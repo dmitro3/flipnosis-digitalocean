@@ -27,6 +27,8 @@ import { ethers } from 'ethers'
 import { PaymentToken } from '../services/ContractService'
 import { DEFAULT_CONTRACT_ADDRESS } from '../config/contracts'
 import { getRequiredPayment } from '../utils/payment'
+import ThreeCoin from '../components/ThreeCoin'
+import EnhancedPowerBar from '../components/EnhancedPowerBar'
 
 const FlipGame = () => {
   const { gameId } = useParams()
@@ -233,10 +235,7 @@ const FlipGame = () => {
     const result = Math.random() < 0.5 ? 'heads' : 'tails'
     console.log('🎲 Flip result:', result)
     
-    // Calculate flip duration based on power (1-10 seconds)
-    const flipDuration = power * 1000 // Convert power to milliseconds
-    
-    // Send flip result to server
+    // Send flip result to server immediately
     sendMessage({
       type: 'flip_complete',
       gameId,
@@ -245,18 +244,17 @@ const FlipGame = () => {
       power
     })
 
+    // Set the result for the 3D coin animation
     setFlipResult(result)
     
-    // Set animation duration using CSS custom property
-    const coinElement = document.querySelector('.coin')
-    if (coinElement) {
-      coinElement.style.setProperty('--duration', `${flipDuration}ms`)
-    }
+    // Calculate flip duration based on power (2-6 seconds)
+    const flipDuration = 2000 + (power * 400)
     
+    // Reset state after animation completes
     setTimeout(() => {
       setIsFlipping(false)
       setMyPower(0)
-      setFlipResult(null)
+      // Don't reset flipResult here - let the next round reset it
     }, flipDuration)
   }
 
@@ -624,107 +622,43 @@ const FlipGame = () => {
                 flipState={safeFlipState}
               />
 
-              {/* 3D Coin */}
-              <div style={{ position: 'relative', margin: '2rem auto', width: '200px', height: '200px', perspective: '1000px' }}>
-                <div 
-                  className={`coin ${isFlipping ? 'flipping' : ''}`}
-                  style={{ 
-                    transformStyle: 'preserve-3d',
-                    width: '100%',
-                    height: '100%',
-                    position: 'relative',
-                    cursor: isMyTurn ? 'pointer' : 'default',
-                    userSelect: 'none'
+              {/* 3D Coin with Enhanced Power Bar */}
+              <div style={{ 
+                position: 'relative', 
+                margin: '2rem auto', 
+                width: '600px', 
+                height: '600px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <ThreeCoin
+                  isFlipping={isFlipping}
+                  flipResult={flipResult}
+                  onPowerCharge={handlePowerChargeStart}
+                  onPowerRelease={handlePowerChargeStop}
+                  isPlayerTurn={isMyTurn}
+                  gamePhase={gamePhase}
+                  power={myPower}
+                  isCharging={isCharging}
+                  style={{
+                    filter: isCharging ? 'brightness(1.2) saturate(1.3)' : 'brightness(1)',
+                    transform: isMyTurn && gamePhase === 'round_active' ? 'scale(1.05)' : 'scale(1)'
                   }}
-                  onMouseDown={handlePowerChargeStart}
-                  onMouseUp={handlePowerChargeStop}
-                  onMouseLeave={handlePowerChargeStop}
-                  onTouchStart={handlePowerChargeStart}
-                  onTouchEnd={handlePowerChargeStop}
-                >
-                  {/* Front face */}
-                  <div className="coin-face front" style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    backfaceVisibility: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '4rem',
-                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
-                    border: '4px solid #FFD700'
-                  }}>
-                    👑
-                  </div>
-                  
-                  {/* Back face */}
-                  <div className="coin-face back" style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    backfaceVisibility: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '4rem',
-                    background: 'linear-gradient(45deg, #C0C0C0, #808080)',
-                    boxShadow: '0 0 20px rgba(192, 192, 192, 0.5)',
-                    border: '4px solid #C0C0C0',
-                    transform: 'rotateY(180deg)'
-                  }}>
-                    💎
-                  </div>
-                </div>
+                />
                 
-                {/* Power Bar */}
-                <DualPowerBar
-                  isVisible={gamePhase === 'round_active'}
-                  isSinglePlayer={true}
-                  activePlayer={currentPlayer}
-                  creatorPower={isCreator ? myPower : opponentPower}
-                  joinerPower={isCreator ? opponentPower : myPower}
-                  creatorCharging={isCharging && isCreator}
-                  joinerCharging={isCharging && !isCreator}
-                >
-                  <div className="power-bar">
-                    <div className="power-fill" />
-                  </div>
-                  <div className="power-label">
-                    {isMyTurn ? 'Your Power' : 'Opponent\'s Power'}
-                  </div>
-                  <div className="power-value">{Math.round((isMyTurn ? myPower : opponentPower) * 10) / 10}</div>
-                </DualPowerBar>
+                {/* Enhanced Power Bar */}
+                <EnhancedPowerBar
+                  power={myPower}
+                  isCharging={isCharging}
+                  isVisible={gamePhase === 'round_active' && isMyTurn}
+                  label={isMyTurn ? 'Your Power' : 'Opponent Power'}
+                  color={isCreator ? theme.colors.neonPink : theme.colors.neonBlue}
+                />
               </div>
 
               {/* Game Controls with Debug Info */}
               <div style={{ marginTop: '1rem' }}>
-                {/* Debug Panel */}
-                <div style={{ 
-                  background: 'rgba(255,0,0,0.1)', 
-                  padding: '1rem', 
-                  marginBottom: '1rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.8rem',
-                  fontFamily: 'monospace'
-                }}>
-                  <div><strong>🐛 Debug Info:</strong></div>
-                  <div>Address: {address}</div>
-                  <div>Creator: {initialGame?.creator}</div>
-                  <div>Joiner: {initialGame?.joiner || 'None'}</div>
-                  <div>Status: {initialGame?.status}</div>
-                  <div>Game Phase: {gamePhase}</div>
-                  <div>Is Creator: {isCreator ? 'YES' : 'NO'}</div>
-                  <div>Is Joiner: {isJoiner ? 'YES' : 'NO'}</div>
-                  <div>Can Join: {(!initialGame?.joiner && !isCreator) ? 'YES' : 'NO'}</div>
-                  <div>WebSocket Connected: {wsConnected ? 'YES' : 'NO'}</div>
-                  <div>Show Join Button: {(!initialGame?.joiner && !isCreator && initialGame?.status === 'waiting') ? 'YES' : 'NO'}</div>
-                  <div>Show Start Button: {((isCreator || isJoiner) && initialGame?.joiner && initialGame?.status === 'waiting') ? 'YES' : 'NO'}</div>
-                </div>
-
                 {/* Player 2 - Join Button */}
                 {!initialGame?.joiner && !isCreator && initialGame?.status === 'waiting' && (
                   <div>
@@ -787,52 +721,69 @@ const FlipGame = () => {
                 )}
               </div>
 
-              {/* Heads/Tails Choice UI */}
-              {gamePhase === 'choosing_side' && isPlayer && (
-                <div style={{ marginTop: '1rem' }}>
-                  <p style={{ color: theme.colors.textSecondary, marginBottom: '1rem' }}>
-                    Choose Heads or Tails
-                  </p>
-                  <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                    <Button 
-                      onClick={() => handleSideChoice('heads')}
-                      style={{ flex: 1 }}
-                    >
-                      Heads 👑
-                    </Button>
-                    <Button 
-                      onClick={() => handleSideChoice('tails')}
-                      style={{ flex: 1 }}
-                    >
-                      Tails 💎
-                    </Button>
+              {/* Enhanced Game Instructions */}
+              {gamePhase === 'round_active' && (
+                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    padding: '1rem',
+                    borderRadius: '1rem',
+                    border: `1px solid ${theme.colors.neonYellow}`,
+                    backdropFilter: 'blur(10px)'
+                  }}>
+                    <p style={{ 
+                      color: isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning, 
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      marginBottom: '0.5rem',
+                      textShadow: `0 0 10px ${isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning}`
+                    }}>
+                      {isMyTurn ? '🎯 YOUR TURN!' : '⏳ OPPONENT\'S TURN'}
+                    </p>
+                    
+                    <p style={{ 
+                      color: theme.colors.textSecondary,
+                      fontSize: '0.9rem',
+                      marginBottom: '0.5rem'
+                    }}>
+                      {isMyTurn ? 
+                        'Click and hold the coin to charge power, release to flip!' : 
+                        'Waiting for opponent to flip the coin...'
+                      }
+                    </p>
+                    
+                    {isMyTurn && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '1rem',
+                        marginTop: '0.5rem',
+                        fontSize: '0.75rem',
+                        color: theme.colors.textTertiary
+                      }}>
+                        <span>💪 More power = Higher flip</span>
+                        <span>⚡ More power = Longer spin</span>
+                        <span>🎯 Release to set your force</span>
+                      </div>
+                    )}
+                    
+                    {/* Round Timer Display */}
+                    <div style={{
+                      marginTop: '0.5rem',
+                      padding: '0.5rem',
+                      background: 'rgba(255, 222, 3, 0.1)',
+                      borderRadius: '0.5rem',
+                      border: '1px solid rgba(255, 222, 3, 0.3)'
+                    }}>
+                      <span style={{ 
+                        color: theme.colors.neonYellow,
+                        fontSize: '1rem',
+                        fontWeight: 'bold'
+                      }}>
+                        ⏱️ {safeFlipState.roundTimer}s remaining
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Game Instructions */}
-              {gamePhase === 'round_active' && (
-                <div style={{ marginTop: '1rem' }}>
-                  <p style={{ color: theme.colors.neonYellow, fontSize: '1.2rem', marginBottom: '0.5rem' }}>
-                    {isMyTurn ? 'YOUR TURN!' : 'OPPONENT\'S TURN'}
-                  </p>
-                  <p style={{ color: theme.colors.textSecondary }}>
-                    {isMyTurn ? 
-                      'Click and hold the coin to charge power, release to flip!' : 
-                      'Waiting for opponent to flip...'
-                    }
-                  </p>
-                </div>
-              )}
-
-              {/* Round Timer */}
-              {gamePhase === 'round_active' && (
-                <div style={{ 
-                  marginTop: '1rem',
-                  color: theme.colors.textSecondary,
-                  fontSize: '1.2rem'
-                }}>
-                  Time Remaining: {safeFlipState.roundTimer}s
                 </div>
               )}
 
@@ -897,31 +848,6 @@ const FlipGame = () => {
             isCurrentUser={isCreator ? (flipResult === 'heads') : (flipResult === 'tails')}
             flipState={safeFlipState}
           />
-
-          {/* Debug Info */}
-          {process.env.NODE_ENV === 'development' && (
-            <GlassCard style={{ marginTop: '1rem', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-              <div><strong>Debug Info:</strong></div>
-              <div>WebSocket Connected: {wsConnected ? 'Yes' : 'No'}</div>
-              <div>Game Phase: {gamePhase}</div>
-              <div>Current Round: {currentRound}</div>
-              <div>Initial Game Joiner: {initialGame?.joiner || 'None'}</div>
-              <div>WebSocket Game Joiner: {gameState?.joiner || 'None'}</div>
-              <div>Is Creator: {isCreator ? 'Yes' : 'No'}</div>
-              <div>Address: {address}</div>
-              <div>Show Start Button: {isCreator && (initialGame?.joiner || gameState?.joiner) && (gamePhase === 'ready_to_start' || gamePhase === 'waiting') ? 'YES' : 'NO'}</div>
-              <div>Button Conditions:</div>
-              <div>- isCreator: {isCreator ? 'YES' : 'NO'}</div>
-              <div>- hasJoiner: {(initialGame?.joiner || gameState?.joiner) ? 'YES' : 'NO'}</div>
-              <div>- correctPhase: {(gamePhase === 'ready_to_start' || gamePhase === 'waiting') ? 'YES' : 'NO'}</div>
-              <div>My Turn: {isMyTurn ? 'Yes' : 'No'}</div>
-              <div>Both Ready: {isMyTurn ? 'Yes' : 'No'}</div>
-              <div>Creator Power: {safeFlipState.creatorPower.toFixed(1)}</div>
-              <div>Joiner Power: {safeFlipState.joinerPower.toFixed(1)}</div>
-              <div>Timer: {safeFlipState.roundTimer}s</div>
-              <div>Scores: {scores.creator} - {scores.joiner}</div>
-            </GlassCard>
-          )}
         </ContentWrapper>
       </Container>
     </ThemeProvider>
