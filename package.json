@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "NODE_ENV=production node dist/server/server.js",
+    "start": "NODE_ENV=production node start.js",
     "build:production": "vite build && npm run copy-server",
     "copy-server": "cp -r server dist/"
   },
