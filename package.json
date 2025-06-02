@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "start": "NODE_ENV=production node start.js",
     "build:production": "vite build && npm run copy-server",
-    "copy-server": "cp -r server dist/"
+    "copy-server": "node -e \"require('fs-extra').copySync('server', 'dist/server')\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -26,7 +26,8 @@
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "ws": "^8.16.0",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "fs-extra": "^11.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
