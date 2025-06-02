@@ -6,9 +6,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "NODE_ENV=production node start.js",
+    "start": "NODE_ENV=production node dist/server/server.js",
     "build:production": "vite build && npm run copy-server",
-    "copy-server": "node -e \"require('fs-extra').copySync('server', 'dist/server')\""
+    "copy-server": "node -e \"require('fs-extra').copySync('server', 'dist/server', {overwrite: true})\"",
+    "postinstall": "npm run copy-server"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
