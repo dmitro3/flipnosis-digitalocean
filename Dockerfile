@@ -1,17 +1,24 @@
-# Use Node.js 20 (fixes the Solana package engine warnings)
-FROM node:20-alpine
+# Use regular Node.js 20 (not Alpine) to avoid musl/glibc issues
+FROM node:20
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for sqlite3 and other native modules
-RUN apk add --no-cache python3 make g++ sqlite curl
+# Install system dependencies for sqlite3
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    sqlite3 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files first (for better Docker layer caching)
 COPY package*.json ./
 
-# Install dependencies (use install instead of ci for more flexibility)
-RUN npm install --omit=dev
+# Clear npm cache and install dependencies
+RUN npm cache clean --force
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -20,14 +27,13 @@ COPY . .
 RUN npm run build
 
 # Create a non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
 
 # Change ownership of the app directory
 RUN chown -R nodejs:nodejs /app
 USER nodejs
 
-# Expose port (Railway will provide PORT env var)
+# Expose port
 EXPOSE 3001
 
 # Health check
