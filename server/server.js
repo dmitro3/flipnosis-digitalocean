@@ -4,6 +4,11 @@ const WebSocket = require('ws')
 const cors = require('cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
+const fs = require('fs')
+
+console.log('🚀 Starting FLIPNOSIS server...')
+console.log('📁 Server directory:', __dirname)
+console.log('📁 Process CWD:', process.cwd())
 
 const app = express()
 const server = http.createServer(app)
@@ -12,41 +17,61 @@ const wss = new WebSocket.Server({ server })
 app.use(cors())
 app.use(express.json())
 
-// Serve static files from the built frontend (Railway deployment)
-if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, '..')
-  console.log('📁 Serving static files from:', distPath)
-  
-  app.use(express.static(distPath))
-  
-  // Handle React Router (SPA) - serve index.html for all non-API routes
-  app.get('*', (req, res, next) => {
-    // Skip API routes and health check
-    if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
-      return next()
-    }
-    
-    const indexPath = path.join(distPath, 'index.html')
-    console.log('📄 Serving index.html from:', indexPath)
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        console.error('❌ Error serving index.html:', err)
-        res.status(500).send('Error loading application')
-      }
-    })
-  })
-}
+// Database setup with Railway environment variable
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'games.db')
+console.log('🗄️ Database path:', dbPath)
 
-// Database setup
-const dbPath = path.join(__dirname, 'games.db')
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('❌ Error opening database:', err)
   } else {
-    console.log('✅ Connected to SQLite database')
+    console.log('✅ Connected to SQLite database at:', dbPath)
     initializeDatabase()
   }
 })
+
+// Serve static files from the built frontend
+if (process.env.NODE_ENV === 'production') {
+  console.log('🌍 Production mode - setting up static file serving')
+  
+  // The dist folder is at the same level as the server folder
+  // So from /app/server/server.js, the dist is at /app/dist
+  const distPath = path.join(__dirname, '../dist')
+  console.log('📁 Looking for dist folder at:', distPath)
+  
+  if (fs.existsSync(distPath)) {
+    console.log('✅ Found dist folder')
+    console.log('📄 Dist contents:', fs.readdirSync(distPath))
+    
+    app.use(express.static(distPath))
+    console.log('📁 Serving static files from:', distPath)
+    
+    // Handle React Router (SPA) - serve index.html for all non-API routes
+    app.get('*', (req, res, next) => {
+      // Skip API routes and health check
+      if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
+        return next()
+      }
+      
+      const indexPath = path.join(distPath, 'index.html')
+      console.log('📄 Serving index.html for path:', req.path)
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error('❌ Error serving index.html:', err)
+          res.status(500).send('Error loading application')
+        }
+      })
+    })
+  } else {
+    console.error('❌ Dist folder not found at:', distPath)
+    // List parent directory contents to debug
+    const parentDir = path.dirname(__dirname)
+    console.log('📁 Parent directory:', parentDir)
+    if (fs.existsSync(parentDir)) {
+      console.log('📁 Parent directory contents:', fs.readdirSync(parentDir))
+    }
+  }
+}
 
 // Initialize database tables
 function initializeDatabase() {
@@ -171,6 +196,21 @@ const dbHelpers = {
     })
   },
 
+  // Get all games (not just waiting)
+  getAllGames: (limit = 50) => {
+    return new Promise((resolve, reject) => {
+      const sql = `SELECT * FROM games ORDER BY created_at DESC LIMIT ?`
+      db.all(sql, [limit], (err, rows) => {
+        if (err) {
+          console.error('❌ Error getting games:', err)
+          reject(err)
+        } else {
+          resolve(rows)
+        }
+      })
+    })
+  },
+
   // Get all waiting games
   getWaitingGames: (limit = 50) => {
     return new Promise((resolve, reject) => {
@@ -267,7 +307,7 @@ const dbHelpers = {
   }
 }
 
-// Game session management (same as before but with database integration)
+// Game session management (keeping existing logic)
 class GameSession {
   constructor(gameId) {
     this.gameId = gameId
@@ -683,9 +723,10 @@ async function handleMessage(ws, data) {
 // REST API endpoints for analytics
 app.get('/api/games', async (req, res) => {
   try {
-    const games = await dbHelpers.getWaitingGames(100)
+    const games = await dbHelpers.getAllGames(100)
     res.json(games)
   } catch (error) {
+    console.error('API Error:', error)
     res.status(500).json({ error: 'Database error' })
   }
 })
@@ -699,6 +740,7 @@ app.get('/api/games/:gameId', async (req, res) => {
       res.status(404).json({ error: 'Game not found' })
     }
   } catch (error) {
+    console.error('API Error:', error)
     res.status(500).json({ error: 'Database error' })
   }
 })
@@ -708,6 +750,7 @@ app.get('/api/stats/monthly/:year/:month', async (req, res) => {
     const stats = await dbHelpers.getMonthlyStats(req.params.year, req.params.month)
     res.json(stats)
   } catch (error) {
+    console.error('API Error:', error)
     res.status(500).json({ error: 'Database error' })
   }
 })
@@ -717,6 +760,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     activeSessions: activeSessions.size,
+    environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString()
   })
 })
@@ -752,4 +796,10 @@ server.listen(PORT, () => {
   console.log(`🚀 WebSocket server with SQLite running on port ${PORT}`)
   console.log(`📊 Health check: http://localhost:${PORT}/health`)
   console.log(`🎮 Games API: http://localhost:${PORT}/api/games`)
+  console.log(`🌍 Environment: ${process.env.NODE_ENV}`)
+  
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`🚀 Production server ready at https://cryptoflipz2-production.up.railway.app`)
+    console.log(`📄 Frontend served from static files`)
+  }
 }) 
