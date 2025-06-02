@@ -12,6 +12,22 @@ const wss = new WebSocket.Server({ server })
 app.use(cors())
 app.use(express.json())
 
+// Serve static files from the built frontend (Railway deployment)
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist')
+  app.use(express.static(distPath))
+  
+  // Handle React Router (SPA)
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
+      return next()
+    }
+    
+    res.sendFile(path.join(distPath, 'index.html'))
+  })
+}
+
 // Database setup
 const dbPath = path.join(__dirname, 'games.db')
 const db = new sqlite3.Database(dbPath, (err) => {
