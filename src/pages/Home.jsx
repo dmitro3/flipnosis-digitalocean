@@ -12,12 +12,6 @@ import {
   Grid,
   GameCard,
   GameImage,
-  ChainBadge,
-  StatusBadge,
-  PriceBadge,
-  SelectedGameContainer,
-  GameDetails,
-  DetailCard,
   LoadingSpinner,
   TwoBoxLayout,
   ActiveGamesBox,
@@ -38,106 +32,81 @@ import {
 } from '../styles/components'
 
 const Home = () => {
-  const { chains, isConnected, firebaseService, address } = useWallet()
+  const { chains, isConnected } = useWallet()
   const [activeFilter, setActiveFilter] = useState('all')
   const [flips, setFlips] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedFlip, setSelectedFlip] = useState(null)
   const [error, setError] = useState(null)
 
-  // Fetch active flips from Firebase
-  useEffect(() => {
-    const fetchActiveFlips = async () => {
-      if (!firebaseService) {
-        setLoading(false)
-        return
+  // API URL - will be Railway URL in production
+  const API_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://your-railway-app.railway.app' 
+    : 'http://localhost:3001'
+
+  // Fetch games from database
+  const fetchGames = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch(`${API_URL}/api/games`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch games')
       }
 
-      try {
-        setLoading(true)
-        setError(null)
+      const gamesData = await response.json()
+      console.log('📊 Fetched games from database:', gamesData)
 
-        const chainFilter = activeFilter === 'all' ? null : activeFilter
-        const result = await firebaseService.getActiveGames(chainFilter)
-
-        if (!result.success) {
-          throw new Error(result.error)
-        }
-
-        const processedFlips = result.games.map(game => ({
-          id: game.id,
-          nft: {
-            name: game.nft?.name || 'Unknown NFT',
-            image: game.nft?.image || '',
-            collection: game.nft?.collection || 'Unknown Collection'
-          },
-          price: game.price || 0,
-          priceUSD: game.priceUSD || game.price || 0,
-          currency: game.currency || 'USD',
-          chain: game.nft?.chain || 'base',
-          creator: game.creator || '',
-          joiner: game.joiner || null,
-          rounds: game.rounds || 3,
-          status: game.status || 'waiting',
-          createdAt: game.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-          expiresAt: game.expiresAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-          description: game.nft?.description || 'No description available',
-          gameData: game
-        }))
-
-        console.log('Fetched flips from Firebase:', processedFlips)
-        setFlips(processedFlips)
-        
-        if (processedFlips.length > 0) {
-          setSelectedFlip(processedFlips[0])
-        }
-      } catch (error) {
-        console.error('Error fetching active flips:', error)
-        setError('Failed to fetch active flips. Please try again.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchActiveFlips()
-  }, [firebaseService, activeFilter])
-
-  // Real-time updates
-  useEffect(() => {
-    if (!firebaseService) return
-
-    const chainFilter = activeFilter === 'all' ? null : activeFilter
-    
-    const unsubscribe = firebaseService.subscribeToActiveGames((games) => {
-      const processedFlips = games.map(game => ({
+      // Transform database games to frontend format
+      const processedFlips = gamesData.map(game => ({
         id: game.id,
         nft: {
-          name: game.nft?.name || 'Unknown NFT',
-          image: game.nft?.image || '',
-          collection: game.nft?.collection || 'Unknown Collection'
+          name: game.nft_name || 'Unknown NFT',
+          image: game.nft_image || 'https://picsum.photos/300/300?random=' + game.id,
+          collection: game.nft_collection || 'Unknown Collection',
+          contractAddress: game.nft_contract,
+          tokenId: game.nft_token_id,
+          chain: game.nft_chain || 'base'
         },
-        price: game.price || 0,
-        priceUSD: game.priceUSD || game.price || 0,
-        currency: game.currency || 'USD',
-        chain: game.nft?.chain || 'base',
-        creator: game.creator || '',
-        joiner: game.joiner || null,
-        rounds: game.rounds || 3,
-        status: game.status || 'waiting',
-        createdAt: game.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        expiresAt: game.expiresAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        description: game.nft?.description || 'No description available',
-        gameData: game
+        price: game.price_usd,
+        priceUSD: game.price_usd,
+        currency: 'USD',
+        chain: game.nft_chain || 'base',
+        creator: game.creator,
+        joiner: game.joiner,
+        rounds: game.rounds,
+        status: game.status,
+        createdAt: game.created_at,
+        winner: game.winner,
+        creatorWins: game.creator_wins || 0,
+        joinerWins: game.joiner_wins || 0,
+        spectators: game.total_spectators || 0,
+        description: `${game.nft_name} from ${game.nft_collection} - Ready for battle!`
       }))
 
+      console.log('✅ Processed flips:', processedFlips)
       setFlips(processedFlips)
-      if (processedFlips.length > 0 && !selectedFlip) {
+      
+      if (processedFlips.length > 0) {
         setSelectedFlip(processedFlips[0])
       }
-    }, chainFilter)
+    } catch (error) {
+      console.error('❌ Error fetching games:', error)
+      setError('Failed to load games. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    return () => unsubscribe && unsubscribe()
-  }, [firebaseService, activeFilter])
+  // Load games on component mount
+  useEffect(() => {
+    fetchGames()
+    
+    // Refresh every 10 seconds
+    const interval = setInterval(fetchGames, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const filteredFlips = flips.filter(flip => 
     activeFilter === 'all' || flip.chain === activeFilter
@@ -146,6 +115,7 @@ const Home = () => {
   const chainFilters = [
     { key: 'all', name: 'All', icon: '🌐' },
     { key: 'base', name: 'Base', icon: '🔵' },
+    { key: 'ethereum', name: 'Ethereum', icon: '🔵' },
     { key: 'polygon', name: 'Polygon', icon: '🟣' },
     { key: 'arbitrum', name: 'Arbitrum', icon: '🔷' },
     { key: 'bnb', name: 'BNB', icon: '🟡' },
@@ -157,14 +127,14 @@ const Home = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const getStatusColor = (status) => {
-    return status === 'waiting' ? theme.colors.statusWarning : 
-           status === 'active' ? theme.colors.statusSuccess : theme.colors.textTertiary
-  }
-
   const getStatusIcon = (status) => {
-    return status === 'waiting' ? '⏳' : 
-           status === 'active' ? '🔴' : '✅'
+    switch (status) {
+      case 'waiting': return '⏳'
+      case 'joined': return '🔄'
+      case 'active': return '🎮'
+      case 'completed': return '🏆'
+      default: return '❓'
+    }
   }
 
   if (loading) {
@@ -174,6 +144,9 @@ const Home = () => {
           <ContentWrapper>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
               <LoadingSpinner />
+              <span style={{ marginLeft: '1rem', color: theme.colors.textSecondary }}>
+                Loading games from database...
+              </span>
             </div>
           </ContentWrapper>
         </Container>
@@ -186,10 +159,12 @@ const Home = () => {
       <ThemeProvider theme={theme}>
         <Container>
           <ContentWrapper>
-            <GlassCard className="text-center py-20">
-              <NeonText className="text-2xl mb-6">Error</NeonText>
-              <p className="text-gray-400 mb-8">{error}</p>
-              <Button onClick={() => window.location.reload()} style={{ background: theme.colors.neonPink }}>
+            <GlassCard style={{ textAlign: 'center', padding: '3rem' }}>
+              <NeonText style={{ fontSize: '2rem', marginBottom: '1rem', color: theme.colors.statusError }}>
+                Error Loading Games
+              </NeonText>
+              <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>{error}</p>
+              <Button onClick={fetchGames} style={{ background: theme.colors.neonPink }}>
                 Retry
               </Button>
             </GlassCard>
@@ -203,6 +178,20 @@ const Home = () => {
     <ThemeProvider theme={theme}>
       <Container>
         <ContentWrapper>
+          {/* Database Stats */}
+          <div style={{ 
+            background: 'rgba(0, 255, 65, 0.1)', 
+            padding: '1rem', 
+            borderRadius: '1rem',
+            border: '1px solid rgba(0, 255, 65, 0.3)',
+            marginBottom: '1rem',
+            textAlign: 'center'
+          }}>
+            <span style={{ color: theme.colors.neonGreen, fontWeight: 'bold' }}>
+              📊 Live from Database: {flips.length} games loaded
+            </span>
+          </div>
+
           {/* Chain Filters */}
           <TransparentCard>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -222,10 +211,12 @@ const Home = () => {
             </div>
           </TransparentCard>
 
-          {flips.length === 0 ? (
-            <GlassCard className="text-center py-20" style={{ border: `2px solid ${theme.colors.neonPink}` }}>
-              <NeonText className="text-2xl mb-6">No Active Flips</NeonText>
-              <p className="text-gray-400 mb-8">There are no active flips at the moment. Be the first to create one!</p>
+          {filteredFlips.length === 0 ? (
+            <GlassCard style={{ textAlign: 'center', padding: '3rem', border: `2px solid ${theme.colors.neonPink}` }}>
+              <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Active Flips</NeonText>
+              <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
+                Be the first to create a flip game!
+              </p>
               <Button as={Link} to="/create" style={{ background: theme.colors.neonPink }}>
                 Create Flip
               </Button>
@@ -236,8 +227,14 @@ const Home = () => {
                 {/* Left Box - Selected Game */}
                 <div>
                   {selectedFlip && (
-                    <SelectedGameContainer style={{ border: `2px solid ${theme.colors.neonPink}` }}>
-                      <div className="relative aspect-square rounded-xl overflow-hidden mb-4">
+                    <div style={{
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '1rem',
+                      padding: '1.5rem',
+                      border: `2px solid ${theme.colors.neonPink}`,
+                      maxWidth: '300px'
+                    }}>
+                      <div style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
                         <GameImage 
                           src={selectedFlip.nft.image} 
                           alt={selectedFlip.nft.name}
@@ -253,23 +250,47 @@ const Home = () => {
                         <GameStats>
                           <GameStat>{selectedFlip.rounds} Rounds</GameStat>
                           <GameStat>{selectedFlip.chain}</GameStat>
-                          <GameStat>{chains[selectedFlip.chain]?.icon || '🔗'}</GameStat>
-                          <GameStat>{selectedFlip.status}</GameStat>
+                          <GameStat>{getStatusIcon(selectedFlip.status)} {selectedFlip.status}</GameStat>
+                          {selectedFlip.spectators > 0 && (
+                            <GameStat>👀 {selectedFlip.spectators}</GameStat>
+                          )}
                         </GameStats>
                         
                         <GamePrice>${(selectedFlip?.priceUSD || 0).toFixed(2)}</GamePrice>
                         
-                        <p className="text-gray-400 mb-6">{selectedFlip.description}</p>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '1.5rem' }}>
+                          {selectedFlip.description}
+                        </p>
+
+                        {/* Game Status Info */}
+                        {selectedFlip.status === 'completed' && (
+                          <div style={{ 
+                            background: 'rgba(0, 255, 0, 0.1)', 
+                            padding: '0.5rem', 
+                            borderRadius: '0.5rem',
+                            marginBottom: '1rem',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ color: theme.colors.statusSuccess, fontWeight: 'bold' }}>
+                              🏆 Game Complete!
+                            </div>
+                            <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+                              Score: {selectedFlip.creatorWins} - {selectedFlip.joinerWins}
+                            </div>
+                          </div>
+                        )}
 
                         <GameFlipButton
                           as={Link}
                           to={`/game/${selectedFlip.id}`}
-                          style={{ background: theme.colors.neonPink }}
+                          style={{ 
+                            background: selectedFlip.status === 'completed' ? theme.colors.neonBlue : theme.colors.neonPink 
+                          }}
                         >
-                          FLIP
+                          {selectedFlip.status === 'completed' ? 'VIEW RESULTS' : 'JOIN GAME'}
                         </GameFlipButton>
                       </GameInfo>
-                    </SelectedGameContainer>
+                    </div>
                   )}
                 </div>
 
@@ -277,11 +298,11 @@ const Home = () => {
                 <ActiveGamesBox>
                   <ActiveGamesTitle>
                     <LiveDot />
-                    Active Games
+                    Live Games ({flips.filter(f => f.status === 'active').length})
                   </ActiveGamesTitle>
                   
                   {flips
-                    .filter(flip => flip.status === 'active' && flip.joiner)
+                    .filter(flip => flip.status === 'active' || flip.status === 'joined')
                     .map(flip => (
                       <ActiveGameItem 
                         key={flip.id}
@@ -292,14 +313,17 @@ const Home = () => {
                           <GameItemDetails>
                             <span>${(flip?.priceUSD || 0).toFixed(2)}</span>
                             <span>•</span>
-                            <span>Round {flip.currentRound || 1}/{flip.rounds}</span>
+                            <span>{flip.creatorWins || 0}-{flip.joinerWins || 0}</span>
+                            <span>•</span>
+                            <span>{getStatusIcon(flip.status)} {flip.status}</span>
                             <span>•</span>
                             <span>{flip.chain}</span>
                           </GameItemDetails>
                         </GameItemInfo>
                       </ActiveGameItem>
                     ))}
-                  {flips.filter(flip => flip.status === 'active' && flip.joiner).length === 0 && (
+                  
+                  {flips.filter(flip => flip.status === 'active' || flip.status === 'joined').length === 0 && (
                     <p style={{ color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', padding: '1rem' }}>
                       No active games at the moment
                     </p>
@@ -310,11 +334,11 @@ const Home = () => {
               {/* Available Flips Grid */}
               <div style={{ marginTop: '2rem' }}>
                 <NeonText style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
-                  Available Flips
+                  Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
                 </NeonText>
                 <Grid>
                   {filteredFlips
-                    .filter(flip => !flip.joiner)
+                    .filter(flip => flip.status === 'waiting')
                     .map((flip) => (
                       <GameCard
                         key={flip.id}
@@ -343,7 +367,7 @@ const Home = () => {
                             to={`/game/${flip.id}`}
                             style={{ background: theme.colors.neonPink }}
                           >
-                            FLIP
+                            JOIN FLIP
                           </GameFlipButton>
                         </GameInfo>
                       </GameCard>

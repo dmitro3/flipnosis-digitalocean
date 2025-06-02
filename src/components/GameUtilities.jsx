@@ -479,182 +479,52 @@ export const DualPowerBar = styled.div`
   }
 `
 
-// Enhanced 3D Coin with dual-axis rotation
-export const DualGameCoin = styled.div`
-  width: 200px;
-  height: 200px;
-  position: relative;
-  cursor: ${props => props.isPlayerTurn && props.gamePhase === 'round_active' ? 'pointer' : 'default'};
-  transform-style: preserve-3d;
-  transition: transform 0.3s ease;
+// Live Score Display
+export const LiveScoreDisplay = ({ gameState }) => {
+  const { creatorWins = 0, joinerWins = 0, currentRound = 1, maxRounds = 5 } = gameState || {}
 
-  &:hover {
-    transform: ${props => props.isPlayerTurn && props.gamePhase === 'round_active' ? 'scale(1.05)' : 'none'};
-  }
-
-  .coin {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    border-radius: 50%;
-    background: ${props => {
-      if (props.isFlipping) return 'linear-gradient(45deg, #FFD700, #FFA500)';
-      if (props.flipResult === 'heads') return 'linear-gradient(45deg, #FFD700, #FFA500)';
-      if (props.flipResult === 'tails') return 'linear-gradient(45deg, #C0C0C0, #808080)';
-      return 'linear-gradient(45deg, #FFD700, #FFA500)';
-    }};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 4rem;
-    box-shadow: 0 0 20px ${props => props.theme.colors.neonYellow};
-    border: 2px solid ${props => {
-      if (props.isPlayerTurn && props.gamePhase === 'round_active') return props.theme.colors.neonPink;
-      if (props.gamePhase === 'flipping') return props.theme.colors.neonYellow;
-      return props.theme.colors.neonGreen;
-    }};
-    transition: all 0.3s ease;
-  }
-
-  .coin-front, .coin-back {
-    backface-visibility: hidden;
-  }
-
-  .coin-back {
-    transform: rotateY(180deg);
-  }
-
-  &.flipping {
-    animation: flip 2s ease-in-out;
-  }
-
-  @keyframes flip {
-    0% { transform: rotateY(0); }
-    100% { transform: rotateY(1800deg); }
-  }
-`
-
-// Real-time Score Display with round information
-export const LiveScoreDisplay = ({ scores, currentRound, gamePhase, maxRounds, flipState }) => {
-  if (gamePhase === 'waiting') return null
-  
-  const winsNeeded = Math.ceil(maxRounds / 2)
-  
   return (
     <div style={{
+      background: 'rgba(0, 0, 0, 0.3)',
+      padding: '1rem',
+      borderRadius: '1rem',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '2rem',
-      padding: '1rem',
-      background: 'rgba(0,0,0,0.4)',
-      borderRadius: '1rem',
-      border: '1px solid rgba(255,255,255,0.1)'
+      marginBottom: '1rem'
     }}>
-      {/* Creator Score */}
-      <div style={{ 
-        textAlign: 'center',
-        border: flipState.creatorReady ? `2px solid ${theme.colors.statusSuccess}` : '2px solid transparent',
-        borderRadius: '1rem',
-        padding: '0.5rem',
-        animation: flipState.creatorCharging ? 'playerReady 1s infinite' : 'none'
-      }}>
-        <div style={{ 
-          color: theme.colors.neonPink, 
-          fontWeight: 'bold', 
-          fontSize: '2.5rem',
-          textShadow: `0 0 10px ${theme.colors.neonPink}`
-        }}>
-          {scores.creator}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ color: theme.colors.neonPink, fontSize: '2rem', fontWeight: 'bold' }}>
+          {creatorWins}
         </div>
-        <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
+        <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
           Player 1
         </div>
-        {flipState.creatorReady && (
-          <div style={{ 
-            color: theme.colors.statusSuccess, 
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            marginTop: '0.25rem'
-          }}>
-            READY
-          </div>
-        )}
       </div>
       
-      {/* Round Info */}
-      <div style={{ 
-        color: theme.colors.textSecondary,
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>Round</div>
-        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.colors.textPrimary }}>
-          {currentRound}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ color: theme.colors.textPrimary, fontSize: '1.25rem', fontWeight: 'bold' }}>
+          {currentRound} / {maxRounds}
         </div>
-        <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-          First to {winsNeeded}
-        </div>
-        
-        {/* Game Phase Indicator */}
-        <div style={{
-          marginTop: '0.5rem',
-          padding: '0.25rem 0.5rem',
-          borderRadius: '1rem',
-          background: 
-            gamePhase === 'round_active' ? 'rgba(255, 222, 3, 0.2)' :
-            gamePhase === 'flipping' ? 'rgba(255, 107, 0, 0.2)' :
-            gamePhase === 'round_complete' ? 'rgba(0, 255, 65, 0.2)' :
-            'rgba(255,255,255,0.1)',
-          color:
-            gamePhase === 'round_active' ? theme.colors.statusWarning :
-            gamePhase === 'flipping' ? theme.colors.neonOrange :
-            gamePhase === 'round_complete' ? theme.colors.statusSuccess :
-            theme.colors.textSecondary,
-          fontSize: '0.75rem',
-          fontWeight: 'bold'
-        }}>
-          {gamePhase === 'round_active' ? 'CHARGING' :
-           gamePhase === 'flipping' ? 'FLIPPING' :
-           gamePhase === 'round_complete' ? 'SCORED' :
-           'PLAYING'}
+        <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+          Round
         </div>
       </div>
       
-      {/* Joiner Score */}
-      <div style={{ 
-        textAlign: 'center',
-        border: flipState.joinerReady ? `2px solid ${theme.colors.statusSuccess}` : '2px solid transparent',
-        borderRadius: '1rem',
-        padding: '0.5rem',
-        animation: flipState.joinerCharging ? 'playerReady 1s infinite' : 'none'
-      }}>
-        <div style={{ 
-          color: theme.colors.neonBlue, 
-          fontWeight: 'bold', 
-          fontSize: '2.5rem',
-          textShadow: `0 0 10px ${theme.colors.neonBlue}`
-        }}>
-          {scores.joiner}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ color: theme.colors.neonBlue, fontSize: '2rem', fontWeight: 'bold' }}>
+          {joinerWins}
         </div>
-        <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
+        <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
           Player 2
         </div>
-        {flipState.joinerReady && (
-          <div style={{ 
-            color: theme.colors.statusSuccess, 
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            marginTop: '0.25rem'
-          }}>
-            READY
-          </div>
-        )}
       </div>
     </div>
   )
 }
 
-// Enhanced Player Card with real-time power display
+// Player Card Component
 export const LivePlayerCard = ({ 
   player, 
   isCurrentUser, 
@@ -663,20 +533,19 @@ export const LivePlayerCard = ({
   cryptoAmount = null,
   score = 0,
   gamePhase,
-  flipState,
+  isActiveTurn = false,
   spectatorMode = false
 }) => {
   const isPlayer1 = playerNumber === 1
   const cardColor = isPlayer1 ? theme.colors.neonPink : theme.colors.neonBlue
-  const isCharging = isPlayer1 ? flipState.creatorCharging : flipState.joinerCharging
-  const power = isPlayer1 ? flipState.creatorPower : flipState.joinerPower
-  const isReady = isPlayer1 ? flipState.creatorReady : flipState.joinerReady
   
   return (
-    <GlassCard style={{
+    <div style={{
+      background: 'rgba(0, 0, 0, 0.3)',
       border: isCurrentUser ? `2px solid ${cardColor}` : '1px solid rgba(255,255,255,0.1)',
-      animation: isCharging ? 'playerReady 1s infinite' : 'none',
-      background: isCharging ? `linear-gradient(45deg, ${cardColor}20, transparent)` : undefined
+      borderRadius: '1rem',
+      padding: '1rem',
+      animation: isActiveTurn ? 'playerReady 1s infinite' : 'none'
     }}>
       <div style={{ textAlign: 'center' }}>
         {/* Player Header */}
@@ -686,8 +555,7 @@ export const LivePlayerCard = ({
             `linear-gradient(45deg, ${cardColor}, ${isPlayer1 ? theme.colors.neonPurple : theme.colors.neonGreen})` : 
             'rgba(255,255,255,0.1)',
           borderRadius: '1rem',
-          marginBottom: '1rem',
-          position: 'relative'
+          marginBottom: '1rem'
         }}>
           <h3 style={{ color: 'white', fontWeight: 'bold', marginBottom: '0.5rem' }}>
             PLAYER {playerNumber} {isCurrentUser && '(YOU)'}
@@ -696,38 +564,17 @@ export const LivePlayerCard = ({
             {player ? `${player.slice(0, 6)}...${player.slice(-4)}` : 'Waiting...'}
           </div>
           
-          {/* Real-time status indicators */}
-          {gamePhase === 'round_active' && player && (
+          {isActiveTurn && gamePhase === 'round_active' && (
             <div style={{
               marginTop: '0.5rem',
-              display: 'flex',
-              gap: '0.5rem',
-              justifyContent: 'center',
-              flexWrap: 'wrap'
+              padding: '0.25rem 0.75rem',
+              background: theme.colors.statusSuccess,
+              borderRadius: '1rem',
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
+              animation: 'powerPulse 1s ease-in-out infinite'
             }}>
-              {isCharging && (
-                <div style={{
-                  padding: '0.25rem 0.75rem',
-                  background: theme.colors.statusWarning,
-                  borderRadius: '1rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
-                  animation: 'powerPulse 0.5s ease-in-out infinite'
-                }}>
-                  ⚡ CHARGING
-                </div>
-              )}
-              {isReady && (
-                <div style={{
-                  padding: '0.25rem 0.75rem',
-                  background: theme.colors.statusSuccess,
-                  borderRadius: '1rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold'
-                }}>
-                  ✓ READY
-                </div>
-              )}
+              YOUR TURN
             </div>
           )}
         </div>
@@ -743,8 +590,7 @@ export const LivePlayerCard = ({
                 aspectRatio: '1',
                 objectFit: 'cover',
                 borderRadius: '1rem',
-                border: isCurrentUser ? `3px solid ${cardColor}` : '1px solid rgba(255,255,255,0.2)',
-                filter: isCharging ? 'brightness(1.2) saturate(1.3)' : 'brightness(1)'
+                border: isCurrentUser ? `3px solid ${cardColor}` : '1px solid rgba(255,255,255,0.2)'
               }}
             />
           ) : (
@@ -756,7 +602,6 @@ export const LivePlayerCard = ({
               background: player ? `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 'rgba(255,255,255,0.1)',
               borderRadius: '1rem',
               border: isCurrentUser ? `3px solid ${cardColor}` : player ? '1px solid rgba(255,255,255,0.2)' : '2px dashed rgba(255,255,255,0.3)',
-              filter: isCharging ? 'brightness(1.2) saturate(1.3)' : 'brightness(1)'
             }}>
               <div style={{
                 fontSize: '6rem',
@@ -783,8 +628,7 @@ export const LivePlayerCard = ({
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '1.5rem',
-              fontWeight: 'bold',
-              animation: 'scoreUpdate 0.5s ease-in-out'
+              fontWeight: 'bold'
             }}>
               {score}
             </div>
@@ -800,64 +644,64 @@ export const LivePlayerCard = ({
             {nft ? nft.collection : player ? 'Cryptocurrency' : ''}
           </p>
         </div>
-        
-        {/* Power Display for Active Round */}
-        {gamePhase === 'round_active' && player && (
-          <div style={{ marginTop: '1rem' }}>
-            <p style={{ 
-              color: theme.colors.textSecondary, 
-              fontSize: '0.875rem',
-              marginBottom: '0.5rem'
-            }}>
-              {isPlayer1 ? 'Vertical Power' : 'Horizontal Power'}
-            </p>
-            <div style={{ 
-              height: '20px', 
-              background: 'rgba(255,255,255,0.1)', 
-              borderRadius: '10px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.3)'
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${(power / 10) * 100}%`,
-                background: isCharging 
-                  ? `linear-gradient(90deg, ${cardColor}, ${isPlayer1 ? theme.colors.neonPurple : theme.colors.neonGreen})`
-                  : cardColor,
-                borderRadius: '10px',
-                transition: 'width 0.1s ease',
-                animation: isCharging ? 'powerChargeGlow 0.5s infinite' : 'none'
-              }} />
-            </div>
-            <p style={{ 
-              color: cardColor, 
-              fontWeight: 'bold', 
-              marginTop: '0.5rem',
-              fontSize: '1.25rem'
-            }}>
-              {power.toFixed(1)} / 10
-            </p>
-          </div>
-        )}
       </div>
-    </GlassCard>
+    </div>
   )
 }
 
-// Round Result with enhanced animation
-export const LiveRoundResult = ({ flipResult, roundWinner, isCurrentUser, flipState }) => {
-  if (!flipResult || !roundWinner) return null
-  
-  const isWinner = (roundWinner === 'creator' && isCurrentUser) || 
-                   (roundWinner === 'joiner' && isCurrentUser)
+// Spectator Counter
+export const SpectatorCounter = ({ count, isLive = false }) => {
+  if (count === 0) return null
   
   return (
-    <GlassCard style={{ 
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      background: 'rgba(0, 191, 255, 0.1)',
+      padding: '0.5rem 1rem',
+      borderRadius: '1rem',
+      border: '1px solid rgba(0, 191, 255, 0.3)'
+    }}>
+      <span style={{ 
+        fontSize: '1rem',
+        animation: isLive ? 'livePulse 2s infinite' : 'none'
+      }}>
+        👥
+      </span>
+      <span style={{ 
+        color: theme.colors.neonBlue,
+        fontWeight: 'bold',
+        fontSize: '0.875rem'
+      }}>
+        {count} watching
+      </span>
+      {isLive && (
+        <div style={{
+          width: '8px',
+          height: '8px',
+          background: '#ff0000',
+          borderRadius: '50%',
+          animation: 'livePulse 1s infinite'
+        }} />
+      )}
+    </div>
+  )
+}
+
+// Round Result Display
+export const LiveRoundResult = ({ flipResult, isWinner }) => {
+  if (!flipResult) return null
+  
+  return (
+    <div style={{ 
       textAlign: 'center', 
       background: `linear-gradient(45deg, ${theme.colors.neonPink}20, ${theme.colors.neonBlue}20)`,
-      border: `2px solid ${roundWinner === 'creator' ? theme.colors.neonPink : theme.colors.neonBlue}`,
-      animation: 'resultSlideIn 0.5s ease-out',
-      marginTop: '2rem'
+      border: `2px solid ${theme.colors.neonYellow}`,
+      borderRadius: '1rem',
+      padding: '2rem',
+      marginTop: '2rem',
+      animation: 'resultReveal 0.5s ease-out'
     }}>
       <div style={{
         fontSize: '4rem',
@@ -867,61 +711,21 @@ export const LiveRoundResult = ({ flipResult, roundWinner, isCurrentUser, flipSt
         {flipResult === 'heads' ? '👑' : '💎'}
       </div>
       
-      <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-        {flipResult.toUpperCase()}!
-      </NeonText>
-      
-      <div style={{
+      <h3 style={{ 
+        fontSize: '2rem', 
         marginBottom: '1rem',
-        padding: '1rem',
-        background: 'rgba(0,0,0,0.3)',
-        borderRadius: '1rem'
+        color: theme.colors.neonYellow,
+        textShadow: `0 0 10px ${theme.colors.neonYellow}`
       }}>
-        <p style={{ 
-          color: theme.colors.textSecondary,
-          fontSize: '0.875rem',
-          marginBottom: '0.5rem'
-        }}>
-          Power Combination
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: theme.colors.neonPink, fontWeight: 'bold' }}>
-              {flipState.creatorPower?.toFixed(1) || '0.0'}
-            </div>
-            <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
-              Vertical
-            </div>
-          </div>
-          <div style={{ color: theme.colors.textSecondary, fontSize: '1.5rem' }}>+</div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold' }}>
-              {flipState.joinerPower?.toFixed(1) || '0.0'}
-            </div>
-            <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
-              Horizontal
-            </div>
-          </div>
-          <div style={{ color: theme.colors.textSecondary, fontSize: '1.5rem' }}>=</div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ color: theme.colors.neonYellow, fontWeight: 'bold' }}>
-              {((flipState.creatorPower || 0) + (flipState.joinerPower || 0)).toFixed(1)}
-            </div>
-            <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
-              Total
-            </div>
-          </div>
-        </div>
-      </div>
+        {flipResult.toUpperCase()}!
+      </h3>
       
       <p style={{ 
-        color: roundWinner === 'creator' ? theme.colors.neonPink : theme.colors.neonBlue,
+        color: isWinner ? theme.colors.statusSuccess : theme.colors.statusError,
         fontSize: '1.25rem',
-        fontWeight: 'bold',
-        marginBottom: '1rem'
+        fontWeight: 'bold'
       }}>
-        Round won by Player {roundWinner === 'creator' ? '1' : '2'}
-        {isWinner && ' (YOU)'}!
+        {isWinner ? '🎉 YOU WON THIS ROUND!' : '💔 YOU LOST THIS ROUND'}
       </p>
       
       {isWinner && (
@@ -932,7 +736,7 @@ export const LiveRoundResult = ({ flipResult, roundWinner, isCurrentUser, flipSt
           🎉
         </div>
       )}
-    </GlassCard>
+    </div>
   )
 }
 
@@ -993,46 +797,6 @@ export const DualGameInstructions = ({ isPlayerTurn, gamePhase, isPlayer, player
           More power = more spin influence • Both players flip together!
         </p>
       </div>
-    </div>
-  )
-}
-
-// Spectator count display
-export const SpectatorCounter = ({ count, isLive = false }) => {
-  if (count === 0) return null
-  
-  return (
-    <div style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      background: 'rgba(0, 191, 255, 0.1)',
-      padding: '0.5rem 1rem',
-      borderRadius: '1rem',
-      border: '1px solid rgba(0, 191, 255, 0.3)'
-    }}>
-      <span style={{ 
-        fontSize: '1rem',
-        animation: isLive ? 'livePulse 2s infinite' : 'none'
-      }}>
-        👥
-      </span>
-      <span style={{ 
-        color: theme.colors.neonBlue,
-        fontWeight: 'bold',
-        fontSize: '0.875rem'
-      }}>
-        {count} watching
-      </span>
-      {isLive && (
-        <div style={{
-          width: '8px',
-          height: '8px',
-          background: '#ff0000',
-          borderRadius: '50%',
-          animation: 'livePulse 1s infinite'
-        }} />
-      )}
     </div>
   )
 } 

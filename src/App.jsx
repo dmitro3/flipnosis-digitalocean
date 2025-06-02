@@ -6,11 +6,11 @@ import { router } from './Routes'
 
 function App() {
   return (
-    <RouterProvider router={router}>
-      <ToastProvider>
-        <WalletProvider />
-      </ToastProvider>
-    </RouterProvider>
+    <ToastProvider>
+      <WalletProvider>
+        <RouterProvider router={router} />
+      </WalletProvider>
+    </ToastProvider>
   )
 }
 

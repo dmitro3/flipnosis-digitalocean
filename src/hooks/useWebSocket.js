@@ -1,28 +1,29 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { CONFIG } from '../config'
 
 export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null) => {
   const [socket, setSocket] = useState(null)
   const [connected, setConnected] = useState(false)
-  const [gameState, setGameState] = useState(null)
-  const [gamePhase, setGamePhase] = useState('waiting')
-  const [currentPlayer, setCurrentPlayer] = useState(null)
-  const [flipState, setFlipState] = useState({
-    creatorPower: 0,
-    joinerPower: 0,
-    creatorCharging: false,
-    joinerCharging: false,
-    creatorReady: false,
-    joinerReady: false,
-    flipResult: null,
-    roundTimer: 30
+  const [gameState, setGameState] = useState({
+    gameId: gameId,
+    creator: null,
+    joiner: null,
+    phase: 'waiting',
+    currentRound: 1,
+    maxRounds: 5,
+    creatorWins: 0,
+    joinerWins: 0,
+    winner: null,
+    currentPlayer: null,
+    spectators: 0,
+    flipState: {
+      creatorPower: 0,
+      joinerPower: 0,
+      creatorReady: false,
+      joinerReady: false,
+      flipResult: null,
+      roundTimer: 30
+    }
   })
-  
-  // Derived state from gameState
-  const currentRound = gameState?.currentRound || 1
-  const scores = gameState?.scores || { creator: 0, joiner: 0 }
-  const spectatorCount = gameState?.spectators?.size || 0
-  const isMyTurn = currentPlayer === playerAddress
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -30,7 +31,11 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
 
     console.log('🔌 Connecting to WebSocket server...')
     
-    const newSocket = new WebSocket(CONFIG.WEBSOCKET_URL)
+    const wsUrl = process.env.NODE_ENV === 'production' 
+      ? 'wss://your-production-domain.com' 
+      : 'ws://localhost:3001'
+    
+    const newSocket = new WebSocket(wsUrl)
 
     newSocket.onopen = () => {
       console.log('✅ Connected to WebSocket server')
@@ -52,52 +57,36 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
     }
 
     newSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log('📊 Received message:', data)
-      
-      switch (data.type) {
-        case 'game_state':
-          setGameState(data.state)
-          setGamePhase(data.state.phase || 'waiting')
-          setCurrentPlayer(data.state.currentPlayer)
-          break
-        case 'player_joined':
-          setGameState(data.state)
-          setGamePhase(data.state.phase || 'ready')
-          setCurrentPlayer(data.state.currentPlayer)
-          break
-        case 'game_started':
-          setGameState(data.state)
-          setGamePhase('round_active')
-          setCurrentPlayer(data.currentPlayer)
-          break
-        case 'flip_result':
-          setGameState(data.state)
-          setGamePhase('round_complete')
-          setCurrentPlayer(data.state.currentPlayer)
-          break
-        case 'game_complete':
-          setGameState(data.state)
-          setGamePhase('game_complete')
-          setCurrentPlayer(null)
-          break
-        case 'round_complete':
-          console.log('🏁 Round complete:', data.flipResult)
-          setGameState(data.state)
-          setGamePhase(data.state.phase)
-          setCurrentPlayer(data.state.currentPlayer)
-          break
-        case 'flip_complete':
-          console.log('🎲 Flip completed, updating state')
-          setGameState(data.state)
-          setGamePhase(data.state.phase)
-          setCurrentPlayer(data.currentPlayer)
-          break
-        case 'turn_switch':
-          console.log('🔄 Turn switched to:', data.currentPlayer)
-          setCurrentPlayer(data.currentPlayer)
-          setGameState(data.state)
-          break
+      try {
+        const data = JSON.parse(event.data)
+        console.log('📊 Received WebSocket message:', data.type, data)
+        
+        // Handle different message types
+        switch (data.type) {
+          case 'game_data_response':
+            // Game data received from database
+            if (data.gameData) {
+              console.log('📋 Received game data from database:', data.gameData)
+              // You can emit this data to parent component if needed
+            }
+            break
+          
+          case 'error':
+            console.error('❌ WebSocket error:', data.error)
+            break
+          
+          default:
+            // Update game state from server
+            if (data.state) {
+              setGameState(prevState => ({
+                ...prevState,
+                ...data.state
+              }))
+            }
+            break
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error)
       }
     }
 
@@ -109,42 +98,76 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
 
     return () => {
       console.log('🔌 Cleaning up WebSocket connection')
-      newSocket.close()
+      if (newSocket.readyState === WebSocket.OPEN) {
+        newSocket.close()
+      }
     }
   }, [gameId, playerAddress, isCreator])
 
   // WebSocket action functions
   const sendMessage = useCallback((message) => {
     if (socket && connected && socket.readyState === WebSocket.OPEN) {
+      console.log('📤 Sending WebSocket message:', message.type, message)
       socket.send(JSON.stringify(message))
+    } else {
+      console.error('❌ Cannot send message - WebSocket not connected')
     }
   }, [socket, connected])
 
-  const startRound = useCallback((roundNumber) => {
-    sendMessage({ type: 'start_round', gameId, roundNumber })
+  const startGame = useCallback(() => {
+    sendMessage({ type: 'start_game', gameId })
   }, [sendMessage, gameId])
 
-  const chargePower = useCallback((power) => {
-    sendMessage({ type: 'charge_power', gameId, address: playerAddress, power })
+  const joinGame = useCallback((joinerAddress) => {
+    sendMessage({ 
+      type: 'player_joined', 
+      gameId, 
+      joinerAddress, 
+      startGame: true 
+    })
+  }, [sendMessage, gameId])
+
+  const flipComplete = useCallback((result, power) => {
+    sendMessage({ 
+      type: 'flip_complete', 
+      gameId, 
+      player: isCreator ? 'creator' : 'joiner',
+      result,
+      power
+    })
+  }, [sendMessage, gameId, isCreator])
+
+  const updatePower = useCallback((power) => {
+    sendMessage({
+      type: 'charge_power',
+      gameId,
+      address: playerAddress,
+      power
+    })
   }, [sendMessage, gameId, playerAddress])
 
-  const lockPower = useCallback((finalPower) => {
-    sendMessage({ type: 'lock_power', gameId, address: playerAddress, power: finalPower })
-  }, [sendMessage, gameId, playerAddress])
+  // Derived state
+  const isMyTurn = gameState.currentPlayer === playerAddress
+  const scores = {
+    creator: gameState.creatorWins || 0,
+    joiner: gameState.joinerWins || 0
+  }
+  const spectatorCount = gameState.spectators || 0
+  const currentRound = gameState.currentRound || 1
+  const gamePhase = gameState.phase || 'waiting'
 
   return {
     connected,
-    socket,
     gameState,
     gamePhase,
     currentRound,
     scores,
     spectatorCount,
-    currentPlayer,
     isMyTurn,
-    startRound,
-    chargePower,
-    lockPower,
-    sendMessage
+    sendMessage,
+    startGame,
+    joinGame,
+    flipComplete,
+    updatePower
   }
 } 

@@ -14,214 +14,200 @@ import {
   LoadingSpinner
 } from '../styles/components'
 import {
-  DualPowerBar,
-  DualGameCoin,
   LiveScoreDisplay,
   LivePlayerCard,
   LiveRoundResult,
-  DualGameInstructions,
   SpectatorCounter
 } from '../components/GameUtilities'
 import WebSocketStatus from '../components/WebSocketStatus'
-import { ethers } from 'ethers'
-import { PaymentToken } from '../services/ContractService'
-import { DEFAULT_CONTRACT_ADDRESS } from '../config/contracts'
-import { getRequiredPayment } from '../utils/payment'
 import ThreeCoin from '../components/ThreeCoin'
 import EnhancedPowerBar from '../components/EnhancedPowerBar'
+import PaymentService from '../services/PaymentService'
+import { ethers } from 'ethers'
 
 const FlipGame = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { isConnected, address, provider, firebaseService, delistNFT } = useWallet()
+  const { isConnected, address, provider } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
 
-  // Initial Firebase game data (for setup only)
-  const [initialGame, setInitialGame] = useState(null)
+  // Game data state
+  const [gameData, setGameData] = useState(null)
   const [loading, setLoading] = useState(true)
 
   // Player identification
-  const isCreator = initialGame?.creator === address
-  const isJoiner = initialGame?.joiner === address
+  const isCreator = gameData?.creator === address
+  const isJoiner = gameData?.joiner === address
   const isPlayer = isCreator || isJoiner
-  const canJoin = !initialGame?.joiner && !isCreator && !loading
+  const canJoin = !gameData?.joiner && !isCreator && gameData?.status === 'waiting'
 
-  // WebSocket connection with game config
+  // WebSocket connection
   const {
     connected: wsConnected,
     gameState,
     gamePhase,
     currentRound,
-    currentPlayer,
-    isMyTurn,
     scores,
     spectatorCount,
-    startRound,
-    chargePower,
-    lockPower,
-    sendMessage
+    isMyTurn,
+    startGame,
+    joinGame,
+    flipComplete,
+    updatePower
   } = useWebSocket(
     gameId,
     address,
     isCreator,
-    initialGame ? {
-      creator: initialGame.creator,
-      joiner: initialGame.joiner,
-      maxRounds: initialGame.rounds,
-      priceUSD: initialGame.priceUSD
+    gameData ? {
+      creator: gameData.creator,
+      joiner: gameData.joiner,
+      maxRounds: gameData.rounds,
+      priceUSD: gameData.priceUSD
     } : null
   )
-
-  // Add this safe defaults block after your WebSocket destructuring
-  const safeFlipState = gameState?.flipState || {
-    creatorPower: 0,
-    joinerPower: 0,
-    creatorReady: false,
-    joinerReady: false,
-    flipResult: null
-  }
-
-  // Refs for power charging
-  const powerChargeRef = useRef(null)
-  const chargingStartTimeRef = useRef(null)
 
   // Power management state
   const [myPower, setMyPower] = useState(0)
   const [isCharging, setIsCharging] = useState(false)
-  const [opponentPower, setOpponentPower] = useState(0)
   const [flipResult, setFlipResult] = useState(null)
   const [isFlipping, setIsFlipping] = useState(false)
 
-  // Update opponent power when WebSocket state changes
-  useEffect(() => {
-    if (gameState?.flipState) {
-      const oppPower = isCreator ? 
-        safeFlipState.joinerPower : 
-        safeFlipState.creatorPower
-      setOpponentPower(oppPower || 0)
-    }
-  }, [gameState?.flipState, isCreator])
+  // Refs for power charging
+  const chargingIntervalRef = useRef(null)
 
-  // Handle game completion
-  useEffect(() => {
-    if (gamePhase === 'game_complete' && gameState?.winner) {
-      const isWinner = gameState.winner === address
-      showSuccess(`🏆 Game Over! ${isWinner ? 'You won!' : 'You lost!'}`)
-    }
-  }, [gamePhase, gameState?.winner, address])
-
-  // Auto-start game when player 2 connects
-  useEffect(() => {
-    if (gamePhase === 'waiting_for_players' && initialGame?.joiner && !initialGame?.started && wsConnected) {
-      console.log('🎮 Auto-starting game as player 2 connected')
-      handleStartGame()
-    }
-  }, [gamePhase, initialGame?.joiner, initialGame?.started, wsConnected])
-
-  // Start game (only creator can do this when both players are connected)
-  const handleStartGame = async () => {
-    console.log('🚀 START GAME clicked')
-    console.log('WebSocket connected:', wsConnected)
-    console.log('Game ID:', gameId)
-    console.log('Initial game:', initialGame)
-    
-    if (!wsConnected) {
-      showError('WebSocket not connected')
-      return
-    }
-
-    if (!sendMessage) {
-      showError('WebSocket not ready')
-      return
-    }
-
+  // Load game data
+  const loadGame = async () => {
     try {
-      console.log('📡 Sending start_game message')
+      setLoading(true)
       
-      sendMessage({
-        type: 'start_game',
-        gameId,
-        timestamp: Date.now()
-      })
-
-      showSuccess('Game starting...')
+      // API URL
+      const API_URL = process.env.NODE_ENV === 'production' 
+        ? 'https://your-railway-app.railway.app' 
+        : 'http://localhost:3001'
+      
+      console.log('📊 Loading game from database:', gameId)
+      
+      // First try to load from database via API
+      const response = await fetch(`${API_URL}/api/games/${gameId}`)
+      
+      if (response.ok) {
+        const dbGame = await response.json()
+        console.log('✅ Loaded game from database:', dbGame)
+        
+        // Transform database game to frontend format
+        const gameData = {
+          id: dbGame.id,
+          creator: dbGame.creator,
+          joiner: dbGame.joiner,
+          nft: {
+            contractAddress: dbGame.nft_contract,
+            tokenId: dbGame.nft_token_id,
+            name: dbGame.nft_name,
+            image: dbGame.nft_image || 'https://picsum.photos/300/300?random=' + dbGame.id,
+            collection: dbGame.nft_collection,
+            chain: dbGame.nft_chain
+          },
+          price: dbGame.price_usd,
+          priceUSD: dbGame.price_usd,
+          currency: 'USD',
+          rounds: dbGame.rounds,
+          status: dbGame.status,
+          winner: dbGame.winner,
+          creatorWins: dbGame.creator_wins || 0,
+          joinerWins: dbGame.joiner_wins || 0,
+          createdAt: dbGame.created_at,
+          startedAt: dbGame.started_at,
+          completedAt: dbGame.completed_at,
+          listingFee: {
+            amountETH: dbGame.listing_fee_eth,
+            transactionHash: dbGame.listing_fee_hash
+          }
+        }
+        
+        setGameData(gameData)
+        return
+      }
+      
+      // Fallback to localStorage (for backwards compatibility)
+      console.log('🔄 Trying localStorage fallback...')
+      const storedGame = localStorage.getItem(`game_${gameId}`)
+      if (storedGame) {
+        const parsedGame = JSON.parse(storedGame)
+        setGameData(parsedGame)
+        console.log('✅ Loaded game from localStorage:', parsedGame)
+        return
+      }
+      
+      // If neither works, show error
+      throw new Error('Game not found')
       
     } catch (error) {
-      console.error('❌ Error starting game:', error)
-      showError('Failed to start game: ' + error.message)
+      console.error('❌ Error loading game:', error)
+      showError('Game not found')
+      navigate('/')
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Power charging handlers
+  useEffect(() => {
+    loadGame()
+  }, [gameId])
+
+  // Handle game state updates from WebSocket
+  useEffect(() => {
+    if (gameState?.phase === 'game_complete' && gameState?.winner) {
+      const isWinner = gameState.winner === address
+      showSuccess(`🏆 Game Over! ${isWinner ? 'You won!' : 'You lost!'}`)
+    }
+  }, [gameState?.phase, gameState?.winner, address])
+
+  // Power charging logic
   const handlePowerChargeStart = () => {
     console.log('🔋 Power charge START - isMyTurn:', isMyTurn, 'gamePhase:', gamePhase)
-    if (gamePhase === 'round_active' && isMyTurn) {
+    if (gamePhase === 'round_active' && isMyTurn && !isCharging) {
       setIsCharging(true)
-      chargingStartTimeRef.current = Date.now()
+      
+      // Start power charging interval
+      chargingIntervalRef.current = setInterval(() => {
+        setMyPower(prev => {
+          const newPower = Math.min(10, prev + 0.2)
+          updatePower(newPower) // Send to WebSocket
+          return newPower
+        })
+      }, 50)
+      
       console.log('✅ Started charging')
     }
   }
 
   const handlePowerChargeStop = () => {
     console.log('🔋 Power charge STOP - isCharging:', isCharging, 'myPower:', myPower)
-    if (isCharging && myPower > 0) {
+    if (isCharging) {
       setIsCharging(false)
       
-      // Execute flip immediately
-      console.log('🎲 Executing flip with power:', myPower)
-      executeFlip(myPower)
+      // Clear charging interval
+      if (chargingIntervalRef.current) {
+        clearInterval(chargingIntervalRef.current)
+        chargingIntervalRef.current = null
+      }
+      
+      // Execute flip with current power
+      if (myPower > 0) {
+        executeFlip(myPower)
+      }
     }
   }
 
-  // Add power charging effect
+  // Cleanup charging interval
   useEffect(() => {
-    let powerInterval
-    if (isCharging && gamePhase === 'round_active' && isMyTurn) {
-      console.log('⚡ Starting power charging interval')
-      powerInterval = setInterval(() => {
-        setMyPower(prev => {
-          const newPower = Math.min(10, prev + 0.2)
-          console.log('🔋 Power charging:', prev, '→', newPower)
-          return newPower
-        })
-      }, 50)
-    }
-    
     return () => {
-      if (powerInterval) {
-        console.log('🛑 Clearing power interval')
-        clearInterval(powerInterval)
+      if (chargingIntervalRef.current) {
+        clearInterval(chargingIntervalRef.current)
       }
     }
-  }, [isCharging, gamePhase, isMyTurn])
+  }, [])
 
-  // Add timer effect
-  useEffect(() => {
-    let timerInterval
-    if (gamePhase === 'round_active' && !isFlipping) {
-      const startTime = Date.now()
-      const roundDuration = 30000 // 30 seconds
-      
-      timerInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime
-        const remaining = Math.max(0, Math.ceil((roundDuration - elapsed) / 1000))
-        
-        if (remaining <= 0 && isMyTurn) {
-          console.log('⏰ Timer expired!')
-          executeFlip(Math.max(myPower, 1))
-          clearInterval(timerInterval)
-        }
-      }, 100)
-    }
-    
-    return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval)
-      }
-    }
-  }, [gamePhase, isFlipping, isMyTurn, myPower])
-
-  // Update executeFlip function to use server turn management
   const executeFlip = (power) => {
     console.log('🎲 executeFlip called with power:', power)
     
@@ -232,18 +218,13 @@ const FlipGame = () => {
 
     setIsFlipping(true)
     
+    // Calculate flip result
     const result = Math.random() < 0.5 ? 'heads' : 'tails'
     console.log('🎲 Flip result:', result)
     
-    // Send flip result to server immediately
-    sendMessage({
-      type: 'flip_complete',
-      gameId,
-      player: isCreator ? 'creator' : 'joiner',
-      result,
-      power
-    })
-
+    // Send flip result to WebSocket
+    flipComplete(result, power)
+    
     // Set the result for the 3D coin animation
     setFlipResult(result)
     
@@ -254,163 +235,48 @@ const FlipGame = () => {
     setTimeout(() => {
       setIsFlipping(false)
       setMyPower(0)
-      // Don't reset flipResult here - let the next round reset it
+      setFlipResult(null)
     }, flipDuration)
   }
 
-  // Load initial game data from Firebase (ONE TIME ONLY)
-  useEffect(() => {
-    const loadInitialGame = async () => {
-      if (!firebaseService || !gameId) return
-
-      try {
-        setLoading(true)
-        const result = await firebaseService.getGame(gameId)
-        
-        if (!result.success) {
-          throw new Error('Game not found')
-        }
-
-        setInitialGame(result.game)
-        console.log('📋 Initial game data loaded from Firebase:', result.game)
-
-      } catch (error) {
-        console.error('Failed to load game:', error)
-        showError('Failed to load game')
-        navigate('/')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadInitialGame()
-  }, [gameId, firebaseService])
-
-  // Handle Firebase updates from WebSocket server
-  useEffect(() => {
-    window.updateFirebaseFromWebSocket = async (updateData) => {
-      console.log('📝 Updating Firebase from WebSocket:', updateData)
-      
-      try {
-        if (!firebaseService) return
-        
-        const result = await firebaseService.updateGame(updateData.gameId, {
-          status: updateData.status,
-          winner: updateData.winner,
-          creatorWins: updateData.creatorWins,
-          joinerWins: updateData.joinerWins,
-          completedAt: updateData.completedAt,
-          totalRounds: updateData.totalRounds
-        })
-        
-        if (result.success) {
-          console.log('✅ Firebase updated successfully')
-        } else {
-          console.error('❌ Failed to update Firebase:', result.error)
-        }
-      } catch (error) {
-        console.error('❌ Error updating Firebase:', error)
-      }
-    }
-
-    return () => {
-      delete window.updateFirebaseFromWebSocket
-    }
-  }, [firebaseService])
-
-  // Show messages for auto-start flow
-  useEffect(() => {
-    if (gamePhase === 'ready_for_round') {
-      showInfo('🎮 Game starting automatically...')
-    }
-    if (gamePhase === 'round_active' && currentRound === 1) {
-      showSuccess('⚡ Round 1 started! Charge your power!')
-    }
-  }, [gamePhase, currentRound])
-
-  // Add auto-start when both players are ready
-  useEffect(() => {
-    // Auto-start game when both players are present and game is active
-    if (initialGame?.status === 'active' && 
-        initialGame?.joiner && 
-        initialGame?.creator && 
-        gamePhase === 'waiting' && 
-        wsConnected) {
-      
-      console.log('🚀 Auto-starting game - both players ready')
-      
-      // Send start signal to WebSocket
-      if (sendMessage) {
-        sendMessage({
-          type: 'start_game',
-          gameId
-        })
-      }
-    }
-  }, [initialGame?.status, initialGame?.joiner, gamePhase, wsConnected])
-
-  // Join game function - WITH PAYMENT (Fixed Gas Fees)
+  // Join game function
   const handleJoinGame = async () => {
-    if (!initialGame || !firebaseService || !provider) return
+    if (!gameData || !provider) return
 
     try {
       showInfo('Joining game and paying entry fee...')
       
       // Calculate payment
-      const ethPriceUSD = 2500 // You can make this dynamic later
-      const ethAmount = initialGame.priceUSD / ethPriceUSD
-      const weiAmount = ethers.parseEther(ethAmount.toString())
+      const paymentResult = await PaymentService.calculateETHAmount(gameData.priceUSD)
+      if (!paymentResult.success) {
+        throw new Error('Failed to calculate payment amount')
+      }
 
       const signer = await provider.getSigner()
-      const feeRecipient = '0xE1E3dFa98C39Ba5b6C643348420420aBC3556416'
+      const feeRecipient = PaymentService.getFeeRecipient()
       
-      // Get gas data
-      const feeData = await provider.getFeeData()
-      const txConfig = {
-        to: feeRecipient,
-        value: weiAmount,
-        gasLimit: 100000
+      // Build and send transaction
+      const txResult = await PaymentService.buildTransaction(feeRecipient, paymentResult.weiAmount, provider)
+      if (!txResult.success) {
+        throw new Error('Failed to build transaction: ' + txResult.error)
       }
       
-      if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
-        txConfig.maxFeePerGas = feeData.maxFeePerGas * 110n / 100n
-        txConfig.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas * 110n / 100n
-      }
-      
-      // Send payment
-      const paymentTx = await signer.sendTransaction(txConfig)
+      const paymentTx = await signer.sendTransaction(txResult.txConfig)
+      showInfo('Confirming payment...')
       await paymentTx.wait()
       
-      // Update Firebase - this triggers auto-start
-      const updateResult = await firebaseService.updateGame(gameId, {
-        joiner: address,
-        status: 'active', // This is key - changes from 'waiting' to 'active'
-        paymentTxHash: paymentTx.hash,
-        gameStarted: true,
-        updatedAt: new Date()
-      })
-
-      if (!updateResult.success) {
-        throw new Error('Failed to update game')
-      }
-
-      // Update local state immediately
-      setInitialGame(prev => ({
-        ...prev,
+      // Update local game data
+      const updatedGame = {
+        ...gameData,
         joiner: address,
         status: 'active',
-        gameStarted: true
-      }))
-
-      // Notify WebSocket that game should start
-      if (wsConnected && sendMessage) {
-        sendMessage({
-          type: 'player_joined',
-          gameId,
-          joinerAddress: address,
-          startGame: true // This tells server to auto-start
-        })
+        paymentTxHash: paymentTx.hash
       }
+      setGameData(updatedGame)
+      localStorage.setItem(`game_${gameId}`, JSON.stringify(updatedGame))
+
+      // Notify WebSocket
+      joinGame(address)
 
       showSuccess('Payment successful! Game starting...')
       
@@ -420,91 +286,13 @@ const FlipGame = () => {
     }
   }
 
-  // Start next round (only creator can start rounds)
-  const handleStartRound = () => {
-    if (!isCreator) {
-      showError('Only the game creator can start rounds')
-      return
-    }
-    
-    console.log('🚀 Creator starting round', currentRound)
-    startRound(currentRound)
-    showInfo(`Round ${currentRound} started!`)
+  // Start game function
+  const handleStartGame = () => {
+    console.log('🚀 Starting game')
+    startGame()
+    showSuccess('Game starting...')
   }
 
-  // Reset timer when round starts
-  useEffect(() => {
-    if (gamePhase === 'round_active') {
-      setFlipResult(null)
-    }
-  }, [gamePhase, currentRound])
-
-  // Start new round
-  const startNewRound = () => {
-    setGamePhase('round_active')
-    setFlipResult(null)
-  }
-
-  // Delist game (only when waiting)
-  const handleDelist = async () => {
-    try {
-      showInfo('Delisting game...')
-      const result = await delistNFT(gameId)
-      
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-
-      showSuccess('Game delisted successfully')
-      navigate('/')
-    } catch (error) {
-      console.error('Failed to delist game:', error)
-      showError(error.message || 'Failed to delist game')
-    }
-  }
-
-  // Handle side choice
-  const handleSideChoice = async (choice) => {
-    try {
-      // Update game state
-      sendMessage({
-        type: 'side_chosen',
-        choice,
-        player: isCreator ? 'creator' : 'joiner'
-      })
-    } catch (error) {
-      console.error('Error choosing side:', error)
-      showError('Failed to choose side')
-    }
-  }
-
-  // Add this useEffect after your existing useEffects to sync Firebase updates
-  useEffect(() => {
-    if (!firebaseService || !gameId) return
-
-    console.log('🔥 Setting up Firebase real-time listener for game:', gameId)
-    
-    // Listen for real-time changes to the game document
-    const unsubscribe = firebaseService.subscribeToGame(gameId, (updatedGame) => {
-      console.log('🔥 Firebase game update received:', updatedGame)
-      
-      // Update local state when Firebase changes
-      setInitialGame(updatedGame)
-      
-      // If joiner was added and we're the creator, log it
-      if (updatedGame.joiner && isCreator && !initialGame?.joiner) {
-        console.log('✅ Player 2 joined! Joiner:', updatedGame.joiner)
-        showSuccess('Player 2 joined the game!')
-      }
-    })
-
-    return () => {
-      console.log('🔥 Cleaning up Firebase listener')
-      if (unsubscribe) unsubscribe()
-    }
-  }, [firebaseService, gameId, isCreator])
-
-  // Loading state
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -541,7 +329,7 @@ const FlipGame = () => {
     )
   }
 
-  if (!initialGame) {
+  if (!gameData) {
     return (
       <ThemeProvider theme={theme}>
         <Container>
@@ -573,7 +361,7 @@ const FlipGame = () => {
               </NeonText>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <span style={{ color: theme.colors.textSecondary }}>
-                  Best of {initialGame.rounds} • ${initialGame.priceUSD?.toFixed(2)}
+                  Best of {gameData.rounds} • ${gameData.priceUSD?.toFixed(2)}
                 </span>
                 <SpectatorCounter count={spectatorCount} isLive={gamePhase === 'round_active'} />
               </div>
@@ -582,16 +370,8 @@ const FlipGame = () => {
               {isPlayer && (
                 <WebSocketStatus 
                   connected={wsConnected} 
-                  playerCount={gameState?.joiner ? 2 : 1} 
+                  playerCount={gameData?.joiner ? 2 : 1} 
                 />
-              )}
-              {!initialGame.joiner && isCreator && gamePhase === 'waiting' && (
-                <Button 
-                  onClick={handleDelist} 
-                  style={{ background: theme.colors.statusError }}
-                >
-                  Delist Game
-                </Button>
               )}
             </div>
           </div>
@@ -600,34 +380,32 @@ const FlipGame = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
             {/* Player 1 (Creator) */}
             <LivePlayerCard
-              player={gameState?.creator || initialGame.creator}
+              player={gameState?.creator || gameData.creator}
               isCurrentUser={isCreator}
               playerNumber={1}
-              nft={initialGame.nft}
+              nft={gameData.nft}
               score={scores.creator}
               gamePhase={gamePhase}
-              flipState={safeFlipState}
               spectatorMode={!isPlayer}
               isActiveTurn={isMyTurn && gamePhase === 'round_active'}
             />
 
             {/* Center - Coin and Controls */}
-            <GlassCard style={{ textAlign: 'center', position: 'relative' }}>
+            <GlassCard style={{ 
+              textAlign: 'center', 
+              position: 'relative',
+              background: 'transparent',
+              backdropFilter: 'none'
+            }}>
               {/* Live Score Display */}
-              <LiveScoreDisplay
-                scores={scores}
-                currentRound={currentRound}
-                gamePhase={gamePhase}
-                maxRounds={initialGame.rounds}
-                flipState={safeFlipState}
-              />
+              <LiveScoreDisplay gameState={gameState} />
 
               {/* 3D Coin with Enhanced Power Bar */}
               <div style={{ 
                 position: 'relative', 
                 margin: '2rem auto', 
-                width: '600px', 
-                height: '600px',
+                width: '300px', 
+                height: '300px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -657,13 +435,13 @@ const FlipGame = () => {
                 />
               </div>
 
-              {/* Game Controls with Debug Info */}
+              {/* Game Controls */}
               <div style={{ marginTop: '1rem' }}>
-                {/* Player 2 - Join Button */}
-                {!initialGame?.joiner && !isCreator && initialGame?.status === 'waiting' && (
+                {/* Join Game Button */}
+                {canJoin && (
                   <div>
                     <p style={{ color: theme.colors.textSecondary, marginBottom: '1rem' }}>
-                      Entry Price: ${initialGame.priceUSD?.toFixed(2)}
+                      Entry Price: ${gameData.priceUSD?.toFixed(2)}
                     </p>
                     <Button 
                       onClick={handleJoinGame} 
@@ -674,17 +452,16 @@ const FlipGame = () => {
                         padding: '1rem'
                       }}
                     >
-                      💰 Join Game & Pay ${initialGame.priceUSD?.toFixed(2)}
+                      💰 Join Game & Pay ${gameData.priceUSD?.toFixed(2)}
                     </Button>
                   </div>
                 )}
 
-                {/* Both Players - Start Button (when both are ready) */}
-                {(isCreator || isJoiner) && 
-                 initialGame?.joiner && 
-                 initialGame?.creator && 
-                 initialGame?.status === 'active' && 
-                 gamePhase === 'ready' && (
+                {/* Start Game Button */}
+                {gameData?.joiner && 
+                 gameData?.creator && 
+                 gameData?.status === 'active' && 
+                 gamePhase === 'waiting' && isCreator && (
                   <div>
                     <p style={{ color: theme.colors.statusSuccess, marginBottom: '1rem', textAlign: 'center' }}>
                       ✅ Both players ready! Payment received.
@@ -704,7 +481,7 @@ const FlipGame = () => {
                 )}
 
                 {/* Waiting States */}
-                {!initialGame?.joiner && isCreator && (
+                {!gameData?.joiner && isCreator && (
                   <div style={{ textAlign: 'center', padding: '2rem' }}>
                     <p style={{ color: theme.colors.statusWarning, fontSize: '1.1rem' }}>
                       ⏳ Waiting for Player 2 to join...
@@ -712,141 +489,78 @@ const FlipGame = () => {
                   </div>
                 )}
 
-                {gamePhase !== 'waiting' && (
-                  <div style={{ textAlign: 'center', padding: '1rem' }}>
-                    <p style={{ color: theme.colors.statusSuccess, fontSize: '1.1rem' }}>
-                      🎮 Game in progress!
+                {/* Game Instructions */}
+                {gamePhase === 'round_active' && (
+                  <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                    <div style={{
+                      background: 'rgba(0, 0, 0, 0.6)',
+                      padding: '1rem',
+                      borderRadius: '1rem',
+                      border: `1px solid ${theme.colors.neonYellow}`,
+                      backdropFilter: 'blur(10px)'
+                    }}>
+                      <p style={{ 
+                        color: isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning, 
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        marginBottom: '0.5rem',
+                        textShadow: `0 0 10px ${isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning}`
+                      }}>
+                        {isMyTurn ? '🎯 YOUR TURN!' : '⏳ OPPONENT\'S TURN'}
+                      </p>
+                      
+                      <p style={{ 
+                        color: theme.colors.textSecondary,
+                        fontSize: '0.9rem'
+                      }}>
+                        {isMyTurn ? 
+                          'Click and hold the coin to charge power, release to flip!' : 
+                          'Waiting for opponent to flip the coin...'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Game Complete */}
+                {gamePhase === 'game_complete' && (
+                  <div>
+                    <p style={{ 
+                      color: gameState?.winner === address ? theme.colors.statusSuccess : theme.colors.statusError,
+                      fontSize: '2rem', 
+                      fontWeight: 'bold',
+                      marginBottom: '1rem'
+                    }}>
+                      {gameState?.winner === address ? '🏆 YOU WON!' : '💔 YOU LOST!'}
                     </p>
+                    <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
+                      Final Score: {scores.creator} - {scores.joiner}
+                    </p>
+                    <Button onClick={() => navigate('/')} style={{ width: '100%' }}>
+                      Back to Games
+                    </Button>
                   </div>
                 )}
               </div>
-
-              {/* Enhanced Game Instructions */}
-              {gamePhase === 'round_active' && (
-                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                  <div style={{
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    padding: '1rem',
-                    borderRadius: '1rem',
-                    border: `1px solid ${theme.colors.neonYellow}`,
-                    backdropFilter: 'blur(10px)'
-                  }}>
-                    <p style={{ 
-                      color: isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning, 
-                      fontSize: '1.2rem',
-                      fontWeight: 'bold',
-                      marginBottom: '0.5rem',
-                      textShadow: `0 0 10px ${isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning}`
-                    }}>
-                      {isMyTurn ? '🎯 YOUR TURN!' : '⏳ OPPONENT\'S TURN'}
-                    </p>
-                    
-                    <p style={{ 
-                      color: theme.colors.textSecondary,
-                      fontSize: '0.9rem',
-                      marginBottom: '0.5rem'
-                    }}>
-                      {isMyTurn ? 
-                        'Click and hold the coin to charge power, release to flip!' : 
-                        'Waiting for opponent to flip the coin...'
-                      }
-                    </p>
-                    
-                    {isMyTurn && (
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: '1rem',
-                        marginTop: '0.5rem',
-                        fontSize: '0.75rem',
-                        color: theme.colors.textTertiary
-                      }}>
-                        <span>💪 More power = Higher flip</span>
-                        <span>⚡ More power = Longer spin</span>
-                        <span>🎯 Release to set your force</span>
-                      </div>
-                    )}
-                    
-                    {/* Round Timer Display */}
-                    <div style={{
-                      marginTop: '0.5rem',
-                      padding: '0.5rem',
-                      background: 'rgba(255, 222, 3, 0.1)',
-                      borderRadius: '0.5rem',
-                      border: '1px solid rgba(255, 222, 3, 0.3)'
-                    }}>
-                      <span style={{ 
-                        color: theme.colors.neonYellow,
-                        fontSize: '1rem',
-                        fontWeight: 'bold'
-                      }}>
-                        ⏱️ {safeFlipState.roundTimer}s remaining
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Game Phase Messages */}
-              {gamePhase === 'flipping' && (
-                <div>
-                  <p style={{ color: theme.colors.neonYellow, fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    🌀 FLIPPING! 🌀
-                  </p>
-                </div>
-              )}
-
-              {gamePhase === 'round_complete' && (
-                <div>
-                  <p style={{ color: theme.colors.statusSuccess, fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {flipResult?.toUpperCase()}!
-                  </p>
-                  <p style={{ color: theme.colors.textSecondary }}>
-                    {gameState?.currentRound < initialGame.rounds ? 'Next round starting...' : 'Game complete!'}
-                  </p>
-                </div>
-              )}
-
-              {gamePhase === 'game_complete' && (
-                <div>
-                  <p style={{ 
-                    color: gameState?.winner === address ? theme.colors.statusSuccess : theme.colors.statusError,
-                    fontSize: '2rem', 
-                    fontWeight: 'bold',
-                    marginBottom: '1rem'
-                  }}>
-                    {gameState?.winner === address ? '🏆 YOU WON!' : '💔 YOU LOST!'}
-                  </p>
-                  <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
-                    Final Score: {scores.creator} - {scores.joiner}
-                  </p>
-                  <Button onClick={() => navigate('/')} style={{ width: '100%' }}>
-                    Back to Games
-                  </Button>
-                </div>
-              )}
             </GlassCard>
 
             {/* Player 2 (Joiner) */}
             <LivePlayerCard
-              player={gameState?.joiner || initialGame.joiner}
+              player={gameState?.joiner || gameData.joiner}
               isCurrentUser={isJoiner}
               playerNumber={2}
-              cryptoAmount={`${initialGame.priceUSD?.toFixed(2)}`}
+              cryptoAmount={`${gameData.priceUSD?.toFixed(2)}`}
               score={scores.joiner}
               gamePhase={gamePhase}
-              flipState={safeFlipState}
               spectatorMode={!isPlayer}
-              isActiveTurn={isMyTurn && gamePhase === 'round_active'}
+              isActiveTurn={!isMyTurn && gamePhase === 'round_active'}
             />
           </div>
 
           {/* Round Results */}
           <LiveRoundResult
             flipResult={flipResult}
-            roundWinner={flipResult === 'heads' ? 'creator' : flipResult === 'tails' ? 'joiner' : null}
-            isCurrentUser={isCreator ? (flipResult === 'heads') : (flipResult === 'tails')}
-            flipState={safeFlipState}
+            isWinner={flipResult === 'heads' ? isCreator : flipResult === 'tails' ? isJoiner : false}
           />
         </ContentWrapper>
       </Container>
