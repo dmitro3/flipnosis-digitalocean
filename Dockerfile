@@ -1,17 +1,17 @@
-# Use Node.js 18 Alpine for smaller image size
-FROM node:18-alpine
+# Use Node.js 20 (fixes the Solana package engine warnings)
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies for sqlite3 and other native modules
-RUN apk add --no-cache python3 make g++ sqlite
+RUN apk add --no-cache python3 make g++ sqlite curl
 
 # Copy package files first (for better Docker layer caching)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (use install instead of ci for more flexibility)
+RUN npm install --omit=dev
 
 # Copy source code
 COPY . .
