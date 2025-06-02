@@ -81,9 +81,7 @@ const FlipGame = () => {
       setLoading(true)
       
       // API URL
-      const API_URL = process.env.NODE_ENV === 'production' 
-        ? 'https://your-railway-app.railway.app' 
-        : 'http://localhost:3001'
+      const API_URL = 'https://your-railway-url.com'; // Update with your actual Railway URL
       
       console.log('📊 Loading game from database:', gameId)
       

@@ -14,17 +14,26 @@ app.use(express.json())
 
 // Serve static files from the built frontend (Railway deployment)
 if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, '../dist')
+  const distPath = path.join(__dirname, '..')
+  console.log('📁 Serving static files from:', distPath)
+  
   app.use(express.static(distPath))
   
-  // Handle React Router (SPA)
+  // Handle React Router (SPA) - serve index.html for all non-API routes
   app.get('*', (req, res, next) => {
-    // Skip API routes
+    // Skip API routes and health check
     if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
       return next()
     }
     
-    res.sendFile(path.join(distPath, 'index.html'))
+    const indexPath = path.join(distPath, 'index.html')
+    console.log('📄 Serving index.html from:', indexPath)
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('❌ Error serving index.html:', err)
+        res.status(500).send('Error loading application')
+      }
+    })
   })
 }
 

@@ -6,6 +6,10 @@ startCommand = "npm run start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 
+[deploy.environment]
+NODE_ENV = "production"
+PORT = "3001"
+
 [[services]]
 name = "crypto-flipz-backend"
 source = "server"

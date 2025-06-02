@@ -40,9 +40,7 @@ const Home = () => {
   const [error, setError] = useState(null)
 
   // API URL - will be Railway URL in production
-  const API_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://your-railway-app.railway.app' 
-    : 'http://localhost:3001'
+  const API_URL = import.meta.env.VITE_API_URL || window.location.origin
 
   // Fetch games from database
   const fetchGames = async () => {
