@@ -34,9 +34,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
 if (process.env.NODE_ENV === 'production') {
   console.log('🌍 Production mode - setting up static file serving')
   
-  // The dist folder is at the same level as the server folder
-  // So from /app/server/server.js, the dist is at /app/dist
-  const distPath = path.join(__dirname, '../dist')
+  // In production, the server.js is in dist/server/server.js
+  // So we need to go up two levels to reach the dist folder
+  const distPath = path.join(__dirname, '..')
   console.log('📁 Looking for dist folder at:', distPath)
   
   if (fs.existsSync(distPath)) {
