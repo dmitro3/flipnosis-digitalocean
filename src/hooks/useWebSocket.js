@@ -41,12 +41,12 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
       console.log('✅ Connected to WebSocket server')
       setConnected(true)
       
-      // Only send connect_to_game message, let server determine role
+      // ONLY send connect_to_game - NO AUTO-JOINING
       newSocket.send(JSON.stringify({
         type: 'connect_to_game',
         gameId, 
-        address: playerAddress,
-        gameConfig
+        address: playerAddress
+        // Removed gameConfig and auto-join logic
       }))
     }
 
@@ -63,10 +63,8 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
         // Handle different message types
         switch (data.type) {
           case 'game_data_response':
-            // Game data received from database
             if (data.gameData) {
               console.log('📋 Received game data from database:', data.gameData)
-              // You can emit this data to parent component if needed
             }
             break
           
@@ -74,21 +72,14 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
             console.error('❌ WebSocket error:', data.error)
             break
           
-          case 'join_game':
-            // Only set creator info, don't auto-join
-            if (data.role === 'creator') {
-              gameState.creator = data.address
-              gameState.maxRounds = data.gameConfig?.maxRounds || 5
-              console.log('👑 Creator joined:', data.address)
-            } else {
-              console.log('👀 Spectator joined:', data.address)
+          case 'game_state':
+            // Update game state from server
+            if (data.state) {
+              setGameState(prevState => ({
+                ...prevState,
+                ...data.state
+              }))
             }
-            
-            // Send current state to new client
-            newSocket.send(JSON.stringify({
-              type: 'game_state',
-              state: gameState
-            }))
             break
           
           default:
@@ -118,7 +109,7 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
         newSocket.close()
       }
     }
-  }, [gameId, playerAddress, isCreator])
+  }, [gameId, playerAddress]) // Removed isCreator dependency
 
   // WebSocket action functions
   const sendMessage = useCallback((message) => {
@@ -134,12 +125,13 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
     sendMessage({ type: 'start_game', gameId })
   }, [sendMessage, gameId])
 
-  const joinGame = useCallback((joinerAddress) => {
+  const joinGame = useCallback((joinerAddress, entryFeeHash) => {
     sendMessage({ 
-      type: 'player_joined', 
+      type: 'join_game', 
       gameId, 
-      joinerAddress, 
-      startGame: true 
+      role: 'joiner',
+      address: joinerAddress,
+      entryFeeHash: entryFeeHash
     })
   }, [sendMessage, gameId])
 
@@ -174,6 +166,7 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
 
   return {
     connected,
+    socket, // Export socket for FlipGame to use
     gameState,
     gamePhase,
     currentRound,

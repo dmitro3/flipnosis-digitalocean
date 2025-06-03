@@ -257,6 +257,8 @@ const FlipGame = () => {
       setClaimingSlot(true)
       showInfo('Claiming player slot...')
       
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      
       const claimResponse = await fetch(`${API_URL}/api/games/${gameData.id}/claim-slot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -314,31 +316,22 @@ const FlipGame = () => {
         throw new Error('Failed to complete join')
       }
       
-      // ONLY after successful payment and database update:
-      if (joinResponse.ok) {
-        // Update local game data
-        const updatedGame = {
-          ...gameData,
-          joiner: address,
-          status: 'joined',
-          paymentTxHash: receipt.hash
-        }
-        setGameData(updatedGame)
-
-        // NOW notify WebSocket with explicit join
-        if (wsConnected && socket) {
-          socket.send(JSON.stringify({
-            type: 'join_game',
-            gameId,
-            address: address,
-            role: 'joiner',
-            entryFeeHash: receipt.hash
-          }))
-        }
-
-        showSuccess('Successfully joined the game!')
-        setTimeout(() => window.location.reload(), 1500)
+      // STEP 4: Update local game data
+      const updatedGame = {
+        ...gameData,
+        joiner: address,
+        status: 'joined',
+        paymentTxHash: receipt.hash
       }
+      setGameData(updatedGame)
+
+      // STEP 5: NOW notify WebSocket with the completed join
+      if (wsConnected && socket) {
+        joinGame(address, receipt.hash) // Use the joinGame function from useWebSocket
+      }
+
+      showSuccess('Successfully joined the game!')
+      setTimeout(() => window.location.reload(), 1500)
         
     } catch (error) {
       console.error('❌ Failed to join game:', error)
@@ -346,6 +339,7 @@ const FlipGame = () => {
       
       // Release the claimed slot on error
       try {
+        const API_URL = 'https://cryptoflipz2-production.up.railway.app'
         await fetch(`${API_URL}/api/games/${gameData.id}/release-slot`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -375,56 +369,6 @@ const FlipGame = () => {
                   gameData.status === 'waiting' &&
                   isConnected &&
                   address
-
-  // Add the Missing Join Button
-  {canJoin && (
-    <div style={{ textAlign: 'center', padding: '2rem' }}>
-      <div style={{
-        background: 'rgba(0, 255, 65, 0.1)',
-        padding: '1.5rem',
-        borderRadius: '1rem',
-        border: '1px solid rgba(0, 255, 65, 0.3)',
-        marginBottom: '1rem'
-      }}>
-        <h3 style={{ 
-          color: theme.colors.neonGreen, 
-          fontSize: '1.5rem', 
-          marginBottom: '1rem',
-          textShadow: `0 0 10px ${theme.colors.neonGreen}`
-        }}>
-          💎 JOIN THE BATTLE!
-        </h3>
-        <p style={{ color: theme.colors.textSecondary, fontSize: '1rem', marginBottom: '0.5rem' }}>
-          Entry Fee: <span style={{ color: theme.colors.neonYellow, fontWeight: 'bold' }}>${gameData.priceUSD.toFixed(2)}</span>
-        </p>
-        <p style={{ color: theme.colors.textTertiary, fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-          Winner takes all! Best of {gameData.rounds} rounds.
-        </p>
-      </div>
-      
-      <Button 
-        onClick={handleJoinGame}
-        disabled={joiningGame}
-        style={{ 
-          width: '100%',
-          background: `linear-gradient(45deg, ${theme.colors.neonGreen}, ${theme.colors.neonBlue})`,
-          fontSize: '1.2rem',
-          padding: '1rem 2rem',
-          boxShadow: `0 0 20px ${theme.colors.neonGreen}`,
-          animation: 'neon-pulse 2s infinite'
-        }}
-      >
-        {joiningGame ? (
-          <>
-            <LoadingSpinner style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
-            Processing Payment...
-          </>
-        ) : (
-          `💰 PAY & JOIN (${gameData.priceUSD.toFixed(2)} USD)`
-        )}
-      </Button>
-    </div>
-  )}
 
   if (!isConnected) {
     return (
@@ -668,6 +612,54 @@ const FlipGame = () => {
           />
         </ContentWrapper>
       </Container>
+      {canJoin && (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <div style={{
+            background: 'rgba(0, 255, 65, 0.1)',
+            padding: '1.5rem',
+            borderRadius: '1rem',
+            border: '1px solid rgba(0, 255, 65, 0.3)',
+            marginBottom: '1rem'
+          }}>
+            <h3 style={{ 
+              color: theme.colors.neonGreen, 
+              fontSize: '1.5rem', 
+              marginBottom: '1rem',
+              textShadow: `0 0 10px ${theme.colors.neonGreen}`
+            }}>
+              💎 JOIN THE BATTLE!
+            </h3>
+            <p style={{ color: theme.colors.textSecondary, fontSize: '1rem', marginBottom: '0.5rem' }}>
+              Entry Fee: <span style={{ color: theme.colors.neonYellow, fontWeight: 'bold' }}>${gameData.priceUSD.toFixed(2)}</span>
+            </p>
+            <p style={{ color: theme.colors.textTertiary, fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+              Winner takes all! Best of {gameData.rounds} rounds.
+            </p>
+          </div>
+          
+          <Button 
+            onClick={handleJoinGame}
+            disabled={joiningGame}
+            style={{ 
+              width: '100%',
+              background: `linear-gradient(45deg, ${theme.colors.neonGreen}, ${theme.colors.neonBlue})`,
+              fontSize: '1.2rem',
+              padding: '1rem 2rem',
+              boxShadow: `0 0 20px ${theme.colors.neonGreen}`,
+              animation: 'neon-pulse 2s infinite'
+            }}
+          >
+            {joiningGame ? (
+              <>
+                <LoadingSpinner style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+                Processing Payment...
+              </>
+            ) : (
+              `💰 PAY & JOIN ($${gameData.priceUSD.toFixed(2)} USD)`
+            )}
+          </Button>
+        </div>
+      )}
     </ThemeProvider>
   )
 }

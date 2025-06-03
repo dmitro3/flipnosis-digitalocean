@@ -893,7 +893,7 @@ async function handleMessage(ws, data) {
   session.addClient(ws)
 
   switch (type) {
-    case 'connect_to_game': // New case - just connect, don't auto-join
+    case 'connect_to_game': // Updated - just connect, don't auto-join
       // Get game from database to determine actual roles
       try {
         const gameData = await dbHelpers.getGame(gameId)
@@ -913,22 +913,24 @@ async function handleMessage(ws, data) {
         console.error('Error loading game data:', error)
       }
       
-      // Send current state to new client (no auto-joining)
+      // Send current state to new client (NO auto-joining)
       ws.send(JSON.stringify({
         type: 'game_state',
         state: session.getState()
       }))
       break
 
-    case 'join_game': // Only use this for actual intentional joins
-      if (data.role === 'creator') {
+    case 'join_game': // Updated to handle the new flow
+      if (data.role === 'joiner' && data.entryFeeHash) {
+        // This is a real join with payment proof
+        await session.setJoiner(data.address, data.entryFeeHash)
+        console.log('✅ Player actually joined with payment:', data.address)
+      } else if (data.role === 'creator') {
         session.creator = data.address
         session.maxRounds = data.gameConfig?.maxRounds || 5
         console.log('👑 Creator joined:', data.address)
-      } else if (data.role === 'joiner') {
-        await session.setJoiner(data.address, data.entryFeeHash)
       } else {
-        console.log('👀 Spectator joined:', data.address)
+        console.log('👀 Spectator viewing:', data.address)
       }
       break
 
