@@ -77,20 +77,20 @@ const ThreeCoin = ({
 
     // Create coin faces
     const headsFace = new THREE.Mesh(coinGeometry, headsMaterial)
-    headsFace.rotation.x = Math.PI / 2
+    headsFace.rotation.x = 0
     headsFace.position.z = 0.075
 
     const tailsFace = new THREE.Mesh(coinGeometry, tailsMaterial)
-    tailsFace.rotation.x = -Math.PI / 2
+    tailsFace.rotation.x = Math.PI
     tailsFace.position.z = -0.075
-    tailsFace.rotation.y = Math.PI
+    tailsFace.rotation.y = 0
 
     // Add faces to coin group
     coin.add(headsFace)
     coin.add(tailsFace)
 
-    // Set initial rotation to show heads
-    coin.rotation.x = Math.PI / 2
+    // Set initial rotation to show heads facing the camera
+    coin.rotation.x = 0
     coin.rotation.y = 0
 
     // Add coin to scene
@@ -154,7 +154,7 @@ const ThreeCoin = ({
       // Smooth easing
       const easeProgress = 1 - Math.pow(1 - progress, 3)
 
-      // Calculate rotation with proper ending
+      // Calculate rotation with proper ending - flip around X axis to face camera
       const totalRotationX = flips * Math.PI * 2
       coin.rotation.x = initialRotationX + totalRotationX * easeProgress
       
@@ -164,8 +164,8 @@ const ThreeCoin = ({
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - ensure correct side is showing
-        coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
+        // Final position - ensure correct side is showing and facing camera
+        coin.rotation.x = isHeads ? 0 : Math.PI
         coin.rotation.y = 0
         setCurrentSide(isHeads ? 'heads' : 'tails')
         setIsAnimating(false)
