@@ -89,10 +89,9 @@ const ThreeCoin = ({
     coin.add(headsFace)
     coin.add(tailsFace)
 
-    // Set initial rotation to show heads FACING the camera
+    // Set initial rotation to show heads
     coin.rotation.x = Math.PI / 2
     coin.rotation.y = 0
-    coin.rotation.z = 0
 
     // Add coin to scene
     scene.add(coin)
@@ -146,7 +145,7 @@ const ThreeCoin = ({
     // Calculate flips based on duration
     const flips = Math.max(3, Math.floor(duration / 1000)) // At least 3 flips
     const startTime = Date.now()
-    const initialRotationX = Math.PI / 2  // Always start from heads facing camera
+    const initialRotationX = coin.rotation.x
 
     const animateFlip = () => {
       const elapsed = Date.now() - startTime
@@ -155,7 +154,7 @@ const ThreeCoin = ({
       // Smooth easing
       const easeProgress = 1 - Math.pow(1 - progress, 3)
 
-      // Calculate rotation with proper ending - flip around X axis to face camera
+      // Calculate rotation with proper ending
       const totalRotationX = flips * Math.PI * 2
       coin.rotation.x = initialRotationX + totalRotationX * easeProgress
       
@@ -165,14 +164,9 @@ const ThreeCoin = ({
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - face the camera properly
-        if (isHeads) {
-          coin.rotation.x = Math.PI / 2  // Heads facing camera
-        } else {
-          coin.rotation.x = -Math.PI / 2  // Tails facing camera
-        }
+        // Final position - ensure correct side is showing
+        coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
         coin.rotation.y = 0
-        coin.rotation.z = 0
         setCurrentSide(isHeads ? 'heads' : 'tails')
         setIsAnimating(false)
         console.log('✅ Flip animation complete:', flipResult)
@@ -180,12 +174,6 @@ const ThreeCoin = ({
     }
 
     animateFlip()
-
-    // Make the images on the coins brighter
-    headsMaterial.emissiveIntensity = 0.5
-    headsMaterial.color.setHex(0xFFFFFF)
-    tailsMaterial.emissiveIntensity = 0.5
-    tailsMaterial.color.setHex(0xFFFFFF)
   }, [isAnimating])
 
   // Trigger synchronized flip when flipResult changes
