@@ -1076,6 +1076,31 @@ app.post('/api/games/:gameId/join', async (req, res) => {
   }
 })
 
+// Force join endpoint for debugging
+app.post('/api/games/:gameId/force-join', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { joinerAddress } = req.body
+    
+    console.log('🔧 Force joining game:', { gameId, joinerAddress })
+    
+    // Update game in database
+    const updates = {
+      joiner: joinerAddress,
+      status: 'joined'
+    }
+    
+    await dbHelpers.updateGame(gameId, updates)
+    
+    console.log('✅ Force join successful:', gameId)
+    res.json({ success: true, gameId })
+    
+  } catch (error) {
+    console.error('❌ Error force joining game:', error)
+    res.status(500).json({ error: 'Failed to force join game', details: error.message })
+  }
+})
+
 // Cleanup inactive sessions
 setInterval(() => {
   const now = Date.now()

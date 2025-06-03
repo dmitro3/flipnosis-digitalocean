@@ -39,7 +39,6 @@ const FlipGame = () => {
   const isCreator = gameData?.creator === address
   const isJoiner = gameData?.joiner === address
   const isPlayer = isCreator || isJoiner
-  const canJoin = !gameData?.joiner && !isCreator && gameData?.status === 'waiting'
 
   // WebSocket connection
   const {
@@ -328,6 +327,21 @@ const FlipGame = () => {
     showSuccess('Game starting...')
   }
 
+  // Ensure canJoin is declared only once and used correctly
+  const canJoin = gameData && 
+                  !gameData.joiner && 
+                  gameData.creator !== address && 
+                  gameData.status === 'waiting'
+
+  console.log('🔍 Join Logic Debug:', {
+    hasGameData: !!gameData,
+    hasJoiner: !!gameData?.joiner,
+    joinerAddress: gameData?.joiner,
+    isNotCreator: gameData?.creator !== address,
+    statusIsWaiting: gameData?.status === 'waiting',
+    canJoin
+  })
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -411,6 +425,54 @@ const FlipGame = () => {
             </div>
           </div>
 
+          {/* Debug Section - Add this after the game header */}
+          <div style={{
+            background: 'rgba(255, 0, 0, 0.1)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            border: '1px solid rgba(255, 0, 0, 0.3)',
+            marginBottom: '1rem'
+          }}>
+            <h4 style={{ color: '#ff4444', marginBottom: '0.5rem' }}>🔧 Debug Info</h4>
+            <div style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>
+              <div>Your Address: {address}</div>
+              <div>Creator: {gameData?.creator}</div>
+              <div>Joiner: {gameData?.joiner}</div>
+              <div>Status: {gameData?.status}</div>
+              <div>Is Creator: {isCreator ? 'Yes' : 'No'}</div>
+              <div>Is Joiner: {isJoiner ? 'Yes' : 'No'}</div>
+            </div>
+            
+            {/* Force Join Button for Testing */}
+            {!isCreator && !isJoiner && (
+              <Button 
+                onClick={async () => {
+                  try {
+                    // Force update the joiner in database
+                    const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+                    const response = await fetch(`${API_URL}/api/games/${gameData.id}/force-join`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ joinerAddress: address })
+                    })
+                    
+                    if (response.ok) {
+                      showSuccess('Forced join successful! Reloading...')
+                      setTimeout(() => window.location.reload(), 1000)
+                    } else {
+                      showError('Force join failed')
+                    }
+                  } catch (error) {
+                    showError('Error: ' + error.message)
+                  }
+                }}
+                style={{ marginTop: '0.5rem', background: '#ff4444' }}
+              >
+                🔧 Force Join (Debug)
+              </Button>
+            )}
+          </div>
+
           {/* Main Game Area */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
             {/* Player 1 (Creator) */}
@@ -473,42 +535,6 @@ const FlipGame = () => {
               {/* Game Controls */}
               <div style={{ marginTop: '1rem' }}>
                 {/* Join Game Button - Show for non-creators when game is waiting for players */}
-                {canJoin && gameData?.status === 'waiting' && (
-                  <div style={{ textAlign: 'center', padding: '2rem' }}>
-                    <div style={{
-                      background: 'rgba(0, 255, 0, 0.1)',
-                      padding: '1.5rem',
-                      borderRadius: '1rem',
-                      border: '1px solid rgba(0, 255, 0, 0.3)',
-                      marginBottom: '1.5rem'
-                    }}>
-                      <h3 style={{ color: theme.colors.statusSuccess, marginBottom: '1rem' }}>
-                        🎮 Join This Game!
-                      </h3>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <strong>Entry Price: ${gameData.priceUSD?.toFixed(2)}</strong>
-                      </div>
-                      <div style={{ marginBottom: '1rem', fontSize: '0.875rem', color: theme.colors.textSecondary }}>
-                        NFT: {gameData.nft?.name} • {gameData.rounds} Rounds
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      onClick={handleJoinGame} 
-                      style={{ 
-                        width: '100%',
-                        background: theme.colors.statusSuccess,
-                        fontSize: '1.2rem',
-                        padding: '1rem',
-                        border: `2px solid ${theme.colors.statusSuccess}`
-                      }}
-                    >
-                      💰 Pay ${gameData.priceUSD?.toFixed(2)} & Join Game
-                    </Button>
-                  </div>
-                )}
-
-                {/* Show waiting message for creator */}
                 {isCreator && !gameData?.joiner && gameData?.status === 'waiting' && (
                   <div style={{ textAlign: 'center', padding: '2rem' }}>
                     <div style={{
