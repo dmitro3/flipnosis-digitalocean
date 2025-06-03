@@ -632,7 +632,7 @@ export const LivePlayerCard = ({
                 {player ? (
                   playerNumber === 2 ? (
                     <img 
-                      src="/Images/baseeth.png" 
+                      src="/Images/baseeth.webp" 
                       alt="Base ETH" 
                       style={{
                         width: '4rem',
