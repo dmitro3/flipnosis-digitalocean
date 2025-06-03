@@ -1140,4 +1140,165 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Production server ready at https://cryptoflipz2-production.up.railway.app`)
     console.log(`📄 Frontend served from static files`)
   }
+})
+
+// ==============================================
+// DATABASE ADMIN ENDPOINTS - Add to server.js
+// ==============================================
+
+// 1. VIEW ALL GAMES - See complete database
+app.get('/api/admin/games', async (req, res) => {
+  try {
+    const games = await dbHelpers.getAllGames(100)
+    res.json({
+      total: games.length,
+      games: games.map(game => ({
+        id: game.id,
+        creator: game.creator,
+        joiner: game.joiner,
+        nft_name: game.nft_name,
+        nft_collection: game.nft_collection,
+        price_usd: game.price_usd,
+        status: game.status,
+        created_at: game.created_at,
+        creator_wins: game.creator_wins,
+        joiner_wins: game.joiner_wins
+      }))
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// 2. DELETE GAME - Remove specific game
+app.delete('/api/admin/games/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    
+    // Delete from database
+    const sql = `DELETE FROM games WHERE id = ?`
+    db.run(sql, [gameId], function(err) {
+      if (err) {
+        console.error('❌ Error deleting game:', err)
+        res.status(500).json({ error: 'Failed to delete game' })
+      } else {
+        console.log('✅ Game deleted:', gameId, 'Changes:', this.changes)
+        res.json({ 
+          success: true, 
+          deletedId: gameId,
+          changes: this.changes 
+        })
+      }
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// 3. CLEAR ALL GAMES - Reset database completely
+app.delete('/api/admin/games', async (req, res) => {
+  try {
+    console.log('🧹 Clearing all games from database')
+    
+    // Delete all games
+    const sql = `DELETE FROM games`
+    db.run(sql, [], function(err) {
+      if (err) {
+        console.error('❌ Error clearing games:', err)
+        res.status(500).json({ error: 'Failed to clear games' })
+      } else {
+        console.log('✅ All games cleared. Changes:', this.changes)
+        res.json({ 
+          success: true, 
+          message: 'All games deleted',
+          deletedCount: this.changes 
+        })
+      }
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// 4. UPDATE GAME STATUS - Fix stuck games
+app.patch('/api/admin/games/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { status, joiner, creator_wins, joiner_wins } = req.body
+    
+    const updates = {}
+    if (status) updates.status = status
+    if (joiner !== undefined) updates.joiner = joiner
+    if (creator_wins !== undefined) updates.creator_wins = creator_wins
+    if (joiner_wins !== undefined) updates.joiner_wins = joiner_wins
+    
+    const result = await dbHelpers.updateGame(gameId, updates)
+    
+    res.json({ 
+      success: true, 
+      gameId,
+      updates,
+      changes: result 
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// 5. DELIST GAME - Creator can cancel their own game
+app.post('/api/games/:gameId/delist', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { creatorAddress } = req.body
+    
+    console.log('🗑️ Delisting game:', { gameId, creatorAddress })
+    
+    // Get game to verify creator
+    const game = await dbHelpers.getGame(gameId)
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Verify creator
+    if (game.creator !== creatorAddress) {
+      return res.status(403).json({ error: 'Only creator can delist game' })
+    }
+    
+    // Can only delist if no joiner or if waiting
+    if (game.joiner && game.status !== 'waiting') {
+      return res.status(400).json({ error: 'Cannot delist game with active players' })
+    }
+    
+    // Update status to cancelled
+    await dbHelpers.updateGame(gameId, { 
+      status: 'cancelled',
+      completed_at: new Date().toISOString()
+    })
+    
+    console.log('✅ Game delisted successfully:', gameId)
+    res.json({ success: true, gameId })
+    
+  } catch (error) {
+    console.error('❌ Error delisting game:', error)
+    res.status(500).json({ error: 'Failed to delist game', details: error.message })
+  }
+})
+
+// 6. GET GAMES BY CREATOR - See your own games
+app.get('/api/games/creator/:address', async (req, res) => {
+  try {
+    const { address } = req.params
+    
+    const sql = `SELECT * FROM games WHERE creator = ? ORDER BY created_at DESC`
+    db.all(sql, [address], (err, rows) => {
+      if (err) {
+        console.error('❌ Error getting creator games:', err)
+        res.status(500).json({ error: 'Database error' })
+      } else {
+        res.json(rows)
+      }
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 }) 
