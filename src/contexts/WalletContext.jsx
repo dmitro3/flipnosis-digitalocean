@@ -286,9 +286,10 @@ export const WalletProvider = ({ children }) => {
 
       console.log('📡 Fetching NFTs for address:', address)
       
-      // Use the correct method with proper options
+      // Use the correct method with free plan compatible options
       const nftResponse = await alchemy.nft.getNftsForOwner(address, {
-        excludeFilters: ['SPAM'], // Filter out spam NFTs
+        // Remove excludeFilters for free plan compatibility
+        // excludeFilters: ['SPAM'], // This requires paid plan
         omitMetadata: false, // Include metadata
         pageSize: 100 // Get up to 100 NFTs
       })
