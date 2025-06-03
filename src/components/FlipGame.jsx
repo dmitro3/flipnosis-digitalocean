@@ -327,20 +327,63 @@ const FlipGame = () => {
     showSuccess('Game starting...')
   }
 
-  // Ensure canJoin is declared only once and used correctly
+  // Fix Join Button Logic
   const canJoin = gameData && 
                   !gameData.joiner && 
                   gameData.creator !== address && 
-                  gameData.status === 'waiting'
+                  gameData.status === 'waiting' &&
+                  isConnected &&
+                  address;
 
-  console.log('🔍 Join Logic Debug:', {
-    hasGameData: !!gameData,
-    hasJoiner: !!gameData?.joiner,
-    joinerAddress: gameData?.joiner,
-    isNotCreator: gameData?.creator !== address,
-    statusIsWaiting: gameData?.status === 'waiting',
-    canJoin
-  })
+  // Add the Missing Join Button
+  {canJoin && (
+    <div style={{ textAlign: 'center', padding: '2rem' }}>
+      <div style={{
+        background: 'rgba(0, 255, 65, 0.1)',
+        padding: '1.5rem',
+        borderRadius: '1rem',
+        border: '1px solid rgba(0, 255, 65, 0.3)',
+        marginBottom: '1rem'
+      }}>
+        <h3 style={{ 
+          color: theme.colors.neonGreen, 
+          fontSize: '1.5rem', 
+          marginBottom: '1rem',
+          textShadow: `0 0 10px ${theme.colors.neonGreen}`
+        }}>
+          💎 JOIN THE BATTLE!
+        </h3>
+        <p style={{ color: theme.colors.textSecondary, fontSize: '1rem', marginBottom: '0.5rem' }}>
+          Entry Fee: <span style={{ color: theme.colors.neonYellow, fontWeight: 'bold' }}>${gameData.priceUSD.toFixed(2)}</span>
+        </p>
+        <p style={{ color: theme.colors.textTertiary, fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+          Winner takes all! Best of {gameData.rounds} rounds.
+        </p>
+      </div>
+      
+      <Button 
+        onClick={handleJoinGame}
+        disabled={joiningGame}
+        style={{ 
+          width: '100%',
+          background: `linear-gradient(45deg, ${theme.colors.neonGreen}, ${theme.colors.neonBlue})`,
+          fontSize: '1.2rem',
+          padding: '1rem 2rem',
+          boxShadow: `0 0 20px ${theme.colors.neonGreen}`,
+          animation: 'neon-pulse 2s infinite'
+        }}
+      >
+        {joiningGame ? (
+          <>
+            <LoadingSpinner style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+            Processing Payment...
+          </>
+        ) : (
+          `💰 PAY & JOIN (${gameData.priceUSD.toFixed(2)} USD)`
+        )}
+      </Button>
+    </div>
+  )}
 
   if (!isConnected) {
     return (
@@ -425,54 +468,6 @@ const FlipGame = () => {
             </div>
           </div>
 
-          {/* Debug Section - Add this after the game header */}
-          <div style={{
-            background: 'rgba(255, 0, 0, 0.1)',
-            padding: '1rem',
-            borderRadius: '1rem',
-            border: '1px solid rgba(255, 0, 0, 0.3)',
-            marginBottom: '1rem'
-          }}>
-            <h4 style={{ color: '#ff4444', marginBottom: '0.5rem' }}>🔧 Debug Info</h4>
-            <div style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>
-              <div>Your Address: {address}</div>
-              <div>Creator: {gameData?.creator}</div>
-              <div>Joiner: {gameData?.joiner}</div>
-              <div>Status: {gameData?.status}</div>
-              <div>Is Creator: {isCreator ? 'Yes' : 'No'}</div>
-              <div>Is Joiner: {isJoiner ? 'Yes' : 'No'}</div>
-            </div>
-            
-            {/* Force Join Button for Testing */}
-            {!isCreator && !isJoiner && (
-              <Button 
-                onClick={async () => {
-                  try {
-                    // Force update the joiner in database
-                    const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-                    const response = await fetch(`${API_URL}/api/games/${gameData.id}/force-join`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ joinerAddress: address })
-                    })
-                    
-                    if (response.ok) {
-                      showSuccess('Forced join successful! Reloading...')
-                      setTimeout(() => window.location.reload(), 1000)
-                    } else {
-                      showError('Force join failed')
-                    }
-                  } catch (error) {
-                    showError('Error: ' + error.message)
-                  }
-                }}
-                style={{ marginTop: '0.5rem', background: '#ff4444' }}
-              >
-                🔧 Force Join (Debug)
-              </Button>
-            )}
-          </div>
-
           {/* Main Game Area */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
             {/* Player 1 (Creator) */}
@@ -534,58 +529,6 @@ const FlipGame = () => {
 
               {/* Game Controls */}
               <div style={{ marginTop: '1rem' }}>
-                {/* Join Game Button - Show for non-creators when game is waiting for players */}
-                {isCreator && !gameData?.joiner && gameData?.status === 'waiting' && (
-                  <div style={{ textAlign: 'center', padding: '2rem' }}>
-                    <div style={{
-                      background: 'rgba(255, 255, 0, 0.1)',
-                      padding: '1.5rem',
-                      borderRadius: '1rem',
-                      border: '1px solid rgba(255, 255, 0, 0.3)'
-                    }}>
-                      <p style={{ color: theme.colors.statusWarning, fontSize: '1.1rem', marginBottom: '1rem' }}>
-                        ⏳ Waiting for Player 2 to join...
-                      </p>
-                      <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-                        Share this game URL with another player
-                      </p>
-                      <div style={{ 
-                        background: 'rgba(0, 0, 0, 0.3)', 
-                        padding: '0.5rem', 
-                        borderRadius: '0.5rem',
-                        marginTop: '1rem',
-                        fontSize: '0.75rem',
-                        fontFamily: 'monospace'
-                      }}>
-                        {window.location.href}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Start Game Button */}
-                {gameData?.joiner && 
-                 gameData?.creator && 
-                 gameData?.status === 'active' && 
-                 gamePhase === 'waiting' && isCreator && (
-                  <div>
-                    <p style={{ color: theme.colors.statusSuccess, marginBottom: '1rem', textAlign: 'center' }}>
-                      ✅ Both players ready! Payment received.
-                    </p>
-                    <Button 
-                      onClick={handleStartGame} 
-                      style={{ 
-                        width: '100%',
-                        background: theme.colors.neonPink,
-                        fontSize: '1.2rem',
-                        padding: '1rem'
-                      }}
-                    >
-                      🚀 START GAME
-                    </Button>
-                  </div>
-                )}
-
                 {/* Game Instructions */}
                 {gamePhase === 'round_active' && (
                   <div style={{ marginTop: '1rem', textAlign: 'center' }}>
@@ -635,6 +578,29 @@ const FlipGame = () => {
                     </p>
                     <Button onClick={() => navigate('/')} style={{ width: '100%' }}>
                       Back to Games
+                    </Button>
+                  </div>
+                )}
+
+                {/* Fixed Game Status Checks */}
+                {gameData?.joiner && 
+                 gameData?.creator && 
+                 gameData?.status === 'joined' && 
+                 gamePhase === 'waiting' && isCreator && (
+                  <div>
+                    <p style={{ color: theme.colors.statusSuccess, marginBottom: '1rem', textAlign: 'center' }}>
+                      ✅ Both players ready! Payment received.
+                    </p>
+                    <Button 
+                      onClick={handleStartGame} 
+                      style={{ 
+                        width: '100%',
+                        background: theme.colors.neonPink,
+                        fontSize: '1.2rem',
+                        padding: '1rem'
+                      }}
+                    >
+                      🚀 START GAME
                     </Button>
                   </div>
                 )}
