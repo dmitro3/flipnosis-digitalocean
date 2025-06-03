@@ -34,7 +34,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 if (process.env.NODE_ENV === 'production') {
   console.log('🌍 Production mode - setting up static file serving')
   
-  // In Railway production, we're in dist/server/, so go up one level to find static files
+  // In production, we're in /app/dist/server/, so go up one level to find static files
   const distPath = path.join(__dirname, '..')
   console.log('📁 Looking for static files at:', distPath)
   
@@ -60,7 +60,7 @@ if (process.env.NODE_ENV === 'production') {
     })
   } else {
     console.error('❌ Built frontend not found at:', distPath)
-    console.log('📁 Directory contents:', fs.readdirSync(path.dirname(__dirname)))
+    console.log('📁 Available files:', fs.readdirSync(__dirname))
   }
 }
 
