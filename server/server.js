@@ -183,13 +183,48 @@ app.get('/debug/files', (req, res) => {
   }
 })
 
+// Debug endpoint to check database
+app.get('/api/debug/db', async (req, res) => {
+  try {
+    // Test database connection
+    db.get("SELECT name FROM sqlite_master WHERE type='table'", (err, result) => {
+      if (err) {
+        res.status(500).json({ error: 'Database error', details: err.message })
+      } else {
+        // Get all games count
+        db.get("SELECT COUNT(*) as count FROM games", (err2, countResult) => {
+          if (err2) {
+            res.json({ 
+              tablesExist: !!result,
+              gamesTableExists: false,
+              error: err2.message 
+            })
+          } else {
+            res.json({ 
+              tablesExist: !!result,
+              gamesTableExists: true,
+              gamesCount: countResult.count,
+              databasePath: dbPath 
+            })
+          }
+        })
+      }
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Database initialization and rest of your code stays the same...
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('❌ Error opening database:', err)
   } else {
     console.log('✅ Connected to SQLite database at:', dbPath)
-    // initializeDatabase() // You'll need to add this function back
+    // Force immediate initialization
+    setTimeout(() => {
+      initializeDatabase()
+    }, 100)
   }
 })
 

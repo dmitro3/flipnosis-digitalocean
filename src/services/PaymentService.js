@@ -7,13 +7,8 @@ export class PaymentService {
 
   static async calculateETHAmount(usdAmount, ethPriceUSD = this.ETH_PRICE_USD) {
     try {
-      // Calculate ETH amount with proper precision handling
       const ethAmount = usdAmount / ethPriceUSD
-      
-      // Round to 8 decimal places to avoid ethers.js precision issues
       const roundedEthAmount = Math.round(ethAmount * 100000000) / 100000000
-      
-      // Ensure minimum amount (ethers.js needs at least some wei)
       const finalEthAmount = Math.max(roundedEthAmount, 0.000001)
       
       console.log(`💰 Payment calculation: $${usdAmount} USD = ${finalEthAmount} ETH (price: $${ethPriceUSD}/ETH)`)
@@ -36,41 +31,44 @@ export class PaymentService {
 
   static async buildTransaction(to, valueWei, provider) {
     try {
-      const feeData = await provider.getFeeData()
+      console.log('🔧 Building transaction for Base network...')
       
+      // Simple transaction config for Base network
       const txConfig = {
         to,
         value: valueWei,
-        gasLimit: 100000
+        gasLimit: 21000 // Standard ETH transfer
       }
 
-      // Check if the network supports EIP-1559 (priority fees)
-      if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
-        // EIP-1559 transaction
-        const maxPriorityFee = feeData.maxPriorityFeePerGas
-        const baseFee = feeData.maxFeePerGas - maxPriorityFee
-        
-        txConfig.maxFeePerGas = baseFee + (maxPriorityFee * 110n / 100n)
-        txConfig.maxPriorityFeePerGas = maxPriorityFee * 110n / 100n
-      } else if (feeData.gasPrice) {
-        // Legacy transaction
-        txConfig.gasPrice = feeData.gasPrice * 110n / 100n
-      } else {
-        // Fallback gas price
-        txConfig.gasPrice = ethers.parseUnits('20', 'gwei')
+      try {
+        // Try to get gas price (fallback method for Base)
+        const gasPrice = await provider.getGasPrice()
+        txConfig.gasPrice = gasPrice * 120n / 100n // 20% buffer
+        console.log('✅ Using legacy gas price:', ethers.formatUnits(txConfig.gasPrice, 'gwei'), 'gwei')
+      } catch (gasPriceError) {
+        // Ultimate fallback
+        console.warn('⚠️ Using fallback gas price')
+        txConfig.gasPrice = ethers.parseUnits('1', 'gwei') // 1 gwei fallback for Base
       }
+
+      console.log('✅ Transaction config ready:', {
+        to: txConfig.to,
+        value: ethers.formatEther(txConfig.value),
+        gasLimit: txConfig.gasLimit.toString(),
+        gasPrice: ethers.formatUnits(txConfig.gasPrice, 'gwei') + ' gwei'
+      })
 
       return { success: true, txConfig }
     } catch (error) {
-      console.error('Error building transaction:', error)
-      // Return a basic transaction config as fallback
+      console.error('❌ Error building transaction:', error)
       return { 
-        success: true, 
+        success: false, 
+        error: error.message,
         txConfig: {
           to,
           value: valueWei,
-          gasLimit: 100000,
-          gasPrice: ethers.parseUnits('20', 'gwei') // 20 gwei fallback
+          gasLimit: 21000,
+          gasPrice: ethers.parseUnits('1', 'gwei')
         }
       }
     }
@@ -101,7 +99,7 @@ export class PaymentService {
       return {
         success: false,
         error: error.message,
-        ethAmount: 0.000001 // Fallback amount
+        ethAmount: 0.000001
       }
     }
   }
