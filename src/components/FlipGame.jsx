@@ -43,6 +43,7 @@ const FlipGame = () => {
   // WebSocket connection
   const {
     connected: wsConnected,
+    socket,
     gameState,
     gamePhase,
     currentRound,
@@ -78,13 +79,13 @@ const FlipGame = () => {
   const [claimingSlot, setClaimingSlot] = useState(false)
   const [joiningGame, setJoiningGame] = useState(false)
 
+  // Add the API_URL constant at the top of the component
+  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+
   // Load game data
   const loadGame = async () => {
     try {
       setLoading(true)
-      
-      // API URL
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app' // Update with your actual Railway URL
       
       console.log('📊 Loading game from database:', gameId)
       
@@ -257,8 +258,6 @@ const FlipGame = () => {
       setClaimingSlot(true)
       showInfo('Claiming player slot...')
       
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      
       const claimResponse = await fetch(`${API_URL}/api/games/${gameData.id}/claim-slot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -337,16 +336,23 @@ const FlipGame = () => {
       console.error('❌ Failed to join game:', error)
       showError('Failed to join: ' + error.message)
       
-      // Release the claimed slot on error
+      // Release the claimed slot on error - with better error handling
       try {
-        const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-        await fetch(`${API_URL}/api/games/${gameData.id}/release-slot`, {
+        const releaseResponse = await fetch(`${API_URL}/api/games/${gameData.id}/release-slot`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ playerAddress: address })
         })
+        
+        if (!releaseResponse.ok) {
+          const releaseError = await releaseResponse.json()
+          console.log('⚠️ Could not release slot (may already be available):', releaseError)
+        } else {
+          console.log('✅ Slot released after error')
+        }
       } catch (releaseError) {
         console.error('Failed to release slot:', releaseError)
+        // Don't show this error to user as it's not critical
       }
     } finally {
       setJoiningGame(false)

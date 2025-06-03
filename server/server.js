@@ -1109,8 +1109,8 @@ app.post('/api/games/:gameId/release-slot', async (req, res) => {
       return res.status(404).json({ error: 'Game not found' })
     }
     
-    // Only release if this player claimed it
-    if (game.joiner === playerAddress && game.status === 'claiming') {
+    // More flexible release conditions
+    if (game.joiner === playerAddress && (game.status === 'claiming' || game.status === 'waiting')) {
       await dbHelpers.updateGame(gameId, { 
         status: 'waiting',
         joiner: null // Clear the joiner
@@ -1118,8 +1118,24 @@ app.post('/api/games/:gameId/release-slot', async (req, res) => {
       
       console.log('✅ Slot released successfully:', gameId)
       res.json({ success: true, gameId })
+    } else if (game.status === 'waiting' && !game.joiner) {
+      // Slot was already released or never claimed
+      console.log('ℹ️ Slot was already available:', gameId)
+      res.json({ success: true, gameId, message: 'Slot was already available' })
     } else {
-      res.status(400).json({ error: 'Cannot release slot' })
+      console.log('⚠️ Cannot release slot:', { 
+        gameJoiner: game.joiner, 
+        requestPlayer: playerAddress, 
+        gameStatus: game.status 
+      })
+      res.status(400).json({ 
+        error: 'Cannot release slot',
+        debug: {
+          gameJoiner: game.joiner,
+          requestPlayer: playerAddress,
+          gameStatus: game.status
+        }
+      })
     }
     
   } catch (error) {
