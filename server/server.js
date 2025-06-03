@@ -16,6 +16,17 @@ const app = express()
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
 
+// Railway health check endpoint - must be first
+app.get('/health', (req, res) => {
+  console.log(`❤️ Health check at ${new Date().toISOString()}`)
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    port: process.env.PORT,
+    host: '0.0.0.0'
+  })
+})
+
 // Add extensive request logging
 app.use((req, res, next) => {
   console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.url}`)

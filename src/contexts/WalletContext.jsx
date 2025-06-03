@@ -236,33 +236,24 @@ export const WalletProvider = ({ children }) => {
   }
 
   const fetchEVMNFTs = async () => {
-    if (!address) return []
+    if (!address) {
+      console.log('❌ No address provided for NFT fetching')
+      return []
+    }
 
     try {
       const chainConfig = chains[chain]
-      console.log('Fetching NFTs for chain:', chain, 'with config:', chainConfig)
+      console.log('🔍 Fetching NFTs for chain:', chain, 'address:', address)
       
-      const networkEndpoints = {
-        ethereum: 'https://eth-mainnet.g.alchemy.com/v2',
-        polygon: 'https://polygon-mainnet.g.alchemy.com/v2',
-        arbitrum: 'https://arb-mainnet.g.alchemy.com/v2',
-        bnb: 'https://bsc-mainnet.g.alchemy.com/v2',
-        avalanche: 'https://avalanche-mainnet.g.alchemy.com/v2',
-        base: 'https://base-mainnet.g.alchemy.com/v2'
-      }
-
-      const endpoint = networkEndpoints[chain]
-      if (!endpoint) {
-        console.error('No endpoint found for chain:', chain)
-        return []
-      }
-
+      // Check if we have an API key
       const apiKey = import.meta.env.VITE_ALCHEMY_API_KEY
       if (!apiKey) {
-        console.error('Alchemy API key not found')
+        console.error('❌ Missing VITE_ALCHEMY_API_KEY environment variable')
         return []
       }
+      console.log('✅ Alchemy API key found:', apiKey.slice(0, 10) + '...')
 
+      // Map chain to Alchemy network
       let network
       switch (chain) {
         case 'ethereum':
@@ -274,131 +265,137 @@ export const WalletProvider = ({ children }) => {
         case 'arbitrum':
           network = Network.ARB_MAINNET
           break
-        case 'bnb':
-          network = Network.BNB_MAINNET
-          break
-        case 'avalanche':
-          network = Network.AVAX_MAINNET
-          break
         case 'base':
           network = Network.BASE_MAINNET
           break
         default:
-          console.error('Unsupported network for Alchemy:', chain)
+          console.error('❌ Unsupported network for Alchemy:', chain)
           return []
       }
 
+      console.log('🔧 Using Alchemy network:', network)
+
+      // Initialize Alchemy SDK
       const settings = {
         apiKey: apiKey,
         network: network,
         maxRetries: 3
       }
 
-      console.log('Using Alchemy settings:', { ...settings, apiKey: '***' })
+      console.log('🚀 Initializing Alchemy...')
       const alchemy = new Alchemy(settings)
 
-      console.log('Fetching NFTs for address:', address)
+      console.log('📡 Fetching NFTs for address:', address)
       
-      let response = await alchemy.nft.getNftsForOwner(address, {
-        contractAddresses: [],
-        withMetadata: true,
-        withTokenUri: true,
-        pageSize: 100
+      // Use the correct method with proper options
+      const nftResponse = await alchemy.nft.getNftsForOwner(address, {
+        excludeFilters: ['SPAM'], // Filter out spam NFTs
+        omitMetadata: false, // Include metadata
+        pageSize: 100 // Get up to 100 NFTs
       })
       
-      console.log('NFT response:', response)
+      console.log('📊 NFT API Response:', {
+        totalCount: nftResponse.totalCount,
+        ownedNftsLength: nftResponse.ownedNfts?.length,
+        pageKey: nftResponse.pageKey
+      })
       
-      if (!response || !response.ownedNfts) {
-        console.log('No NFTs found or invalid response format')
+      if (!nftResponse || !nftResponse.ownedNfts) {
+        console.log('⚠️ No NFTs found or invalid response format')
         return []
       }
 
-      const mappedNFTs = await Promise.all(response.ownedNfts.map(async nft => {
-        try {
-          const name = nft.title || nft.rawMetadata?.name || `NFT #${nft.tokenId}`
-          const description = nft.description || nft.rawMetadata?.description || ''
+      console.log('🎨 Processing', nftResponse.ownedNfts.length, 'NFTs...')
+
+      // Process NFTs
+      const mappedNFTs = nftResponse.ownedNfts
+        .filter(nft => {
+          // Basic validation
+          if (!nft.contract?.address || nft.tokenId === undefined) {
+            console.log('⚠️ Skipping NFT with missing contract or tokenId:', nft.contract?.address, nft.tokenId)
+            return false
+          }
           
-          // Basic spam filtering
-          const spamIndicators = ['airdrop', 'free', 'claim', 'bit.ly']
-          const isSpam = spamIndicators.some(indicator => 
-            name.toLowerCase().includes(indicator) || description.toLowerCase().includes(indicator)
-          )
+          return true
+        })
+        .map(nft => {
+          try {
+            const name = nft.name || nft.title || `Token #${nft.tokenId}`
+            
+            // Get image URL with better fallbacks
+            let imageUrl = ''
+            
+            // Try different image sources from Alchemy's response
+            if (nft.image?.cachedUrl) {
+              imageUrl = nft.image.cachedUrl
+            } else if (nft.image?.thumbnailUrl) {
+              imageUrl = nft.image.thumbnailUrl
+            } else if (nft.image?.pngUrl) {
+              imageUrl = nft.image.pngUrl
+            } else if (nft.image?.originalUrl) {
+              imageUrl = nft.image.originalUrl
+            } else if (nft.rawMetadata?.image) {
+              imageUrl = nft.rawMetadata.image
+            } else if (nft.media && nft.media.length > 0) {
+              imageUrl = nft.media[0]?.gateway || nft.media[0]?.raw || ''
+            }
 
-          if (isSpam) {
-            console.log('Filtered out spam NFT:', name)
-            return null
-          }
-
-          // Get image URL with better fallbacks
-          let imageUrl = ''
-
-          // Try media array first
-          if (nft.media && nft.media.length > 0) {
-            const media = nft.media[0]
-            imageUrl = media?.gateway || media?.raw || ''
-          }
-
-          // Try raw metadata if no media
-          if (!imageUrl && nft.rawMetadata?.image) {
-            imageUrl = nft.rawMetadata.image
-          }
-
-          // Try tokenUri gateway
-          if (!imageUrl && nft.tokenUri?.gateway) {
-            imageUrl = nft.tokenUri.gateway
-          }
-
-          // Convert IPFS URLs to HTTP
-          if (imageUrl) {
-            if (imageUrl.startsWith('ipfs://')) {
+            // Convert IPFS URLs to HTTP
+            if (imageUrl && imageUrl.startsWith('ipfs://')) {
               const hash = imageUrl.replace('ipfs://', '')
               imageUrl = `https://ipfs.io/ipfs/${hash}`
-            } else if (imageUrl.startsWith('ipfs/')) {
-              const hash = imageUrl.replace('ipfs/', '')
-              imageUrl = `https://ipfs.io/ipfs/${hash}`
             }
-          }
 
-          // Fallback to a working placeholder
-          if (!imageUrl) {
-            imageUrl = `https://picsum.photos/300/300?random=${nft.tokenId}`
-          }
-
-          console.log('Final image URL for', nft.tokenId, ':', imageUrl)
-
-          const collection = nft.contract.name || nft.rawMetadata?.collection || 'Unknown Collection'
-          const attributes = nft.rawMetadata?.attributes || []
-          const tokenType = nft.tokenType || 'ERC721'
-          const explorerUrl = `${chainConfig.explorer}/token/${nft.contract.address}?a=${nft.tokenId}`
-
-          return {
-            id: `${nft.contract.address}-${nft.tokenId}`,
-            name,
-            image: imageUrl,
-            collection,
-            tokenId: nft.tokenId,
-            contractAddress: nft.contract.address,
-            chain: chain,
-            tokenType,
-            explorerUrl,
-            metadata: {
-              description,
-              attributes,
-              raw: nft.rawMetadata || {}
+            // Fallback to a working placeholder if no image
+            if (!imageUrl) {
+              imageUrl = `https://picsum.photos/300/300?random=${nft.tokenId}`
             }
+
+            const collection = nft.contract?.name || nft.contract?.symbol || 'Unknown Collection'
+            const contractAddress = nft.contract?.address
+            const tokenId = nft.tokenId
+            
+            console.log('✅ Processed NFT:', {
+              name,
+              collection,
+              contractAddress,
+              tokenId,
+              hasImage: !!imageUrl
+            })
+
+            return {
+              id: `${contractAddress}-${tokenId}`,
+              name,
+              image: imageUrl,
+              collection,
+              tokenId: tokenId.toString(),
+              contractAddress,
+              chain: chain,
+              tokenType: nft.contract?.tokenType || 'ERC721',
+              metadata: {
+                description: nft.description || nft.rawMetadata?.description || '',
+                attributes: nft.rawMetadata?.attributes || [],
+                raw: nft.rawMetadata || {}
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error processing NFT:', error, nft)
+            return null
           }
-        } catch (error) {
-          console.error('Error mapping NFT:', error, nft)
-          return null
-        }
-      }))
-      
-      const validNFTs = mappedNFTs.filter(Boolean)
-      console.log('Final mapped NFTs:', validNFTs)
-      return validNFTs
+        })
+        .filter(Boolean) // Remove null entries
+
+      console.log('✅ Successfully mapped', mappedNFTs.length, 'NFTs')
+      return mappedNFTs
 
     } catch (error) {
-      console.error('Error fetching NFTs:', error)
+      console.error('❌ Error fetching NFTs:', error)
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        chain,
+        address
+      })
       return []
     }
   }

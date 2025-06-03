@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
@@ -36,7 +36,7 @@ import { ethers } from 'ethers'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
-  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address } = useWallet()
+  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
@@ -44,6 +44,17 @@ const CreateFlip = () => {
   const [rounds, setRounds] = useState(3)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 CreateFlip Debug:', {
+      isConnected,
+      address,
+      nftsLoading,
+      nftsCount: nfts?.length || 0,
+      chain
+    })
+  }, [isConnected, address, nftsLoading, nfts, chain])
 
   const createGameWithDatabase = async (gameData) => {
     try {
