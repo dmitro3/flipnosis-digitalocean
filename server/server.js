@@ -9,10 +9,19 @@ const fs = require('fs')
 console.log('🚀 Starting FLIPNOSIS server...')
 console.log('📁 Server directory:', __dirname)
 console.log('📁 Process CWD:', process.cwd())
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV)
+console.log('🔌 PORT:', process.env.PORT)
 
 const app = express()
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
+
+// Add extensive request logging
+app.use((req, res, next) => {
+  console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.url}`)
+  console.log('📥 Headers:', JSON.stringify(req.headers, null, 2))
+  next()
+})
 
 app.use(cors())
 app.use(express.json())
@@ -21,48 +30,157 @@ app.use(express.json())
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'games.db')
 console.log('🗄️ Database path:', dbPath)
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('❌ Error opening database:', err)
-  } else {
-    console.log('✅ Connected to SQLite database at:', dbPath)
-    initializeDatabase()
-  }
+// Test route first
+app.get('/test', (req, res) => {
+  console.log('🧪 Test route hit!')
+  res.json({ 
+    message: 'Server is working!',
+    timestamp: new Date().toISOString(),
+    __dirname: __dirname,
+    cwd: process.cwd(),
+    env: process.env.NODE_ENV,
+    port: process.env.PORT
+  })
+})
+
+// Health check route (before static files)
+app.get('/health', (req, res) => {
+  console.log('❤️ Health check requested')
+  res.json({ 
+    status: 'ok', 
+    activeSessions: 0, // activeSessions.size,
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+    __dirname: __dirname,
+    staticPath: path.join(__dirname, '..'),
+    distContents: (() => {
+      try {
+        const distPath = path.join(__dirname, '..')
+        return fs.readdirSync(distPath)
+      } catch (e) {
+        return 'Error reading dist: ' + e.message
+      }
+    })()
+  })
+})
+
+// API routes (before static files)
+app.get('/api/test', (req, res) => {
+  console.log('🔧 API test route hit!')
+  res.json({ message: 'API is working!' })
 })
 
 // Serve static files from the built frontend
 if (process.env.NODE_ENV === 'production') {
   console.log('🌍 Production mode - setting up static file serving')
   
-  // In production, we're in /app/dist/server/, so go up one level to find static files
+  // Debug file system
+  console.log('📁 Current directory contents:', fs.readdirSync(__dirname))
+  console.log('📁 Parent directory contents:', fs.readdirSync(path.join(__dirname, '..')))
+  console.log('📁 Root directory contents:', fs.readdirSync('/app'))
+  
   const distPath = path.join(__dirname, '..')
   console.log('📁 Looking for static files at:', distPath)
   
-  // Check for index.html to verify we have the built frontend
+  // Check for index.html
   const indexPath = path.join(distPath, 'index.html')
+  console.log('📄 Looking for index.html at:', indexPath)
+  console.log('📄 Index.html exists:', fs.existsSync(indexPath))
+  
   if (fs.existsSync(indexPath)) {
     console.log('✅ Found built frontend files')
-    app.use(express.static(distPath))
+    
+    // Log all files in dist
+    console.log('📁 Dist directory contents:', fs.readdirSync(distPath))
+    
+    app.use(express.static(distPath, {
+      index: false, // Don't serve index.html automatically
+      setHeaders: (res, path) => {
+        console.log('📤 Serving static file:', path)
+      }
+    }))
+    
     console.log('📁 Serving static files from:', distPath)
     
     // Handle React Router (SPA) - serve index.html for all non-API routes
     app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
+      console.log('🌐 Catch-all route hit for:', req.path)
+      
+      if (req.path.startsWith('/api') || req.path.startsWith('/health') || req.path.startsWith('/test')) {
+        console.log('🔄 Skipping catch-all for API route:', req.path)
         return next()
       }
       
+      console.log('📄 Serving index.html for:', req.path)
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error('❌ Error serving index.html:', err)
-          res.status(500).send('Error loading application')
+          res.status(500).send('Error loading application: ' + err.message)
+        } else {
+          console.log('✅ Successfully served index.html for:', req.path)
         }
       })
     })
   } else {
     console.error('❌ Built frontend not found at:', distPath)
-    console.log('📁 Available files:', fs.readdirSync(__dirname))
+    console.log('📁 Available files in server dir:', fs.readdirSync(__dirname))
+    console.log('📁 Available files in parent dir:', fs.readdirSync(path.join(__dirname, '..')))
+    
+    // Fallback response
+    app.get('*', (req, res) => {
+      res.status(404).json({
+        error: 'Frontend not found',
+        distPath: distPath,
+        indexPath: indexPath,
+        serverDir: __dirname,
+        serverContents: fs.readdirSync(__dirname),
+        parentContents: fs.readdirSync(path.join(__dirname, '..')),
+        requestedPath: req.path
+      })
+    })
   }
+} else {
+  console.log('🏠 Development mode - not serving static files')
 }
+
+// Debug endpoint to see what files exist
+app.get('/debug/files', (req, res) => {
+  console.log('🔍 Debug files endpoint hit')
+  try {
+    const serverDir = fs.readdirSync(__dirname)
+    const parentDir = fs.readdirSync(path.join(__dirname, '..'))
+    const rootDir = fs.readdirSync('/app')
+    
+    res.json({
+      serverDir: {
+        path: __dirname,
+        contents: serverDir
+      },
+      parentDir: {
+        path: path.join(__dirname, '..'),
+        contents: parentDir
+      },
+      rootDir: {
+        path: '/app',
+        contents: rootDir
+      },
+      indexExists: fs.existsSync(path.join(__dirname, '..', 'index.html')),
+      indexPath: path.join(__dirname, '..', 'index.html')
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Database initialization and rest of your code stays the same...
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('❌ Error opening database:', err)
+  } else {
+    console.log('✅ Connected to SQLite database at:', dbPath)
+    // initializeDatabase() // You'll need to add this function back
+  }
+})
 
 // Initialize database tables
 function initializeDatabase() {
@@ -746,16 +864,6 @@ app.get('/api/stats/monthly/:year/:month', async (req, res) => {
   }
 })
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    activeSessions: activeSessions.size,
-    environment: process.env.NODE_ENV,
-    timestamp: new Date().toISOString()
-  })
-})
-
 // Cleanup inactive sessions
 setInterval(() => {
   const now = Date.now()
@@ -783,11 +891,13 @@ process.on('SIGINT', () => {
 })
 
 const PORT = process.env.PORT || 3001
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 WebSocket server with SQLite running on port ${PORT}`)
   console.log(`📊 Health check: http://localhost:${PORT}/health`)
+  console.log(`🧪 Test endpoint: http://localhost:${PORT}/test`)
   console.log(`🎮 Games API: http://localhost:${PORT}/api/games`)
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`)
+  console.log(`🔗 Server listening on 0.0.0.0:${PORT}`)
   
   if (process.env.NODE_ENV === 'production') {
     console.log(`🚀 Production server ready at https://cryptoflipz2-production.up.railway.app`)
