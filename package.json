@@ -6,9 +6,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "NODE_ENV=production node dist/server/server.js",
-    "build:production": "vite build && npm run copy-server",
+    "start": "node dist/server/server.js",
+    "build:production": "vite build && npm run copy-server && npm run install-server-deps",
     "copy-server": "mkdir -p dist/server && cp server/server.js dist/server/ && cp server/package.json dist/server/",
+    "install-server-deps": "cd dist/server && npm install --production",
     "postinstall": "echo 'Frontend install complete'"
   },
   "dependencies": {

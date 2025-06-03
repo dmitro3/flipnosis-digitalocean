@@ -64,12 +64,12 @@ const ThreeCoin = ({
     // Load textures with increased vibrancy
     const textureLoader = new THREE.TextureLoader()
     textureLoader.load(headsTexture, (texture) => {
-      texture.encoding = THREE.sRGBEncoding
+      texture.colorSpace = THREE.SRGBColorSpace
       headsMaterial.map = texture
       headsMaterial.needsUpdate = true
     })
     textureLoader.load(tailsTexture, (texture) => {
-      texture.encoding = THREE.sRGBEncoding
+      texture.colorSpace = THREE.SRGBColorSpace
       tailsMaterial.map = texture
       tailsMaterial.needsUpdate = true
     })
