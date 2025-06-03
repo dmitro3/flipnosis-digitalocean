@@ -190,6 +190,64 @@ const Home = () => {
             </span>
           </div>
 
+          {/* Database Debug Panel - Temporary */}
+          <div style={{ 
+            background: 'rgba(255, 0, 0, 0.1)', 
+            padding: '1rem', 
+            borderRadius: '1rem',
+            border: '1px solid rgba(255, 0, 0, 0.3)',
+            marginBottom: '1rem'
+          }}>
+            <h3 style={{ color: '#ff4444', marginBottom: '1rem' }}>🔧 Database Debug Panel</h3>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <Button 
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`${API_URL}/api/debug/db`)
+                    const data = await response.json()
+                    alert('Database Status: ' + JSON.stringify(data, null, 2))
+                  } catch (error) {
+                    alert('Error: ' + error.message)
+                  }
+                }}
+                style={{ background: '#ff4444' }}
+              >
+                Check Database
+              </Button>
+              
+              <Button 
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`${API_URL}/api/debug/init`, { method: 'POST' })
+                    const data = await response.json()
+                    alert('Init Result: ' + JSON.stringify(data, null, 2))
+                    fetchGames() // Refresh games after init
+                  } catch (error) {
+                    alert('Error: ' + error.message)
+                  }
+                }}
+                style={{ background: '#ff8800' }}
+              >
+                Initialize Database
+              </Button>
+              
+              <Button 
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`${API_URL}/api/games`)
+                    const data = await response.json()
+                    alert('Games in DB: ' + JSON.stringify(data, null, 2))
+                  } catch (error) {
+                    alert('Error: ' + error.message)
+                  }
+                }}
+                style={{ background: '#0088ff' }}
+              >
+                Check Games
+              </Button>
+            </div>
+          </div>
+
           {/* Chain Filters */}
           <TransparentCard>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

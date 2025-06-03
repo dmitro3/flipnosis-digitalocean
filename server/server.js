@@ -215,6 +215,105 @@ app.get('/api/debug/db', async (req, res) => {
   }
 })
 
+// Database initialization endpoint
+app.post('/api/debug/init', async (req, res) => {
+  try {
+    console.log('🔧 Manual database initialization requested')
+    
+    // Force database initialization
+    db.serialize(() => {
+      // Drop and recreate tables to ensure clean slate
+      db.run("DROP TABLE IF EXISTS games", (err) => {
+        if (err) console.log('Note: games table did not exist')
+      })
+      
+      db.run("DROP TABLE IF EXISTS game_rounds", (err) => {
+        if (err) console.log('Note: game_rounds table did not exist')
+      })
+      
+      // Create games table
+      db.run(`CREATE TABLE games (
+        id TEXT PRIMARY KEY,
+        creator TEXT NOT NULL,
+        joiner TEXT,
+        nft_contract TEXT NOT NULL,
+        nft_token_id TEXT NOT NULL,
+        nft_name TEXT,
+        nft_image TEXT,
+        nft_collection TEXT,
+        nft_chain TEXT,
+        price_usd REAL NOT NULL,
+        rounds INTEGER NOT NULL,
+        status TEXT DEFAULT 'waiting',
+        winner TEXT,
+        creator_wins INTEGER DEFAULT 0,
+        joiner_wins INTEGER DEFAULT 0,
+        listing_fee_eth REAL,
+        listing_fee_hash TEXT,
+        entry_fee_hash TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        started_at DATETIME,
+        completed_at DATETIME,
+        total_spectators INTEGER DEFAULT 0
+      )`, (err) => {
+        if (err) {
+          console.error('❌ Error creating games table:', err)
+          res.status(500).json({ error: 'Failed to create games table', details: err.message })
+        } else {
+          console.log('✅ Games table created successfully')
+          
+          // Test insert
+          const testGame = {
+            id: 'test123',
+            creator: '0x123',
+            nft_contract: '0x456',
+            nft_token_id: '1',
+            nft_name: 'Test NFT',
+            nft_image: 'test.jpg',
+            nft_collection: 'Test Collection',
+            nft_chain: 'base',
+            price_usd: 1.0,
+            rounds: 3
+          }
+          
+          const sql = `INSERT INTO games (
+            id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
+            nft_collection, nft_chain, price_usd, rounds
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          
+          db.run(sql, [
+            testGame.id, testGame.creator, testGame.nft_contract, 
+            testGame.nft_token_id, testGame.nft_name, testGame.nft_image,
+            testGame.nft_collection, testGame.nft_chain, testGame.price_usd, 
+            testGame.rounds
+          ], function(err) {
+            if (err) {
+              console.error('❌ Test insert failed:', err)
+              res.json({ 
+                success: false, 
+                message: 'Tables created but test insert failed',
+                error: err.message 
+              })
+            } else {
+              console.log('✅ Test game inserted successfully')
+              res.json({ 
+                success: true, 
+                message: 'Database initialized successfully',
+                testGameId: testGame.id,
+                insertId: this.lastID
+              })
+            }
+          })
+        }
+      })
+    })
+    
+  } catch (error) {
+    console.error('❌ Database initialization error:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Database initialization and rest of your code stays the same...
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
