@@ -673,10 +673,10 @@ export const SpectatorCounter = ({ count, isLive = false }) => {
       display: 'inline-flex',
       alignItems: 'center',
       gap: '0.5rem',
-      background: 'rgba(0, 255, 0, 0.1)',
+      background: 'rgba(0, 191, 255, 0.1)',
       padding: '0.5rem 1rem',
       borderRadius: '1rem',
-      border: '1px solid rgba(0, 255, 0, 0.3)'
+      border: '1px solid rgba(0, 191, 255, 0.3)'
     }}>
       <span style={{ 
         fontSize: '1rem',
@@ -685,7 +685,7 @@ export const SpectatorCounter = ({ count, isLive = false }) => {
         👥
       </span>
       <span style={{ 
-        color: theme.colors.neonGreen,
+        color: theme.colors.neonBlue,
         fontWeight: 'bold',
         fontSize: '0.875rem'
       }}>
@@ -695,7 +695,7 @@ export const SpectatorCounter = ({ count, isLive = false }) => {
         <div style={{
           width: '8px',
           height: '8px',
-          background: theme.colors.neonGreen,
+          background: '#ff0000',
           borderRadius: '50%',
           animation: 'livePulse 1s infinite'
         }} />

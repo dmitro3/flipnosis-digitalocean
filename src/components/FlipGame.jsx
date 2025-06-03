@@ -456,12 +456,23 @@ const FlipGame = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div>
               <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-                FLIP #{gameId.slice(-6).toUpperCase()}
+                FLIP GAME #{gameId.slice(-6).toUpperCase()}
                 {!isPlayer && <span style={{ color: theme.colors.statusWarning }}> (SPECTATING)</span>}
               </NeonText>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <span style={{ color: theme.colors.textSecondary }}>
+                  Best of {gameData.rounds} • ${gameData.priceUSD?.toFixed(2)}
+                </span>
                 <SpectatorCounter count={spectatorCount} isLive={gamePhase === 'round_active'} />
               </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {isPlayer && (
+                <WebSocketStatus 
+                  connected={wsConnected} 
+                  playerCount={gameData?.joiner ? 2 : 1} 
+                />
+              )}
             </div>
           </div>
 
