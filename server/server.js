@@ -570,7 +570,7 @@ const dbHelpers = {
   }
 }
 
-// Game session management (keeping existing logic)
+// Enhanced GameSession class
 class GameSession {
   constructor(gameId) {
     this.gameId = gameId
@@ -584,14 +584,15 @@ class GameSession {
     this.joinerWins = 0
     this.winner = null
     this.spectators = 0
-    this.flipState = {
-      creatorPower: 0,
-      joinerPower: 0,
-      creatorReady: false,
-      joinerReady: false,
-      flipResult: null,
-      roundTimer: 30
-    }
+    
+    // Player choices and states
+    this.creatorChoice = null
+    this.joinerChoice = null
+    this.currentPlayerChoice = null
+    this.creatorPower = 0
+    this.joinerPower = 0
+    this.chargingPlayers = new Set()
+    
     this.clients = new Set()
     this.lastActionTime = Date.now()
     this.roundStartTime = null
@@ -603,7 +604,6 @@ class GameSession {
     this.spectators = this.clients.size
     this.broadcast({ type: 'spectator_update', spectators: this.spectators })
     
-    // Update max spectators in database
     dbHelpers.updateGame(this.gameId, { total_spectators: Math.max(this.spectators, 0) })
       .catch(err => console.error('Error updating spectator count:', err))
   }
@@ -635,12 +635,18 @@ class GameSession {
       phase: this.phase,
       currentRound: this.currentRound,
       currentPlayer: this.currentPlayer,
+      currentPlayerChoice: this.currentPlayerChoice,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice,
       maxRounds: this.maxRounds,
       creatorWins: this.creatorWins,
       joinerWins: this.joinerWins,
       winner: this.winner,
       spectators: this.spectators,
-      flipState: this.flipState
+      creatorPower: this.creatorPower,
+      joinerPower: this.joinerPower,
+      chargingPlayers: Array.from(this.chargingPlayers),
+      syncedFlip: this.syncedFlip || null
     }
   }
 
@@ -649,7 +655,6 @@ class GameSession {
     this.creator = data.creator
     this.maxRounds = data.rounds
     
-    // Save to database
     try {
       await dbHelpers.createGame(data)
     } catch (error) {
@@ -661,7 +666,6 @@ class GameSession {
     this.joiner = address
     this.phase = 'ready'
     
-    // Update database
     try {
       await dbHelpers.updateGame(this.gameId, { 
         joiner: address, 
@@ -669,14 +673,13 @@ class GameSession {
         entry_fee_hash: entryFeeHash 
       })
       
-      // Record entry fee transaction
       if (this.gameData) {
         await dbHelpers.recordTransaction(
           this.gameId,
           address,
           'entry_fee',
           this.gameData.priceUSD,
-          this.gameData.priceUSD / 2500, // Approximate ETH amount
+          this.gameData.priceUSD / 2500,
           entryFeeHash
         )
       }
@@ -692,11 +695,11 @@ class GameSession {
     console.log('🚀 Starting game')
     this.phase = 'round_active'
     this.currentPlayer = this.creator
+    this.currentRound = 1
     this.lastActionTime = Date.now()
     this.roundStartTime = Date.now()
-    this.resetFlipState()
+    this.resetRoundState()
     
-    // Update database
     try {
       await dbHelpers.updateGame(this.gameId, { 
         status: 'active',
@@ -717,27 +720,66 @@ class GameSession {
     return true
   }
 
-  resetFlipState() {
-    this.flipState = {
-      creatorPower: 0,
-      joinerPower: 0,
-      creatorReady: false,
-      joinerReady: false,
-      flipResult: null,
-      roundTimer: 30
+  resetRoundState() {
+    this.creatorChoice = null
+    this.joinerChoice = null
+    this.currentPlayerChoice = null
+    this.creatorPower = 0
+    this.joinerPower = 0
+    this.chargingPlayers.clear()
+    this.syncedFlip = null
+  }
+
+  makeChoice(address, choice) {
+    if (address !== this.currentPlayer) {
+      console.log('❌ Invalid choice - not your turn')
+      return false
     }
+
+    console.log('🎯 Player choice made:', { address, choice })
+    
+    if (address === this.creator) {
+      this.creatorChoice = choice
+    } else if (address === this.joiner) {
+      this.joinerChoice = choice
+    }
+    
+    this.currentPlayerChoice = choice
+    
+    this.broadcast({
+      type: 'choice_made',
+      player: address === this.creator ? 'creator' : 'joiner',
+      choice: choice
+    })
+    
+    return true
+  }
+
+  startCharging(address) {
+    if (address === this.currentPlayer && this.currentPlayerChoice) {
+      this.chargingPlayers.add(address)
+      this.broadcast({
+        type: 'power_charging',
+        player: address === this.creator ? 'creator' : 'joiner',
+        charging: true
+      })
+    }
+  }
+
+  stopCharging(address) {
+    this.chargingPlayers.delete(address)
+    this.broadcast({
+      type: 'power_charging',
+      player: address === this.creator ? 'creator' : 'joiner',
+      charging: false
+    })
   }
 
   updatePower(address, power) {
     if (address === this.creator) {
-      this.flipState.creatorPower = power
+      this.creatorPower = power
     } else if (address === this.joiner) {
-      this.flipState.joinerPower = power
-    }
-    
-    if (this.roundStartTime) {
-      const elapsed = Math.floor((Date.now() - this.roundStartTime) / 1000)
-      this.flipState.roundTimer = Math.max(0, 30 - elapsed)
+      this.joinerPower = power
     }
     
     this.broadcast({ 
@@ -752,7 +794,7 @@ class GameSession {
     this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
     this.lastActionTime = Date.now()
     this.roundStartTime = Date.now()
-    this.resetFlipState()
+    this.resetRoundState()
     
     console.log('🔄 Turn switched to:', this.currentPlayer)
     
@@ -766,30 +808,58 @@ class GameSession {
     }
   }
 
-  async handleFlipComplete(result, player, power) {
-    console.log('🎲 Handling flip from player:', player, 'result:', result, 'power:', power)
+  async handleFlipComplete(address, choice, power) {
+    console.log('🎲 Handling flip from:', address, 'choice:', choice, 'power:', power)
     
-    const playerAddress = player === 'creator' ? this.creator : this.joiner
-    if (playerAddress !== this.currentPlayer) {
+    if (address !== this.currentPlayer) {
       console.log('❌ Invalid turn - current player is:', this.currentPlayer)
       return false
     }
 
+    // Generate random result
+    const randomResult = Math.random() < 0.5 ? 'heads' : 'tails'
+    const isWinner = choice === randomResult
+    
+    // Calculate flip duration based on power (2-6 seconds)
+    const flipDuration = 2000 + (power * 400)
+    
+    console.log('🎬 Flip result:', { choice, randomResult, isWinner, flipDuration })
+
+    // Create synchronized flip data
+    this.syncedFlip = {
+      result: randomResult,
+      playerChoice: choice,
+      playerAddress: address,
+      duration: flipDuration,
+      timestamp: Date.now(),
+      isWinner: isWinner
+    }
+
     // Record round in database
     try {
-      await dbHelpers.recordRound(this.gameId, this.currentRound, result, playerAddress, power)
+      await dbHelpers.recordRound(this.gameId, this.currentRound, randomResult, address, power)
     } catch (error) {
       console.error('Error recording round:', error)
     }
 
     // Update scores
-    if (result === 'heads') {
-      this.creatorWins++
-    } else if (result === 'tails') {
-      this.joinerWins++
+    if (isWinner) {
+      if (address === this.creator) {
+        this.creatorWins++
+      } else {
+        this.joinerWins++
+      }
     }
 
-    this.flipState.flipResult = result
+    // Broadcast synchronized flip to ALL clients
+    this.broadcast({
+      type: 'synchronized_flip',
+      syncedFlip: this.syncedFlip,
+      scores: {
+        creator: this.creatorWins,
+        joiner: this.joinerWins
+      }
+    })
 
     // Check win condition
     const winsNeeded = Math.ceil(this.maxRounds / 2)
@@ -797,7 +867,6 @@ class GameSession {
       this.phase = 'game_complete'
       this.winner = this.creatorWins > this.joinerWins ? this.creator : this.joiner
       
-      // Update database with completion
       try {
         await dbHelpers.updateGame(this.gameId, { 
           status: 'completed',
@@ -812,33 +881,28 @@ class GameSession {
       
       console.log('🏆 Game complete! Winner:', this.winner)
       
-      this.broadcast({
-        type: 'game_complete',
-        winner: this.winner,
-        finalScores: {
-          creator: this.creatorWins,
-          joiner: this.joinerWins
-        },
-        result: result
-      })
+      // Delay the game complete message to allow flip animation
+      setTimeout(() => {
+        this.broadcast({
+          type: 'game_complete',
+          winner: this.winner,
+          finalScores: {
+            creator: this.creatorWins,
+            joiner: this.joinerWins
+          }
+        })
+      }, flipDuration + 1000)
       
       return true
     }
 
-    // Continue game - switch turns
-    this.switchTurn()
-
-    this.broadcast({
-      type: 'flip_complete',
-      result: result,
-      scorer: result === 'heads' ? 'creator' : 'joiner',
-      currentPlayer: this.currentPlayer,
-      round: this.currentRound,
-      scores: {
-        creator: this.creatorWins,
-        joiner: this.joinerWins
-      }
-    })
+    // Continue game - advance round and switch turns
+    this.currentRound++
+    
+    // Delay turn switch to allow flip animation to complete
+    setTimeout(() => {
+      this.switchTurn()
+    }, flipDuration + 1000)
 
     return true
   }
@@ -893,14 +957,21 @@ async function handleMessage(ws, data) {
   session.addClient(ws)
 
   switch (type) {
-    case 'connect_to_game': // Updated - just connect, don't auto-join
-      // Get game from database to determine actual roles
+    case 'connect_to_game':
       try {
         const gameData = await dbHelpers.getGame(gameId)
         if (gameData) {
           session.creator = gameData.creator
           session.joiner = gameData.joiner
           session.maxRounds = gameData.rounds
+          
+          // Set phase based on game status
+          if (gameData.status === 'active') {
+            session.phase = 'round_active'
+            session.currentPlayer = session.creator // Default to creator
+          } else if (gameData.status === 'joined') {
+            session.phase = 'ready'
+          }
           
           console.log('🔗 Player connected to game:', {
             address: data.address,
@@ -913,33 +984,21 @@ async function handleMessage(ws, data) {
         console.error('Error loading game data:', error)
       }
       
-      // Send current state to new client (NO auto-joining)
       ws.send(JSON.stringify({
         type: 'game_state',
         state: session.getState()
       }))
       break
 
-    case 'join_game': // Updated to handle the new flow
+    case 'join_game':
       if (data.role === 'joiner' && data.entryFeeHash) {
-        // This is a real join with payment proof
         await session.setJoiner(data.address, data.entryFeeHash)
-        console.log('✅ Player actually joined with payment:', data.address)
       } else if (data.role === 'creator') {
         session.creator = data.address
         session.maxRounds = data.gameConfig?.maxRounds || 5
         console.log('👑 Creator joined:', data.address)
       } else {
         console.log('👀 Spectator viewing:', data.address)
-      }
-      break
-
-    case 'player_joined':
-      if (data.joinerAddress && data.startGame) {
-        await session.setJoiner(data.joinerAddress, data.entryFeeHash)
-        setTimeout(() => {
-          session.startGame()
-        }, 1000)
       }
       break
 
@@ -954,13 +1013,31 @@ async function handleMessage(ws, data) {
       }
       break
 
+    case 'make_choice':
+      const choiceSuccess = session.makeChoice(data.address, data.choice)
+      if (!choiceSuccess) {
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          error: 'Invalid choice attempt' 
+        }))
+      }
+      break
+
+    case 'start_charging':
+      session.startCharging(data.address)
+      break
+
+    case 'stop_charging':
+      session.stopCharging(data.address)
+      break
+
     case 'charge_power':
       session.updatePower(data.address, data.power)
       break
 
     case 'flip_complete':
-      console.log('🎲 Processing flip_complete from:', data.player)
-      const success = await session.handleFlipComplete(data.result, data.player, data.power)
+      console.log('🎲 Processing flip_complete from:', data.address)
+      const success = await session.handleFlipComplete(data.address, data.choice, data.power)
       if (!success) {
         ws.send(JSON.stringify({ 
           type: 'error', 

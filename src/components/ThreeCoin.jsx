@@ -1,4 +1,7 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+3. Update ThreeCoin.jsx - Synchronized Animations
+File: src/components/ThreeCoin.jsx
+Replace the entire file:
+javascriptimport React, { useRef, useEffect, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import headsTexture from '../../Images/Heads.webp'
 import tailsTexture from '../../Images/tails.webp'
@@ -6,6 +9,7 @@ import tailsTexture from '../../Images/tails.webp'
 const ThreeCoin = ({ 
   isFlipping, 
   flipResult, 
+  flipDuration = 3000,
   onPowerCharge, 
   onPowerRelease,
   isPlayerTurn,
@@ -27,7 +31,7 @@ const ThreeCoin = ({
     // Scene setup
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000)
-    camera.position.set(0, 0, 4) // Moved camera back for better view
+    camera.position.set(0, 0, 4)
 
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
@@ -42,7 +46,7 @@ const ThreeCoin = ({
     // Create coin geometry
     const coinGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.15, 32)
 
-    // Create materials with increased vibrancy
+    // Create materials
     const headsMaterial = new THREE.MeshPhongMaterial({
       color: 0xFFFFFF,
       shininess: 100,
@@ -59,9 +63,9 @@ const ThreeCoin = ({
 
     // Create coin group
     const coin = new THREE.Group()
-    coin.scale.set(1.2, 1.2, 1.2) // Slightly smaller scale
+    coin.scale.set(1.2, 1.2, 1.2)
 
-    // Load textures with increased vibrancy
+    // Load textures
     const textureLoader = new THREE.TextureLoader()
     textureLoader.load(headsTexture, (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace
@@ -82,7 +86,7 @@ const ThreeCoin = ({
     const tailsFace = new THREE.Mesh(coinGeometry, tailsMaterial)
     tailsFace.rotation.x = -Math.PI / 2
     tailsFace.position.z = -0.075
-    tailsFace.rotation.y = Math.PI // Fix tails orientation
+    tailsFace.rotation.y = Math.PI
 
     // Add faces to coin group
     coin.add(headsFace)
@@ -96,7 +100,7 @@ const ThreeCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // Add lights for better visibility
+    // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7)
     scene.add(ambientLight)
 
@@ -108,9 +112,9 @@ const ThreeCoin = ({
     const animate = () => {
       if (!coinRef.current) return
 
-      // Only rotate when charging and no result
-      if (isCharging && !flipResult) {
-        coinRef.current.rotation.y += 0.006
+      // Gentle rotation when charging
+      if (isCharging && !isFlipping) {
+        coinRef.current.rotation.y += 0.01
       }
 
       renderer.render(scene, camera)
@@ -129,21 +133,20 @@ const ThreeCoin = ({
       }
       renderer.dispose()
     }
-  }, [isCharging, flipResult])
+  }, [isCharging, isFlipping])
 
-  // Handle flip animation
-  const executeFlip = useCallback((flipResult, powerLevel) => {
+  // Handle synchronized flip animation
+  const executeSynchronizedFlip = useCallback((flipResult, duration) => {
     if (!coinRef.current || isAnimating) return
 
+    console.log('🎬 Starting synchronized flip animation:', { flipResult, duration })
+    
     setIsAnimating(true)
     const coin = coinRef.current
     const isHeads = flipResult === 'heads'
     
-    // Calculate animation parameters based on power
-    const baseDuration = 2000 // 2 seconds base duration
-    const duration = baseDuration + (powerLevel * 200) // Add 200ms per power level
-    const flips = 1 + Math.floor(powerLevel / 2) // One flip plus additional flips based on power
-
+    // Calculate flips based on duration
+    const flips = Math.max(3, Math.floor(duration / 1000)) // At least 3 flips
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
 
@@ -151,52 +154,59 @@ const ThreeCoin = ({
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
 
-      // Vertical flip only
+      // Smooth easing
+      const easeProgress = 1 - Math.pow(1 - progress, 3)
+
+      // Calculate rotation with proper ending
       const totalRotationX = flips * Math.PI * 2
-      coin.rotation.x = initialRotationX + totalRotationX * progress
+      coin.rotation.x = initialRotationX + totalRotationX * easeProgress
+      
+      // Add some Y rotation for more dynamic movement
+      coin.rotation.y = Math.sin(progress * Math.PI * flips) * 0.5
 
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - stop on winning side
+        // Final position - ensure correct side is showing
         coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
         coin.rotation.y = 0
         setCurrentSide(isHeads ? 'heads' : 'tails')
         setIsAnimating(false)
+        console.log('✅ Flip animation complete:', flipResult)
       }
     }
 
     animateFlip()
   }, [isAnimating])
 
-  // Trigger flip when flipResult changes
+  // Trigger synchronized flip when flipResult changes
   useEffect(() => {
-    if (flipResult && !isAnimating) {
-      executeFlip(flipResult, power)
+    if (isFlipping && flipResult && flipDuration && !isAnimating) {
+      executeSynchronizedFlip(flipResult, flipDuration)
     }
-  }, [flipResult, power, executeFlip, isAnimating])
+  }, [isFlipping, flipResult, flipDuration, executeSynchronizedFlip, isAnimating])
 
   // Handle mouse/touch events
   const handleMouseDown = useCallback((e) => {
     e.preventDefault()
-    if (gamePhase === 'round_active' && isPlayerTurn && onPowerCharge) {
+    if (isPlayerTurn && onPowerCharge && !isFlipping) {
       onPowerCharge()
     }
-  }, [gamePhase, isPlayerTurn, onPowerCharge])
+  }, [isPlayerTurn, onPowerCharge, isFlipping])
 
   const handleMouseUp = useCallback((e) => {
     e.preventDefault()
-    if (gamePhase === 'round_active' && isPlayerTurn && onPowerRelease) {
+    if (isPlayerTurn && onPowerRelease && !isFlipping) {
       onPowerRelease()
     }
-  }, [gamePhase, isPlayerTurn, onPowerRelease])
+  }, [isPlayerTurn, onPowerRelease, isFlipping])
 
   const handleMouseLeave = useCallback((e) => {
     e.preventDefault()
-    if (gamePhase === 'round_active' && isPlayerTurn && onPowerRelease) {
+    if (isPlayerTurn && onPowerRelease && !isFlipping) {
       onPowerRelease()
     }
-  }, [gamePhase, isPlayerTurn, onPowerRelease])
+  }, [isPlayerTurn, onPowerRelease, isFlipping])
 
   return (
     <div
@@ -209,11 +219,12 @@ const ThreeCoin = ({
       style={{
         width: '300px',
         height: '300px',
-        cursor: gamePhase === 'round_active' && isPlayerTurn ? 'pointer' : 'default',
+        cursor: isPlayerTurn && !isFlipping ? 'pointer' : 'default',
+        userSelect: 'none',
         ...style
       }}
     />
   )
 }
 
-export default ThreeCoin 
+export default ThreeCoin

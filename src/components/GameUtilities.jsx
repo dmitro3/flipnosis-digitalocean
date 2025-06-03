@@ -534,7 +534,8 @@ export const LivePlayerCard = ({
   score = 0,
   gamePhase,
   isActiveTurn = false,
-  spectatorMode = false
+  spectatorMode = false,
+  playerChoice = null
 }) => {
   const isPlayer1 = playerNumber === 1
   const cardColor = isPlayer1 ? theme.colors.neonPink : theme.colors.neonBlue
@@ -563,6 +564,20 @@ export const LivePlayerCard = ({
           <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
             {player ? `${player.slice(0, 6)}...${player.slice(-4)}` : 'Waiting...'}
           </div>
+          
+          {/* Player Choice Display */}
+          {playerChoice && (
+            <div style={{
+              marginTop: '0.5rem',
+              padding: '0.25rem 0.75rem',
+              background: playerChoice === 'heads' ? theme.colors.neonPink : theme.colors.neonBlue,
+              borderRadius: '1rem',
+              fontSize: '0.75rem',
+              fontWeight: 'bold'
+            }}>
+              {playerChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
+            </div>
+          )}
           
           {isActiveTurn && gamePhase === 'round_active' && (
             <div style={{
@@ -690,7 +705,13 @@ export const SpectatorCounter = ({ count, isLive = false }) => {
 }
 
 // Round Result Display
-export const LiveRoundResult = ({ flipResult, isWinner }) => {
+export const LiveRoundResult = ({ 
+  flipResult, 
+  playerChoice, 
+  isWinner, 
+  currentPlayer,
+  isCurrentUser 
+}) => {
   if (!flipResult) return null
   
   return (
@@ -717,15 +738,25 @@ export const LiveRoundResult = ({ flipResult, isWinner }) => {
         color: theme.colors.neonYellow,
         textShadow: `0 0 10px ${theme.colors.neonYellow}`
       }}>
-        {flipResult.toUpperCase()}!
+        RESULT: {flipResult.toUpperCase()}!
       </h3>
+
+      {playerChoice && (
+        <p style={{ 
+          color: theme.colors.textSecondary,
+          fontSize: '1rem',
+          marginBottom: '1rem'
+        }}>
+          {isCurrentUser ? 'You' : 'Opponent'} chose: {playerChoice.toUpperCase()}
+        </p>
+      )}
       
       <p style={{ 
         color: isWinner ? theme.colors.statusSuccess : theme.colors.statusError,
         fontSize: '1.25rem',
         fontWeight: 'bold'
       }}>
-        {isWinner ? '🎉 YOU WON THIS ROUND!' : '💔 YOU LOST THIS ROUND'}
+        {isWinner ? '🎉 ROUND WON!' : '💔 ROUND LOST'}
       </p>
       
       {isWinner && (

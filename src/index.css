@@ -174,15 +174,15 @@ body {
 
 @keyframes resultReveal {
   0% {
-    transform: translateX(-50%) scale(0);
+    transform: translateY(50px) scale(0.8);
     opacity: 0;
   }
   50% {
-    transform: translateX(-50%) scale(1.2);
+    transform: translateY(-10px) scale(1.1);
     opacity: 0.8;
   }
   100% {
-    transform: translateX(-50%) scale(1);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
@@ -277,4 +277,51 @@ canvas {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Enhanced power charging animations */
+@keyframes choiceGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+@keyframes synchronizedFlip {
+  0% { 
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1); 
+  }
+  25% { 
+    transform: perspective(1000px) rotateX(180deg) rotateY(90deg) scale(1.1); 
+  }
+  50% { 
+    transform: perspective(1000px) rotateX(360deg) rotateY(180deg) scale(1.2); 
+  }
+  75% { 
+    transform: perspective(1000px) rotateX(540deg) rotateY(270deg) scale(1.1); 
+  }
+  100% { 
+    transform: perspective(1000px) rotateX(720deg) rotateY(360deg) scale(1); 
+  }
+}
+
+.synchronized-flip {
+  animation: synchronizedFlip var(--duration, 3s) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-style: preserve-3d;
+}
+
+/* Choice button animations */
+.choice-button {
+  transition: all 0.3s ease;
+}
+
+.choice-button:hover {
+  animation: choiceGlow 1s ease-in-out infinite;
+}
+
+/* Turn indicator */
+.player-turn {
+  animation: playerReady 2s ease-in-out infinite;
 } 

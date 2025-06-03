@@ -14,7 +14,11 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
     joinerWins: 0,
     winner: null,
     currentPlayer: null,
+    currentPlayerChoice: null,
+    creatorChoice: null,
+    joinerChoice: null,
     spectators: 0,
+    syncedFlip: null,
     flipState: {
       creatorPower: 0,
       joinerPower: 0,
@@ -41,12 +45,10 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
       console.log('✅ Connected to WebSocket server')
       setConnected(true)
       
-      // ONLY send connect_to_game - NO AUTO-JOINING
       newSocket.send(JSON.stringify({
         type: 'connect_to_game',
         gameId, 
         address: playerAddress
-        // Removed gameConfig and auto-join logic
       }))
     }
 
@@ -60,7 +62,6 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
         const data = JSON.parse(event.data)
         console.log('📊 Received WebSocket message:', data.type, data)
         
-        // Handle different message types
         switch (data.type) {
           case 'game_data_response':
             if (data.gameData) {
@@ -73,7 +74,15 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
             break
           
           case 'game_state':
-            // Update game state from server
+          case 'game_started':
+          case 'turn_switch':
+          case 'choice_made':
+          case 'power_charging':
+          case 'synchronized_flip':
+          case 'flip_result':
+          case 'game_complete':
+          case 'player_joined':
+          case 'spectator_update':
             if (data.state) {
               setGameState(prevState => ({
                 ...prevState,
@@ -83,7 +92,6 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
             break
           
           default:
-            // Update game state from server
             if (data.state) {
               setGameState(prevState => ({
                 ...prevState,
@@ -109,7 +117,7 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
         newSocket.close()
       }
     }
-  }, [gameId, playerAddress]) // Removed isCreator dependency
+  }, [gameId, playerAddress])
 
   // WebSocket action functions
   const sendMessage = useCallback((message) => {
@@ -125,58 +133,86 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
     sendMessage({ type: 'start_game', gameId })
   }, [sendMessage, gameId])
 
-  const joinGame = useCallback((joinerAddress, entryFeeHash) => {
-    sendMessage({ 
-      type: 'join_game', 
-      gameId, 
-      role: 'joiner',
-      address: joinerAddress,
-      entryFeeHash: entryFeeHash
-    })
-  }, [sendMessage, gameId])
+ const joinGame = useCallback((joinerAddress, entryFeeHash) => {
+   sendMessage({ 
+     type: 'join_game', 
+     gameId, 
+     role: 'joiner',
+     address: joinerAddress,
+     entryFeeHash: entryFeeHash
+   })
+ }, [sendMessage, gameId])
 
-  const flipComplete = useCallback((result, power) => {
-    sendMessage({ 
-      type: 'flip_complete', 
-      gameId, 
-      player: isCreator ? 'creator' : 'joiner',
-      result,
-      power
-    })
-  }, [sendMessage, gameId, isCreator])
+ const makeChoice = useCallback((choice) => {
+   sendMessage({
+     type: 'make_choice',
+     gameId,
+     address: playerAddress,
+     choice: choice // 'heads' or 'tails'
+   })
+ }, [sendMessage, gameId, playerAddress])
 
-  const updatePower = useCallback((power) => {
-    sendMessage({
-      type: 'charge_power',
-      gameId,
-      address: playerAddress,
-      power
-    })
-  }, [sendMessage, gameId, playerAddress])
+ const startCharging = useCallback(() => {
+   sendMessage({
+     type: 'start_charging',
+     gameId,
+     address: playerAddress
+   })
+ }, [sendMessage, gameId, playerAddress])
 
-  // Derived state
-  const isMyTurn = gameState.currentPlayer === playerAddress
-  const scores = {
-    creator: gameState.creatorWins || 0,
-    joiner: gameState.joinerWins || 0
-  }
-  const spectatorCount = gameState.spectators || 0
-  const currentRound = gameState.currentRound || 1
-  const gamePhase = gameState.phase || 'waiting'
+ const stopCharging = useCallback(() => {
+   sendMessage({
+     type: 'stop_charging',
+     gameId,
+     address: playerAddress
+   })
+ }, [sendMessage, gameId, playerAddress])
 
-  return {
-    connected,
-    socket, // Export socket for FlipGame to use
-    gameState,
-    gamePhase,
-    currentRound,
-    scores,
-    spectatorCount,
-    isMyTurn,
-    sendMessage,
-    startGame,
-    joinGame,
-    flipComplete,
-    updatePower
-  }
+ const flipComplete = useCallback((choice, power) => {
+   sendMessage({ 
+     type: 'flip_complete', 
+     gameId, 
+     address: playerAddress,
+     choice: choice,
+     power: power
+   })
+ }, [sendMessage, gameId, playerAddress])
+
+ const updatePower = useCallback((power) => {
+   sendMessage({
+     type: 'charge_power',
+     gameId,
+     address: playerAddress,
+     power
+   })
+ }, [sendMessage, gameId, playerAddress])
+
+ // Derived state
+ const isMyTurn = gameState.currentPlayer === playerAddress
+ const scores = {
+   creator: gameState.creatorWins || 0,
+   joiner: gameState.joinerWins || 0
+ }
+ const spectatorCount = gameState.spectators || 0
+ const currentRound = gameState.currentRound || 1
+ const gamePhase = gameState.phase || 'waiting'
+
+ return {
+   connected,
+   socket,
+   gameState,
+   gamePhase,
+   currentRound,
+   scores,
+   spectatorCount,
+   isMyTurn,
+   sendMessage,
+   startGame,
+   joinGame,
+   makeChoice,
+   startCharging,
+   stopCharging,
+   flipComplete,
+   updatePower
+ }
 } 

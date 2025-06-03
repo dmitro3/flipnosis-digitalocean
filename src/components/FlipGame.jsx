@@ -31,6 +31,9 @@ const FlipGame = () => {
   const { isConnected, address, provider } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
 
+  // API URL
+  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+
   // Game data state
   const [gameData, setGameData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -53,7 +56,10 @@ const FlipGame = () => {
     startGame,
     joinGame,
     flipComplete,
-    updatePower
+    updatePower,
+    makeChoice,
+    startCharging,
+    stopCharging
   } = useWebSocket(
     gameId,
     address,
@@ -66,11 +72,13 @@ const FlipGame = () => {
     } : null
   )
 
-  // Power management state
+  // Game state
+  const [myChoice, setMyChoice] = useState(null) // 'heads' or 'tails'
   const [myPower, setMyPower] = useState(0)
   const [isCharging, setIsCharging] = useState(false)
   const [flipResult, setFlipResult] = useState(null)
   const [isFlipping, setIsFlipping] = useState(false)
+  const [syncedFlipData, setSyncedFlipData] = useState(null)
 
   // Refs for power charging
   const chargingIntervalRef = useRef(null)
@@ -79,9 +87,6 @@ const FlipGame = () => {
   const [claimingSlot, setClaimingSlot] = useState(false)
   const [joiningGame, setJoiningGame] = useState(false)
 
-  // Add the API_URL constant at the top of the component
-  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-
   // Load game data
   const loadGame = async () => {
     try {
@@ -89,14 +94,12 @@ const FlipGame = () => {
       
       console.log('📊 Loading game from database:', gameId)
       
-      // First try to load from database via API
       const response = await fetch(`${API_URL}/api/games/${gameId}`)
       
       if (response.ok) {
         const dbGame = await response.json()
         console.log('✅ Loaded game from database:', dbGame)
         
-        // Transform database game to frontend format
         const gameData = {
           id: dbGame.id,
           creator: dbGame.creator,
@@ -130,17 +133,6 @@ const FlipGame = () => {
         return
       }
       
-      // Fallback to localStorage (for backwards compatibility)
-      console.log('🔄 Trying localStorage fallback...')
-      const storedGame = localStorage.getItem(`game_${gameId}`)
-      if (storedGame) {
-        const parsedGame = JSON.parse(storedGame)
-        setGameData(parsedGame)
-        console.log('✅ Loaded game from localStorage:', parsedGame)
-        return
-      }
-      
-      // If neither works, show error
       throw new Error('Game not found')
       
     } catch (error) {
@@ -156,6 +148,21 @@ const FlipGame = () => {
     loadGame()
   }, [gameId])
 
+  // Handle synchronized flip animations
+  useEffect(() => {
+    if (gameState?.syncedFlip) {
+      console.log('🎬 Starting synchronized flip:', gameState.syncedFlip)
+      setSyncedFlipData(gameState.syncedFlip)
+      setIsFlipping(true)
+      
+      // Clear after animation duration
+      setTimeout(() => {
+        setIsFlipping(false)
+        setSyncedFlipData(null)
+      }, gameState.syncedFlip.duration)
+    }
+  }, [gameState?.syncedFlip])
+
   // Handle game state updates from WebSocket
   useEffect(() => {
     if (gameState?.phase === 'game_complete' && gameState?.winner) {
@@ -164,17 +171,35 @@ const FlipGame = () => {
     }
   }, [gameState?.phase, gameState?.winner, address])
 
+  // Auto-start game when both players are ready
+  useEffect(() => {
+    if (gameData?.joiner && gameData?.creator && gameData?.status === 'joined' && gamePhase === 'waiting' && isCreator) {
+      console.log('🚀 Both players ready, auto-starting game...')
+      setTimeout(() => {
+        handleStartGame()
+      }, 2000) // 2 second delay for user to see both players joined
+    }
+  }, [gameData?.joiner, gameData?.creator, gameData?.status, gamePhase, isCreator])
+
+  // Choice selection
+  const handleChoiceSelection = (choice) => {
+    console.log('🎯 Player chose:', choice)
+    setMyChoice(choice)
+    makeChoice(choice)
+  }
+
   // Power charging logic
   const handlePowerChargeStart = () => {
-    console.log('🔋 Power charge START - isMyTurn:', isMyTurn, 'gamePhase:', gamePhase)
-    if (gamePhase === 'round_active' && isMyTurn && !isCharging) {
+    console.log('🔋 Power charge START - isMyTurn:', isMyTurn, 'gamePhase:', gamePhase, 'hasChoice:', !!myChoice)
+    
+    if (gamePhase === 'round_active' && isMyTurn && myChoice && !isCharging) {
       setIsCharging(true)
+      startCharging()
       
-      // Start power charging interval
       chargingIntervalRef.current = setInterval(() => {
         setMyPower(prev => {
           const newPower = Math.min(10, prev + 0.2)
-          updatePower(newPower) // Send to WebSocket
+          updatePower(newPower)
           return newPower
         })
       }, 50)
@@ -185,18 +210,18 @@ const FlipGame = () => {
 
   const handlePowerChargeStop = () => {
     console.log('🔋 Power charge STOP - isCharging:', isCharging, 'myPower:', myPower)
-    if (isCharging) {
+    
+    if (isCharging && myChoice) {
       setIsCharging(false)
+      stopCharging()
       
-      // Clear charging interval
       if (chargingIntervalRef.current) {
         clearInterval(chargingIntervalRef.current)
         chargingIntervalRef.current = null
       }
       
-      // Execute flip with current power
       if (myPower > 0) {
-        executeFlip(myPower)
+        executeFlip(myPower, myChoice)
       }
     }
   }
@@ -210,35 +235,20 @@ const FlipGame = () => {
     }
   }, [])
 
-  const executeFlip = (power) => {
-    console.log('🎲 executeFlip called with power:', power)
+  const executeFlip = (power, choice) => {
+    console.log('🎲 executeFlip called with power:', power, 'choice:', choice)
     
-    if (!isMyTurn) {
-      console.log('❌ Not your turn!')
+    if (!isMyTurn || !choice) {
+      console.log('❌ Cannot flip - not your turn or no choice made')
       return
     }
 
-    setIsFlipping(true)
+    // Send flip data to WebSocket for synchronization
+    flipComplete(choice, power)
     
-    // Calculate flip result
-    const result = Math.random() < 0.5 ? 'heads' : 'tails'
-    console.log('🎲 Flip result:', result)
-    
-    // Send flip result to WebSocket
-    flipComplete(result, power)
-    
-    // Set the result for the 3D coin animation
-    setFlipResult(result)
-    
-    // Calculate flip duration based on power (2-6 seconds)
-    const flipDuration = 2000 + (power * 400)
-    
-    // Reset state after animation completes
-    setTimeout(() => {
-      setIsFlipping(false)
-      setMyPower(0)
-      setFlipResult(null)
-    }, flipDuration)
+    // Reset local state
+    setMyPower(0)
+    setMyChoice(null)
   }
 
   // Join game function
@@ -254,7 +264,6 @@ const FlipGame = () => {
     }
 
     try {
-      // STEP 1: Claim the slot first (prevents race conditions)
       setClaimingSlot(true)
       showInfo('Claiming player slot...')
       
@@ -269,17 +278,9 @@ const FlipGame = () => {
         throw new Error(error.error || 'Failed to claim slot')
       }
       
-      // STEP 2: Process payment
       setJoiningGame(true)
       showInfo('Processing payment...')
       
-      console.log('💰 Joining game with payment:', {
-        gameId: gameData.id,
-        priceUSD: gameData.priceUSD,
-        address: address
-      })
-      
-      // Calculate payment
       const paymentResult = await PaymentService.calculateETHAmount(gameData.priceUSD)
       if (!paymentResult.success) {
         throw new Error('Failed to calculate payment amount: ' + paymentResult.error)
@@ -288,7 +289,6 @@ const FlipGame = () => {
       const signer = await provider.getSigner()
       const feeRecipient = PaymentService.getFeeRecipient()
       
-      // Build and send transaction
       const txResult = await PaymentService.buildTransaction(feeRecipient, paymentResult.weiAmount, provider)
       if (!txResult.success) {
         throw new Error('Failed to build transaction: ' + txResult.error)
@@ -300,7 +300,6 @@ const FlipGame = () => {
       const receipt = await paymentTx.wait()
       console.log('✅ Payment confirmed:', receipt.hash)
       
-      // STEP 3: Complete the join with payment proof
       const joinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -315,7 +314,6 @@ const FlipGame = () => {
         throw new Error('Failed to complete join')
       }
       
-      // STEP 4: Update local game data
       const updatedGame = {
         ...gameData,
         joiner: address,
@@ -324,19 +322,16 @@ const FlipGame = () => {
       }
       setGameData(updatedGame)
 
-      // STEP 5: NOW notify WebSocket with the completed join
       if (wsConnected && socket) {
-        joinGame(address, receipt.hash) // Use the joinGame function from useWebSocket
+        joinGame(address, receipt.hash)
       }
 
       showSuccess('Successfully joined the game!')
-      setTimeout(() => window.location.reload(), 1500)
         
     } catch (error) {
       console.error('❌ Failed to join game:', error)
       showError('Failed to join: ' + error.message)
       
-      // Release the claimed slot on error - with better error handling
       try {
         const releaseResponse = await fetch(`${API_URL}/api/games/${gameData.id}/release-slot`, {
           method: 'POST',
@@ -346,13 +341,10 @@ const FlipGame = () => {
         
         if (!releaseResponse.ok) {
           const releaseError = await releaseResponse.json()
-          console.log('⚠️ Could not release slot (may already be available):', releaseError)
-        } else {
-          console.log('✅ Slot released after error')
+          console.log('⚠️ Could not release slot:', releaseError)
         }
       } catch (releaseError) {
         console.error('Failed to release slot:', releaseError)
-        // Don't show this error to user as it's not critical
       }
     } finally {
       setJoiningGame(false)
@@ -364,10 +356,9 @@ const FlipGame = () => {
   const handleStartGame = () => {
     console.log('🚀 Starting game')
     startGame()
-    showSuccess('Game starting...')
   }
 
-  // Update the canJoin logic
+  // Determine what UI to show
   const canJoin = gameData && 
                   !gameData.joiner && 
                   !claimingSlot &&
@@ -375,6 +366,10 @@ const FlipGame = () => {
                   gameData.status === 'waiting' &&
                   isConnected &&
                   address
+
+  const showChoiceButtons = gamePhase === 'round_active' && isMyTurn && !myChoice
+  const showPowerCharging = gamePhase === 'round_active' && isMyTurn && myChoice && !isFlipping
+  const showWaitingForOpponent = gamePhase === 'round_active' && !isMyTurn
 
   if (!isConnected) {
     return (
@@ -471,6 +466,7 @@ const FlipGame = () => {
               gamePhase={gamePhase}
               spectatorMode={!isPlayer}
               isActiveTurn={isMyTurn && gamePhase === 'round_active'}
+              playerChoice={gameState?.creatorChoice}
             />
 
             {/* Center - Coin and Controls */}
@@ -482,6 +478,58 @@ const FlipGame = () => {
             }}>
               {/* Live Score Display */}
               <LiveScoreDisplay gameState={gameState} />
+
+              {/* Game Status */}
+              {gamePhase === 'waiting' && gameData?.joiner && gameData?.creator && (
+                <div style={{
+                  background: 'rgba(0, 255, 0, 0.1)',
+                  padding: '1rem',
+                  borderRadius: '1rem',
+                  border: '1px solid rgba(0, 255, 0, 0.3)',
+                  marginBottom: '1rem'
+                }}>
+                  <h3 style={{ color: theme.colors.statusSuccess, margin: 0 }}>
+                    🚀 Starting Game...
+                  </h3>
+                </div>
+              )}
+
+              {/* Choice Buttons */}
+              {showChoiceButtons && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <h3 style={{ 
+                    color: theme.colors.neonYellow, 
+                    marginBottom: '1rem',
+                    textShadow: `0 0 10px ${theme.colors.neonYellow}`
+                  }}>
+                    🎯 Choose Your Side!
+                  </h3>
+                  <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                    <Button
+                      onClick={() => handleChoiceSelection('heads')}
+                      style={{
+                        background: `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})`,
+                        fontSize: '1.5rem',
+                        padding: '1rem 2rem',
+                        minWidth: '120px'
+                      }}
+                    >
+                      👑 HEADS
+                    </Button>
+                    <Button
+                      onClick={() => handleChoiceSelection('tails')}
+                      style={{
+                        background: `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})`,
+                        fontSize: '1.5rem',
+                        padding: '1rem 2rem',
+                        minWidth: '120px'
+                      }}
+                    >
+                      💎 TAILS
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* 3D Coin with Enhanced Power Bar */}
               <div style={{ 
@@ -495,16 +543,17 @@ const FlipGame = () => {
               }}>
                 <ThreeCoin
                   isFlipping={isFlipping}
-                  flipResult={flipResult}
+                  flipResult={syncedFlipData?.result}
+                  flipDuration={syncedFlipData?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
-                  isPlayerTurn={isMyTurn}
+                  isPlayerTurn={showPowerCharging}
                   gamePhase={gamePhase}
                   power={myPower}
                   isCharging={isCharging}
                   style={{
                     filter: isCharging ? 'brightness(1.2) saturate(1.3)' : 'brightness(1)',
-                    transform: isMyTurn && gamePhase === 'round_active' ? 'scale(1.05)' : 'scale(1)'
+                    transform: showPowerCharging ? 'scale(1.05)' : 'scale(1)'
                   }}
                 />
                 
@@ -512,90 +561,71 @@ const FlipGame = () => {
                 <EnhancedPowerBar
                   power={myPower}
                   isCharging={isCharging}
-                  isVisible={gamePhase === 'round_active' && isMyTurn}
-                  label={isMyTurn ? 'Your Power' : 'Opponent Power'}
+                  isVisible={showPowerCharging}
+                  label={`${myChoice?.toUpperCase()} Power`}
                   color={isCreator ? theme.colors.neonPink : theme.colors.neonBlue}
                 />
               </div>
 
-              {/* Game Controls */}
-              <div style={{ marginTop: '1rem' }}>
-                {/* Game Instructions */}
-                {gamePhase === 'round_active' && (
-                  <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                    <div style={{
-                      background: 'rgba(0, 0, 0, 0.6)',
-                      padding: '1rem',
-                      borderRadius: '1rem',
-                      border: `1px solid ${theme.colors.neonYellow}`,
-                      backdropFilter: 'blur(10px)'
-                    }}>
-                      <p style={{ 
-                        color: isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning, 
-                        fontSize: '1.2rem',
-                        fontWeight: 'bold',
-                        marginBottom: '0.5rem',
-                        textShadow: `0 0 10px ${isMyTurn ? theme.colors.statusSuccess : theme.colors.statusWarning}`
-                      }}>
-                        {isMyTurn ? '🎯 YOUR TURN!' : '⏳ OPPONENT\'S TURN'}
-                      </p>
-                      
-                      <p style={{ 
-                        color: theme.colors.textSecondary,
-                        fontSize: '0.9rem'
-                      }}>
-                        {isMyTurn ? 
-                          'Click and hold the coin to charge power, release to flip!' : 
-                          'Waiting for opponent to flip the coin...'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                )}
+              {/* Game Instructions */}
+              {showPowerCharging && (
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.6)',
+                  padding: '1rem',
+                  borderRadius: '1rem',
+                  border: `1px solid ${theme.colors.neonYellow}`,
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  <p style={{ 
+                    color: theme.colors.statusSuccess, 
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    marginBottom: '0.5rem'
+                  }}>
+                    🎯 You chose {myChoice?.toUpperCase()}!
+                  </p>
+                  <p style={{ color: theme.colors.textSecondary }}>
+                    Hold the coin to charge power, release to flip!
+                  </p>
+                </div>
+              )}
 
-                {/* Game Complete */}
-                {gamePhase === 'game_complete' && (
-                  <div>
-                    <p style={{ 
-                      color: gameState?.winner === address ? theme.colors.statusSuccess : theme.colors.statusError,
-                      fontSize: '2rem', 
-                      fontWeight: 'bold',
-                      marginBottom: '1rem'
-                    }}>
-                      {gameState?.winner === address ? '🏆 YOU WON!' : '💔 YOU LOST!'}
+              {showWaitingForOpponent && (
+                <div style={{
+                  background: 'rgba(255, 165, 0, 0.1)',
+                  padding: '1rem',
+                  borderRadius: '1rem',
+                  border: '1px solid rgba(255, 165, 0, 0.3)'
+                }}>
+                  <p style={{ color: theme.colors.statusWarning, fontSize: '1.2rem' }}>
+                    ⏳ Waiting for opponent...
+                  </p>
+                  {gameState?.currentPlayerChoice && (
+                    <p style={{ color: theme.colors.textSecondary }}>
+                      They chose {gameState.currentPlayerChoice.toUpperCase()}
                     </p>
-                    <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
-                      Final Score: {scores.creator} - {scores.joiner}
-                    </p>
-                    <Button onClick={() => navigate('/')} style={{ width: '100%' }}>
-                      Back to Games
-                    </Button>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {/* Fixed Game Status Checks */}
-                {gameData?.joiner && 
-                 gameData?.creator && 
-                 gameData?.status === 'joined' && 
-                 gamePhase === 'waiting' && isCreator && (
-                  <div>
-                    <p style={{ color: theme.colors.statusSuccess, marginBottom: '1rem', textAlign: 'center' }}>
-                      ✅ Both players ready! Payment received.
-                    </p>
-                    <Button 
-                      onClick={handleStartGame} 
-                      style={{ 
-                        width: '100%',
-                        background: theme.colors.neonPink,
-                        fontSize: '1.2rem',
-                        padding: '1rem'
-                      }}
-                    >
-                      🚀 START GAME
-                    </Button>
-                  </div>
-                )}
-              </div>
+              {gamePhase === 'game_complete' && (
+                <div>
+                  <p style={{ 
+                    color: gameState?.winner === address ? theme.colors.statusSuccess : theme.colors.statusError,
+                    fontSize: '2rem', 
+                    fontWeight: 'bold',
+                    marginBottom: '1rem'
+                  }}>
+                    {gameState?.winner === address ? '🏆 YOU WON!' : '💔 YOU LOST!'}
+                  </p>
+                  <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
+                    Final Score: {scores.creator} - {scores.joiner}
+                  </p>
+                  <Button onClick={() => navigate('/')} style={{ width: '100%' }}>
+                    Back to Games
+                  </Button>
+                </div>
+              )}
             </GlassCard>
 
             {/* Player 2 (Joiner) */}
@@ -608,66 +638,74 @@ const FlipGame = () => {
               gamePhase={gamePhase}
               spectatorMode={!isPlayer}
               isActiveTurn={!isMyTurn && gamePhase === 'round_active'}
+              playerChoice={gameState?.joinerChoice}
             />
           </div>
 
+          {/* Join Button */}
+          {canJoin && (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <div style={{
+                background: 'rgba(0, 255, 65, 0.1)',
+                padding: '1.5rem',
+                borderRadius: '1rem',
+                border: '1px solid rgba(0, 255, 65, 0.3)',
+                marginBottom: '1rem'
+              }}>
+                <h3 style={{ 
+                  color: theme.colors.neonGreen, 
+                  fontSize: '1.5rem', 
+                  marginBottom: '1rem',
+                  textShadow: `0 0 10px ${theme.colors.neonGreen}`
+                }}>
+                  💎 JOIN THE BATTLE!
+                </h3>
+                <p style={{ color: theme.colors.textSecondary, fontSize: '1rem', marginBottom: '0.5rem' }}>
+                  Entry Fee: <span style={{ color: theme.colors.neonYellow, fontWeight: 'bold' }}>${gameData.priceUSD.toFixed(2)}</span>
+                </p>
+                <p style={{ color: theme.colors.textTertiary, fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                  Winner takes all! Best of {gameData.rounds} rounds.
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleJoinGame}
+                disabled={joiningGame}
+                style={{ 
+                  width: '100%',
+                  background: `linear-gradient(45deg, ${theme.colors.neonGreen}, ${theme.colors.neonBlue})`,
+                  fontSize: '1.2rem',
+                  padding: '1rem 2rem',
+                  boxShadow: `0 0 20px ${theme.colors.neonGreen}`,
+                  animation: 'neon-pulse 2s infinite'
+                }}
+              >
+                {joiningGame ? (
+                  <>
+                    <LoadingSpinner style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
+                    Processing Payment...
+                  </>
+                ) : (
+                  `💰 PAY & JOIN ($${gameData.priceUSD.toFixed(2)} USD)`
+                )}
+              </Button>
+            </div>
+          )}
+
           {/* Round Results */}
-          <LiveRoundResult
-            flipResult={flipResult}
-            isWinner={flipResult === 'heads' ? isCreator : flipResult === 'tails' ? isJoiner : false}
-          />
+          {syncedFlipData && (
+            <LiveRoundResult
+              flipResult={syncedFlipData.result}
+              playerChoice={syncedFlipData.playerChoice}
+              isWinner={syncedFlipData.result === syncedFlipData.playerChoice}
+              currentPlayer={syncedFlipData.playerAddress}
+              isCurrentUser={syncedFlipData.playerAddress === address}
+            />
+          )}
         </ContentWrapper>
       </Container>
-      {canJoin && (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <div style={{
-            background: 'rgba(0, 255, 65, 0.1)',
-            padding: '1.5rem',
-            borderRadius: '1rem',
-            border: '1px solid rgba(0, 255, 65, 0.3)',
-            marginBottom: '1rem'
-          }}>
-            <h3 style={{ 
-              color: theme.colors.neonGreen, 
-              fontSize: '1.5rem', 
-              marginBottom: '1rem',
-              textShadow: `0 0 10px ${theme.colors.neonGreen}`
-            }}>
-              💎 JOIN THE BATTLE!
-            </h3>
-            <p style={{ color: theme.colors.textSecondary, fontSize: '1rem', marginBottom: '0.5rem' }}>
-              Entry Fee: <span style={{ color: theme.colors.neonYellow, fontWeight: 'bold' }}>${gameData.priceUSD.toFixed(2)}</span>
-            </p>
-            <p style={{ color: theme.colors.textTertiary, fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              Winner takes all! Best of {gameData.rounds} rounds.
-            </p>
-          </div>
-          
-          <Button 
-            onClick={handleJoinGame}
-            disabled={joiningGame}
-            style={{ 
-              width: '100%',
-              background: `linear-gradient(45deg, ${theme.colors.neonGreen}, ${theme.colors.neonBlue})`,
-              fontSize: '1.2rem',
-              padding: '1rem 2rem',
-              boxShadow: `0 0 20px ${theme.colors.neonGreen}`,
-              animation: 'neon-pulse 2s infinite'
-            }}
-          >
-            {joiningGame ? (
-              <>
-                <LoadingSpinner style={{ width: '1rem', height: '1rem', marginRight: '0.5rem' }} />
-                Processing Payment...
-              </>
-            ) : (
-              `💰 PAY & JOIN ($${gameData.priceUSD.toFixed(2)} USD)`
-            )}
-          </Button>
-        </div>
-      )}
     </ThemeProvider>
   )
 }
 
-export default FlipGame 
+export default FlipGame
