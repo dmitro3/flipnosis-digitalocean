@@ -41,12 +41,11 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
       console.log('✅ Connected to WebSocket server')
       setConnected(true)
       
-      // Join the game room
+      // Only send connect_to_game message, let server determine role
       newSocket.send(JSON.stringify({
-        type: 'join_game',
+        type: 'connect_to_game',
         gameId, 
-        address: playerAddress, 
-        role: isCreator ? 'creator' : 'joiner',
+        address: playerAddress,
         gameConfig
       }))
     }

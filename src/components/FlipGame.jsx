@@ -314,20 +314,31 @@ const FlipGame = () => {
         throw new Error('Failed to complete join')
       }
       
-      // Update local game data
-      const updatedGame = {
-        ...gameData,
-        joiner: address,
-        status: 'joined',
-        paymentTxHash: receipt.hash
+      // ONLY after successful payment and database update:
+      if (joinResponse.ok) {
+        // Update local game data
+        const updatedGame = {
+          ...gameData,
+          joiner: address,
+          status: 'joined',
+          paymentTxHash: receipt.hash
+        }
+        setGameData(updatedGame)
+
+        // NOW notify WebSocket with explicit join
+        if (wsConnected && socket) {
+          socket.send(JSON.stringify({
+            type: 'join_game',
+            gameId,
+            address: address,
+            role: 'joiner',
+            entryFeeHash: receipt.hash
+          }))
+        }
+
+        showSuccess('Successfully joined the game!')
+        setTimeout(() => window.location.reload(), 1500)
       }
-      setGameData(updatedGame)
-
-      // Notify WebSocket ONLY after successful payment
-      joinGame(address)
-
-      showSuccess('Successfully joined the game!')
-      setTimeout(() => window.location.reload(), 1500)
         
     } catch (error) {
       console.error('❌ Failed to join game:', error)

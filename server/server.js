@@ -878,7 +878,7 @@ async function handleMessage(ws, data) {
   console.log('📡 Received message:', type, 'for game:', gameId)
 
   let session = activeSessions.get(gameId)
-  if (!session && type === 'join_game') {
+  if (!session && (type === 'connect_to_game' || type === 'join_game')) {
     session = new GameSession(gameId)
     activeSessions.set(gameId, session)
     console.log('🎮 Created new game session:', gameId)
@@ -893,12 +893,34 @@ async function handleMessage(ws, data) {
   session.addClient(ws)
 
   switch (type) {
-    case 'create_game':
-      await session.setGameData(data.gameData)
-      console.log('🎮 Game created and stored:', gameId)
+    case 'connect_to_game': // New case - just connect, don't auto-join
+      // Get game from database to determine actual roles
+      try {
+        const gameData = await dbHelpers.getGame(gameId)
+        if (gameData) {
+          session.creator = gameData.creator
+          session.joiner = gameData.joiner
+          session.maxRounds = gameData.rounds
+          
+          console.log('🔗 Player connected to game:', {
+            address: data.address,
+            isCreator: gameData.creator === data.address,
+            isJoiner: gameData.joiner === data.address,
+            gameStatus: gameData.status
+          })
+        }
+      } catch (error) {
+        console.error('Error loading game data:', error)
+      }
+      
+      // Send current state to new client (no auto-joining)
+      ws.send(JSON.stringify({
+        type: 'game_state',
+        state: session.getState()
+      }))
       break
 
-    case 'join_game':
+    case 'join_game': // Only use this for actual intentional joins
       if (data.role === 'creator') {
         session.creator = data.address
         session.maxRounds = data.gameConfig?.maxRounds || 5
@@ -908,12 +930,6 @@ async function handleMessage(ws, data) {
       } else {
         console.log('👀 Spectator joined:', data.address)
       }
-      
-      // Send current state to new client
-      ws.send(JSON.stringify({
-        type: 'game_state',
-        state: session.getState()
-      }))
       break
 
     case 'player_joined':
