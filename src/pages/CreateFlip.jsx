@@ -69,37 +69,25 @@ const CreateFlip = () => {
       
       console.log('🎮 Creating game with database:', gameWithId)
       
-      // Send to WebSocket server for database storage
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'wss://cryptoflipz2-production.up.railway.app' 
-        : 'ws://localhost:3001'
+      // Use REST API instead of WebSocket
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
       
-      return new Promise((resolve, reject) => {
-        const ws = new WebSocket(wsUrl)
-        
-        ws.onopen = () => {
-          console.log('📡 Sending game data to database...')
-          ws.send(JSON.stringify({
-            type: 'create_game',
-            gameId: gameId,
-            gameData: gameWithId
-          }))
-          
-          setTimeout(() => {
-            ws.close()
-            resolve({ success: true, gameId })
-          }, 1000)
-        }
-        
-        ws.onerror = (error) => {
-          console.error('❌ WebSocket error:', error)
-          reject(new Error('Failed to connect to game server'))
-        }
-        
-        ws.onclose = () => {
-          console.log('📡 Game data sent to database')
-        }
+      const response = await fetch(`${API_URL}/api/games`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(gameWithId)
       })
+      
+      if (!response.ok) {
+        throw new Error('Failed to create game')
+      }
+      
+      const result = await response.json()
+      console.log('✅ Game created successfully:', result)
+      
+      return { success: true, gameId }
       
     } catch (error) {
       console.error('❌ Error creating game:', error)

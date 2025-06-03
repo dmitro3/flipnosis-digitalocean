@@ -1018,6 +1018,23 @@ app.get('/api/stats/monthly/:year/:month', async (req, res) => {
   }
 })
 
+// POST endpoint to create games
+app.post('/api/games', async (req, res) => {
+  try {
+    console.log('🎮 Creating game via REST API:', req.body)
+    
+    const gameData = req.body
+    await dbHelpers.createGame(gameData)
+    
+    console.log('✅ Game created successfully:', gameData.id)
+    res.json({ success: true, gameId: gameData.id })
+    
+  } catch (error) {
+    console.error('❌ Error creating game:', error)
+    res.status(500).json({ error: 'Failed to create game', details: error.message })
+  }
+})
+
 // Cleanup inactive sessions
 setInterval(() => {
   const now = Date.now()
