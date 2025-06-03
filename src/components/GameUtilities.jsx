@@ -480,8 +480,12 @@ export const DualPowerBar = styled.div`
 `
 
 // Live Score Display
-export const LiveScoreDisplay = ({ gameState }) => {
-  const { creatorWins = 0, joinerWins = 0, currentRound = 1, maxRounds = 5 } = gameState || {}
+export const LiveScoreDisplay = ({ gameState, roundResults = [] }) => {
+  const { currentRound = 1, maxRounds = 5 } = gameState || {}
+  
+  // Calculate scores from round results
+  const creatorWins = roundResults.filter(round => round.flip_result === 'heads').length
+  const joinerWins = roundResults.filter(round => round.flip_result === 'tails').length
 
   return (
     <div style={{
@@ -505,7 +509,7 @@ export const LiveScoreDisplay = ({ gameState }) => {
       
       <div style={{ textAlign: 'center' }}>
         <div style={{ color: theme.colors.textPrimary, fontSize: '1.25rem', fontWeight: 'bold' }}>
-          {currentRound} / {maxRounds}
+          {roundResults.length} / {maxRounds}
         </div>
         <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
           Round
@@ -621,9 +625,24 @@ export const LivePlayerCard = ({
               <div style={{
                 fontSize: '6rem',
                 filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
-                opacity: player ? 1 : 0.5
+                opacity: player ? 1 : 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
-                {player ? '💎' : '⏳'}
+                {player ? (
+                  playerNumber === 2 ? (
+                    <img 
+                      src="/Images/baseeth.webp" 
+                      alt="Base ETH" 
+                      style={{
+                        width: '4rem',
+                        height: '4rem',
+                        filter: 'drop-shadow(0 0 20px rgba(0, 82, 255, 0.5))'
+                      }}
+                    />
+                  ) : '💎'
+                ) : '⏳'}
               </div>
             </div>
           )}

@@ -133,43 +133,76 @@ const ThreeCoin = ({
   }, [isCharging, isFlipping])
 
   // Handle synchronized flip animation
-  const executeSynchronizedFlip = useCallback((flipResult, duration) => {
+  const executeFlip = useCallback((flipResult, powerLevel) => {
     if (!coinRef.current || isAnimating) return
 
-    console.log('🎬 Starting synchronized flip animation:', { flipResult, duration })
-    
     setIsAnimating(true)
     const coin = coinRef.current
     const isHeads = flipResult === 'heads'
     
-    // Calculate flips based on duration
-    const flips = Math.max(3, Math.floor(duration / 1000)) // At least 3 flips
+    // Calculate animation parameters based on power
+    const baseDuration = 2000 // 2 seconds base duration
+    const duration = baseDuration + (powerLevel * 200) // Add 200ms per power level
+    const flips = 1 + Math.floor(powerLevel / 2) // One flip plus additional flips based on power
+
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
+    
+    // Camera animation variables
+    const initialCameraPosition = { x: 0, y: 0, z: 4 }
+    const finalCameraPosition = { x: 0, y: 3, z: 2 } // Look down at coin
+    const cameraStartTime = duration * 0.7 // Start camera movement at 70% through flip
 
     const animateFlip = () => {
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
+      const cameraProgress = Math.max(0, (elapsed - cameraStartTime) / (duration * 0.3))
 
-      // Smooth easing
-      const easeProgress = 1 - Math.pow(1 - progress, 3)
-
-      // Calculate rotation with proper ending
+      // Vertical flip only
       const totalRotationX = flips * Math.PI * 2
-      coin.rotation.x = initialRotationX + totalRotationX * easeProgress
-      
-      // Add some Y rotation for more dynamic movement
-      coin.rotation.y = Math.sin(progress * Math.PI * flips) * 0.5
+      coin.rotation.x = initialRotationX + totalRotationX * progress
+
+      // Camera movement during final 30% of animation
+      if (cameraProgress > 0) {
+        const smoothProgress = cameraProgress * cameraProgress * (3 - 2 * cameraProgress) // Smooth easing
+        camera.position.x = initialCameraPosition.x + (finalCameraPosition.x - initialCameraPosition.x) * smoothProgress
+        camera.position.y = initialCameraPosition.y + (finalCameraPosition.y - initialCameraPosition.y) * smoothProgress
+        camera.position.z = initialCameraPosition.z + (finalCameraPosition.z - initialCameraPosition.z) * smoothProgress
+        camera.lookAt(0, 0, 0) // Always look at the coin
+      }
 
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - ensure correct side is showing
+        // Final position - stop on winning side
         coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
         coin.rotation.y = 0
+        
+        // Reset camera after a brief pause
+        setTimeout(() => {
+          const resetCameraStart = Date.now()
+          const resetDuration = 1000
+          
+          const resetCamera = () => {
+            const resetElapsed = Date.now() - resetCameraStart
+            const resetProgress = Math.min(resetElapsed / resetDuration, 1)
+            const smoothReset = resetProgress * resetProgress * (3 - 2 * resetProgress)
+            
+            camera.position.x = finalCameraPosition.x + (initialCameraPosition.x - finalCameraPosition.x) * smoothReset
+            camera.position.y = finalCameraPosition.y + (initialCameraPosition.y - finalCameraPosition.y) * smoothReset
+            camera.position.z = finalCameraPosition.z + (initialCameraPosition.z - finalCameraPosition.z) * smoothReset
+            camera.lookAt(0, 0, 0)
+            
+            if (resetProgress < 1) {
+              requestAnimationFrame(resetCamera)
+            }
+          }
+          
+          resetCamera()
+        }, 1500)
+        
         setCurrentSide(isHeads ? 'heads' : 'tails')
         setIsAnimating(false)
-        console.log('✅ Flip animation complete:', flipResult)
       }
     }
 
@@ -179,9 +212,9 @@ const ThreeCoin = ({
   // Trigger synchronized flip when flipResult changes
   useEffect(() => {
     if (isFlipping && flipResult && flipDuration && !isAnimating) {
-      executeSynchronizedFlip(flipResult, flipDuration)
+      executeFlip(flipResult, power)
     }
-  }, [isFlipping, flipResult, flipDuration, executeSynchronizedFlip, isAnimating])
+  }, [isFlipping, flipResult, flipDuration, executeFlip, isAnimating, power])
 
   // Handle mouse/touch events
   const handleMouseDown = useCallback((e) => {

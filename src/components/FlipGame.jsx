@@ -87,6 +87,9 @@ const FlipGame = () => {
   const [claimingSlot, setClaimingSlot] = useState(false)
   const [joiningGame, setJoiningGame] = useState(false)
 
+  // New state for loading round results
+  const [roundResults, setRoundResults] = useState([])
+
   // Load game data
   const loadGame = async () => {
     try {
@@ -393,6 +396,29 @@ const FlipGame = () => {
   const showPowerCharging = gamePhase === 'round_active' && isMyTurn && myChoice && !isFlipping
   const showWaitingForOpponent = gamePhase === 'round_active' && !isMyTurn
 
+  // Load round results
+  useEffect(() => {
+    const loadRoundResults = async () => {
+      if (!gameId) return
+      
+      try {
+        const response = await fetch(`https://cryptoflipz2-production.up.railway.app/api/games/${gameId}/rounds`)
+        if (response.ok) {
+          const rounds = await response.json()
+          setRoundResults(rounds)
+        }
+      } catch (error) {
+        console.error('Error loading round results:', error)
+      }
+    }
+    
+    loadRoundResults()
+    
+    // Refresh every 5 seconds during active game
+    const interval = setInterval(loadRoundResults, 5000)
+    return () => clearInterval(interval)
+  }, [gameId])
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -456,7 +482,7 @@ const FlipGame = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div>
               <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-                FLIP GAME #{gameId.slice(-6).toUpperCase()}
+                FLIP #{gameId.slice(-6).toUpperCase()}
                 {!isPlayer && <span style={{ color: theme.colors.statusWarning }}> (SPECTATING)</span>}
               </NeonText>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -467,12 +493,7 @@ const FlipGame = () => {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {isPlayer && (
-                <WebSocketStatus 
-                  connected={wsConnected} 
-                  playerCount={gameData?.joiner ? 2 : 1} 
-                />
-              )}
+              {/* WebSocket status removed */}
             </div>
           </div>
 

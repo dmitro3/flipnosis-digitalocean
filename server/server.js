@@ -567,6 +567,21 @@ const dbHelpers = {
         }
       })
     })
+  },
+
+  // Get round results for a game
+  getRoundResults: (gameId) => {
+    return new Promise((resolve, reject) => {
+      const sql = `SELECT round_number, flip_result, flipper_address FROM game_rounds WHERE game_id = ? ORDER BY round_number ASC`
+      db.all(sql, [gameId], (err, rows) => {
+        if (err) {
+          console.error('❌ Error getting round results:', err)
+          reject(err)
+        } else {
+          resolve(rows)
+        }
+      })
+    })
   }
 }
 
@@ -1479,5 +1494,16 @@ app.get('/api/games/creator/:address', async (req, res) => {
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
+  }
+})
+
+// Get round results for a game
+app.get('/api/games/:gameId/rounds', async (req, res) => {
+  try {
+    const rounds = await dbHelpers.getRoundResults(req.params.gameId)
+    res.json(rounds)
+  } catch (error) {
+    console.error('API Error:', error)
+    res.status(500).json({ error: 'Database error' })
   }
 }) 
