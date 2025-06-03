@@ -34,27 +34,23 @@ const db = new sqlite3.Database(dbPath, (err) => {
 if (process.env.NODE_ENV === 'production') {
   console.log('🌍 Production mode - setting up static file serving')
   
-  // In production, the server.js is in dist/server/server.js
-  // So we need to go up two levels to reach the dist folder
+  // In Railway production, we're in dist/server/, so go up one level to find static files
   const distPath = path.join(__dirname, '..')
-  console.log('📁 Looking for dist folder at:', distPath)
+  console.log('📁 Looking for static files at:', distPath)
   
-  if (fs.existsSync(distPath)) {
-    console.log('✅ Found dist folder')
-    console.log('📄 Dist contents:', fs.readdirSync(distPath))
-    
+  // Check for index.html to verify we have the built frontend
+  const indexPath = path.join(distPath, 'index.html')
+  if (fs.existsSync(indexPath)) {
+    console.log('✅ Found built frontend files')
     app.use(express.static(distPath))
     console.log('📁 Serving static files from:', distPath)
     
     // Handle React Router (SPA) - serve index.html for all non-API routes
     app.get('*', (req, res, next) => {
-      // Skip API routes and health check
       if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
         return next()
       }
       
-      const indexPath = path.join(distPath, 'index.html')
-      console.log('📄 Serving index.html for path:', req.path)
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error('❌ Error serving index.html:', err)
@@ -63,13 +59,8 @@ if (process.env.NODE_ENV === 'production') {
       })
     })
   } else {
-    console.error('❌ Dist folder not found at:', distPath)
-    // List parent directory contents to debug
-    const parentDir = path.dirname(__dirname)
-    console.log('📁 Parent directory:', parentDir)
-    if (fs.existsSync(parentDir)) {
-      console.log('📁 Parent directory contents:', fs.readdirSync(parentDir))
-    }
+    console.error('❌ Built frontend not found at:', distPath)
+    console.log('📁 Directory contents:', fs.readdirSync(path.dirname(__dirname)))
   }
 }
 

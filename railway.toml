@@ -1,9 +1,9 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && npm run build:production"
+buildCommand = "npm install && cd server && npm install && cd .. && npm run build:production"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "cd dist/server && npm install --production && node server.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 

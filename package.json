@@ -8,8 +8,8 @@
     "preview": "vite preview",
     "start": "NODE_ENV=production node dist/server/server.js",
     "build:production": "vite build && npm run copy-server",
-    "copy-server": "node -e \"require('fs-extra').copySync('server', 'dist/server', {overwrite: true})\"",
-    "postinstall": "npm run copy-server"
+    "copy-server": "mkdir -p dist/server && cp server/server.js dist/server/ && cp server/package.json dist/server/",
+    "postinstall": "echo 'Frontend install complete'"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,8 +1,13 @@
-node_modules
+server/node_modules/
+server/.git/
+node_modules/
+.git/
+Images/
+references/
+contracts/
 dist
 *.log
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local
-.git 
+.env.production.local 
