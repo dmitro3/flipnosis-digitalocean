@@ -140,11 +140,7 @@ const ThreeCoin = ({
     const coin = coinRef.current
     const isHeads = flipResult === 'heads'
     
-    // Calculate animation parameters based on power
-    const baseDuration = 2000 // 2 seconds base duration
-    const duration = baseDuration + (powerLevel * 200) // Add 200ms per power level
-    const flips = 1 + Math.floor(powerLevel / 2) // One flip plus additional flips based on power
-
+    const duration = 3000
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
 
@@ -152,14 +148,13 @@ const ThreeCoin = ({
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
 
-      // Vertical flip only
-      const totalRotationX = flips * Math.PI * 2
-      coin.rotation.x = initialRotationX + totalRotationX * progress
+      // Flip the coin
+      coin.rotation.x = initialRotationX + (Math.PI * 8 * progress)
 
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - stop on winning side
+        // Final position
         coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
         coin.rotation.y = 0
         setCurrentSide(isHeads ? 'heads' : 'tails')
