@@ -40,7 +40,7 @@ const Home = () => {
   const [error, setError] = useState(null)
 
   // API URL - will be Railway URL in production
-  const API_URL = import.meta.env.VITE_API_URL || window.location.origin
+  const API_URL = import.meta.env.VITE_API_URL || 'https://cryptoflipz2-production.up.railway.app'
 
   // Fetch games from database
   const fetchGames = async () => {

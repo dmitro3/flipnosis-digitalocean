@@ -71,7 +71,7 @@ const CreateFlip = () => {
       
       // Send to WebSocket server for database storage
       const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'wss://your-railway-app.railway.app' 
+        ? 'wss://cryptoflipz2-production.up.railway.app' 
         : 'ws://localhost:3001'
       
       return new Promise((resolve, reject) => {

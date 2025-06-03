@@ -81,7 +81,7 @@ const FlipGame = () => {
       setLoading(true)
       
       // API URL
-      const API_URL = 'https://your-railway-url.com'; // Update with your actual Railway URL
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app' // Update with your actual Railway URL
       
       console.log('📊 Loading game from database:', gameId)
       

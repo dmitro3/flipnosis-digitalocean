@@ -32,7 +32,7 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
     console.log('🔌 Connecting to WebSocket server...')
     
     const wsUrl = process.env.NODE_ENV === 'production' 
-      ? 'wss://your-production-domain.com' 
+      ? 'wss://cryptoflipz2-production.up.railway.app' 
       : 'ws://localhost:3001'
     
     const newSocket = new WebSocket(wsUrl)

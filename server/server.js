@@ -220,7 +220,13 @@ function initializeDatabase() {
       started_at DATETIME,
       completed_at DATETIME,
       total_spectators INTEGER DEFAULT 0
-    )`)
+    )`, (err) => {
+      if (err) {
+        console.error('❌ Error creating games table:', err)
+      } else {
+        console.log('✅ Games table ready')
+      }
+    })
 
     // Game rounds table
     db.run(`CREATE TABLE IF NOT EXISTS game_rounds (
@@ -263,6 +269,9 @@ function initializeDatabase() {
     console.log('✅ Database tables initialized')
   })
 }
+
+// Call initializeDatabase during server startup
+initializeDatabase()
 
 // Database helper functions
 const dbHelpers = {
