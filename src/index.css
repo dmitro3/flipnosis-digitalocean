@@ -13,6 +13,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #0a0a1a;
   color: #ffffff;
+  background-image: url('../Images/background.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Essential animations only */
