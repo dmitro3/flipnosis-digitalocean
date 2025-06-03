@@ -480,12 +480,11 @@ export const DualPowerBar = styled.div`
 `
 
 // Live Score Display
-export const LiveScoreDisplay = ({ gameState, roundResults = [] }) => {
-  const { currentRound = 1, maxRounds = 5 } = gameState || {}
-  
-  // Calculate scores from round results
-  const creatorWins = roundResults.filter(round => round.flip_result === 'heads').length
-  const joinerWins = roundResults.filter(round => round.flip_result === 'tails').length
+export const LiveScoreDisplay = ({ gameState }) => {
+  const creatorWins = gameState?.creatorWins || 0
+  const joinerWins = gameState?.joinerWins || 0
+  const maxRounds = gameState?.maxRounds || 5
+  const currentRound = Math.min(creatorWins + joinerWins + 1, maxRounds)
 
   return (
     <div style={{
@@ -509,7 +508,7 @@ export const LiveScoreDisplay = ({ gameState, roundResults = [] }) => {
       
       <div style={{ textAlign: 'center' }}>
         <div style={{ color: theme.colors.textPrimary, fontSize: '1.25rem', fontWeight: 'bold' }}>
-          {roundResults.length} / {maxRounds}
+          {currentRound} / {maxRounds}
         </div>
         <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
           Round
@@ -633,7 +632,7 @@ export const LivePlayerCard = ({
                 {player ? (
                   playerNumber === 2 ? (
                     <img 
-                      src="/Images/baseeth.webp" 
+                      src="/Images/baseeth.png" 
                       alt="Base ETH" 
                       style={{
                         width: '4rem',

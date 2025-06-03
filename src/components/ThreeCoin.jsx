@@ -147,29 +147,14 @@ const ThreeCoin = ({
 
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
-    
-    // Camera animation variables
-    const initialCameraPosition = { x: 0, y: 0, z: 4 }
-    const finalCameraPosition = { x: 0, y: 3, z: 2 } // Look down at coin
-    const cameraStartTime = duration * 0.7 // Start camera movement at 70% through flip
 
     const animateFlip = () => {
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
-      const cameraProgress = Math.max(0, (elapsed - cameraStartTime) / (duration * 0.3))
 
       // Vertical flip only
       const totalRotationX = flips * Math.PI * 2
       coin.rotation.x = initialRotationX + totalRotationX * progress
-
-      // Camera movement during final 30% of animation
-      if (cameraProgress > 0) {
-        const smoothProgress = cameraProgress * cameraProgress * (3 - 2 * cameraProgress) // Smooth easing
-        camera.position.x = initialCameraPosition.x + (finalCameraPosition.x - initialCameraPosition.x) * smoothProgress
-        camera.position.y = initialCameraPosition.y + (finalCameraPosition.y - initialCameraPosition.y) * smoothProgress
-        camera.position.z = initialCameraPosition.z + (finalCameraPosition.z - initialCameraPosition.z) * smoothProgress
-        camera.lookAt(0, 0, 0) // Always look at the coin
-      }
 
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
@@ -177,30 +162,6 @@ const ThreeCoin = ({
         // Final position - stop on winning side
         coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
         coin.rotation.y = 0
-        
-        // Reset camera after a brief pause
-        setTimeout(() => {
-          const resetCameraStart = Date.now()
-          const resetDuration = 1000
-          
-          const resetCamera = () => {
-            const resetElapsed = Date.now() - resetCameraStart
-            const resetProgress = Math.min(resetElapsed / resetDuration, 1)
-            const smoothReset = resetProgress * resetProgress * (3 - 2 * resetProgress)
-            
-            camera.position.x = finalCameraPosition.x + (initialCameraPosition.x - finalCameraPosition.x) * smoothReset
-            camera.position.y = finalCameraPosition.y + (initialCameraPosition.y - finalCameraPosition.y) * smoothReset
-            camera.position.z = finalCameraPosition.z + (initialCameraPosition.z - finalCameraPosition.z) * smoothReset
-            camera.lookAt(0, 0, 0)
-            
-            if (resetProgress < 1) {
-              requestAnimationFrame(resetCamera)
-            }
-          }
-          
-          resetCamera()
-        }, 1500)
-        
         setCurrentSide(isHeads ? 'heads' : 'tails')
         setIsAnimating(false)
       }
@@ -239,21 +200,39 @@ const ThreeCoin = ({
   }, [isPlayerTurn, onPowerRelease, isFlipping])
 
   return (
-    <div
-      ref={mountRef}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onTouchStart={handleMouseDown}
-      onTouchEnd={handleMouseUp}
-      style={{
-        width: '300px',
-        height: '300px',
-        cursor: isPlayerTurn && !isFlipping ? 'pointer' : 'default',
-        userSelect: 'none',
-        ...style
-      }}
-    />
+    <div style={{ position: 'relative', width: '300px', height: '300px' }}>
+      <div
+        ref={mountRef}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleMouseDown}
+        onTouchEnd={handleMouseUp}
+        style={{
+          width: '300px',
+          height: '300px',
+          cursor: gamePhase === 'round_active' && isPlayerTurn ? 'pointer' : 'default',
+          ...style
+        }}
+      />
+      
+      {/* Electric Energy Effect */}
+      {isCharging && (
+        <div className="electric-energy">
+          <div className="energy-ring"></div>
+          <div className="energy-ring"></div>
+          <div className="energy-ring"></div>
+          <div className="electric-sparks">
+            <div className="spark"></div>
+            <div className="spark"></div>
+            <div className="spark"></div>
+            <div className="spark"></div>
+            <div className="spark"></div>
+            <div className="spark"></div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

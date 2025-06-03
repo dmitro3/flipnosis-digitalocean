@@ -336,8 +336,8 @@ canvas {
     opacity: 0.8;
   }
   50% {
-    transform: scale(1.3) rotate(180deg);
-    opacity: 0.4;
+    transform: scale(1.2) rotate(180deg);
+    opacity: 0.5;
   }
   100% {
     transform: scale(1) rotate(360deg);
@@ -352,26 +352,26 @@ canvas {
   }
   50% {
     opacity: 1;
-    transform: scale(1.2);
+    transform: scale(1.5);
   }
 }
 
 .electric-energy {
   position: absolute;
-  width: 400px;
-  height: 400px;
+  width: 350px;
+  height: 350px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  z-index: 1;
+  z-index: 10;
 }
 
 .energy-ring {
   position: absolute;
-  border: 3px solid #ff1493;
+  border: 2px solid #ff1493;
   border-radius: 50%;
-  animation: electricRing 1s linear infinite;
+  animation: electricRing 0.8s linear infinite;
 }
 
 .energy-ring:nth-child(1) {
@@ -409,12 +409,12 @@ canvas {
 
 .spark {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
   background: #ff1493;
   border-radius: 50%;
-  animation: electricSpark 0.5s ease-in-out infinite;
-  box-shadow: 0 0 10px #ff1493;
+  animation: electricSpark 0.4s ease-in-out infinite;
+  box-shadow: 0 0 15px #ff1493;
 }
 
 .spark:nth-child(1) { top: 10%; left: 50%; animation-delay: 0s; }

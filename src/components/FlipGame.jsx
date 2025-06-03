@@ -419,6 +419,14 @@ const FlipGame = () => {
     return () => clearInterval(interval)
   }, [gameId])
 
+  // Use WebSocket scores but ensure they're properly updated
+  const scores = {
+    creator: gameState?.creatorWins || 0,
+    joiner: gameState?.joinerWins || 0
+  }
+  const totalRounds = scores.creator + scores.joiner
+  const currentRound = Math.min(totalRounds + 1, gameData?.rounds || 5)
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
