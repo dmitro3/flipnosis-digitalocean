@@ -77,21 +77,22 @@ const ThreeCoin = ({
 
     // Create coin faces
     const headsFace = new THREE.Mesh(coinGeometry, headsMaterial)
-    headsFace.rotation.x = 0
+    headsFace.rotation.x = Math.PI / 2
     headsFace.position.z = 0.075
 
     const tailsFace = new THREE.Mesh(coinGeometry, tailsMaterial)
-    tailsFace.rotation.x = Math.PI
+    tailsFace.rotation.x = -Math.PI / 2
     tailsFace.position.z = -0.075
-    tailsFace.rotation.y = 0
+    tailsFace.rotation.y = Math.PI
 
     // Add faces to coin group
     coin.add(headsFace)
     coin.add(tailsFace)
 
-    // Set initial rotation to show heads facing the camera
-    coin.rotation.x = 0
+    // Set initial rotation to show heads FACING the camera
+    coin.rotation.x = Math.PI / 2
     coin.rotation.y = 0
+    coin.rotation.z = 0
 
     // Add coin to scene
     scene.add(coin)
@@ -145,7 +146,7 @@ const ThreeCoin = ({
     // Calculate flips based on duration
     const flips = Math.max(3, Math.floor(duration / 1000)) // At least 3 flips
     const startTime = Date.now()
-    const initialRotationX = coin.rotation.x
+    const initialRotationX = Math.PI / 2  // Always start from heads facing camera
 
     const animateFlip = () => {
       const elapsed = Date.now() - startTime
@@ -164,9 +165,14 @@ const ThreeCoin = ({
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - ensure correct side is showing and facing camera
-        coin.rotation.x = isHeads ? 0 : Math.PI
+        // Final position - face the camera properly
+        if (isHeads) {
+          coin.rotation.x = Math.PI / 2  // Heads facing camera
+        } else {
+          coin.rotation.x = -Math.PI / 2  // Tails facing camera
+        }
         coin.rotation.y = 0
+        coin.rotation.z = 0
         setCurrentSide(isHeads ? 'heads' : 'tails')
         setIsAnimating(false)
         console.log('✅ Flip animation complete:', flipResult)
@@ -174,6 +180,12 @@ const ThreeCoin = ({
     }
 
     animateFlip()
+
+    // Make the images on the coins brighter
+    headsMaterial.emissiveIntensity = 0.5
+    headsMaterial.color.setHex(0xFFFFFF)
+    tailsMaterial.emissiveIntensity = 0.5
+    tailsMaterial.color.setHex(0xFFFFFF)
   }, [isAnimating])
 
   // Trigger synchronized flip when flipResult changes
