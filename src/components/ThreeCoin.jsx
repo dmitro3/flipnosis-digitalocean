@@ -1,7 +1,4 @@
-3. Update ThreeCoin.jsx - Synchronized Animations
-File: src/components/ThreeCoin.jsx
-Replace the entire file:
-javascriptimport React, { useRef, useEffect, useState, useCallback } from 'react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import headsTexture from '../../Images/Heads.webp'
 import tailsTexture from '../../Images/tails.webp'
