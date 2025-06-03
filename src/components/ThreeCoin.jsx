@@ -133,14 +133,17 @@ const ThreeCoin = ({
   }, [isCharging, isFlipping])
 
   // Handle synchronized flip animation
-  const executeFlip = useCallback((flipResult, powerLevel) => {
+  const executeSynchronizedFlip = useCallback((flipResult, duration) => {
     if (!coinRef.current || isAnimating) return
 
+    console.log('🎬 Starting synchronized flip animation:', { flipResult, duration })
+    
     setIsAnimating(true)
     const coin = coinRef.current
     const isHeads = flipResult === 'heads'
     
-    const duration = 3000
+    // Calculate flips based on duration
+    const flips = Math.max(3, Math.floor(duration / 1000)) // At least 3 flips
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
 
@@ -148,17 +151,25 @@ const ThreeCoin = ({
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
 
-      // Flip the coin
-      coin.rotation.x = initialRotationX + (Math.PI * 8 * progress)
+      // Smooth easing
+      const easeProgress = 1 - Math.pow(1 - progress, 3)
+
+      // Calculate rotation with proper ending
+      const totalRotationX = flips * Math.PI * 2
+      coin.rotation.x = initialRotationX + totalRotationX * easeProgress
+      
+      // Add some Y rotation for more dynamic movement
+      coin.rotation.y = Math.sin(progress * Math.PI * flips) * 0.5
 
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position
+        // Final position - ensure correct side is showing
         coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
         coin.rotation.y = 0
         setCurrentSide(isHeads ? 'heads' : 'tails')
         setIsAnimating(false)
+        console.log('✅ Flip animation complete:', flipResult)
       }
     }
 
@@ -168,9 +179,9 @@ const ThreeCoin = ({
   // Trigger synchronized flip when flipResult changes
   useEffect(() => {
     if (isFlipping && flipResult && flipDuration && !isAnimating) {
-      executeFlip(flipResult, power)
+      executeSynchronizedFlip(flipResult, flipDuration)
     }
-  }, [isFlipping, flipResult, flipDuration, executeFlip, isAnimating, power])
+  }, [isFlipping, flipResult, flipDuration, executeSynchronizedFlip, isAnimating])
 
   // Handle mouse/touch events
   const handleMouseDown = useCallback((e) => {
@@ -195,39 +206,21 @@ const ThreeCoin = ({
   }, [isPlayerTurn, onPowerRelease, isFlipping])
 
   return (
-    <div style={{ position: 'relative', width: '300px', height: '300px' }}>
-      <div
-        ref={mountRef}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onTouchStart={handleMouseDown}
-        onTouchEnd={handleMouseUp}
-        style={{
-          width: '300px',
-          height: '300px',
-          cursor: gamePhase === 'round_active' && isPlayerTurn ? 'pointer' : 'default',
-          ...style
-        }}
-      />
-      
-      {/* Electric Energy Effect */}
-      {isCharging && (
-        <div className="electric-energy">
-          <div className="energy-ring"></div>
-          <div className="energy-ring"></div>
-          <div className="energy-ring"></div>
-          <div className="electric-sparks">
-            <div className="spark"></div>
-            <div className="spark"></div>
-            <div className="spark"></div>
-            <div className="spark"></div>
-            <div className="spark"></div>
-            <div className="spark"></div>
-          </div>
-        </div>
-      )}
-    </div>
+    <div
+      ref={mountRef}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleMouseDown}
+      onTouchEnd={handleMouseUp}
+      style={{
+        width: '300px',
+        height: '300px',
+        cursor: isPlayerTurn && !isFlipping ? 'pointer' : 'default',
+        userSelect: 'none',
+        ...style
+      }}
+    />
   )
 }
 

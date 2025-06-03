@@ -481,10 +481,7 @@ export const DualPowerBar = styled.div`
 
 // Live Score Display
 export const LiveScoreDisplay = ({ gameState }) => {
-  const creatorWins = gameState?.creatorWins || 0
-  const joinerWins = gameState?.joinerWins || 0
-  const maxRounds = gameState?.maxRounds || 5
-  const currentRound = Math.min(creatorWins + joinerWins + 1, maxRounds)
+  const { creatorWins = 0, joinerWins = 0, currentRound = 1, maxRounds = 5 } = gameState || {}
 
   return (
     <div style={{
@@ -624,24 +621,9 @@ export const LivePlayerCard = ({
               <div style={{
                 fontSize: '6rem',
                 filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
-                opacity: player ? 1 : 0.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                opacity: player ? 1 : 0.5
               }}>
-                {player ? (
-                  playerNumber === 2 ? (
-                    <img 
-                      src="/Images/baseeth.webp" 
-                      alt="Base ETH" 
-                      style={{
-                        width: '4rem',
-                        height: '4rem',
-                        filter: 'drop-shadow(0 0 20px rgba(0, 82, 255, 0.5))'
-                      }}
-                    />
-                  ) : '💎'
-                ) : '⏳'}
+                {player ? '💎' : '⏳'}
               </div>
             </div>
           )}
