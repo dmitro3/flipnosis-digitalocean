@@ -664,7 +664,7 @@ class GameSession {
 
   async setJoiner(address, entryFeeHash) {
     this.joiner = address
-    this.phase = 'ready'
+    this.phase = 'ready' // Set to ready first
     
     try {
       await dbHelpers.updateGame(this.gameId, { 
@@ -689,6 +689,14 @@ class GameSession {
     
     console.log('✅ Player 2 joined:', address)
     this.broadcast({ type: 'player_joined', joiner: address })
+    
+    // AUTO-START after 2 seconds
+    setTimeout(() => {
+      if (this.creator && this.joiner && this.phase === 'ready') {
+        console.log('🚀 AUTO-STARTING game after player 2 joined')
+        this.startGame()
+      }
+    }, 2000)
   }
 
   async startGame() {

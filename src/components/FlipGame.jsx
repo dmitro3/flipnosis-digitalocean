@@ -171,15 +171,37 @@ const FlipGame = () => {
     }
   }, [gameState?.phase, gameState?.winner, address])
 
-  // Auto-start game when both players are ready
+  // Auto-start game when both players are ready - ENHANCED
   useEffect(() => {
-    if (gameData?.joiner && gameData?.creator && gameData?.status === 'joined' && gamePhase === 'waiting' && isCreator) {
-      console.log('🚀 Both players ready, auto-starting game...')
+    console.log('🔍 Auto-start check:', {
+      hasJoiner: !!gameData?.joiner,
+      hasCreator: !!gameData?.creator,
+      gameStatus: gameData?.status,
+      gamePhase: gamePhase,
+      isCreator: isCreator,
+      wsConnected: wsConnected
+    })
+
+    if (gameData?.joiner && 
+        gameData?.creator && 
+        (gameData?.status === 'joined' || gameData?.status === 'active') && 
+        gamePhase === 'waiting' && 
+        isCreator && 
+        wsConnected) {
+      
+      console.log('🚀 AUTO-STARTING GAME - All conditions met!')
       setTimeout(() => {
         handleStartGame()
-      }, 2000) // 2 second delay for user to see both players joined
+      }, 1000) // 1 second delay
     }
-  }, [gameData?.joiner, gameData?.creator, gameData?.status, gamePhase, isCreator])
+  }, [gameData?.joiner, gameData?.creator, gameData?.status, gamePhase, isCreator, wsConnected])
+
+  // Manual start button fallback
+  const showStartButton = gameData?.joiner && 
+                         gameData?.creator && 
+                         gameData?.status === 'joined' && 
+                         (gamePhase === 'waiting' || gamePhase === 'ready') && 
+                         isCreator
 
   // Choice selection
   const handleChoiceSelection = (choice) => {
@@ -701,6 +723,63 @@ const FlipGame = () => {
               currentPlayer={syncedFlipData.playerAddress}
               isCurrentUser={syncedFlipData.playerAddress === address}
             />
+          )}
+
+          {/* DEBUG PANEL - Remove after fixing */}
+          <div style={{
+            background: 'rgba(255, 0, 0, 0.1)',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            border: '1px solid rgba(255, 0, 0, 0.3)',
+            marginBottom: '1rem',
+            fontSize: '0.875rem'
+          }}>
+            <h4 style={{ color: '#ff4444', marginBottom: '0.5rem' }}>🔧 Debug Info:</h4>
+            <div style={{ color: 'white', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <div>gameData.joiner: {gameData?.joiner ? '✅' : '❌'}</div>
+              <div>gameData.creator: {gameData?.creator ? '✅' : '❌'}</div>
+              <div>gameData.status: {gameData?.status}</div>
+              <div>gamePhase: {gamePhase}</div>
+              <div>isCreator: {isCreator ? '✅' : '❌'}</div>
+              <div>wsConnected: {wsConnected ? '✅' : '❌'}</div>
+              <div>showStartButton: {showStartButton ? '✅' : '❌'}</div>
+              <div>currentPlayer: {gameState?.currentPlayer || 'none'}</div>
+            </div>
+          </div>
+
+          {/* Manual Start Button - Fallback */}
+          {showStartButton && (
+            <div style={{
+              background: 'rgba(255, 20, 147, 0.1)',
+              padding: '1.5rem',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 20, 147, 0.3)',
+              marginBottom: '2rem'
+            }}>
+              <h3 style={{ 
+                color: theme.colors.neonPink, 
+                marginBottom: '1rem',
+                textShadow: `0 0 10px ${theme.colors.neonPink}`
+              }}>
+                🎮 Ready to Start!
+              </h3>
+              <p style={{ color: theme.colors.textSecondary, marginBottom: '1.5rem' }}>
+                Both players have joined. Start the first round!
+              </p>
+              <Button
+                onClick={handleStartGame}
+                style={{
+                  width: '100%',
+                  background: `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})`,
+                  fontSize: '1.2rem',
+                  padding: '1rem 2rem',
+                  boxShadow: `0 0 20px ${theme.colors.neonPink}`,
+                  animation: 'neon-pulse 2s infinite'
+                }}
+              >
+                🚀 START GAME
+              </Button>
+            </div>
           )}
         </ContentWrapper>
       </Container>
