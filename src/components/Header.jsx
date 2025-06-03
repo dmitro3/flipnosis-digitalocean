@@ -140,9 +140,26 @@ const Header = () => {
         </CreateButton>
         
         <WalletSection>
-          <WalletButton onClick={handleConnect} disabled={loading}>
-            {loading ? 'Connecting...' : 'Connect Wallet'}
-          </WalletButton>
+          {isConnected && address ? (
+            <>
+              <WalletInfo>
+                <ChainIndicator>
+                  <ChainDot chain={chain} />
+                  <span>{chains[chain]?.name || 'Unknown'}</span>
+                </ChainIndicator>
+                <WalletAddress>
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </WalletAddress>
+              </WalletInfo>
+              <WalletButton onClick={disconnectWallet}>
+                Disconnect
+              </WalletButton>
+            </>
+          ) : (
+            <WalletButton onClick={handleConnect} disabled={loading}>
+              {loading ? 'Connecting...' : 'Connect Wallet'}
+            </WalletButton>
+          )}
         </WalletSection>
       </HeaderContainer>
     </ThemeProvider>
