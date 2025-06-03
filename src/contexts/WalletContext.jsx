@@ -245,13 +245,12 @@ export const WalletProvider = ({ children }) => {
       const chainConfig = chains[chain]
       console.log('🔍 Fetching NFTs for chain:', chain, 'address:', address)
       
-      // Check if we have an API key
-      const apiKey = import.meta.env.VITE_ALCHEMY_API_KEY
-      if (!apiKey) {
-        console.error('❌ Missing VITE_ALCHEMY_API_KEY environment variable')
-        return []
-      }
-      console.log('✅ Alchemy API key found:', apiKey.slice(0, 10) + '...')
+      // Try multiple ways to get the API key
+      const apiKey = import.meta.env.VITE_ALCHEMY_API_KEY || 
+                     window.__VITE_ALCHEMY_API_KEY__ || 
+                     'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3' // Fallback to direct key
+
+      console.log('🔍 API Key found:', apiKey ? 'Yes (' + apiKey.slice(0, 10) + '...)' : 'No')
 
       // Map chain to Alchemy network
       let network
