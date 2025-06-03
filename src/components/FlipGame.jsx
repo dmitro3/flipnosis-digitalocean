@@ -239,16 +239,27 @@ const FlipGame = () => {
 
   // Join game function
   const handleJoinGame = async () => {
-    if (!gameData || !provider) return
+    if (!gameData || !provider || !address) {
+      showError('Missing required data for joining')
+      return
+    }
 
     try {
-      showInfo('Joining game and paying entry fee...')
+      showInfo('Processing payment to join game...')
+      
+      console.log('💰 Joining game with payment:', {
+        gameId: gameData.id,
+        priceUSD: gameData.priceUSD,
+        address: address
+      })
       
       // Calculate payment
       const paymentResult = await PaymentService.calculateETHAmount(gameData.priceUSD)
       if (!paymentResult.success) {
-        throw new Error('Failed to calculate payment amount')
+        throw new Error('Failed to calculate payment amount: ' + paymentResult.error)
       }
+
+      console.log('💱 Payment calculation:', paymentResult)
 
       const signer = await provider.getSigner()
       const feeRecipient = PaymentService.getFeeRecipient()
@@ -259,27 +270,53 @@ const FlipGame = () => {
         throw new Error('Failed to build transaction: ' + txResult.error)
       }
       
+      console.log('📄 Sending payment transaction...')
       const paymentTx = await signer.sendTransaction(txResult.txConfig)
       showInfo('Confirming payment...')
-      await paymentTx.wait()
+      
+      const receipt = await paymentTx.wait()
+      console.log('✅ Payment confirmed:', receipt.hash)
+      
+      // Update game in database via API
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      
+      const response = await fetch(`${API_URL}/api/games/${gameData.id}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          joinerAddress: address,
+          paymentTxHash: receipt.hash,
+          paymentAmount: gameData.priceUSD
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update game on server')
+      }
       
       // Update local game data
       const updatedGame = {
         ...gameData,
         joiner: address,
-        status: 'active',
-        paymentTxHash: paymentTx.hash
+        status: 'joined',
+        paymentTxHash: receipt.hash
       }
       setGameData(updatedGame)
-      localStorage.setItem(`game_${gameId}`, JSON.stringify(updatedGame))
 
       // Notify WebSocket
       joinGame(address)
 
-      showSuccess('Payment successful! Game starting...')
+      showSuccess('Payment successful! You joined the game!')
+      
+      // Reload the page to update the UI
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
       
     } catch (error) {
-      console.error('Failed to join game:', error)
+      console.error('❌ Failed to join game:', error)
       showError('Failed to join: ' + error.message)
     }
   }
@@ -435,23 +472,68 @@ const FlipGame = () => {
 
               {/* Game Controls */}
               <div style={{ marginTop: '1rem' }}>
-                {/* Join Game Button */}
-                {canJoin && (
-                  <div>
-                    <p style={{ color: theme.colors.textSecondary, marginBottom: '1rem' }}>
-                      Entry Price: ${gameData.priceUSD?.toFixed(2)}
-                    </p>
+                {/* Join Game Button - Show for non-creators when game is waiting for players */}
+                {canJoin && gameData?.status === 'waiting' && (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div style={{
+                      background: 'rgba(0, 255, 0, 0.1)',
+                      padding: '1.5rem',
+                      borderRadius: '1rem',
+                      border: '1px solid rgba(0, 255, 0, 0.3)',
+                      marginBottom: '1.5rem'
+                    }}>
+                      <h3 style={{ color: theme.colors.statusSuccess, marginBottom: '1rem' }}>
+                        🎮 Join This Game!
+                      </h3>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <strong>Entry Price: ${gameData.priceUSD?.toFixed(2)}</strong>
+                      </div>
+                      <div style={{ marginBottom: '1rem', fontSize: '0.875rem', color: theme.colors.textSecondary }}>
+                        NFT: {gameData.nft?.name} • {gameData.rounds} Rounds
+                      </div>
+                    </div>
+                    
                     <Button 
                       onClick={handleJoinGame} 
                       style={{ 
                         width: '100%',
-                        background: theme.colors.neonGreen,
+                        background: theme.colors.statusSuccess,
                         fontSize: '1.2rem',
-                        padding: '1rem'
+                        padding: '1rem',
+                        border: `2px solid ${theme.colors.statusSuccess}`
                       }}
                     >
-                      💰 Join Game & Pay ${gameData.priceUSD?.toFixed(2)}
+                      💰 Pay ${gameData.priceUSD?.toFixed(2)} & Join Game
                     </Button>
+                  </div>
+                )}
+
+                {/* Show waiting message for creator */}
+                {isCreator && !gameData?.joiner && gameData?.status === 'waiting' && (
+                  <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <div style={{
+                      background: 'rgba(255, 255, 0, 0.1)',
+                      padding: '1.5rem',
+                      borderRadius: '1rem',
+                      border: '1px solid rgba(255, 255, 0, 0.3)'
+                    }}>
+                      <p style={{ color: theme.colors.statusWarning, fontSize: '1.1rem', marginBottom: '1rem' }}>
+                        ⏳ Waiting for Player 2 to join...
+                      </p>
+                      <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+                        Share this game URL with another player
+                      </p>
+                      <div style={{ 
+                        background: 'rgba(0, 0, 0, 0.3)', 
+                        padding: '0.5rem', 
+                        borderRadius: '0.5rem',
+                        marginTop: '1rem',
+                        fontSize: '0.75rem',
+                        fontFamily: 'monospace'
+                      }}>
+                        {window.location.href}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -475,15 +557,6 @@ const FlipGame = () => {
                     >
                       🚀 START GAME
                     </Button>
-                  </div>
-                )}
-
-                {/* Waiting States */}
-                {!gameData?.joiner && isCreator && (
-                  <div style={{ textAlign: 'center', padding: '2rem' }}>
-                    <p style={{ color: theme.colors.statusWarning, fontSize: '1.1rem' }}>
-                      ⏳ Waiting for Player 2 to join...
-                    </p>
                   </div>
                 )}
 

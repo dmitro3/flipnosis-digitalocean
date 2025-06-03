@@ -1035,6 +1035,47 @@ app.post('/api/games', async (req, res) => {
   }
 })
 
+// POST endpoint for joining games
+app.post('/api/games/:gameId/join', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { joinerAddress, paymentTxHash, paymentAmount } = req.body
+    
+    console.log('🎮 Player joining game:', {
+      gameId,
+      joinerAddress,
+      paymentTxHash,
+      paymentAmount
+    })
+    
+    // Update game in database
+    const updates = {
+      joiner: joinerAddress,
+      status: 'joined',
+      entry_fee_hash: paymentTxHash
+    }
+    
+    await dbHelpers.updateGame(gameId, updates)
+    
+    // Record the payment transaction
+    await dbHelpers.recordTransaction(
+      gameId,
+      joinerAddress,
+      'entry_fee',
+      paymentAmount,
+      paymentAmount / 2500, // Approximate ETH amount
+      paymentTxHash
+    )
+    
+    console.log('✅ Player joined successfully:', gameId)
+    res.json({ success: true, gameId })
+    
+  } catch (error) {
+    console.error('❌ Error joining game:', error)
+    res.status(500).json({ error: 'Failed to join game', details: error.message })
+  }
+})
+
 // Cleanup inactive sessions
 setInterval(() => {
   const now = Date.now()
