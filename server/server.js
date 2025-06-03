@@ -1035,23 +1035,108 @@ app.post('/api/games', async (req, res) => {
   }
 })
 
-// POST endpoint for joining games
+// Claim a player slot (prevents race conditions)
+app.post('/api/games/:gameId/claim-slot', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { playerAddress } = req.body
+    
+    console.log('🎯 Claiming slot for game:', { gameId, playerAddress })
+    
+    // Get current game state
+    const game = await dbHelpers.getGame(gameId)
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Check if slot is available
+    if (game.joiner) {
+      return res.status(400).json({ error: 'Game already has a second player' })
+    }
+    
+    if (game.creator === playerAddress) {
+      return res.status(400).json({ error: 'Creator cannot join their own game' })
+    }
+    
+    if (game.status !== 'waiting') {
+      return res.status(400).json({ error: 'Game is not accepting new players' })
+    }
+    
+    // Temporarily reserve the slot (we'll use a special status)
+    await dbHelpers.updateGame(gameId, { 
+      status: 'claiming',
+      joiner: playerAddress // Temporarily set joiner
+    })
+    
+    console.log('✅ Slot claimed successfully:', gameId)
+    res.json({ success: true, gameId })
+    
+  } catch (error) {
+    console.error('❌ Error claiming slot:', error)
+    res.status(500).json({ error: 'Failed to claim slot', details: error.message })
+  }
+})
+
+// Release a claimed slot (if payment fails)
+app.post('/api/games/:gameId/release-slot', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { playerAddress } = req.body
+    
+    console.log('🔓 Releasing slot for game:', { gameId, playerAddress })
+    
+    // Get current game state
+    const game = await dbHelpers.getGame(gameId)
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Only release if this player claimed it
+    if (game.joiner === playerAddress && game.status === 'claiming') {
+      await dbHelpers.updateGame(gameId, { 
+        status: 'waiting',
+        joiner: null // Clear the joiner
+      })
+      
+      console.log('✅ Slot released successfully:', gameId)
+      res.json({ success: true, gameId })
+    } else {
+      res.status(400).json({ error: 'Cannot release slot' })
+    }
+    
+  } catch (error) {
+    console.error('❌ Error releasing slot:', error)
+    res.status(500).json({ error: 'Failed to release slot', details: error.message })
+  }
+})
+
+// Update the existing join endpoint to handle the new flow
 app.post('/api/games/:gameId/join', async (req, res) => {
   try {
     const { gameId } = req.params
     const { joinerAddress, paymentTxHash, paymentAmount } = req.body
     
-    console.log('🎮 Player joining game:', {
+    console.log('🎮 Completing join for game:', {
       gameId,
       joinerAddress,
       paymentTxHash,
       paymentAmount
     })
     
-    // Update game in database
+    // Get current game state
+    const game = await dbHelpers.getGame(gameId)
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Verify this player claimed the slot
+    if (game.joiner !== joinerAddress || game.status !== 'claiming') {
+      return res.status(400).json({ error: 'Player slot not properly claimed' })
+    }
+    
+    // Complete the join with payment
     const updates = {
-      joiner: joinerAddress,
-      status: 'joined',
+      status: 'joined', // Move from 'claiming' to 'joined'
       entry_fee_hash: paymentTxHash
     }
     
@@ -1067,37 +1152,12 @@ app.post('/api/games/:gameId/join', async (req, res) => {
       paymentTxHash
     )
     
-    console.log('✅ Player joined successfully:', gameId)
+    console.log('✅ Join completed successfully:', gameId)
     res.json({ success: true, gameId })
     
   } catch (error) {
-    console.error('❌ Error joining game:', error)
-    res.status(500).json({ error: 'Failed to join game', details: error.message })
-  }
-})
-
-// Force join endpoint for debugging
-app.post('/api/games/:gameId/force-join', async (req, res) => {
-  try {
-    const { gameId } = req.params
-    const { joinerAddress } = req.body
-    
-    console.log('🔧 Force joining game:', { gameId, joinerAddress })
-    
-    // Update game in database
-    const updates = {
-      joiner: joinerAddress,
-      status: 'joined'
-    }
-    
-    await dbHelpers.updateGame(gameId, updates)
-    
-    console.log('✅ Force join successful:', gameId)
-    res.json({ success: true, gameId })
-    
-  } catch (error) {
-    console.error('❌ Error force joining game:', error)
-    res.status(500).json({ error: 'Failed to force join game', details: error.message })
+    console.error('❌ Error completing join:', error)
+    res.status(500).json({ error: 'Failed to complete join', details: error.message })
   }
 })
 

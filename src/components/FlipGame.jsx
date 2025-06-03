@@ -74,6 +74,10 @@ const FlipGame = () => {
   // Refs for power charging
   const chargingIntervalRef = useRef(null)
 
+  // New state for preventing race conditions
+  const [claimingSlot, setClaimingSlot] = useState(false)
+  const [joiningGame, setJoiningGame] = useState(false)
+
   // Load game data
   const loadGame = async () => {
     try {
@@ -243,8 +247,30 @@ const FlipGame = () => {
       return
     }
 
+    if (joiningGame || claimingSlot) {
+      showError('Another player is already joining this game...')
+      return
+    }
+
     try {
-      showInfo('Processing payment to join game...')
+      // STEP 1: Claim the slot first (prevents race conditions)
+      setClaimingSlot(true)
+      showInfo('Claiming player slot...')
+      
+      const claimResponse = await fetch(`${API_URL}/api/games/${gameData.id}/claim-slot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerAddress: address })
+      })
+      
+      if (!claimResponse.ok) {
+        const error = await claimResponse.json()
+        throw new Error(error.error || 'Failed to claim slot')
+      }
+      
+      // STEP 2: Process payment
+      setJoiningGame(true)
+      showInfo('Processing payment...')
       
       console.log('💰 Joining game with payment:', {
         gameId: gameData.id,
@@ -258,8 +284,6 @@ const FlipGame = () => {
         throw new Error('Failed to calculate payment amount: ' + paymentResult.error)
       }
 
-      console.log('💱 Payment calculation:', paymentResult)
-
       const signer = await provider.getSigner()
       const feeRecipient = PaymentService.getFeeRecipient()
       
@@ -269,21 +293,16 @@ const FlipGame = () => {
         throw new Error('Failed to build transaction: ' + txResult.error)
       }
       
-      console.log('📄 Sending payment transaction...')
       const paymentTx = await signer.sendTransaction(txResult.txConfig)
       showInfo('Confirming payment...')
       
       const receipt = await paymentTx.wait()
       console.log('✅ Payment confirmed:', receipt.hash)
       
-      // Update game in database via API
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      
-      const response = await fetch(`${API_URL}/api/games/${gameData.id}/join`, {
+      // STEP 3: Complete the join with payment proof
+      const joinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/join`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           joinerAddress: address,
           paymentTxHash: receipt.hash,
@@ -291,8 +310,8 @@ const FlipGame = () => {
         })
       })
       
-      if (!response.ok) {
-        throw new Error('Failed to update game on server')
+      if (!joinResponse.ok) {
+        throw new Error('Failed to complete join')
       }
       
       // Update local game data
@@ -304,19 +323,29 @@ const FlipGame = () => {
       }
       setGameData(updatedGame)
 
-      // Notify WebSocket
+      // Notify WebSocket ONLY after successful payment
       joinGame(address)
 
-      showSuccess('Payment successful! You joined the game!')
-      
-      // Reload the page to update the UI
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
-      
+      showSuccess('Successfully joined the game!')
+      setTimeout(() => window.location.reload(), 1500)
+        
     } catch (error) {
       console.error('❌ Failed to join game:', error)
       showError('Failed to join: ' + error.message)
+      
+      // Release the claimed slot on error
+      try {
+        await fetch(`${API_URL}/api/games/${gameData.id}/release-slot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerAddress: address })
+        })
+      } catch (releaseError) {
+        console.error('Failed to release slot:', releaseError)
+      }
+    } finally {
+      setJoiningGame(false)
+      setClaimingSlot(false)
     }
   }
 
@@ -327,13 +356,14 @@ const FlipGame = () => {
     showSuccess('Game starting...')
   }
 
-  // Fix Join Button Logic
+  // Update the canJoin logic
   const canJoin = gameData && 
                   !gameData.joiner && 
+                  !claimingSlot &&
                   gameData.creator !== address && 
                   gameData.status === 'waiting' &&
                   isConnected &&
-                  address;
+                  address
 
   // Add the Missing Join Button
   {canJoin && (

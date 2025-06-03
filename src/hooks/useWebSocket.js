@@ -75,6 +75,23 @@ export const useWebSocket = (gameId, playerAddress, isCreator, gameConfig = null
             console.error('❌ WebSocket error:', data.error)
             break
           
+          case 'join_game':
+            // Only set creator info, don't auto-join
+            if (data.role === 'creator') {
+              gameState.creator = data.address
+              gameState.maxRounds = data.gameConfig?.maxRounds || 5
+              console.log('👑 Creator joined:', data.address)
+            } else {
+              console.log('👀 Spectator joined:', data.address)
+            }
+            
+            // Send current state to new client
+            newSocket.send(JSON.stringify({
+              type: 'game_state',
+              state: gameState
+            }))
+            break
+          
           default:
             // Update game state from server
             if (data.state) {
