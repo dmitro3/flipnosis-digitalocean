@@ -742,7 +742,16 @@ class GameSession {
   }
 
   async executeFlip(address, power) {
-    if (this.isFlipInProgress || address !== this.currentPlayer) return
+    if (this.isFlipInProgress || address !== this.currentPlayer) {
+      console.log('❌ Cannot execute flip:', {
+        isFlipInProgress: this.isFlipInProgress,
+        addressIsCurrentPlayer: address === this.currentPlayer,
+        currentPlayer: this.currentPlayer
+      })
+      return
+    }
+    
+    console.log('🎲 Executing flip for:', address, 'with power:', power)
     
     this.isFlipInProgress = true
     this.broadcastGameState()
@@ -757,31 +766,36 @@ class GameSession {
       playerChoice,
       result,
       isWinner,
-      power,
-      isCreator: address === this.creator
+      power
     })
     
-    // Calculate flip duration - LONGER power = LONGER flip (4-12 seconds)
-    const flipDuration = 4000 + (power * 800) // 4 seconds + up to 8 more seconds
+    // Calculate flip duration
+    const flipDuration = 4000 + (power * 800)
     
-    console.log('⏱️ Flip duration calculated:', flipDuration, 'ms for power:', power)
+    console.log('⏱️ Flip duration:', flipDuration, 'ms')
     
     // Broadcast flip animation
     this.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({
-          type: 'flip_animation',
-          result: result,
-          duration: flipDuration,
-          playerChoice: playerChoice,
-          playerAddress: address,
-          power: power
-        }))
+        try {
+          client.send(JSON.stringify({
+            type: 'flip_animation',
+            result: result,
+            duration: flipDuration,
+            playerChoice: playerChoice,
+            playerAddress: address,
+            power: power
+          }))
+        } catch (error) {
+          console.error('❌ Error sending flip animation:', error)
+        }
       }
     })
     
-    // Process result after animation
+    // Process result after animation with extra logging
+    console.log('⏰ Setting timeout for processFlipResult in:', flipDuration + 1000, 'ms')
     setTimeout(async () => {
+      console.log('⏰ Timeout fired - calling processFlipResult')
       await this.processFlipResult(address, result, isWinner, power)
     }, flipDuration + 1000)
   }
@@ -798,14 +812,12 @@ class GameSession {
         result,
         isWinner,
         power,
-        isCreator: address === this.creator,
-        isJoiner: address === this.joiner,
-        currentScores: { creator: this.creatorWins, joiner: this.joinerWins }
+        currentRound: this.currentRound
       })
       
       this.roundCompleted = true
       
-      // Update scores with better logic
+      // Update scores
       if (isWinner) {
         if (address === this.creator) {
           this.creatorWins++
@@ -815,7 +827,6 @@ class GameSession {
           console.log('✅ JOINER WINS! Score:', this.creatorWins, '-', this.joinerWins)
         }
       } else {
-        // Opposite player wins when current player loses
         if (address === this.creator) {
           this.joinerWins++
           console.log('✅ JOINER WINS (creator lost)! Score:', this.creatorWins, '-', this.joinerWins)
@@ -825,7 +836,7 @@ class GameSession {
         }
       }
 
-      // Record in database with error handling
+      // Record in database
       try {
         await dbHelpers.recordRound(this.gameId, this.currentRound, result, address, power)
         await dbHelpers.updateGame(this.gameId, { 
@@ -834,13 +845,13 @@ class GameSession {
         })
         console.log('✅ Database updated successfully')
       } catch (dbError) {
-        console.error('❌ Database error (continuing anyway):', dbError)
+        console.error('❌ Database error:', dbError)
       }
 
-      // Determine who actually won this round
+      // Determine actual winner
       const actualWinner = isWinner ? address : (address === this.creator ? this.joiner : this.creator)
       
-      // Broadcast result safely
+      // Broadcast result immediately
       try {
         this.clients.forEach(client => {
           if (client.readyState === WebSocket.OPEN) {
@@ -856,9 +867,7 @@ class GameSession {
                 roundNumber: this.currentRound
               }))
             } catch (sendError) {
-              console.error('❌ Error sending to client:', sendError)
-              // Remove broken client
-              this.clients.delete(client)
+              console.error('❌ Error sending result to client:', sendError)
             }
           }
         })
@@ -870,23 +879,22 @@ class GameSession {
       const winsNeeded = Math.ceil(this.maxRounds / 2)
       if (this.creatorWins >= winsNeeded || this.joinerWins >= winsNeeded) {
         console.log('🏆 Game complete! Final scores:', this.creatorWins, '-', this.joinerWins)
-        setTimeout(() => this.endGame(), 1000)
+        // End game after showing result
+        setTimeout(() => {
+          this.endGame()
+        }, 3000)
         return
       }
 
-      // Schedule next round
+      // Schedule next round - FIXED TIMING
       console.log('⏳ Scheduling next round in 4 seconds...')
       setTimeout(() => {
-        try {
-          this.prepareNextRound()
-        } catch (nextRoundError) {
-          console.error('❌ Error preparing next round:', nextRoundError)
-        }
+        console.log('🔄 Timer fired - calling prepareNextRound')
+        this.prepareNextRound()
       }, 4000)
       
     } catch (error) {
       console.error('❌ Critical error in processFlipResult:', error)
-      // Try to recover by broadcasting current state
       this.broadcastGameState()
     }
   }
@@ -908,15 +916,44 @@ class GameSession {
     this.broadcastGameState()
   }
 
-  nextRound() {
-    if (this.phase === 'game_complete') return
-    
-    this.currentRound++
-    this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
-    this.isFlipInProgress = false
-    this.resetPowers()
-    
-    this.broadcastGameState()
+  prepareNextRound() {
+    try {
+      if (this.phase === 'game_complete') {
+        console.log('⚠️ Game already complete, not preparing next round')
+        return
+      }
+      
+      console.log('🔄 Preparing next round...', {
+        currentRound: this.currentRound,
+        maxRounds: this.maxRounds,
+        currentPlayer: this.currentPlayer
+      })
+      
+      // Increment round
+      this.currentRound++
+      
+      // Switch players
+      this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
+      
+      // Reset round state
+      this.isFlipInProgress = false
+      this.roundCompleted = false
+      this.resetPowers()
+      
+      console.log('✅ Next round ready:', {
+        newRound: this.currentRound,
+        newCurrentPlayer: this.currentPlayer,
+        phase: this.phase
+      })
+      
+      // Broadcast the new round state
+      this.broadcastGameState()
+      
+    } catch (error) {
+      console.error('❌ Error in prepareNextRound:', error)
+      // Fallback: just broadcast current state
+      this.broadcastGameState()
+    }
   }
 
   async loadFromDatabase() {

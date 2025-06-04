@@ -83,20 +83,31 @@ const FlipGame = () => {
           
           switch (data.type) {
             case 'game_state':
+              console.log('🔄 Game state update:', {
+                phase: data.phase,
+                currentRound: data.currentRound,
+                currentPlayer: data.currentPlayer,
+                creatorWins: data.creatorWins,
+                joinerWins: data.joinerWins,
+                isFlipInProgress: data.isFlipInProgress
+              })
               setGameState(data)
               break
               
             case 'flip_animation':
+              console.log('🎬 Flip animation received:', data)
               setFlipAnimation(data)
               setRoundResult(null)
               break
               
             case 'round_result':
+              console.log('🏁 Round result received:', data)
               setRoundResult(data)
               setTimeout(() => setRoundResult(null), 4000)
               break
               
             case 'error':
+              console.log('❌ Error received:', data.error)
               showError(data.error)
               break
           }
