@@ -319,7 +319,8 @@ const FlipGame = () => {
       <Container style={{ 
         position: 'relative', 
         minHeight: '100vh',
-        background: 'transparent !important' // Force transparency
+        background: 'transparent !important',
+        zIndex: 1
       }}>
         {/* Intense Green Plasma Globe Background */}
         <div className="plasma-background">

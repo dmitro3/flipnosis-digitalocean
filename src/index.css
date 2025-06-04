@@ -26,9 +26,10 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: -1;
+  z-index: -10;
   background: radial-gradient(circle at center, #001100 0%, #000000 70%);
   opacity: 0.8;
+  pointer-events: none;
 }
 
 .plasma-background::before {
@@ -46,6 +47,7 @@ body {
     radial-gradient(circle at 90% 60%, rgba(0, 255, 65, 0.08) 0%, transparent 32%),
     radial-gradient(circle at 10% 90%, rgba(0, 255, 120, 0.06) 0%, transparent 25%);
   animation: plasmaMove1 8s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .plasma-background::after {
@@ -62,6 +64,7 @@ body {
     radial-gradient(circle at 85% 30%, rgba(0, 255, 80, 0.08) 0%, transparent 22%),
     radial-gradient(circle at 50% 90%, rgba(0, 255, 65, 0.06) 0%, transparent 28%);
   animation: plasmaMove2 12s ease-in-out infinite reverse;
+  pointer-events: none;
 }
 
 /* Plasma Lightning Bolts */
@@ -78,6 +81,7 @@ body {
   background-size: 200% 200%, 300% 300%, 150% 150%;
   animation: lightningFlash 3s ease-in-out infinite;
   opacity: 0;
+  pointer-events: none;
 }
 
 /* Plasma Particles */
@@ -96,6 +100,7 @@ body {
   background-repeat: repeat;
   background-size: 200px 100px, 300px 150px, 250px 125px, 180px 90px, 220px 110px;
   animation: particleFloat 15s linear infinite;
+  pointer-events: none;
 }
 
 /* Essential Animations */
