@@ -30,8 +30,10 @@ const ThreeCoin = ({
     camera.position.set(0, 0, 4)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setSize(300, 300)
-    renderer.setClearColor(0x000000, 0)
+    renderer.setSize(280, 280)
+    renderer.domElement.style.width = '280px'
+    renderer.domElement.style.height = '280px'
+    renderer.domElement.style.margin = '0 auto'
 
     sceneRef.current = scene
     rendererRef.current = renderer
@@ -226,13 +228,16 @@ const ThreeCoin = ({
         cursor: isPlayerTurn ? 'pointer' : 'default',
         userSelect: 'none',
         background: isCharging ? 
-          'radial-gradient(circle, rgba(255, 20, 147, 0.3) 0%, rgba(255, 20, 147, 0.1) 50%, transparent 100%)' : 
+          'radial-gradient(circle, rgba(255, 20, 147, 0.2) 0%, rgba(255, 20, 147, 0.05) 50%, transparent 100%)' : 
           'transparent',
         boxShadow: isCharging ? 
           '0 0 30px rgba(255, 20, 147, 0.6), 0 0 60px rgba(255, 20, 147, 0.4)' : 
           'none',
         borderRadius: '50%',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}
     />
   )
