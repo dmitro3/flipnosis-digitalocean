@@ -850,13 +850,26 @@ class GameSession {
       console.error('Error recording round:', error)
     }
 
-    // Update scores
+    // Update scores IMMEDIATELY
     if (isWinner) {
       if (address === this.creator) {
         this.creatorWins++
+        console.log('✅ Creator wins! New score:', this.creatorWins)
       } else {
         this.joinerWins++
+        console.log('✅ Joiner wins! New score:', this.joinerWins)
       }
+    }
+
+    // Update database with current scores
+    try {
+      await dbHelpers.updateGame(this.gameId, { 
+        creator_wins: this.creatorWins,
+        joiner_wins: this.joinerWins
+      })
+      console.log('📊 Database updated with scores:', { creator: this.creatorWins, joiner: this.joinerWins })
+    } catch (error) {
+      console.error('Error updating scores in database:', error)
     }
 
     // Broadcast synchronized flip to ALL clients

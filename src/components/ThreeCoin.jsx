@@ -219,6 +219,15 @@ const ThreeCoin = ({
         height: '300px',
         cursor: isPlayerTurn && !isFlipping ? 'pointer' : 'default',
         userSelect: 'none',
+        background: (isCharging || (style?.opponentCharging)) ? 
+          'radial-gradient(circle, rgba(255, 20, 147, 0.3) 0%, rgba(255, 20, 147, 0.1) 50%, transparent 100%)' : 
+          'transparent',
+        boxShadow: (isCharging || (style?.opponentCharging)) ? 
+          '0 0 30px rgba(255, 20, 147, 0.6), 0 0 60px rgba(255, 20, 147, 0.4)' : 
+          'none',
+        animation: (isCharging || (style?.opponentCharging)) ? 
+          'powerPulse 0.5s ease-in-out infinite' : 
+          'none',
         ...style
       }}
     />

@@ -87,6 +87,9 @@ const FlipGame = () => {
   const [claimingSlot, setClaimingSlot] = useState(false)
   const [joiningGame, setJoiningGame] = useState(false)
 
+  // Add to state
+  const [opponentCharging, setOpponentCharging] = useState(false)
+
   // Load game data
   const loadGame = async () => {
     try {
@@ -393,6 +396,14 @@ const FlipGame = () => {
   const showPowerCharging = gamePhase === 'round_active' && isMyTurn && myChoice && !isFlipping
   const showWaitingForOpponent = gamePhase === 'round_active' && !isMyTurn
 
+  // In the useEffect for WebSocket messages, add:
+  useEffect(() => {
+    if (gameState?.chargingPlayers) {
+      const opponentAddress = isCreator ? gameData?.joiner : gameData?.creator
+      setOpponentCharging(gameState.chargingPlayers.includes(opponentAddress))
+    }
+  }, [gameState?.chargingPlayers, isCreator, gameData])
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -567,7 +578,8 @@ const FlipGame = () => {
                   isCharging={isCharging}
                   style={{
                     filter: isCharging ? 'brightness(1.2) saturate(1.3)' : 'brightness(1)',
-                    transform: showPowerCharging ? 'scale(1.05)' : 'scale(1)'
+                    transform: showPowerCharging ? 'scale(1.05)' : 'scale(1)',
+                    opponentCharging: opponentCharging
                   }}
                 />
                 
@@ -749,6 +761,36 @@ const FlipGame = () => {
               >
                 🚀 START GAME
               </Button>
+            </div>
+          )}
+
+          {/* Add Win/Lose Animation */}
+          {syncedFlipData && (
+            <div style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 1000,
+              animation: 'resultReveal 1s ease-out',
+              pointerEvents: 'none'
+            }}>
+              <div style={{
+                background: syncedFlipData.isWinner ? 
+                  'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
+                  'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
+                color: 'white',
+                padding: '2rem 4rem',
+                borderRadius: '2rem',
+                fontSize: '3rem',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                border: `3px solid ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`,
+                boxShadow: `0 0 40px ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`,
+                animation: 'winLoseAnimation 2s ease-out forwards'
+              }}>
+                {syncedFlipData.isWinner ? '🎉 WIN! 🎉' : '💔 LOSE 💔'}
+              </div>
             </div>
           )}
         </ContentWrapper>
