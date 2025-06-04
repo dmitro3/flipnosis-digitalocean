@@ -852,7 +852,7 @@ class GameSession {
     }
   }
 
-  // Update handleFlipComplete to store pending result and delay score updates
+  // Update handleFlipComplete method
   async handleFlipComplete(address, choice, power) {
     console.log('🎲 Handling flip from:', address, 'choice:', choice, 'power:', power)
     
@@ -865,67 +865,12 @@ class GameSession {
     const randomResult = Math.random() < 0.5 ? 'heads' : 'tails'
     const isWinner = choice === randomResult
     
-    // Calculate flip duration based on power (4-12 seconds - doubled as requested)
-    const flipDuration = 4000 + (power * 800)
+    // Calculate flip duration (3-6 seconds)
+    const flipDuration = 3000 + (power * 300)
     
     console.log('🎬 Flip result:', { choice, randomResult, isWinner, flipDuration })
 
-    // Store pending result (don't update scores yet)
-    this.pendingFlipResult = {
-      address,
-      choice,
-      randomResult,
-      isWinner,
-      flipDuration,
-      roundNumber: this.currentRound
-    }
-
-    // Create synchronized flip data WITHOUT score updates
-    this.syncedFlip = {
-      result: randomResult,
-      playerChoice: choice,
-      playerAddress: address,
-      duration: flipDuration,
-      timestamp: Date.now(),
-      isWinner: isWinner,
-      winnerType: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null,
-      showResult: false // Don't show result until animation completes
-    }
-
-    // Record round in database immediately
-    try {
-      await dbHelpers.recordRound(this.gameId, this.currentRound, randomResult, address, power)
-      console.log('✅ Round recorded in database')
-    } catch (error) {
-      console.error('Error recording round:', error)
-    }
-
-    // Broadcast flip animation WITHOUT score updates
-    this.broadcast({
-      type: 'synchronized_flip',
-      syncedFlip: this.syncedFlip,
-      scores: {
-        creator: this.creatorWins, // Keep current scores during animation
-        joiner: this.joinerWins
-      },
-      currentRound: this.currentRound
-    })
-
-    // Schedule score update AFTER animation completes
-    setTimeout(async () => {
-      await this.completeRound()
-    }, flipDuration + 500) // Extra 500ms buffer
-
-    return true
-  }
-
-  // Complete round after animation
-  async completeRound() {
-    if (!this.pendingFlipResult) return
-
-    const { address, isWinner, roundNumber } = this.pendingFlipResult
-
-    // NOW update the scores
+    // Update scores IMMEDIATELY
     if (isWinner) {
       if (address === this.creator) {
         this.creatorWins++
@@ -936,23 +881,57 @@ class GameSession {
       }
     }
 
-    // Update database with new scores
+    // Record round in database
     try {
+      await dbHelpers.recordRound(this.gameId, this.currentRound, randomResult, address, power)
       await dbHelpers.updateGame(this.gameId, { 
         creator_wins: this.creatorWins,
         joiner_wins: this.joinerWins
       })
-      console.log('📊 Database updated with scores:', { creator: this.creatorWins, joiner: this.joinerWins })
+      console.log('✅ Round and scores recorded in database')
     } catch (error) {
-      console.error('Error updating scores in database:', error)
+      console.error('Error recording round:', error)
     }
 
-    // Update syncedFlip to show result
-    if (this.syncedFlip) {
-      this.syncedFlip.showResult = true
+    // Create synchronized flip data WITH updated scores
+    this.syncedFlip = {
+      result: randomResult,
+      playerChoice: choice,
+      playerAddress: address,
+      duration: flipDuration,
+      timestamp: Date.now(),
+      isWinner: isWinner,
+      winnerType: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null,
+      showResult: false,
+      roundWinner: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null
     }
 
-    // Broadcast updated scores and result
+    // Broadcast flip animation WITH updated scores
+    this.broadcast({
+      type: 'synchronized_flip',
+      syncedFlip: this.syncedFlip,
+      scores: {
+        creator: this.creatorWins,
+        joiner: this.joinerWins
+      },
+      currentRound: this.currentRound
+    })
+
+    // Schedule result display and next round
+    setTimeout(async () => {
+      await this.showResultAndContinue()
+    }, flipDuration + 500)
+
+    return true
+  }
+
+  // Replace completeRound with showResultAndContinue
+  async showResultAndContinue() {
+    if (!this.syncedFlip) return
+
+    // Show the result
+    this.syncedFlip.showResult = true
+
     this.broadcast({
       type: 'round_complete',
       syncedFlip: this.syncedFlip,
@@ -960,8 +939,7 @@ class GameSession {
         creator: this.creatorWins,
         joiner: this.joinerWins
       },
-      currentRound: this.currentRound,
-      roundWinner: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null
+      currentRound: this.currentRound
     })
 
     // Check win condition
@@ -974,15 +952,11 @@ class GameSession {
         await dbHelpers.updateGame(this.gameId, { 
           status: 'completed',
           winner: this.winner,
-          creator_wins: this.creatorWins,
-          joiner_wins: this.joinerWins,
           completed_at: new Date().toISOString()
         })
       } catch (error) {
         console.error('Error updating game completion:', error)
       }
-      
-      console.log('🏆 Game complete! Winner:', this.winner)
       
       setTimeout(() => {
         this.broadcast({
@@ -993,21 +967,13 @@ class GameSession {
             joiner: this.joinerWins
           }
         })
-      }, 3000) // Give time for result animation
+      }, 3000)
       
-      this.pendingFlipResult = null
       return
     }
 
-    // Clear pending result
-    this.pendingFlipResult = null
-    
-    // Wait longer before next round and DON'T auto-switch turns
-    console.log('⏳ Round complete, waiting for next player action...')
-    
-    // Instead of auto-switching, set phase to waiting for next round
+    // Continue to next round after 4 seconds
     setTimeout(() => {
-      this.phase = 'round_active'
       this.currentRound++
       this.switchTurn()
       
@@ -1016,7 +982,7 @@ class GameSession {
         currentPlayer: this.currentPlayer,
         currentRound: this.currentRound
       })
-    }, 4000) // 4 seconds to see result and prepare
+    }, 4000)
   }
 }
 

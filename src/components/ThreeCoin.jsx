@@ -17,13 +17,18 @@ const ThreeCoin = ({
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
+  const sceneRef = useRef(null)
+  const rendererRef = useRef(null)
   const animationIdRef = useRef(null)
-  const [isAnimating, setIsAnimating] = useState(false)
+  const isFlipAnimatingRef = useRef(false)
+  
   const [currentSide, setCurrentSide] = useState('heads')
 
-  // Initialize Three.js scene
+  // Initialize Three.js scene ONCE
   useEffect(() => {
-    if (!mountRef.current) return
+    if (!mountRef.current || sceneRef.current) return
+
+    console.log('🎬 Initializing Three.js scene')
 
     // Scene setup
     const scene = new THREE.Scene()
@@ -36,6 +41,10 @@ const ThreeCoin = ({
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setClearColor(0x000000, 0)
+
+    // Store refs
+    sceneRef.current = scene
+    rendererRef.current = renderer
 
     // Add renderer to DOM
     mountRef.current.appendChild(renderer.domElement)
@@ -107,14 +116,14 @@ const ThreeCoin = ({
 
     // Animation loop
     const animate = () => {
-      if (!coinRef.current) return
+      if (!coinRef.current || !rendererRef.current) return
 
-      // Gentle rotation when charging
-      if (isCharging && !isFlipping) {
+      // Only gentle rotation when charging (not flipping)
+      if (isCharging && !isFlipAnimatingRef.current) {
         coinRef.current.rotation.y += 0.01
       }
 
-      renderer.render(scene, camera)
+      rendererRef.current.render(scene, camera)
       animationIdRef.current = requestAnimationFrame(animate)
     }
 
@@ -122,6 +131,7 @@ const ThreeCoin = ({
 
     // Cleanup
     return () => {
+      console.log('🧹 Cleaning up Three.js scene')
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current)
       }
@@ -129,103 +139,90 @@ const ThreeCoin = ({
         mountRef.current.removeChild(renderer.domElement)
       }
       renderer.dispose()
+      sceneRef.current = null
+      rendererRef.current = null
+      coinRef.current = null
     }
-  }, [isCharging, isFlipping])
+  }, []) // Only run once
 
-  // Handle synchronized flip animation
-  const executeSynchronizedFlip = useCallback((flipResult, duration) => {
-    if (!coinRef.current || isAnimating) return
+  // Handle flip animation - SINGLE useEffect
+  useEffect(() => {
+    if (!isFlipping || !flipResult || !flipDuration || !coinRef.current || isFlipAnimatingRef.current) {
+      return
+    }
 
-    console.log('🎬 Starting synchronized flip animation:', { flipResult, duration })
+    console.log('🎬 Starting flip animation:', { flipResult, flipDuration })
     
-    setIsAnimating(true)
+    isFlipAnimatingRef.current = true
     const coin = coinRef.current
     const isHeads = flipResult === 'heads'
     
-    // Modify flip calculation to double the duration
-    const actualDuration = duration * 2 // Double the spin time
-    const flips = Math.max(3, Math.floor(actualDuration / 1000)) // At least 3 flips
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
-
+    const flips = Math.max(3, Math.floor(flipDuration / 1000))
+    
     const animateFlip = () => {
       const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
-
+      const progress = Math.min(elapsed / flipDuration, 1)
+      
       // Smooth easing
       const easeProgress = 1 - Math.pow(1 - progress, 3)
-
-      // Calculate rotation with proper ending
+      
+      // Calculate rotation
       const totalRotationX = flips * Math.PI * 2
       coin.rotation.x = initialRotationX + totalRotationX * easeProgress
-      
-      // Add some Y rotation for more dynamic movement
       coin.rotation.y = Math.sin(progress * Math.PI * flips) * 0.5
-
+      
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - ensure correct side is showing
+        // Final position
         coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
         coin.rotation.y = 0
         setCurrentSide(isHeads ? 'heads' : 'tails')
-        setIsAnimating(false)
+        isFlipAnimatingRef.current = false
         console.log('✅ Flip animation complete:', flipResult)
       }
     }
-
+    
     animateFlip()
-  }, [isAnimating])
-
-  // Trigger synchronized flip when flipResult changes
-  useEffect(() => {
-    if (isFlipping && flipResult && flipDuration && !isAnimating) {
-      executeSynchronizedFlip(flipResult, flipDuration)
-    }
-  }, [isFlipping, flipResult, flipDuration, executeSynchronizedFlip, isAnimating])
+  }, [isFlipping, flipResult, flipDuration]) // Clean dependencies
 
   // Handle mouse/touch events
   const handleMouseDown = useCallback((e) => {
     e.preventDefault()
-    if (isPlayerTurn && onPowerCharge && !isFlipping) {
+    if (isPlayerTurn && onPowerCharge && !isFlipAnimatingRef.current) {
       onPowerCharge()
     }
-  }, [isPlayerTurn, onPowerCharge, isFlipping])
+  }, [isPlayerTurn, onPowerCharge])
 
   const handleMouseUp = useCallback((e) => {
     e.preventDefault()
-    if (isPlayerTurn && onPowerRelease && !isFlipping) {
+    if (isPlayerTurn && onPowerRelease && !isFlipAnimatingRef.current) {
       onPowerRelease()
     }
-  }, [isPlayerTurn, onPowerRelease, isFlipping])
-
-  const handleMouseLeave = useCallback((e) => {
-    e.preventDefault()
-    if (isPlayerTurn && onPowerRelease && !isFlipping) {
-      onPowerRelease()
-    }
-  }, [isPlayerTurn, onPowerRelease, isFlipping])
+  }, [isPlayerTurn, onPowerRelease])
 
   return (
     <div
       ref={mountRef}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
+      onMouseLeave={handleMouseUp}
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
       style={{
         width: '300px',
         height: '300px',
-        cursor: isPlayerTurn && !isFlipping ? 'pointer' : 'default',
+        cursor: isPlayerTurn && !isFlipAnimatingRef.current ? 'pointer' : 'default',
         userSelect: 'none',
-        background: (isCharging || (style?.opponentCharging)) ? 
+        background: (isCharging || style?.opponentCharging) ? 
           'radial-gradient(circle, rgba(255, 20, 147, 0.3) 0%, rgba(255, 20, 147, 0.1) 50%, transparent 100%)' : 
           'transparent',
-        boxShadow: (isCharging || (style?.opponentCharging)) ? 
+        boxShadow: (isCharging || style?.opponentCharging) ? 
           '0 0 30px rgba(255, 20, 147, 0.6), 0 0 60px rgba(255, 20, 147, 0.4)' : 
           'none',
-        animation: (isCharging || (style?.opponentCharging)) ? 
+        animation: (isCharging || style?.opponentCharging) ? 
           'powerPulse 0.5s ease-in-out infinite' : 
           'none',
         ...style

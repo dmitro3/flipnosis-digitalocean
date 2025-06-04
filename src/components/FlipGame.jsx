@@ -170,13 +170,21 @@ const FlipGame = () => {
     }
   }, [gameState?.syncedFlip])
 
-  // Handle game state updates from WebSocket
+  // Replace the useEffect that handles WebSocket game state updates
   useEffect(() => {
     if (gameState?.phase === 'game_complete' && gameState?.winner) {
       const isWinner = gameState.winner === address
       showSuccess(`🏆 Game Over! ${isWinner ? 'You won!' : 'You lost!'}`)
     }
-  }, [gameState?.phase, gameState?.winner, address])
+    
+    // Update local scores when they change
+    if (gameState?.creatorWins !== undefined && gameState?.joinerWins !== undefined) {
+      console.log('📊 Updating scores from WebSocket:', {
+        creator: gameState.creatorWins,
+        joiner: gameState.joinerWins
+      })
+    }
+  }, [gameState?.phase, gameState?.winner, gameState?.creatorWins, gameState?.joinerWins, address])
 
   // Auto-start game when both players are ready - ENHANCED
   useEffect(() => {
@@ -785,26 +793,49 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* Win/Lose Animation - Only show when result is ready */}
+          {/* Large Win/Lose Display */}
           {syncedFlipData && syncedFlipData.showResult && (
             <div style={{
               position: 'fixed',
-              top: '30%',
+              top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 1000,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              background: syncedFlipData.isWinner ? 
+                'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
+                'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
+              padding: '3rem 4rem',
+              borderRadius: '2rem',
+              border: `4px solid ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`,
+              boxShadow: `0 0 50px ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`
             }}>
               <div style={{
                 fontSize: '4rem',
                 fontWeight: 'bold',
                 textAlign: 'center',
-                color: syncedFlipData.isWinner ? '#00FF41' : '#FF1493',
+                color: 'white',
                 textShadow: `0 0 20px ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`,
-                animation: 'slideDownResult 2s ease-out forwards',
-                filter: `drop-shadow(0 0 30px ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'})`
+                animation: 'winLoseAnimation 3s ease-out forwards',
+                marginBottom: '1rem'
               }}>
-                {syncedFlipData.isWinner ? 'WINNER' : 'LOSER'}
+                {syncedFlipData.isWinner ? '🏆 WINNER!' : '💔 LOSER!'}
+              </div>
+              <div style={{
+                fontSize: '1.5rem',
+                textAlign: 'center',
+                color: 'white',
+                fontWeight: 'bold'
+              }}>
+                Coin landed on: {syncedFlipData.result.toUpperCase()}
+              </div>
+              <div style={{
+                fontSize: '1.2rem',
+                textAlign: 'center',
+                color: 'rgba(255, 255, 255, 0.8)',
+                marginTop: '0.5rem'
+              }}>
+                You chose: {syncedFlipData.playerChoice?.toUpperCase()}
               </div>
             </div>
           )}
