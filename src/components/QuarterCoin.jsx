@@ -30,45 +30,25 @@ const QuarterCoin = ({
     camera.position.set(0, 0, 4)
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setSize(320, 320) // Larger for quarter size
+    renderer.setSize(400, 400) // Increased size
     renderer.setClearColor(0x000000, 0)
 
     sceneRef.current = scene
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-    // Create realistic silver quarter
-    const coinGeometry = new THREE.CylinderGeometry(1.4, 1.4, 0.15, 64) // Thicker like real quarter
-    
-    // Realistic silver material
-    const silverMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xc5c5c5,
-      metalness: 0.95,
-      roughness: 0.05,
-      reflectivity: 0.9,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      envMapIntensity: 1.0
-    })
-
+    // Create coin group
     const coin = new THREE.Group()
-    coin.scale.set(1.1, 1.1, 1.1)
-
-    // Main coin body
-    const coinMesh = new THREE.Mesh(coinGeometry, silverMaterial)
-    coin.add(coinMesh)
+    coin.scale.set(1.5, 1.5, 1.5) // Increased scale
 
     // Load the actual Trump images
     const textureLoader = new THREE.TextureLoader()
 
-    // Heads face (Trump side) - using your trumpheads.webp
-    const headsMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff, // White base to show true image colors
-      metalness: 0.2,  // Reduced for better image visibility
-      roughness: 0.3,
-      reflectivity: 0.6,
-      clearcoat: 0.5,
-      clearcoatRoughness: 0.3
+    // Heads face (Trump side)
+    const headsMaterial = new THREE.MeshBasicMaterial({ // Changed to BasicMaterial for better image display
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1
     })
 
     textureLoader.load(trumpHeadsImage, (texture) => {
@@ -85,18 +65,15 @@ const QuarterCoin = ({
 
     const headsGeometry = new THREE.CircleGeometry(1.4, 64)
     const headsFace = new THREE.Mesh(headsGeometry, headsMaterial)
-    headsFace.position.z = 0.076
+    headsFace.position.z = 0.001 // Slightly offset to prevent z-fighting
     headsFace.rotation.x = 0
     coin.add(headsFace)
 
-    // Tails face (Eagle/Trump tails side) - using your trumptails.webp
-    const tailsMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff, // White base to show true image colors
-      metalness: 0.2,  // Reduced for better image visibility
-      roughness: 0.3,
-      reflectivity: 0.6,
-      clearcoat: 0.5,
-      clearcoatRoughness: 0.3
+    // Tails face
+    const tailsMaterial = new THREE.MeshBasicMaterial({ // Changed to BasicMaterial for better image display
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1
     })
 
     textureLoader.load(trumpTailsImage, (texture) => {
@@ -113,22 +90,24 @@ const QuarterCoin = ({
 
     const tailsGeometry = new THREE.CircleGeometry(1.4, 64)
     const tailsFace = new THREE.Mesh(tailsGeometry, tailsMaterial)
-    tailsFace.position.z = -0.076
+    tailsFace.position.z = -0.001 // Slightly offset to prevent z-fighting
     tailsFace.rotation.x = Math.PI
     coin.add(tailsFace)
 
-    // Detailed edge with reeding (like real quarters)
-    const edgeGeometry = new THREE.CylinderGeometry(1.41, 1.41, 0.15, 128)
+    // Edge with metallic look
+    const edgeGeometry = new THREE.CylinderGeometry(1.41, 1.41, 0.1, 128)
     const edgeMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xa5a5a5,
-      metalness: 1.0,
-      roughness: 0.4,
-      normalScale: new THREE.Vector2(1.0, 0.2) // Reeded edge texture
+      color: 0xc5c5c5,
+      metalness: 0.9,
+      roughness: 0.1,
+      reflectivity: 0.9,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1
     })
     const edge = new THREE.Mesh(edgeGeometry, edgeMaterial)
     coin.add(edge)
 
-    // Set initial rotation to face camera (heads up)
+    // Set initial rotation
     coin.rotation.x = Math.PI / 2
     coin.rotation.y = 0
     coin.rotation.z = 0
@@ -136,21 +115,21 @@ const QuarterCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // Professional lighting for realistic metal
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.3)
+    // Enhanced lighting setup
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.5)
     scene.add(ambientLight)
 
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2)
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5)
     directionalLight1.position.set(3, 3, 5)
     directionalLight1.castShadow = true
     scene.add(directionalLight1)
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6)
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8)
     directionalLight2.position.set(-2, -1, 3)
     scene.add(directionalLight2)
 
-    // Subtle accent light for neon theme
-    const accentLight = new THREE.DirectionalLight(0x00ff41, 0.2)
+    // Subtle accent light
+    const accentLight = new THREE.DirectionalLight(0x00ff41, 0.3)
     accentLight.position.set(0, 0, 5)
     scene.add(accentLight)
 
@@ -283,8 +262,8 @@ const QuarterCoin = ({
       onTouchStart={isPlayerTurn ? onPowerCharge : undefined}
       onTouchEnd={isPlayerTurn ? onPowerRelease : undefined}
       style={{
-        width: '320px',
-        height: '320px',
+        width: '400px', // Increased size
+        height: '400px', // Increased size
         cursor: isPlayerTurn ? 'pointer' : 'default',
         userSelect: 'none',
         background: isCharging ? 
