@@ -37,8 +37,16 @@ const ThreeCoin = ({
 
     // Create coin
     const coinGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.15, 32)
-    const headsMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 100 })
-    const tailsMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 100 })
+    const headsMaterial = new THREE.MeshPhongMaterial({
+      color: 0xFFFFFF,
+      shininess: 100,
+      emissive: 0x333333
+    })
+    const tailsMaterial = new THREE.MeshPhongMaterial({
+      color: 0xFFFFFF,
+      shininess: 100,
+      emissive: 0x333333
+    })
 
     const coin = new THREE.Group()
     coin.scale.set(1.2, 1.2, 1.2)
@@ -73,12 +81,17 @@ const ThreeCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7)
+    // Lights - BRIGHTER
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0)
     scene.add(ambientLight)
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8)
     directionalLight.position.set(5, 5, 5)
     scene.add(directionalLight)
+
+    // Add another light for more brightness
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8)
+    directionalLight2.position.set(-5, -5, 5)
+    scene.add(directionalLight2)
 
     // Animation loop
     const animate = () => {

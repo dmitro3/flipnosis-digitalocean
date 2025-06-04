@@ -614,12 +614,12 @@ const FlipGame = () => {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 1000,
-              background: roundResult.isWinner && roundResult.playerAddress === address ? 
+              background: roundResult.actualWinner === address ? 
                 'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
                 'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
               padding: '3rem 4rem',
               borderRadius: '2rem',
-              border: `4px solid ${roundResult.isWinner && roundResult.playerAddress === address ? '#00FF41' : '#FF1493'}`,
+              border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
               textAlign: 'center'
             }}>
               <div style={{
@@ -628,10 +628,13 @@ const FlipGame = () => {
                 color: 'white',
                 marginBottom: '1rem'
               }}>
-                {roundResult.isWinner && roundResult.playerAddress === address ? '🏆 WINNER!' : '💔 LOSER!'}
+                {roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
               </div>
               <div style={{ fontSize: '1.5rem', color: 'white', fontWeight: 'bold' }}>
                 Coin: {roundResult.result.toUpperCase()}
+              </div>
+              <div style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '0.5rem' }}>
+                You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}
               </div>
             </div>
           )}

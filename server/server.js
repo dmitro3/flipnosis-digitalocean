@@ -593,6 +593,8 @@ class GameSession {
     this.gameData = null
     this.clients = new Set()
     this.lastActionTime = Date.now()
+    this.roundCompleted = false
+    this.syncedFlip = null
   }
 
   addClient(ws) {
@@ -735,8 +737,19 @@ class GameSession {
     const playerChoice = address === this.creator ? 'heads' : 'tails'
     const isWinner = playerChoice === result
     
-    // Calculate flip duration (3-8 seconds based on power)
-    const flipDuration = 3000 + (power * 500)
+    console.log('🎲 Flip calculation:', {
+      address,
+      playerChoice,
+      result,
+      isWinner,
+      power,
+      isCreator: address === this.creator
+    })
+    
+    // Calculate flip duration - LONGER power = LONGER flip (4-12 seconds)
+    const flipDuration = 4000 + (power * 800) // 4 seconds + up to 8 more seconds
+    
+    console.log('⏱️ Flip duration calculated:', flipDuration, 'ms for power:', power)
     
     // Broadcast flip animation
     this.clients.forEach(client => {
@@ -759,15 +772,44 @@ class GameSession {
   }
 
   async processFlipResult(address, result, isWinner, power) {
-    // Update scores
+    if (this.roundCompleted) return
+    
+    console.log('🎯 Processing flip result:', {
+      address,
+      result,
+      isWinner,
+      power,
+      addressIsCreator: address === this.creator,
+      addressIsJoiner: address === this.joiner
+    })
+    
+    this.roundCompleted = true
+    
+    // Update scores - THIS WAS THE BUG
     if (isWinner) {
       if (address === this.creator) {
         this.creatorWins++
-      } else {
+        console.log('✅ CREATOR WINS! New score:', this.creatorWins)
+      } else if (address === this.joiner) {
         this.joinerWins++
+        console.log('✅ JOINER WINS! New score:', this.joinerWins)
+      }
+    } else {
+      // The OPPOSITE player wins when the flipper loses
+      if (address === this.creator) {
+        this.joinerWins++
+        console.log('✅ JOINER WINS (creator lost)! New score:', this.joinerWins)
+      } else if (address === this.joiner) {
+        this.creatorWins++
+        console.log('✅ CREATOR WINS (joiner lost)! New score:', this.creatorWins)
       }
     }
-    
+
+    console.log('📊 Updated scores:', {
+      creatorWins: this.creatorWins,
+      joinerWins: this.joinerWins
+    })
+
     // Record in database
     try {
       await dbHelpers.recordRound(this.gameId, this.currentRound, result, address, power)
@@ -775,35 +817,40 @@ class GameSession {
         creator_wins: this.creatorWins,
         joiner_wins: this.joinerWins
       })
+      console.log('✅ Database updated with scores')
     } catch (error) {
       console.error('Error recording round:', error)
     }
-    
-    // Broadcast result
-    this.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({
-          type: 'round_result',
-          result: result,
-          isWinner: isWinner,
-          playerAddress: address,
-          creatorWins: this.creatorWins,
-          joinerWins: this.joinerWins,
-          roundNumber: this.currentRound
-        }))
-      }
+
+    // Show result
+    if (this.syncedFlip) {
+      this.syncedFlip.showResult = true
+    }
+
+    // Broadcast with CORRECT winner info
+    this.broadcast({
+      type: 'round_complete',
+      syncedFlip: this.syncedFlip,
+      scores: {
+        creator: this.creatorWins,
+        joiner: this.joinerWins
+      },
+      roundWinner: isWinner ? 
+        (address === this.creator ? 'creator' : 'joiner') : 
+        (address === this.creator ? 'joiner' : 'creator'), // OPPOSITE when flipper loses
+      actualWinner: isWinner ? address : (address === this.creator ? this.joiner : this.creator)
     })
-    
+
     // Check win condition
     const winsNeeded = Math.ceil(this.maxRounds / 2)
     if (this.creatorWins >= winsNeeded || this.joinerWins >= winsNeeded) {
       await this.endGame()
       return
     }
-    
-    // Next round after delay
+
+    // Prepare next round after delay
     setTimeout(() => {
-      this.nextRound()
+      this.prepareNextRound()
     }, 4000)
   }
 
