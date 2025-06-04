@@ -76,7 +76,7 @@ const ThreeCoin = ({
     coin.add(headsFace)
     coin.add(tailsFace)
     coin.rotation.x = Math.PI / 2
-    coin.rotation.y = 0
+    coin.rotation.y = Math.PI / 2
 
     scene.add(coin)
     coinRef.current = coin
@@ -170,9 +170,9 @@ const ThreeCoin = ({
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position
+        // Final position - ADD the Y rotation offset
         coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
-        coin.rotation.y = 0
+        coin.rotation.y = Math.PI / 2  // Keep the 90-degree Y offset
         coin.rotation.z = 0
         coin.position.y = 0
         isAnimatingRef.current = false
