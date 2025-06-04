@@ -408,13 +408,22 @@ const FlipGame = () => {
     }
   }, [gameState?.chargingPlayers, isCreator, gameData])
 
-  // Handle round completion separately
+  // Handle round completion
   useEffect(() => {
     if (gameState?.type === 'round_complete') {
-      // Update scores only after animation
-      console.log('🏁 Round completed, updating scores')
+      console.log('🏁 Round completed, showing result')
+      // The result animation will show automatically via syncedFlipData.showResult
     }
   }, [gameState])
+
+  // Clear result display after showing
+  useEffect(() => {
+    if (syncedFlipData?.showResult) {
+      setTimeout(() => {
+        setSyncedFlipData(null)
+      }, 2500) // Clear after 2.5 seconds
+    }
+  }, [syncedFlipData?.showResult])
 
   if (!isConnected) {
     return (
@@ -568,23 +577,26 @@ const FlipGame = () => {
                 </div>
               )}
 
-              {/* 3D Coin with Enhanced Power Bar and Flashing Border */}
+              {/* 3D Coin with Enhanced Power Bar and Pulsing Border */}
               <div style={{ 
                 position: 'relative', 
                 margin: '2rem auto', 
-                width: '300px', 
-                height: '300px',
+                width: '320px', 
+                height: '320px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                // Add flashing border when flipping
-                border: isFlipAnimating ? '5px solid #FF1493' : '2px solid rgba(255, 255, 255, 0.2)',
+                // Enhanced pulsing border when flipping
+                border: isFlipAnimating ? '4px solid #FF1493' : '2px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '50%',
                 boxShadow: isFlipAnimating ? 
-                  '0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493' : 
+                  '0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493, inset 0 0 20px rgba(255, 20, 147, 0.3)' : 
                   'none',
-                animation: isFlipAnimating ? 'flipBorderFlash 0.2s infinite' : 'none',
-                transition: 'all 0.3s ease'
+                animation: isFlipAnimating ? 'flipBorderPulse 0.4s infinite' : 'none',
+                transition: 'all 0.3s ease',
+                background: isFlipAnimating ? 
+                  'radial-gradient(circle, rgba(255, 20, 147, 0.1) 0%, rgba(255, 20, 147, 0.05) 50%, transparent 100%)' : 
+                  'transparent'
               }}>
                 <ThreeCoin
                   isFlipping={isFlipping}
@@ -738,17 +750,6 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* Round Results */}
-          {syncedFlipData && (
-            <LiveRoundResult
-              flipResult={syncedFlipData.result}
-              playerChoice={syncedFlipData.playerChoice}
-              isWinner={syncedFlipData.result === syncedFlipData.playerChoice}
-              currentPlayer={syncedFlipData.playerAddress}
-              isCurrentUser={syncedFlipData.playerAddress === address}
-            />
-          )}
-
           {/* Manual Start Button - Fallback */}
           {showStartButton && (
             <div style={{
@@ -788,28 +789,22 @@ const FlipGame = () => {
           {syncedFlipData && syncedFlipData.showResult && (
             <div style={{
               position: 'fixed',
-              top: '50%',
+              top: '30%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 1000,
-              animation: 'resultReveal 1s ease-out',
               pointerEvents: 'none'
             }}>
               <div style={{
-                background: syncedFlipData.isWinner ? 
-                  'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
-                  'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
-                color: 'white',
-                padding: '2rem 4rem',
-                borderRadius: '2rem',
-                fontSize: '3rem',
+                fontSize: '4rem',
                 fontWeight: 'bold',
                 textAlign: 'center',
-                border: `3px solid ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`,
-                boxShadow: `0 0 40px ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`,
-                animation: 'winLoseAnimation 2s ease-out forwards'
+                color: syncedFlipData.isWinner ? '#00FF41' : '#FF1493',
+                textShadow: `0 0 20px ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'}`,
+                animation: 'slideDownResult 2s ease-out forwards',
+                filter: `drop-shadow(0 0 30px ${syncedFlipData.isWinner ? '#00FF41' : '#FF1493'})`
               }}>
-                {syncedFlipData.isWinner ? '🎉 WIN! 🎉' : '💔 LOSE 💔'}
+                {syncedFlipData.isWinner ? 'WINNER' : 'LOSER'}
               </div>
             </div>
           )}

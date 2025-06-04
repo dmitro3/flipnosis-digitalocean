@@ -993,19 +993,30 @@ class GameSession {
             joiner: this.joinerWins
           }
         })
-      }, 2000)
+      }, 3000) // Give time for result animation
       
       this.pendingFlipResult = null
       return
     }
 
-    // Continue game - advance round and switch turns
-    this.currentRound++
+    // Clear pending result
     this.pendingFlipResult = null
     
+    // Wait longer before next round and DON'T auto-switch turns
+    console.log('⏳ Round complete, waiting for next player action...')
+    
+    // Instead of auto-switching, set phase to waiting for next round
     setTimeout(() => {
+      this.phase = 'round_active'
+      this.currentRound++
       this.switchTurn()
-    }, 2000)
+      
+      this.broadcast({
+        type: 'next_round_ready',
+        currentPlayer: this.currentPlayer,
+        currentRound: this.currentRound
+      })
+    }, 4000) // 4 seconds to see result and prepare
   }
 }
 
