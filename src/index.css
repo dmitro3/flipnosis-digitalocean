@@ -454,4 +454,154 @@ canvas {
     border-width: 4px;
     filter: brightness(1);
   }
+}
+
+/* Matrix Green Spiral Background */
+@keyframes spiralRotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1.1);
+  }
+}
+
+@keyframes spiralPulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.spiral-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: -1;
+  background: radial-gradient(circle at center, 
+    rgba(0, 20, 0, 0.9) 0%, 
+    rgba(0, 10, 0, 0.95) 50%, 
+    rgba(0, 0, 0, 1) 100%
+  );
+}
+
+.spiral-background::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200vw;
+  height: 200vw;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(0, 255, 65, 0.1) 30deg,
+    rgba(0, 255, 100, 0.15) 60deg,
+    rgba(0, 255, 65, 0.1) 90deg,
+    transparent 120deg,
+    transparent 150deg,
+    rgba(0, 255, 65, 0.08) 180deg,
+    rgba(0, 255, 100, 0.12) 210deg,
+    rgba(0, 255, 65, 0.08) 240deg,
+    transparent 270deg,
+    transparent 300deg,
+    rgba(0, 255, 65, 0.05) 330deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spiralRotate 30s linear infinite, spiralPulse 4s ease-in-out infinite;
+}
+
+.spiral-background::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150vw;
+  height: 150vw;
+  background: conic-gradient(
+    from 90deg,
+    transparent 0deg,
+    rgba(0, 255, 41, 0.12) 45deg,
+    rgba(0, 255, 80, 0.18) 90deg,
+    rgba(0, 255, 41, 0.12) 135deg,
+    transparent 180deg,
+    transparent 225deg,
+    rgba(0, 255, 41, 0.1) 270deg,
+    rgba(0, 255, 80, 0.15) 315deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spiralRotate 20s linear infinite reverse, spiralPulse 6s ease-in-out infinite;
+}
+
+/* Additional spiral layers for more depth */
+.spiral-layer-1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300vw;
+  height: 300vw;
+  background: conic-gradient(
+    from 180deg,
+    transparent 0deg,
+    rgba(0, 255, 65, 0.05) 60deg,
+    rgba(0, 255, 100, 0.08) 120deg,
+    rgba(0, 255, 65, 0.05) 180deg,
+    transparent 240deg,
+    rgba(0, 255, 65, 0.03) 300deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spiralRotate 45s linear infinite;
+}
+
+.spiral-layer-2 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 100vw;
+  background: conic-gradient(
+    from 270deg,
+    transparent 0deg,
+    rgba(0, 255, 41, 0.2) 30deg,
+    rgba(0, 255, 80, 0.25) 60deg,
+    rgba(0, 255, 41, 0.2) 90deg,
+    transparent 120deg,
+    rgba(0, 255, 41, 0.15) 180deg,
+    rgba(0, 255, 80, 0.2) 240deg,
+    rgba(0, 255, 41, 0.15) 270deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spiralRotate 15s linear infinite reverse;
+}
+
+/* Matrix-style radial lines */
+.matrix-lines {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200vw;
+  height: 200vw;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(0, 255, 65, 0.02) 0.5deg,
+    transparent 1deg,
+    transparent 5deg
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spiralRotate 40s linear infinite;
 } 

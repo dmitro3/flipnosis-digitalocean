@@ -314,7 +314,14 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container>
+      <Container style={{ position: 'relative' }}>
+        {/* Matrix Green Spiral Background */}
+        <div className="spiral-background">
+          <div className="spiral-layer-1"></div>
+          <div className="spiral-layer-2"></div>
+          <div className="matrix-lines"></div>
+        </div>
+        
         <ContentWrapper>
           {/* Connection Status */}
           {!connected && (
