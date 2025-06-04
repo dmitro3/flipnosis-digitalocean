@@ -97,6 +97,28 @@ export const ProfileProvider = ({ children }) => {
     })
   }
 
+  const updateProfilePicture = async (newPicture) => {
+    try {
+      setProfilePicture(newPicture);
+      localStorage.setItem('profilePicture', newPicture);
+      
+      // Sync with server
+      const response = await fetch('/api/profile/picture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ picture: newPicture }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to sync profile picture');
+      }
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+    }
+  };
+
   return (
     <ProfileContext.Provider value={{
       profilePictures,

@@ -18,6 +18,7 @@ const ThreeCoin = ({
   const rendererRef = useRef(null)
   const animationIdRef = useRef(null)
   const isAnimatingRef = useRef(false)
+  const chargingRing = useRef(null)
 
   // Initialize Three.js scene ONCE
   useEffect(() => {
@@ -202,6 +203,17 @@ const ThreeCoin = ({
    
     animateFlip()
   }, [isFlipping, flipResult, flipDuration])
+
+  // Update the charging effect
+  useEffect(() => {
+    if (isCharging) {
+      const time = Date.now() * 0.001;
+      const scale = 1 + Math.sin(time * 5) * 0.1;
+      chargingRing.current.scale.set(scale, scale, scale);
+      chargingRing.current.rotation.z = time * 2;
+      chargingRing.current.material.opacity = 0.6 + Math.sin(time * 3) * 0.2;
+    }
+  }, [isCharging])
 
   return (
     <div

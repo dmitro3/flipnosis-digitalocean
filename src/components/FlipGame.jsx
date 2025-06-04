@@ -349,7 +349,7 @@ const FlipGame = () => {
           {/* Game Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-              FLIP GAME #{gameId.slice(-6).toUpperCase()}
+              FLIP#{gameId.slice(-6).toUpperCase()}
               {!isPlayer && <span style={{ color: theme.colors.statusWarning }}> (SPECTATING)</span>}
             </NeonText>
             <div style={{ color: theme.colors.textSecondary }}>
