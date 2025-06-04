@@ -60,6 +60,11 @@ const ProfilePicture = ({
           // Save to profile (this will upload to server)
           setProfilePicture(address, dataUrl)
           setProfilePic(dataUrl)
+          
+          // Force refresh for all users viewing this address
+          window.dispatchEvent(new CustomEvent('profileUpdated', { 
+            detail: { address, imageData: dataUrl } 
+          }))
         }
         img.src = e.target.result
       }
@@ -68,6 +73,18 @@ const ProfilePicture = ({
     
     event.target.value = ''
   }
+  
+  // Add profile update listener
+  useEffect(() => {
+    const handleProfileUpdate = (event) => {
+      if (event.detail.address === address) {
+        setProfilePic(event.detail.imageData)
+      }
+    }
+    
+    window.addEventListener('profileUpdated', handleProfileUpdate)
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate)
+  }, [address])
   
   const handleClick = () => {
     if (isClickable && fileInputRef.current) {

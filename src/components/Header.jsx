@@ -12,6 +12,8 @@ const HeaderContainer = styled.header`
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 100;
 `
 
 const Logo = styled(Link)`

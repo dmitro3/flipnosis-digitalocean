@@ -442,9 +442,15 @@ const FlipGame = () => {
             </div>
 
             {/* Center - Coin and Game Area */}
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {/* Coin */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                marginBottom: '2rem',
+                transform: 'scale(1.24)'
+              }}>
                 <ThreeCoin
                   isFlipping={!!flipAnimation}
                   flipResult={flipAnimation?.result}
@@ -575,11 +581,10 @@ const FlipGame = () => {
             </div>
           </div>
 
-          {/* MOVED TO BOTTOM: Game Header */}
+          {/* Game Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
               FLIP#{gameId.slice(-6).toUpperCase()}
-              {!isPlayer && <span style={{ color: theme.colors.statusWarning }}> (SPECTATING)</span>}
             </NeonText>
             <div style={{ color: theme.colors.textSecondary }}>
               Best of {gameData?.rounds} • ${gameData?.priceUSD?.toFixed(2)}
@@ -669,7 +674,7 @@ const FlipGame = () => {
                 style={{ 
                   fontSize: '1.2rem',
                   padding: '1rem 2rem',
-                  background: `linear-gradient(45deg, ${theme.colors.neonGreen}, ${theme.colors.neonBlue})`
+                  background: theme.colors.neonPink
                 }}
               >
                 {joiningGame ? 'Processing...' : `JOIN GAME ($${gameData.priceUSD.toFixed(2)})`}
