@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import headsTexture from '../../Images/Heads.webp'
 import tailsTexture from '../../Images/tails.webp'
@@ -10,12 +10,7 @@ const ThreeCoin = ({
   onPowerCharge, 
   onPowerRelease,
   isPlayerTurn,
-  gamePhase,
-  creatorPower = 0,
-  joinerPower = 0,
-  isCharging = false,
-  chargingPlayer = null,
-  style = {}
+  isCharging = false
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
@@ -23,14 +18,10 @@ const ThreeCoin = ({
   const rendererRef = useRef(null)
   const animationIdRef = useRef(null)
   const isAnimatingRef = useRef(false)
-  
-  const [currentSide, setCurrentSide] = useState('heads')
 
   // Initialize Three.js scene ONCE
   useEffect(() => {
     if (!mountRef.current || sceneRef.current) return
-
-    console.log('🎬 Initializing Three.js scene')
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000)
@@ -46,14 +37,8 @@ const ThreeCoin = ({
 
     // Create coin
     const coinGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.15, 32)
-    const headsMaterial = new THREE.MeshPhongMaterial({
-      color: 0xFFFFFF,
-      shininess: 100
-    })
-    const tailsMaterial = new THREE.MeshPhongMaterial({
-      color: 0xFFFFFF,
-      shininess: 100
-    })
+    const headsMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 100 })
+    const tailsMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, shininess: 100 })
 
     const coin = new THREE.Group()
     coin.scale.set(1.2, 1.2, 1.2)
@@ -101,28 +86,15 @@ const ThreeCoin = ({
 
       const coin = coinRef.current
       
-      // Charging animation with tilt effect
-      if ((isCharging || chargingPlayer) && !isAnimatingRef.current) {
+      // Charging animation
+      if (isCharging && !isAnimatingRef.current) {
         const time = Date.now() * 0.001
-        
-        // Gentle rotation
-        coin.rotation.y += 0.01
-        
-        // Power-based tilt effect
-        const totalPower = creatorPower + joinerPower
-        const tiltAmount = Math.min(totalPower * 0.05, 0.3) // Max 0.3 radians tilt
-        
-        coin.rotation.z = Math.sin(time * 3) * tiltAmount
-        coin.position.y = Math.sin(time * 4) * 0.1 // Gentle hover
-        
-        // Pulsing scale based on power
-        const scaleMultiplier = 1 + (totalPower * 0.02)
-        coin.scale.set(1.2 * scaleMultiplier, 1.2 * scaleMultiplier, 1.2 * scaleMultiplier)
+        coin.rotation.y += 0.02
+        coin.rotation.z = Math.sin(time * 3) * 0.1
+        coin.position.y = Math.sin(time * 4) * 0.05
       } else if (!isAnimatingRef.current) {
-        // Reset to neutral position when not charging
         coin.rotation.z = 0
         coin.position.y = 0
-        coin.scale.set(1.2, 1.2, 1.2)
       }
 
       rendererRef.current.render(scene, camera)
@@ -144,7 +116,7 @@ const ThreeCoin = ({
     }
   }, [])
 
-  // Handle flip animation - CLEAN SINGLE TRIGGER
+  // Handle flip animation - ONLY when server tells us to
   useEffect(() => {
     if (!isFlipping || !flipResult || !flipDuration || !coinRef.current || isAnimatingRef.current) {
       return
@@ -155,34 +127,33 @@ const ThreeCoin = ({
     isAnimatingRef.current = true
     const coin = coinRef.current
     const isHeads = flipResult === 'heads'
-    
-    // Reset position and scale
+   
+    // Reset position
     coin.position.y = 0
     coin.rotation.z = 0
-    coin.scale.set(1.2, 1.2, 1.2)
-    
+   
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
-    const flips = Math.max(4, Math.floor(flipDuration / 800)) // More flips for longer duration
-    
+    const flips = Math.max(4, Math.floor(flipDuration / 800))
+   
     const animateFlip = () => {
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / flipDuration, 1)
-      
-      // Smooth easing with slow end
+     
+      // Smooth easing
       const easeProgress = progress < 0.8 ? 
         progress / 0.8 : 
         0.8 + (1 - Math.pow(1 - (progress - 0.8) / 0.2, 3)) * 0.2
-      
-      // Multi-axis rotation for dramatic effect
+     
+      // Multi-axis rotation
       const totalRotationX = flips * Math.PI * 2
       coin.rotation.x = initialRotationX + totalRotationX * easeProgress
       coin.rotation.y = Math.sin(progress * Math.PI * flips * 0.7) * 0.8
       coin.rotation.z = Math.cos(progress * Math.PI * flips * 0.5) * 0.4
-      
-      // Height variation during flip
+     
+      // Height variation
       coin.position.y = Math.sin(progress * Math.PI) * 0.5
-      
+     
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
@@ -191,54 +162,33 @@ const ThreeCoin = ({
         coin.rotation.y = 0
         coin.rotation.z = 0
         coin.position.y = 0
-        setCurrentSide(isHeads ? 'heads' : 'tails')
         isAnimatingRef.current = false
         console.log('✅ Flip animation complete:', flipResult)
       }
     }
-    
+   
     animateFlip()
   }, [isFlipping, flipResult, flipDuration])
-
-  // Update animation variables when power changes
-  useEffect(() => {
-    // This effect just ensures the animation loop has access to current power values
-  }, [creatorPower, joinerPower, isCharging, chargingPlayer])
-
-  const handleMouseDown = useCallback((e) => {
-    e.preventDefault()
-    if (isPlayerTurn && onPowerCharge && !isAnimatingRef.current) {
-      onPowerCharge()
-    }
-  }, [isPlayerTurn, onPowerCharge])
-
-  const handleMouseUp = useCallback((e) => {
-    e.preventDefault()
-    if (isPlayerTurn && onPowerRelease && !isAnimatingRef.current) {
-      onPowerRelease()
-    }
-  }, [isPlayerTurn, onPowerRelease])
 
   return (
     <div
       ref={mountRef}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchStart={handleMouseDown}
-      onTouchEnd={handleMouseUp}
+      onMouseDown={isPlayerTurn ? onPowerCharge : undefined}
+      onMouseUp={isPlayerTurn ? onPowerRelease : undefined}
+      onMouseLeave={isPlayerTurn ? onPowerRelease : undefined}
+      onTouchStart={isPlayerTurn ? onPowerCharge : undefined}
+      onTouchEnd={isPlayerTurn ? onPowerRelease : undefined}
       style={{
         width: '300px',
         height: '300px',
-        cursor: isPlayerTurn && !isAnimatingRef.current ? 'pointer' : 'default',
+        cursor: isPlayerTurn ? 'pointer' : 'default',
         userSelect: 'none',
-        background: (isCharging || chargingPlayer) ? 
+        background: isCharging ? 
           'radial-gradient(circle, rgba(255, 20, 147, 0.3) 0%, rgba(255, 20, 147, 0.1) 50%, transparent 100%)' : 
           'transparent',
-        boxShadow: (isCharging || chargingPlayer) ? 
+        boxShadow: isCharging ? 
           '0 0 30px rgba(255, 20, 147, 0.6), 0 0 60px rgba(255, 20, 147, 0.4)' : 
-          'none',
-        ...style
+          'none'
       }}
     />
   )
