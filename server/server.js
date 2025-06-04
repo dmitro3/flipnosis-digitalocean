@@ -570,7 +570,7 @@ const dbHelpers = {
   }
 }
 
-// Enhanced GameSession class
+// Enhanced GameSession class - COMPLETE REPLACEMENT
 class GameSession {
   constructor(gameId) {
     this.gameId = gameId
@@ -578,37 +578,34 @@ class GameSession {
     this.joiner = null
     this.phase = 'waiting'
     this.currentRound = 1
-    this.currentPlayer = null
     this.maxRounds = 5
     this.creatorWins = 0
     this.joinerWins = 0
     this.winner = null
     this.spectators = 0
     
-    // Player choices and states
-    this.creatorChoice = null
-    this.joinerChoice = null
+    // Fixed choice system - creator is always heads, joiner is always tails
+    this.creatorChoice = 'heads'  // Creator is always heads
+    this.joinerChoice = 'tails'   // Joiner is always tails
+    this.currentPlayer = null
     this.currentPlayerChoice = null
+    
+    // Power system
     this.creatorPower = 0
     this.joinerPower = 0
     this.chargingPlayers = new Set()
     
     this.clients = new Set()
     this.lastActionTime = Date.now()
-    this.roundStartTime = null
     this.gameData = null
-
-    // Add pendingFlipResult to store result until animation completes
-    this.pendingFlipResult = null
+    this.isFlipInProgress = false
+    this.roundCompleted = false
   }
 
   addClient(ws) {
     this.clients.add(ws)
     this.spectators = this.clients.size
     this.broadcast({ type: 'spectator_update', spectators: this.spectators })
-    
-    dbHelpers.updateGame(this.gameId, { total_spectators: Math.max(this.spectators, 0) })
-      .catch(err => console.error('Error updating spectator count:', err))
   }
 
   removeClient(ws) {
@@ -638,9 +635,9 @@ class GameSession {
       phase: this.phase,
       currentRound: this.currentRound,
       currentPlayer: this.currentPlayer,
-      currentPlayerChoice: this.currentPlayerChoice,
       creatorChoice: this.creatorChoice,
       joinerChoice: this.joinerChoice,
+      currentPlayerChoice: this.currentPlayerChoice,
       maxRounds: this.maxRounds,
       creatorWins: this.creatorWins,
       joinerWins: this.joinerWins,
@@ -649,6 +646,7 @@ class GameSession {
       creatorPower: this.creatorPower,
       joinerPower: this.joinerPower,
       chargingPlayers: Array.from(this.chargingPlayers),
+      isFlipInProgress: this.isFlipInProgress,
       syncedFlip: this.syncedFlip || null
     }
   }
@@ -667,7 +665,7 @@ class GameSession {
 
   async setJoiner(address, entryFeeHash) {
     this.joiner = address
-    this.phase = 'ready' // Set to ready first
+    this.phase = 'ready'
     
     try {
       await dbHelpers.updateGame(this.gameId, { 
@@ -675,17 +673,6 @@ class GameSession {
         status: 'joined',
         entry_fee_hash: entryFeeHash 
       })
-      
-      if (this.gameData) {
-        await dbHelpers.recordTransaction(
-          this.gameId,
-          address,
-          'entry_fee',
-          this.gameData.priceUSD,
-          this.gameData.priceUSD / 2500,
-          entryFeeHash
-        )
-      }
     } catch (error) {
       console.error('Error updating joiner in database:', error)
     }
@@ -703,13 +690,19 @@ class GameSession {
   }
 
   async startGame() {
-    console.log('🚀 Starting game')
+    if (this.phase !== 'ready') return false
+    
+    console.log('🚀 Starting game - Round', this.currentRound)
     this.phase = 'round_active'
-    this.currentPlayer = this.creator
-    this.currentRound = 1
-    this.lastActionTime = Date.now()
-    this.roundStartTime = Date.now()
-    this.resetRoundState()
+    this.currentPlayer = this.creator // Always start with creator
+    this.currentPlayerChoice = this.creatorChoice
+    this.isFlipInProgress = false
+    this.roundCompleted = false
+    
+    // Reset powers
+    this.creatorPower = 0
+    this.joinerPower = 0
+    this.chargingPlayers.clear()
     
     try {
       await dbHelpers.updateGame(this.gameId, { 
@@ -720,8 +713,6 @@ class GameSession {
       console.error('Error updating game start in database:', error)
     }
     
-    console.log('👤 Current player set to:', this.currentPlayer)
-    
     this.broadcast({ 
       type: 'game_started', 
       currentPlayer: this.currentPlayer,
@@ -731,50 +722,16 @@ class GameSession {
     return true
   }
 
-  resetRoundState() {
-    this.creatorChoice = null
-    this.joinerChoice = null
-    this.currentPlayerChoice = null
-    this.creatorPower = 0
-    this.joinerPower = 0
-    this.chargingPlayers.clear()
-    this.syncedFlip = null
-  }
-
-  makeChoice(address, choice) {
-    if (address !== this.currentPlayer) {
-      console.log('❌ Invalid choice - not your turn')
-      return false
-    }
-
-    console.log('🎯 Player choice made:', { address, choice })
-    
-    if (address === this.creator) {
-      this.creatorChoice = choice
-    } else if (address === this.joiner) {
-      this.joinerChoice = choice
-    }
-    
-    this.currentPlayerChoice = choice
-    
-    this.broadcast({
-      type: 'choice_made',
-      player: address === this.creator ? 'creator' : 'joiner',
-      choice: choice
-    })
-    
-    return true
-  }
-
   startCharging(address) {
-    if (address === this.currentPlayer && this.currentPlayerChoice) {
-      this.chargingPlayers.add(address)
-      this.broadcast({
-        type: 'power_charging',
-        player: address === this.creator ? 'creator' : 'joiner',
-        charging: true
-      })
-    }
+    if (this.isFlipInProgress || this.roundCompleted) return false
+    
+    this.chargingPlayers.add(address)
+    this.broadcast({
+      type: 'power_charging',
+      player: address === this.creator ? 'creator' : 'joiner',
+      charging: true
+    })
+    return true
   }
 
   stopCharging(address) {
@@ -787,39 +744,185 @@ class GameSession {
   }
 
   updatePower(address, power) {
+    if (this.isFlipInProgress || this.roundCompleted) return
+    
     if (address === this.creator) {
       this.creatorPower = power
     } else if (address === this.joiner) {
       this.joinerPower = power
     }
     
+    // Broadcast power update to all clients so they can see both power bars
     this.broadcast({ 
-      type: 'power_update', 
-      currentPlayer: this.currentPlayer,
-      power: power,
-      player: address === this.creator ? 'creator' : 'joiner'
+      type: 'power_update',
+      creatorPower: this.creatorPower,
+      joinerPower: this.joinerPower,
+      chargingPlayer: address === this.creator ? 'creator' : 'joiner'
     })
   }
 
-  switchTurn() {
-    this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
-    this.lastActionTime = Date.now()
-    this.roundStartTime = Date.now()
-    this.resetRoundState()
+  async handleFlipComplete(address, choice, power) {
+    console.log('🎲 Handling flip from:', address, 'power:', power)
     
-    console.log('🔄 Turn switched to:', this.currentPlayer)
-    
-    if (this.phase === 'round_active') {
-      this.broadcast({
-        type: 'turn_switch',
-        currentPlayer: this.currentPlayer,
-        round: this.currentRound,
-        timestamp: this.lastActionTime
-      })
+    if (this.isFlipInProgress || this.roundCompleted) {
+      console.log('❌ Flip already in progress or round completed')
+      return false
     }
+    
+    if (address !== this.currentPlayer) {
+      console.log('❌ Not current player turn')
+      return false
+    }
+
+    this.isFlipInProgress = true
+    
+    // Generate result
+    const randomResult = Math.random() < 0.5 ? 'heads' : 'tails'
+    
+    // Determine winner - creator is heads, joiner is tails
+    const playerChoice = address === this.creator ? 'heads' : 'tails'
+    const isWinner = playerChoice === randomResult
+    
+    // Calculate duration based on BOTH players' power (3-8 seconds)
+    const totalPower = this.creatorPower + this.joinerPower
+    const flipDuration = 3000 + (totalPower * 250) // More power = longer flip
+    
+    console.log('🎬 Flip result:', { 
+      playerChoice, 
+      randomResult, 
+      isWinner, 
+      flipDuration,
+      totalPower 
+    })
+
+    // Create synchronized flip data
+    this.syncedFlip = {
+      result: randomResult,
+      playerChoice: playerChoice,
+      playerAddress: address,
+      duration: flipDuration,
+      timestamp: Date.now(),
+      isWinner: isWinner,
+      winnerType: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null,
+      showResult: false,
+      creatorPower: this.creatorPower,
+      joinerPower: this.joinerPower,
+      totalPower: totalPower
+    }
+
+    // Broadcast flip animation
+    this.broadcast({
+      type: 'synchronized_flip',
+      syncedFlip: this.syncedFlip
+    })
+
+    // Schedule result processing AFTER animation
+    setTimeout(async () => {
+      await this.processFlipResult(isWinner, address, randomResult, playerChoice, power)
+    }, flipDuration + 1000) // Extra buffer
+
+    return true
   }
 
-  // Load game state from database
+  async processFlipResult(isWinner, address, result, playerChoice, power) {
+    if (this.roundCompleted) return
+    
+    this.roundCompleted = true
+    
+    // Update scores
+    if (isWinner) {
+      if (address === this.creator) {
+        this.creatorWins++
+      } else {
+        this.joinerWins++
+      }
+    }
+
+    // Record in database
+    try {
+      await dbHelpers.recordRound(this.gameId, this.currentRound, result, address, power)
+      await dbHelpers.updateGame(this.gameId, { 
+        creator_wins: this.creatorWins,
+        joiner_wins: this.joinerWins
+      })
+    } catch (error) {
+      console.error('Error recording round:', error)
+    }
+
+    // Show result
+    if (this.syncedFlip) {
+      this.syncedFlip.showResult = true
+    }
+
+    this.broadcast({
+      type: 'round_complete',
+      syncedFlip: this.syncedFlip,
+      scores: {
+        creator: this.creatorWins,
+        joiner: this.joinerWins
+      },
+      roundWinner: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null
+    })
+
+    // Check win condition
+    const winsNeeded = Math.ceil(this.maxRounds / 2)
+    if (this.creatorWins >= winsNeeded || this.joinerWins >= winsNeeded) {
+      await this.endGame()
+      return
+    }
+
+    // Prepare next round after delay
+    setTimeout(() => {
+      this.prepareNextRound()
+    }, 4000)
+  }
+
+  async endGame() {
+    this.phase = 'game_complete'
+    this.winner = this.creatorWins > this.joinerWins ? this.creator : this.joiner
+    
+    try {
+      await dbHelpers.updateGame(this.gameId, { 
+        status: 'completed',
+        winner: this.winner,
+        completed_at: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('Error updating game completion:', error)
+    }
+    
+    this.broadcast({
+      type: 'game_complete',
+      winner: this.winner,
+      finalScores: {
+        creator: this.creatorWins,
+        joiner: this.joinerWins
+      }
+    })
+  }
+
+  prepareNextRound() {
+    if (this.phase === 'game_complete') return
+    
+    this.currentRound++
+    this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
+    this.currentPlayerChoice = this.currentPlayer === this.creator ? this.creatorChoice : this.joinerChoice
+    this.isFlipInProgress = false
+    this.roundCompleted = false
+    
+    // Reset powers
+    this.creatorPower = 0
+    this.joinerPower = 0
+    this.chargingPlayers.clear()
+    this.syncedFlip = null
+    
+    this.broadcast({
+      type: 'next_round_ready',
+      currentPlayer: this.currentPlayer,
+      currentRound: this.currentRound
+    })
+  }
+
   async loadFromDatabase() {
     try {
       const gameData = await dbHelpers.getGame(this.gameId)
@@ -830,19 +933,13 @@ class GameSession {
         this.creatorWins = gameData.creator_wins || 0
         this.joinerWins = gameData.joiner_wins || 0
         
-        // Calculate current round from database
+        // Count completed rounds to determine current round
         const roundsSql = `SELECT COUNT(*) as count FROM game_rounds WHERE game_id = ?`
         return new Promise((resolve) => {
           db.get(roundsSql, [this.gameId], (err, result) => {
             if (!err && result) {
-              this.currentRound = (result.count || 0) + 1
+              this.currentRound = Math.min((result.count || 0) + 1, this.maxRounds)
             }
-            console.log('📊 Loaded game state:', {
-              gameId: this.gameId,
-              creatorWins: this.creatorWins,
-              joinerWins: this.joinerWins,
-              currentRound: this.currentRound
-            })
             resolve()
           })
         })
@@ -850,139 +947,6 @@ class GameSession {
     } catch (error) {
       console.error('Error loading game from database:', error)
     }
-  }
-
-  // Update handleFlipComplete method
-  async handleFlipComplete(address, choice, power) {
-    console.log('🎲 Handling flip from:', address, 'choice:', choice, 'power:', power)
-    
-    if (address !== this.currentPlayer) {
-      console.log('❌ Invalid turn - current player is:', this.currentPlayer)
-      return false
-    }
-
-    // Generate random result
-    const randomResult = Math.random() < 0.5 ? 'heads' : 'tails'
-    const isWinner = choice === randomResult
-    
-    // Calculate flip duration (3-6 seconds)
-    const flipDuration = 3000 + (power * 300)
-    
-    console.log('🎬 Flip result:', { choice, randomResult, isWinner, flipDuration })
-
-    // Update scores IMMEDIATELY
-    if (isWinner) {
-      if (address === this.creator) {
-        this.creatorWins++
-        console.log('✅ Creator wins! New score:', this.creatorWins)
-      } else {
-        this.joinerWins++
-        console.log('✅ Joiner wins! New score:', this.joinerWins)
-      }
-    }
-
-    // Record round in database
-    try {
-      await dbHelpers.recordRound(this.gameId, this.currentRound, randomResult, address, power)
-      await dbHelpers.updateGame(this.gameId, { 
-        creator_wins: this.creatorWins,
-        joiner_wins: this.joinerWins
-      })
-      console.log('✅ Round and scores recorded in database')
-    } catch (error) {
-      console.error('Error recording round:', error)
-    }
-
-    // Create synchronized flip data WITH updated scores
-    this.syncedFlip = {
-      result: randomResult,
-      playerChoice: choice,
-      playerAddress: address,
-      duration: flipDuration,
-      timestamp: Date.now(),
-      isWinner: isWinner,
-      winnerType: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null,
-      showResult: false,
-      roundWinner: isWinner ? (address === this.creator ? 'creator' : 'joiner') : null
-    }
-
-    // Broadcast flip animation WITH updated scores
-    this.broadcast({
-      type: 'synchronized_flip',
-      syncedFlip: this.syncedFlip,
-      scores: {
-        creator: this.creatorWins,
-        joiner: this.joinerWins
-      },
-      currentRound: this.currentRound
-    })
-
-    // Schedule result display and next round
-    setTimeout(async () => {
-      await this.showResultAndContinue()
-    }, flipDuration + 500)
-
-    return true
-  }
-
-  // Replace completeRound with showResultAndContinue
-  async showResultAndContinue() {
-    if (!this.syncedFlip) return
-
-    // Show the result
-    this.syncedFlip.showResult = true
-
-    this.broadcast({
-      type: 'round_complete',
-      syncedFlip: this.syncedFlip,
-      scores: {
-        creator: this.creatorWins,
-        joiner: this.joinerWins
-      },
-      currentRound: this.currentRound
-    })
-
-    // Check win condition
-    const winsNeeded = Math.ceil(this.maxRounds / 2)
-    if (this.creatorWins >= winsNeeded || this.joinerWins >= winsNeeded) {
-      this.phase = 'game_complete'
-      this.winner = this.creatorWins > this.joinerWins ? this.creator : this.joiner
-      
-      try {
-        await dbHelpers.updateGame(this.gameId, { 
-          status: 'completed',
-          winner: this.winner,
-          completed_at: new Date().toISOString()
-        })
-      } catch (error) {
-        console.error('Error updating game completion:', error)
-      }
-      
-      setTimeout(() => {
-        this.broadcast({
-          type: 'game_complete',
-          winner: this.winner,
-          finalScores: {
-            creator: this.creatorWins,
-            joiner: this.joinerWins
-          }
-        })
-      }, 3000)
-      
-      return
-    }
-
-    // Continue to next round after 4 seconds
-    setTimeout(() => {
-      this.currentRound++
-      this.switchTurn()
-      
-      this.broadcast({
-        type: 'next_round_ready',
-        currentPlayer: this.currentPlayer,
-        currentRound: this.currentRound
-      })
-    }, 4000)
   }
 }
 

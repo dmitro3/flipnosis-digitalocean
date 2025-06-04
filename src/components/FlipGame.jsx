@@ -625,11 +625,12 @@ const FlipGame = () => {
                 
                 {/* Enhanced Power Bar */}
                 <EnhancedPowerBar
-                  power={myPower}
+                  creatorPower={gameState?.creatorPower || 0}
+                  joinerPower={gameState?.joinerPower || 0}
                   isCharging={isCharging}
-                  isVisible={showPowerCharging}
-                  label={`${myChoice?.toUpperCase()} Power`}
-                  color={isCreator ? theme.colors.neonPink : theme.colors.neonBlue}
+                  isVisible={showPowerCharging || showWaitingForOpponent}
+                  currentPlayer={gameState?.currentPlayer}
+                  isCreator={isCreator}
                 />
               </div>
 
