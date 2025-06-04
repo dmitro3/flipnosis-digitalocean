@@ -12,7 +12,7 @@ import {
   Button,
   LoadingSpinner
 } from '../styles/components'
-import ThreeCoin from '../components/ThreeCoin'
+import QuarterCoin from '../components/QuarterCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
 import { ethers } from 'ethers'
@@ -451,7 +451,7 @@ const FlipGame = () => {
                 marginBottom: '2rem',
                 transform: 'scale(1.24)'
               }}>
-                <ThreeCoin
+                <QuarterCoin
                   isFlipping={!!flipAnimation}
                   flipResult={flipAnimation?.result}
                   flipDuration={flipAnimation?.duration}
