@@ -90,6 +90,9 @@ const FlipGame = () => {
   // Add to state
   const [opponentCharging, setOpponentCharging] = useState(false)
 
+  // Add to existing state
+  const [isFlipAnimating, setIsFlipAnimating] = useState(false)
+
   // Load game data
   const loadGame = async () => {
     try {
@@ -157,11 +160,12 @@ const FlipGame = () => {
       console.log('🎬 Starting synchronized flip:', gameState.syncedFlip)
       setSyncedFlipData(gameState.syncedFlip)
       setIsFlipping(true)
+      setIsFlipAnimating(true)
       
       // Clear after animation duration
       setTimeout(() => {
         setIsFlipping(false)
-        setSyncedFlipData(null)
+        setIsFlipAnimating(false)
       }, gameState.syncedFlip.duration)
     }
   }, [gameState?.syncedFlip])
@@ -404,6 +408,14 @@ const FlipGame = () => {
     }
   }, [gameState?.chargingPlayers, isCreator, gameData])
 
+  // Handle round completion separately
+  useEffect(() => {
+    if (gameState?.type === 'round_complete') {
+      // Update scores only after animation
+      console.log('🏁 Round completed, updating scores')
+    }
+  }, [gameState])
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -556,7 +568,7 @@ const FlipGame = () => {
                 </div>
               )}
 
-              {/* 3D Coin with Enhanced Power Bar */}
+              {/* 3D Coin with Enhanced Power Bar and Flashing Border */}
               <div style={{ 
                 position: 'relative', 
                 margin: '2rem auto', 
@@ -564,7 +576,15 @@ const FlipGame = () => {
                 height: '300px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                // Add flashing border when flipping
+                border: isFlipAnimating ? '5px solid #FF1493' : '2px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '50%',
+                boxShadow: isFlipAnimating ? 
+                  '0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493' : 
+                  'none',
+                animation: isFlipAnimating ? 'flipBorderFlash 0.2s infinite' : 'none',
+                transition: 'all 0.3s ease'
               }}>
                 <ThreeCoin
                   isFlipping={isFlipping}
@@ -764,8 +784,8 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* Add Win/Lose Animation */}
-          {syncedFlipData && (
+          {/* Win/Lose Animation - Only show when result is ready */}
+          {syncedFlipData && syncedFlipData.showResult && (
             <div style={{
               position: 'fixed',
               top: '50%',

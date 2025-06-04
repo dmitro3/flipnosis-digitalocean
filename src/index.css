@@ -355,4 +355,22 @@ canvas {
     transform: scale(1) rotate(0deg);
     opacity: 0;
   }
+}
+
+@keyframes flipBorderFlash {
+  0% {
+    border-color: #FF1493;
+    box-shadow: 0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493;
+    border-width: 5px;
+  }
+  50% {
+    border-color: #FF69B4;
+    box-shadow: 0 0 30px #FF69B4, 0 0 60px #FF69B4, 0 0 90px #FF69B4;
+    border-width: 7px;
+  }
+  100% {
+    border-color: #FF1493;
+    box-shadow: 0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493;
+    border-width: 5px;
+  }
 } 
