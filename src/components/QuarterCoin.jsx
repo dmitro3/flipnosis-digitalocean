@@ -1,5 +1,7 @@
 import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
+import trumpHeadsImage from '../../Images/trumpheads.webp'
+import trumpTailsImage from '../../Images/trumptails.webp'
 
 const QuarterCoin = ({ 
   isFlipping, 
@@ -56,145 +58,59 @@ const QuarterCoin = ({
     const coinMesh = new THREE.Mesh(coinGeometry, silverMaterial)
     coin.add(coinMesh)
 
-    // Create detailed quarter textures
-    const createQuarterTexture = (isHeads = true) => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 512
-      canvas.height = 512
-      const context = canvas.getContext('2d')
-      
-      // Clear with silver background
-      context.fillStyle = '#c5c5c5'
-      context.fillRect(0, 0, 512, 512)
-      
-      // Add subtle radial gradient for depth
-      const gradient = context.createRadialGradient(256, 256, 0, 256, 256, 256)
-      gradient.addColorStop(0, '#d5d5d5')
-      gradient.addColorStop(0.7, '#c5c5c5')
-      gradient.addColorStop(1, '#a5a5a5')
-      context.fillStyle = gradient
-      context.fillRect(0, 0, 512, 512)
-      
-      if (isHeads) {
-        // HEADS side - Trump profile and text
-        context.fillStyle = '#2a2a2a'
-        context.strokeStyle = '#1a1a1a'
-        context.lineWidth = 2
-        
-        // Draw simplified Trump profile silhouette
-        context.beginPath()
-        context.ellipse(256, 220, 80, 95, 0, 0, 2 * Math.PI) // Head shape
-        context.fill()
-        context.stroke()
-        
-        // Hair outline (distinctive shape)
-        context.beginPath()
-        context.ellipse(256, 180, 90, 45, 0, 0, Math.PI, true) // Hair curve
-        context.fill()
-        
-        // "LIBERTY" text (curved at top)
-        context.font = 'bold 24px serif'
-        context.textAlign = 'center'
-        context.fillStyle = '#2a2a2a'
-        context.fillText('LIBERTY', 256, 80)
-        
-        // "IN GOD WE TRUST" (left side)
-        context.font = 'bold 16px serif'
-        context.save()
-        context.translate(120, 180)
-        context.rotate(-Math.PI/2)
-        context.fillText('IN GOD', 0, 0)
-        context.fillText('WE TRUST', 0, 20)
-        context.restore()
-        
-        // Date (right side)
-        context.font = 'bold 20px serif'
-        context.textAlign = 'center'
-        context.fillText('2024', 380, 200)
-        
-        // "UNITED STATES OF AMERICA" (bottom curve)
-        context.font = 'bold 18px serif'
-        context.fillText('UNITED STATES', 256, 380)
-        context.fillText('OF AMERICA', 256, 405)
-        
-      } else {
-        // TAILS side - Eagle design
-        context.fillStyle = '#2a2a2a'
-        context.strokeStyle = '#1a1a1a'
-        context.lineWidth = 2
-        
-        // Eagle body (simplified)
-        context.beginPath()
-        context.ellipse(256, 256, 60, 80, 0, 0, 2 * Math.PI)
-        context.fill()
-        context.stroke()
-        
-        // Wings spread
-        context.beginPath()
-        context.ellipse(200, 240, 40, 25, -0.3, 0, 2 * Math.PI) // Left wing
-        context.fill()
-        context.beginPath()
-        context.ellipse(312, 240, 40, 25, 0.3, 0, 2 * Math.PI) // Right wing
-        context.fill()
-        
-        // "QUARTER DOLLAR" text (bottom)
-        context.font = 'bold 20px serif'
-        context.textAlign = 'center'
-        context.fillText('QUARTER', 256, 380)
-        context.fillText('DOLLAR', 256, 405)
-        
-        // "E PLURIBUS UNUM" (top)
-        context.font = 'bold 16px serif'
-        context.fillText('E PLURIBUS UNUM', 256, 80)
-        
-        // Stars around edge
-        context.font = 'bold 20px serif'
-        for (let i = 0; i < 8; i++) {
-          const angle = (i / 8) * Math.PI * 2
-          const x = 256 + Math.cos(angle) * 180
-          const y = 256 + Math.sin(angle) * 180
-          context.fillText('★', x, y)
-        }
-      }
-      
-      // Add raised edge effect
-      context.strokeStyle = '#999999'
-      context.lineWidth = 8
-      context.beginPath()
-      context.arc(256, 256, 248, 0, 2 * Math.PI)
-      context.stroke()
-      
-      const texture = new THREE.CanvasTexture(canvas)
-      texture.needsUpdate = true
-      return texture
-    }
+    // Load the actual Trump images
+    const textureLoader = new THREE.TextureLoader()
 
-    // Heads face (Trump side)
-    const headsTexture = createQuarterTexture(true)
+    // Heads face (Trump side) - using your trumpheads.webp
     const headsMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xc5c5c5,
-      metalness: 0.9,
-      roughness: 0.1,
-      map: headsTexture,
-      normalScale: new THREE.Vector2(0.5, 0.5) // Subtle depth
+      color: 0xffffff, // White base to show true image colors
+      metalness: 0.2,  // Reduced for better image visibility
+      roughness: 0.3,
+      reflectivity: 0.6,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.3
     })
-    
+
+    textureLoader.load(trumpHeadsImage, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace
+      texture.flipY = false
+      texture.wrapS = THREE.ClampToEdgeWrapping
+      texture.wrapT = THREE.ClampToEdgeWrapping
+      headsMaterial.map = texture
+      headsMaterial.needsUpdate = true
+      console.log('✅ Heads texture loaded')
+    }, undefined, (error) => {
+      console.error('❌ Error loading heads texture:', error)
+    })
+
     const headsGeometry = new THREE.CircleGeometry(1.4, 64)
     const headsFace = new THREE.Mesh(headsGeometry, headsMaterial)
     headsFace.position.z = 0.076
     headsFace.rotation.x = 0
     coin.add(headsFace)
 
-    // Tails face (Eagle side)
-    const tailsTexture = createQuarterTexture(false)
+    // Tails face (Eagle/Trump tails side) - using your trumptails.webp
     const tailsMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xc5c5c5,
-      metalness: 0.9,
-      roughness: 0.1,
-      map: tailsTexture,
-      normalScale: new THREE.Vector2(0.5, 0.5)
+      color: 0xffffff, // White base to show true image colors
+      metalness: 0.2,  // Reduced for better image visibility
+      roughness: 0.3,
+      reflectivity: 0.6,
+      clearcoat: 0.5,
+      clearcoatRoughness: 0.3
     })
-    
+
+    textureLoader.load(trumpTailsImage, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace
+      texture.flipY = false
+      texture.wrapS = THREE.ClampToEdgeWrapping
+      texture.wrapT = THREE.ClampToEdgeWrapping
+      tailsMaterial.map = texture
+      tailsMaterial.needsUpdate = true
+      console.log('✅ Tails texture loaded')
+    }, undefined, (error) => {
+      console.error('❌ Error loading tails texture:', error)
+    })
+
     const tailsGeometry = new THREE.CircleGeometry(1.4, 64)
     const tailsFace = new THREE.Mesh(tailsGeometry, tailsMaterial)
     tailsFace.position.z = -0.076
