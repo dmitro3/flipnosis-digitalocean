@@ -39,16 +39,17 @@ const QuarterCoin = ({
 
     // Create coin group
     const coin = new THREE.Group()
-    coin.scale.set(1.5, 1.5, 1.5) // Increased scale
+    coin.scale.set(1.2, 1.2, 1.2) // Reduced scale from 1.5
 
     // Load the actual Trump images
     const textureLoader = new THREE.TextureLoader()
 
     // Heads face (Trump side)
-    const headsMaterial = new THREE.MeshBasicMaterial({ // Changed to BasicMaterial for better image display
+    const headsMaterial = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 1
+      opacity: 1,
+      side: THREE.DoubleSide // Add double-sided rendering
     })
 
     textureLoader.load(trumpHeadsImage, (texture) => {
@@ -65,15 +66,16 @@ const QuarterCoin = ({
 
     const headsGeometry = new THREE.CircleGeometry(1.4, 64)
     const headsFace = new THREE.Mesh(headsGeometry, headsMaterial)
-    headsFace.position.z = 0.001 // Slightly offset to prevent z-fighting
-    headsFace.rotation.x = 0
+    headsFace.position.z = 0.001
+    headsFace.rotation.x = Math.PI // Flip 180 degrees
     coin.add(headsFace)
 
     // Tails face
-    const tailsMaterial = new THREE.MeshBasicMaterial({ // Changed to BasicMaterial for better image display
+    const tailsMaterial = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 1
+      opacity: 1,
+      side: THREE.DoubleSide // Add double-sided rendering
     })
 
     textureLoader.load(trumpTailsImage, (texture) => {
@@ -90,8 +92,8 @@ const QuarterCoin = ({
 
     const tailsGeometry = new THREE.CircleGeometry(1.4, 64)
     const tailsFace = new THREE.Mesh(tailsGeometry, tailsMaterial)
-    tailsFace.position.z = -0.001 // Slightly offset to prevent z-fighting
-    tailsFace.rotation.x = Math.PI
+    tailsFace.position.z = -0.001
+    tailsFace.rotation.x = 0 // Changed from Math.PI to 0
     coin.add(tailsFace)
 
     // Edge with metallic look
@@ -107,8 +109,8 @@ const QuarterCoin = ({
     const edge = new THREE.Mesh(edgeGeometry, edgeMaterial)
     coin.add(edge)
 
-    // Set initial rotation
-    coin.rotation.x = Math.PI / 2
+    // Set initial rotation to show face instead of edge
+    coin.rotation.x = 0 // Changed from Math.PI / 2 to 0
     coin.rotation.y = 0
     coin.rotation.z = 0
 
