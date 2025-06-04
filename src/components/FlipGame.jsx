@@ -16,6 +16,7 @@ import ThreeCoin from '../components/ThreeCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
 import { ethers } from 'ethers'
+import ProfilePicture from './ProfilePicture'
 
 const FlipGame = () => {
   const { gameId } = useParams()
@@ -453,30 +454,30 @@ const FlipGame = () => {
                     `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})` : 
                     'rgba(255,255,255,0.1)',
                   borderRadius: '1rem',
-                  marginBottom: '1rem'
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}>
-                  <h3 style={{ color: 'white', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0 }}>
                     PLAYER 1 {isCreator && '(YOU)'}
                   </h3>
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-                    {gameState?.creator ? `${gameState.creator.slice(0, 6)}...${gameState.creator.slice(-4)}` : 'Waiting...'}
-                  </div>
                   
-                  {/* Player Choice Display */}
-                  <div style={{
-                    marginTop: '0.5rem',
-                    padding: '0.25rem 0.75rem',
-                    background: theme.colors.neonPink,
-                    borderRadius: '1rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold'
-                  }}>
-                    👑 HEADS
+                  {/* Profile Picture */}
+                  <ProfilePicture
+                    address={gameState?.creator}
+                    size="60px"
+                    isClickable={isCreator}
+                    showUploadIcon={isCreator}
+                  />
+                  
+                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem', textAlign: 'center' }}>
+                    {gameState?.creator ? `${gameState.creator.slice(0, 6)}...${gameState.creator.slice(-4)}` : 'Waiting...'}
                   </div>
                   
                   {gameState?.currentPlayer === gameState?.creator && gameState?.phase === 'round_active' && (
                     <div style={{
-                      marginTop: '0.5rem',
                       padding: '0.25rem 0.75rem',
                       background: theme.colors.statusSuccess,
                       borderRadius: '1rem',
@@ -581,32 +582,30 @@ const FlipGame = () => {
                     `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 
                     'rgba(255,255,255,0.1)',
                   borderRadius: '1rem',
-                  marginBottom: '1rem'
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}>
-                  <h3 style={{ color: 'white', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0 }}>
                     PLAYER 2 {isJoiner && '(YOU)'}
                   </h3>
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+                  
+                  {/* Profile Picture */}
+                  <ProfilePicture
+                    address={gameState?.joiner}
+                    size="60px"
+                    isClickable={isJoiner}
+                    showUploadIcon={isJoiner}
+                  />
+                  
+                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem', textAlign: 'center' }}>
                     {gameState?.joiner ? `${gameState.joiner.slice(0, 6)}...${gameState.joiner.slice(-4)}` : 'Waiting...'}
                   </div>
                   
-                  {/* Player Choice Display */}
-                  {gameState?.joiner && (
-                    <div style={{
-                      marginTop: '0.5rem',
-                      padding: '0.25rem 0.75rem',
-                      background: theme.colors.neonBlue,
-                      borderRadius: '1rem',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold'
-                    }}>
-                      💎 TAILS
-                    </div>
-                  )}
-                  
                   {gameState?.currentPlayer === gameState?.joiner && gameState?.phase === 'round_active' && (
                     <div style={{
-                      marginTop: '0.5rem',
                       padding: '0.25rem 0.75rem',
                       background: theme.colors.statusSuccess,
                       borderRadius: '1rem',

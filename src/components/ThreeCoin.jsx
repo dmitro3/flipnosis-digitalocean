@@ -153,31 +153,38 @@ const ThreeCoin = ({
     const animateFlip = () => {
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / flipDuration, 1)
-     
-      // Smooth easing
-      const easeProgress = progress < 0.8 ? 
-        progress / 0.8 : 
-        0.8 + (1 - Math.pow(1 - (progress - 0.8) / 0.2, 3)) * 0.2
-     
-      // Multi-axis rotation for dramatic effect
+      
+      // Advanced easing - fast start, gradual slow down, very slow end
+      let easeProgress
+      if (progress < 0.7) {
+        // Fast spinning for first 70%
+        easeProgress = progress / 0.7
+      } else {
+        // Dramatic slow down for last 30%
+        const slowPhase = (progress - 0.7) / 0.3
+        const slowEase = 1 - Math.pow(1 - slowPhase, 4) // Quartic ease-out
+        easeProgress = 0.7 + (slowEase * 0.3)
+      }
+      
+      // Multi-axis rotation with slow finish
       const totalRotationX = flips * Math.PI * 2
-      coin.rotation.x = totalRotationX * easeProgress  // Primary flip axis
-      coin.rotation.y = Math.sin(progress * Math.PI * flips * 0.7) * 0.3  // Reduced side wobble
-      coin.rotation.z = Math.cos(progress * Math.PI * flips * 0.5) * 0.2  // Reduced twist
-     
-      // Height variation
-      coin.position.y = Math.sin(progress * Math.PI) * 0.5
-     
+      coin.rotation.x = totalRotationX * easeProgress
+      coin.rotation.y = Math.sin(progress * Math.PI * flips * 0.7) * 0.3 * (1 - progress * 0.5) // Reduce wobble as it slows
+      coin.rotation.z = Math.cos(progress * Math.PI * flips * 0.5) * 0.2 * (1 - progress * 0.5)
+      
+      // Height variation with gentle landing
+      coin.position.y = Math.sin(progress * Math.PI) * 0.5 * (1 - progress * 0.3)
+      
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - show the face directly toward camera
+        // Final position
         if (isHeads) {
-          coin.rotation.x = 0      // Heads facing camera
+          coin.rotation.x = 0
           coin.rotation.y = 0      
           coin.rotation.z = 0
         } else {
-          coin.rotation.x = Math.PI  // Flip 180 degrees to show tails
+          coin.rotation.x = Math.PI
           coin.rotation.y = 0
           coin.rotation.z = 0
         }
