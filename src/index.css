@@ -11,14 +11,13 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #000000; /* Fallback only */
+  background: #000000 !important;
   color: #ffffff;
   overflow-x: hidden;
-  /* Remove any background image that might be covering the plasma */
   background-image: none !important;
 }
 
-/* Plasma Globe Background - Updated */
+/* Plasma Globe Background */
 .plasma-background {
   position: fixed;
   top: 0;
@@ -79,41 +78,25 @@ body {
   opacity: 0;
 }
 
-/* Central Energy Core */
-.plasma-core {
+/* Plasma Particles */
+.plasma-particles {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 300px;
-  height: 300px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, 
-    rgba(0, 255, 65, 0.6) 0%, 
-    rgba(0, 255, 100, 0.4) 30%, 
-    rgba(0, 255, 41, 0.2) 60%, 
-    transparent 100%
-  );
-  border-radius: 50%;
-  animation: coreEnergy 4s ease-in-out infinite;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, rgba(0, 255, 65, 0.4), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(0, 255, 100, 0.3), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(0, 255, 41, 0.5), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(0, 255, 80, 0.4), transparent),
+    radial-gradient(2px 2px at 160px 30px, rgba(0, 255, 65, 0.3), transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px, 300px 150px, 250px 125px, 180px 90px, 220px 110px;
+  animation: particleFloat 15s linear infinite;
 }
 
-.plasma-core::before {
-  content: '';
-  position: absolute;
-  top: 10%;
-  left: 10%;
-  width: 80%;
-  height: 80%;
-  background: radial-gradient(circle, 
-    rgba(0, 255, 65, 0.8) 0%, 
-    rgba(0, 255, 100, 0.6) 40%, 
-    transparent 70%
-  );
-  border-radius: 50%;
-  animation: coreEnergy 3s ease-in-out infinite reverse;
-}
-
-/* Plasma Animations */
+/* Essential Animations */
 @keyframes plasmaMove1 {
   0%, 100% {
     background-position: 0% 0%, 100% 100%, 50% 50%, 0% 100%, 100% 0%, 25% 75%;
@@ -156,35 +139,6 @@ body {
   }
 }
 
-@keyframes coreEnergy {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 1;
-  }
-}
-
-/* Plasma Particles */
-.plasma-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, rgba(0, 255, 65, 0.4), transparent),
-    radial-gradient(2px 2px at 40px 70px, rgba(0, 255, 100, 0.3), transparent),
-    radial-gradient(1px 1px at 90px 40px, rgba(0, 255, 41, 0.5), transparent),
-    radial-gradient(1px 1px at 130px 80px, rgba(0, 255, 80, 0.4), transparent),
-    radial-gradient(2px 2px at 160px 30px, rgba(0, 255, 65, 0.3), transparent);
-  background-repeat: repeat;
-  background-size: 200px 100px, 300px 150px, 250px 125px, 180px 90px, 220px 110px;
-  animation: particleFloat 15s linear infinite;
-}
-
 @keyframes particleFloat {
   0% {
     background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
@@ -194,27 +148,6 @@ body {
   }
 }
 
-@keyframes bodySpiral {
-  0% {
-    background-position: center, center, center;
-  }
-  100% {
-    background-position: center, 200% 200%, center;
-  }
-}
-
-@keyframes spiralRotate {
-  0% {
-    background-position: center, center;
-    transform: rotate(0deg);
-  }
-  100% {
-    background-position: center, center;
-    transform: rotate(360deg);
-  }
-}
-
-/* Essential animations only */
 @keyframes coinFlip {
   0% { transform: rotateY(0deg) scale(1); }
   50% { transform: rotateY(180deg) scale(1.2); }
@@ -244,11 +177,9 @@ body {
 @keyframes coinContainerGlow {
   0%, 100% {
     box-shadow: 0 0 20px currentColor;
-    filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 40px currentColor, 0 0 60px currentColor;
-    filter: brightness(1.3);
+    box-shadow: 0 0 40px currentColor;
   }
 }
 
@@ -257,222 +188,207 @@ body {
     box-shadow: 0 0 10px currentColor;
   }
   50% {
-    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    box-shadow: 0 0 20px currentColor;
   }
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 @keyframes waitingPulse {
   0%, 100% {
     opacity: 0.5;
+    transform: scale(1);
   }
   50% {
     opacity: 1;
+    transform: scale(1.1);
   }
 }
 
 @keyframes playerTurnGlow {
   0%, 100% {
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: none;
+    box-shadow: 0 0 10px currentColor;
   }
   50% {
-    border-color: #ff1493;
-    box-shadow: 0 0 20px #ff1493;
+    box-shadow: 0 0 20px currentColor;
   }
 }
 
 @keyframes resultSlideIn {
-  0% {
-    transform: translateY(50px) scale(0.8);
+  from {
+    transform: translateY(-20px);
     opacity: 0;
   }
-  50% {
-    transform: translateY(-10px) scale(1.1);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translateY(0) scale(1);
+  to {
+    transform: translateY(0);
     opacity: 1;
   }
 }
 
 @keyframes phaseTransition {
   0% {
-    transform: scale(0.8);
     opacity: 0;
+    transform: scale(0.9);
   }
   50% {
-    transform: scale(1.1);
-    opacity: 0.8;
+    opacity: 1;
+    transform: scale(1.05);
   }
   100% {
-    transform: scale(1);
     opacity: 1;
+    transform: scale(1);
   }
 }
 
 @keyframes winCelebration {
   0% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
+    opacity: 0.5;
   }
   25% {
-    transform: scale(1.2) rotate(10deg);
+    transform: scale(1.2);
+    opacity: 1;
   }
   50% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
+    opacity: 0.8;
   }
   75% {
-    transform: scale(1.2) rotate(-10deg);
+    transform: scale(1.1);
+    opacity: 1;
   }
   100% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
+    opacity: 0.5;
   }
 }
 
 @keyframes scoreUpdate {
-  0% { 
-    transform: scale(1); 
-    background: #00FF41;
+  0% {
+    transform: scale(1);
   }
-  50% { 
-    transform: scale(1.3); 
-    background: #ffde03;
+  50% {
+    transform: scale(1.2);
   }
-  100% { 
-    transform: scale(1); 
-    background: #00FF41;
+  100% {
+    transform: scale(1);
   }
 }
 
 @keyframes playerReady {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
-  }
-}
-
-@keyframes timerPulse {
-  0% {
     transform: scale(1);
   }
   50% {
     transform: scale(1.1);
   }
-  100% {
+}
+
+@keyframes timerPulse {
+  0%, 100% {
     transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
   }
 }
 
 @keyframes resultReveal {
   0% {
-    transform: translateY(50px) scale(0.8);
+    transform: scale(0.8);
     opacity: 0;
   }
   50% {
-    transform: translateY(-10px) scale(1.1);
-    opacity: 0.8;
+    transform: scale(1.1);
+    opacity: 1;
   }
   100% {
-    transform: translateY(0) scale(1);
+    transform: scale(1);
     opacity: 1;
   }
 }
 
 @keyframes livePulse {
-  0% {
-    opacity: 1;
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
   }
   50% {
-    opacity: 0.5;
-  }
-  100% {
+    transform: scale(1.1);
     opacity: 1;
   }
 }
 
 @keyframes smoothCoinFlip {
-  0% { 
-    transform: perspective(1000px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); 
+  0% {
+    transform: rotateY(0deg) scale(1);
   }
-  25% { 
-    transform: perspective(1000px) rotateX(180deg) rotateY(90deg) rotateZ(45deg) scale(1.2); 
+  25% {
+    transform: rotateY(90deg) scale(1.1);
   }
-  50% { 
-    transform: perspective(1000px) rotateX(360deg) rotateY(270deg) rotateZ(135deg) scale(1.3); 
+  50% {
+    transform: rotateY(180deg) scale(1.2);
   }
-  75% { 
-    transform: perspective(1000px) rotateX(540deg) rotateY(450deg) rotateZ(225deg) scale(1.2); 
+  75% {
+    transform: rotateY(270deg) scale(1.1);
   }
-  100% { 
-    transform: perspective(1000px) rotateX(720deg) rotateY(630deg) rotateZ(315deg) scale(1); 
+  100% {
+    transform: rotateY(360deg) scale(1);
   }
 }
 
+/* Essential Classes */
 .coin-flipping {
-  animation: smoothCoinFlip var(--duration, 3s) cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform-style: preserve-3d;
+  animation: smoothCoinFlip 1s ease-in-out;
 }
 
 .flipping-animation {
-  animation: coinFlip var(--duration) cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform-style: preserve-3d;
-  perspective: 1000px;
+  animation: coinFlip 1s ease-in-out;
 }
 
 .animate-slide-in {
-  animation: slideIn 0.3s ease-out forwards;
+  animation: slideIn 0.3s ease-out;
 }
 
 .status-message {
   padding: 1rem;
   border-radius: 0.5rem;
-  color: white;
-  font-weight: bold;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-bottom: 0.5rem;
-  min-width: 200px;
-  max-width: 400px;
+  margin: 1rem 0;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;
 }
 
 .status-success {
-  background: linear-gradient(45deg, #00c853, #69f0ae);
-  border: 1px solid #00c853;
+  background-color: rgba(0, 255, 65, 0.1);
+  border: 1px solid rgba(0, 255, 65, 0.3);
 }
 
 .status-error {
-  background: linear-gradient(45deg, #ff1744, #ff616f);
-  border: 1px solid #ff1744;
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
 }
 
 .status-info {
-  background: linear-gradient(45deg, #2196f3, #64b5f6);
-  border: 1px solid #2196f3;
+  background-color: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
 }
 
 canvas {
-  border-radius: 50%;
-  transition: all 0.3s ease;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-/* Three.js canvas styling */
-canvas {
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -481,349 +397,3 @@ canvas {
     scroll-behavior: auto !important;
   }
 }
-
-/* Enhanced power charging animations */
-@keyframes choiceGlow {
-  0%, 100% {
-    box-shadow: 0 0 10px currentColor;
-  }
-  50% {
-    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
-  }
-}
-
-@keyframes synchronizedFlip {
-  0% { 
-    transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1); 
-  }
-  25% { 
-    transform: perspective(1000px) rotateX(180deg) rotateY(90deg) scale(1.1); 
-  }
-  50% { 
-    transform: perspective(1000px) rotateX(360deg) rotateY(180deg) scale(1.2); 
-  }
-  75% { 
-    transform: perspective(1000px) rotateX(540deg) rotateY(270deg) scale(1.1); 
-  }
-  100% { 
-    transform: perspective(1000px) rotateX(720deg) rotateY(360deg) scale(1); 
-  }
-}
-
-.synchronized-flip {
-  animation: synchronizedFlip var(--duration, 3s) cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transform-style: preserve-3d;
-}
-
-/* Choice button animations */
-.choice-button {
-  transition: all 0.3s ease;
-}
-
-.choice-button:hover {
-  animation: choiceGlow 1s ease-in-out infinite;
-}
-
-/* Turn indicator */
-.player-turn {
-  animation: playerReady 2s ease-in-out infinite;
-}
-
-@keyframes winLoseAnimation {
-  0% {
-    transform: scale(0.5) rotate(-10deg);
-    opacity: 0;
-  }
-  20% {
-    transform: scale(1.2) rotate(5deg);
-    opacity: 1;
-  }
-  40% {
-    transform: scale(0.9) rotate(-2deg);
-    opacity: 1;
-  }
-  60% {
-    transform: scale(1.05) rotate(1deg);
-    opacity: 1;
-  }
-  80% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0;
-  }
-}
-
-@keyframes flipBorderFlash {
-  0% {
-    border-color: #FF1493;
-    box-shadow: 0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493;
-    border-width: 5px;
-  }
-  50% {
-    border-color: #FF69B4;
-    box-shadow: 0 0 30px #FF69B4, 0 0 60px #FF69B4, 0 0 90px #FF69B4;
-    border-width: 7px;
-  }
-  100% {
-    border-color: #FF1493;
-    box-shadow: 0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493;
-    border-width: 5px;
-  }
-}
-
-@keyframes slideDownResult {
-  0% {
-    transform: translate(-50%, -200px) scale(0.5);
-    opacity: 0;
-  }
-  30% {
-    transform: translate(-50%, -50px) scale(1.2);
-    opacity: 1;
-  }
-  60% {
-    transform: translate(-50%, 0px) scale(1);
-    opacity: 1;
-  }
-  80% {
-    transform: translate(-50%, 0px) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, 50px) scale(0.8);
-    opacity: 0;
-  }
-}
-
-/* Enhanced pulsing effect for coin border */
-@keyframes flipBorderPulse {
-  0% {
-    border-color: #FF1493;
-    box-shadow: 
-      0 0 20px #FF1493, 
-      0 0 40px #FF1493, 
-      0 0 60px #FF1493,
-      inset 0 0 20px rgba(255, 20, 147, 0.3);
-    border-width: 4px;
-    filter: brightness(1);
-  }
-  25% {
-    border-color: #FF69B4;
-    box-shadow: 
-      0 0 30px #FF69B4, 
-      0 0 60px #FF69B4, 
-      0 0 90px #FF69B4,
-      inset 0 0 30px rgba(255, 105, 180, 0.4);
-    border-width: 6px;
-    filter: brightness(1.3);
-  }
-  50% {
-    border-color: #FF1493;
-    box-shadow: 
-      0 0 40px #FF1493, 
-      0 0 80px #FF1493, 
-      0 0 120px #FF1493,
-      inset 0 0 40px rgba(255, 20, 147, 0.5);
-    border-width: 8px;
-    filter: brightness(1.5);
-  }
-  75% {
-    border-color: #FF69B4;
-    box-shadow: 
-      0 0 30px #FF69B4, 
-      0 0 60px #FF69B4, 
-      0 0 90px #FF69B4,
-      inset 0 0 30px rgba(255, 105, 180, 0.4);
-    border-width: 6px;
-    filter: brightness(1.3);
-  }
-  100% {
-    border-color: #FF1493;
-    box-shadow: 
-      0 0 20px #FF1493, 
-      0 0 40px #FF1493, 
-      0 0 60px #FF1493,
-      inset 0 0 20px rgba(255, 20, 147, 0.3);
-    border-width: 4px;
-    filter: brightness(1);
-  }
-}
-
-/* Matrix Green Spiral Background */
-@keyframes spiralPulse {
-  0%, 100% {
-    opacity: 0.1;
-  }
-  50% {
-    opacity: 0.25;
-  }
-}
-
-.spiral-background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  z-index: -1;
-  background: radial-gradient(circle at center, 
-    rgba(0, 20, 0, 0.9) 0%, 
-    rgba(0, 10, 0, 0.95) 50%, 
-    rgba(0, 0, 0, 1) 100%
-  );
-}
-
-.spiral-background::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 200vw;
-  height: 200vw;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(0, 255, 65, 0.1) 30deg,
-    rgba(0, 255, 100, 0.15) 60deg,
-    rgba(0, 255, 65, 0.1) 90deg,
-    transparent 120deg,
-    transparent 150deg,
-    rgba(0, 255, 65, 0.08) 180deg,
-    rgba(0, 255, 100, 0.12) 210deg,
-    rgba(0, 255, 65, 0.08) 240deg,
-    transparent 270deg,
-    transparent 300deg,
-    rgba(0, 255, 65, 0.05) 330deg,
-    transparent 360deg
-  );
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: spiralRotate 30s linear infinite, spiralPulse 4s ease-in-out infinite;
-}
-
-.spiral-background::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150vw;
-  height: 150vw;
-  background: conic-gradient(
-    from 90deg,
-    transparent 0deg,
-    rgba(0, 255, 41, 0.12) 45deg,
-    rgba(0, 255, 80, 0.18) 90deg,
-    rgba(0, 255, 41, 0.12) 135deg,
-    transparent 180deg,
-    transparent 225deg,
-    rgba(0, 255, 41, 0.1) 270deg,
-    rgba(0, 255, 80, 0.15) 315deg,
-    transparent 360deg
-  );
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: spiralRotate 20s linear infinite reverse, spiralPulse 6s ease-in-out infinite;
-}
-
-/* Additional spiral layers for more depth */
-.spiral-layer-1 {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 300vw;
-  height: 300vw;
-  background: conic-gradient(
-    from 180deg,
-    transparent 0deg,
-    rgba(0, 255, 65, 0.05) 60deg,
-    rgba(0, 255, 100, 0.08) 120deg,
-    rgba(0, 255, 65, 0.05) 180deg,
-    transparent 240deg,
-    rgba(0, 255, 65, 0.03) 300deg,
-    transparent 360deg
-  );
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: spiralRotate 45s linear infinite;
-}
-
-.spiral-layer-2 {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100vw;
-  height: 100vw;
-  background: conic-gradient(
-    from 270deg,
-    transparent 0deg,
-    rgba(0, 255, 41, 0.2) 30deg,
-    rgba(0, 255, 80, 0.25) 60deg,
-    rgba(0, 255, 41, 0.2) 90deg,
-    transparent 120deg,
-    rgba(0, 255, 41, 0.15) 180deg,
-    rgba(0, 255, 80, 0.2) 240deg,
-    rgba(0, 255, 41, 0.15) 270deg,
-    transparent 360deg
-  );
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: spiralRotate 15s linear infinite reverse;
-}
-
-/* Matrix-style radial lines */
-.matrix-lines {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 200vw;
-  height: 200vw;
-  background: repeating-conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(0, 255, 65, 0.02) 0.5deg,
-    transparent 1deg,
-    transparent 5deg
-  );
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: spiralRotate 40s linear infinite;
-}
-
-/* Electric Charging Animations */
-@keyframes electricCharge {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.8;
-    box-shadow: 
-      0 0 20px rgba(255, 20, 147, 0.8),
-      0 0 40px rgba(255, 20, 147, 0.6),
-      0 0 60px rgba(255, 20, 147, 0.4),
-      inset 0 0 20px rgba(255, 20, 147, 0.3);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.05);
-    opacity: 1;
-    box-shadow: 
-      0 0 30px rgba(255, 20, 147, 1),
-      0 0 60px rgba(255, 20, 147, 0.8),
-      0 0 90px rgba(255, 20, 147, 0.6),
-      inset 0 0 30px rgba(255, 20, 147, 0.5);
-  }
-}
-
-@keyframes electricRotate {
-  0% {
-    transform: rotate(0deg);
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: rotate(360deg);
-    opacity: 0.6;
-  }
-} 

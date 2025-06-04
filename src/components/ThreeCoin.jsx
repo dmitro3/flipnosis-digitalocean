@@ -11,7 +11,8 @@ const ThreeCoin = ({
   onPowerRelease,
   isPlayerTurn,
   isCharging = false,
-  chargingPlayer
+  chargingPlayer,
+  gamePhase
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
@@ -19,7 +20,6 @@ const ThreeCoin = ({
   const rendererRef = useRef(null)
   const animationIdRef = useRef(null)
   const isAnimatingRef = useRef(false)
-  const chargingRing = useRef(null)
 
   // Initialize Three.js scene ONCE
   useEffect(() => {
@@ -108,15 +108,22 @@ const ThreeCoin = ({
         coin.rotation.y += 0.02
         coin.rotation.z = Math.sin(time * 3) * 0.1
         coin.position.y = Math.sin(time * 4) * 0.05
-      } else if (!isAnimatingRef.current && isPlayerTurn) {
-        // Gentle hover when waiting for turn
-        coin.rotation.z = 0
-        coin.position.y = Math.sin(time * 2) * 0.1 // Gentle up/down hover
-        coin.rotation.y += 0.005 // Very slow rotation
       } else if (!isAnimatingRef.current) {
-        // Still when not in active round
-        coin.rotation.z = 0
-        coin.position.y = 0
+        // Check if we're in an active round but not the player's turn
+        const isWaitingInRound = gamePhase === 'round_active' && !isPlayerTurn
+        // Or if we're waiting for the game to start
+        const isWaitingToStart = gamePhase === 'waiting' || gamePhase === 'ready'
+        
+        if (isWaitingInRound || isWaitingToStart) {
+          // Gentle hover when waiting
+          coin.rotation.z = 0
+          coin.position.y = Math.sin(time * 2) * 0.15 // Gentle up/down hover (increased from 0.1)
+          coin.rotation.y += 0.008 // Very slow rotation
+        } else {
+          // Still when not in active states
+          coin.rotation.z = 0
+          coin.position.y = 0
+        }
       }
 
       rendererRef.current.render(scene, camera)
@@ -205,90 +212,29 @@ const ThreeCoin = ({
     animateFlip()
   }, [isFlipping, flipResult, flipDuration])
 
-  // Update the charging effect
-  useEffect(() => {
-    if (isCharging) {
-      const time = Date.now() * 0.001;
-      const scale = 1 + Math.sin(time * 5) * 0.1;
-      chargingRing.current.scale.set(scale, scale, scale);
-      chargingRing.current.rotation.z = time * 2;
-      chargingRing.current.material.opacity = 0.6 + Math.sin(time * 3) * 0.2;
-    }
-  }, [isCharging])
-
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Electric Circular Charging Effect */}
-      {(isCharging || chargingPlayer) && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: `
-            radial-gradient(circle, 
-              rgba(255, 20, 147, 0.4) 0%, 
-              rgba(255, 20, 147, 0.2) 30%, 
-              rgba(255, 105, 180, 0.1) 60%, 
-              transparent 80%
-            )
-          `,
-          border: '3px solid rgba(255, 20, 147, 0.8)',
-          boxShadow: `
-            0 0 20px rgba(255, 20, 147, 0.8),
-            0 0 40px rgba(255, 20, 147, 0.6),
-            0 0 60px rgba(255, 20, 147, 0.4),
-            inset 0 0 20px rgba(255, 20, 147, 0.3)
-          `,
-          animation: 'electricCharge 0.3s ease-in-out infinite',
-          zIndex: -1,
-          pointerEvents: 'none'
-        }}>
-          {/* Electric Bolts */}
-          <div style={{
-            position: 'absolute',
-            top: '10%',
-            left: '10%',
-            width: '80%',
-            height: '80%',
-            borderRadius: '50%',
-            border: '2px dashed rgba(255, 20, 147, 0.6)',
-            animation: 'electricRotate 1s linear infinite'
-          }} />
-          <div style={{
-            position: 'absolute',
-            top: '20%',
-            left: '20%',
-            width: '60%',
-            height: '60%',
-            borderRadius: '50%',
-            border: '1px solid rgba(255, 105, 180, 0.8)',
-            animation: 'electricRotate 0.8s linear infinite reverse'
-          }} />
-        </div>
-      )}
-      
-      {/* Make sure this div gets the ref properly */}
-      <div
-        ref={mountRef}
-        onMouseDown={isPlayerTurn && mountRef.current ? onPowerCharge : undefined}
-        onMouseUp={isPlayerTurn && mountRef.current ? onPowerRelease : undefined}
-        onMouseLeave={isPlayerTurn && mountRef.current ? onPowerRelease : undefined}
-        onTouchStart={isPlayerTurn && mountRef.current ? onPowerCharge : undefined}
-        onTouchEnd={isPlayerTurn && mountRef.current ? onPowerRelease : undefined}
-        style={{
-          width: '300px',
-          height: '300px',
-          cursor: isPlayerTurn ? 'pointer' : 'default',
-          userSelect: 'none',
-          position: 'relative',
-          zIndex: 1
-        }}
-      />
-    </div>
+    <div
+      ref={mountRef}
+      onMouseDown={isPlayerTurn ? onPowerCharge : undefined}
+      onMouseUp={isPlayerTurn ? onPowerRelease : undefined}
+      onMouseLeave={isPlayerTurn ? onPowerRelease : undefined}
+      onTouchStart={isPlayerTurn ? onPowerCharge : undefined}
+      onTouchEnd={isPlayerTurn ? onPowerRelease : undefined}
+      style={{
+        width: '300px',
+        height: '300px',
+        cursor: isPlayerTurn ? 'pointer' : 'default',
+        userSelect: 'none',
+        background: isCharging ? 
+          'radial-gradient(circle, rgba(255, 20, 147, 0.3) 0%, rgba(255, 20, 147, 0.1) 50%, transparent 100%)' : 
+          'transparent',
+        boxShadow: isCharging ? 
+          '0 0 30px rgba(255, 20, 147, 0.6), 0 0 60px rgba(255, 20, 147, 0.4)' : 
+          'none',
+        borderRadius: '50%',
+        transition: 'all 0.3s ease'
+      }}
+    />
   )
 }
 

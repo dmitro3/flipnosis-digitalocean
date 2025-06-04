@@ -316,7 +316,11 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container style={{ position: 'relative', minHeight: '100vh' }}>
+      <Container style={{ 
+        position: 'relative', 
+        minHeight: '100vh',
+        background: 'transparent !important' // Force transparency
+      }}>
         {/* Intense Green Plasma Globe Background */}
         <div className="plasma-background">
           <div className="plasma-lightning"></div>
