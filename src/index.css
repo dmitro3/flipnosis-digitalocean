@@ -24,7 +24,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1;
+  z-index: 0;
   background: radial-gradient(circle at center, #001100 0%, #000000 70%);
   opacity: 0.8;
 }
@@ -351,19 +351,19 @@ body {
 .coin-flipping {
   animation: smoothCoinFlip 1s ease-in-out;
   position: relative;
-  z-index: 2;
+  z-index: 10;
 }
 
 .flipping-animation {
   animation: coinFlip 1s ease-in-out;
   position: relative;
-  z-index: 2;
+  z-index: 10;
 }
 
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
   position: relative;
-  z-index: 2;
+  z-index: 10;
 }
 
 .status-message {
@@ -373,7 +373,7 @@ body {
   text-align: center;
   animation: slideIn 0.3s ease-out;
   position: relative;
-  z-index: 2;
+  z-index: 10;
 }
 
 .status-success {
@@ -404,4 +404,16 @@ canvas {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Add z-index to main content wrapper */
+.ContentWrapper {
+  position: relative;
+  z-index: 10;
+}
+
+/* Add z-index to glass cards */
+.GlassCard {
+  position: relative;
+  z-index: 10;
 }
