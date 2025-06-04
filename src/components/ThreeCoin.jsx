@@ -75,8 +75,9 @@ const ThreeCoin = ({
 
     coin.add(headsFace)
     coin.add(tailsFace)
-    coin.rotation.x = Math.PI / 2
-    coin.rotation.y = Math.PI / 2
+    coin.rotation.x = 0  // No X rotation - coin faces camera
+    coin.rotation.y = 0  // No Y rotation
+    coin.rotation.z = 0  // No Z rotation
 
     scene.add(coin)
     coinRef.current = coin
@@ -158,11 +159,11 @@ const ThreeCoin = ({
         progress / 0.8 : 
         0.8 + (1 - Math.pow(1 - (progress - 0.8) / 0.2, 3)) * 0.2
      
-      // Multi-axis rotation
+      // Multi-axis rotation for dramatic effect
       const totalRotationX = flips * Math.PI * 2
-      coin.rotation.x = initialRotationX + totalRotationX * easeProgress
-      coin.rotation.y = Math.sin(progress * Math.PI * flips * 0.7) * 0.8
-      coin.rotation.z = Math.cos(progress * Math.PI * flips * 0.5) * 0.4
+      coin.rotation.x = totalRotationX * easeProgress  // Primary flip axis
+      coin.rotation.y = Math.sin(progress * Math.PI * flips * 0.7) * 0.3  // Reduced side wobble
+      coin.rotation.z = Math.cos(progress * Math.PI * flips * 0.5) * 0.2  // Reduced twist
      
       // Height variation
       coin.position.y = Math.sin(progress * Math.PI) * 0.5
@@ -170,10 +171,16 @@ const ThreeCoin = ({
       if (progress < 1) {
         requestAnimationFrame(animateFlip)
       } else {
-        // Final position - ADD the Y rotation offset
-        coin.rotation.x = isHeads ? Math.PI / 2 : -Math.PI / 2
-        coin.rotation.y = Math.PI / 2  // Keep the 90-degree Y offset
-        coin.rotation.z = 0
+        // Final position - show the face directly toward camera
+        if (isHeads) {
+          coin.rotation.x = 0      // Heads facing camera
+          coin.rotation.y = 0      
+          coin.rotation.z = 0
+        } else {
+          coin.rotation.x = Math.PI  // Flip 180 degrees to show tails
+          coin.rotation.y = 0
+          coin.rotation.z = 0
+        }
         coin.position.y = 0
         isAnimatingRef.current = false
         console.log('✅ Flip animation complete:', flipResult)
