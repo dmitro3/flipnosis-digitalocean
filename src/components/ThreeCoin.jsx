@@ -10,7 +10,8 @@ const ThreeCoin = ({
   onPowerCharge, 
   onPowerRelease,
   isPlayerTurn,
-  isCharging = false
+  isCharging = false,
+  chargingPlayer
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
@@ -216,26 +217,78 @@ const ThreeCoin = ({
   }, [isCharging])
 
   return (
-    <div
-      ref={mountRef}
-      onMouseDown={isPlayerTurn ? onPowerCharge : undefined}
-      onMouseUp={isPlayerTurn ? onPowerRelease : undefined}
-      onMouseLeave={isPlayerTurn ? onPowerRelease : undefined}
-      onTouchStart={isPlayerTurn ? onPowerCharge : undefined}
-      onTouchEnd={isPlayerTurn ? onPowerRelease : undefined}
-      style={{
-        width: '300px',
-        height: '300px',
-        cursor: isPlayerTurn ? 'pointer' : 'default',
-        userSelect: 'none',
-        background: isCharging ? 
-          'radial-gradient(circle, rgba(255, 20, 147, 0.3) 0%, rgba(255, 20, 147, 0.1) 50%, transparent 100%)' : 
-          'transparent',
-        boxShadow: isCharging ? 
-          '0 0 30px rgba(255, 20, 147, 0.6), 0 0 60px rgba(255, 20, 147, 0.4)' : 
-          'none'
-      }}
-    />
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Electric Circular Charging Effect */}
+      {(isCharging || chargingPlayer) && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: '320px',
+          height: '320px',
+          borderRadius: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: `
+            radial-gradient(circle, 
+              rgba(255, 20, 147, 0.4) 0%, 
+              rgba(255, 20, 147, 0.2) 30%, 
+              rgba(255, 105, 180, 0.1) 60%, 
+              transparent 80%
+            )
+          `,
+          border: '3px solid rgba(255, 20, 147, 0.8)',
+          boxShadow: `
+            0 0 20px rgba(255, 20, 147, 0.8),
+            0 0 40px rgba(255, 20, 147, 0.6),
+            0 0 60px rgba(255, 20, 147, 0.4),
+            inset 0 0 20px rgba(255, 20, 147, 0.3)
+          `,
+          animation: 'electricCharge 0.3s ease-in-out infinite',
+          zIndex: -1,
+          pointerEvents: 'none'
+        }}>
+          {/* Electric Bolts */}
+          <div style={{
+            position: 'absolute',
+            top: '10%',
+            left: '10%',
+            width: '80%',
+            height: '80%',
+            borderRadius: '50%',
+            border: '2px dashed rgba(255, 20, 147, 0.6)',
+            animation: 'electricRotate 1s linear infinite'
+          }} />
+          <div style={{
+            position: 'absolute',
+            top: '20%',
+            left: '20%',
+            width: '60%',
+            height: '60%',
+            borderRadius: '50%',
+            border: '1px solid rgba(255, 105, 180, 0.8)',
+            animation: 'electricRotate 0.8s linear infinite reverse'
+          }} />
+        </div>
+      )}
+      
+      {/* Make sure this div gets the ref properly */}
+      <div
+        ref={mountRef}
+        onMouseDown={isPlayerTurn && mountRef.current ? onPowerCharge : undefined}
+        onMouseUp={isPlayerTurn && mountRef.current ? onPowerRelease : undefined}
+        onMouseLeave={isPlayerTurn && mountRef.current ? onPowerRelease : undefined}
+        onTouchStart={isPlayerTurn && mountRef.current ? onPowerCharge : undefined}
+        onTouchEnd={isPlayerTurn && mountRef.current ? onPowerRelease : undefined}
+        style={{
+          width: '300px',
+          height: '300px',
+          cursor: isPlayerTurn ? 'pointer' : 'default',
+          userSelect: 'none',
+          position: 'relative',
+          zIndex: 1
+        }}
+      />
+    </div>
   )
 }
 

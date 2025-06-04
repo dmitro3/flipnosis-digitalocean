@@ -316,121 +316,14 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container style={{ 
-        position: 'relative',
-        background: 'transparent',
-        minHeight: '100vh'
-      }}>
+      <Container style={{ position: 'relative', minHeight: '100vh' }}>
         {/* Intense Green Plasma Globe Background */}
         <div className="plasma-background">
-          <div className="plasma-core"></div>
           <div className="plasma-lightning"></div>
           <div className="plasma-particles"></div>
         </div>
         
         <ContentWrapper>
-          {/* Connection Status */}
-          {!connected && (
-            <div style={{
-              position: 'fixed',
-              top: '1rem',
-              right: '1rem',
-              background: 'rgba(255, 0, 0, 0.9)',
-              color: 'white',
-              padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
-              fontWeight: 'bold',
-              zIndex: 1000
-            }}>
-              🔴 Reconnecting...
-            </div>
-          )}
-
-          {/* Game Header */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-              FLIP#{gameId.slice(-6).toUpperCase()}
-              {!isPlayer && <span style={{ color: theme.colors.statusWarning }}> (SPECTATING)</span>}
-            </NeonText>
-            <div style={{ color: theme.colors.textSecondary }}>
-              Best of {gameData?.rounds} • ${gameData?.priceUSD?.toFixed(2)}
-              {gameState && <span> • {gameState.spectators} watching</span>}
-            </div>
-          </div>
-
-          {/* Score Display */}
-          {gameState && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '2rem',
-              padding: '1rem',
-              background: 'rgba(0, 0, 0, 0.3)',
-              borderRadius: '1rem'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: theme.colors.neonPink, fontSize: '3rem', fontWeight: 'bold' }}>
-                  {gameState.creatorWins}
-                </div>
-                <div style={{ color: theme.colors.textSecondary }}>
-                  👑 Player 1 (Heads)
-                </div>
-              </div>
-              
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: theme.colors.textPrimary, fontSize: '1.5rem', fontWeight: 'bold' }}>
-                  {gameState.currentRound} / {gameState.maxRounds}
-                </div>
-                <div style={{ color: theme.colors.textSecondary }}>Round</div>
-              </div>
-              
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: theme.colors.neonBlue, fontSize: '3rem', fontWeight: 'bold' }}>
-                  {gameState.joinerWins}
-                </div>
-                <div style={{ color: theme.colors.textSecondary }}>
-                  💎 Player 2 (Tails)
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Game Status */}
-          {gameState?.phase === 'round_active' && (
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              {isMyTurn ? (
-                <div style={{
-                  padding: '1rem',
-                  background: 'rgba(0, 255, 65, 0.1)',
-                  border: '1px solid rgba(0, 255, 65, 0.3)',
-                  borderRadius: '1rem'
-                }}>
-                  <div style={{ color: theme.colors.statusSuccess, fontWeight: 'bold', fontSize: '1.2rem' }}>
-                    🎯 YOUR TURN!
-                  </div>
-                  <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
-                    You are {isCreator ? 'HEADS 👑' : 'TAILS 💎'} - Hold coin to charge power, release to flip!
-                  </div>
-                </div>
-              ) : (
-                <div style={{
-                  padding: '1rem',
-                  background: 'rgba(255, 165, 0, 0.1)',
-                  border: '1px solid rgba(255, 165, 0, 0.3)',
-                  borderRadius: '1rem'
-                }}>
-                  <div style={{ color: theme.colors.statusWarning, fontWeight: 'bold', fontSize: '1.2rem' }}>
-                    ⏳ Opponent's Turn
-                  </div>
-                  <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
-                    They are {!isCreator ? 'HEADS 👑' : 'TAILS 💎'}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Main Game Area - Three Column Layout */}
           <div style={{ 
             display: 'grid', 
@@ -555,6 +448,8 @@ const FlipGame = () => {
                   onPowerRelease={handlePowerChargeStop}
                   isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
                   isCharging={gameState?.chargingPlayer === address}
+                  chargingPlayer={gameState?.chargingPlayer}
+                  gamePhase={gameState?.phase}
                 />
               </div>
 
@@ -674,6 +569,91 @@ const FlipGame = () => {
               </div>
             </div>
           </div>
+
+          {/* MOVED TO BOTTOM: Game Header */}
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+              FLIP#{gameId.slice(-6).toUpperCase()}
+              {!isPlayer && <span style={{ color: theme.colors.statusWarning }}> (SPECTATING)</span>}
+            </NeonText>
+            <div style={{ color: theme.colors.textSecondary }}>
+              Best of {gameData?.rounds} • ${gameData?.priceUSD?.toFixed(2)}
+              {gameState && <span> • {gameState.spectators} watching</span>}
+            </div>
+          </div>
+
+          {/* MOVED TO BOTTOM: Score Display */}
+          {gameState && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '2rem',
+              padding: '1rem',
+              background: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: '1rem'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: theme.colors.neonPink, fontSize: '3rem', fontWeight: 'bold' }}>
+                  {gameState.creatorWins}
+                </div>
+                <div style={{ color: theme.colors.textSecondary }}>
+                  👑 Player 1 (Heads)
+                </div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: theme.colors.textPrimary, fontSize: '1.5rem', fontWeight: 'bold' }}>
+                  {gameState.currentRound} / {gameState.maxRounds}
+                </div>
+                <div style={{ color: theme.colors.textSecondary }}>Round</div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: theme.colors.neonBlue, fontSize: '3rem', fontWeight: 'bold' }}>
+                  {gameState.joinerWins}
+                </div>
+                <div style={{ color: theme.colors.textSecondary }}>
+                  💎 Player 2 (Tails)
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MOVED TO BOTTOM: Game Status */}
+          {gameState?.phase === 'round_active' && (
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              {isMyTurn ? (
+                <div style={{
+                  padding: '1rem',
+                  background: 'rgba(0, 255, 65, 0.1)',
+                  border: '1px solid rgba(0, 255, 65, 0.3)',
+                  borderRadius: '1rem'
+                }}>
+                  <div style={{ color: theme.colors.statusSuccess, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                    🎯 YOUR TURN!
+                  </div>
+                  <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
+                    You are {isCreator ? 'HEADS 👑' : 'TAILS 💎'} - Hold coin to charge power, release to flip!
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '1rem',
+                  background: 'rgba(255, 165, 0, 0.1)',
+                  border: '1px solid rgba(255, 165, 0, 0.3)',
+                  borderRadius: '1rem'
+                }}>
+                  <div style={{ color: theme.colors.statusWarning, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                    ⏳ Opponent's Turn
+                  </div>
+                  <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
+                    They are {!isCreator ? 'HEADS 👑' : 'TAILS 💎'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Join Button */}
           {canJoin && (

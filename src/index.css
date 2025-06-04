@@ -27,7 +27,7 @@ body {
   height: 100vh;
   z-index: -10;
   background: radial-gradient(circle at center, #001100 0%, #000000 70%);
-  opacity: 0.8; /* Reduced opacity by 20% */
+  opacity: 0.8;
 }
 
 .plasma-background::before {
