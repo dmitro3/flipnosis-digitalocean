@@ -644,24 +644,23 @@ class GameSession {
   }
 
   async setJoiner(address, entryFeeHash) {
+    // Only set if not already set
+    if (this.joiner) {
+      console.log('⚠️ Joiner already set:', this.joiner)
+      this.broadcastGameState()
+      return
+    }
+    
     this.joiner = address
     this.phase = 'ready'
     
-    try {
-      await dbHelpers.updateGame(this.gameId, { 
-        joiner: address, 
-        status: 'joined',
-        entry_fee_hash: entryFeeHash 
-      })
-    } catch (error) {
-      console.error('Error updating joiner:', error)
-    }
-    
+    console.log('✅ Player 2 joined via WebSocket:', address)
     this.broadcastGameState()
     
     // Auto-start after 2 seconds
     setTimeout(() => {
-      if (this.phase === 'ready') {
+      if (this.phase === 'ready' && this.creator && this.joiner) {
+        console.log('🚀 AUTO-STARTING game after player 2 joined')
         this.startGame()
       }
     }, 2000)
@@ -846,37 +845,47 @@ class GameSession {
         this.creatorWins = gameData.creator_wins || 0
         this.joinerWins = gameData.joiner_wins || 0
         
-        // Determine current round and phase
+        console.log('📊 Loading game from DB:', {
+          creator: this.creator,
+          joiner: this.joiner,
+          status: gameData.status,
+          creatorWins: this.creatorWins,
+          joinerWins: this.joinerWins
+        })
+        
+        // Determine current phase based on database state
         if (gameData.status === 'completed') {
           this.phase = 'game_complete'
           this.winner = gameData.winner
         } else if (gameData.status === 'active' && this.joiner) {
           this.phase = 'round_active'
           this.currentPlayer = this.creator // Default to creator's turn
-        } else if (this.joiner) {
+        } else if (this.joiner && gameData.status === 'joined') {
           this.phase = 'ready'
+        } else {
+          this.phase = 'waiting'
         }
         
-        // Count completed rounds
+        // Count completed rounds to determine current round
         const roundsSql = `SELECT COUNT(*) as count FROM game_rounds WHERE game_id = ?`
         return new Promise((resolve) => {
           db.get(roundsSql, [this.gameId], (err, result) => {
             if (!err && result) {
               this.currentRound = Math.min((result.count || 0) + 1, this.maxRounds)
             }
-            console.log('📊 Loaded game state:', {
+            console.log('✅ Game state loaded:', {
               gameId: this.gameId,
               phase: this.phase,
-              creatorWins: this.creatorWins,
-              joinerWins: this.joinerWins,
-              currentRound: this.currentRound
+              currentRound: this.currentRound,
+              creator: this.creator,
+              joiner: this.joiner
             })
             resolve()
           })
         })
       }
     } catch (error) {
-      console.error('Error loading game from database:', error)
+      console.error('❌ Error loading game from database:', error)
     }
   }
 }
@@ -949,7 +958,14 @@ async function handleMessage(ws, data) {
       if (data.role === 'joiner' && data.entryFeeHash) {
         await session.setJoiner(data.address, data.entryFeeHash)
       } else if (data.role === 'creator') {
-        session.creator = data.address
+        // Handle creator connecting to existing game
+        if (!session.creator) {
+          session.creator = data.address
+        }
+        session.broadcastGameState()
+      } else {
+        console.log('👀 Spectator viewing:', data.address)
+        // Just broadcast current state for spectators
         session.broadcastGameState()
       }
       break
@@ -1160,6 +1176,66 @@ app.post('/api/games/:gameId/join', async (req, res) => {
   } catch (error) {
     console.error('❌ Error completing join:', error)
     res.status(500).json({ error: 'Failed to complete join', details: error.message })
+  }
+})
+
+// Simple join endpoint - just updates database
+app.post('/api/games/:gameId/simple-join', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { joinerAddress, paymentTxHash, paymentAmount } = req.body
+    
+    console.log('🎮 Simple join for game:', {
+      gameId,
+      joinerAddress,
+      paymentTxHash,
+      paymentAmount
+    })
+    
+    // Get current game state
+    const game = await dbHelpers.getGame(gameId)
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Basic validation
+    if (game.joiner) {
+      return res.status(400).json({ error: 'Game already has a second player' })
+    }
+    
+    if (game.creator === joinerAddress) {
+      return res.status(400).json({ error: 'Creator cannot join their own game' })
+    }
+    
+    if (game.status !== 'waiting') {
+      return res.status(400).json({ error: 'Game is not accepting new players' })
+    }
+    
+    // Update database
+    const updates = {
+      joiner: joinerAddress,
+      status: 'joined',
+      entry_fee_hash: paymentTxHash
+    }
+    
+    await dbHelpers.updateGame(gameId, updates)
+    
+    // Record the payment transaction
+    await dbHelpers.recordTransaction(
+      gameId,
+      joinerAddress,
+      'entry_fee',
+      paymentAmount,
+      paymentAmount / 2500, // Approximate ETH amount
+      paymentTxHash
+    )
+    
+    console.log('✅ Simple join completed successfully:', gameId)
+    res.json({ success: true, gameId })
+    
+  } catch (error) {
+    console.error('❌ Error in simple join:', error)
+    res.status(500).json({ error: 'Failed to join game', details: error.message })
   }
 })
 
