@@ -466,14 +466,6 @@ const FlipGame = () => {
                 <SpectatorCounter count={spectatorCount} isLive={gamePhase === 'round_active'} />
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {isPlayer && (
-                <WebSocketStatus 
-                  connected={wsConnected} 
-                  playerCount={gameData?.joiner ? 2 : 1} 
-                />
-              )}
-            </div>
           </div>
 
           {/* Main Game Area */}
@@ -724,28 +716,6 @@ const FlipGame = () => {
               isCurrentUser={syncedFlipData.playerAddress === address}
             />
           )}
-
-          {/* DEBUG PANEL - Remove after fixing */}
-          <div style={{
-            background: 'rgba(255, 0, 0, 0.1)',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            border: '1px solid rgba(255, 0, 0, 0.3)',
-            marginBottom: '1rem',
-            fontSize: '0.875rem'
-          }}>
-            <h4 style={{ color: '#ff4444', marginBottom: '0.5rem' }}>🔧 Debug Info:</h4>
-            <div style={{ color: 'white', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <div>gameData.joiner: {gameData?.joiner ? '✅' : '❌'}</div>
-              <div>gameData.creator: {gameData?.creator ? '✅' : '❌'}</div>
-              <div>gameData.status: {gameData?.status}</div>
-              <div>gamePhase: {gamePhase}</div>
-              <div>isCreator: {isCreator ? '✅' : '❌'}</div>
-              <div>wsConnected: {wsConnected ? '✅' : '❌'}</div>
-              <div>showStartButton: {showStartButton ? '✅' : '❌'}</div>
-              <div>currentPlayer: {gameState?.currentPlayer || 'none'}</div>
-            </div>
-          </div>
 
           {/* Manual Start Button - Fallback */}
           {showStartButton && (

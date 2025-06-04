@@ -142,8 +142,9 @@ const ThreeCoin = ({
     const coin = coinRef.current
     const isHeads = flipResult === 'heads'
     
-    // Calculate flips based on duration
-    const flips = Math.max(3, Math.floor(duration / 1000)) // At least 3 flips
+    // Modify flip calculation to double the duration
+    const actualDuration = duration * 2 // Double the spin time
+    const flips = Math.max(3, Math.floor(actualDuration / 1000)) // At least 3 flips
     const startTime = Date.now()
     const initialRotationX = coin.rotation.x
 

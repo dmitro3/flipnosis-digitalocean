@@ -627,27 +627,6 @@ export const LivePlayerCard = ({
               </div>
             </div>
           )}
-          
-          {/* Score Badge */}
-          {gamePhase !== 'waiting' && score > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: '1rem',
-              right: '1rem',
-              background: theme.colors.statusSuccess,
-              color: 'white',
-              borderRadius: '50%',
-              width: '3rem',
-              height: '3rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.5rem',
-              fontWeight: 'bold'
-            }}>
-              {score}
-            </div>
-          )}
         </div>
         
         {/* Item Info */}
