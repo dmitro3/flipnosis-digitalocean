@@ -99,14 +99,20 @@ const ThreeCoin = ({
       if (!coinRef.current || !rendererRef.current) return
 
       const coin = coinRef.current
+      const time = Date.now() * 0.001
       
       // Charging animation
       if (isCharging && !isAnimatingRef.current) {
-        const time = Date.now() * 0.001
         coin.rotation.y += 0.02
         coin.rotation.z = Math.sin(time * 3) * 0.1
         coin.position.y = Math.sin(time * 4) * 0.05
+      } else if (!isAnimatingRef.current && isPlayerTurn) {
+        // Gentle hover when waiting for turn
+        coin.rotation.z = 0
+        coin.position.y = Math.sin(time * 2) * 0.1 // Gentle up/down hover
+        coin.rotation.y += 0.005 // Very slow rotation
       } else if (!isAnimatingRef.current) {
+        // Still when not in active round
         coin.rotation.z = 0
         coin.position.y = 0
       }

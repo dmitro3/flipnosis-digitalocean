@@ -17,6 +17,7 @@ import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
 import { ethers } from 'ethers'
 import ProfilePicture from './ProfilePicture'
+import baseEthLogo from '../../Images/baseeth.webp'
 
 const FlipGame = () => {
   const { gameId } = useParams()
@@ -315,7 +316,11 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container style={{ position: 'relative' }}>
+      <Container style={{ 
+        position: 'relative',
+        background: 'transparent',
+        minHeight: '100vh'
+      }}>
         {/* Intense Green Plasma Globe Background */}
         <div className="plasma-background">
           <div className="plasma-core"></div>
@@ -631,15 +636,29 @@ const FlipGame = () => {
                     borderRadius: '1rem',
                     border: isJoiner ? `3px solid ${theme.colors.neonBlue}` : 
                             gameState?.joiner ? '1px solid rgba(255,255,255,0.2)' : 
-                            '2px dashed rgba(255,255,255,0.3)'
+                            '2px dashed rgba(255,255,255,0.3)',
+                    padding: '1rem'
                   }}>
-                    <div style={{
-                      fontSize: '4rem',
-                      filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
-                      opacity: gameState?.joiner ? 1 : 0.5
-                    }}>
-                      {gameState?.joiner ? '💎' : '⏳'}
-                    </div>
+                    {gameState?.joiner ? (
+                      <img 
+                        src={baseEthLogo} 
+                        alt="Base ETH"
+                        style={{
+                          width: '80%',
+                          height: '80%',
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        fontSize: '4rem',
+                        filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
+                        opacity: 0.5
+                      }}>
+                        ⏳
+                      </div>
+                    )}
                   </div>
                 </div>
                 
