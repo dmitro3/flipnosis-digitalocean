@@ -314,32 +314,12 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container style={{ 
-        position: 'relative',
-        background: `
-          radial-gradient(circle at 50% 50%, rgba(0, 20, 0, 0.2) 0%, rgba(0, 0, 0, 0.8) 100%),
-          conic-gradient(from 0deg at 50% 50%, 
-            transparent 0deg,
-            rgba(0, 255, 65, 0.05) 30deg,
-            rgba(0, 255, 100, 0.08) 60deg,
-            rgba(0, 255, 65, 0.05) 90deg,
-            transparent 120deg,
-            rgba(0, 255, 65, 0.03) 180deg,
-            rgba(0, 255, 100, 0.06) 240deg,
-            rgba(0, 255, 65, 0.03) 270deg,
-            transparent 360deg
-          )
-        `,
-        backgroundSize: '100% 100%, 200% 200%',
-        backgroundPosition: 'center, center',
-        backgroundRepeat: 'no-repeat, no-repeat',
-        animation: 'spiralRotate 30s linear infinite'
-      }}>
-        {/* Matrix Green Spiral Background */}
-        <div className="spiral-background">
-          <div className="spiral-layer-1"></div>
-          <div className="spiral-layer-2"></div>
-          <div className="matrix-lines"></div>
+      <Container style={{ position: 'relative' }}>
+        {/* Intense Green Plasma Globe Background */}
+        <div className="plasma-background">
+          <div className="plasma-core"></div>
+          <div className="plasma-lightning"></div>
+          <div className="plasma-particles"></div>
         </div>
         
         <ContentWrapper>
