@@ -15,6 +15,8 @@ body {
   color: #ffffff;
   overflow-x: hidden;
   background-image: none !important;
+  position: relative;
+  z-index: 0;
 }
 
 /* Plasma Globe Background */
@@ -24,7 +26,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 0;
+  z-index: 1;
   background: radial-gradient(circle at center, #001100 0%, #000000 70%);
   opacity: 0.8;
 }
@@ -351,19 +353,19 @@ body {
 .coin-flipping {
   animation: smoothCoinFlip 1s ease-in-out;
   position: relative;
-  z-index: 10;
+  z-index: 2;
 }
 
 .flipping-animation {
   animation: coinFlip 1s ease-in-out;
   position: relative;
-  z-index: 10;
+  z-index: 2;
 }
 
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
   position: relative;
-  z-index: 10;
+  z-index: 2;
 }
 
 .status-message {
@@ -373,7 +375,7 @@ body {
   text-align: center;
   animation: slideIn 0.3s ease-out;
   position: relative;
-  z-index: 10;
+  z-index: 2;
 }
 
 .status-success {
@@ -409,11 +411,23 @@ canvas {
 /* Add z-index to main content wrapper */
 .ContentWrapper {
   position: relative;
-  z-index: 10;
+  z-index: 2;
 }
 
 /* Add z-index to glass cards */
 .GlassCard {
   position: relative;
-  z-index: 10;
+  z-index: 2;
+}
+
+/* Ensure all game elements are above the plasma */
+.Container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ensure images and other content are above plasma */
+img, canvas, video {
+  position: relative;
+  z-index: 2;
 }
