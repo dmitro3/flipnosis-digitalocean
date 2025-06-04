@@ -51,58 +51,91 @@ const FlipGame = () => {
   useEffect(() => {
     if (!gameId || !address) return
 
-    const wsUrl = process.env.NODE_ENV === 'production' 
-      ? 'wss://cryptoflipz2-production.up.railway.app' 
-      : 'ws://localhost:3001'
-    
-    const ws = new WebSocket(wsUrl)
+    let reconnectAttempts = 0
+    const maxReconnectAttempts = 5
+    let reconnectTimer
 
-    ws.onopen = () => {
-      console.log('✅ Connected to WebSocket')
-      setConnected(true)
-      setSocket(ws)
+    const connect = () => {
+      const wsUrl = process.env.NODE_ENV === 'production' 
+        ? 'wss://cryptoflipz2-production.up.railway.app' 
+        : 'ws://localhost:3001'
       
-      // Join game
-      ws.send(JSON.stringify({
-        type: 'connect_to_game',
-        gameId,
-        address
-      }))
-    }
+      const ws = new WebSocket(wsUrl)
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log('📡 Received:', data.type)
-      
-      switch (data.type) {
-        case 'game_state':
-          setGameState(data)
-          break
-          
-        case 'flip_animation':
-          setFlipAnimation(data)
-          setRoundResult(null) // Clear previous result
-          break
-          
-        case 'round_result':
-          setRoundResult(data)
-          setTimeout(() => setRoundResult(null), 4000) // Clear after 4s
-          break
-          
-        case 'error':
-          showError(data.error)
-          break
+      ws.onopen = () => {
+        console.log('✅ Connected to WebSocket')
+        setConnected(true)
+        setSocket(ws)
+        reconnectAttempts = 0 // Reset on successful connection
+        
+        // Join game
+        ws.send(JSON.stringify({
+          type: 'connect_to_game',
+          gameId,
+          address
+        }))
       }
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          console.log('📡 Received:', data.type)
+          
+          switch (data.type) {
+            case 'game_state':
+              setGameState(data)
+              break
+              
+            case 'flip_animation':
+              setFlipAnimation(data)
+              setRoundResult(null)
+              break
+              
+            case 'round_result':
+              setRoundResult(data)
+              setTimeout(() => setRoundResult(null), 4000)
+              break
+              
+            case 'error':
+              showError(data.error)
+              break
+          }
+        } catch (error) {
+          console.error('❌ Error parsing WebSocket message:', error)
+        }
+      }
+
+      ws.onclose = () => {
+        console.log('❌ WebSocket disconnected')
+        setConnected(false)
+        setSocket(null)
+        
+        // Attempt to reconnect
+        if (reconnectAttempts < maxReconnectAttempts) {
+          reconnectAttempts++
+          console.log(`🔄 Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`)
+          reconnectTimer = setTimeout(() => {
+            connect()
+          }, 2000 * reconnectAttempts) // Exponential backoff
+        } else {
+          showError('Lost connection to game server. Please refresh the page.')
+        }
+      }
+
+      ws.onerror = (error) => {
+        console.error('❌ WebSocket error:', error)
+      }
+
+      return ws
     }
 
-    ws.onclose = () => {
-      console.log('❌ WebSocket disconnected')
-      setConnected(false)
-      setSocket(null)
-    }
+    const ws = connect()
 
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+      }
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close()
       }
     }
@@ -272,6 +305,23 @@ const FlipGame = () => {
     <ThemeProvider theme={theme}>
       <Container>
         <ContentWrapper>
+          {/* Connection Status */}
+          {!connected && (
+            <div style={{
+              position: 'fixed',
+              top: '1rem',
+              right: '1rem',
+              background: 'rgba(255, 0, 0, 0.9)',
+              color: 'white',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              fontWeight: 'bold',
+              zIndex: 1000
+            }}>
+              🔴 Reconnecting...
+            </div>
+          )}
+
           {/* Game Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>

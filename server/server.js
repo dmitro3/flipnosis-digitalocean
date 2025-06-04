@@ -626,10 +626,25 @@ class GameSession {
       spectators: this.clients.size
     }
 
+    // Safely broadcast to all clients
+    const deadClients = new Set()
+    
     this.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(state))
+        try {
+          client.send(JSON.stringify(state))
+        } catch (error) {
+          console.error('❌ Error sending to client, marking for removal:', error)
+          deadClients.add(client)
+        }
+      } else {
+        deadClients.add(client)
       }
+    })
+    
+    // Clean up dead clients
+    deadClients.forEach(client => {
+      this.clients.delete(client)
     })
   }
 
@@ -772,86 +787,108 @@ class GameSession {
   }
 
   async processFlipResult(address, result, isWinner, power) {
-    if (this.roundCompleted) return
-    
-    console.log('🎯 Processing flip result:', {
-      address,
-      result,
-      isWinner,
-      power,
-      addressIsCreator: address === this.creator,
-      addressIsJoiner: address === this.joiner
-    })
-    
-    this.roundCompleted = true
-    
-    // Update scores - THIS WAS THE BUG
-    if (isWinner) {
-      if (address === this.creator) {
-        this.creatorWins++
-        console.log('✅ CREATOR WINS! New score:', this.creatorWins)
-      } else if (address === this.joiner) {
-        this.joinerWins++
-        console.log('✅ JOINER WINS! New score:', this.joinerWins)
-      }
-    } else {
-      // The OPPOSITE player wins when the flipper loses
-      if (address === this.creator) {
-        this.joinerWins++
-        console.log('✅ JOINER WINS (creator lost)! New score:', this.joinerWins)
-      } else if (address === this.joiner) {
-        this.creatorWins++
-        console.log('✅ CREATOR WINS (joiner lost)! New score:', this.creatorWins)
-      }
-    }
-
-    console.log('📊 Updated scores:', {
-      creatorWins: this.creatorWins,
-      joinerWins: this.joinerWins
-    })
-
-    // Record in database
     try {
-      await dbHelpers.recordRound(this.gameId, this.currentRound, result, address, power)
-      await dbHelpers.updateGame(this.gameId, { 
-        creator_wins: this.creatorWins,
-        joiner_wins: this.joinerWins
+      if (this.roundCompleted) {
+        console.log('⚠️ Round already completed, skipping')
+        return
+      }
+      
+      console.log('🎯 Processing flip result:', {
+        address,
+        result,
+        isWinner,
+        power,
+        isCreator: address === this.creator,
+        isJoiner: address === this.joiner,
+        currentScores: { creator: this.creatorWins, joiner: this.joinerWins }
       })
-      console.log('✅ Database updated with scores')
+      
+      this.roundCompleted = true
+      
+      // Update scores with better logic
+      if (isWinner) {
+        if (address === this.creator) {
+          this.creatorWins++
+          console.log('✅ CREATOR WINS! Score:', this.creatorWins, '-', this.joinerWins)
+        } else if (address === this.joiner) {
+          this.joinerWins++
+          console.log('✅ JOINER WINS! Score:', this.creatorWins, '-', this.joinerWins)
+        }
+      } else {
+        // Opposite player wins when current player loses
+        if (address === this.creator) {
+          this.joinerWins++
+          console.log('✅ JOINER WINS (creator lost)! Score:', this.creatorWins, '-', this.joinerWins)
+        } else if (address === this.joiner) {
+          this.creatorWins++
+          console.log('✅ CREATOR WINS (joiner lost)! Score:', this.creatorWins, '-', this.joinerWins)
+        }
+      }
+
+      // Record in database with error handling
+      try {
+        await dbHelpers.recordRound(this.gameId, this.currentRound, result, address, power)
+        await dbHelpers.updateGame(this.gameId, { 
+          creator_wins: this.creatorWins,
+          joiner_wins: this.joinerWins
+        })
+        console.log('✅ Database updated successfully')
+      } catch (dbError) {
+        console.error('❌ Database error (continuing anyway):', dbError)
+      }
+
+      // Determine who actually won this round
+      const actualWinner = isWinner ? address : (address === this.creator ? this.joiner : this.creator)
+      
+      // Broadcast result safely
+      try {
+        this.clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            try {
+              client.send(JSON.stringify({
+                type: 'round_result',
+                result: result,
+                isWinner: isWinner,
+                playerAddress: address,
+                actualWinner: actualWinner,
+                creatorWins: this.creatorWins,
+                joinerWins: this.joinerWins,
+                roundNumber: this.currentRound
+              }))
+            } catch (sendError) {
+              console.error('❌ Error sending to client:', sendError)
+              // Remove broken client
+              this.clients.delete(client)
+            }
+          }
+        })
+      } catch (broadcastError) {
+        console.error('❌ Broadcast error:', broadcastError)
+      }
+
+      // Check win condition
+      const winsNeeded = Math.ceil(this.maxRounds / 2)
+      if (this.creatorWins >= winsNeeded || this.joinerWins >= winsNeeded) {
+        console.log('🏆 Game complete! Final scores:', this.creatorWins, '-', this.joinerWins)
+        setTimeout(() => this.endGame(), 1000)
+        return
+      }
+
+      // Schedule next round
+      console.log('⏳ Scheduling next round in 4 seconds...')
+      setTimeout(() => {
+        try {
+          this.prepareNextRound()
+        } catch (nextRoundError) {
+          console.error('❌ Error preparing next round:', nextRoundError)
+        }
+      }, 4000)
+      
     } catch (error) {
-      console.error('Error recording round:', error)
+      console.error('❌ Critical error in processFlipResult:', error)
+      // Try to recover by broadcasting current state
+      this.broadcastGameState()
     }
-
-    // Show result
-    if (this.syncedFlip) {
-      this.syncedFlip.showResult = true
-    }
-
-    // Broadcast with CORRECT winner info
-    this.broadcast({
-      type: 'round_complete',
-      syncedFlip: this.syncedFlip,
-      scores: {
-        creator: this.creatorWins,
-        joiner: this.joinerWins
-      },
-      roundWinner: isWinner ? 
-        (address === this.creator ? 'creator' : 'joiner') : 
-        (address === this.creator ? 'joiner' : 'creator'), // OPPOSITE when flipper loses
-      actualWinner: isWinner ? address : (address === this.creator ? this.joiner : this.creator)
-    })
-
-    // Check win condition
-    const winsNeeded = Math.ceil(this.maxRounds / 2)
-    if (this.creatorWins >= winsNeeded || this.joinerWins >= winsNeeded) {
-      await this.endGame()
-      return
-    }
-
-    // Prepare next round after delay
-    setTimeout(() => {
-      this.prepareNextRound()
-    }, 4000)
   }
 
   async endGame() {
@@ -943,25 +980,32 @@ const activeSessions = new Map()
 wss.on('connection', (ws) => {
   console.log('🔌 New WebSocket connection')
   
+  // Add error handler
+  ws.on('error', (error) => {
+    console.error('❌ WebSocket client error:', error)
+  })
+  
   ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message)
       await handleMessage(ws, data)
     } catch (error) {
-      console.error('❌ Error parsing message:', error)
-      ws.send(JSON.stringify({ type: 'error', error: 'Invalid message format' }))
+      console.error('❌ Error handling message:', error)
+      // Send error back but don't crash
+      try {
+        ws.send(JSON.stringify({ type: 'error', error: 'Message processing failed' }))
+      } catch (sendError) {
+        console.error('❌ Could not send error message:', sendError)
+      }
     }
   })
   
   ws.on('close', () => {
     console.log('🔌 Client disconnected')
+    // Clean up from all sessions
     activeSessions.forEach(session => {
       session.removeClient(ws)
     })
-  })
-
-  ws.on('error', (error) => {
-    console.error('❌ WebSocket error:', error)
   })
 })
 
