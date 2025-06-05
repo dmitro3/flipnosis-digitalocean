@@ -23,7 +23,8 @@ const PowerDisplay = ({
   // Show power bar if choice is made or in active phase
   const showPowerBar = gamePhase === 'round_active' || playerChoice
   
-  if (!showChoiceButtons && !showPowerBar) {
+  // Always show the power display area
+  if (!showChoiceButtons && !showPowerBar && gamePhase !== 'choosing') {
     return null
   }
 
@@ -38,17 +39,28 @@ const PowerDisplay = ({
       margin: '0 auto',
       boxShadow: '0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1)'
     }}>
+      {/* Power Display Header - Always Show */}
+      <div style={{
+        color: '#FFD700',
+        fontSize: '1.1rem',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: '1.2rem',
+        textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
+        letterSpacing: '1px'
+      }}>
+        ⚡ POWER LEVEL ⚡
+      </div>
       
-      {/* Choice Buttons - Only show during choosing phase */}
+      {/* Choice Buttons - Show during choosing phase */}
       {showChoiceButtons && (
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <div style={{
             color: '#FFD700',
-            fontSize: '1.2rem',
+            fontSize: '1rem',
             fontWeight: 'bold',
             marginBottom: '1rem',
-            textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
-            letterSpacing: '1px'
+            textAlign: 'center'
           }}>
             🎯 CHOOSE YOUR SIDE
           </div>
@@ -69,14 +81,6 @@ const PowerDisplay = ({
                 transition: 'all 0.3s ease',
                 boxShadow: '0 0 15px rgba(255, 20, 147, 0.3)'
               }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'scale(1.05)'
-                e.target.style.boxShadow = '0 0 25px rgba(255, 20, 147, 0.5)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'scale(1)'
-                e.target.style.boxShadow = '0 0 15px rgba(255, 20, 147, 0.3)'
-              }}
             >
               👑 HEADS
             </button>
@@ -96,44 +100,16 @@ const PowerDisplay = ({
                 transition: 'all 0.3s ease',
                 boxShadow: '0 0 15px rgba(0, 191, 255, 0.3)'
               }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'scale(1.05)'
-                e.target.style.boxShadow = '0 0 25px rgba(0, 191, 255, 0.5)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'scale(1)'
-                e.target.style.boxShadow = '0 0 15px rgba(0, 191, 255, 0.3)'
-              }}
             >
               💎 TAILS
             </button>
           </div>
-          
-          <div style={{
-            marginTop: '1rem',
-            color: 'rgba(255, 215, 0, 0.8)',
-            fontSize: '0.85rem'
-          }}>
-            Choose your side, then hold the coin to charge power!
-          </div>
         </div>
       )}
 
-      {/* Single Power Bar - Only show after choice is made */}
-      {showPowerBar && (
+      {/* Single Power Bar - Show after choice is made or always show structure */}
+      {(showPowerBar || !showChoiceButtons) && (
         <div>
-          <div style={{
-            color: '#FFD700',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            marginBottom: '1.2rem',
-            textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
-            letterSpacing: '1px'
-          }}>
-            ⚡ COMBINED POWER LEVEL ⚡
-          </div>
-
           {/* Single Combined Power Bar */}
           <div style={{ marginBottom: '1.2rem' }}>
             <div style={{
@@ -202,36 +178,9 @@ const PowerDisplay = ({
             </div>
           </div>
 
-          {/* Current Player Info */}
-          <div style={{
-            textAlign: 'center',
-            paddingTop: '0.8rem',
-            borderTop: '1px solid rgba(255, 215, 0, 0.3)',
-            marginTop: '0.5rem'
-          }}>
-            <div style={{
-              color: '#FFD700',
-              fontSize: '0.9rem',
-              fontWeight: 'bold',
-              marginBottom: '0.3rem',
-              textShadow: '0 0 8px rgba(255, 215, 0, 0.6)'
-            }}>
-              {currentPlayer === creator ? '👑 Player 1 Turn' : 
-               currentPlayer === joiner ? '💎 Player 2 Turn' : 
-               'Waiting...'}
-            </div>
-            <div style={{
-              color: 'rgba(255, 215, 0, 0.7)',
-              fontSize: '0.75rem'
-            }}>
-              Higher power = Longer, more dramatic coin flip!
-            </div>
-          </div>
-
           {/* Charging Indicator */}
           {chargingPlayer && (
             <div style={{
-              marginTop: '0.8rem',
               padding: '0.6rem',
               background: 'linear-gradient(90deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.1) 100%)',
               border: '1px solid rgba(255, 215, 0, 0.5)',
@@ -245,14 +194,7 @@ const PowerDisplay = ({
                 animation: 'powerPulse 0.4s ease-in-out infinite',
                 textShadow: '0 0 10px rgba(255, 215, 0, 0.8)'
               }}>
-                ⚡ {chargingPlayer === creator ? 'PLAYER 1' : 'PLAYER 2'} CHARGING POWER ⚡
-              </div>
-              <div style={{
-                color: 'rgba(255, 215, 0, 0.8)',
-                fontSize: '0.75rem',
-                marginTop: '0.2rem'
-              }}>
-                Hold to build energy, release to flip!
+                ⚡ {chargingPlayer === creator ? 'PLAYER 1' : 'PLAYER 2'} CHARGING ⚡
               </div>
             </div>
           )}

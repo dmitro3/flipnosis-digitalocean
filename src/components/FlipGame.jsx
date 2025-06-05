@@ -599,6 +599,25 @@ const FlipGame = () => {
                   </div>
                 </div>
               )}
+              
+              {/* Game ID Below Player 2 */}
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: 'rgba(255, 215, 0, 0.1)',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                borderRadius: '0.75rem',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  color: '#FFD700',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  textShadow: '0 0 8px rgba(255, 215, 0, 0.5)'
+                }}>
+                  FLIP#{gameId?.slice(-6).toUpperCase()}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -607,21 +626,17 @@ const FlipGame = () => {
             <div style={{
               marginTop: '2rem',
               textAlign: 'center',
-              padding: '1.5rem',
+              padding: '1rem',
               background: 'rgba(255, 215, 0, 0.1)',
-              border: '2px solid rgba(255, 215, 0, 0.3)',
+              border: '1px solid rgba(255, 215, 0, 0.3)',
               borderRadius: '1rem'
             }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>👀</div>
               <p style={{ 
                 color: '#FFD700', 
                 fontWeight: 'bold',
-                fontSize: '1.2rem'
+                margin: 0
               }}>
-                SPECTATING GOLD FLIP
-              </p>
-              <p style={{ color: 'rgba(255, 215, 0, 0.8)', fontSize: '0.9rem' }}>
-                Watch players choose their side and flip the golden coin!
+                👀 SPECTATING
               </p>
             </div>
           )}
