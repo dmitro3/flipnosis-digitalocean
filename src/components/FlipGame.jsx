@@ -369,7 +369,10 @@ const FlipGame = () => {
               background: 'rgba(0, 0, 0, 0.3)',
               border: isCreator ? `2px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.1)',
               borderRadius: '1rem',
-              padding: '1rem'
+              padding: '1rem',
+              // Add green flashing when it's this player's turn
+              animation: gameState?.currentPlayer === gameState?.creator ? 'playerTurnGlow 1s ease-in-out infinite' : 'none',
+              boxShadow: gameState?.currentPlayer === gameState?.creator ? '0 0 20px rgba(0, 255, 65, 0.5)' : 'none'
             }}>
               {/* Compact Header */}
               <div style={{
@@ -505,7 +508,10 @@ const FlipGame = () => {
               background: 'rgba(0, 0, 0, 0.3)',
               border: isJoiner ? `2px solid ${theme.colors.neonBlue}` : '1px solid rgba(255,255,255,0.1)',
               borderRadius: '1rem',
-              padding: '1rem'
+              padding: '1rem',
+              // Add green flashing when it's this player's turn
+              animation: gameState?.currentPlayer === gameState?.joiner ? 'playerTurnGlow 1s ease-in-out infinite' : 'none',
+              boxShadow: gameState?.currentPlayer === gameState?.joiner ? '0 0 20px rgba(0, 255, 65, 0.5)' : 'none'
             }}>
               {/* Compact Header */}
               <div style={{
@@ -631,11 +637,7 @@ const FlipGame = () => {
               border: '1px solid rgba(255, 215, 0, 0.3)',
               borderRadius: '1rem'
             }}>
-              <p style={{ 
-                color: '#FFD700', 
-                fontWeight: 'bold',
-                margin: 0
-              }}>
+              <p style={{ color: '#FFD700', fontWeight: 'bold', margin: 0 }}>
                 👀 SPECTATING
               </p>
             </div>

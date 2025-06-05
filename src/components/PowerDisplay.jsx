@@ -35,7 +35,7 @@ const PowerDisplay = ({
       borderRadius: '1rem',
       border: `2px solid #FFD700`,
       backdropFilter: 'blur(10px)',
-      maxWidth: '450px',
+      maxWidth: '550px',
       margin: '0 auto',
       boxShadow: '0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1)'
     }}>
@@ -67,7 +67,11 @@ const PowerDisplay = ({
           
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button
-              onClick={() => onPlayerChoice('heads')}
+              onClick={() => {
+                console.log('🎯 Heads button clicked')
+                console.log('Current state:', { gamePhase, isMyTurn, playerChoice })
+                onPlayerChoice('heads')
+              }}
               style={{
                 flex: 1,
                 padding: '1rem',
@@ -86,7 +90,11 @@ const PowerDisplay = ({
             </button>
             
             <button
-              onClick={() => onPlayerChoice('tails')}
+              onClick={() => {
+                console.log('🎯 Tails button clicked')
+                console.log('Current state:', { gamePhase, isMyTurn, playerChoice })
+                onPlayerChoice('tails')
+              }}
               style={{
                 flex: 1,
                 padding: '1rem',
