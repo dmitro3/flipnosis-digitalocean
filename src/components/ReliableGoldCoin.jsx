@@ -144,41 +144,46 @@ const ReliableGoldCoin = ({
     sceneRef.current = scene
     rendererRef.current = renderer
 
-    // LIGHTING SETUP - MUCH BRIGHTER with cool spotlights
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2)) // Increased ambient
+    // LIGHTING SETUP - MUCH BRIGHTER with optimal positioning for metallic surfaces
+    scene.add(new THREE.AmbientLight(0xffffff, 2.0)) // Increased from 1.2 to 2.0
 
-    // Left point light - BRIGHTER
-    const pointLightLeft = new THREE.PointLight(0xFFE4B5, 2.0) // Increased from 1.2
-    pointLightLeft.position.set(-3, -2, 5)
-    scene.add(pointLightLeft)
+    // Primary front light - directly illuminates the coin face toward camera
+    const primaryLight = new THREE.DirectionalLight(0xFFFFFF, 3.0) // Much brighter
+    primaryLight.position.set(0, 0, 10) // Directly in front
+    scene.add(primaryLight)
 
-    // Right point light - BRIGHTER
-    const pointLightRight = new THREE.PointLight(0xFFE4B5, 2.0) // Increased from 1.2
-    pointLightRight.position.set(3, 2, 5)
-    scene.add(pointLightRight)
+    // Key light from top-front-right - main illumination
+    const keyLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
+    keyLight.position.set(3, 3, 8) // Closer to camera
+    scene.add(keyLight)
 
-    // Top point light - BRIGHTER
-    const pointLightTop = new THREE.PointLight(0xFFFFFF, 1.8) // Increased from 1.0
-    pointLightTop.position.set(0, 4, 3)
-    scene.add(pointLightTop)
+    // Fill light from top-front-left - fills shadows
+    const fillLight = new THREE.DirectionalLight(0xFFE4B5, 2.0)
+    fillLight.position.set(-3, 3, 8) // Closer to camera
+    scene.add(fillLight)
 
-    // Additional front spotlight for brightness
-    const frontSpotlight = new THREE.SpotLight(0xFFFFFF, 2.5)
-    frontSpotlight.position.set(0, 0, 8)
-    frontSpotlight.target.position.set(0, 0, 0)
-    frontSpotlight.angle = Math.PI / 6
-    frontSpotlight.penumbra = 0.3
-    scene.add(frontSpotlight)
-    scene.add(frontSpotlight.target)
+    // Bottom light to eliminate dark areas
+    const bottomLight = new THREE.DirectionalLight(0xFFFFFF, 1.5)
+    bottomLight.position.set(0, -4, 6)
+    scene.add(bottomLight)
 
-    // Back rim light for extra glow
-    const backRimLight = new THREE.PointLight(0xFFD700, 1.5)
-    backRimLight.position.set(0, 0, -3)
-    scene.add(backRimLight)
+    // Rim lights for metallic edge reflection
+    const rimLight1 = new THREE.PointLight(0xFFD700, 2.0) // Gold colored
+    rimLight1.position.set(4, 0, 4)
+    scene.add(rimLight1)
 
-    // MATERIALS SETUP - BRIGHTER GOLD
-    const metalness = 0.9 // More metallic
-    const roughness = 0.05 // Much shinier
+    const rimLight2 = new THREE.PointLight(0xFFD700, 2.0) // Gold colored
+    rimLight2.position.set(-4, 0, 4)
+    scene.add(rimLight2)
+
+    // Back light for glow effect
+    const backLight = new THREE.PointLight(0xFFE4B5, 1.0)
+    backLight.position.set(0, 0, -2)
+    scene.add(backLight)
+
+    // MATERIALS SETUP - MUCH BRIGHTER GOLD with less metalness
+    const metalness = 0.6 // Reduced from 0.9 - less mirror-like
+    const roughness = 0.1 // Slightly increased from 0.05 - less perfect reflection
 
     // Create or load textures
     const textureHeads = headsImage ? 
@@ -198,32 +203,32 @@ const ReliableGoldCoin = ({
     textureEdge.repeat.set(20, 1)
 
     const materials = [
-      // Circumference (edge) - BRIGHTER
+      // Circumference (edge) - MUCH BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureEdge,
         metalness: metalness,
         roughness: roughness,
-        color: 0xFFEF94, // Much brighter edge
-        emissive: 0x332200, // Subtle warm glow
-        emissiveIntensity: 0.1
+        color: 0xFFFFCC, // Much brighter base color
+        emissive: 0x443300, // Warm glow
+        emissiveIntensity: 0.3 // Increased from 0.1
       }),
-      // Heads side (top) - BRIGHTER
+      // Heads side (top) - MUCH BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureHeads,
         metalness: metalness,
         roughness: roughness,
-        color: 0xFFEF94, // Much brighter gold
-        emissive: 0x443300, // Warm glow
-        emissiveIntensity: 0.15
+        color: 0xFFFFCC, // Much brighter gold
+        emissive: 0x554400, // Stronger warm glow
+        emissiveIntensity: 0.4 // Increased from 0.15
       }),
-      // Tails side (bottom) - BRIGHTER
+      // Tails side (bottom) - MUCH BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureTails,
         metalness: metalness,
         roughness: roughness,
-        color: 0xFFEF94, // Much brighter gold
-        emissive: 0x443300, // Warm glow
-        emissiveIntensity: 0.15
+        color: 0xFFFFCC, // Much brighter gold
+        emissive: 0x554400, // Stronger warm glow
+        emissiveIntensity: 0.4 // Increased from 0.15
       })
     ]
 

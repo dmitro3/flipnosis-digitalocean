@@ -201,7 +201,15 @@ const FlipGame = () => {
 
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
-    if (!isMyTurn || !socket || isChargingRef.current) return
+    // Only allow charging if player has made their choice and it's the charging phase
+    if (!isMyTurn || !socket || isChargingRef.current || gameState?.phase !== 'round_active') return
+    
+    // Check if player has made their choice
+    const playerChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice
+    if (!playerChoice) {
+      showError('You must choose heads or tails first!')
+      return
+    }
     
     isChargingRef.current = true
     socket.send(JSON.stringify({
@@ -219,6 +227,22 @@ const FlipGame = () => {
       type: 'stop_charging',
       gameId,
       address
+    }))
+  }
+
+  const handlePlayerChoice = (choice) => {
+    if (!socket || !gameState || gameState.phase !== 'choosing') return
+    
+    const isMyTurn = gameState.currentPlayer === address
+    if (!isMyTurn) return
+    
+    console.log('🎯 Player choosing:', choice)
+    
+    socket.send(JSON.stringify({
+      type: 'player_choice',
+      gameId,
+      address,
+      choice // 'heads' or 'tails'
     }))
   }
 
@@ -342,243 +366,346 @@ const FlipGame = () => {
             }
           }}>
             
-            {/* Left Player Card - Player 1 (Creator) */}
+            {/* Left Player Card - Player 1 (Creator) - COMPACT */}
             <div style={{
               background: 'rgba(0, 0, 0, 0.3)',
               border: isCreator ? `2px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.1)',
               borderRadius: '1rem',
               padding: '1rem',
-              animation: gameState?.currentPlayer === gameState?.creator ? 'playerReady 1s infinite' : 'none'
+              animation: gameState?.currentPlayer === gameState?.creator ? 'playerReady 1s infinite' : 'none',
+              maxWidth: '280px' // Smaller width
             }}>
-              <div style={{ textAlign: 'center' }}>
-                {/* Player Header */}
-                <div style={{
-                  padding: '1rem',
-                  background: isCreator ? 
-                    `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})` : 
-                    'rgba(255,255,255,0.1)',
-                  borderRadius: '1rem',
-                  marginBottom: '1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0 }}>
+              {/* Compact Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: isCreator ? 
+                  `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})` : 
+                  'rgba(255,255,255,0.1)',
+                borderRadius: '0.75rem'
+              }}>
+                {/* Profile Picture - Top Left */}
+                <ProfilePicture
+                  address={gameState?.creator}
+                  size="50px"
+                  isClickable={isCreator}
+                  showUploadIcon={isCreator}
+                />
+                
+                {/* Player Info - Top Right */}
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
                     PLAYER 1 {isCreator && '(YOU)'}
                   </h3>
-                  
-                  {/* Profile Picture */}
-                  <ProfilePicture
-                    address={gameState?.creator}
-                    size="60px"
-                    isClickable={isCreator}
-                    showUploadIcon={isCreator}
-                  />
-                  
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem', textAlign: 'center' }}>
+                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
                     {gameState?.creator ? `${gameState.creator.slice(0, 6)}...${gameState.creator.slice(-4)}` : 'Waiting...'}
                   </div>
-                  
-                  {gameState?.currentPlayer === gameState?.creator && gameState?.phase === 'round_active' && (
-                    <div style={{
-                      padding: '0.25rem 0.75rem',
-                      background: theme.colors.statusSuccess,
-                      borderRadius: '1rem',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold',
-                      animation: 'powerPulse 1s ease-in-out infinite'
-                    }}>
-                      YOUR TURN
-                    </div>
-                  )}
                 </div>
-                
-                {/* NFT Display */}
-                <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                  {gameData?.nft ? (
-                    <img
-                      src={gameData.nft.image}
-                      alt={gameData.nft.name}
-                      style={{
-                        width: '100%',
-                        aspectRatio: '1',
-                        objectFit: 'cover',
-                        borderRadius: '1rem',
-                        border: isCreator ? `3px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.2)'
-                      }}
-                    />
-                  ) : (
-                    <div style={{
+              </div>
+              
+              {/* NFT Image - Smaller */}
+              <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                {gameData?.nft ? (
+                  <img
+                    src={gameData.nft.image}
+                    alt={gameData.nft.name}
+                    style={{
+                      width: '100%',
                       aspectRatio: '1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: gameState?.creator ? 
-                        `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})` : 
-                        'rgba(255,255,255,0.1)',
-                      borderRadius: '1rem',
-                      border: isCreator ? `3px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.2)'
-                    }}>
-                      <div style={{
-                        fontSize: '4rem',
-                        filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))'
-                      }}>
-                        👑
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Item Info */}
-                <div>
-                  <h4 style={{ color: theme.colors.textPrimary, fontWeight: 'bold' }}>
-                    {gameData?.nft ? gameData.nft.name : 'Player 1'}
-                  </h4>
-                  <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-                    {gameData?.nft ? gameData.nft.collection : 'Heads Player'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Center - Coin and Game Area */}
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {/* Coin */}
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                marginBottom: '2rem',
-                transform: 'scale(1.24)'
-              }}>
-                <ReliableGoldCoin
-                  isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result}
-                  flipDuration={flipAnimation?.duration}
-                  onPowerCharge={handlePowerChargeStart}
-                  onPowerRelease={handlePowerChargeStop}
-                  isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
-                  isCharging={gameState?.chargingPlayer === address}
-                  chargingPlayer={gameState?.chargingPlayer}
-                  gamePhase={gameState?.phase}
-                />
-              </div>
-
-              {/* Power Display */}
-              {gameState?.phase === 'round_active' && (
-                <PowerDisplay
-                  creatorPower={gameState.creatorPower}
-                  joinerPower={gameState.joinerPower}
-                  currentPlayer={gameState.currentPlayer}
-                  creator={gameState.creator}
-                  joiner={gameState.joiner}
-                  chargingPlayer={gameState.chargingPlayer}
-                />
-              )}
-            </div>
-
-            {/* Right Player Card - Player 2 (Joiner) */}
-            <div style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              border: isJoiner ? `2px solid ${theme.colors.neonBlue}` : '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '1rem',
-              padding: '1rem',
-              animation: gameState?.currentPlayer === gameState?.joiner ? 'playerReady 1s infinite' : 'none'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                {/* Player Header */}
-                <div style={{
-                  padding: '1rem',
-                  background: isJoiner ? 
-                    `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 
-                    'rgba(255,255,255,0.1)',
-                  borderRadius: '1rem',
-                  marginBottom: '1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0 }}>
-                    PLAYER 2 {isJoiner && '(YOU)'}
-                  </h3>
-                  
-                  {/* Profile Picture */}
-                  <ProfilePicture
-                    address={gameState?.joiner}
-                    size="60px"
-                    isClickable={isJoiner}
-                    showUploadIcon={isJoiner}
+                      objectFit: 'cover',
+                      borderRadius: '0.75rem',
+                      border: isCreator ? `2px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.2)'
+                    }}
                   />
-                  
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem', textAlign: 'center' }}>
-                    {gameState?.joiner ? `${gameState.joiner.slice(0, 6)}...${gameState.joiner.slice(-4)}` : 'Waiting...'}
-                  </div>
-                  
-                  {gameState?.currentPlayer === gameState?.joiner && gameState?.phase === 'round_active' && (
-                    <div style={{
-                      padding: '0.25rem 0.75rem',
-                      background: theme.colors.statusSuccess,
-                      borderRadius: '1rem',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold',
-                      animation: 'powerPulse 1s ease-in-out infinite'
-                    }}>
-                      YOUR TURN
-                    </div>
-                  )}
-                </div>
-                
-                {/* Crypto/Placeholder Display */}
-                <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                ) : (
                   <div style={{
                     aspectRatio: '1',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: gameState?.joiner ? 
-                      `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 
+                    background: gameState?.creator ? 
+                      `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})` : 
                       'rgba(255,255,255,0.1)',
-                    borderRadius: '1rem',
-                    border: isJoiner ? `3px solid ${theme.colors.neonBlue}` : 
-                            gameState?.joiner ? '1px solid rgba(255,255,255,0.2)' : 
-                            '2px dashed rgba(255,255,255,0.3)',
-                    padding: '1rem'
+                    borderRadius: '0.75rem',
+                    border: isCreator ? `2px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.2)'
                   }}>
-                    {gameState?.joiner ? (
-                      <img 
-                        src={baseEthLogo} 
-                        alt="Base ETH"
-                        style={{
-                          width: '80%',
-                          height: '80%',
-                          objectFit: 'contain',
-                          filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))'
-                        }}
-                      />
-                    ) : (
-                      <div style={{
-                        fontSize: '4rem',
-                        filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
-                        opacity: 0.5
-                      }}>
-                        ⏳
+                    <div style={{ fontSize: '3rem', filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))' }}>
+                      👑
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Choice Box */}
+              <div style={{
+                background: 'rgba(255, 20, 147, 0.1)',
+                border: `2px solid ${theme.colors.neonPink}`,
+                borderRadius: '0.75rem',
+                padding: '0.75rem',
+                textAlign: 'center',
+                marginBottom: '1rem'
+              }}>
+                {gameState?.creatorChoice ? (
+                  <div>
+                    <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      {gameState.creatorChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
+                    </div>
+                    <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                      Choice Made
+                    </div>
+                  </div>
+                ) : gameState?.currentPlayer === gameState?.creator && gameState?.phase === 'choosing' ? (
+                  <div>
+                    <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                      Choose Your Side
+                    </div>
+                    {isCreator && (
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handlePlayerChoice('heads')}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: theme.colors.neonPink,
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          👑 HEADS
+                        </button>
+                        <button
+                          onClick={() => handlePlayerChoice('tails')}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: theme.colors.neonBlue,
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          💎 TAILS
+                        </button>
                       </div>
                     )}
                   </div>
+                ) : (
+                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                    Waiting for choice...
+                  </div>
+                )}
+              </div>
+              
+              {/* Item Info - Compact */}
+              <div style={{ textAlign: 'center' }}>
+                <h4 style={{ color: theme.colors.textPrimary, fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
+                  {gameData?.nft ? gameData.nft.name : 'Player 1'}
+                </h4>
+                <p style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', margin: 0 }}>
+                  {gameData?.nft ? gameData.nft.collection : 'Heads Player'}
+                </p>
+              </div>
+              
+              {/* Turn Indicator */}
+              {gameState?.currentPlayer === gameState?.creator && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  padding: '0.5rem',
+                  background: theme.colors.statusSuccess,
+                  borderRadius: '0.5rem',
+                  textAlign: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.75rem',
+                  animation: 'powerPulse 1s ease-in-out infinite'
+                }}>
+                  {gameState?.phase === 'choosing' ? 'CHOOSE SIDE' : 'YOUR TURN'}
                 </div>
+              )}
+            </div>
+
+            {/* Right Player Card - Player 2 (Joiner) - COMPACT */}
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.3)',
+              border: isJoiner ? `2px solid ${theme.colors.neonBlue}` : '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '1rem',
+              padding: '1rem',
+              animation: gameState?.currentPlayer === gameState?.joiner ? 'playerReady 1s infinite' : 'none',
+              maxWidth: '280px' // Smaller width
+            }}>
+              {/* Compact Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: isJoiner ? 
+                  `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 
+                  'rgba(255,255,255,0.1)',
+                borderRadius: '0.75rem'
+              }}>
+                {/* Profile Picture - Top Left */}
+                <ProfilePicture
+                  address={gameState?.joiner}
+                  size="50px"
+                  isClickable={isJoiner}
+                  showUploadIcon={isJoiner}
+                />
                 
-                {/* Item Info */}
-                <div>
-                  <h4 style={{ color: theme.colors.textPrimary, fontWeight: 'bold' }}>
-                    {gameState?.joiner ? `$${gameData?.priceUSD?.toFixed(2)}` : 'Waiting for player...'}
-                  </h4>
-                  <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-                    {gameState?.joiner ? 'Tails Player' : ''}
-                  </p>
+                {/* Player Info - Top Right */}
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
+                    PLAYER 2 {isJoiner && '(YOU)'}
+                  </h3>
+                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
+                    {gameState?.joiner ? `${gameState.joiner.slice(0, 6)}...${gameState.joiner.slice(-4)}` : 'Waiting...'}
+                  </div>
                 </div>
               </div>
+              
+              {/* Crypto/Placeholder Display - Smaller */}
+              <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                <div style={{
+                  aspectRatio: '1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: gameState?.joiner ? 
+                    `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 
+                    'rgba(255,255,255,0.1)',
+                  borderRadius: '0.75rem',
+                  border: isJoiner ? `2px solid ${theme.colors.neonBlue}` : 
+                          gameState?.joiner ? '1px solid rgba(255,255,255,0.2)' : 
+                          '2px dashed rgba(255,255,255,0.3)',
+                  padding: '1rem'
+                }}>
+                  {gameState?.joiner ? (
+                    <img 
+                      src={baseEthLogo} 
+                      alt="Base ETH"
+                      style={{
+                        width: '70%',
+                        height: '70%',
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      fontSize: '3rem',
+                      filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
+                      opacity: 0.5
+                    }}>
+                      ⏳
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Choice Box */}
+              <div style={{
+                background: 'rgba(0, 191, 255, 0.1)',
+                border: `2px solid ${theme.colors.neonBlue}`,
+                borderRadius: '0.75rem',
+                padding: '0.75rem',
+                textAlign: 'center',
+                marginBottom: '1rem'
+              }}>
+                {gameState?.joinerChoice ? (
+                  <div>
+                    <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      {gameState.joinerChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
+                    </div>
+                    <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                      Choice Made
+                    </div>
+                  </div>
+                ) : gameState?.currentPlayer === gameState?.joiner && gameState?.phase === 'choosing' ? (
+                  <div>
+                    <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                      Choose Your Side
+                    </div>
+                    {isJoiner && (
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handlePlayerChoice('heads')}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: theme.colors.neonPink,
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          👑 HEADS
+                        </button>
+                        <button
+                          onClick={() => handlePlayerChoice('tails')}
+                          style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: theme.colors.neonBlue,
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          💎 TAILS
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                    {gameState?.joiner ? 'Waiting for choice...' : 'Waiting for player...'}
+                  </div>
+                )}
+              </div>
+              
+              {/* Item Info - Compact */}
+              <div style={{ textAlign: 'center' }}>
+                <h4 style={{ color: theme.colors.textPrimary, fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
+                  {gameState?.joiner ? `$${gameData?.priceUSD?.toFixed(2)}` : 'Waiting for player...'}
+                </h4>
+                <p style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', margin: 0 }}>
+                  {gameState?.joiner ? 'Tails Player' : ''}
+                </p>
+              </div>
+              
+              {/* Turn Indicator */}
+              {gameState?.currentPlayer === gameState?.joiner && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  padding: '0.5rem',
+                  background: theme.colors.statusSuccess,
+                  borderRadius: '0.5rem',
+                  textAlign: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '0.75rem',
+                  animation: 'powerPulse 1s ease-in-out infinite'
+                }}>
+                  {gameState?.phase === 'choosing' ? 'CHOOSE SIDE' : 'YOUR TURN'}
+                </div>
+              )}
             </div>
           </div>
 
@@ -631,7 +758,41 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* MOVED TO BOTTOM: Game Status */}
+          {/* Game Status */}
+          {gameState?.phase === 'choosing' && (
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              {isMyTurn ? (
+                <div style={{
+                  padding: '1rem',
+                  background: 'rgba(255, 215, 0, 0.1)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  borderRadius: '1rem'
+                }}>
+                  <div style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                    🎯 CHOOSE YOUR SIDE!
+                  </div>
+                  <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
+                    Select heads or tails in your player box, then you can charge power and flip!
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '1rem',
+                  background: 'rgba(255, 165, 0, 0.1)',
+                  border: '1px solid rgba(255, 165, 0, 0.3)',
+                  borderRadius: '1rem'
+                }}>
+                  <div style={{ color: theme.colors.statusWarning, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                    ⏳ Opponent is Choosing
+                  </div>
+                  <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
+                    Waiting for {!isCreator ? 'Player 1' : 'Player 2'} to choose heads or tails
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {gameState?.phase === 'round_active' && (
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               {isMyTurn ? (
@@ -642,10 +803,10 @@ const FlipGame = () => {
                   borderRadius: '1rem'
                 }}>
                   <div style={{ color: theme.colors.statusSuccess, fontWeight: 'bold', fontSize: '1.2rem' }}>
-                    🎯 YOUR TURN!
+                    ⚡ YOUR TURN TO FLIP!
                   </div>
                   <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
-                    You are {isCreator ? 'HEADS 👑' : 'TAILS 💎'} - Hold coin to charge power, release to flip!
+                    You chose {isCreator ? gameState.creatorChoice?.toUpperCase() : gameState.joinerChoice?.toUpperCase()} - Hold coin to charge power, release to flip!
                   </div>
                 </div>
               ) : (
@@ -659,7 +820,7 @@ const FlipGame = () => {
                     ⏳ Opponent's Turn
                   </div>
                   <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
-                    They are {!isCreator ? 'HEADS 👑' : 'TAILS 💎'}
+                    They chose {!isCreator ? gameState.creatorChoice?.toUpperCase() : gameState.joinerChoice?.toUpperCase()} and are charging power to flip
                   </div>
                 </div>
               )}
