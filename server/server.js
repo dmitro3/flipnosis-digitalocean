@@ -570,31 +570,26 @@ const dbHelpers = {
   }
 }
 
-class GameSession {
+class EnhancedGameSession {
   constructor(gameId) {
     this.gameId = gameId
     this.creator = null
     this.joiner = null
-    this.phase = 'waiting'
+    this.phase = 'waiting' // 'waiting', 'waiting_for_choice', 'charging_power', 'flipping', 'round_complete', 'game_complete'
     this.currentRound = 1
     this.maxRounds = 5
     this.creatorWins = 0
     this.joinerWins = 0
-    this.winner = null
-    
-    // Simple power system
+    this.currentPlayer = null
+    this.chargingPlayer = null
     this.creatorPower = 0
     this.joinerPower = 0
-    this.chargingPlayer = null
-    this.currentPlayer = null
-    
-    // Control flags
-    this.isFlipInProgress = false
-    this.gameData = null
-    this.clients = new Set()
-    this.lastActionTime = Date.now()
-    this.roundCompleted = false
-    this.syncedFlip = null
+    this.spectators = 0
+    this.creatorChoice = null
+    this.joinerChoice = null
+    this.creatorHasChosen = false
+    this.joinerHasChosen = false
+    this.winner = null
   }
 
   addClient(ws) {
@@ -607,44 +602,26 @@ class GameSession {
   }
 
   broadcastGameState() {
-    const state = {
+    this.broadcast({
       type: 'game_state',
-      gameId: this.gameId,
-      creator: this.creator,
-      joiner: this.joiner,
       phase: this.phase,
       currentRound: this.currentRound,
       maxRounds: this.maxRounds,
+      creator: this.creator,
+      joiner: this.joiner,
       creatorWins: this.creatorWins,
       joinerWins: this.joinerWins,
-      winner: this.winner,
+      currentPlayer: this.currentPlayer,
+      chargingPlayer: this.chargingPlayer,
       creatorPower: this.creatorPower,
       joinerPower: this.joinerPower,
-      chargingPlayer: this.chargingPlayer,
-      currentPlayer: this.currentPlayer,
-      isFlipInProgress: this.isFlipInProgress,
-      spectators: this.clients.size
-    }
-
-    // Safely broadcast to all clients
-    const deadClients = new Set()
-    
-    this.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        try {
-          client.send(JSON.stringify(state))
-        } catch (error) {
-          console.error('❌ Error sending to client, marking for removal:', error)
-          deadClients.add(client)
-        }
-      } else {
-        deadClients.add(client)
-      }
-    })
-    
-    // Clean up dead clients
-    deadClients.forEach(client => {
-      this.clients.delete(client)
+      spectators: this.spectators,
+      winner: this.winner,
+      // Choice-related state
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice,
+      creatorHasChosen: this.creatorHasChosen,
+      joinerHasChosen: this.joinerHasChosen
     })
   }
 
@@ -1009,6 +986,228 @@ class GameSession {
       console.error('❌ Error loading game from database:', error)
     }
   }
+
+  handleMessage(message, ws) {
+    const { type, gameId, address, role } = message
+
+    switch (type) {
+      case 'connect_to_game':
+        this.handleConnectToGame(address, ws)
+        break
+
+      case 'join_game':
+        this.handleJoinGame(address, role, message.entryFeeHash)
+        break
+
+      case 'make_choice':
+        this.handleMakeChoice(address, message.choice)
+        break
+
+      case 'start_charging':
+        this.handleStartCharging(address)
+        break
+
+      case 'stop_charging':
+        this.handleStopCharging(address)
+        break
+
+      case 'disconnect':
+        this.handleDisconnect(address)
+        break
+
+      default:
+        console.log('❌ Unknown message type:', type)
+    }
+  }
+
+  handleMakeChoice(address, choice) {
+    if (!this.isPlayer(address)) {
+      this.sendError('Only players can make choices')
+      return
+    }
+
+    if (this.phase !== 'waiting_for_choice') {
+      this.sendError('Cannot make choice in current phase')
+      return
+    }
+
+    if (address !== this.currentPlayer) {
+      this.sendError('Not your turn to choose')
+      return
+    }
+
+    if (address === this.creator) {
+      if (this.creatorHasChosen) {
+        this.sendError('You have already chosen')
+        return
+      }
+      this.creatorChoice = choice
+      this.creatorHasChosen = true
+    } else {
+      if (this.joinerHasChosen) {
+        this.sendError('You have already chosen')
+        return
+      }
+      this.joinerChoice = choice
+      this.joinerHasChosen = true
+    }
+
+    // Broadcast choice made
+    this.broadcast({
+      type: 'choice_made',
+      player: address,
+      choice
+    })
+
+    // If both players have chosen, move to charging phase
+    if (this.creatorHasChosen && this.joinerHasChosen) {
+      this.phase = 'charging_power'
+      this.broadcastGameState()
+    }
+  }
+
+  handleStartCharging(address) {
+    if (!this.isPlayer(address)) {
+      this.sendError('Only players can charge power')
+      return
+    }
+
+    if (this.phase !== 'charging_power') {
+      this.sendError('Cannot charge power in current phase')
+      return
+    }
+
+    if (address !== this.currentPlayer) {
+      this.sendError('Not your turn to charge')
+      return
+    }
+
+    this.chargingPlayer = address
+    this.broadcastGameState()
+  }
+
+  handleStopCharging(address) {
+    if (!this.isPlayer(address)) {
+      this.sendError('Only players can stop charging')
+      return
+    }
+
+    if (this.phase !== 'charging_power') {
+      this.sendError('Cannot stop charging in current phase')
+      return
+    }
+
+    if (address !== this.chargingPlayer) {
+      this.sendError('You are not currently charging')
+      return
+    }
+
+    // Calculate power based on charging time
+    const power = Math.floor(Math.random() * 10) + 1 // For now, random power
+    if (address === this.creator) {
+      this.creatorPower = power
+    } else {
+      this.joinerPower = power
+    }
+
+    // Move to flipping phase
+    this.phase = 'flipping'
+    this.chargingPlayer = null
+    this.broadcastGameState()
+
+    // Start flip animation
+    setTimeout(() => {
+      this.handleFlipResult()
+    }, 3000)
+  }
+
+  handleFlipResult() {
+    const result = Math.random() < 0.5 ? 'heads' : 'tails'
+    const winner = this.determineWinner(result)
+
+    // Broadcast flip animation
+    this.broadcast({
+      type: 'flip_animation',
+      result,
+      duration: 3000
+    })
+
+    // After animation, broadcast result
+    setTimeout(() => {
+      this.broadcast({
+        type: 'round_result',
+        result,
+        winner,
+        actualWinner: winner === this.creator ? this.creator : this.joiner
+      })
+
+      // Update scores
+      if (winner === this.creator) {
+        this.creatorWins++
+      } else {
+        this.joinerWins++
+      }
+
+      // Check for game end
+      if (this.creatorWins >= Math.ceil(this.maxRounds / 2) || 
+          this.joinerWins >= Math.ceil(this.maxRounds / 2)) {
+        this.phase = 'game_complete'
+        this.winner = winner
+      } else {
+        // Reset for next round
+        this.currentRound++
+        this.phase = 'waiting_for_choice'
+        this.creatorChoice = null
+        this.joinerChoice = null
+        this.creatorHasChosen = false
+        this.joinerHasChosen = false
+        this.creatorPower = 0
+        this.joinerPower = 0
+        this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
+      }
+
+      this.broadcastGameState()
+    }, 3000)
+  }
+
+  determineWinner(result) {
+    // If result matches creator's choice, creator wins
+    if (result === this.creatorChoice) {
+      return this.creator
+    }
+    // If result matches joiner's choice, joiner wins
+    if (result === this.joinerChoice) {
+      return this.joiner
+    }
+    // This should never happen, but just in case
+    return null
+  }
+
+  broadcastGameState() {
+    this.broadcast({
+      type: 'game_state',
+      phase: this.phase,
+      currentRound: this.currentRound,
+      maxRounds: this.maxRounds,
+      creator: this.creator,
+      joiner: this.joiner,
+      creatorWins: this.creatorWins,
+      joinerWins: this.joinerWins,
+      currentPlayer: this.currentPlayer,
+      chargingPlayer: this.chargingPlayer,
+      creatorPower: this.creatorPower,
+      joinerPower: this.joinerPower,
+      spectators: this.spectators,
+      winner: this.winner,
+      // Choice-related state
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice,
+      creatorHasChosen: this.creatorHasChosen,
+      joinerHasChosen: this.joinerHasChosen
+    })
+  }
+
+  // ... rest of existing code ...
 }
 
 const activeSessions = new Map()
@@ -1053,7 +1252,7 @@ async function handleMessage(ws, data) {
 
   let session = activeSessions.get(gameId)
   if (!session && (type === 'connect_to_game' || type === 'join_game')) {
-    session = new GameSession(gameId)
+    session = new EnhancedGameSession(gameId)
     activeSessions.set(gameId, session)
     console.log('🎮 Created new game session:', gameId)
     
@@ -1104,6 +1303,10 @@ async function handleMessage(ws, data) {
 
     case 'stop_charging':
       await session.stopCharging(data.address)
+      break
+
+    case 'make_choice':
+      session.handleMakeChoice(data.address, data.choice)
       break
 
     default:
