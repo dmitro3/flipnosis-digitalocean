@@ -144,42 +144,34 @@ const ReliableGoldCoin = ({
     sceneRef.current = scene
     rendererRef.current = renderer
 
-    // LIGHTING SETUP - MUCH BRIGHTER with optimal positioning for metallic surfaces
-    scene.add(new THREE.AmbientLight(0xffffff, 2.0)) // Increased from 1.2 to 2.0
+    // LIGHTING SETUP - WORKING BRIGHT CONFIGURATION
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.5) // Very bright ambient
+    scene.add(ambientLight)
 
-    // Primary front light - directly illuminates the coin face toward camera
-    const primaryLight = new THREE.DirectionalLight(0xFFFFFF, 3.0) // Much brighter
-    primaryLight.position.set(0, 0, 10) // Directly in front
-    scene.add(primaryLight)
+    // Primary directional light - front facing
+    const mainLight = new THREE.DirectionalLight(0xFFFFFF, 4.0) // Very bright
+    mainLight.position.set(0, 0, 10) // Directly in front
+    scene.add(mainLight)
 
-    // Key light from top-front-right - main illumination
-    const keyLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
-    keyLight.position.set(3, 3, 8) // Closer to camera
-    scene.add(keyLight)
+    // Top light
+    const topLight = new THREE.DirectionalLight(0xFFE4B5, 3.0)
+    topLight.position.set(0, 5, 5)
+    scene.add(topLight)
 
-    // Fill light from top-front-left - fills shadows
-    const fillLight = new THREE.DirectionalLight(0xFFE4B5, 2.0)
-    fillLight.position.set(-3, 3, 8) // Closer to camera
-    scene.add(fillLight)
+    // Left side light
+    const leftLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
+    leftLight.position.set(-5, 2, 5)
+    scene.add(leftLight)
 
-    // Bottom light to eliminate dark areas
-    const bottomLight = new THREE.DirectionalLight(0xFFFFFF, 1.5)
-    bottomLight.position.set(0, -4, 6)
+    // Right side light
+    const rightLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
+    rightLight.position.set(5, 2, 5)
+    scene.add(rightLight)
+
+    // Bottom fill light
+    const bottomLight = new THREE.DirectionalLight(0xFFFFFF, 2.0)
+    bottomLight.position.set(0, -3, 5)
     scene.add(bottomLight)
-
-    // Rim lights for metallic edge reflection
-    const rimLight1 = new THREE.PointLight(0xFFD700, 2.0) // Gold colored
-    rimLight1.position.set(4, 0, 4)
-    scene.add(rimLight1)
-
-    const rimLight2 = new THREE.PointLight(0xFFD700, 2.0) // Gold colored
-    rimLight2.position.set(-4, 0, 4)
-    scene.add(rimLight2)
-
-    // Back light for glow effect
-    const backLight = new THREE.PointLight(0xFFE4B5, 1.0)
-    backLight.position.set(0, 0, -2)
-    scene.add(backLight)
 
     // MATERIALS SETUP - MUCH BRIGHTER GOLD with less metalness
     const metalness = 0.6 // Reduced from 0.9 - less mirror-like
