@@ -107,7 +107,7 @@ const GoldCoin = ({
 
     const headsFace = new THREE.Mesh(headsFaceGeometry, headsMaterial)
     headsFace.position.z = coinThickness / 2 + 0.001
-    headsFace.rotation.x = 0
+    headsFace.rotation.x = 0  // Face forward
     coin.add(headsFace)
 
     // TAILS FACE (Back)
@@ -144,7 +144,7 @@ const GoldCoin = ({
 
     const tailsFace = new THREE.Mesh(tailsFaceGeometry, tailsMaterial)
     tailsFace.position.z = -(coinThickness / 2) - 0.001
-    tailsFace.rotation.x = Math.PI // Flip to face outward
+    tailsFace.rotation.x = 0  // Face forward 
     coin.add(tailsFace)
 
     // COIN EDGE
@@ -161,35 +161,40 @@ const GoldCoin = ({
     coin.add(edge)
 
     // INITIAL POSITION - Always start with heads facing forward
-    coin.rotation.x = Math.PI / 2  // Rotate so faces point toward camera
-    coin.rotation.y = 0            // Heads faces forward
-    coin.rotation.z = 0
+    coin.rotation.x = 0   // No X rotation - keep flat
+    coin.rotation.y = 0   // Heads faces forward (Y=0)
+    coin.rotation.z = 0   // No Z rotation
     coin.position.y = 0
 
     scene.add(coin)
     coinRef.current = coin
 
-    // ENHANCED LIGHTING for gold
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6)
+    // ENHANCED LIGHTING for gold - MUCH BRIGHTER
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.2)  // Increased from 0.6
     scene.add(ambientLight)
 
-    // Key light - warm tone for gold
-    const keyLight = new THREE.DirectionalLight(0xFFF4E6, 1.5)
+    // Key light - warm tone for gold - MUCH BRIGHTER
+    const keyLight = new THREE.DirectionalLight(0xFFF4E6, 2.5)  // Increased from 1.5
     keyLight.position.set(5, 5, 5)
     keyLight.castShadow = true
     keyLight.shadow.mapSize.width = 2048
     keyLight.shadow.mapSize.height = 2048
     scene.add(keyLight)
 
-    // Fill light - cooler tone for contrast
-    const fillLight = new THREE.DirectionalLight(0xE6F4FF, 0.7)
+    // Fill light - cooler tone for contrast - BRIGHTER
+    const fillLight = new THREE.DirectionalLight(0xE6F4FF, 1.2)  // Increased from 0.7
     fillLight.position.set(-3, 2, 3)
     scene.add(fillLight)
 
-    // Rim light - dramatic edge lighting
-    const rimLight = new THREE.DirectionalLight(0xFFFFFF, 0.9)
+    // Rim light - dramatic edge lighting - BRIGHTER
+    const rimLight = new THREE.DirectionalLight(0xFFFFFF, 1.5)  // Increased from 0.9
     rimLight.position.set(0, -2, 5)
     scene.add(rimLight)
+
+    // Front light - directly illuminates the coin face
+    const frontLight = new THREE.DirectionalLight(0xFFFFFF, 1.8)
+    frontLight.position.set(0, 0, 10)  // Directly in front
+    scene.add(frontLight)
 
     // Animation loop
     const animate = () => {
@@ -352,7 +357,7 @@ const GoldCoin = ({
       
       // MINIMAL wobble on other axes (very subtle, like real coins)
       const wobbleIntensity = (1 - progress * 0.8) // Decreases as flip progresses
-      coin.rotation.x = (Math.PI / 2) + (Math.sin(progress * Math.PI * totalFlips * 0.3) * 0.08 * wobbleIntensity)
+      coin.rotation.x = Math.sin(progress * Math.PI * totalFlips * 0.3) * 0.08 * wobbleIntensity  // Removed the PI/2 offset
       coin.rotation.z = Math.cos(progress * Math.PI * totalFlips * 0.2) * 0.05 * wobbleIntensity
       
       // Slight scale variation during peak
@@ -363,7 +368,7 @@ const GoldCoin = ({
         requestAnimationFrame(animateFlip)
       } else {
         // FINAL LANDING POSITION
-        coin.rotation.x = Math.PI / 2  // Face camera
+        coin.rotation.x = 0  // Face forward, not tilted
         coin.rotation.z = 0
         coin.position.y = 0
         coin.scale.set(1.2, 1.2, 1.2)
