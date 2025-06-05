@@ -18,7 +18,7 @@ const HeaderContainer = styled.header`
 
 const Logo = styled(Link)`
   color: #00FF41;
-  font-size: 1.5rem;
+  font-size: 3rem;
   font-weight: 700;
   text-decoration: none;
   letter-spacing: 2px;
