@@ -17,11 +17,17 @@ const HeaderContainer = styled.header`
 `
 
 const Logo = styled(Link)`
-  color: ${props => props.theme.colors.neonPink};
+  color: #00FF41;
   font-size: 1.5rem;
   font-weight: 700;
   text-decoration: none;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  font-family: 'Hyperwave', sans-serif;
+  text-shadow: 
+    0 0 5px #00FF41,
+    0 0 10px #00FF41,
+    0 0 20px #00FF41,
+    0 0 40px #00FF41;
   animation: neonPulse 2s infinite;
   ${props => props.theme.animations.neonPulse}
 `
