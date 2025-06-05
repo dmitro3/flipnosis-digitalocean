@@ -1,10 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
+import Home from "./pages/Home";
+import CreateFlip from "./pages/CreateFlip";
+import FlipGame from "./components/FlipGame";
 import Layout from "./components/Layout";
-import Home from "./components/Home";
-import EnhancedFlipGame from "./components/FlipGame";
-import DatabaseAdmin from "./components/DatabaseAdmin";
 
-const router = createBrowserRouter([
+export const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
@@ -14,15 +14,13 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: "game/:gameId",
-        element: <EnhancedFlipGame />,
+        path: "create",
+        element: <CreateFlip />,
       },
       {
-        path: "admin",
-        element: <DatabaseAdmin />,
+        path: "game/:gameId",
+        element: <FlipGame />,
       },
     ],
   },
-]);
-
-export default router; 
+]); 
