@@ -39,59 +39,75 @@ const ReliableGoldCoin = ({
     const ctx = canvas.getContext('2d')
 
     if (type === 'heads') {
-      // Gold gradient background
+      // Gold gradient background - BRIGHTER
       const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
-      gradient.addColorStop(0, '#FFD700')
-      gradient.addColorStop(0.7, '#DAA520')
-      gradient.addColorStop(1, '#B8860B')
+      gradient.addColorStop(0, '#FFEF94') // Much brighter center
+      gradient.addColorStop(0.5, '#FFD700') // Bright gold
+      gradient.addColorStop(0.8, '#DAA520') // Medium gold
+      gradient.addColorStop(1, '#B8860B') // Darker edge
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, size, size)
       
-      // Crown symbol
-      ctx.fillStyle = '#B8860B'
-      ctx.font = `bold ${size * 0.25}px serif`
+      // Crown symbol - positioned higher
+      ctx.fillStyle = '#8B4513' // Darker brown for contrast
+      ctx.font = `bold ${size * 0.2}px serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('♔', size/2, size/2)
+      ctx.fillText('♔', size/2, size/2 - size * 0.08) // Moved up
       
-      // Decorative border
+      // "HEADS" text below crown
+      ctx.fillStyle = '#654321' // Dark brown
+      ctx.font = `bold ${size * 0.08}px Arial`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('HEADS', size/2, size/2 + size * 0.12) // Below crown
+      
+      // Decorative border - more prominent
       ctx.strokeStyle = '#8B7D6B'
-      ctx.lineWidth = size * 0.02
+      ctx.lineWidth = size * 0.025 // Thicker border
       ctx.beginPath()
-      ctx.arc(size/2, size/2, size * 0.45, 0, Math.PI * 2)
+      ctx.arc(size/2, size/2, size * 0.42, 0, Math.PI * 2)
       ctx.stroke()
       
     } else if (type === 'tails') {
-      // Gold gradient background
+      // Gold gradient background - BRIGHTER  
       const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
-      gradient.addColorStop(0, '#FFD700')
-      gradient.addColorStop(0.7, '#DAA520')
-      gradient.addColorStop(1, '#B8860B')
+      gradient.addColorStop(0, '#FFEF94') // Much brighter center
+      gradient.addColorStop(0.5, '#FFD700') // Bright gold
+      gradient.addColorStop(0.8, '#DAA520') // Medium gold
+      gradient.addColorStop(1, '#B8860B') // Darker edge
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, size, size)
       
-      // Diamond symbol
-      ctx.fillStyle = '#B8860B'
-      ctx.font = `bold ${size * 0.25}px serif`
+      // Diamond symbol - positioned higher
+      ctx.fillStyle = '#8B4513' // Darker brown for contrast
+      ctx.font = `bold ${size * 0.2}px serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('♦', size/2, size/2)
+      ctx.fillText('♦', size/2, size/2 - size * 0.08) // Moved up
       
-      // Decorative border
+      // "TAILS" text below diamond
+      ctx.fillStyle = '#654321' // Dark brown
+      ctx.font = `bold ${size * 0.08}px Arial`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('TAILS', size/2, size/2 + size * 0.12) // Below diamond
+      
+      // Decorative border - more prominent
       ctx.strokeStyle = '#8B7D6B'
-      ctx.lineWidth = size * 0.02
+      ctx.lineWidth = size * 0.025 // Thicker border
       ctx.beginPath()
-      ctx.arc(size/2, size/2, size * 0.45, 0, Math.PI * 2)
+      ctx.arc(size/2, size/2, size * 0.42, 0, Math.PI * 2)
       ctx.stroke()
       
     } else if (type === 'edge') {
-      // Repeating edge pattern
-      ctx.fillStyle = '#DAA520'
+      // Brighter edge pattern
+      ctx.fillStyle = '#FFEF94' // Much brighter base
       ctx.fillRect(0, 0, size, size)
       
-      // Vertical lines pattern (reeding)
-      ctx.strokeStyle = '#B8860B'
-      ctx.lineWidth = 2
+      // Vertical lines pattern (reeding) - more contrast
+      ctx.strokeStyle = '#B8860B' // Darker lines for contrast
+      ctx.lineWidth = 3 // Slightly thicker
       for (let i = 0; i < size; i += 8) {
         ctx.beginPath()
         ctx.moveTo(i, 0)
@@ -128,27 +144,41 @@ const ReliableGoldCoin = ({
     sceneRef.current = scene
     rendererRef.current = renderer
 
-    // LIGHTING SETUP - Bright and professional
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8))
+    // LIGHTING SETUP - MUCH BRIGHTER with cool spotlights
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2)) // Increased ambient
 
-    // Left point light
-    const pointLightLeft = new THREE.PointLight(0xFFE4B5, 1.2)
+    // Left point light - BRIGHTER
+    const pointLightLeft = new THREE.PointLight(0xFFE4B5, 2.0) // Increased from 1.2
     pointLightLeft.position.set(-3, -2, 5)
     scene.add(pointLightLeft)
 
-    // Right point light  
-    const pointLightRight = new THREE.PointLight(0xFFE4B5, 1.2)
+    // Right point light - BRIGHTER
+    const pointLightRight = new THREE.PointLight(0xFFE4B5, 2.0) // Increased from 1.2
     pointLightRight.position.set(3, 2, 5)
     scene.add(pointLightRight)
 
-    // Top point light
-    const pointLightTop = new THREE.PointLight(0xFFFFFF, 1.0)
+    // Top point light - BRIGHTER
+    const pointLightTop = new THREE.PointLight(0xFFFFFF, 1.8) // Increased from 1.0
     pointLightTop.position.set(0, 4, 3)
     scene.add(pointLightTop)
 
-    // MATERIALS SETUP
-    const metalness = 0.8
-    const roughness = 0.1
+    // Additional front spotlight for brightness
+    const frontSpotlight = new THREE.SpotLight(0xFFFFFF, 2.5)
+    frontSpotlight.position.set(0, 0, 8)
+    frontSpotlight.target.position.set(0, 0, 0)
+    frontSpotlight.angle = Math.PI / 6
+    frontSpotlight.penumbra = 0.3
+    scene.add(frontSpotlight)
+    scene.add(frontSpotlight.target)
+
+    // Back rim light for extra glow
+    const backRimLight = new THREE.PointLight(0xFFD700, 1.5)
+    backRimLight.position.set(0, 0, -3)
+    scene.add(backRimLight)
+
+    // MATERIALS SETUP - BRIGHTER GOLD
+    const metalness = 0.9 // More metallic
+    const roughness = 0.05 // Much shinier
 
     // Create or load textures
     const textureHeads = headsImage ? 
@@ -168,26 +198,32 @@ const ReliableGoldCoin = ({
     textureEdge.repeat.set(20, 1)
 
     const materials = [
-      // Circumference (edge)
+      // Circumference (edge) - BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureEdge,
         metalness: metalness,
         roughness: roughness,
-        color: 0xDAA520
+        color: 0xFFEF94, // Much brighter edge
+        emissive: 0x332200, // Subtle warm glow
+        emissiveIntensity: 0.1
       }),
-      // Heads side (top)
+      // Heads side (top) - BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureHeads,
         metalness: metalness,
         roughness: roughness,
-        color: 0xFFD700
+        color: 0xFFEF94, // Much brighter gold
+        emissive: 0x443300, // Warm glow
+        emissiveIntensity: 0.15
       }),
-      // Tails side (bottom)
+      // Tails side (bottom) - BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureTails,
         metalness: metalness,
         roughness: roughness,
-        color: 0xFFD700
+        color: 0xFFEF94, // Much brighter gold
+        emissive: 0x443300, // Warm glow
+        emissiveIntensity: 0.15
       })
     ]
 
