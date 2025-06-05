@@ -12,12 +12,13 @@ import {
   Button,
   LoadingSpinner
 } from '../styles/components'
-import QuarterCoin from '../components/QuarterCoin'
+import GoldCoin from './GoldCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
 import { ethers } from 'ethers'
 import ProfilePicture from './ProfilePicture'
 import baseEthLogo from '../../Images/baseeth.webp'
+import GoldGameInstructions from './GoldGameInstructions'
 
 const FlipGame = () => {
   const { gameId } = useParams()
@@ -451,16 +452,20 @@ const FlipGame = () => {
                 marginBottom: '2rem',
                 transform: 'scale(1.24)'
               }}>
-                <QuarterCoin
+                <GoldCoin
                   isFlipping={!!flipAnimation}
                   flipResult={flipAnimation?.result}
                   flipDuration={flipAnimation?.duration}
+                  isCharging={gameState?.chargingPlayer === address}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
+                  isWaiting={!isPlayer}
                   isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
-                  isCharging={gameState?.chargingPlayer === address}
-                  chargingPlayer={gameState?.chargingPlayer}
-                  gamePhase={gameState?.phase}
+                  playerNumber={isCreator ? 1 : 2}
+                  spectatorMode={!isPlayer}
+                  currentPower={gameState?.chargingPlayer === address ? 
+                    (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
+                  }
                 />
               </div>
 
@@ -741,6 +746,18 @@ const FlipGame = () => {
               </div>
             </div>
           )}
+
+          {/* Gold Game Instructions */}
+          <GoldGameInstructions
+            isPlayerTurn={isMyTurn}
+            gamePhase={gameState?.phase}
+            isPlayer={isPlayer}
+            playerNumber={isCreator ? 1 : 2}
+            spectatorMode={!isPlayer}
+            currentPower={gameState?.chargingPlayer === address ? 
+              (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
+            }
+          />
         </ContentWrapper>
       </Container>
     </ThemeProvider>
