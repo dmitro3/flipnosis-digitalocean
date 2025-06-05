@@ -12,7 +12,7 @@ import {
   Button,
   LoadingSpinner
 } from '../styles/components'
-import GoldCoin from './GoldCoin'
+import ReliableGoldCoin from './ReliableGoldCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
 import { ethers } from 'ethers'
@@ -452,20 +452,16 @@ const FlipGame = () => {
                 marginBottom: '2rem',
                 transform: 'scale(1.24)'
               }}>
-                <GoldCoin
+                <ReliableGoldCoin
                   isFlipping={!!flipAnimation}
                   flipResult={flipAnimation?.result}
                   flipDuration={flipAnimation?.duration}
-                  isCharging={gameState?.chargingPlayer === address}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
-                  isWaiting={!isPlayer}
                   isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
-                  playerNumber={isCreator ? 1 : 2}
-                  spectatorMode={!isPlayer}
-                  currentPower={gameState?.chargingPlayer === address ? 
-                    (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
-                  }
+                  isCharging={gameState?.chargingPlayer === address}
+                  chargingPlayer={gameState?.chargingPlayer}
+                  gamePhase={gameState?.phase}
                 />
               </div>
 
