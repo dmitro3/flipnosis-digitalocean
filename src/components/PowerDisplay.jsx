@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { theme } from '../styles/theme'
 
 const PowerDisplay = ({ 
@@ -11,14 +11,47 @@ const PowerDisplay = ({
   gamePhase = null,
   isMyTurn = false,
   playerChoice = null,
-  onPlayerChoice = null
+  onPlayerChoice = null,
+  address = null
 }) => {
   // Calculate total power for single bar
   const totalPower = creatorPower + joinerPower
   const maxTotalPower = 20 // 10 + 10
   
   // Show choice buttons if it's choosing phase and player's turn
-  const showChoiceButtons = gamePhase === 'choosing' && isMyTurn && !playerChoice && onPlayerChoice
+  const showChoiceButtons = useMemo(() => {
+    console.log('🎯 Computing showChoiceButtons:', {
+      gamePhase,
+      isMyTurn,
+      playerChoice,
+      currentPlayer,
+      address
+    })
+    return gamePhase === 'choosing' && isMyTurn && !playerChoice
+  }, [gamePhase, isMyTurn, playerChoice, currentPlayer, address])
+
+  const showPowerControls = useMemo(() => {
+    console.log('🎯 Computing showPowerControls:', {
+      gamePhase,
+      isMyTurn,
+      playerChoice,
+      currentPlayer,
+      address
+    })
+    return gamePhase === 'round_active' && isMyTurn && playerChoice
+  }, [gamePhase, isMyTurn, playerChoice, currentPlayer, address])
+
+  const showWaitingMessage = useMemo(() => {
+    console.log('🎯 Computing showWaitingMessage:', {
+      gamePhase,
+      isMyTurn,
+      playerChoice,
+      currentPlayer,
+      address
+    })
+    return (gamePhase === 'choosing' && !isMyTurn) || 
+           (gamePhase === 'round_active' && !isMyTurn)
+  }, [gamePhase, isMyTurn, playerChoice, currentPlayer, address])
   
   // Add detailed debug logging in PowerDisplay
   console.log('🎯 PowerDisplay props:', {

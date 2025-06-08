@@ -1128,6 +1128,70 @@ class GameSession {
       console.error('❌ Error loading game from database:', error)
     }
   }
+
+  async handleRoundResult() {
+    console.log('🎯 handleRoundResult called:', {
+      phase: this.phase,
+      currentRound: this.currentRound,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice,
+      creatorPower: this.creatorPower,
+      joinerPower: this.joinerPower
+    })
+
+    if (this.phase !== 'round_active' || !this.creatorChoice || !this.joinerChoice) {
+      console.log('❌ Cannot handle round result:', {
+        phase: this.phase,
+        hasCreatorChoice: !!this.creatorChoice,
+        hasJoinerChoice: !!this.joinerChoice
+      })
+      return
+    }
+
+    // Determine winner based on choices and power
+    const result = this.determineRoundWinner()
+    console.log('🎲 Round result:', result)
+
+    // Update scores
+    if (result.winner === this.creator) {
+      this.creatorWins++
+    } else if (result.winner === this.joiner) {
+      this.joinerWins++
+    }
+
+    // Broadcast round result
+    this.broadcastRoundResult(result)
+
+    // Check for game winner
+    if (this.creatorWins >= 3 || this.joinerWins >= 3) {
+      this.winner = this.creatorWins > this.joinerWins ? this.creator : this.joiner
+      this.phase = 'game_over'
+      console.log('🏆 Game over:', { winner: this.winner })
+      this.broadcastGameState()
+      return
+    }
+
+    // Move to next round
+    this.currentRound++
+    console.log('🔄 Moving to next round:', this.currentRound)
+
+    // Reset for next round
+    this.resetPowers()
+    this.resetChoices()
+    
+    // Switch current player and transition to choosing phase
+    this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
+    this.phase = 'choosing'
+    
+    console.log('🎯 Next player should choose:', {
+      currentPlayer: this.currentPlayer,
+      phase: this.phase,
+      round: this.currentRound
+    })
+
+    // Broadcast new game state
+    this.broadcastGameState()
+  }
 }
 
 const activeSessions = new Map()
