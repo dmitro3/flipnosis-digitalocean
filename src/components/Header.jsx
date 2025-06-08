@@ -5,6 +5,7 @@ import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
+import potionLogo from '../../Images/potion.png'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 
@@ -19,6 +20,12 @@ const HeaderContainer = styled.header`
   z-index: 100;
 `
 
+const LogoContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`
+
 const Logo = styled(Link)`
   color: #00FF41;
   font-size: 4rem;
@@ -26,6 +33,13 @@ const Logo = styled(Link)`
   text-decoration: none;
   letter-spacing: 6px;
   font-family: 'Hyperwave', sans-serif;
+  animation: neonPulse 2s infinite;
+  ${props => props.theme.animations.neonPulse}
+`
+
+const PotionLogo = styled.img`
+  height: 2.5rem;
+  width: auto;
   animation: neonPulse 2s infinite;
   ${props => props.theme.animations.neonPulse}
 `
@@ -203,7 +217,10 @@ const Header = () => {
   return (
     <ThemeProvider theme={theme}>
       <HeaderContainer>
-        <Logo to="/">FLIPNOSIS</Logo>
+        <LogoContainer>
+          <Logo to="/">FLIPNOSIS</Logo>
+          <PotionLogo src={potionLogo} alt="Potion Logo" />
+        </LogoContainer>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <CreateButton to="/create">
             Create Flip
