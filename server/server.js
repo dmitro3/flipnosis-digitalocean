@@ -1128,70 +1128,6 @@ class GameSession {
       console.error('❌ Error loading game from database:', error)
     }
   }
-
-  async handleRoundResult() {
-    console.log('🎯 handleRoundResult called:', {
-      phase: this.phase,
-      currentRound: this.currentRound,
-      creatorChoice: this.creatorChoice,
-      joinerChoice: this.joinerChoice,
-      creatorPower: this.creatorPower,
-      joinerPower: this.joinerPower
-    })
-
-    if (this.phase !== 'round_active' || !this.creatorChoice || !this.joinerChoice) {
-      console.log('❌ Cannot handle round result:', {
-        phase: this.phase,
-        hasCreatorChoice: !!this.creatorChoice,
-        hasJoinerChoice: !!this.joinerChoice
-      })
-      return
-    }
-
-    // Determine winner based on choices and power
-    const result = this.determineRoundWinner()
-    console.log('🎲 Round result:', result)
-
-    // Update scores
-    if (result.winner === this.creator) {
-      this.creatorWins++
-    } else if (result.winner === this.joiner) {
-      this.joinerWins++
-    }
-
-    // Broadcast round result
-    this.broadcastRoundResult(result)
-
-    // Check for game winner
-    if (this.creatorWins >= 3 || this.joinerWins >= 3) {
-      this.winner = this.creatorWins > this.joinerWins ? this.creator : this.joiner
-      this.phase = 'game_over'
-      console.log('🏆 Game over:', { winner: this.winner })
-      this.broadcastGameState()
-      return
-    }
-
-    // Move to next round
-    this.currentRound++
-    console.log('🔄 Moving to next round:', this.currentRound)
-
-    // Reset for next round
-    this.resetPowers()
-    this.resetChoices()
-    
-    // Switch current player and transition to choosing phase
-    this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
-    this.phase = 'choosing'
-    
-    console.log('🎯 Next player should choose:', {
-      currentPlayer: this.currentPlayer,
-      phase: this.phase,
-      round: this.currentRound
-    })
-
-    // Broadcast new game state
-    this.broadcastGameState()
-  }
 }
 
 const activeSessions = new Map()
@@ -1200,87 +1136,32 @@ const activeSessions = new Map()
 wss.on('connection', (ws) => {
   console.log('🔌 New WebSocket connection')
   
+  // Add error handler
+  ws.on('error', (error) => {
+    console.error('❌ WebSocket client error:', error)
+  })
+  
   ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message)
-      console.log('📨 Received message:', data)
-
-      switch (data.type) {
-        case 'connect_to_game':
-          console.log('🎮 Player connecting to game:', {
-            gameId: data.gameId,
-            address: data.address
-          })
-          const session = getOrCreateGameSession(data.gameId)
-          session.addClient(ws)
-          ws.gameId = data.gameId
-          ws.address = data.address
-          session.broadcastGameState()
-          break
-
-        case 'join_game':
-          console.log('👥 Player joining game:', {
-            gameId: data.gameId,
-            address: data.address,
-            entryFeeHash: data.entryFeeHash
-          })
-          const gameSession = getOrCreateGameSession(data.gameId)
-          await gameSession.setJoiner(data.address, data.entryFeeHash)
-          break
-
-        case 'player_choice':
-          console.log('🎯 Player making choice:', {
-            gameId: data.gameId,
-            address: data.address,
-            choice: data.choice
-          })
-          const choiceSession = getOrCreateGameSession(data.gameId)
-          const success = choiceSession.setPlayerChoice(data.address, data.choice)
-          console.log('✅ Choice result:', {
-            success,
-            phase: choiceSession.phase,
-            currentPlayer: choiceSession.currentPlayer,
-            address: data.address
-          })
-          break
-
-        case 'start_charging':
-          console.log('⚡ Player starting charge:', {
-            gameId: data.gameId,
-            address: data.address
-          })
-          const chargeSession = getOrCreateGameSession(data.gameId)
-          chargeSession.startCharging(data.address)
-          break
-
-        case 'stop_charging':
-          console.log('⚡ Player stopping charge:', {
-            gameId: data.gameId,
-            address: data.address
-          })
-          const stopSession = getOrCreateGameSession(data.gameId)
-          stopSession.stopCharging(data.address)
-          break
-
-        default:
-          console.log('❌ Unknown message type:', data.type)
-      }
+      await handleMessage(ws, data)
     } catch (error) {
       console.error('❌ Error handling message:', error)
-      ws.send(JSON.stringify({
-        type: 'error',
-        message: 'Failed to process message'
-      }))
+      // Send error back but don't crash
+      try {
+        ws.send(JSON.stringify({ type: 'error', error: 'Message processing failed' }))
+      } catch (sendError) {
+        console.error('❌ Could not send error message:', sendError)
+      }
     }
   })
-
+  
   ws.on('close', () => {
-    console.log('🔌 WebSocket connection closed')
-    if (ws.gameId) {
-      const session = getOrCreateGameSession(ws.gameId)
+    console.log('🔌 Client disconnected')
+    // Clean up from all sessions
+    activeSessions.forEach(session => {
       session.removeClient(ws)
-      session.broadcastGameState()
-    }
+    })
   })
 })
 

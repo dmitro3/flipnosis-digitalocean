@@ -247,14 +247,32 @@ const ReliableGoldCoin = ({
       if (isAnimatingRef.current) {
         // Flip animation is handled separately
       } else if (isCharging && !isAnimatingRef.current) {
-        // Power charging effects
+        // ENHANCED CHARGING EFFECTS
         const intensity = powerSystem.power / powerSystem.maxPower
         
-        // Gentle hover and slow rotation when charging
-        coin.position.y = Math.sin(time * 4) * 0.1 * intensity
-        coin.rotation.x += 0.01 * (1 + intensity) // Slow continuous rotation
+        // Dramatic hover and rotation when charging
+        coin.position.y = Math.sin(time * 6) * 0.15 * (1 + intensity)
+        coin.rotation.x += 0.02 * (1 + intensity * 2) // Faster rotation with more power
+        
+        // Pulsing scale effect
+        const pulseScale = 1 + Math.sin(time * 8) * 0.08 * intensity
+        coin.scale.set(pulseScale, pulseScale, pulseScale)
+        
+        // Enhanced material glow during charging
+        materials.forEach(material => {
+          material.emissiveIntensity = 0.4 + Math.sin(time * 10) * 0.3 * intensity
+          // Add pink tint during charging
+          material.emissive.setHex(0x554400 + Math.floor(intensity * 0x331133))
+        })
         
       } else if (!isAnimatingRef.current) {
+        // Reset effects when not charging
+        materials.forEach(material => {
+          material.emissiveIntensity = 0.4
+          material.emissive.setHex(0x554400)
+        })
+        coin.scale.set(1, 1, 1)
+        
         // Idle state
         const isWaitingInRound = gamePhase === 'round_active' && !isPlayerTurn
         const isWaitingToStart = gamePhase === 'waiting' || gamePhase === 'ready'
@@ -408,16 +426,19 @@ const ReliableGoldCoin = ({
         cursor: isPlayerTurn ? 'pointer' : 'default',
         userSelect: 'none',
         background: isCharging ? 
-          'radial-gradient(circle, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.1) 50%, rgba(255, 215, 0, 0.05) 100%)' : 
+          'radial-gradient(circle, rgba(255, 20, 147, 0.4) 0%, rgba(255, 20, 147, 0.2) 30%, rgba(255, 20, 147, 0.1) 60%, transparent 100%)' : 
           'radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.03) 50%, transparent 100%)',
         boxShadow: isCharging ? 
-          '0 0 30px rgba(255, 215, 0, 0.4), 0 0 60px rgba(255, 215, 0, 0.2)' : 
+          '0 0 40px rgba(255, 20, 147, 0.8), 0 0 80px rgba(255, 20, 147, 0.4), 0 0 120px rgba(255, 20, 147, 0.2)' : 
           '0 0 15px rgba(255, 215, 0, 0.2)',
         borderRadius: '50%',
         transition: 'all 0.3s ease',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        // Add animated border when charging
+        border: isCharging ? '3px solid rgba(255, 20, 147, 0.8)' : '1px solid rgba(255, 215, 0, 0.3)',
+        animation: isCharging ? 'chargingPulse 0.5s ease-in-out infinite' : 'none'
       }}
     >
       <canvas style={{ width: '100%', height: '100%' }} />

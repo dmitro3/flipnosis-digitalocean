@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
@@ -37,23 +37,9 @@ const FlipGame = () => {
   // WebSocket state - SINGLE SOURCE OF TRUTH for game
   const [socket, setSocket] = useState(null)
   const [connected, setConnected] = useState(false)
-  const [gameState, setGameState] = useState({
-    phase: 'waiting',
-    currentPlayer: null,
-    creatorChoice: null,
-    joinerChoice: null,
-    creatorPower: 0,
-    joinerPower: 0,
-    chargingPlayer: null,
-    isFlipInProgress: false,
-    spectators: 0,
-    creatorWins: 0,
-    joinerWins: 0,
-    winner: null,
-    roundResult: null,
-    flipResult: null,
-    flipPower: 0
-  })
+  const [gameState, setGameState] = useState(null)
+  const [flipAnimation, setFlipAnimation] = useState(null)
+  const [roundResult, setRoundResult] = useState(null)
 
   // Refs for user input
   const isChargingRef = useRef(false)
@@ -132,13 +118,14 @@ const FlipGame = () => {
               
             case 'flip_animation':
               console.log('🎬 Flip animation received:', data)
-              setGameState(data)
+              setFlipAnimation(data)
+              setRoundResult(null)
               break
               
             case 'round_result':
               console.log('🏁 Round result received:', data)
-              setGameState(data)
-              setTimeout(() => setGameState(prev => ({ ...prev, roundResult: null })), 4000)
+              setRoundResult(data)
+              setTimeout(() => setRoundResult(null), 4000)
               break
               
             case 'error':
@@ -262,129 +249,41 @@ const FlipGame = () => {
     }))
   }
 
-  const handleMessage = useCallback((event) => {
-    try {
-      const data = JSON.parse(event.data)
-      console.log('📨 WebSocket message received:', data)
-
-      switch (data.type) {
-        case 'game_state':
-          console.log('🎮 Game state update:', {
-            phase: data.phase,
-            currentPlayer: data.currentPlayer,
-            address: address,
-            isMyTurn: data.currentPlayer === address
-          })
-          setGameState(prev => ({
-            ...prev,
-            phase: data.phase || prev.phase,
-            currentPlayer: data.currentPlayer || prev.currentPlayer,
-            creatorChoice: data.creatorChoice || prev.creatorChoice,
-            joinerChoice: data.joinerChoice || prev.joinerChoice,
-            creatorPower: data.creatorPower || prev.creatorPower,
-            joinerPower: data.joinerPower || prev.joinerPower,
-            chargingPlayer: data.chargingPlayer || prev.chargingPlayer,
-            isFlipInProgress: data.isFlipInProgress || prev.isFlipInProgress,
-            spectators: data.spectators || prev.spectators
-          }))
-          break
-
-        case 'flip_animation':
-          console.log('🪙 Flip animation:', data)
-          setGameState(prev => ({
-            ...prev,
-            isFlipInProgress: true,
-            flipResult: data.result,
-            flipPower: data.power
-          }))
-          break
-
-        case 'round_result':
-          console.log('🎯 Round result:', data)
-          setGameState(prev => ({
-            ...prev,
-            isFlipInProgress: false,
-            roundResult: data,
-            creatorWins: data.creatorWins || prev.creatorWins,
-            joinerWins: data.joinerWins || prev.joinerWins,
-            winner: data.winner || prev.winner
-          }))
-          break
-
-        case 'error':
-          console.error('❌ Game error:', data)
-          showError(data.message)
-          break
-
-        default:
-          console.log('📨 Unknown message type:', data.type)
-      }
-    } catch (error) {
-      console.error('❌ Error handling WebSocket message:', error)
-    }
-  }, [address])
-
-  const handlePlayerChoice = useCallback((choice) => {
-    if (!gameState || !socket) {
-      console.log('❌ Cannot make choice - missing game state or WebSocket')
-      return
-    }
-
-    console.log('🎯 Player choice:', {
+  const handlePlayerChoice = (choice) => {
+    console.log('🎯 handlePlayerChoice called:', {
       choice,
-      currentPhase: gameState.phase,
-      currentPlayer: gameState.currentPlayer,
-      address: address,
-      isMyTurn: gameState.currentPlayer === address
+      hasSocket: !!socket,
+      hasGameState: !!gameState,
+      gamePhase: gameState?.phase,
+      isMyTurn: gameState?.currentPlayer === address,
+      currentPlayer: gameState?.currentPlayer,
+      myAddress: address
     })
 
-    if (gameState.phase !== 'choosing' || gameState.currentPlayer !== address) {
-      console.log('❌ Cannot make choice:', {
-        phase: gameState.phase,
-        currentPlayer: gameState.currentPlayer,
-        address: address
+    if (!socket || !gameState || gameState.phase !== 'choosing') {
+      console.log('❌ Cannot make choice:', { 
+        hasSocket: !!socket, 
+        hasGameState: !!gameState, 
+        phase: gameState?.phase 
       })
       return
     }
-
-    try {
-      socket.send(JSON.stringify({
-        type: 'player_choice',
-        gameId: gameId,
-        choice: choice
-      }))
-      console.log('✅ Choice sent to server:', choice)
-    } catch (error) {
-      console.error('❌ Error sending choice:', error)
-      showError('Failed to send choice')
+    
+    const isMyTurn = gameState.currentPlayer === address
+    if (!isMyTurn) {
+      console.log('❌ Not my turn:', { currentPlayer: gameState.currentPlayer, myAddress: address })
+      return
     }
-  }, [gameState, address, gameId])
-
-  // Add debug logging for game state changes
-  useEffect(() => {
-    if (!gameState) return
-
-    console.log('🔄 Game state updated:', {
-      phase: gameState.phase,
-      currentPlayer: gameState.currentPlayer,
-      address: address,
-      isMyTurn: gameState.currentPlayer === address,
-      creatorChoice: gameState.creatorChoice,
-      joinerChoice: gameState.joinerChoice
-    })
-  }, [gameState, address])
-
-  // Add debug logging for player turn changes
-  useEffect(() => {
-    if (!gameState) return
-
-    console.log('👥 Player turn changed:', {
-      currentPlayer: gameState.currentPlayer,
-      address: address,
-      isMyTurn: gameState.currentPlayer === address,
-      phase: gameState.phase
-    })
-  }, [gameState?.currentPlayer, address, gameState?.phase])
+    
+    console.log('🎯 Sending player choice:', choice)
+    
+    socket.send(JSON.stringify({
+      type: 'player_choice',
+      gameId,
+      address,
+      choice
+    }))
+  }
 
   const handleJoinGame = async () => {
     if (!gameData || !provider || !address || joiningGame) return
@@ -616,9 +515,9 @@ const FlipGame = () => {
                 marginBottom: '2rem'
               }}>
                 <ReliableGoldCoin
-                  isFlipping={!!gameState.flipAnimation}
-                  flipResult={gameState.flipAnimation?.result}
-                  flipDuration={gameState.flipAnimation?.duration}
+                  isFlipping={!!flipAnimation}
+                  flipResult={flipAnimation?.result}
+                  flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
                   isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
@@ -919,19 +818,19 @@ const FlipGame = () => {
           )}
 
           {/* Round Result Display */}
-          {gameState?.roundResult && (
+          {roundResult && (
             <div style={{
               position: 'fixed',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 1000,
-              background: gameState.roundResult.actualWinner === address ? 
+              background: roundResult.actualWinner === address ? 
                 'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
                 'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
               padding: '3rem 4rem',
               borderRadius: '2rem',
-              border: `4px solid ${gameState.roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
+              border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
               textAlign: 'center'
             }}>
               <div style={{
@@ -940,10 +839,10 @@ const FlipGame = () => {
                 color: 'white',
                 marginBottom: '1rem'
               }}>
-                {gameState.roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
+                {roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
               </div>
               <div style={{ fontSize: '1.5rem', color: 'white', fontWeight: 'bold' }}>
-                Coin: {gameState.roundResult.result.toUpperCase()}
+                Coin: {roundResult.result.toUpperCase()}
               </div>
               <div style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '0.5rem' }}>
                 You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}

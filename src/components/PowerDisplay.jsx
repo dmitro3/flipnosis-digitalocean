@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { theme } from '../styles/theme'
 
 const PowerDisplay = ({ 
@@ -11,47 +11,14 @@ const PowerDisplay = ({
   gamePhase = null,
   isMyTurn = false,
   playerChoice = null,
-  onPlayerChoice = null,
-  address = null
+  onPlayerChoice = null
 }) => {
   // Calculate total power for single bar
   const totalPower = creatorPower + joinerPower
   const maxTotalPower = 20 // 10 + 10
   
   // Show choice buttons if it's choosing phase and player's turn
-  const showChoiceButtons = useMemo(() => {
-    console.log('🎯 Computing showChoiceButtons:', {
-      gamePhase,
-      isMyTurn,
-      playerChoice,
-      currentPlayer,
-      address
-    })
-    return gamePhase === 'choosing' && isMyTurn && !playerChoice
-  }, [gamePhase, isMyTurn, playerChoice, currentPlayer, address])
-
-  const showPowerControls = useMemo(() => {
-    console.log('🎯 Computing showPowerControls:', {
-      gamePhase,
-      isMyTurn,
-      playerChoice,
-      currentPlayer,
-      address
-    })
-    return gamePhase === 'round_active' && isMyTurn && playerChoice
-  }, [gamePhase, isMyTurn, playerChoice, currentPlayer, address])
-
-  const showWaitingMessage = useMemo(() => {
-    console.log('🎯 Computing showWaitingMessage:', {
-      gamePhase,
-      isMyTurn,
-      playerChoice,
-      currentPlayer,
-      address
-    })
-    return (gamePhase === 'choosing' && !isMyTurn) || 
-           (gamePhase === 'round_active' && !isMyTurn)
-  }, [gamePhase, isMyTurn, playerChoice, currentPlayer, address])
+  const showChoiceButtons = gamePhase === 'choosing' && isMyTurn && !playerChoice && onPlayerChoice
   
   // Add detailed debug logging in PowerDisplay
   console.log('🎯 PowerDisplay props:', {
@@ -111,7 +78,8 @@ const PowerDisplay = ({
             fontSize: '1rem',
             fontWeight: 'bold',
             marginBottom: '1rem',
-            textAlign: 'center'
+            textAlign: 'center',
+            animation: 'powerPulse 1s ease-in-out infinite'
           }}>
             🎯 CHOOSE YOUR SIDE
           </div>
@@ -119,8 +87,7 @@ const PowerDisplay = ({
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button
               onClick={() => {
-                console.log('🎯 Heads button clicked')
-                console.log('Current state:', { gamePhase, isMyTurn, playerChoice })
+                console.log('🎯 Heads button clicked for player:', currentPlayer)
                 onPlayerChoice('heads')
               }}
               style={{
@@ -134,7 +101,8 @@ const PowerDisplay = ({
                 cursor: 'pointer',
                 fontSize: '1rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 15px rgba(255, 20, 147, 0.3)'
+                boxShadow: '0 0 15px rgba(255, 20, 147, 0.3)',
+                animation: 'powerPulse 1.5s ease-in-out infinite'
               }}
             >
               👑 HEADS
@@ -142,8 +110,7 @@ const PowerDisplay = ({
             
             <button
               onClick={() => {
-                console.log('🎯 Tails button clicked')
-                console.log('Current state:', { gamePhase, isMyTurn, playerChoice })
+                console.log('🎯 Tails button clicked for player:', currentPlayer)
                 onPlayerChoice('tails')
               }}
               style={{
@@ -157,11 +124,22 @@ const PowerDisplay = ({
                 cursor: 'pointer',
                 fontSize: '1rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 15px rgba(0, 191, 255, 0.3)'
+                boxShadow: '0 0 15px rgba(0, 191, 255, 0.3)',
+                animation: 'powerPulse 1.5s ease-in-out infinite'
               }}
             >
               💎 TAILS
             </button>
+          </div>
+          
+          <div style={{
+            marginTop: '1rem',
+            textAlign: 'center',
+            color: '#FFD700',
+            fontSize: '0.9rem',
+            fontWeight: 'bold'
+          }}>
+            Player {currentPlayer === creator ? '1' : '2'}'s Turn
           </div>
         </div>
       )}
