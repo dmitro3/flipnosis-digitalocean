@@ -877,15 +877,20 @@ class GameSession {
     
     // Generate result
     const result = Math.random() < 0.5 ? 'heads' : 'tails'
-    const playerChoice = address === this.creator ? 'heads' : 'tails'
+    
+    // FIXED: Get the actual player choice instead of hardcoded values
+    const playerChoice = address === this.creator ? this.creatorChoice : this.joinerChoice
     const isWinner = playerChoice === result
     
     console.log('🎲 Flip calculation:', {
       address,
+      isCreator: address === this.creator,
       playerChoice,
       result,
       isWinner,
-      power
+      power,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice
     })
     
     // Calculate flip duration
@@ -931,12 +936,14 @@ class GameSession {
         result,
         isWinner,
         power,
-        currentRound: this.currentRound
+        currentRound: this.currentRound,
+        isCreator: address === this.creator,
+        playerChoice: address === this.creator ? this.creatorChoice : this.joinerChoice
       })
       
       this.roundCompleted = true
       
-      // Update scores
+      // FIXED: Update scores based on who actually won
       if (isWinner) {
         if (address === this.creator) {
           this.creatorWins++
@@ -946,6 +953,7 @@ class GameSession {
           console.log('✅ JOINER WINS! Score:', this.creatorWins, '-', this.joinerWins)
         }
       } else {
+        // The player who flipped lost, so the other player wins
         if (address === this.creator) {
           this.joinerWins++
           console.log('✅ JOINER WINS (creator lost)! Score:', this.creatorWins, '-', this.joinerWins)
@@ -967,10 +975,19 @@ class GameSession {
         console.error('❌ Database error:', dbError)
       }
 
-      // Determine actual winner
+      // FIXED: Determine actual winner based on the flip result and player choices
       const actualWinner = isWinner ? address : (address === this.creator ? this.joiner : this.creator)
       
-      // Broadcast result immediately
+      console.log('🏆 Round result summary:', {
+        flipResult: result,
+        currentPlayerAddress: address,
+        currentPlayerChoice: address === this.creator ? this.creatorChoice : this.joinerChoice,
+        currentPlayerWon: isWinner,
+        actualWinner: actualWinner,
+        newScore: `${this.creatorWins}-${this.joinerWins}`
+      })
+      
+      // Broadcast result to all clients with detailed information
       try {
         this.clients.forEach(client => {
           if (client.readyState === WebSocket.OPEN) {
@@ -980,10 +997,15 @@ class GameSession {
                 result: result,
                 isWinner: isWinner,
                 playerAddress: address,
+                playerChoice: address === this.creator ? this.creatorChoice : this.joinerChoice,
                 actualWinner: actualWinner,
                 creatorWins: this.creatorWins,
                 joinerWins: this.joinerWins,
-                roundNumber: this.currentRound
+                roundNumber: this.currentRound,
+                // Additional debug info
+                flipperWon: isWinner,
+                creatorChoice: this.creatorChoice,
+                joinerChoice: this.joinerChoice
               }))
             } catch (sendError) {
               console.error('❌ Error sending result to client:', sendError)

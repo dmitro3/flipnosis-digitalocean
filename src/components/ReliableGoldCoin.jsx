@@ -44,39 +44,46 @@ const ReliableGoldCoin = ({
     let headsColor = '#654321' // Dark brown
     let tailsColor = '#654321' // Dark brown
     
-    // If any player has made a choice, update colors
-    if (creatorChoice || joinerChoice) {
-      if (isCreator) {
-        // For the creator's view
-        if (creatorChoice === 'heads') {
-          headsColor = '#00FF00' // Green for their choice
-          tailsColor = '#FF0000' // Red for opponent's side
-        } else if (creatorChoice === 'tails') {
-          headsColor = '#FF0000' // Red for opponent's side
-          tailsColor = '#00FF00' // Green for their choice
-        }
-      } else {
-        // For the joiner's view (reversed perspective)
-        if (joinerChoice === 'heads') {
-          headsColor = '#00FF00' // Green for their choice
-          tailsColor = '#FF0000' // Red for opponent's side
-        } else if (joinerChoice === 'tails') {
-          headsColor = '#FF0000' // Red for opponent's side
-          tailsColor = '#00FF00' // Green for their choice
-        }
-        
-        // If joiner hasn't chosen but creator has, show creator's choice
-        if (!joinerChoice && creatorChoice) {
-          if (creatorChoice === 'heads') {
-            headsColor = '#FF0000' // Red for opponent's choice
-            tailsColor = '#00FF00' // Green for joiner's designated side
-          } else if (creatorChoice === 'tails') {
-            headsColor = '#00FF00' // Green for joiner's designated side
-            tailsColor = '#FF0000' // Red for opponent's choice
-          }
-        }
+    // Determine the current active player's choice for this round
+    let currentPlayerChoice = null
+    
+    if (isCreator && creatorChoice) {
+      currentPlayerChoice = creatorChoice
+    } else if (!isCreator && joinerChoice) {
+      currentPlayerChoice = joinerChoice
+    }
+    
+    // If current player has made a choice, show their perspective
+    if (currentPlayerChoice) {
+      if (currentPlayerChoice === 'heads') {
+        headsColor = '#00FF00' // Green for their choice
+        tailsColor = '#FF0000' // Red for the other side
+      } else if (currentPlayerChoice === 'tails') {
+        headsColor = '#FF0000' // Red for the other side
+        tailsColor = '#00FF00' // Green for their choice
       }
     }
+    // If current player hasn't chosen but other player has, show waiting state
+    else if ((isCreator && joinerChoice) || (!isCreator && creatorChoice)) {
+      // Show the other player's choice in red, and this player's default side in a neutral color
+      const otherPlayerChoice = isCreator ? joinerChoice : creatorChoice
+      if (otherPlayerChoice === 'heads') {
+        headsColor = '#FF0000' // Red for opponent's choice
+        tailsColor = '#FFA500' // Orange for waiting/potential choice
+      } else if (otherPlayerChoice === 'tails') {
+        headsColor = '#FFA500' // Orange for waiting/potential choice
+        tailsColor = '#FF0000' // Red for opponent's choice
+      }
+    }
+    
+    console.log('🎨 Color calculation:', {
+      isCreator,
+      creatorChoice,
+      joinerChoice,
+      currentPlayerChoice,
+      headsColor,
+      tailsColor
+    })
     
     return { headsColor, tailsColor }
   }
