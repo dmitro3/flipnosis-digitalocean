@@ -82,7 +82,13 @@ const FlipGame = () => {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          console.log('📡 Received:', data.type)
+          console.log('📡 Received WebSocket message:', {
+            type: data.type,
+            phase: data.phase,
+            currentPlayer: data.currentPlayer,
+            creatorChoice: data.creatorChoice,
+            joinerChoice: data.joinerChoice
+          })
           
           switch (data.type) {
             case 'game_state':
@@ -92,7 +98,9 @@ const FlipGame = () => {
                 currentPlayer: data.currentPlayer,
                 creatorWins: data.creatorWins,
                 joinerWins: data.joinerWins,
-                isFlipInProgress: data.isFlipInProgress
+                isFlipInProgress: data.isFlipInProgress,
+                creatorChoice: data.creatorChoice,
+                joinerChoice: data.joinerChoice
               })
               setGameState(data)
               break

@@ -54,13 +54,26 @@ class GameSession {
 
   // Update the startGame method to begin with choosing phase
   async startGame() {
-    if (this.phase !== 'ready') return
+    console.log('🎮 startGame called:', { currentPhase: this.phase })
+    
+    if (this.phase !== 'ready') {
+      console.log('❌ Cannot start game - wrong phase:', this.phase)
+      return
+    }
     
     this.phase = 'choosing'  // Changed from 'round_active' to 'choosing'
     this.currentPlayer = this.creator  // Player 1 chooses first
     this.currentRound = 1
     this.resetPowers()
-    this.resetChoices()  // Add this method
+    this.resetChoices()
+    
+    console.log('✅ Game started:', {
+      newPhase: this.phase,
+      currentPlayer: this.currentPlayer,
+      currentRound: this.currentRound,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice
+    })
     
     try {
       await dbHelpers.updateGame(this.gameId, { 
@@ -171,6 +184,8 @@ class GameSession {
   }
 
   async setJoiner(address, entryFeeHash) {
+    console.log('🎮 setJoiner called:', { address, currentPhase: this.phase })
+    
     // Only set if not already set
     if (this.joiner) {
       console.log('⚠️ Joiner already set:', this.joiner)
@@ -182,13 +197,32 @@ class GameSession {
     this.phase = 'ready'
     
     console.log('✅ Player 2 joined via WebSocket:', address)
+    console.log('🔄 Game state after join:', { 
+      phase: this.phase,
+      creator: this.creator,
+      joiner: this.joiner,
+      currentPlayer: this.currentPlayer
+    })
+    
     this.broadcastGameState()
     
     // Auto-start the choosing phase after 2 seconds
+    console.log('⏰ Setting up auto-start timer...')
     setTimeout(() => {
+      console.log('⏰ Auto-start timer fired:', {
+        currentPhase: this.phase,
+        hasCreator: !!this.creator,
+        hasJoiner: !!this.joiner
+      })
       if (this.phase === 'ready' && this.creator && this.joiner) {
         console.log('🚀 AUTO-STARTING game - entering choosing phase')
         this.startGame()
+      } else {
+        console.log('⚠️ Auto-start conditions not met:', {
+          phase: this.phase,
+          creator: this.creator,
+          joiner: this.joiner
+        })
       }
     }, 2000)
   }
