@@ -267,7 +267,7 @@ const Home = () => {
                           <div>{selectedFlip.rounds}</div>
                         </GameStat>
                       </GameStats>
-                      <GameFlipButton as={Link} to={`/flip/${selectedFlip.id}`}>
+                      <GameFlipButton as={Link} to={`/game/${selectedFlip.id}`}>
                         Join Flip
                       </GameFlipButton>
                     </GameInfo>
@@ -361,7 +361,7 @@ const Home = () => {
                         </div>
                         <GameFlipButton 
                           as={Link} 
-                          to={`/flip/${flip.id}`}
+                          to={`/game/${flip.id}`}
                           style={{
                             padding: '0.2rem 0.6rem',
                             fontSize: '0.7rem',
