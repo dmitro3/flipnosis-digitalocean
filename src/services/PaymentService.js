@@ -3,7 +3,7 @@ import { ethers } from 'ethers'
 export class PaymentService {
   static ETH_PRICE_USD = 2500 // Update periodically
   static FEE_RECIPIENT = '0xE1E3dFa98C39Ba5b6C643348420420aBC3556416'
-  static LISTING_FEE_USD = 0.30
+  static LISTING_FEE_USD = 0.10
 
   static async calculateETHAmount(usdAmount, ethPriceUSD = this.ETH_PRICE_USD) {
     try {

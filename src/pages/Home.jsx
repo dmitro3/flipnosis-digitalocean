@@ -30,7 +30,10 @@ import {
   GameStat,
   GamePrice,
   GameFlipButton,
-  TransparentCard
+  TransparentCard,
+  ChainBadge,
+  StatusBadge,
+  PriceBadge
 } from '../styles/components'
 
 const BackgroundVideo = styled.video`
@@ -228,105 +231,237 @@ const Home = () => {
               </Button>
             </GlassCard>
           ) : (
-            <>
-              <TwoBoxLayout>
-                {/* Left Box - Selected Game */}
-                <div>
-                  {selectedFlip && (
-                    <div style={{
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      borderRadius: '1rem',
-                      padding: '1.5rem',
-                      border: `2px solid ${theme.colors.neonPink}`,
-                      maxWidth: '300px'
-                    }}>
-                      <div style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
-                        <GameImage 
-                          src={selectedFlip.nft.image} 
-                          alt={selectedFlip.nft.name}
-                        />
-                      </div>
-                      
-                      <GameInfo>
-                        <div>
-                          <GameTitle>{selectedFlip.nft.name}</GameTitle>
-                          <GameCollection>{selectedFlip.nft.collection}</GameCollection>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '240px 1fr 300px',
+              gap: '1.5rem',
+              marginTop: '2rem'
+            }}>
+              {/* Left Box - Selected Game */}
+              <div>
+                {selectedFlip && (
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.8)',
+                    borderRadius: '1rem',
+                    padding: '1.5rem',
+                    border: `2px solid ${theme.colors.neonPink}`,
+                    maxWidth: '240px'
+                  }}>
+                    <div style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
+                      <GameImage 
+                        src={selectedFlip.nft.image} 
+                        alt={selectedFlip.nft.name}
+                      />
+                    </div>
+                    
+                    <GameInfo>
+                      <GameTitle>{selectedFlip.nft.name}</GameTitle>
+                      <GameCollection>{selectedFlip.nft.collection}</GameCollection>
+                      <GameStats>
+                        <GameStat>
+                          <span>Price</span>
+                          <div>${selectedFlip.priceUSD}</div>
+                        </GameStat>
+                        <GameStat>
+                          <span>Rounds</span>
+                          <div>{selectedFlip.rounds}</div>
+                        </GameStat>
+                      </GameStats>
+                      <GameFlipButton as={Link} to={`/flip/${selectedFlip.id}`}>
+                        Join Flip
+                      </GameFlipButton>
+                    </GameInfo>
+                  </div>
+                )}
+              </div>
+
+              {/* Middle Box - Available Flips */}
+              <div style={{
+                background: 'rgba(0, 0, 20, 0.95)',
+                borderRadius: '1rem',
+                padding: '1rem',
+                border: `1px solid ${theme.colors.neonBlue}`,
+                maxHeight: '600px',
+                overflowY: 'auto'
+              }}>
+                <div style={{
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: theme.colors.neonBlue,
+                  marginBottom: '1rem',
+                  padding: '0.5rem',
+                  borderBottom: `1px solid ${theme.colors.neonBlue}`,
+                  textShadow: '0 0 10px rgba(0, 150, 255, 0.5)'
+                }}>
+                  Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
+                </div>
+                <div style={{ 
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  padding: '0.5rem'
+                }}>
+                  {filteredFlips.map(flip => (
+                    <div
+                      key={flip.id}
+                      onClick={() => handleSelectFlip(flip)}
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        borderRadius: '0.75rem',
+                        padding: '0.75rem',
+                        border: `1px solid ${theme.colors.neonBlue}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ 
+                          width: '60px', 
+                          height: '60px', 
+                          borderRadius: '0.5rem',
+                          overflow: 'hidden',
+                          flexShrink: 0
+                        }}>
+                          <GameImage 
+                            src={flip.nft.image} 
+                            alt={flip.nft.name}
+                          />
                         </div>
-                        
-                        <GameStats>
-                          <GameStat>{selectedFlip.rounds} Rounds</GameStat>
-                          <GameStat>{selectedFlip.chain}</GameStat>
-                          <GameStat>{getStatusIcon(selectedFlip.status)} {selectedFlip.status}</GameStat>
-                          {selectedFlip.spectators > 0 && (
-                            <GameStat>👀 {selectedFlip.spectators}</GameStat>
-                          )}
-                        </GameStats>
-                        
-                        <GamePrice>${(selectedFlip?.priceUSD || 0).toFixed(2)}</GamePrice>
-                        
-                        <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '1.5rem' }}>
-                          {selectedFlip.description}
-                        </p>
-
-                        {/* Game Status Info */}
-                        {selectedFlip.status === 'completed' && (
+                        <div style={{ flex: 1 }}>
                           <div style={{ 
-                            background: 'rgba(0, 255, 0, 0.1)', 
-                            padding: '0.5rem', 
-                            borderRadius: '0.5rem',
-                            marginBottom: '1rem',
-                            textAlign: 'center'
+                            fontSize: '0.9rem', 
+                            fontWeight: 'bold',
+                            marginBottom: '0.25rem',
+                            color: theme.colors.textPrimary
                           }}>
-                            <div style={{ color: theme.colors.statusSuccess, fontWeight: 'bold' }}>
-                              🏆 Game Complete!
-                            </div>
-                            <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-                              Score: {selectedFlip.creatorWins} - {selectedFlip.joinerWins}
-                            </div>
+                            {flip.nft.name}
                           </div>
-                        )}
-
-                        <GameFlipButton
-                          as={Link}
-                          to={`/game/${selectedFlip.id}`}
-                          style={{ 
-                            background: selectedFlip.status === 'completed' ? theme.colors.neonBlue : theme.colors.neonPink 
+                          <div style={{ 
+                            fontSize: '0.8rem',
+                            color: theme.colors.textSecondary,
+                            marginBottom: '0.5rem'
+                          }}>
+                            {flip.nft.collection}
+                          </div>
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '0.75rem',
+                            fontSize: '0.8rem',
+                            color: theme.colors.textSecondary
+                          }}>
+                            <span>{flip.rounds} Rounds</span>
+                            <span>{flip.chain}</span>
+                            <span>🔵</span>
+                            <span>${flip.priceUSD}</span>
+                          </div>
+                        </div>
+                        <GameFlipButton 
+                          as={Link} 
+                          to={`/flip/${flip.id}`}
+                          style={{
+                            padding: '0.2rem 0.6rem',
+                            fontSize: '0.7rem',
+                            height: '28px',
+                            minWidth: 'unset',
+                            textAlign: 'center',
+                            color: '#000',
+                            fontWeight: 'bold',
+                            background: theme.colors.neonBlue,
+                            alignSelf: 'center',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            lineHeight: 1,
+                            '&:hover': {
+                              background: theme.colors.neonPink,
+                              color: '#000'
+                            }
                           }}
                         >
-                          {selectedFlip.status === 'completed' ? 'VIEW RESULTS' : 'JOIN GAME'}
+                          JOIN FLIP
                         </GameFlipButton>
-                      </GameInfo>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
+              </div>
 
-                {/* Right Box - Active Games List */}
-                <ActiveGamesBox style={{ background: theme.colors.bgDark }}>
-                  <ActiveGamesTitle style={{ background: theme.colors.bgDark }}>
-                    <LiveDot />
-                    Live Games ({flips.filter(f => f.status === 'active').length})
-                  </ActiveGamesTitle>
-                  
+              {/* Right Box - Live Games */}
+              <div style={{
+                background: 'rgba(0, 0, 20, 0.95)',
+                borderRadius: '1rem',
+                padding: '1rem',
+                border: `1px solid ${theme.colors.neonPink}`,
+                maxHeight: '600px',
+                overflowY: 'auto'
+              }}>
+                <div style={{
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: theme.colors.neonPink,
+                  marginBottom: '1rem',
+                  padding: '0.5rem',
+                  borderBottom: `1px solid ${theme.colors.neonPink}`,
+                  textShadow: '0 0 10px rgba(255, 105, 180, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <LiveDot />
+                  Live Games ({flips.filter(f => f.status === 'active').length})
+                </div>
+                
+                <div style={{ 
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem'
+                }}>
                   {flips
                     .filter(flip => flip.status === 'active' || flip.status === 'joined')
                     .map(flip => (
-                      <ActiveGameItem 
+                      <div
                         key={flip.id}
                         onClick={() => handleSelectFlip(flip)}
+                        style={{
+                          background: 'rgba(0, 0, 0, 0.6)',
+                          borderRadius: '0.75rem',
+                          padding: '0.75rem',
+                          border: `1px solid ${theme.colors.neonPink}`,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                          }
+                        }}
                       >
-                        <GameItemInfo>
-                          <GameItemTitle>{flip.nft.name}</GameItemTitle>
-                          <GameItemDetails>
-                            <span>${(flip?.priceUSD || 0).toFixed(2)}</span>
-                            <span>•</span>
-                            <span>{flip.creatorWins || 0}-{flip.joinerWins || 0}</span>
-                            <span>•</span>
-                            <span>{getStatusIcon(flip.status)} {flip.status}</span>
-                            <span>•</span>
-                            <span>{flip.chain}</span>
-                          </GameItemDetails>
-                        </GameItemInfo>
-                      </ActiveGameItem>
+                        <div style={{ 
+                          fontSize: '0.9rem', 
+                          fontWeight: 'bold',
+                          marginBottom: '0.25rem',
+                          color: theme.colors.textPrimary
+                        }}>
+                          {flip.nft.name}
+                        </div>
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '0.75rem',
+                          fontSize: '0.8rem',
+                          color: theme.colors.textSecondary
+                        }}>
+                          <span>${(flip?.priceUSD || 0).toFixed(2)}</span>
+                          <span>•</span>
+                          <span>{flip.creatorWins || 0}-{flip.joinerWins || 0}</span>
+                          <span>•</span>
+                          <span>{getStatusIcon(flip.status)} {flip.status}</span>
+                          <span>•</span>
+                          <span>{flip.chain}</span>
+                        </div>
+                      </div>
                     ))}
                   
                   {flips.filter(flip => flip.status === 'active' || flip.status === 'joined').length === 0 && (
@@ -334,54 +469,9 @@ const Home = () => {
                       No active games at the moment
                     </p>
                   )}
-                </ActiveGamesBox>
-              </TwoBoxLayout>
-
-              {/* Available Flips Grid */}
-              <div style={{ marginTop: '2rem' }}>
-                <NeonText style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
-                  Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
-                </NeonText>
-                <Grid>
-                  {filteredFlips
-                    .filter(flip => flip.status === 'waiting')
-                    .map((flip) => (
-                      <GameCard
-                        key={flip.id}
-                        onClick={() => handleSelectFlip(flip)}
-                        style={{
-                          border: selectedFlip?.id === flip.id ? `2px solid ${theme.colors.neonPink}` : 'none'
-                        }}
-                      >
-                        <GameImage src={flip.nft.image} alt={flip.nft.name} />
-                        <GameInfo>
-                          <div>
-                            <GameTitle>{flip.nft.name}</GameTitle>
-                            <GameCollection>{flip.nft.collection}</GameCollection>
-                          </div>
-                          
-                          <GameStats>
-                            <GameStat>{flip.rounds} Rounds</GameStat>
-                            <GameStat>{flip.chain}</GameStat>
-                            <GameStat>{chains[flip.chain]?.icon || '🔗'}</GameStat>
-                          </GameStats>
-                          
-                          <GamePrice>${(flip?.priceUSD || 0).toFixed(2)}</GamePrice>
-                          
-                          <GameFlipButton
-                            as={Link}
-                            to={`/game/${flip.id}`}
-                            style={{ background: theme.colors.neonPink }}
-                            className="join-flip-button"
-                          >
-                            JOIN FLIP
-                          </GameFlipButton>
-                        </GameInfo>
-                      </GameCard>
-                    ))}
-                </Grid>
+                </div>
               </div>
-            </>
+            </div>
           )}
         </ContentWrapper>
       </Container>
