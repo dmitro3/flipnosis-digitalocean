@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import styled from '@emotion/styled'
+import backgreenVideo from '../../Images/Video/Final/backgreen.webm'
 import {
   Container,
   ContentWrapper,
@@ -30,6 +32,17 @@ import {
   GameFlipButton,
   TransparentCard
 } from '../styles/components'
+
+const BackgroundVideo = styled.video`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.7;
+`
 
 const Home = () => {
   const { chains, isConnected } = useWallet()
@@ -138,6 +151,9 @@ const Home = () => {
   if (loading) {
     return (
       <ThemeProvider theme={theme}>
+        <BackgroundVideo autoPlay loop muted playsInline>
+          <source src={backgreenVideo} type="video/webm" />
+        </BackgroundVideo>
         <Container>
           <ContentWrapper>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
@@ -155,6 +171,9 @@ const Home = () => {
   if (error) {
     return (
       <ThemeProvider theme={theme}>
+        <BackgroundVideo autoPlay loop muted playsInline>
+          <source src={backgreenVideo} type="video/webm" />
+        </BackgroundVideo>
         <Container>
           <ContentWrapper>
             <GlassCard style={{ textAlign: 'center', padding: '3rem' }}>
@@ -174,6 +193,9 @@ const Home = () => {
 
   return (
     <ThemeProvider theme={theme}>
+      <BackgroundVideo autoPlay loop muted playsInline>
+        <source src={backgreenVideo} type="video/webm" />
+      </BackgroundVideo>
       <Container>
         <ContentWrapper>
           {/* Chain Filters */}

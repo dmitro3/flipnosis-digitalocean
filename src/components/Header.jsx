@@ -1,9 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
+import { keyframes } from '@emotion/react'
+import MyFlipsDropdown from './MyFlipsDropdown'
 
 const HeaderContainer = styled.header`
   background-color: ${props => props.theme.colors.bgDark};
@@ -18,16 +21,11 @@ const HeaderContainer = styled.header`
 
 const Logo = styled(Link)`
   color: #00FF41;
-  font-size: 3rem;
+  font-size: 4rem;
   font-weight: 700;
   text-decoration: none;
-  letter-spacing: 2px;
+  letter-spacing: 6px;
   font-family: 'Hyperwave', sans-serif;
-  text-shadow: 
-    0 0 5px #00FF41,
-    0 0 10px #00FF41,
-    0 0 20px #00FF41,
-    0 0 40px #00FF41;
   animation: neonPulse 2s infinite;
   ${props => props.theme.animations.neonPulse}
 `
@@ -127,12 +125,76 @@ const ChainDot = styled.div`
   };
 `
 
+const infoPulse = keyframes`
+  0%, 100% {
+    box-shadow: 0 0 0px #00FF41, 0 0 0px #00FF41;
+    border-color: #00FF41;
+  }
+  50% {
+    box-shadow: 0 0 16px #00FF41, 0 0 32px #00FF41;
+    border-color: #baffc9;
+  }
+`;
+
+const InfoButton = styled.button`
+  background: rgba(0,255,65,0.12);
+  border: 2px solid #00FF41;
+  color: #00FF41;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-left: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  animation: ${infoPulse} 1.2s infinite;
+  &:hover {
+    background: rgba(0,255,65,0.25);
+  }
+`;
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+const ModalContent = styled.div`
+  background: #181c1b;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 0 32px #00FF41;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #00FF41;
+  font-size: 2rem;
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  cursor: pointer;
+`;
+
 const Header = () => {
   const { address, connectWallet, disconnectWallet, isConnected, chain, chains, loading } = useWallet()
+  const [showInfo, setShowInfo] = useState(false);
 
   const handleConnect = async () => {
     try {
-      await connectWallet() // Let it use whatever chain the user is currently on
+      await connectWallet()
     } catch (error) {
       console.error('Failed to connect wallet:', error)
     }
@@ -142,11 +204,12 @@ const Header = () => {
     <ThemeProvider theme={theme}>
       <HeaderContainer>
         <Logo to="/">FLIPNOSIS</Logo>
-        
-        <CreateButton to="/create">
-          Create Flip
-        </CreateButton>
-        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <CreateButton to="/create">
+            Create Flip
+          </CreateButton>
+          {isConnected && <MyFlipsDropdown />}
+        </div>
         <WalletSection>
           {isConnected && address ? (
             <>
@@ -169,6 +232,15 @@ const Header = () => {
             </WalletButton>
           )}
         </WalletSection>
+        <InfoButton onClick={() => setShowInfo(true)} title="About FLIPNOSIS">i</InfoButton>
+        {showInfo && (
+          <ModalOverlay onClick={() => setShowInfo(false)}>
+            <ModalContent onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+              <CloseButton onClick={() => setShowInfo(false)} title="Close">×</CloseButton>
+              <img src={FlipnosisInfoImg} alt="FLIPNOSIS Info" style={{ maxWidth: '80vw', maxHeight: '70vh', borderRadius: '0.5rem' }} />
+            </ModalContent>
+          </ModalOverlay>
+        )}
       </HeaderContainer>
     </ThemeProvider>
   )

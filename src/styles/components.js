@@ -2,7 +2,7 @@ import styled from '@emotion/styled'
 
 export const Container = styled.div`
   min-height: 100vh;
-  background-color: ${props => props.theme.colors.bgDark};
+  background-color: transparent;
   color: ${props => props.theme.colors.textPrimary};
   padding: 2rem;
 `

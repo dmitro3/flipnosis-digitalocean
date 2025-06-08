@@ -456,7 +456,7 @@ const FlipGame = () => {
                   borderRadius: '0.75rem',
                   textAlign: 'center'
                 }}>
-                  <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                  <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.5rem' }}>
                     {gameState.creatorChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
                   </div>
                   <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
@@ -597,7 +597,7 @@ const FlipGame = () => {
                   borderRadius: '0.75rem',
                   textAlign: 'center'
                 }}>
-                  <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                  <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold', fontSize: '1.5rem' }}>
                     {gameState.joinerChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
                   </div>
                   <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
