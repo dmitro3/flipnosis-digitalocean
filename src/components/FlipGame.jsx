@@ -547,6 +547,9 @@ const FlipGame = () => {
                   gamePhase={gameState?.phase}
                   creatorPower={gameState?.creatorPower || 0}
                   joinerPower={gameState?.joinerPower || 0}
+                  creatorChoice={gameState?.creatorChoice}
+                  joinerChoice={gameState?.joinerChoice}
+                  isCreator={isCreator}
                 />
               </div>
 

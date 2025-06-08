@@ -14,6 +14,10 @@ const ReliableGoldCoin = ({
   // Add these new props for charging effects
   creatorPower = 0,
   joinerPower = 0,
+  // NEW: Add props for player choices and player identification
+  creatorChoice = null,
+  joinerChoice = null,
+  isCreator = false,
   // Optional image props - if not provided, uses procedural gold textures
   headsImage = null,
   tailsImage = null,
@@ -34,12 +38,58 @@ const ReliableGoldCoin = ({
     chargeInterval: null
   })
 
-  // Create procedural gold textures
+  // NEW: Function to determine text colors based on player choices
+  const getTextColors = () => {
+    // Default colors (no choice made)
+    let headsColor = '#654321' // Dark brown
+    let tailsColor = '#654321' // Dark brown
+    
+    // If any player has made a choice, update colors
+    if (creatorChoice || joinerChoice) {
+      if (isCreator) {
+        // For the creator's view
+        if (creatorChoice === 'heads') {
+          headsColor = '#00FF00' // Green for their choice
+          tailsColor = '#FF0000' // Red for opponent's side
+        } else if (creatorChoice === 'tails') {
+          headsColor = '#FF0000' // Red for opponent's side
+          tailsColor = '#00FF00' // Green for their choice
+        }
+      } else {
+        // For the joiner's view (reversed perspective)
+        if (joinerChoice === 'heads') {
+          headsColor = '#00FF00' // Green for their choice
+          tailsColor = '#FF0000' // Red for opponent's side
+        } else if (joinerChoice === 'tails') {
+          headsColor = '#FF0000' // Red for opponent's side
+          tailsColor = '#00FF00' // Green for their choice
+        }
+        
+        // If joiner hasn't chosen but creator has, show creator's choice
+        if (!joinerChoice && creatorChoice) {
+          if (creatorChoice === 'heads') {
+            headsColor = '#FF0000' // Red for opponent's choice
+            tailsColor = '#00FF00' // Green for joiner's designated side
+          } else if (creatorChoice === 'tails') {
+            headsColor = '#00FF00' // Green for joiner's designated side
+            tailsColor = '#FF0000' // Red for opponent's choice
+          }
+        }
+      }
+    }
+    
+    return { headsColor, tailsColor }
+  }
+
+  // Create procedural gold textures with dynamic colors
   const createGoldTexture = (type, size = 512) => {
     const canvas = document.createElement('canvas')
     canvas.width = size
     canvas.height = size
     const ctx = canvas.getContext('2d')
+
+    // Get current text colors
+    const { headsColor, tailsColor } = getTextColors()
 
     if (type === 'heads') {
       // Gold gradient background - BRIGHTER
@@ -58,12 +108,20 @@ const ReliableGoldCoin = ({
       ctx.textBaseline = 'middle'
       ctx.fillText('♔', size/2, size/2 - size * 0.08) // Moved up
       
-      // "HEADS" text below crown
-      ctx.fillStyle = '#654321' // Dark brown
+      // "HEADS" text below crown - NOW WITH DYNAMIC COLOR
+      ctx.fillStyle = headsColor // Use dynamic color
       ctx.font = `bold ${size * 0.08}px Arial`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('HEADS', size/2, size/2 + size * 0.12) // Below crown
+      
+      // Add glow effect for green text
+      if (headsColor === '#00FF00') {
+        ctx.shadowColor = '#00FF00'
+        ctx.shadowBlur = 10
+        ctx.fillText('HEADS', size/2, size/2 + size * 0.12)
+        ctx.shadowBlur = 0 // Reset shadow
+      }
       
       // Decorative border - more prominent
       ctx.strokeStyle = '#8B7D6B'
@@ -89,12 +147,20 @@ const ReliableGoldCoin = ({
       ctx.textBaseline = 'middle'
       ctx.fillText('♦', size/2, size/2 - size * 0.08) // Moved up
       
-      // "TAILS" text below diamond
-      ctx.fillStyle = '#654321' // Dark brown
+      // "TAILS" text below diamond - NOW WITH DYNAMIC COLOR
+      ctx.fillStyle = tailsColor // Use dynamic color
       ctx.font = `bold ${size * 0.08}px Arial`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('TAILS', size/2, size/2 + size * 0.12) // Below diamond
+      
+      // Add glow effect for green text
+      if (tailsColor === '#00FF00') {
+        ctx.shadowColor = '#00FF00'
+        ctx.shadowBlur = 10
+        ctx.fillText('TAILS', size/2, size/2 + size * 0.12)
+        ctx.shadowBlur = 0 // Reset shadow
+      }
       
       // Decorative border - more prominent
       ctx.strokeStyle = '#8B7D6B'
@@ -340,6 +406,34 @@ const ReliableGoldCoin = ({
       rendererRef.current = null
     }
   }, [headsImage, tailsImage, edgeImage])
+
+  // NEW: Update textures when player choices change
+  useEffect(() => {
+    if (!coinRef.current || !sceneRef.current) return
+    
+    console.log('🎨 Updating coin textures due to choice change:', {
+      creatorChoice,
+      joinerChoice,
+      isCreator
+    })
+    
+    // Recreate textures with new colors
+    const newHeadsTexture = createGoldTexture('heads')
+    const newTailsTexture = createGoldTexture('tails')
+    
+    // Update materials
+    const coin = coinRef.current
+    if (coin.material && coin.material[1]) { // Heads material
+      if (coin.material[1].map) coin.material[1].map.dispose()
+      coin.material[1].map = newHeadsTexture
+      coin.material[1].needsUpdate = true
+    }
+    if (coin.material && coin.material[2]) { // Tails material
+      if (coin.material[2].map) coin.material[2].map.dispose()
+      coin.material[2].map = newTailsTexture
+      coin.material[2].needsUpdate = true
+    }
+  }, [creatorChoice, joinerChoice, isCreator])
 
   // POWER SYSTEM MANAGEMENT
   useEffect(() => {
