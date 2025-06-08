@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
@@ -249,41 +249,120 @@ const FlipGame = () => {
     }))
   }
 
-  const handlePlayerChoice = (choice) => {
-    console.log('🎯 handlePlayerChoice called:', {
+  const handleMessage = useCallback((event) => {
+    try {
+      const data = JSON.parse(event.data)
+      console.log('📨 WebSocket message received:', data)
+
+      switch (data.type) {
+        case 'game_state':
+          console.log('🎮 Game state update:', {
+            phase: data.phase,
+            currentPlayer: data.currentPlayer,
+            address: address,
+            isMyTurn: data.currentPlayer === address
+          })
+          setGameState(prev => ({
+            ...prev,
+            phase: data.phase,
+            currentPlayer: data.currentPlayer,
+            creatorChoice: data.creatorChoice,
+            joinerChoice: data.joinerChoice,
+            creatorPower: data.creatorPower,
+            joinerPower: data.joinerPower,
+            chargingPlayer: data.chargingPlayer,
+            isFlipInProgress: data.isFlipInProgress,
+            spectators: data.spectators
+          }))
+          break
+
+        case 'flip_animation':
+          console.log('🪙 Flip animation:', data)
+          setGameState(prev => ({
+            ...prev,
+            isFlipInProgress: true,
+            flipResult: data.result,
+            flipPower: data.power
+          }))
+          break
+
+        case 'round_result':
+          console.log('🎯 Round result:', data)
+          setGameState(prev => ({
+            ...prev,
+            isFlipInProgress: false,
+            roundResult: data,
+            creatorWins: data.creatorWins,
+            joinerWins: data.joinerWins,
+            winner: data.winner
+          }))
+          break
+
+        case 'error':
+          console.error('❌ Game error:', data)
+          showError(data.message)
+          break
+
+        default:
+          console.log('📨 Unknown message type:', data.type)
+      }
+    } catch (error) {
+      console.error('❌ Error handling WebSocket message:', error)
+    }
+  }, [address])
+
+  const handlePlayerChoice = useCallback((choice) => {
+    console.log('🎯 Player choice:', {
       choice,
-      hasSocket: !!socket,
-      hasGameState: !!gameState,
-      gamePhase: gameState?.phase,
-      isMyTurn: gameState?.currentPlayer === address,
-      currentPlayer: gameState?.currentPlayer,
-      myAddress: address
+      currentPhase: gameState.phase,
+      currentPlayer: gameState.currentPlayer,
+      address: address,
+      isMyTurn: gameState.currentPlayer === address
     })
 
-    if (!socket || !gameState || gameState.phase !== 'choosing') {
-      console.log('❌ Cannot make choice:', { 
-        hasSocket: !!socket, 
-        hasGameState: !!gameState, 
-        phase: gameState?.phase 
+    if (gameState.phase !== 'choosing' || gameState.currentPlayer !== address) {
+      console.log('❌ Cannot make choice:', {
+        phase: gameState.phase,
+        currentPlayer: gameState.currentPlayer,
+        address: address
       })
       return
     }
-    
-    const isMyTurn = gameState.currentPlayer === address
-    if (!isMyTurn) {
-      console.log('❌ Not my turn:', { currentPlayer: gameState.currentPlayer, myAddress: address })
-      return
+
+    try {
+      socket.current?.send(JSON.stringify({
+        type: 'player_choice',
+        gameId: gameId,
+        choice: choice
+      }))
+      console.log('✅ Choice sent to server:', choice)
+    } catch (error) {
+      console.error('❌ Error sending choice:', error)
+      showError('Failed to send choice')
     }
-    
-    console.log('🎯 Sending player choice:', choice)
-    
-    socket.send(JSON.stringify({
-      type: 'player_choice',
-      gameId,
-      address,
-      choice
-    }))
-  }
+  }, [gameState.phase, gameState.currentPlayer, address, gameId])
+
+  // Add debug logging for game state changes
+  useEffect(() => {
+    console.log('🔄 Game state updated:', {
+      phase: gameState.phase,
+      currentPlayer: gameState.currentPlayer,
+      address: address,
+      isMyTurn: gameState.currentPlayer === address,
+      creatorChoice: gameState.creatorChoice,
+      joinerChoice: gameState.joinerChoice
+    })
+  }, [gameState, address])
+
+  // Add debug logging for player turn changes
+  useEffect(() => {
+    console.log('👥 Player turn changed:', {
+      currentPlayer: gameState.currentPlayer,
+      address: address,
+      isMyTurn: gameState.currentPlayer === address,
+      phase: gameState.phase
+    })
+  }, [gameState.currentPlayer, address, gameState.phase])
 
   const handleJoinGame = async () => {
     if (!gameData || !provider || !address || joiningGame) return
