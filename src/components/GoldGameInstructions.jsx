@@ -51,14 +51,17 @@ const GoldGameInstructions = ({
     )
   }
 
-  // Round indicator circles
-  const renderRoundIndicators = () => {
+  // Round indicator circles for each player box
+  const renderRoundIndicators = (isCreator) => {
     return (
       <div style={{
         display: 'flex',
         justifyContent: 'center',
         gap: '0.5rem',
-        marginTop: '1rem'
+        marginTop: '1rem',
+        padding: '0.5rem',
+        background: 'rgba(0, 0, 0, 0.2)',
+        borderRadius: '0.5rem'
       }}>
         {Array.from({ length: maxRounds }).map((_, index) => {
           const roundNumber = index + 1
@@ -66,6 +69,9 @@ const GoldGameInstructions = ({
           const isPastRound = roundNumber < currentRound
           const roundWinner = roundNumber < currentRound ? 
             (creatorWins >= roundNumber ? 'creator' : 'joiner') : null
+          const isWin = isCreator ? 
+            (roundWinner === 'creator') : 
+            (roundWinner === 'joiner')
 
           return (
             <div
@@ -77,12 +83,12 @@ const GoldGameInstructions = ({
                 background: isCurrentRound ? 
                   'rgba(255, 215, 0, 0.3)' : 
                   isPastRound ? 
-                    (roundWinner === 'creator' ? theme.colors.neonPink : theme.colors.neonBlue) :
+                    (isWin ? theme.colors.neonGreen : theme.colors.statusError) :
                     'rgba(255, 255, 255, 0.1)',
                 border: `2px solid ${
                   isCurrentRound ? '#FFD700' :
                   isPastRound ? 
-                    (roundWinner === 'creator' ? theme.colors.neonPink : theme.colors.neonBlue) :
+                    (isWin ? theme.colors.neonGreen : theme.colors.statusError) :
                     'rgba(255, 255, 255, 0.2)'
                 }`,
                 display: 'flex',
@@ -102,7 +108,7 @@ const GoldGameInstructions = ({
     )
   }
 
-  return renderRoundIndicators()
+  return renderRoundIndicators(playerNumber === 1)
 }
 
 export default GoldGameInstructions 

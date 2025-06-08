@@ -424,13 +424,12 @@ const FlipGame = () => {
             minHeight: '500px'
           }}>
             
-            {/* Left Player Card - Player 1 (Creator) */}
+            {/* Player 1 Box */}
             <div style={{
               background: 'rgba(0, 0, 0, 0.3)',
               border: isCreator ? `2px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.1)',
               borderRadius: '1rem',
               padding: '1rem',
-              // Add green flashing when it's this player's turn
               animation: gameState?.currentPlayer === gameState?.creator ? 'playerTurnGlow 1s ease-in-out infinite' : 'none',
               boxShadow: gameState?.currentPlayer === gameState?.creator ? '0 0 20px rgba(0, 255, 65, 0.5)' : 'none'
             }}>
@@ -464,66 +463,22 @@ const FlipGame = () => {
                   </div>
                 </div>
               </div>
-              
-              {/* NFT Image */}
-              <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                {gameData?.nft ? (
-                  <img
-                    src={gameData.nft.image}
-                    alt={gameData.nft.name}
-                    style={{
-                      width: '100%',
-                      aspectRatio: '1',
-                      objectFit: 'cover',
-                      borderRadius: '0.75rem',
-                      border: isCreator ? `2px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.2)'
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    aspectRatio: '1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: gameState?.creator ? 
-                      `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})` : 
-                      'rgba(255,255,255,0.1)',
-                    borderRadius: '0.75rem',
-                    fontSize: '3rem'
-                  }}>
-                    👑
-                  </div>
-                )}
-              </div>
-              
-              {/* Item Info */}
-              <div style={{ textAlign: 'center' }}>
-                <h4 style={{ color: theme.colors.textPrimary, fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
-                  {gameData?.nft ? gameData.nft.name : 'Player 1'}
-                </h4>
-                <p style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', margin: 0 }}>
-                  {gameData?.nft ? gameData.nft.collection : 'Heads Player'}
-                </p>
-              </div>
-              
-              {/* Choice Display */}
-              {gameState?.creatorChoice && (
-                <div style={{
-                  marginTop: '1rem',
-                  padding: '0.75rem',
-                  background: 'rgba(255, 20, 147, 0.1)',
-                  border: `2px solid ${theme.colors.neonPink}`,
-                  borderRadius: '0.75rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.5rem' }}>
-                    {gameState.creatorChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
-                  </div>
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                    Choice Made
-                  </div>
-                </div>
-              )}
+
+              {/* Round Indicators for Player 1 */}
+              <GoldGameInstructions
+                isPlayerTurn={isMyTurn}
+                gamePhase={gameState?.phase}
+                isPlayer={isPlayer}
+                playerNumber={1}
+                spectatorMode={!isPlayer}
+                currentPower={gameState?.chargingPlayer === address ? 
+                  (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
+                }
+                currentRound={gameState?.currentRound}
+                maxRounds={gameState?.maxRounds}
+                creatorWins={gameState?.creatorWins}
+                joinerWins={gameState?.joinerWins}
+              />
             </div>
 
             {/* Center - Coin and Power Area */}
@@ -568,13 +523,12 @@ const FlipGame = () => {
               />
             </div>
 
-            {/* Right Player Card - Player 2 (Joiner) */}
+            {/* Player 2 Box */}
             <div style={{
               background: 'rgba(0, 0, 0, 0.3)',
               border: isJoiner ? `2px solid ${theme.colors.neonBlue}` : '1px solid rgba(255,255,255,0.1)',
               borderRadius: '1rem',
               padding: '1rem',
-              // Add green flashing when it's this player's turn
               animation: gameState?.currentPlayer === gameState?.joiner ? 'playerTurnGlow 1s ease-in-out infinite' : 'none',
               boxShadow: gameState?.currentPlayer === gameState?.joiner ? '0 0 20px rgba(0, 255, 65, 0.5)' : 'none'
             }}>
@@ -608,87 +562,22 @@ const FlipGame = () => {
                   </div>
                 </div>
               </div>
-              
-              {/* Crypto Display */}
-              <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                <div style={{
-                  aspectRatio: '1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: gameState?.joiner ? 
-                    `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 
-                    'rgba(255,255,255,0.1)',
-                  borderRadius: '0.75rem',
-                  border: isJoiner ? `2px solid ${theme.colors.neonBlue}` : 
-                          gameState?.joiner ? '1px solid rgba(255,255,255,0.2)' : 
-                          '2px dashed rgba(255,255,255,0.3)',
-                  padding: '1rem'
-                }}>
-                  {gameState?.joiner ? (
-                    <img 
-                      src={baseEthLogo} 
-                      alt="Base ETH"
-                      style={{
-                        width: '70%',
-                        height: '70%',
-                        objectFit: 'contain',
-                        filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))'
-                      }}
-                    />
-                  ) : (
-                    <div style={{ fontSize: '3rem', opacity: 0.5 }}>⏳</div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Item Info */}
-              <div style={{ textAlign: 'center' }}>
-                <h4 style={{ color: theme.colors.textPrimary, fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
-                  {gameState?.joiner ? `$${gameData?.priceUSD?.toFixed(2)}` : 'Waiting for player...'}
-                </h4>
-                <p style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', margin: 0 }}>
-                  {gameState?.joiner ? 'Tails Player' : ''}
-                </p>
-              </div>
-              
-              {/* Choice Display */}
-              {gameState?.joinerChoice && (
-                <div style={{
-                  marginTop: '1rem',
-                  padding: '0.75rem',
-                  background: 'rgba(0, 191, 255, 0.1)',
-                  border: `2px solid ${theme.colors.neonBlue}`,
-                  borderRadius: '0.75rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold', fontSize: '1.5rem' }}>
-                    {gameState.joinerChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
-                  </div>
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                    Choice Made
-                  </div>
-                </div>
-              )}
-              
-              {/* Game ID Below Player 2 */}
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                background: 'rgba(255, 215, 0, 0.1)',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
-                borderRadius: '0.75rem',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  color: '#FFD700',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  textShadow: '0 0 8px rgba(255, 215, 0, 0.5)'
-                }}>
-                  FLIP#{gameId?.slice(-6).toUpperCase()}
-                </div>
-              </div>
+
+              {/* Round Indicators for Player 2 */}
+              <GoldGameInstructions
+                isPlayerTurn={isMyTurn}
+                gamePhase={gameState?.phase}
+                isPlayer={isPlayer}
+                playerNumber={2}
+                spectatorMode={!isPlayer}
+                currentPower={gameState?.chargingPlayer === address ? 
+                  (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
+                }
+                currentRound={gameState?.currentRound}
+                maxRounds={gameState?.maxRounds}
+                creatorWins={gameState?.creatorWins}
+                joinerWins={gameState?.joinerWins}
+              />
             </div>
           </div>
 
@@ -864,22 +753,6 @@ const FlipGame = () => {
               </div>
             </div>
           )}
-
-          {/* Gold Game Instructions */}
-          <GoldGameInstructions
-            isPlayerTurn={isMyTurn}
-            gamePhase={gameState?.phase}
-            isPlayer={isPlayer}
-            playerNumber={isCreator ? 1 : 2}
-            spectatorMode={!isPlayer}
-            currentPower={gameState?.chargingPlayer === address ? 
-              (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
-            }
-            currentRound={gameState?.currentRound}
-            maxRounds={gameState?.maxRounds}
-            creatorWins={gameState?.creatorWins}
-            joinerWins={gameState?.joinerWins}
-          />
         </ContentWrapper>
       </Container>
     </ThemeProvider>
