@@ -28,7 +28,7 @@ const LogoContainer = styled.div`
 
 const Logo = styled(Link)`
   color: #00FF41;
-  font-size: 4rem;
+  font-size: 3rem;
   font-weight: 700;
   text-decoration: none;
   letter-spacing: 6px;

@@ -4,7 +4,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
-import backgreenVideo from '../../Images/Video/Final/backgreen.webm'
+import hazeVideo from '../../Images/Video/haze.webm'
 import {
   Container,
   ContentWrapper,
@@ -155,7 +155,7 @@ const Home = () => {
     return (
       <ThemeProvider theme={theme}>
         <BackgroundVideo autoPlay loop muted playsInline>
-          <source src={backgreenVideo} type="video/webm" />
+          <source src={hazeVideo} type="video/webm" />
         </BackgroundVideo>
         <Container>
           <ContentWrapper>
@@ -175,7 +175,7 @@ const Home = () => {
     return (
       <ThemeProvider theme={theme}>
         <BackgroundVideo autoPlay loop muted playsInline>
-          <source src={backgreenVideo} type="video/webm" />
+          <source src={hazeVideo} type="video/webm" />
         </BackgroundVideo>
         <Container>
           <ContentWrapper>
@@ -197,7 +197,7 @@ const Home = () => {
   return (
     <ThemeProvider theme={theme}>
       <BackgroundVideo autoPlay loop muted playsInline>
-        <source src={backgreenVideo} type="video/webm" />
+        <source src={hazeVideo} type="video/webm" />
       </BackgroundVideo>
       <Container>
         <ContentWrapper>
