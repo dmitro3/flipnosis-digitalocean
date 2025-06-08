@@ -719,44 +719,6 @@ const FlipGame = () => {
             </div>
           </div>
 
-          {/* MOVED TO BOTTOM: Score Display */}
-          {gameState && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '2rem',
-              padding: '1rem',
-              background: 'rgba(0, 0, 0, 0.3)',
-              borderRadius: '1rem'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: theme.colors.neonPink, fontSize: '3rem', fontWeight: 'bold' }}>
-                  {gameState.creatorWins}
-                </div>
-                <div style={{ color: theme.colors.textSecondary }}>
-                  👑 Player 1 (Heads)
-                </div>
-              </div>
-              
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: theme.colors.textPrimary, fontSize: '1.5rem', fontWeight: 'bold' }}>
-                  {gameState.currentRound} / {gameState.maxRounds}
-                </div>
-                <div style={{ color: theme.colors.textSecondary }}>Round</div>
-              </div>
-              
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: theme.colors.neonBlue, fontSize: '3rem', fontWeight: 'bold' }}>
-                  {gameState.joinerWins}
-                </div>
-                <div style={{ color: theme.colors.textSecondary }}>
-                  💎 Player 2 (Tails)
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Game Status */}
           {gameState?.phase === 'choosing' && (
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -913,6 +875,10 @@ const FlipGame = () => {
             currentPower={gameState?.chargingPlayer === address ? 
               (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
             }
+            currentRound={gameState?.currentRound}
+            maxRounds={gameState?.maxRounds}
+            creatorWins={gameState?.creatorWins}
+            joinerWins={gameState?.joinerWins}
           />
         </ContentWrapper>
       </Container>
