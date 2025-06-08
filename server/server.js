@@ -572,6 +572,7 @@ const dbHelpers = {
 
 class GameSession {
   constructor(gameId) {
+    console.log('🎮 Creating new GameSession:', gameId)
     this.gameId = gameId
     this.creator = null
     this.joiner = null
@@ -588,6 +589,10 @@ class GameSession {
     this.chargingPlayer = null
     this.currentPlayer = null
     
+    // Player choices for each round
+    this.creatorChoice = null
+    this.joinerChoice = null
+    
     // Control flags
     this.isFlipInProgress = false
     this.gameData = null
@@ -595,14 +600,31 @@ class GameSession {
     this.lastActionTime = Date.now()
     this.roundCompleted = false
     this.syncedFlip = null
+    
+    console.log('✅ GameSession created:', {
+      gameId,
+      phase: this.phase,
+      creator: this.creator,
+      joiner: this.joiner,
+      currentPlayer: this.currentPlayer
+    })
   }
 
   addClient(ws) {
+    console.log('🔌 Adding client to game:', {
+      gameId: this.gameId,
+      currentClients: this.clients.size,
+      phase: this.phase
+    })
     this.clients.add(ws)
-    this.broadcastGameState()
   }
 
   removeClient(ws) {
+    console.log('🔌 Removing client from game:', {
+      gameId: this.gameId,
+      currentClients: this.clients.size,
+      phase: this.phase
+    })
     this.clients.delete(ws)
   }
 
@@ -623,8 +645,19 @@ class GameSession {
       chargingPlayer: this.chargingPlayer,
       currentPlayer: this.currentPlayer,
       isFlipInProgress: this.isFlipInProgress,
-      spectators: this.clients.size
+      spectators: this.clients.size,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice
     }
+
+    console.log('📢 Broadcasting game state:', {
+      gameId: this.gameId,
+      phase: this.phase,
+      currentPlayer: this.currentPlayer,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice,
+      clients: this.clients.size
+    })
 
     // Safely broadcast to all clients
     const deadClients = new Set()
@@ -661,6 +694,13 @@ class GameSession {
   }
 
   async setJoiner(address, entryFeeHash) {
+    console.log('🎮 setJoiner called:', { 
+      address, 
+      currentPhase: this.phase,
+      creator: this.creator,
+      joiner: this.joiner
+    })
+    
     // Only set if not already set
     if (this.joiner) {
       console.log('⚠️ Joiner already set:', this.joiner)
@@ -672,24 +712,61 @@ class GameSession {
     this.phase = 'ready'
     
     console.log('✅ Player 2 joined via WebSocket:', address)
+    console.log('🔄 Game state after join:', { 
+      phase: this.phase,
+      creator: this.creator,
+      joiner: this.joiner,
+      currentPlayer: this.currentPlayer
+    })
+    
     this.broadcastGameState()
     
-    // Auto-start after 2 seconds
+    // Auto-start the choosing phase after 2 seconds
+    console.log('⏰ Setting up auto-start timer...')
     setTimeout(() => {
+      console.log('⏰ Auto-start timer fired:', {
+        currentPhase: this.phase,
+        hasCreator: !!this.creator,
+        hasJoiner: !!this.joiner
+      })
       if (this.phase === 'ready' && this.creator && this.joiner) {
-        console.log('🚀 AUTO-STARTING game after player 2 joined')
+        console.log('🚀 AUTO-STARTING game - entering choosing phase')
         this.startGame()
+      } else {
+        console.log('⚠️ Auto-start conditions not met:', {
+          phase: this.phase,
+          creator: this.creator,
+          joiner: this.joiner
+        })
       }
     }, 2000)
   }
 
   async startGame() {
-    if (this.phase !== 'ready') return
+    console.log('🎮 startGame called:', { 
+      currentPhase: this.phase,
+      creator: this.creator,
+      joiner: this.joiner
+    })
     
-    this.phase = 'round_active'
-    this.currentPlayer = this.creator
+    if (this.phase !== 'ready') {
+      console.log('❌ Cannot start game - wrong phase:', this.phase)
+      return
+    }
+    
+    this.phase = 'choosing'  // Changed from 'round_active' to 'choosing'
+    this.currentPlayer = this.creator  // Player 1 chooses first
     this.currentRound = 1
     this.resetPowers()
+    this.resetChoices()
+    
+    console.log('✅ Game started:', {
+      newPhase: this.phase,
+      currentPlayer: this.currentPlayer,
+      currentRound: this.currentRound,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice
+    })
     
     try {
       await dbHelpers.updateGame(this.gameId, { 
@@ -700,13 +777,55 @@ class GameSession {
       console.error('Error updating game start:', error)
     }
     
+    console.log('🎯 Game started - Player 1 should choose heads or tails')
     this.broadcastGameState()
+  }
+
+  setPlayerChoice(address, choice) {
+    console.log('🎯 setPlayerChoice called:', {
+      address,
+      choice,
+      phase: this.phase,
+      currentPlayer: this.currentPlayer,
+      creatorChoice: this.creatorChoice,
+      joinerChoice: this.joinerChoice
+    })
+
+    if (this.phase !== 'choosing' || address !== this.currentPlayer) {
+      console.log('❌ Cannot set choice:', { 
+        phase: this.phase, 
+        currentPlayer: this.currentPlayer, 
+        address 
+      })
+      return false
+    }
+    
+    if (address === this.creator) {
+      this.creatorChoice = choice
+      console.log('✅ Creator chose:', choice)
+    } else if (address === this.joiner) {
+      this.joinerChoice = choice
+      console.log('✅ Joiner chose:', choice)
+    } else {
+      return false
+    }
+    
+    // Move to power charging phase after choice is made
+    this.phase = 'round_active'
+    console.log('🔄 Moving to round_active phase after choice')
+    this.broadcastGameState()
+    return true
   }
 
   resetPowers() {
     this.creatorPower = 0
     this.joinerPower = 0
     this.chargingPlayer = null
+  }
+
+  resetChoices() {
+    this.creatorChoice = null
+    this.joinerChoice = null
   }
 
   startCharging(address) {
@@ -1049,18 +1168,19 @@ wss.on('connection', (ws) => {
 async function handleMessage(ws, data) {
   const { type, gameId } = data
 
-  console.log('📡 Received message:', type, 'for game:', gameId)
+  console.log('📡 Received message:', { type, gameId, data })
 
   let session = activeSessions.get(gameId)
   if (!session && (type === 'connect_to_game' || type === 'join_game')) {
+    console.log('🎮 Creating new game session:', gameId)
     session = new GameSession(gameId)
     activeSessions.set(gameId, session)
-    console.log('🎮 Created new game session:', gameId)
     
     // Load existing game data
     try {
       const gameData = await dbHelpers.getGame(gameId)
       if (gameData) {
+        console.log('📂 Loading existing game data:', gameData)
         await session.loadFromDatabase()
       }
     } catch (error) {
@@ -1078,41 +1198,75 @@ async function handleMessage(ws, data) {
 
   switch (type) {
     case 'connect_to_game':
-      console.log('🔗 Player connected:', data.address)
+      console.log('🔗 Player connected:', { 
+        address: data.address,
+        currentPhase: session.phase,
+        creator: session.creator,
+        joiner: session.joiner
+      })
       // Session automatically broadcasts state when client is added
       break
 
     case 'join_game':
+      console.log('🎮 Join game request:', {
+        role: data.role,
+        address: data.address,
+        entryFeeHash: data.entryFeeHash,
+        currentPhase: session.phase
+      })
+      
       if (data.role === 'joiner' && data.entryFeeHash) {
+        console.log('🎯 Player 2 joining game')
         await session.setJoiner(data.address, data.entryFeeHash)
       } else if (data.role === 'creator') {
-        // Handle creator connecting to existing game
+        console.log('🎯 Creator connecting to game')
         if (!session.creator) {
           session.creator = data.address
         }
         session.broadcastGameState()
       } else {
         console.log('👀 Spectator viewing:', data.address)
-        // Just broadcast current state for spectators
         session.broadcastGameState()
       }
       break
 
+    case 'player_choice':
+      console.log('🎯 Player choice received:', {
+        address: data.address,
+        choice: data.choice,
+        currentPhase: session.phase,
+        currentPlayer: session.currentPlayer
+      })
+      if (session && data.address && data.choice) {
+        const success = session.setPlayerChoice(data.address, data.choice)
+        if (!success) {
+          console.log('❌ Invalid choice attempt:', {
+            address: data.address,
+            choice: data.choice,
+            phase: session.phase,
+            currentPlayer: session.currentPlayer
+          })
+          ws.send(JSON.stringify({ type: 'error', error: 'Invalid choice or not your turn' }))
+        }
+      }
+      break
+
     case 'start_charging':
+      console.log('⚡ Start charging:', {
+        address: data.address,
+        currentPhase: session.phase,
+        currentPlayer: session.currentPlayer
+      })
       session.startCharging(data.address)
       break
 
     case 'stop_charging':
+      console.log('⚡ Stop charging:', {
+        address: data.address,
+        currentPhase: session.phase,
+        currentPlayer: session.currentPlayer
+      })
       await session.stopCharging(data.address)
-      break
-
-    case 'player_choice':
-      if (session && data.address && data.choice) {
-        const success = session.setPlayerChoice(data.address, data.choice)
-        if (!success) {
-          ws.send(JSON.stringify({ type: 'error', error: 'Invalid choice or not your turn' }))
-        }
-      }
       break
 
     default:

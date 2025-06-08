@@ -52,8 +52,12 @@ const FlipGame = () => {
 
   // WebSocket connection
   useEffect(() => {
-    if (!gameId || !address) return
+    if (!gameId || !address) {
+      console.log('❌ Cannot connect - missing gameId or address:', { gameId, address })
+      return
+    }
 
+    console.log('🎮 Setting up WebSocket connection:', { gameId, address })
     let reconnectAttempts = 0
     const maxReconnectAttempts = 5
     let reconnectTimer
@@ -63,20 +67,23 @@ const FlipGame = () => {
         ? 'wss://cryptoflipz2-production.up.railway.app' 
         : 'ws://localhost:3001'
       
+      console.log('🔌 Connecting to WebSocket:', wsUrl)
       const ws = new WebSocket(wsUrl)
 
       ws.onopen = () => {
-        console.log('✅ Connected to WebSocket')
+        console.log('✅ WebSocket connected')
         setConnected(true)
         setSocket(ws)
-        reconnectAttempts = 0 // Reset on successful connection
+        reconnectAttempts = 0
         
         // Join game
-        ws.send(JSON.stringify({
+        const joinMessage = {
           type: 'connect_to_game',
           gameId,
           address
-        }))
+        }
+        console.log('🎮 Sending join message:', joinMessage)
+        ws.send(JSON.stringify(joinMessage))
       }
 
       ws.onmessage = (event) => {
@@ -87,7 +94,9 @@ const FlipGame = () => {
             phase: data.phase,
             currentPlayer: data.currentPlayer,
             creatorChoice: data.creatorChoice,
-            joinerChoice: data.joinerChoice
+            joinerChoice: data.joinerChoice,
+            creator: data.creator,
+            joiner: data.joiner
           })
           
           switch (data.type) {
@@ -100,7 +109,9 @@ const FlipGame = () => {
                 joinerWins: data.joinerWins,
                 isFlipInProgress: data.isFlipInProgress,
                 creatorChoice: data.creatorChoice,
-                joinerChoice: data.joinerChoice
+                joinerChoice: data.joinerChoice,
+                creator: data.creator,
+                joiner: data.joiner
               })
               setGameState(data)
               break
@@ -138,7 +149,7 @@ const FlipGame = () => {
           console.log(`🔄 Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`)
           reconnectTimer = setTimeout(() => {
             connect()
-          }, 2000 * reconnectAttempts) // Exponential backoff
+          }, 2000 * reconnectAttempts)
         } else {
           showError('Lost connection to game server. Please refresh the page.')
         }
@@ -239,6 +250,16 @@ const FlipGame = () => {
   }
 
   const handlePlayerChoice = (choice) => {
+    console.log('🎯 handlePlayerChoice called:', {
+      choice,
+      hasSocket: !!socket,
+      hasGameState: !!gameState,
+      gamePhase: gameState?.phase,
+      isMyTurn: gameState?.currentPlayer === address,
+      currentPlayer: gameState?.currentPlayer,
+      myAddress: address
+    })
+
     if (!socket || !gameState || gameState.phase !== 'choosing') {
       console.log('❌ Cannot make choice:', { 
         hasSocket: !!socket, 
@@ -254,13 +275,13 @@ const FlipGame = () => {
       return
     }
     
-    console.log('🎯 Player choosing:', choice)
+    console.log('🎯 Sending player choice:', choice)
     
     socket.send(JSON.stringify({
       type: 'player_choice',
       gameId,
       address,
-      choice // 'heads' or 'tails'
+      choice
     }))
   }
 
