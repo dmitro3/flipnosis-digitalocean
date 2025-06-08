@@ -37,9 +37,23 @@ const FlipGame = () => {
   // WebSocket state - SINGLE SOURCE OF TRUTH for game
   const [socket, setSocket] = useState(null)
   const [connected, setConnected] = useState(false)
-  const [gameState, setGameState] = useState(null)
-  const [flipAnimation, setFlipAnimation] = useState(null)
-  const [roundResult, setRoundResult] = useState(null)
+  const [gameState, setGameState] = useState({
+    phase: 'waiting',
+    currentPlayer: null,
+    creatorChoice: null,
+    joinerChoice: null,
+    creatorPower: 0,
+    joinerPower: 0,
+    chargingPlayer: null,
+    isFlipInProgress: false,
+    spectators: 0,
+    creatorWins: 0,
+    joinerWins: 0,
+    winner: null,
+    roundResult: null,
+    flipResult: null,
+    flipPower: 0
+  })
 
   // Refs for user input
   const isChargingRef = useRef(false)
@@ -118,14 +132,13 @@ const FlipGame = () => {
               
             case 'flip_animation':
               console.log('🎬 Flip animation received:', data)
-              setFlipAnimation(data)
-              setRoundResult(null)
+              setGameState(data)
               break
               
             case 'round_result':
               console.log('🏁 Round result received:', data)
-              setRoundResult(data)
-              setTimeout(() => setRoundResult(null), 4000)
+              setGameState(data)
+              setTimeout(() => setGameState(prev => ({ ...prev, roundResult: null })), 4000)
               break
               
             case 'error':
@@ -264,15 +277,15 @@ const FlipGame = () => {
           })
           setGameState(prev => ({
             ...prev,
-            phase: data.phase,
-            currentPlayer: data.currentPlayer,
-            creatorChoice: data.creatorChoice,
-            joinerChoice: data.joinerChoice,
-            creatorPower: data.creatorPower,
-            joinerPower: data.joinerPower,
-            chargingPlayer: data.chargingPlayer,
-            isFlipInProgress: data.isFlipInProgress,
-            spectators: data.spectators
+            phase: data.phase || prev.phase,
+            currentPlayer: data.currentPlayer || prev.currentPlayer,
+            creatorChoice: data.creatorChoice || prev.creatorChoice,
+            joinerChoice: data.joinerChoice || prev.joinerChoice,
+            creatorPower: data.creatorPower || prev.creatorPower,
+            joinerPower: data.joinerPower || prev.joinerPower,
+            chargingPlayer: data.chargingPlayer || prev.chargingPlayer,
+            isFlipInProgress: data.isFlipInProgress || prev.isFlipInProgress,
+            spectators: data.spectators || prev.spectators
           }))
           break
 
@@ -292,9 +305,9 @@ const FlipGame = () => {
             ...prev,
             isFlipInProgress: false,
             roundResult: data,
-            creatorWins: data.creatorWins,
-            joinerWins: data.joinerWins,
-            winner: data.winner
+            creatorWins: data.creatorWins || prev.creatorWins,
+            joinerWins: data.joinerWins || prev.joinerWins,
+            winner: data.winner || prev.winner
           }))
           break
 
@@ -312,6 +325,11 @@ const FlipGame = () => {
   }, [address])
 
   const handlePlayerChoice = useCallback((choice) => {
+    if (!gameState || !socket) {
+      console.log('❌ Cannot make choice - missing game state or WebSocket')
+      return
+    }
+
     console.log('🎯 Player choice:', {
       choice,
       currentPhase: gameState.phase,
@@ -330,7 +348,7 @@ const FlipGame = () => {
     }
 
     try {
-      socket.current?.send(JSON.stringify({
+      socket.send(JSON.stringify({
         type: 'player_choice',
         gameId: gameId,
         choice: choice
@@ -340,10 +358,12 @@ const FlipGame = () => {
       console.error('❌ Error sending choice:', error)
       showError('Failed to send choice')
     }
-  }, [gameState.phase, gameState.currentPlayer, address, gameId])
+  }, [gameState, address, gameId])
 
   // Add debug logging for game state changes
   useEffect(() => {
+    if (!gameState) return
+
     console.log('🔄 Game state updated:', {
       phase: gameState.phase,
       currentPlayer: gameState.currentPlayer,
@@ -356,13 +376,15 @@ const FlipGame = () => {
 
   // Add debug logging for player turn changes
   useEffect(() => {
+    if (!gameState) return
+
     console.log('👥 Player turn changed:', {
       currentPlayer: gameState.currentPlayer,
       address: address,
       isMyTurn: gameState.currentPlayer === address,
       phase: gameState.phase
     })
-  }, [gameState.currentPlayer, address, gameState.phase])
+  }, [gameState?.currentPlayer, address, gameState?.phase])
 
   const handleJoinGame = async () => {
     if (!gameData || !provider || !address || joiningGame) return
@@ -594,9 +616,9 @@ const FlipGame = () => {
                 marginBottom: '2rem'
               }}>
                 <ReliableGoldCoin
-                  isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result}
-                  flipDuration={flipAnimation?.duration}
+                  isFlipping={!!gameState.flipAnimation}
+                  flipResult={gameState.flipAnimation?.result}
+                  flipDuration={gameState.flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
                   isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
@@ -897,19 +919,19 @@ const FlipGame = () => {
           )}
 
           {/* Round Result Display */}
-          {roundResult && (
+          {gameState?.roundResult && (
             <div style={{
               position: 'fixed',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 1000,
-              background: roundResult.actualWinner === address ? 
+              background: gameState.roundResult.actualWinner === address ? 
                 'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
                 'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
               padding: '3rem 4rem',
               borderRadius: '2rem',
-              border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
+              border: `4px solid ${gameState.roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
               textAlign: 'center'
             }}>
               <div style={{
@@ -918,10 +940,10 @@ const FlipGame = () => {
                 color: 'white',
                 marginBottom: '1rem'
               }}>
-                {roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
+                {gameState.roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
               </div>
               <div style={{ fontSize: '1.5rem', color: 'white', fontWeight: 'bold' }}>
-                Coin: {roundResult.result.toUpperCase()}
+                Coin: {gameState.roundResult.result.toUpperCase()}
               </div>
               <div style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '0.5rem' }}>
                 You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}
