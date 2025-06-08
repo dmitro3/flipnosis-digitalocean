@@ -56,11 +56,11 @@ class GameSession {
   async startGame() {
     if (this.phase !== 'ready') return
     
-    this.phase = 'choosing' // Start with choosing instead of round_active
-    this.currentPlayer = this.creator
+    this.phase = 'choosing'  // Changed from 'round_active' to 'choosing'
+    this.currentPlayer = this.creator  // Player 1 chooses first
     this.currentRound = 1
     this.resetPowers()
-    this.resetChoices()
+    this.resetChoices()  // Add this method
     
     try {
       await dbHelpers.updateGame(this.gameId, { 
@@ -71,6 +71,7 @@ class GameSession {
       console.error('Error updating game start:', error)
     }
     
+    console.log('🎯 Game started - Player 1 should choose heads or tails')
     this.broadcastGameState()
   }
 
@@ -167,5 +168,28 @@ class GameSession {
     deadClients.forEach(client => {
       this.clients.delete(client)
     })
+  }
+
+  async setJoiner(address, entryFeeHash) {
+    // Only set if not already set
+    if (this.joiner) {
+      console.log('⚠️ Joiner already set:', this.joiner)
+      this.broadcastGameState()
+      return
+    }
+    
+    this.joiner = address
+    this.phase = 'ready'
+    
+    console.log('✅ Player 2 joined via WebSocket:', address)
+    this.broadcastGameState()
+    
+    // Auto-start the choosing phase after 2 seconds
+    setTimeout(() => {
+      if (this.phase === 'ready' && this.creator && this.joiner) {
+        console.log('🚀 AUTO-STARTING game - entering choosing phase')
+        this.startGame()
+      }
+    }, 2000)
   }
 } 

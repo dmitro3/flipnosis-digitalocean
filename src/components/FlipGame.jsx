@@ -231,10 +231,20 @@ const FlipGame = () => {
   }
 
   const handlePlayerChoice = (choice) => {
-    if (!socket || !gameState || gameState.phase !== 'choosing') return
+    if (!socket || !gameState || gameState.phase !== 'choosing') {
+      console.log('❌ Cannot make choice:', { 
+        hasSocket: !!socket, 
+        hasGameState: !!gameState, 
+        phase: gameState?.phase 
+      })
+      return
+    }
     
     const isMyTurn = gameState.currentPlayer === address
-    if (!isMyTurn) return
+    if (!isMyTurn) {
+      console.log('❌ Not my turn:', { currentPlayer: gameState.currentPlayer, myAddress: address })
+      return
+    }
     
     console.log('🎯 Player choosing:', choice)
     

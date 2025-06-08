@@ -1106,6 +1106,15 @@ async function handleMessage(ws, data) {
       await session.stopCharging(data.address)
       break
 
+    case 'player_choice':
+      if (session && data.address && data.choice) {
+        const success = session.setPlayerChoice(data.address, data.choice)
+        if (!success) {
+          ws.send(JSON.stringify({ type: 'error', error: 'Invalid choice or not your turn' }))
+        }
+      }
+      break
+
     default:
       console.warn('⚠️ Unknown message type:', type)
       ws.send(JSON.stringify({ type: 'error', error: 'Unknown message type' }))
