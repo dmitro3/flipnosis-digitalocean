@@ -18,7 +18,20 @@ import PaymentService from '../services/PaymentService'
 import { ethers } from 'ethers'
 import ProfilePicture from './ProfilePicture'
 import baseEthLogo from '../../Images/baseeth.webp'
+import hazeVideo from '../../Images/Video/haze.webm'
 import GoldGameInstructions from './GoldGameInstructions'
+import styled from '@emotion/styled'
+
+const BackgroundVideo = styled.video`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.7;
+`
 
 const FlipGame = () => {
   const { gameId } = useParams()
@@ -391,18 +404,15 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
+      <BackgroundVideo autoPlay loop muted playsInline>
+        <source src={hazeVideo} type="video/webm" />
+      </BackgroundVideo>
       <Container style={{ 
         position: 'relative', 
         minHeight: '100vh',
         background: 'transparent !important',
         zIndex: 1
       }}>
-        {/* Intense Green Plasma Globe Background */}
-        <div className="plasma-background">
-          <div className="plasma-lightning"></div>
-          <div className="plasma-particles"></div>
-        </div>
-        
         <ContentWrapper>
           {/* Main Game Area - Three Column Layout */}
           <div style={{ 
