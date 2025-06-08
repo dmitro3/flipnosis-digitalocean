@@ -257,25 +257,36 @@ const FlipGame = () => {
       gamePhase: gameState?.phase,
       isMyTurn: gameState?.currentPlayer === address,
       currentPlayer: gameState?.currentPlayer,
-      myAddress: address
+      myAddress: address,
+      isCreator,
+      isJoiner
     })
 
-    if (!socket || !gameState || gameState.phase !== 'choosing') {
-      console.log('❌ Cannot make choice:', { 
-        hasSocket: !!socket, 
-        hasGameState: !!gameState, 
-        phase: gameState?.phase 
-      })
+    if (!socket || !gameState) {
+      console.log('❌ Cannot make choice - missing socket or gameState')
+      showError('Connection error - please refresh')
+      return
+    }
+    
+    if (gameState.phase !== 'choosing') {
+      console.log('❌ Cannot make choice - wrong phase:', gameState.phase)
+      showError('Not in choosing phase')
       return
     }
     
     const isMyTurn = gameState.currentPlayer === address
     if (!isMyTurn) {
-      console.log('❌ Not my turn:', { currentPlayer: gameState.currentPlayer, myAddress: address })
+      console.log('❌ Not my turn:', { 
+        currentPlayer: gameState.currentPlayer, 
+        myAddress: address,
+        isCreator,
+        isJoiner
+      })
+      showError('Not your turn')
       return
     }
     
-    console.log('🎯 Sending player choice:', choice)
+    console.log('🎯 Sending player choice to server:', choice)
     
     socket.send(JSON.stringify({
       type: 'player_choice',
@@ -524,6 +535,8 @@ const FlipGame = () => {
                   isCharging={gameState?.chargingPlayer === address}
                   chargingPlayer={gameState?.chargingPlayer}
                   gamePhase={gameState?.phase}
+                  creatorPower={gameState?.creatorPower || 0}
+                  joinerPower={gameState?.joinerPower || 0}
                 />
               </div>
 

@@ -635,3 +635,148 @@ img, canvas, video {
     opacity: 0;
   }
 }
+
+/* Container backgrounds */
+.GlassCard, .Container, .ContentWrapper {
+  background: rgba(0, 0, 40, 0.95) !important; /* Dark navy with high opacity */
+  backdrop-filter: blur(10px);
+}
+
+/* Game card and info boxes */
+.GameCard, .ActiveGamesBox, .TransparentCard, .GameInfo, .GameStats, .GameItemInfo {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Active game items */
+.ActiveGameItem {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Game stats and details */
+.GameStat, .GameItemDetails {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Game info sections */
+.GameTitle, .GameCollection, .GamePrice {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Selected game box */
+div[style*="background: rgba(0, 0, 0, 0.3)"] {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Status info box */
+div[style*="background: rgba(0, 255, 0, 0.1)"] {
+  background: rgba(0, 40, 0, 0.85) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* No active games message */
+p[style*="color: rgba(255, 255, 255, 0.5)"] {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+/* Live Games Box */
+.ActiveGamesBox {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 1rem;
+}
+
+.ActiveGamesTitle {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Chain Filters Box */
+.TransparentCard {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Chain Filter Buttons */
+.TransparentCard button {
+  background: rgba(0, 0, 40, 0.85) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.TransparentCard button:hover {
+  background: rgba(0, 0, 60, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Flashing button animation */
+@keyframes neonFlash {
+  0%, 100% {
+    background: linear-gradient(45deg, #00ff00, #00ff88);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+  }
+  50% {
+    background: linear-gradient(45deg, #ff1493, #ff69b4);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
+  }
+}
+
+.join-flip-button {
+  animation: neonFlash 2s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+.join-flip-button:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+/* Subtle ring pulse for charging container */
+@keyframes chargingRingPulse {
+  0%, 100% {
+    border-color: rgba(255, 20, 147, 0.6);
+    box-shadow: 
+      0 0 60px rgba(255, 20, 147, 0.6), 
+      0 0 120px rgba(255, 20, 147, 0.3);
+  }
+  50% {
+    border-color: rgba(255, 20, 147, 0.9);
+    box-shadow: 
+      0 0 80px rgba(255, 20, 147, 0.8), 
+      0 0 160px rgba(255, 20, 147, 0.4);
+  }
+}
+
+/* Electric spark effect for extreme charging */
+@keyframes electricCrackle {
+  0%, 100% {
+    filter: brightness(1) saturate(1);
+  }
+  25% {
+    filter: brightness(1.5) saturate(2) hue-rotate(10deg);
+  }
+  50% {
+    filter: brightness(2) saturate(3) hue-rotate(-10deg);
+  }
+  75% {
+    filter: brightness(1.3) saturate(1.5) hue-rotate(5deg);
+  }
+}

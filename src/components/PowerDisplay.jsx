@@ -17,31 +17,24 @@ const PowerDisplay = ({
   const totalPower = creatorPower + joinerPower
   const maxTotalPower = 20 // 10 + 10
   
-  // Show choice buttons if it's choosing phase and player's turn
+  // Show choice buttons if it's choosing phase AND player's turn AND no choice made yet
   const showChoiceButtons = gamePhase === 'choosing' && isMyTurn && !playerChoice && onPlayerChoice
   
-  // Add detailed debug logging in PowerDisplay
-  console.log('🎯 PowerDisplay props:', {
+  console.log('🎯 PowerDisplay Debug:', {
     gamePhase,
     isMyTurn,
     playerChoice,
     currentPlayer,
     creator,
     joiner,
-    chargingPlayer,
-    hasOnPlayerChoice: !!onPlayerChoice
-  })
-  
-  console.log('🎯 PowerDisplay computed:', {
     showChoiceButtons,
-    totalPower,
-    maxTotalPower
+    hasOnPlayerChoice: !!onPlayerChoice
   })
   
   // Show power bar if choice is made or in active phase
   const showPowerBar = gamePhase === 'round_active' || playerChoice
   
-  // Always show the power display area
+  // Always show the power display area when in game
   if (!showChoiceButtons && !showPowerBar && gamePhase !== 'choosing') {
     return null
   }
@@ -78,17 +71,29 @@ const PowerDisplay = ({
             fontSize: '1rem',
             fontWeight: 'bold',
             marginBottom: '1rem',
-            textAlign: 'center',
-            animation: 'powerPulse 1s ease-in-out infinite'
+            textAlign: 'center'
           }}>
             🎯 CHOOSE YOUR SIDE
+          </div>
+          
+          <div style={{
+            marginBottom: '1rem',
+            textAlign: 'center',
+            color: '#00FF41',
+            fontSize: '0.9rem'
+          }}>
+            Player {currentPlayer === creator ? '1' : '2'} - Make your choice!
           </div>
           
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button
               onClick={() => {
-                console.log('🎯 Heads button clicked for player:', currentPlayer)
-                onPlayerChoice('heads')
+                console.log('🎯 HEADS clicked by:', currentPlayer, 'gamePhase:', gamePhase)
+                if (onPlayerChoice) {
+                  onPlayerChoice('heads')
+                } else {
+                  console.error('❌ onPlayerChoice is null!')
+                }
               }}
               style={{
                 flex: 1,
@@ -101,8 +106,7 @@ const PowerDisplay = ({
                 cursor: 'pointer',
                 fontSize: '1rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 15px rgba(255, 20, 147, 0.3)',
-                animation: 'powerPulse 1.5s ease-in-out infinite'
+                boxShadow: '0 0 15px rgba(255, 20, 147, 0.3)'
               }}
             >
               👑 HEADS
@@ -110,8 +114,12 @@ const PowerDisplay = ({
             
             <button
               onClick={() => {
-                console.log('🎯 Tails button clicked for player:', currentPlayer)
-                onPlayerChoice('tails')
+                console.log('🎯 TAILS clicked by:', currentPlayer, 'gamePhase:', gamePhase)
+                if (onPlayerChoice) {
+                  onPlayerChoice('tails')
+                } else {
+                  console.error('❌ onPlayerChoice is null!')
+                }
               }}
               style={{
                 flex: 1,
@@ -124,22 +132,11 @@ const PowerDisplay = ({
                 cursor: 'pointer',
                 fontSize: '1rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 15px rgba(0, 191, 255, 0.3)',
-                animation: 'powerPulse 1.5s ease-in-out infinite'
+                boxShadow: '0 0 15px rgba(0, 191, 255, 0.3)'
               }}
             >
               💎 TAILS
             </button>
-          </div>
-          
-          <div style={{
-            marginTop: '1rem',
-            textAlign: 'center',
-            color: '#FFD700',
-            fontSize: '0.9rem',
-            fontWeight: 'bold'
-          }}>
-            Player {currentPlayer === creator ? '1' : '2'}'s Turn
           </div>
         </div>
       )}

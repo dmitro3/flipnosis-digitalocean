@@ -11,6 +11,9 @@ const ReliableGoldCoin = ({
   isCharging = false,
   chargingPlayer,
   gamePhase,
+  // Add these new props for charging effects
+  creatorPower = 0,
+  joinerPower = 0,
   // Optional image props - if not provided, uses procedural gold textures
   headsImage = null,
   tailsImage = null,
@@ -246,32 +249,58 @@ const ReliableGoldCoin = ({
       // Handle different states
       if (isAnimatingRef.current) {
         // Flip animation is handled separately
-      } else if (isCharging && !isAnimatingRef.current) {
-        // ENHANCED CHARGING EFFECTS
-        const intensity = powerSystem.power / powerSystem.maxPower
+      } else if (chargingPlayer && !isAnimatingRef.current) {
+        // FEROCIOUS CHARGING EFFECTS - visible to all players
+        const intensity = (creatorPower + joinerPower) / 20 // Use total power for intensity
+        const chargeIntensity = Math.min(1, intensity * 2) // More dramatic scaling
         
-        // Dramatic hover and rotation when charging
-        coin.position.y = Math.sin(time * 6) * 0.15 * (1 + intensity)
-        coin.rotation.x += 0.02 * (1 + intensity * 2) // Faster rotation with more power
+        // FRENZIED ROTATION AND MOVEMENT
+        coin.position.y = Math.sin(time * 12) * 0.25 * (1 + chargeIntensity)
+        coin.rotation.x += 0.05 * (1 + chargeIntensity * 3) // Much faster rotation
+        coin.rotation.z += Math.sin(time * 8) * 0.02 * chargeIntensity // Z-axis wobble
         
-        // Pulsing scale effect
-        const pulseScale = 1 + Math.sin(time * 8) * 0.08 * intensity
+        // VIOLENT PULSING SCALE
+        const pulseScale = 1 + Math.sin(time * 15) * 0.15 * chargeIntensity
         coin.scale.set(pulseScale, pulseScale, pulseScale)
         
-        // Enhanced material glow during charging
-        materials.forEach(material => {
-          material.emissiveIntensity = 0.4 + Math.sin(time * 10) * 0.3 * intensity
-          // Add pink tint during charging
-          material.emissive.setHex(0x554400 + Math.floor(intensity * 0x331133))
+        // INTENSE MATERIAL EFFECTS - PINK ELECTRIC ENERGY
+        materials.forEach((material, index) => {
+          // Crazy emissive pulsing
+          const emissivePulse = Math.sin(time * 20) * 0.5 + 0.5
+          material.emissiveIntensity = 0.6 + emissivePulse * chargeIntensity
+          
+          // Electric pink energy effect
+          const pinkIntensity = Math.sin(time * 25) * chargeIntensity
+          const redComponent = Math.floor(255 * (0.2 + pinkIntensity * 0.8))
+          const greenComponent = Math.floor(20 * (1 + pinkIntensity))
+          const blueComponent = Math.floor(147 * (0.3 + pinkIntensity * 0.7))
+          
+          material.emissive.setRGB(
+            redComponent / 255,
+            greenComponent / 255, 
+            blueComponent / 255
+          )
+          
+          // Make the coin surface more reflective during charging
+          material.metalness = 0.6 + chargeIntensity * 0.4
+          material.roughness = Math.max(0.05, 0.1 - chargeIntensity * 0.05)
         })
+        
+        // Add random jitter for frenzied effect
+        coin.position.x = Math.sin(time * 30) * 0.03 * chargeIntensity
+        coin.position.z = Math.cos(time * 35) * 0.03 * chargeIntensity
         
       } else if (!isAnimatingRef.current) {
         // Reset effects when not charging
         materials.forEach(material => {
           material.emissiveIntensity = 0.4
-          material.emissive.setHex(0x554400)
+          material.emissive.setHex(0x554400) // Back to gold
+          material.metalness = 0.6
+          material.roughness = 0.1
         })
         coin.scale.set(1, 1, 1)
+        coin.position.x = 0
+        coin.position.z = 0
         
         // Idle state
         const isWaitingInRound = gamePhase === 'round_active' && !isPlayerTurn
@@ -425,20 +454,20 @@ const ReliableGoldCoin = ({
         height: '400px',
         cursor: isPlayerTurn ? 'pointer' : 'default',
         userSelect: 'none',
-        background: isCharging ? 
-          'radial-gradient(circle, rgba(255, 20, 147, 0.4) 0%, rgba(255, 20, 147, 0.2) 30%, rgba(255, 20, 147, 0.1) 60%, transparent 100%)' : 
+        background: chargingPlayer ? 
+          'radial-gradient(circle, rgba(255, 20, 147, 0.15) 0%, rgba(255, 20, 147, 0.05) 50%, transparent 100%)' : 
           'radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.03) 50%, transparent 100%)',
-        boxShadow: isCharging ? 
-          '0 0 40px rgba(255, 20, 147, 0.8), 0 0 80px rgba(255, 20, 147, 0.4), 0 0 120px rgba(255, 20, 147, 0.2)' : 
+        boxShadow: chargingPlayer ? 
+          '0 0 60px rgba(255, 20, 147, 0.6), 0 0 120px rgba(255, 20, 147, 0.3)' : 
           '0 0 15px rgba(255, 215, 0, 0.2)',
         borderRadius: '50%',
         transition: 'all 0.3s ease',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        // Add animated border when charging
-        border: isCharging ? '3px solid rgba(255, 20, 147, 0.8)' : '1px solid rgba(255, 215, 0, 0.3)',
-        animation: isCharging ? 'chargingPulse 0.5s ease-in-out infinite' : 'none'
+        // Subtle outer ring when charging
+        border: chargingPlayer ? '2px solid rgba(255, 20, 147, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+        animation: chargingPlayer ? 'chargingRingPulse 0.3s ease-in-out infinite' : 'none'
       }}
     >
       <canvas style={{ width: '100%', height: '100%' }} />

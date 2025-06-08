@@ -199,7 +199,7 @@ const Home = () => {
       <Container>
         <ContentWrapper>
           {/* Chain Filters */}
-          <TransparentCard>
+          <TransparentCard style={{ background: theme.colors.bgDark }}>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {chainFilters.map(filter => (
                 <Button
@@ -301,8 +301,8 @@ const Home = () => {
                 </div>
 
                 {/* Right Box - Active Games List */}
-                <ActiveGamesBox>
-                  <ActiveGamesTitle>
+                <ActiveGamesBox style={{ background: theme.colors.bgDark }}>
+                  <ActiveGamesTitle style={{ background: theme.colors.bgDark }}>
                     <LiveDot />
                     Live Games ({flips.filter(f => f.status === 'active').length})
                   </ActiveGamesTitle>
@@ -372,6 +372,7 @@ const Home = () => {
                             as={Link}
                             to={`/game/${flip.id}`}
                             style={{ background: theme.colors.neonPink }}
+                            className="join-flip-button"
                           >
                             JOIN FLIP
                           </GameFlipButton>

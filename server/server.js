@@ -1054,15 +1054,19 @@ class GameSession {
       // Switch players
       this.currentPlayer = this.currentPlayer === this.creator ? this.joiner : this.creator
       
-      // Reset round state
+      // Reset round state - GO BACK TO CHOOSING PHASE
+      this.phase = 'choosing'  // This is the key fix!
       this.isFlipInProgress = false
       this.roundCompleted = false
       this.resetPowers()
+      this.resetChoices() // Reset choices for new round
       
       console.log('✅ Next round ready:', {
         newRound: this.currentRound,
         newCurrentPlayer: this.currentPlayer,
-        phase: this.phase
+        phase: this.phase,
+        creatorChoice: this.creatorChoice,
+        joinerChoice: this.joinerChoice
       })
       
       // Broadcast the new round state
