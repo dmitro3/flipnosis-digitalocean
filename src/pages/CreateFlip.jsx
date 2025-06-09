@@ -22,8 +22,6 @@ import {
   InputWrapper,
   Input,
   CurrencyLabel,
-  RoundsContainer,
-  RoundButton,
   SubmitButton,
   ConnectWalletPrompt,
   PromptTitle,
@@ -41,7 +39,7 @@ const CreateFlip = () => {
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [priceUSD, setPriceUSD] = useState('')
-  const [rounds] = useState(5)
+  const [gameType, setGameType] = useState('') // 'nft-vs-crypto' or 'nft-vs-nft'
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -69,7 +67,7 @@ const CreateFlip = () => {
       
       console.log('🎮 Creating game with database:', gameWithId)
       
-      // Use REST API instead of WebSocket
+      // Use REST API
       const API_URL = 'https://cryptoflipz2-production.up.railway.app'
       
       const response = await fetch(`${API_URL}/api/games`, {
@@ -105,8 +103,15 @@ const CreateFlip = () => {
         throw new Error('Please select an NFT')
       }
 
-      if (!priceUSD || isNaN(priceUSD) || parseFloat(priceUSD) <= 0) {
-        throw new Error('Please enter a valid price in USD')
+      if (!gameType) {
+        throw new Error('Please select a game type')
+      }
+
+      // Validate price for NFT vs Crypto
+      if (gameType === 'nft-vs-crypto') {
+        if (!priceUSD || isNaN(priceUSD) || parseFloat(priceUSD) <= 0) {
+          throw new Error('Please enter a valid price in USD')
+        }
       }
 
       if (!provider || !address) {
@@ -115,9 +120,8 @@ const CreateFlip = () => {
 
       showInfo('Processing listing fee payment...')
 
-      // Calculate and pay listing fee
-      console.log('Debug: Calculating listing fee...')
-      const listingFeeUSD = PaymentService.getListingFeeUSD()
+      // Calculate listing fee (50¢ for NFT vs NFT, $0.10 for NFT vs Crypto)
+      const listingFeeUSD = gameType === 'nft-vs-nft' ? 0.50 : 0.10
       console.log('Listing fee USD:', listingFeeUSD)
 
       const feeCalculation = await PaymentService.calculateETHFee(listingFeeUSD)
@@ -151,6 +155,7 @@ const CreateFlip = () => {
       const gameData = {
         creator: address,
         joiner: null,
+        gameType: gameType, // NEW: Add game type
         nft: {
           contractAddress: selectedNFT.contractAddress,
           tokenId: selectedNFT.tokenId,
@@ -159,11 +164,12 @@ const CreateFlip = () => {
           collection: selectedNFT.collection,
           chain: selectedNFT.chain
         },
-        price: parseFloat(priceUSD),
-        priceUSD: parseFloat(priceUSD),
-        currency: 'USD',
-        rounds: rounds,
+        price: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0, // No price for NFT vs NFT
+        priceUSD: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0,
+        currency: gameType === 'nft-vs-crypto' ? 'USD' : 'NFT',
+        rounds: 5, // Default to 5 rounds
         status: 'waiting',
+        offeredNFTs: [], // NEW: Array to store NFT offers for NFT vs NFT games
         listingFee: {
           amountUSD: listingFeeUSD,
           amountETH: feeAmountETH,
@@ -179,7 +185,7 @@ const CreateFlip = () => {
         throw new Error('Failed to create game')
       }
 
-      showSuccess(`Game created successfully! Game ID: ${result.gameId}`)
+      showSuccess(`${gameType === 'nft-vs-nft' ? 'NFT vs NFT' : 'NFT vs Crypto'} game created! Game ID: ${result.gameId}`)
       
       // Navigate to the game
       navigate(`/game/${result.gameId}`)
@@ -219,8 +225,67 @@ const CreateFlip = () => {
             {error && <ErrorMessage>{error}</ErrorMessage>}
             
             <form onSubmit={handleCreateFlip}>
+              {/* NEW: Game Type Selection */}
               <FormSection>
-                <SectionTitle>Select NFT</SectionTitle>
+                <SectionTitle>Choose Game Type</SectionTitle>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setGameType('nft-vs-crypto')}
+                    style={{
+                      flex: 1,
+                      padding: '1.5rem',
+                      background: gameType === 'nft-vs-crypto' ? 
+                        'linear-gradient(45deg, #FF1493, #FF69B4)' : 
+                        'rgba(255, 255, 255, 0.05)',
+                      border: `2px solid ${gameType === 'nft-vs-crypto' ? '#FF1493' : 'rgba(255, 255, 255, 0.1)'}`,
+                      borderRadius: '1rem',
+                      color: 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>💎 vs 💰</div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>NFT vs Crypto</div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                      Your NFT vs opponent's crypto bet
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#FFD700', marginTop: '0.5rem' }}>
+                      Listing fee: $0.10
+                    </div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setGameType('nft-vs-nft')}
+                    style={{
+                      flex: 1,
+                      padding: '1.5rem',
+                      background: gameType === 'nft-vs-nft' ? 
+                        'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                        'rgba(255, 255, 255, 0.05)',
+                      border: `2px solid ${gameType === 'nft-vs-nft' ? '#00FF41' : 'rgba(255, 255, 255, 0.1)'}`,
+                      borderRadius: '1rem',
+                      color: gameType === 'nft-vs-nft' ? '#000' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>💎 vs 💎</div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>NFT vs NFT</div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                      Your NFT vs opponent's NFT - Winner takes both!
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#FFD700', marginTop: '0.5rem' }}>
+                      Listing fee: $0.50
+                    </div>
+                  </button>
+                </div>
+              </FormSection>
+
+              {/* NFT Selection */}
+              <FormSection>
+                <SectionTitle>Select Your NFT</SectionTitle>
                 {selectedNFT ? (
                   <NFTPreview>
                     <NFTImage src={selectedNFT.image} alt={selectedNFT.name} />
@@ -239,29 +304,55 @@ const CreateFlip = () => {
                 )}
               </FormSection>
 
-              <FormSection>
-                <SectionTitle>Set Price</SectionTitle>
-                <InputWrapper>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Enter price in USD"
-                    value={priceUSD}
-                    onChange={(e) => setPriceUSD(e.target.value)}
-                    required
-                  />
-                  <CurrencyLabel>USD</CurrencyLabel>
-                </InputWrapper>
-              </FormSection>
+              {/* Price Section - Only for NFT vs Crypto */}
+              {gameType === 'nft-vs-crypto' && (
+                <FormSection>
+                  <SectionTitle>Set Price</SectionTitle>
+                  <InputWrapper>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Enter price in USD"
+                      value={priceUSD}
+                      onChange={(e) => setPriceUSD(e.target.value)}
+                      required
+                    />
+                    <CurrencyLabel>USD</CurrencyLabel>
+                  </InputWrapper>
+                </FormSection>
+              )}
 
-              <SubmitButton type="submit" disabled={isSubmitting}>
+              {/* NFT vs NFT Info */}
+              {gameType === 'nft-vs-nft' && (
+                <FormSection>
+                  <SectionTitle>NFT vs NFT Battle</SectionTitle>
+                  <div style={{
+                    padding: '1rem',
+                    background: 'rgba(0, 255, 65, 0.1)',
+                    border: '1px solid rgba(0, 255, 65, 0.3)',
+                    borderRadius: '0.5rem'
+                  }}>
+                    <p style={{ margin: 0, color: 'white' }}>
+                      🔥 <strong>Ultimate NFT Battle!</strong>
+                    </p>
+                    <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', opacity: 0.8 }}>
+                      • Other players can offer their NFTs to challenge you<br/>
+                      • You choose which NFT to battle against<br/>
+                      • Winner takes both NFTs!<br/>
+                      • Best of 5 rounds determines the victor
+                    </p>
+                  </div>
+                </FormSection>
+              )}
+
+              <SubmitButton type="submit" disabled={isSubmitting || !gameType}>
                 {isSubmitting ? (
                   <>
-                    <LoadingSpinner /> Creating Flip...
+                    <LoadingSpinner /> Creating {gameType === 'nft-vs-nft' ? 'NFT Battle' : 'Flip'}...
                   </>
                 ) : (
-                  'Create Flip'
+                  `Create ${gameType === 'nft-vs-nft' ? 'NFT Battle' : 'Flip'}`
                 )}
               </SubmitButton>
             </form>

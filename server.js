@@ -1,5 +1,6 @@
 class GameSession {
   constructor(gameId) {
+    console.log('🎮 Creating new GameSession:', gameId)
     this.gameId = gameId
     this.creator = null
     this.joiner = null
@@ -10,23 +11,31 @@ class GameSession {
     this.joinerWins = 0
     this.winner = null
     
-    // Simple power system
+    // Existing power system
     this.creatorPower = 0
     this.joinerPower = 0
     this.chargingPlayer = null
     this.currentPlayer = null
     
-    // NEW: Player choices for each round
+    // Existing player choices
     this.creatorChoice = null
     this.joinerChoice = null
     
-    // Control flags
+    // NEW: NFT vs NFT properties
+    this.gameType = 'nft-vs-crypto' // Default
+    this.offeredNFTs = [] // Array of NFT offers
+    this.acceptedOffer = null // The accepted NFT offer
+    this.challengerPaid = false // Whether challenger paid their fee
+    
+    // Existing control flags
     this.isFlipInProgress = false
     this.gameData = null
     this.clients = new Set()
     this.lastActionTime = Date.now()
     this.roundCompleted = false
     this.syncedFlip = null
+    
+    console.log('✅ GameSession created with NFT support')
   }
 
   // Add new method to handle player choices
@@ -158,7 +167,12 @@ class GameSession {
       spectators: this.clients.size,
       // NEW: Include player choices
       creatorChoice: this.creatorChoice,
-      joinerChoice: this.joinerChoice
+      joinerChoice: this.joinerChoice,
+      // NEW: NFT game data
+      gameType: this.gameType,
+      offeredNFTs: this.offeredNFTs,
+      acceptedOffer: this.acceptedOffer,
+      challengerPaid: this.challengerPaid
     }
 
     // Safely broadcast to all clients
@@ -225,5 +239,166 @@ class GameSession {
         })
       }
     }, 2000)
+  }
+
+  // NEW: Handle NFT offer submission
+  handleNFTOffer(offerData) {
+    console.log('🎯 Handling NFT offer:', offerData)
+    
+    // Validate offer
+    if (this.gameType !== 'nft-vs-nft') {
+      console.log('❌ Not an NFT vs NFT game')
+      return false
+    }
+    
+    if (this.phase !== 'waiting') {
+      console.log('❌ Game not in waiting phase')
+      return false
+    }
+    
+    if (offerData.offererAddress === this.creator) {
+      console.log('❌ Creator cannot offer to their own game')
+      return false
+    }
+    
+    // Check if player already has an offer
+    const existingOfferIndex = this.offeredNFTs.findIndex(
+      offer => offer.offererAddress === offerData.offererAddress
+    )
+    
+    if (existingOfferIndex >= 0) {
+      // Update existing offer
+      this.offeredNFTs[existingOfferIndex] = offerData
+      console.log('✅ Updated existing NFT offer')
+    } else {
+      // Add new offer
+      this.offeredNFTs.push(offerData)
+      console.log('✅ Added new NFT offer')
+    }
+    
+    // Broadcast to all clients
+    this.broadcastToAll({
+      type: 'nft_offer_received',
+      gameId: this.gameId,
+      offer: offerData,
+      totalOffers: this.offeredNFTs.length
+    })
+    
+    return true
+  }
+
+  // NEW: Handle NFT offer acceptance
+  async handleNFTOfferAcceptance(creatorAddress, acceptedOffer) {
+    console.log('✅ Handling NFT offer acceptance:', acceptedOffer)
+    
+    if (creatorAddress !== this.creator) {
+      console.log('❌ Only creator can accept offers')
+      return false
+    }
+    
+    if (this.phase !== 'waiting') {
+      console.log('❌ Game not in waiting phase')
+      return false
+    }
+    
+    this.acceptedOffer = acceptedOffer
+    this.joiner = acceptedOffer.offererAddress
+    
+    // Broadcast acceptance to all clients
+    this.broadcastToAll({
+      type: 'nft_offer_accepted',
+      gameId: this.gameId,
+      acceptedOffer: acceptedOffer,
+      creatorAddress: creatorAddress
+    })
+    
+    console.log('✅ NFT offer accepted, waiting for challenger payment')
+    return true
+  }
+
+  // NEW: Handle challenger payment completion
+  async handleChallengerPayment(challengerAddress, paymentTxHash) {
+    console.log('💰 Handling challenger payment:', challengerAddress)
+    
+    if (!this.acceptedOffer) {
+      console.log('❌ No accepted offer found')
+      return false
+    }
+    
+    if (challengerAddress !== this.acceptedOffer.offererAddress) {
+      console.log('❌ Payment from wrong address')
+      return false
+    }
+    
+    this.challengerPaid = true
+    this.phase = 'ready'
+    
+    // Update database
+    try {
+      await dbHelpers.updateGame(this.gameId, {
+        joiner: challengerAddress,
+        status: 'joined',
+        entry_fee_hash: paymentTxHash,
+        accepted_nft_offer: JSON.stringify(this.acceptedOffer)
+      })
+    } catch (error) {
+      console.error('❌ Database update error:', error)
+    }
+    
+    // Broadcast game ready
+    this.broadcastToAll({
+      type: 'nft_game_ready',
+      gameId: this.gameId,
+      challengerAddress: challengerAddress,
+      paymentTxHash: paymentTxHash
+    })
+    
+    // Auto-start after 2 seconds
+    setTimeout(() => {
+      if (this.phase === 'ready') {
+        this.startGame()
+      }
+    }, 2000)
+    
+    console.log('✅ Challenger payment processed, game ready')
+    return true
+  }
+
+  // NEW: Broadcast to all clients helper
+  broadcastToAll(message) {
+    const deadClients = new Set()
+    
+    this.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        try {
+          client.send(JSON.stringify(message))
+        } catch (error) {
+          console.error('❌ Error sending to client:', error)
+          deadClients.add(client)
+        }
+      } else {
+        deadClients.add(client)
+      }
+    })
+    
+    // Clean up dead clients
+    deadClients.forEach(client => {
+      this.clients.delete(client)
+    })
+  }
+
+  // UPDATE existing setGameData to handle game type
+  async setGameData(data) {
+    this.gameData = data
+    this.creator = data.creator
+    this.maxRounds = data.rounds
+    this.gameType = data.gameType || 'nft-vs-crypto' // NEW
+    
+    try {
+      await dbHelpers.createGame(data)
+    } catch (error) {
+      console.error('Error saving game:', error)
+    }
+    this.broadcastGameState()
   }
 } 

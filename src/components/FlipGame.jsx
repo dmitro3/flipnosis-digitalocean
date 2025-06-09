@@ -25,6 +25,7 @@ import styled from '@emotion/styled'
 import GameResultPopup from './GameResultPopup'
 import GameChatBox from './GameChatBox'
 import NFTVerificationDisplay from './NFTVerificationDisplay'
+import NFTOfferComponent from './NFTOfferComponent'
 
 const BackgroundVideo = styled.video`
   position: fixed;
@@ -74,6 +75,11 @@ const FlipGame = () => {
   // Add new state for enhanced NFT data
   const [nftData, setNftData] = useState(null)
   const [isLoadingNFT, setIsLoadingNFT] = useState(false)
+
+  // Add these state variables to your existing FlipGame component
+  const [offeredNFTs, setOfferedNFTs] = useState([])
+  const [acceptedOffer, setAcceptedOffer] = useState(null)
+  const [isNFTGame, setIsNFTGame] = useState(false)
 
   // WebSocket connection
   useEffect(() => {
@@ -454,6 +460,172 @@ const FlipGame = () => {
       showInfo('Link copied to clipboard!');
     }
   };
+
+  // Add this useEffect to detect NFT vs NFT games
+  useEffect(() => {
+    if (gameData) {
+      setIsNFTGame(gameData.gameType === 'nft-vs-nft')
+    }
+  }, [gameData])
+
+  // Enhanced WebSocket message handler (add to existing useEffect)
+  useEffect(() => {
+    if (!socket) return
+
+    const handleMessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log('📡 Received WebSocket message:', data)
+        
+        switch (data.type) {
+          case 'game_state':
+            setGameState(data)
+            break
+            
+          case 'flip_animation':
+            setFlipAnimation(data)
+            setRoundResult(null)
+            break
+            
+          case 'round_result':
+            setRoundResult(data)
+            setTimeout(() => setRoundResult(null), 4000)
+            break
+
+          // NEW: Handle NFT offers
+          case 'nft_offer_received':
+            console.log('🎯 NFT offer received:', data.offer)
+            setOfferedNFTs(prev => [...prev, data.offer])
+            if (!isCreator) {
+              showInfo(`New NFT battle offer: ${data.offer.nft.name}`)
+            }
+            break
+
+          // NEW: Handle offer acceptance
+          case 'nft_offer_accepted':
+            console.log('✅ NFT offer accepted:', data.acceptedOffer)
+            setAcceptedOffer(data.acceptedOffer)
+            
+            // Show payment prompt to the challenger
+            if (data.acceptedOffer.offererAddress === address) {
+              handlePaymentForAcceptedOffer(data.acceptedOffer)
+            }
+            break
+
+          // NEW: Handle game start after NFT payment
+          case 'nft_game_ready':
+            console.log('🎮 NFT game ready to start')
+            showSuccess('Battle payment confirmed! Game starting...')
+            break
+            
+          case 'error':
+            showError(data.error)
+            break
+        }
+      } catch (error) {
+        console.error('❌ Error parsing WebSocket message:', error)
+      }
+    }
+
+    socket.addEventListener('message', handleMessage)
+    return () => socket.removeEventListener('message', handleMessage)
+  }, [socket, address, isCreator])
+
+  // NEW: Handle payment for accepted NFT offer
+  const handlePaymentForAcceptedOffer = async (offer) => {
+    try {
+      showInfo('Your offer was accepted! Processing payment...')
+      
+      // Calculate 50¢ fee
+      const feeUSD = 0.50
+      const feeCalculation = await PaymentService.calculateETHFee(feeUSD)
+      
+      if (!feeCalculation.success) {
+        throw new Error('Failed to calculate fee: ' + feeCalculation.error)
+      }
+
+      const feeAmountETH = feeCalculation.ethAmount
+      const signer = await provider.getSigner()
+      const feeRecipient = PaymentService.getFeeRecipient()
+      const feeAmountWei = ethers.parseEther(feeAmountETH.toString())
+
+      const txResult = await PaymentService.buildTransaction(feeRecipient, feeAmountWei, provider)
+      if (!txResult.success) {
+        throw new Error('Failed to build transaction: ' + txResult.error)
+      }
+
+      const feeTx = await signer.sendTransaction(txResult.txConfig)
+      showInfo('Confirming payment...')
+      
+      const feeReceipt = await feeTx.wait()
+      showSuccess('Payment confirmed! Starting battle...')
+
+      // Update database with payment
+      const response = await fetch(`${API_URL}/api/games/${gameId}/nft-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengerAddress: address,
+          paymentTxHash: feeReceipt.hash,
+          paymentAmount: feeUSD,
+          acceptedOffer: offer
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to record payment')
+      }
+
+      // Notify via WebSocket that payment is complete
+      if (socket) {
+        socket.send(JSON.stringify({
+          type: 'nft_payment_complete',
+          gameId,
+          challengerAddress: address,
+          paymentTxHash: feeReceipt.hash,
+          acceptedOffer: offer
+        }))
+      }
+
+    } catch (error) {
+      console.error('❌ Payment failed:', error)
+      showError('Payment failed: ' + error.message)
+    }
+  }
+
+  // NEW: Handle NFT offer submission
+  const handleOfferSubmitted = (offerData) => {
+    console.log('📤 NFT offer submitted:', offerData)
+    // The offer will be handled by WebSocket response
+  }
+
+  // NEW: Handle NFT offer acceptance
+  const handleOfferAccepted = async (offer) => {
+    try {
+      showInfo('Accepting NFT challenge...')
+      
+      // Update database to record the accepted offer
+      const response = await fetch(`${API_URL}/api/games/${gameId}/accept-nft-offer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creatorAddress: address,
+          acceptedOffer: offer
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to accept offer')
+      }
+
+      showSuccess(`Challenge accepted! Waiting for ${offer.offererAddress.slice(0, 6)}... to pay.`)
+      setAcceptedOffer(offer)
+      
+    } catch (error) {
+      console.error('❌ Error accepting offer:', error)
+      showError('Failed to accept offer: ' + error.message)
+    }
+  }
 
   if (!isConnected) {
     return (
@@ -930,6 +1102,91 @@ const FlipGame = () => {
               </div>
             </div>
           </div>
+
+          {/* NFT vs NFT Offer Component */}
+          {isNFTGame && gameState?.phase === 'waiting' && (
+            <div style={{ gridColumn: '1 / -1', marginTop: '2rem' }}>
+              <NFTOfferComponent
+                gameId={gameId}
+                gameData={gameData}
+                isCreator={isCreator}
+                socket={socket}
+                connected={connected}
+                offeredNFTs={offeredNFTs}
+                onOfferSubmitted={handleOfferSubmitted}
+                onOfferAccepted={handleOfferAccepted}
+              />
+            </div>
+          )}
+
+          {/* Show accepted offer status */}
+          {isNFTGame && acceptedOffer && gameState?.phase === 'waiting' && (
+            <div style={{
+              gridColumn: '1 / -1',
+              marginTop: '1rem',
+              textAlign: 'center',
+              padding: '1rem',
+              background: 'rgba(255, 215, 0, 0.1)',
+              border: '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '1rem'
+            }}>
+              <h3 style={{ color: '#FFD700', marginBottom: '0.5rem' }}>
+                ⚔️ BATTLE ACCEPTED!
+              </h3>
+              <p style={{ color: 'white', margin: 0 }}>
+                Waiting for {acceptedOffer.offererAddress.slice(0, 6)}...{acceptedOffer.offererAddress.slice(-4)} to complete payment...
+              </p>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '2rem',
+                marginTop: '1rem',
+                alignItems: 'center'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <img
+                    src={gameData.nft.image}
+                    alt={gameData.nft.name}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '0.5rem',
+                      objectFit: 'cover',
+                      marginBottom: '0.5rem'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: 'white' }}>
+                    {gameData.nft.name}
+                  </div>
+                </div>
+                
+                <div style={{
+                  fontSize: '2rem',
+                  color: '#FFD700',
+                  animation: 'pulse 2s infinite'
+                }}>
+                  ⚔️
+                </div>
+                
+                <div style={{ textAlign: 'center' }}>
+                  <img
+                    src={acceptedOffer.nft.image}
+                    alt={acceptedOffer.nft.name}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '0.5rem',
+                      objectFit: 'cover',
+                      marginBottom: '0.5rem'
+                    }}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: 'white' }}>
+                    {acceptedOffer.nft.name}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Spectator Mode Message */}
           {!isPlayer && (
