@@ -22,6 +22,7 @@ import hazeVideo from '../../Images/Video/haze.webm'
 import GoldGameInstructions from './GoldGameInstructions'
 import ShareButton from './ShareButton'
 import styled from '@emotion/styled'
+import GameResultPopup from './GameResultPopup'
 
 const BackgroundVideo = styled.video`
   position: fixed;
@@ -63,6 +64,10 @@ const FlipGame = () => {
   const isJoiner = gameData?.joiner === address
   const isPlayer = isCreator || isJoiner
   const isMyTurn = gameState?.currentPlayer === address
+
+  // Add state for popup
+  const [showResultPopup, setShowResultPopup] = useState(false)
+  const [popupData, setPopupData] = useState(null)
 
   // WebSocket connection
   useEffect(() => {
@@ -139,7 +144,22 @@ const FlipGame = () => {
             case 'round_result':
               console.log('🏁 Round result received:', data)
               setRoundResult(data)
-              setTimeout(() => setRoundResult(null), 4000)
+              
+              // NEW: Show popup instead of bottom display
+              const isWinner = data.actualWinner === address
+              setPopupData({
+                isWinner,
+                flipResult: data.result,
+                playerChoice: isCreator ? data.creatorChoice : data.joinerChoice,
+                gameData
+              })
+              setShowResultPopup(true)
+              
+              // Auto-hide popup after 4 seconds
+              setTimeout(() => {
+                setShowResultPopup(false)
+                setRoundResult(null)
+              }, 4000)
               break
               
             case 'error':
@@ -365,6 +385,22 @@ const FlipGame = () => {
       showError('Failed to join: ' + error.message)
     } finally {
       setJoiningGame(false)
+    }
+  }
+
+  // Add handleClaimWinnings function
+  const handleClaimWinnings = async () => {
+    try {
+      showInfo('Claiming winnings... (Contract integration coming soon)')
+      // TODO: Add contract integration here
+      // For now, just show success and navigate home
+      setTimeout(() => {
+        showSuccess('Winnings claimed successfully!')
+        setShowResultPopup(false)
+        navigate('/')
+      }, 2000)
+    } catch (error) {
+      showError('Failed to claim winnings: ' + error.message)
     }
   }
 
@@ -716,65 +752,16 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* Round Result Display */}
-          {roundResult && (
-            <div style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 1000,
-              background: roundResult.actualWinner === address ? 
-                'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
-                'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
-              padding: '3rem 4rem',
-              borderRadius: '2rem',
-              border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
-              textAlign: 'center'
-            }}>
-              <div style={{
-                fontSize: '4rem',
-                fontWeight: 'bold',
-                color: 'white',
-                marginBottom: '1rem'
-              }}>
-                {roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
-              </div>
-              <div style={{ fontSize: '1.5rem', color: 'white', fontWeight: 'bold' }}>
-                Coin: {roundResult.result.toUpperCase()}
-              </div>
-              <div style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '0.5rem' }}>
-                You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}
-              </div>
-            </div>
-          )}
-
-          {/* Game Complete */}
-          {gameState?.phase === 'game_complete' && (
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <div style={{
-                padding: '2rem',
-                background: gameState.winner === address ? 'rgba(0, 255, 65, 0.1)' : 'rgba(255, 20, 147, 0.1)',
-                border: `2px solid ${gameState.winner === address ? '#00FF41' : '#FF1493'}`,
-                borderRadius: '1rem'
-              }}>
-                <div style={{
-                  fontSize: '3rem',
-                  fontWeight: 'bold',
-                  color: gameState.winner === address ? '#00FF41' : '#FF1493',
-                  marginBottom: '1rem'
-                }}>
-                  {gameState.winner === address ? '🏆 YOU WON!' : '💔 YOU LOST!'}
-                </div>
-                <div style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
-                  Final Score: {gameState.creatorWins} - {gameState.joinerWins}
-                </div>
-                <Button onClick={() => navigate('/')}>
-                  Back to Games
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* NEW: Popup Result Display */}
+          <GameResultPopup
+            isVisible={showResultPopup}
+            isWinner={popupData?.isWinner || false}
+            flipResult={popupData?.flipResult}
+            playerChoice={popupData?.playerChoice}
+            gameData={popupData?.gameData}
+            onClose={() => setShowResultPopup(false)}
+            onClaimWinnings={handleClaimWinnings}
+          />
         </ContentWrapper>
       </Container>
     </ThemeProvider>

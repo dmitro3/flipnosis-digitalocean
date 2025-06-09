@@ -30,13 +30,6 @@ const ReliableGoldCoin = ({
   const animationIdRef = useRef(null)
   const isAnimatingRef = useRef(false)
   const targetAngleRef = useRef(Math.PI / 2) // Default to heads
-  const powerSystemRef = useRef({
-    power: 0,
-    maxPower: 10,
-    chargeRate: 0.15,
-    isCharging: false,
-    chargeInterval: null
-  })
 
   // NEW: Function to determine text colors based on player choices
   const getTextColors = () => {
@@ -312,11 +305,10 @@ const ReliableGoldCoin = ({
 
       const coin = coinRef.current
       const time = Date.now() * 0.001
-      const powerSystem = powerSystemRef.current
       
       // Handle different states
       if (isAnimatingRef.current) {
-        // Flip animation is handled separately
+        // Flip animation is handled separately - DON'T INTERFERE
       } else if (chargingPlayer && !isAnimatingRef.current) {
         // FEROCIOUS CHARGING EFFECTS - visible to all players
         const intensity = (creatorPower + joinerPower) / 20 // Use total power for intensity
@@ -437,132 +429,144 @@ const ReliableGoldCoin = ({
     }
   }, [creatorChoice, joinerChoice, isCreator])
 
-  // POWER SYSTEM MANAGEMENT
-  useEffect(() => {
-    const powerSystem = powerSystemRef.current
-    
-    if (isCharging && !powerSystem.isCharging) {
-      // Start charging
-      powerSystem.isCharging = true
-      powerSystem.chargeInterval = setInterval(() => {
-        powerSystem.power = Math.min(powerSystem.maxPower, powerSystem.power + powerSystem.chargeRate)
-      }, 100)
-    } else if (!isCharging && powerSystem.isCharging) {
-      // Stop charging
-      clearInterval(powerSystem.chargeInterval)
-      powerSystem.isCharging = false
-      powerSystem.power = 0 // Reset for next charge
-    }
-    
-    return () => {
-      if (powerSystem.chargeInterval) {
-        clearInterval(powerSystem.chargeInterval)
-        powerSystem.isCharging = false
-      }
-    }
-  }, [isCharging])
-
-  // FLIP ANIMATION - Based on working example logic
+  // FIXED FLIP ANIMATION - Ensures proper power-based speed
   useEffect(() => {
     if (!isFlipping || !flipResult || !flipDuration || !coinRef.current) {
       return
     }
 
-    console.log('🎬 Starting reliable coin flip:', { flipResult, flipDuration, isAnimatingRef: isAnimatingRef.current })
+    console.log('🎬 Starting FIXED flip animation:', { 
+      flipResult, 
+      flipDuration, 
+      isAnimating: isAnimatingRef.current,
+      totalPower: creatorPower + joinerPower
+    })
     
-    // Reset animation state if it was stuck
+    // FORCE STOP any current animation
     if (isAnimatingRef.current) {
+      console.log('⚠️ Stopping existing animation')
       isAnimatingRef.current = false
     }
     
-    isAnimatingRef.current = true
-    const coin = coinRef.current
-    const powerSystem = powerSystemRef.current
-    
-    // NEW: Calculate flip parameters based on power with dramatic speed differences
-    const totalPower = creatorPower + joinerPower
-    const powerRatio = Math.min(totalPower / 10, 1) // 0 to 1 ratio
-    
-    // Super dramatic speed scaling: 1 = slow, 10 = SUPER FAST
-    const minSpeed = 0.02  // Very slow at power 1
-    const maxSpeed = 0.25  // SUPER FAST at power 10
-    const rotationSpeed = minSpeed + (powerRatio * (maxSpeed - minSpeed))
-    
-    // More flips at higher power
-    const minFlips = 3
-    const maxFlips = 12
-    const totalFlips = minFlips + (powerRatio * (maxFlips - minFlips))
-    
-    console.log('🎲 Flip parameters:', { 
-      totalPower, 
-      powerRatio,
-      rotationSpeed, 
-      totalFlips,
-      flipResult 
-    })
-    
-    // Set target angle based on result
-    targetAngleRef.current = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
-    
-    let flipStartTime = Date.now()
-    let currentRotation = 0
-    
-    const animateFlip = () => {
-      if (!isAnimatingRef.current) return
+    // Short delay to ensure state is clean
+    setTimeout(() => {
+      if (!coinRef.current) return
       
-      const elapsed = Date.now() - flipStartTime
-      const progress = Math.min(elapsed / flipDuration, 1)
+      isAnimatingRef.current = true
+      const coin = coinRef.current
       
-      if (progress < 1) {
-        // Power-based rotation speed with dramatic deceleration
-        const speedMultiplier = progress < 0.8 ? 1 : (1 - progress) / 0.2
-        const currentSpeed = rotationSpeed * speedMultiplier
+      // RESET COIN TO CLEAN STATE
+      coin.scale.set(1, 1, 1)
+      coin.position.x = 0
+      coin.position.y = 0
+      coin.position.z = 0
+      
+      // Calculate flip parameters based on TOTAL power
+      const totalPower = creatorPower + joinerPower
+      const powerRatio = Math.min(totalPower / 10, 1) // 0 to 1 ratio
+      
+      // DRAMATIC speed scaling based on power
+      const minSpeed = 0.03  // Slower at low power
+      const maxSpeed = 0.4   // MUCH faster at high power
+      const rotationSpeed = minSpeed + (powerRatio * (maxSpeed - minSpeed))
+      
+      // More flips at higher power
+      const minFlips = 4
+      const maxFlips = 15
+      const totalFlips = minFlips + (powerRatio * (maxFlips - minFlips))
+      
+      console.log('🎲 FIXED Flip parameters:', { 
+        totalPower, 
+        powerRatio: powerRatio.toFixed(2),
+        rotationSpeed: rotationSpeed.toFixed(3), 
+        totalFlips: totalFlips.toFixed(1),
+        flipResult 
+      })
+      
+      // Set target angle based on result
+      targetAngleRef.current = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
+      
+      let flipStartTime = Date.now()
+      let currentRotationSpeed = rotationSpeed
+      
+      const animateFlip = () => {
+        if (!isAnimatingRef.current || !coinRef.current) return
         
-        // Update rotation
-        currentRotation += currentSpeed
-        coin.rotation.x = currentRotation
+        const elapsed = Date.now() - flipStartTime
+        const progress = Math.min(elapsed / flipDuration, 1)
         
-        // Add some vertical motion during flip
-        coin.position.y = Math.sin(progress * Math.PI) * 0.5
-        
-        requestAnimationFrame(animateFlip)
-      } else {
-        // Start the precision landing phase
-        landOnTarget()
+        if (progress < 1) {
+          // POWER-BASED rotation with dramatic deceleration at the end
+          let speedMultiplier
+          if (progress < 0.85) {
+            // Full speed for 85% of the duration
+            speedMultiplier = 1
+          } else {
+            // Dramatic slowdown in final 15%
+            const endPhase = (progress - 0.85) / 0.15
+            speedMultiplier = Math.pow(1 - endPhase, 3) // Cubic slowdown
+          }
+          
+          // Apply current speed
+          const currentSpeed = currentRotationSpeed * speedMultiplier
+          coin.rotation.x += currentSpeed
+          
+          // Add vertical motion during flip
+          coin.position.y = Math.sin(progress * Math.PI) * 0.6 * (1 - progress * 0.2)
+          
+          // Small wobble for realism
+          coin.rotation.z = Math.sin(progress * Math.PI * totalFlips * 0.1) * 0.05 * (1 - progress)
+          
+          requestAnimationFrame(animateFlip)
+        } else {
+          // Start precision landing phase
+          landOnTarget()
+        }
       }
-    }
-    
-    const landOnTarget = () => {
-      if (!isAnimatingRef.current) return
       
-      const currentRotation = coin.rotation.x
-      const targetAngle = targetAngleRef.current
-      
-      let deltaAngle = (currentRotation % (Math.PI * 2)) - targetAngle
-      
-      while (deltaAngle > Math.PI) deltaAngle -= Math.PI * 2
-      while (deltaAngle < -Math.PI) deltaAngle += Math.PI * 2
-      
-      if (Math.abs(deltaAngle) < 0.06) {
-        coin.rotation.x = targetAngle
-        coin.position.y = 0
-        isAnimatingRef.current = false
-        console.log('✅ Reliable coin flip complete:', flipResult)
-        return
+      const landOnTarget = () => {
+        if (!isAnimatingRef.current || !coinRef.current) return
+        
+        const currentRotation = coin.rotation.x
+        const targetAngle = targetAngleRef.current
+        
+        // Calculate shortest path to target
+        let deltaAngle = (currentRotation % (Math.PI * 2)) - targetAngle
+        
+        // Normalize to shortest rotation
+        while (deltaAngle > Math.PI) deltaAngle -= Math.PI * 2
+        while (deltaAngle < -Math.PI) deltaAngle += Math.PI * 2
+        
+        // Close enough?
+        if (Math.abs(deltaAngle) < 0.05) {
+          // EXACT final position
+          coin.rotation.x = targetAngle
+          coin.rotation.z = 0
+          coin.position.y = 0
+          coin.position.x = 0
+          coin.position.z = 0
+          coin.scale.set(1, 1, 1)
+          
+          isAnimatingRef.current = false
+          console.log('✅ FIXED flip animation complete:', flipResult)
+          return
+        }
+        
+        // Smooth approach to target
+        coin.rotation.x -= deltaAngle * 0.15
+        requestAnimationFrame(landOnTarget)
       }
       
-      coin.rotation.x -= deltaAngle * 0.1
-      requestAnimationFrame(landOnTarget)
-    }
-    
-    // Start the animation
-    animateFlip()
+      // Start the animation
+      animateFlip()
+      
+    }, 50) // Small delay to ensure clean state
     
     // Cleanup function
     return () => {
       isAnimatingRef.current = false
     }
-  }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower]) // Add power dependencies
+  }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower])
 
   return (
     <div
