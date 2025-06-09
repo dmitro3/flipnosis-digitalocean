@@ -144,22 +144,7 @@ const FlipGame = () => {
             case 'round_result':
               console.log('🏁 Round result received:', data)
               setRoundResult(data)
-              
-              // NEW: Show popup instead of bottom display
-              const isWinner = data.actualWinner === address
-              setPopupData({
-                isWinner,
-                flipResult: data.result,
-                playerChoice: isCreator ? data.creatorChoice : data.joinerChoice,
-                gameData
-              })
-              setShowResultPopup(true)
-              
-              // Auto-hide popup after 4 seconds
-              setTimeout(() => {
-                setShowResultPopup(false)
-                setRoundResult(null)
-              }, 4000)
+              setTimeout(() => setRoundResult(null), 4000)
               break
               
             case 'error':
@@ -403,6 +388,24 @@ const FlipGame = () => {
       showError('Failed to claim winnings: ' + error.message)
     }
   }
+
+  // Add effect to show popup when game is complete
+  useEffect(() => {
+    if (gameState?.phase === 'game_complete') {
+      const isWinner = gameState.winner === address
+      setPopupData({
+        isWinner,
+        flipResult: null, // No specific flip result for game end
+        playerChoice: null, // No specific choice for game end
+        gameData,
+        finalScore: {
+          creatorWins: gameState.creatorWins,
+          joinerWins: gameState.joinerWins
+        }
+      })
+      setShowResultPopup(true)
+    }
+  }, [gameState?.phase, gameState?.winner, address, gameData])
 
   if (!isConnected) {
     return (
@@ -752,9 +755,42 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* NEW: Popup Result Display */}
+          {/* Round Result Display */}
+          {roundResult && (
+            <div style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 1000,
+              background: roundResult.actualWinner === address ? 
+                'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
+                'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
+              padding: '3rem 4rem',
+              borderRadius: '2rem',
+              border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: '4rem',
+                fontWeight: 'bold',
+                color: 'white',
+                marginBottom: '1rem'
+              }}>
+                {roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
+              </div>
+              <div style={{ fontSize: '1.5rem', color: 'white', fontWeight: 'bold' }}>
+                Coin: {roundResult.result.toUpperCase()}
+              </div>
+              <div style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '0.5rem' }}>
+                You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}
+              </div>
+            </div>
+          )}
+
+          {/* NEW: Popup Result Display - Only for game completion */}
           <GameResultPopup
-            isVisible={showResultPopup}
+            isVisible={showResultPopup && gameState?.phase === 'game_complete'}
             isWinner={popupData?.isWinner || false}
             flipResult={popupData?.flipResult}
             playerChoice={popupData?.playerChoice}
