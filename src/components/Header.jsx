@@ -46,7 +46,7 @@ const PotionLogo = styled.img`
 
 const CreateButton = styled(Link)`
   background: linear-gradient(45deg, #00FF41, #39FF14);
-  color: white;
+  color: #000000;
   padding: 0.5rem 1.5rem;
   border-radius: 0.75rem;
   text-decoration: none;

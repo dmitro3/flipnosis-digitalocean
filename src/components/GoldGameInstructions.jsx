@@ -38,7 +38,7 @@ const GoldGameInstructions = ({
           fontSize: '1.2rem',
           textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
         }}>
-          SPECTATING GOLD FLIP
+          SPECTATING
         </p>
         <p style={{ 
           color: 'rgba(255, 215, 0, 0.8)', 

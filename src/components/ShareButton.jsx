@@ -44,27 +44,27 @@ const ShareButton = ({ gameId, gameData }) => {
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         style={{
-          background: 'linear-gradient(45deg, #00FF41, #39FF14)',
+          background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
           color: 'white',
-          border: '2px solid #00FF41',
+          border: '2px solid #FF1493',
           borderRadius: '0.75rem',
           padding: '0.75rem 1.5rem',
           fontSize: '1rem',
           fontWeight: 'bold',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          boxShadow: '0 0 10px rgba(0, 255, 65, 0.3)',
+          boxShadow: '0 0 10px rgba(255, 20, 147, 0.3)',
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem'
         }}
         onMouseOver={(e) => {
           e.target.style.transform = 'translateY(-2px)'
-          e.target.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.5)'
+          e.target.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.5)'
         }}
         onMouseOut={(e) => {
           e.target.style.transform = 'translateY(0)'
-          e.target.style.boxShadow = '0 0 10px rgba(0, 255, 65, 0.3)'
+          e.target.style.boxShadow = '0 0 10px rgba(255, 20, 147, 0.3)'
         }}
       >
         🚀 Share Game
@@ -77,7 +77,7 @@ const ShareButton = ({ gameId, gameData }) => {
           left: '0',
           marginTop: '0.5rem',
           background: 'rgba(0, 0, 0, 0.95)',
-          border: '1px solid rgba(0, 255, 65, 0.3)',
+          border: '1px solid rgba(255, 20, 147, 0.3)',
           borderRadius: '0.75rem',
           padding: '0.5rem',
           minWidth: '200px',

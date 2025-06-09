@@ -630,17 +630,6 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* Game Header */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <NeonText style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-              FLIP#{gameId.slice(-6).toUpperCase()}
-            </NeonText>
-            <div style={{ color: theme.colors.textSecondary }}>
-              Best of {gameData?.rounds} • ${gameData?.priceUSD?.toFixed(2)}
-              {gameState && <span> • {gameState.spectators} watching</span>}
-            </div>
-          </div>
-
           {/* Game Status */}
           {gameState?.phase === 'choosing' && (
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>

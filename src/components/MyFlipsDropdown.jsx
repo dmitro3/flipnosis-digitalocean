@@ -11,7 +11,7 @@ const DropdownContainer = styled.div`
 
 const DropdownButton = styled.button`
   background: linear-gradient(45deg, #00FF41, #39FF14);
-  color: white;
+  color: #000000;
   padding: 0.5rem 1.5rem;
   border-radius: 0.75rem;
   border: 2px solid #00FF41;
@@ -21,6 +21,8 @@ const DropdownButton = styled.button`
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 5px #00FF41, 0 0 10px #00FF41, 0 0 20px #00FF41;
+  min-width: 120px;
+  text-align: center;
   
   &::before {
     content: '';
