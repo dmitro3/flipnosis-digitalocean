@@ -38,6 +38,72 @@ const BackgroundVideo = styled.video`
   opacity: 0.7;
 `
 
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`
+
+const ModalContent = styled(GlassCard)`
+  max-width: 500px;
+  width: 90%;
+  padding: 2rem;
+`
+
+const ModalHeader = styled.div`
+  margin-bottom: 1.5rem;
+`
+
+const ModalBody = styled.div`
+  margin-bottom: 1.5rem;
+`
+
+const ModalFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+`
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: ${props => props.theme.colors.textSecondary};
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  
+  &:hover {
+    color: ${props => props.theme.colors.textPrimary};
+  }
+`
+
+const NFTImage = styled.img`
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 1rem;
+  margin: 1rem 0;
+`
+
+const NFTLink = styled.a`
+  color: ${props => props.theme.colors.neonBlue};
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+`
+
 const FlipGame = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
@@ -80,6 +146,12 @@ const FlipGame = () => {
   const [offeredNFTs, setOfferedNFTs] = useState([])
   const [acceptedOffer, setAcceptedOffer] = useState(null)
   const [isNFTGame, setIsNFTGame] = useState(false)
+
+  // Add new state variables
+  const [showNFTOfferModal, setShowNFTOfferModal] = useState(false)
+  const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
+  const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
+  const [offerStatus, setOfferStatus] = useState(null) // 'pending', 'accepted', 'rejected'
 
   // WebSocket connection
   useEffect(() => {
@@ -624,6 +696,73 @@ const FlipGame = () => {
     } catch (error) {
       console.error('❌ Error accepting offer:', error)
       showError('Failed to accept offer: ' + error.message)
+    }
+  }
+
+  // Add new useEffect for NFT vs NFT game detection
+  useEffect(() => {
+    if (gameData?.gameType === 'nft-vs-nft') {
+      console.log('🎮 NFT vs NFT game detected')
+      // If player is not creator and no offer exists, show offer button
+      if (!isCreator && !offeredNFTs?.length) {
+        setShowNFTOfferModal(true)
+      }
+    }
+  }, [gameData, isCreator, offeredNFTs])
+
+  // Add new handler for NFT offer submission
+  const handleNFTOffer = async (selectedNFT) => {
+    if (!connected || !selectedNFT) return
+    
+    try {
+      const offerData = {
+        type: 'nft_offer',
+        gameId: gameId,
+        offererAddress: address,
+        nft: {
+          contractAddress: selectedNFT.contractAddress,
+          tokenId: selectedNFT.tokenId,
+          name: selectedNFT.name,
+          image: selectedNFT.image,
+          collection: selectedNFT.collection,
+          chain: selectedNFT.chain
+        }
+      }
+      
+      socket.send(JSON.stringify(offerData))
+      setShowNFTOfferModal(false)
+      setOfferStatus('pending')
+      
+      showInfo('NFT offer submitted successfully! Waiting for creator to review your offer...')
+    } catch (error) {
+      console.error('Error submitting NFT offer:', error)
+      showError('Failed to submit NFT offer. Please try again.')
+    }
+  }
+
+  // Add new handler for offer acceptance/rejection
+  const handleOfferResponse = async (accepted) => {
+    if (!isCreator || !pendingNFTOffer) return
+    
+    try {
+      const responseData = {
+        type: accepted ? 'accept_nft_offer' : 'reject_nft_offer',
+        gameId: gameId,
+        creatorAddress: address,
+        offer: pendingNFTOffer
+      }
+      
+      socket.send(JSON.stringify(responseData))
+      setShowOfferReviewModal(false)
+      
+      if (accepted) {
+        showInfo('Offer accepted! Waiting for challenger to join the game...')
+      } else {
+        showInfo('Offer rejected. The NFT offer has been rejected.')
+      }
+    } catch (error) {
+      console.error('Error responding to offer:', error)
+      showError('Failed to process offer response. Please try again.')
     }
   }
 
@@ -1388,6 +1527,37 @@ const FlipGame = () => {
               </div>
             </div>
           )}
+
+          {/* Show NFT offer button for non-creators in NFT vs NFT games */}
+          {gameData?.gameType === 'nft-vs-nft' && !isCreator && !offeredNFTs?.length && (
+            <Button
+              colorScheme="green"
+              size="lg"
+              onClick={() => setShowNFTOfferModal(true)}
+              mb={4}
+            >
+              Offer NFT to Battle
+            </Button>
+          )}
+          
+          {/* Show offer status for challengers */}
+          {gameData?.gameType === 'nft-vs-nft' && !isCreator && offerStatus === 'pending' && (
+            <Text color="neonYellow" mb={4}>
+              Your NFT offer is pending review...
+            </Text>
+          )}
+          
+          {/* Show join button after offer is accepted */}
+          {gameData?.gameType === 'nft-vs-nft' && !isCreator && offerStatus === 'accepted' && (
+            <Button
+              colorScheme="green"
+              size="lg"
+              onClick={handleJoinGame}
+              mb={4}
+            >
+              Join Battle
+            </Button>
+          )}
         </ContentWrapper>
       </Container>
       <style>
@@ -1405,6 +1575,10 @@ const FlipGame = () => {
           }
         `}
       </style>
+      
+      {/* Add new modals */}
+      <NFTOfferModal />
+      <OfferReviewModal />
     </ThemeProvider>
   )
 }
@@ -1455,5 +1629,167 @@ const fetchNFTData = async (gameId) => {
     setIsLoadingNFT(false)
   }
 }
+
+// Add NFT Offer Modal
+const NFTOfferModal = () => {
+  const renderNFTOfferModal = () => {
+    if (!showNFTOfferModal) return null
+
+    return (
+      <Modal>
+        <ModalContent>
+          <CloseButton onClick={() => setShowNFTOfferModal(false)}>×</CloseButton>
+          <ModalHeader>
+            <NeonText>NFT Offer</NeonText>
+          </ModalHeader>
+          <ModalBody>
+            <NFTOfferComponent
+              gameId={gameId}
+              onOfferAccepted={handleNFTOfferAccepted}
+              onOfferRejected={handleNFTOfferRejected}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    )
+  }
+
+  const renderNFTVerificationModal = () => {
+    if (!showNFTVerificationModal) return null
+
+    return (
+      <Modal>
+        <ModalContent>
+          <CloseButton onClick={() => setShowNFTVerificationModal(false)}>×</CloseButton>
+          <ModalHeader>
+            <NeonText>NFT Verification</NeonText>
+          </ModalHeader>
+          <ModalBody>
+            <NFTVerificationDisplay
+              nft={selectedNFT}
+              onVerificationComplete={handleNFTVerificationComplete}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    )
+  }
+
+  const renderNFTDetailsModal = () => {
+    if (!showNFTDetailsModal || !selectedNFT) return null
+
+    return (
+      <Modal>
+        <ModalContent>
+          <CloseButton onClick={() => setShowNFTDetailsModal(false)}>×</CloseButton>
+          <ModalHeader>
+            <NeonText>NFT Details</NeonText>
+          </ModalHeader>
+          <ModalBody>
+            <NFTImage src={selectedNFT.image} alt={selectedNFT.name} />
+            <div>
+              <h3>{selectedNFT.name}</h3>
+              <p>Collection: {selectedNFT.collection}</p>
+              <p>Token ID: {selectedNFT.tokenId}</p>
+              <NFTLink href={selectedNFT.openseaUrl} target="_blank" rel="noopener noreferrer">
+                View on OpenSea
+              </NFTLink>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={() => setShowNFTDetailsModal(false)}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    )
+  }
+
+  return (
+    <>
+      {renderNFTOfferModal()}
+      {renderNFTVerificationModal()}
+      {renderNFTDetailsModal()}
+    </>
+  )
+}
+
+// Add Offer Review Modal
+const OfferReviewModal = () => (
+  <Modal isOpen={showOfferReviewModal} onClose={() => setShowOfferReviewModal(false)}>
+    <ModalOverlay />
+    <ModalContent bg="rgba(0, 0, 0, 0.9)" border="1px solid" borderColor="neonGreen">
+      <ModalHeader color="neonGreen">Review NFT Offer</ModalHeader>
+      <ModalCloseButton color="white" />
+      <ModalBody>
+        {pendingNFTOffer && (
+          <>
+            <Text color="white" mb={4}>
+              Review the NFT being offered for battle:
+            </Text>
+            <Box mb={4}>
+              <Image
+                src={pendingNFTOffer.nft.image}
+                alt={pendingNFTOffer.nft.name}
+                borderRadius="md"
+                mb={2}
+              />
+              <Text color="white" fontWeight="bold">
+                {pendingNFTOffer.nft.name}
+              </Text>
+              <Text color="gray.400">
+                {pendingNFTOffer.nft.collection}
+              </Text>
+            </Box>
+            <Box mb={4}>
+              <Text color="white" mb={2}>NFT Details:</Text>
+              <Text color="gray.400">
+                Contract: {pendingNFTOffer.nft.contractAddress}
+              </Text>
+              <Text color="gray.400">
+                Token ID: {pendingNFTOffer.nft.tokenId}
+              </Text>
+              <Text color="gray.400">
+                Chain: {pendingNFTOffer.nft.chain}
+              </Text>
+            </Box>
+            <Box mb={4}>
+              <Text color="white" mb={2}>Verification Links:</Text>
+              <Link
+                href={`https://opensea.io/assets/${pendingNFTOffer.nft.chain}/${pendingNFTOffer.nft.contractAddress}/${pendingNFTOffer.nft.tokenId}`}
+                isExternal
+                color="neonBlue"
+                mr={4}
+              >
+                View on OpenSea
+              </Link>
+              <Link
+                href={`https://basescan.org/token/${pendingNFTOffer.nft.contractAddress}?a=${pendingNFTOffer.nft.tokenId}`}
+                isExternal
+                color="neonBlue"
+              >
+                View on Explorer
+              </Link>
+            </Box>
+          </>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          colorScheme="red"
+          mr={3}
+          onClick={() => handleOfferResponse(false)}
+        >
+          Reject Offer
+        </Button>
+        <Button
+          colorScheme="green"
+          onClick={() => handleOfferResponse(true)}
+        >
+          Accept Offer
+        </Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
+)
 
 export default FlipGame
