@@ -786,7 +786,33 @@ const FlipGame = () => {
 
               {/* NEW: Share Button */}
               <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                <ShareButton gameId={gameId} gameData={gameData} />
+                <button
+                  onClick={handleShare}
+                  style={{
+                    background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+                    color: '#fff',
+                    border: '1px solid #333',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <span style={{ fontSize: '1.2rem' }}>𝕏</span>
+                  Share on X
+                </button>
               </div>
             </div>
           </div>
@@ -919,6 +945,76 @@ const FlipGame = () => {
             onClose={() => setShowResultPopup(false)}
             onClaimWinnings={handleClaimWinnings}
           />
+
+          {/* Winner Screen */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '2rem',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
+              border: '2px solid #FFD700',
+              borderRadius: '1rem',
+              padding: '2rem',
+              textAlign: 'center',
+              maxWidth: '500px',
+              width: '100%',
+              boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
+            }}>
+              <h2 style={{ color: '#FFD700', marginBottom: '1rem' }}>🎉 You Won! 🎉</h2>
+              <p style={{ color: '#fff', marginBottom: '2rem' }}>
+                Congratulations! You've won {gameState.potAmount} {gameState.currency}
+              </p>
+              <button
+                onClick={handleClaimWinnings}
+                style={{
+                  background: 'linear-gradient(135deg, #FF69B4 0%, #FF1493 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '1rem 2rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '1.2rem',
+                  cursor: 'pointer',
+                  width: '100%',
+                  marginBottom: '1rem',
+                  boxShadow: '0 0 20px rgba(255, 105, 180, 0.4)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 105, 180, 0.6)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 105, 180, 0.4)';
+                }}
+              >
+                💰 Claim Your Winnings
+              </button>
+              <p style={{ 
+                color: '#ff4444', 
+                fontSize: '0.9rem', 
+                marginTop: '1rem',
+                border: '1px solid rgba(255, 68, 68, 0.3)',
+                padding: '0.5rem',
+                borderRadius: '0.5rem',
+                background: 'rgba(255, 68, 68, 0.1)'
+              }}>
+                ⚠️ Warning: If you leave this screen without claiming, you will lose your winnings.
+              </p>
+            </div>
+          </div>
         </ContentWrapper>
       </Container>
       <style>
