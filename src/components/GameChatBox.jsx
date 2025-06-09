@@ -15,9 +15,13 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   const [isNameModalOpen, setIsNameModalOpen] = useState(false)
   const [tempName, setTempName] = useState('')
   const [playerName, setPlayerNameState] = useState('')
+  const [newMessage, setNewMessage] = useState('')
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+  const wsRef = useRef(null)
   
   // Load player name on mount
   useEffect(() => {
@@ -171,6 +175,62 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    // Clear unread count when opening chat
+    if (isChatOpen) {
+      setUnreadCount(0)
+    }
+  }, [isChatOpen])
+
+  useEffect(() => {
+    const ws = new WebSocket(`wss://your-websocket-server.com/game/${gameId}`)
+    wsRef.current = ws
+
+    ws.onopen = () => {
+      setConnected(true)
+    }
+
+    ws.onclose = () => {
+      setConnected(false)
+    }
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      setMessages(prev => [...prev, data])
+      
+      // When new message arrives and chat is closed
+      if (!isChatOpen && data.address !== address) {
+        setUnreadCount(prev => prev + 1)
+      }
+    }
+
+    return () => {
+      ws.close()
+    }
+  }, [gameId, address, isChatOpen])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const sendMessage = (e) => {
+    e.preventDefault()
+    if (!newMessage.trim()) return
+
+    const message = {
+      text: newMessage,
+      address: address,
+      timestamp: new Date().toISOString()
+    }
+
+    wsRef.current?.send(JSON.stringify(message))
+    setNewMessage('')
+  }
+
   if (!isConnected) {
     return (
       <div style={{
@@ -189,228 +249,288 @@ const GameChatBox = ({ gameId, socket, connected }) => {
 
   return (
     <>
-      <div style={{
-        background: 'rgba(0, 0, 0, 0.8)',
-        border: '1px solid rgba(255, 215, 0, 0.3)',
-        borderRadius: '1rem',
-        padding: '1rem',
-        width: '100%',
-        maxWidth: '550px',
-        margin: '0 auto',
-        backdropFilter: 'blur(10px)'
-      }}>
-        {/* Chat Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1rem',
-          paddingBottom: '0.5rem',
-          borderBottom: '1px solid rgba(255, 215, 0, 0.3)'
-        }}>
-          <div style={{
-            color: '#FFD700',
+      {/* Chat Button - Integrated into game UI */}
+      {!isChatOpen ? (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          style={{
+            background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+            border: '2px solid #FFD700',
+            borderRadius: '0.75rem',
+            padding: '0.75rem 1.5rem',
+            color: '#000',
             fontWeight: 'bold',
+            cursor: 'pointer',
             fontSize: '1rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            💬 Game Chat
-          </div>
-          <div style={{
+            gap: '0.5rem',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 0 15px rgba(255, 215, 0, 0.3)',
+            position: 'relative'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'translateY(-2px)'
+            e.target.style.boxShadow = '0 0 25px rgba(255, 215, 0, 0.5)'
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'translateY(0)'
+            e.target.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.3)'
+          }}
+        >
+          💬 Chat
+          {unreadCount > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '-8px',
+              right: '-8px',
+              background: '#ff0000',
+              color: 'white',
+              borderRadius: '50%',
+              width: '20px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.7rem',
+              fontWeight: 'bold'
+            }}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </div>
+          )}
+        </button>
+      ) : (
+        /* Chat Modal Popup */
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            zIndex: 10000,
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            justifyContent: 'center',
+            backdropFilter: 'blur(5px)'
+          }}
+          onClick={(e) => {
+            // Only close if clicking the backdrop, not the modal content
+            if (e.target === e.currentTarget) {
+              setIsChatOpen(false)
+            }
+          }}
+        >
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
+            border: '2px solid #FFD700',
+            borderRadius: '1rem',
+            padding: '1.5rem',
+            width: '90%',
+            maxWidth: '600px',
+            maxHeight: '80vh',
+            position: 'relative',
+            boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
           }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: connected ? '#00FF00' : '#FF0000',
-              animation: connected ? 'pulse 2s infinite' : 'none'
-            }} />
-            <span style={{ 
-              color: theme.colors.textSecondary, 
-              fontSize: '0.8rem' 
-            }}>
-              {connected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-        </div>
+            {/* Close Button */}
+            <button
+              onClick={() => setIsChatOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '-15px',
+                right: '-15px',
+                background: 'rgba(255, 0, 0, 0.2)',
+                border: '1px solid rgba(255, 0, 0, 0.5)',
+                borderRadius: '50%',
+                width: '30px',
+                height: '30px',
+                color: '#fff',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10001,
+                boxShadow: '0 0 10px rgba(0, 0, 0, 0.5)'
+              }}
+            >
+              ✕
+            </button>
 
-        {/* Messages Container */}
-        <div style={{
-          height: '200px',
-          overflowY: 'auto',
-          marginBottom: '1rem',
-          padding: '0.5rem',
-          background: 'rgba(0, 0, 0, 0.3)',
-          borderRadius: '0.5rem',
-          border: '1px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          {messages.length === 0 ? (
+            {/* Chat Content */}
             <div style={{
-              color: theme.colors.textSecondary,
-              textAlign: 'center',
-              padding: '2rem',
-              fontSize: '0.9rem'
+              background: 'rgba(0, 0, 0, 0.8)',
+              border: '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '1rem',
+              padding: '1rem',
+              width: '100%',
+              backdropFilter: 'blur(10px)'
             }}>
-              No messages yet. Be the first to say something!
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <div key={msg.id} style={{
-                marginBottom: '0.75rem',
-                padding: '0.5rem',
-                background: msg.address === address ? 
-                  'rgba(255, 215, 0, 0.1)' : 
-                  'rgba(255, 255, 255, 0.05)',
+              {/* Chat Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '1px solid rgba(255, 215, 0, 0.3)'
+              }}>
+                <div style={{
+                  color: '#FFD700',
+                  fontWeight: 'bold',
+                  fontSize: '1.2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  💬 Game Chat
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: connected ? '#00FF00' : '#FF0000',
+                    animation: connected ? 'pulse 2s infinite' : 'none'
+                  }} />
+                  <span style={{ 
+                    color: theme.colors.textSecondary, 
+                    fontSize: '0.8rem' 
+                  }}>
+                    {connected ? 'Connected' : 'Disconnected'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Player Name Settings */}
+              <div style={{
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: 'rgba(255, 215, 0, 0.1)',
                 borderRadius: '0.5rem',
-                borderLeft: `3px solid ${
-                  msg.isSystem ? '#FF6B6B' :
-                  msg.address === address ? '#FFD700' : '#00FF41'
-                }`
+                border: '1px solid rgba(255, 215, 0, 0.2)'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  marginBottom: '0.25rem'
+                  marginBottom: '0.5rem'
                 }}>
-                  {!msg.isSystem && (
-                    <ProfilePicture
-                      address={msg.address}
-                      size="20px"
-                      isClickable={false}
-                    />
-                  )}
-                  <span style={{
-                    color: msg.isSystem ? '#FF6B6B' :
-                           msg.address === address ? '#FFD700' : '#00FF41',
-                    fontWeight: 'bold',
-                    fontSize: '0.8rem'
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem'
                   }}>
-                    {msg.isSystem ? 'System' : (msg.name || truncateAddress(msg.address))}
-                  </span>
-                  <span style={{
-                    color: theme.colors.textTertiary,
-                    fontSize: '0.7rem'
-                  }}>
-                    {formatTimestamp(msg.timestamp)}
-                  </span>
-                </div>
-                <div style={{
-                  color: theme.colors.textPrimary,
-                  fontSize: '0.9rem',
-                  lineHeight: '1.3',
-                  wordBreak: 'break-word'
-                }}>
-                  {formatMessage(msg.message)}
+                    👤
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Your Name</div>
+                    <div style={{ color: '#FFD700', fontWeight: 'bold' }}>
+                      {playerName || 'Anonymous'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsNameModalOpen(true)}
+                    style={{
+                      background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      padding: '0.5rem 1rem',
+                      color: '#000',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    {playerName ? 'Change' : 'Set Name'}
+                  </button>
                 </div>
               </div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
 
-        {/* Message Input */}
-        <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          alignItems: 'flex-end'
-        }}>
-          <div style={{ flex: 1 }}>
-            <textarea
-              ref={inputRef}
-              value={currentMessage}
-              onChange={(e) => setCurrentMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={playerName ? "Type a message..." : "Set your name first..."}
-              disabled={!connected || !playerName}
-              style={{
-                width: '100%',
-                minHeight: '40px',
-                maxHeight: '80px',
-                padding: '0.75rem',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '0.5rem',
-                color: theme.colors.textPrimary,
-                fontSize: '0.9rem',
-                resize: 'vertical',
-                fontFamily: 'inherit',
-                outline: 'none'
-              }}
-              maxLength={500}
-            />
-            <div style={{
-              fontSize: '0.7rem',
-              color: theme.colors.textTertiary,
-              textAlign: 'right',
-              marginTop: '0.25rem'
-            }}>
-              {currentMessage.length}/500
+              {/* Messages Container */}
+              <div style={{
+                height: '400px',
+                overflowY: 'auto',
+                marginBottom: '1rem',
+                padding: '0.5rem'
+              }}>
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      marginBottom: '0.5rem',
+                      padding: '0.5rem',
+                      background: msg.address === address ? 
+                        'rgba(255, 215, 0, 0.1)' : 
+                        'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '0.5rem',
+                      maxWidth: '80%',
+                      marginLeft: msg.address === address ? 'auto' : '0'
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: theme.colors.textSecondary,
+                      marginBottom: '0.25rem'
+                    }}>
+                      {msg.address.slice(0, 6)}...{msg.address.slice(-4)}
+                    </div>
+                    <div style={{ color: '#fff' }}>{msg.text}</div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Message Input */}
+              <form onSubmit={sendMessage} style={{
+                display: 'flex',
+                gap: '0.5rem'
+              }}>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    color: '#fff',
+                    fontSize: '0.9rem'
+                  }}
+                />
+                <button
+                  type="submit"
+                  style={{
+                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem 1.5rem',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Send
+                </button>
+              </form>
             </div>
           </div>
-          <button
-            onClick={handleSendMessage}
-            disabled={!connected || !currentMessage.trim() || !playerName}
-            style={{
-              padding: '0.75rem 1rem',
-              background: connected && currentMessage.trim() && playerName ? 
-                'linear-gradient(45deg, #FFD700, #FFA500)' : 
-                'rgba(255, 255, 255, 0.1)',
-              color: connected && currentMessage.trim() && playerName ? '#000' : theme.colors.textSecondary,
-              border: 'none',
-              borderRadius: '0.5rem',
-              fontWeight: 'bold',
-              cursor: connected && currentMessage.trim() && playerName ? 'pointer' : 'not-allowed',
-              transition: 'all 0.3s ease',
-              fontSize: '0.9rem'
-            }}
-          >
-            Send
-          </button>
         </div>
-
-        {/* Player Name Display/Edit */}
-        <div style={{
-          marginTop: '0.75rem',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{
-            color: theme.colors.textSecondary,
-            fontSize: '0.8rem'
-          }}>
-            Chat as: <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
-              {playerName || 'No name set'}
-            </span>
-          </div>
-          <button
-            onClick={() => {
-              setTempName(playerName)
-              setIsNameModalOpen(true)
-            }}
-            style={{
-              padding: '0.25rem 0.75rem',
-              background: 'transparent',
-              border: `1px solid ${theme.colors.neonBlue}`,
-              borderRadius: '0.25rem',
-              color: theme.colors.neonBlue,
-              fontSize: '0.7rem',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            {playerName ? 'Change Name' : 'Set Name'}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Name Modal */}
       {isNameModalOpen && (
@@ -421,117 +541,94 @@ const GameChatBox = ({ gameId, socket, connected }) => {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 10001,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 10000,
           backdropFilter: 'blur(5px)'
         }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
-            padding: '2rem',
+            border: '2px solid #FFD700',
             borderRadius: '1rem',
-            border: `2px solid #FFD700`,
-            maxWidth: '400px',
+            padding: '1.5rem',
             width: '90%',
-            boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
+            maxWidth: '400px',
+            position: 'relative'
           }}>
             <h3 style={{
               color: '#FFD700',
               marginBottom: '1rem',
-              textAlign: 'center',
-              fontSize: '1.2rem',
-              fontWeight: 'bold'
+              fontSize: '1.2rem'
             }}>
-              Set Your Chat Name
+              {playerName ? 'Change Your Name' : 'Set Your Name'}
             </h3>
-            <p style={{
-              color: theme.colors.textSecondary,
-              marginBottom: '1.5rem',
-              fontSize: '0.9rem',
-              textAlign: 'center',
-              lineHeight: '1.4'
-            }}>
-              Choose a name to display in chat. This will be saved and remembered for future games.
-            </p>
             <input
               type="text"
               value={tempName}
               onChange={(e) => setTempName(e.target.value)}
-              placeholder="Enter your chat name..."
-              maxLength={50}
+              placeholder="Enter your name..."
               style={{
                 width: '100%',
                 padding: '0.75rem',
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 215, 0, 0.3)',
                 borderRadius: '0.5rem',
-                color: theme.colors.textPrimary,
+                color: '#fff',
                 fontSize: '1rem',
-                outline: 'none',
-                marginBottom: '0.5rem'
-              }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleSaveName()
-                }
+                marginBottom: '1rem'
               }}
             />
             <div style={{
-              fontSize: '0.7rem',
-              color: theme.colors.textTertiary,
-              textAlign: 'right',
-              marginBottom: '1.5rem'
-            }}>
-              {tempName.length}/50
-            </div>
-            <div style={{
               display: 'flex',
-              gap: '1rem'
+              gap: '0.5rem',
+              justifyContent: 'flex-end'
             }}>
               <button
-                onClick={() => {
-                  setIsNameModalOpen(false)
-                  setTempName('')
-                }}
+                onClick={() => setIsNameModalOpen(false)}
                 style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: 'transparent',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  padding: '0.75rem 1.5rem',
+                  background: 'rgba(255, 0, 0, 0.2)',
+                  border: '1px solid rgba(255, 0, 0, 0.5)',
                   borderRadius: '0.5rem',
-                  color: theme.colors.textSecondary,
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
+                  color: '#fff',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
                 }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveName}
-                disabled={!validateName(tempName)}
                 style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: validateName(tempName) ? 
-                    'linear-gradient(45deg, #FFD700, #FFA500)' : 
-                    'rgba(255, 255, 255, 0.1)',
+                  padding: '0.75rem 1.5rem',
+                  background: 'linear-gradient(45deg, #FFD700, #FFA500)',
                   border: 'none',
                   borderRadius: '0.5rem',
-                  color: validateName(tempName) ? '#000' : theme.colors.textSecondary,
-                  cursor: validateName(tempName) ? 'pointer' : 'not-allowed',
+                  color: '#000',
                   fontWeight: 'bold',
-                  fontSize: '0.9rem'
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
                 }}
               >
-                Save Name
+                Save
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <style>
+        {`
+          @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+          }
+        `}
+      </style>
     </>
   )
 }
 
-export default GameChatBox 
+export default GameChatBox
