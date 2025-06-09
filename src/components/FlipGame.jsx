@@ -149,9 +149,11 @@ const FlipGame = () => {
 
   // Add new state variables
   const [showNFTOfferModal, setShowNFTOfferModal] = useState(false)
+  const [showNFTVerificationModal, setShowNFTVerificationModal] = useState(false)
+  const [showNFTDetailsModal, setShowNFTDetailsModal] = useState(false)
   const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
-  const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
-  const [offerStatus, setOfferStatus] = useState(null) // 'pending', 'accepted', 'rejected'
+  const [selectedNFT, setSelectedNFT] = useState(null)
+  const [nftOffer, setNftOffer] = useState(null)
 
   // WebSocket connection
   useEffect(() => {
@@ -764,6 +766,119 @@ const FlipGame = () => {
       console.error('Error responding to offer:', error)
       showError('Failed to process offer response. Please try again.')
     }
+  }
+
+  const renderNFTOfferModal = () => {
+    if (!showNFTOfferModal) return null
+
+    return (
+      <Modal>
+        <ModalContent>
+          <CloseButton onClick={() => setShowNFTOfferModal(false)}>×</CloseButton>
+          <ModalHeader>
+            <NeonText>NFT Offer</NeonText>
+          </ModalHeader>
+          <ModalBody>
+            <NFTOfferComponent
+              gameId={gameId}
+              onOfferAccepted={handleNFTOfferAccepted}
+              onOfferRejected={handleNFTOfferRejected}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    )
+  }
+
+  const renderNFTVerificationModal = () => {
+    if (!showNFTVerificationModal) return null
+
+    return (
+      <Modal>
+        <ModalContent>
+          <CloseButton onClick={() => setShowNFTVerificationModal(false)}>×</CloseButton>
+          <ModalHeader>
+            <NeonText>NFT Verification</NeonText>
+          </ModalHeader>
+          <ModalBody>
+            <NFTVerificationDisplay
+              nft={selectedNFT}
+              onVerificationComplete={handleNFTVerificationComplete}
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    )
+  }
+
+  const renderNFTDetailsModal = () => {
+    if (!showNFTDetailsModal || !selectedNFT) return null
+
+    return (
+      <Modal>
+        <ModalContent>
+          <CloseButton onClick={() => setShowNFTDetailsModal(false)}>×</CloseButton>
+          <ModalHeader>
+            <NeonText>NFT Details</NeonText>
+          </ModalHeader>
+          <ModalBody>
+            <NFTImage src={selectedNFT.image} alt={selectedNFT.name} />
+            <div>
+              <h3>{selectedNFT.name}</h3>
+              <p>Collection: {selectedNFT.collection}</p>
+              <p>Token ID: {selectedNFT.tokenId}</p>
+              <NFTLink href={selectedNFT.openseaUrl} target="_blank" rel="noopener noreferrer">
+                View on OpenSea
+              </NFTLink>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={() => setShowNFTDetailsModal(false)}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    )
+  }
+
+  const renderOfferReviewModal = () => {
+    if (!showOfferReviewModal || !nftOffer) return null
+
+    return (
+      <Modal>
+        <ModalContent>
+          <CloseButton onClick={() => setShowOfferReviewModal(false)}>×</CloseButton>
+          <ModalHeader>
+            <NeonText>Review NFT Offer</NeonText>
+          </ModalHeader>
+          <ModalBody>
+            <div>
+              <h3>NFT Details</h3>
+              <NFTImage src={nftOffer.image} alt={nftOffer.name} />
+              <p>Name: {nftOffer.name}</p>
+              <p>Collection: {nftOffer.collection}</p>
+              <p>Token ID: {nftOffer.tokenId}</p>
+              <NFTLink href={nftOffer.openseaUrl} target="_blank" rel="noopener noreferrer">
+                View on OpenSea
+              </NFTLink>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={() => {
+              handleNFTOfferAccepted(nftOffer)
+              setShowOfferReviewModal(false)
+            }}>
+              Accept Offer
+            </Button>
+            <Button onClick={() => {
+              handleNFTOfferRejected()
+              setShowOfferReviewModal(false)
+            }}>
+              Reject Offer
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    )
   }
 
   if (!isConnected) {
@@ -1577,8 +1692,10 @@ const FlipGame = () => {
       </style>
       
       {/* Add new modals */}
-      <NFTOfferModal />
-      <OfferReviewModal />
+      {renderNFTOfferModal()}
+      {renderNFTVerificationModal()}
+      {renderNFTDetailsModal()}
+      {renderOfferReviewModal()}
     </ThemeProvider>
   )
 }
@@ -1629,167 +1746,5 @@ const fetchNFTData = async (gameId) => {
     setIsLoadingNFT(false)
   }
 }
-
-// Add NFT Offer Modal
-const NFTOfferModal = () => {
-  const renderNFTOfferModal = () => {
-    if (!showNFTOfferModal) return null
-
-    return (
-      <Modal>
-        <ModalContent>
-          <CloseButton onClick={() => setShowNFTOfferModal(false)}>×</CloseButton>
-          <ModalHeader>
-            <NeonText>NFT Offer</NeonText>
-          </ModalHeader>
-          <ModalBody>
-            <NFTOfferComponent
-              gameId={gameId}
-              onOfferAccepted={handleNFTOfferAccepted}
-              onOfferRejected={handleNFTOfferRejected}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    )
-  }
-
-  const renderNFTVerificationModal = () => {
-    if (!showNFTVerificationModal) return null
-
-    return (
-      <Modal>
-        <ModalContent>
-          <CloseButton onClick={() => setShowNFTVerificationModal(false)}>×</CloseButton>
-          <ModalHeader>
-            <NeonText>NFT Verification</NeonText>
-          </ModalHeader>
-          <ModalBody>
-            <NFTVerificationDisplay
-              nft={selectedNFT}
-              onVerificationComplete={handleNFTVerificationComplete}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    )
-  }
-
-  const renderNFTDetailsModal = () => {
-    if (!showNFTDetailsModal || !selectedNFT) return null
-
-    return (
-      <Modal>
-        <ModalContent>
-          <CloseButton onClick={() => setShowNFTDetailsModal(false)}>×</CloseButton>
-          <ModalHeader>
-            <NeonText>NFT Details</NeonText>
-          </ModalHeader>
-          <ModalBody>
-            <NFTImage src={selectedNFT.image} alt={selectedNFT.name} />
-            <div>
-              <h3>{selectedNFT.name}</h3>
-              <p>Collection: {selectedNFT.collection}</p>
-              <p>Token ID: {selectedNFT.tokenId}</p>
-              <NFTLink href={selectedNFT.openseaUrl} target="_blank" rel="noopener noreferrer">
-                View on OpenSea
-              </NFTLink>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={() => setShowNFTDetailsModal(false)}>Close</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    )
-  }
-
-  return (
-    <>
-      {renderNFTOfferModal()}
-      {renderNFTVerificationModal()}
-      {renderNFTDetailsModal()}
-    </>
-  )
-}
-
-// Add Offer Review Modal
-const OfferReviewModal = () => (
-  <Modal isOpen={showOfferReviewModal} onClose={() => setShowOfferReviewModal(false)}>
-    <ModalOverlay />
-    <ModalContent bg="rgba(0, 0, 0, 0.9)" border="1px solid" borderColor="neonGreen">
-      <ModalHeader color="neonGreen">Review NFT Offer</ModalHeader>
-      <ModalCloseButton color="white" />
-      <ModalBody>
-        {pendingNFTOffer && (
-          <>
-            <Text color="white" mb={4}>
-              Review the NFT being offered for battle:
-            </Text>
-            <Box mb={4}>
-              <Image
-                src={pendingNFTOffer.nft.image}
-                alt={pendingNFTOffer.nft.name}
-                borderRadius="md"
-                mb={2}
-              />
-              <Text color="white" fontWeight="bold">
-                {pendingNFTOffer.nft.name}
-              </Text>
-              <Text color="gray.400">
-                {pendingNFTOffer.nft.collection}
-              </Text>
-            </Box>
-            <Box mb={4}>
-              <Text color="white" mb={2}>NFT Details:</Text>
-              <Text color="gray.400">
-                Contract: {pendingNFTOffer.nft.contractAddress}
-              </Text>
-              <Text color="gray.400">
-                Token ID: {pendingNFTOffer.nft.tokenId}
-              </Text>
-              <Text color="gray.400">
-                Chain: {pendingNFTOffer.nft.chain}
-              </Text>
-            </Box>
-            <Box mb={4}>
-              <Text color="white" mb={2}>Verification Links:</Text>
-              <Link
-                href={`https://opensea.io/assets/${pendingNFTOffer.nft.chain}/${pendingNFTOffer.nft.contractAddress}/${pendingNFTOffer.nft.tokenId}`}
-                isExternal
-                color="neonBlue"
-                mr={4}
-              >
-                View on OpenSea
-              </Link>
-              <Link
-                href={`https://basescan.org/token/${pendingNFTOffer.nft.contractAddress}?a=${pendingNFTOffer.nft.tokenId}`}
-                isExternal
-                color="neonBlue"
-              >
-                View on Explorer
-              </Link>
-            </Box>
-          </>
-        )}
-      </ModalBody>
-      <ModalFooter>
-        <Button
-          colorScheme="red"
-          mr={3}
-          onClick={() => handleOfferResponse(false)}
-        >
-          Reject Offer
-        </Button>
-        <Button
-          colorScheme="green"
-          onClick={() => handleOfferResponse(true)}
-        >
-          Accept Offer
-        </Button>
-      </ModalFooter>
-    </ModalContent>
-  </Modal>
-)
 
 export default FlipGame
