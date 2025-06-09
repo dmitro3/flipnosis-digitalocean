@@ -464,11 +464,16 @@ const ReliableGoldCoin = ({
 
   // FLIP ANIMATION - Based on working example logic
   useEffect(() => {
-    if (!isFlipping || !flipResult || !flipDuration || !coinRef.current || isAnimatingRef.current) {
+    if (!isFlipping || !flipResult || !flipDuration || !coinRef.current) {
       return
     }
 
-    console.log('🎬 Starting reliable coin flip:', { flipResult, flipDuration })
+    console.log('🎬 Starting reliable coin flip:', { flipResult, flipDuration, isAnimatingRef: isAnimatingRef.current })
+    
+    // Reset animation state if it was stuck
+    if (isAnimatingRef.current) {
+      isAnimatingRef.current = false
+    }
     
     isAnimatingRef.current = true
     const coin = coinRef.current
@@ -500,8 +505,11 @@ const ReliableGoldCoin = ({
     targetAngleRef.current = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
     
     let flipStartTime = Date.now()
+    let currentRotation = 0
     
     const animateFlip = () => {
+      if (!isAnimatingRef.current) return
+      
       const elapsed = Date.now() - flipStartTime
       const progress = Math.min(elapsed / flipDuration, 1)
       
@@ -509,7 +517,10 @@ const ReliableGoldCoin = ({
         // Power-based rotation speed with dramatic deceleration
         const speedMultiplier = progress < 0.8 ? 1 : (1 - progress) / 0.2
         const currentSpeed = rotationSpeed * speedMultiplier
-        coin.rotation.x += currentSpeed
+        
+        // Update rotation
+        currentRotation += currentSpeed
+        coin.rotation.x = currentRotation
         
         // Add some vertical motion during flip
         coin.position.y = Math.sin(progress * Math.PI) * 0.5
@@ -522,6 +533,8 @@ const ReliableGoldCoin = ({
     }
     
     const landOnTarget = () => {
+      if (!isAnimatingRef.current) return
+      
       const currentRotation = coin.rotation.x
       const targetAngle = targetAngleRef.current
       
@@ -542,7 +555,13 @@ const ReliableGoldCoin = ({
       requestAnimationFrame(landOnTarget)
     }
     
+    // Start the animation
     animateFlip()
+    
+    // Cleanup function
+    return () => {
+      isAnimatingRef.current = false
+    }
   }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower]) // Add power dependencies
 
   return (
