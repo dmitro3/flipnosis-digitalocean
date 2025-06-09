@@ -15,7 +15,7 @@ const PowerDisplay = ({
 }) => {
   // Calculate total power for single bar
   const totalPower = creatorPower + joinerPower
-  const maxTotalPower = 20 // 10 + 10
+  const maxTotalPower = 10 // Single player max
   
   // Show choice buttons if it's choosing phase AND player's turn AND no choice made yet
   const showChoiceButtons = gamePhase === 'choosing' && isMyTurn && !playerChoice && onPlayerChoice
@@ -160,7 +160,7 @@ const PowerDisplay = ({
                 color: '#FFD700',
                 textShadow: '0 0 5px rgba(255, 215, 0, 0.8)' 
               }}>
-                {totalPower.toFixed(1)}/20
+                {totalPower.toFixed(1)}/10
               </span>
             </div>
             
@@ -200,7 +200,7 @@ const PowerDisplay = ({
                 alignItems: 'center',
                 padding: '0 0.5rem'
               }}>
-                {[4, 8, 12, 16].map(level => (
+                {[2, 4, 6, 8].map(level => (
                   <div key={level} style={{
                     width: '2px',
                     height: '70%',

@@ -44,35 +44,31 @@ const ReliableGoldCoin = ({
     let headsColor = '#654321' // Dark brown
     let tailsColor = '#654321' // Dark brown
     
-    // Determine the current active player's choice for this round
-    let currentPlayerChoice = null
-    
-    if (isCreator && creatorChoice) {
-      currentPlayerChoice = creatorChoice
-    } else if (!isCreator && joinerChoice) {
-      currentPlayerChoice = joinerChoice
-    }
-    
-    // If current player has made a choice, show their perspective
-    if (currentPlayerChoice) {
-      if (currentPlayerChoice === 'heads') {
-        headsColor = '#00FF00' // Green for their choice
-        tailsColor = '#FF0000' // Red for the other side
-      } else if (currentPlayerChoice === 'tails') {
-        headsColor = '#FF0000' // Red for the other side
-        tailsColor = '#00FF00' // Green for their choice
+    // Show both players' choices to everyone
+    if (creatorChoice && joinerChoice) {
+      // Both players have chosen - show their choices
+      if (isCreator) {
+        // Show from creator's perspective
+        headsColor = creatorChoice === 'heads' ? '#00FF00' : '#FF0000'
+        tailsColor = creatorChoice === 'tails' ? '#00FF00' : '#FF0000'
+      } else {
+        // Show from joiner's perspective
+        headsColor = joinerChoice === 'heads' ? '#00FF00' : '#FF0000'
+        tailsColor = joinerChoice === 'tails' ? '#00FF00' : '#FF0000'
       }
-    }
-    // If current player hasn't chosen but other player has, show waiting state
-    else if ((isCreator && joinerChoice) || (!isCreator && creatorChoice)) {
-      // Show the other player's choice in red, and this player's default side in a neutral color
-      const otherPlayerChoice = isCreator ? joinerChoice : creatorChoice
-      if (otherPlayerChoice === 'heads') {
-        headsColor = '#FF0000' // Red for opponent's choice
-        tailsColor = '#FFA500' // Orange for waiting/potential choice
-      } else if (otherPlayerChoice === 'tails') {
-        headsColor = '#FFA500' // Orange for waiting/potential choice
-        tailsColor = '#FF0000' // Red for opponent's choice
+    } else if (creatorChoice || joinerChoice) {
+      // Only one player has chosen
+      const playerChoice = creatorChoice || joinerChoice
+      const isMyChoice = (creatorChoice && isCreator) || (joinerChoice && !isCreator)
+      
+      if (isMyChoice) {
+        // This is my choice - show green for my choice, orange for opponent's potential choice
+        headsColor = playerChoice === 'heads' ? '#00FF00' : '#FFA500'
+        tailsColor = playerChoice === 'tails' ? '#00FF00' : '#FFA500'
+      } else {
+        // This is opponent's choice - show red for their choice, orange for my potential choice
+        headsColor = playerChoice === 'heads' ? '#FF0000' : '#FFA500'
+        tailsColor = playerChoice === 'tails' ? '#FF0000' : '#FFA500'
       }
     }
     
@@ -80,7 +76,6 @@ const ReliableGoldCoin = ({
       isCreator,
       creatorChoice,
       joinerChoice,
-      currentPlayerChoice,
       headsColor,
       tailsColor
     })
@@ -479,19 +474,30 @@ const ReliableGoldCoin = ({
     const coin = coinRef.current
     const powerSystem = powerSystemRef.current
     
-    // Calculate flip parameters based on power
-    const flipPower = Math.max(1, Math.min(10, powerSystem.power || 5))
-    const rotationSpeed = 0.05 + (flipPower * 0.02) // Speed based on power
+    // NEW: Calculate flip parameters based on power with dramatic speed differences
+    const totalPower = creatorPower + joinerPower
+    const powerRatio = Math.min(totalPower / 10, 1) // 0 to 1 ratio
     
-    // Set target angle based on result (like the working example)
-    targetAngleRef.current = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
+    // Super dramatic speed scaling: 1 = slow, 10 = SUPER FAST
+    const minSpeed = 0.02  // Very slow at power 1
+    const maxSpeed = 0.25  // SUPER FAST at power 10
+    const rotationSpeed = minSpeed + (powerRatio * (maxSpeed - minSpeed))
+    
+    // More flips at higher power
+    const minFlips = 3
+    const maxFlips = 12
+    const totalFlips = minFlips + (powerRatio * (maxFlips - minFlips))
     
     console.log('🎲 Flip parameters:', { 
-      flipPower, 
+      totalPower, 
+      powerRatio,
       rotationSpeed, 
-      targetAngle: targetAngleRef.current,
+      totalFlips,
       flipResult 
     })
+    
+    // Set target angle based on result
+    targetAngleRef.current = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
     
     let flipStartTime = Date.now()
     
@@ -500,8 +506,9 @@ const ReliableGoldCoin = ({
       const progress = Math.min(elapsed / flipDuration, 1)
       
       if (progress < 1) {
-        // Continue flipping with power-based speed
-        const currentSpeed = rotationSpeed * (1 - progress * 0.3) // Slow down over time
+        // Power-based rotation speed with dramatic deceleration
+        const speedMultiplier = progress < 0.8 ? 1 : (1 - progress) / 0.2
+        const currentSpeed = rotationSpeed * speedMultiplier
         coin.rotation.x += currentSpeed
         
         // Add some vertical motion during flip
@@ -518,14 +525,11 @@ const ReliableGoldCoin = ({
       const currentRotation = coin.rotation.x
       const targetAngle = targetAngleRef.current
       
-      // Calculate shortest path to target
       let deltaAngle = (currentRotation % (Math.PI * 2)) - targetAngle
       
-      // Normalize delta angle to [-pi, pi]
       while (deltaAngle > Math.PI) deltaAngle -= Math.PI * 2
       while (deltaAngle < -Math.PI) deltaAngle += Math.PI * 2
       
-      // If close enough, snap to target
       if (Math.abs(deltaAngle) < 0.06) {
         coin.rotation.x = targetAngle
         coin.position.y = 0
@@ -534,13 +538,12 @@ const ReliableGoldCoin = ({
         return
       }
       
-      // Move towards target
-      coin.rotation.x -= deltaAngle * 0.1 // Smooth approach
+      coin.rotation.x -= deltaAngle * 0.1
       requestAnimationFrame(landOnTarget)
     }
     
     animateFlip()
-  }, [isFlipping, flipResult, flipDuration])
+  }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower]) // Add power dependencies
 
   return (
     <div

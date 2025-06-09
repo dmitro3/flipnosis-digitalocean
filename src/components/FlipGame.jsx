@@ -20,6 +20,7 @@ import ProfilePicture from './ProfilePicture'
 import baseEthLogo from '../../Images/baseeth.webp'
 import hazeVideo from '../../Images/Video/haze.webm'
 import GoldGameInstructions from './GoldGameInstructions'
+import ShareButton from './ShareButton'
 import styled from '@emotion/styled'
 
 const BackgroundVideo = styled.video`
@@ -578,6 +579,38 @@ const FlipGame = () => {
                 creatorWins={gameState?.creatorWins}
                 joinerWins={gameState?.joinerWins}
               />
+
+              {/* NEW: Game Info Section */}
+              <div style={{
+                marginTop: '1.5rem',
+                textAlign: 'center',
+                padding: '1rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '0.75rem',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{
+                  color: '#FFD700',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  marginBottom: '0.5rem',
+                  textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+                }}>
+                  FLIP#{gameId.slice(-6).toUpperCase()}
+                </div>
+                <div style={{ 
+                  color: theme.colors.textSecondary,
+                  fontSize: '0.9rem'
+                }}>
+                  Best of {gameData?.rounds} • ${gameData?.priceUSD?.toFixed(2)}
+                  {gameState && <span> • {gameState.spectators} watching</span>}
+                </div>
+              </div>
+
+              {/* NEW: Share Button */}
+              <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                <ShareButton gameId={gameId} gameData={gameData} />
+              </div>
             </div>
           </div>
 

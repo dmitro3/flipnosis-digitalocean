@@ -45,7 +45,7 @@ const PotionLogo = styled.img`
 `
 
 const CreateButton = styled(Link)`
-  background: linear-gradient(45deg, ${props => props.theme.colors.neonPink}, ${props => props.theme.colors.neonBlue});
+  background: linear-gradient(45deg, #00FF41, #39FF14);
   color: white;
   padding: 0.5rem 1.5rem;
   border-radius: 0.75rem;
@@ -54,6 +54,8 @@ const CreateButton = styled(Link)`
   transition: ${props => props.theme.transitions.default};
   position: relative;
   overflow: hidden;
+  border: 2px solid #00FF41;
+  box-shadow: 0 0 5px #00FF41, 0 0 10px #00FF41, 0 0 20px #00FF41;
   
   &::before {
     content: '';
@@ -69,7 +71,7 @@ const CreateButton = styled(Link)`
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.neon};
+    box-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41, 0 0 40px #00FF41;
     
     &::before {
       transform: translateX(100%);
