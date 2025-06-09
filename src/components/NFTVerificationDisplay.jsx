@@ -2,6 +2,14 @@ import React, { useState } from 'react'
 import { theme } from '../styles/theme'
 
 const NFTVerificationDisplay = ({ nftData, chainConfig }) => {
+  if (!nftData) {
+    return (
+      <div style={{ color: '#888', textAlign: 'center', padding: '1rem' }}>
+        NFT data not available
+      </div>
+    )
+  }
+
   const [isExpanded, setIsExpanded] = useState(false)
   const [copiedText, setCopiedText] = useState('')
 
@@ -22,7 +30,7 @@ const NFTVerificationDisplay = ({ nftData, chainConfig }) => {
       borderRadius: '12px',
       padding: '16px',
       color: '#fff',
-      fontFamily: theme.fonts.body
+      fontFamily: 'Inter, sans-serif'
     }}>
       {/* Header with verification badge */}
       <div style={{
@@ -30,17 +38,6 @@ const NFTVerificationDisplay = ({ nftData, chainConfig }) => {
         alignItems: 'center',
         marginBottom: '12px'
       }}>
-        <div style={{
-          background: theme.colors.neonGreen,
-          color: '#000',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontWeight: 'bold',
-          marginRight: '8px'
-        }}>
-          VERIFIED
-        </div>
         <h3 style={{ margin: 0, fontSize: '16px' }}>
           {nftData.name || 'Unnamed NFT'}
         </h3>
@@ -146,7 +143,7 @@ const NFTVerificationDisplay = ({ nftData, chainConfig }) => {
                 fontSize: '12px',
                 wordBreak: 'break-all'
               }}>
-                <span>{nftData.contractAddress}</span>
+                <span>{`${nftData.contractAddress.slice(0, 6)}...${nftData.contractAddress.slice(-4)}`}</span>
                 <button
                   onClick={() => copyToClipboard(nftData.contractAddress, 'contract')}
                   style={{

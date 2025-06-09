@@ -1784,13 +1784,15 @@ app.get('/api/games/creator/:address', async (req, res) => {
   }
 })
 
-// Add new API endpoint to get enhanced NFT data
+// Get enhanced NFT data
 app.get('/api/games/:gameId/nft', async (req, res) => {
   try {
     const { gameId } = req.params
+    console.log('🎨 NFT data requested for game:', gameId)
     const game = await dbHelpers.getGame(gameId)
     
     if (!game) {
+      console.log('❌ Game not found:', gameId)
       return res.status(404).json({ error: 'Game not found' })
     }
     
@@ -1811,9 +1813,10 @@ app.get('/api/games/:gameId/nft', async (req, res) => {
       }
     }
     
+    console.log('✅ Returning NFT data:', nftData)
     res.json(nftData)
   } catch (error) {
-    console.error('API Error:', error)
+    console.error('❌ NFT API Error:', error)
     res.status(500).json({ error: 'Failed to get NFT data' })
   }
 })

@@ -243,27 +243,31 @@ const FlipGame = () => {
     loadGame()
   }, [gameId])
 
-  // Add function to fetch NFT data
-  const fetchNFTData = async (gameId) => {
-    try {
-      setIsLoadingNFT(true)
-      const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
-      if (!response.ok) throw new Error('Failed to fetch NFT data')
-      const data = await response.json()
-      setNftData(data)
-    } catch (error) {
-      console.error('Error fetching NFT data:', error)
-    } finally {
-      setIsLoadingNFT(false)
-    }
-  }
-
-  // Update useEffect to fetch NFT data when game starts
+  // Update useEffect to fetch NFT data when game loads or when we have game data
   useEffect(() => {
-    if (gameId && gameState === 'in_progress') {
+    if (gameId && gameData) {
       fetchNFTData(gameId)
     }
-  }, [gameId, gameState])
+  }, [gameId, gameData])
+
+  // Add effect to set NFT data from gameData as fallback
+  useEffect(() => {
+    if (gameData && !nftData && !isLoadingNFT) {
+      console.log('🎨 Setting NFT data from gameData:', gameData.nft)
+      setNftData({
+        contractAddress: gameData.nft.contractAddress,
+        tokenId: gameData.nft.tokenId,
+        name: gameData.nft.name,
+        image: gameData.nft.image,
+        collection: gameData.nft.collection,
+        chain: gameData.nft.chain,
+        metadata: {
+          description: gameData.nft.description || '',
+          attributes: gameData.nft.attributes || []
+        }
+      })
+    }
+  }, [gameData, nftData, isLoadingNFT])
 
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
@@ -494,42 +498,73 @@ const FlipGame = () => {
             
             {/* Player 1 Box */}
             <div style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              border: isCreator ? `2px solid ${theme.colors.neonPink}` : '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '1rem',
-              padding: '1rem',
-              animation: gameState?.currentPlayer === gameState?.creator ? 'playerTurnGlow 1s ease-in-out infinite' : 'none',
-              boxShadow: gameState?.currentPlayer === gameState?.creator ? '0 0 20px rgba(0, 255, 65, 0.5)' : 'none'
+              position: 'relative',
+              width: '100%',
+              maxWidth: '600px',
+              margin: '0 auto',
+              padding: '2rem',
+              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+              border: '2px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '1.5rem',
+              backdropFilter: 'blur(10px)'
             }}>
+              {/* NFT Image - Small in bottom right */}
+              {nftData?.image && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '1rem',
+                  right: '1rem',
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  border: '2px solid rgba(255, 215, 0, 0.3)',
+                  boxShadow: '0 0 10px rgba(255, 215, 0, 0.2)'
+                }}>
+                  <img 
+                    src={nftData.image} 
+                    alt="NFT" 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+              )}
+              
               {/* Compact Header */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1rem',
-                marginBottom: '1rem',
-                padding: '0.75rem',
-                background: isCreator ? 
-                  `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})` : 
-                  'rgba(255,255,255,0.1)',
-                borderRadius: '0.75rem'
+                justifyContent: 'space-between',
+                marginBottom: '1rem'
               }}>
-                {/* Profile Picture */}
-                <ProfilePicture
-                  address={gameState?.creator}
-                  size="50px"
-                  isClickable={isCreator}
-                  showUploadIcon={isCreator}
-                />
-                
-                {/* Player Info */}
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
-                    PLAYER 1 {isCreator && '(YOU)'}
-                  </h3>
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
-                    {gameState?.creator ? `${gameState.creator.slice(0, 6)}...${gameState.creator.slice(-4)}` : 'Waiting...'}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <ProfilePicture address={gameData?.creator} size={32} />
+                  <div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Player 1</div>
+                    <div style={{ fontWeight: 'bold' }}>
+                      {gameData?.creator?.slice(0, 6)}...{gameData?.creator?.slice(-4)}
+                    </div>
                   </div>
                 </div>
+                {isCreator && (
+                  <div style={{
+                    background: theme.colors.neonPink,
+                    color: '#000',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold'
+                  }}>
+                    YOU
+                  </div>
+                )}
               </div>
 
               {/* Round Indicators for Player 1 */}
@@ -546,25 +581,29 @@ const FlipGame = () => {
                 maxRounds={gameState?.maxRounds}
                 creatorWins={gameState?.creatorWins}
                 joinerWins={gameState?.joinerWins}
+                nftData={nftData}
+                chainConfig={{
+                  name: nftData?.chain || 'Ethereum',
+                  explorerUrl: getExplorerUrl(nftData?.chain),
+                  marketplaceUrl: getMarketplaceUrl(nftData?.chain)
+                }}
               />
 
-              {/* Add NFT Verification Display */}
-              {nftData && (
-                <div className="nft-verification-container">
-                  {isLoadingNFT ? (
-                    <div className="loading-spinner">Loading NFT data...</div>
-                  ) : (
-                    <NFTVerificationDisplay
-                      nftData={nftData}
-                      chainConfig={{
-                        name: nftData.chain,
-                        explorerUrl: getExplorerUrl(nftData.chain),
-                        marketplaceUrl: getMarketplaceUrl(nftData.chain)
-                      }}
-                    />
-                  )}
-                </div>
-              )}
+              {/* NFT Verification Display - Always show */}
+              <div className="nft-verification-container">
+                {isLoadingNFT ? (
+                  <div className="loading-spinner">Loading NFT data...</div>
+                ) : (
+                  <NFTVerificationDisplay
+                    nftData={nftData}
+                    chainConfig={{
+                      name: nftData?.chain || 'Ethereum',
+                      explorerUrl: getExplorerUrl(nftData?.chain),
+                      marketplaceUrl: getMarketplaceUrl(nftData?.chain)
+                    }}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Center - Coin and Power Area */}
@@ -620,45 +659,87 @@ const FlipGame = () => {
 
             {/* Player 2 Box */}
             <div style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              border: isJoiner ? `2px solid ${theme.colors.neonBlue}` : '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '1rem',
-              padding: '1rem',
-              animation: gameState?.currentPlayer === gameState?.joiner ? 'playerTurnGlow 1s ease-in-out infinite' : 'none',
-              boxShadow: gameState?.currentPlayer === gameState?.joiner ? '0 0 20px rgba(0, 255, 65, 0.5)' : 'none'
+              position: 'relative',
+              width: '100%',
+              maxWidth: '600px',
+              margin: '0 auto',
+              padding: '2rem',
+              background: 'linear-gradient(135deg, rgba(0, 191, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+              border: '2px solid rgba(0, 191, 255, 0.3)',
+              borderRadius: '1.5rem',
+              backdropFilter: 'blur(10px)'
             }}>
               {/* Compact Header */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1rem',
-                marginBottom: '1rem',
-                padding: '0.75rem',
-                background: isJoiner ? 
-                  `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})` : 
-                  'rgba(255,255,255,0.1)',
-                borderRadius: '0.75rem'
+                justifyContent: 'space-between',
+                marginBottom: '1rem'
               }}>
-                {/* Profile Picture */}
-                <ProfilePicture
-                  address={gameState?.joiner}
-                  size="50px"
-                  isClickable={isJoiner}
-                  showUploadIcon={isJoiner}
-                />
-                
-                {/* Player Info */}
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ color: 'white', fontWeight: 'bold', margin: 0, fontSize: '1rem' }}>
-                    PLAYER 2 {isJoiner && '(YOU)'}
-                  </h3>
-                  <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
-                    {gameState?.joiner ? `${gameState.joiner.slice(0, 6)}...${gameState.joiner.slice(-4)}` : 'Waiting...'}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <ProfilePicture address={gameData?.joiner} size={32} />
+                  <div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Player 2</div>
+                    <div style={{ fontWeight: 'bold' }}>
+                      {gameData?.joiner ? `${gameData.joiner.slice(0, 6)}...${gameData.joiner.slice(-4)}` : 'Waiting...'}
+                    </div>
                   </div>
                 </div>
+                {isJoiner && (
+                  <div style={{
+                    background: theme.colors.neonBlue,
+                    color: '#000',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold'
+                  }}>
+                    YOU
+                  </div>
+                )}
               </div>
 
-              {/* Round Indicators for Player 2 */}
+              {/* Join Game Button - Only show if game is waiting and user is not creator */}
+              {gameData?.status === 'waiting' && !isCreator && !isJoiner && (
+                <div style={{
+                  marginTop: '1rem',
+                  textAlign: 'center'
+                }}>
+                  <button
+                    onClick={handleJoinGame}
+                    style={{
+                      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                      color: '#000',
+                      border: 'none',
+                      padding: '0.75rem 1.5rem',
+                      borderRadius: '0.5rem',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 0 15px rgba(255, 215, 0, 0.3)',
+                      width: '100%',
+                      animation: 'buttonPulse 2s infinite'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.02)'
+                      e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.5)'
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)'
+                      e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.3)'
+                    }}
+                  >
+                    Join Game
+                  </button>
+                </div>
+              )}
+
+              {/* Round Indicators for Player 2 - No NFT data */}
               <GoldGameInstructions
                 isPlayerTurn={isMyTurn}
                 gamePhase={gameState?.phase}
@@ -672,6 +753,8 @@ const FlipGame = () => {
                 maxRounds={gameState?.maxRounds}
                 creatorWins={gameState?.creatorWins}
                 joinerWins={gameState?.joinerWins}
+                nftData={null}
+                chainConfig={null}
               />
 
               {/* NEW: Game Info Section */}
@@ -793,23 +876,6 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* Join Button */}
-          {canJoin && (
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <Button 
-                onClick={handleJoinGame}
-                disabled={joiningGame}
-                style={{ 
-                  fontSize: '1.2rem',
-                  padding: '1rem 2rem',
-                  background: theme.colors.neonPink
-                }}
-              >
-                {joiningGame ? 'Processing...' : `JOIN GAME ($${gameData.priceUSD.toFixed(2)})`}
-              </Button>
-            </div>
-          )}
-
           {/* Round Result Display */}
           {roundResult && (
             <div style={{
@@ -855,27 +921,70 @@ const FlipGame = () => {
           />
         </ContentWrapper>
       </Container>
+      <style>
+        {`
+          @keyframes buttonPulse {
+            0% {
+              box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            }
+            50% {
+              box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+            }
+            100% {
+              box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            }
+          }
+        `}
+      </style>
     </ThemeProvider>
   )
 }
 
 // Add helper functions for chain URLs
 const getExplorerUrl = (chain) => {
+  if (!chain) return 'https://etherscan.io' // Default to Ethereum explorer
+  
   const explorers = {
     ethereum: 'https://etherscan.io',
     polygon: 'https://polygonscan.com',
+    base: 'https://basescan.org',
+    arbitrum: 'https://arbiscan.io',
+    optimism: 'https://optimistic.etherscan.io',
     // Add more chains as needed
   }
   return explorers[chain.toLowerCase()] || 'https://etherscan.io'
 }
 
 const getMarketplaceUrl = (chain) => {
+  if (!chain) return 'https://opensea.io/assets/ethereum' // Default to Ethereum marketplace
+  
   const marketplaces = {
     ethereum: 'https://opensea.io/assets/ethereum',
     polygon: 'https://opensea.io/assets/matic',
+    base: 'https://opensea.io/assets/base',
+    arbitrum: 'https://opensea.io/assets/arbitrum',
+    optimism: 'https://opensea.io/assets/optimism',
     // Add more chains as needed
   }
-  return marketplaces[chain.toLowerCase()] || 'https://opensea.io'
+  return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
+}
+
+// Add the missing fetchNFTData function
+const fetchNFTData = async (gameId) => {
+  try {
+    setIsLoadingNFT(true)
+    console.log('🎨 Fetching NFT data for game:', gameId)
+    const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
+    if (!response.ok) throw new Error('Failed to fetch NFT data')
+    const data = await response.json()
+    console.log('✅ NFT data received:', data)
+    setNftData(data)
+  } catch (error) {
+    console.error('❌ Error fetching NFT data:', error)
+    setNftData(null)
+  } finally {
+    setIsLoadingNFT(false)
+  }
 }
 
 export default FlipGame

@@ -14,43 +14,6 @@ const GoldGameInstructions = ({
   creatorWins = 0,
   joinerWins = 0
 }) => {
-  if (spectatorMode) {
-    return (
-      <div style={{
-        marginTop: '2rem',
-        textAlign: 'center',
-        padding: '1.5rem',
-        background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
-        border: '2px solid rgba(255, 215, 0, 0.3)',
-        borderRadius: '1rem',
-        backdropFilter: 'blur(10px)'
-      }}>
-        <div style={{
-          fontSize: '1.5rem',
-          marginBottom: '0.5rem'
-        }}>
-          👀
-        </div>
-        <p style={{ 
-          color: '#FFD700', 
-          marginBottom: '1rem', 
-          fontWeight: 'bold',
-          fontSize: '1.2rem',
-          textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
-        }}>
-          SPECTATING
-        </p>
-        <p style={{ 
-          color: 'rgba(255, 215, 0, 0.8)', 
-          fontSize: '0.9rem',
-          lineHeight: '1.4'
-        }}>
-          Watch players choose their side, charge power, and flip the golden coin!
-        </p>
-      </div>
-    )
-  }
-
   // Round indicator circles for each player box
   const renderRoundIndicators = (isCreator) => {
     return (
@@ -108,7 +71,62 @@ const GoldGameInstructions = ({
     )
   }
 
-  return renderRoundIndicators(playerNumber === 1)
+  return (
+    <div style={{
+      marginTop: '2rem',
+      textAlign: 'center',
+      padding: '1.5rem',
+      background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+      border: '2px solid rgba(255, 215, 0, 0.3)',
+      borderRadius: '1rem',
+      backdropFilter: 'blur(10px)'
+    }}>
+      {/* Game Info */}
+      <div style={{
+        marginTop: '1.5rem',
+        padding: '1rem',
+        background: 'rgba(0, 0, 0, 0.2)',
+        borderRadius: '0.8rem',
+        border: '1px solid rgba(255, 215, 0, 0.2)'
+      }}>
+        <h3 style={{
+          color: '#FFD700',
+          fontSize: '1rem',
+          marginBottom: '1rem',
+          textAlign: 'left'
+        }}>
+          Game Info
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '1rem',
+          textAlign: 'left'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Current Round</div>
+            <div style={{ color: '#FFD700', fontWeight: 'bold' }}>{currentRound} / {maxRounds}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Creator Wins</div>
+            <div style={{ color: theme.colors.neonGreen, fontWeight: 'bold' }}>{creatorWins}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Joiner Wins</div>
+            <div style={{ color: theme.colors.neonGreen, fontWeight: 'bold' }}>{joinerWins}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Game Phase</div>
+            <div style={{ color: '#FFD700', fontWeight: 'bold', textTransform: 'capitalize' }}>
+              {gamePhase || 'Waiting'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {renderRoundIndicators(playerNumber === 1)}
+    </div>
+  )
 }
 
 export default GoldGameInstructions 

@@ -755,14 +755,6 @@ export const DualGameInstructions = ({ isPlayerTurn, gamePhase, isPlayer, player
   if (spectatorMode) {
     return (
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <p style={{ 
-          color: theme.colors.neonBlue, 
-          marginBottom: '1rem', 
-          fontWeight: 'bold',
-          fontSize: '1.125rem'
-        }}>
-          👀 SPECTATING
-        </p>
         <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
           Watch both players charge power and flip the coin!
         </p>
