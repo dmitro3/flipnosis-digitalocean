@@ -129,11 +129,10 @@ const Home = () => {
   const chainFilters = [
     { key: 'all', name: 'All', icon: '🌐' },
     { key: 'base', name: 'Base', icon: '🔵' },
-    { key: 'ethereum', name: 'Ethereum', icon: '🔵' },
-    { key: 'polygon', name: 'Polygon', icon: '🟣' },
-    { key: 'arbitrum', name: 'Arbitrum', icon: '🔷' },
     { key: 'bnb', name: 'BNB', icon: '🟡' },
-    { key: 'avalanche', name: 'Avalanche', icon: '🔴' }
+    { key: 'avalanche', name: 'Avalanche', icon: '🔴' },
+    { key: 'polygon', name: 'Polygon', icon: '🟣' },
+    { key: 'arbitrum', name: 'Arbitrum', icon: '🔷' }
   ]
 
   const handleSelectFlip = (flip) => {
@@ -211,7 +210,8 @@ const Home = () => {
                   style={{
                     background: activeFilter === filter.key ? theme.colors.neonGreen : 'transparent',
                     border: `1px solid ${theme.colors.neonGreen}`,
-                    padding: '0.5rem 1rem'
+                    padding: '0.5rem 1rem',
+                    color: activeFilter === filter.key ? '#000B1A' : theme.colors.textPrimary
                   }}
                 >
                   {filter.icon} {filter.name}
@@ -260,15 +260,23 @@ const Home = () => {
                       <GameStats>
                         <GameStat>
                           <span>Price</span>
-                          <div>${selectedFlip.priceUSD}</div>
+                          <div>${selectedFlip.priceUSD.toFixed(2)}</div>
                         </GameStat>
                         <GameStat>
                           <span>Rounds</span>
                           <div>{selectedFlip.rounds}</div>
                         </GameStat>
                       </GameStats>
-                      <GameFlipButton as={Link} to={`/game/${selectedFlip.id}`}>
-                        Join Flip
+                      <GameFlipButton 
+                        as={Link} 
+                        to={`/game/${selectedFlip.id}`}
+                        style={{
+                          background: '#FF1493',
+                          color: '#fff',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        View Flip
                       </GameFlipButton>
                     </GameInfo>
                   </div>
@@ -356,7 +364,7 @@ const Home = () => {
                             <span>{flip.rounds} Rounds</span>
                             <span>{flip.chain}</span>
                             <span>🔵</span>
-                            <span>${flip.priceUSD}</span>
+                            <span>${flip.priceUSD.toFixed(2)}</span>
                           </div>
                         </div>
                         <GameFlipButton 
@@ -369,9 +377,9 @@ const Home = () => {
                             minWidth: 'unset',
                             width: 'auto',
                             textAlign: 'center',
-                            color: '#000',
+                            color: '#fff',
                             fontWeight: 'bold',
-                            background: theme.colors.neonBlue,
+                            background: '#FF1493',
                             alignSelf: 'center',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -379,12 +387,12 @@ const Home = () => {
                             lineHeight: 1,
                             marginLeft: 'auto',
                             '&:hover': {
-                              background: theme.colors.neonPink,
-                              color: '#000'
+                              background: '#FF1493',
+                              color: '#fff'
                             }
                           }}
                         >
-                          JOIN FLIP
+                          VIEW FLIP
                         </GameFlipButton>
                       </div>
                     </div>

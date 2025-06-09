@@ -5,7 +5,6 @@ import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
-import potionLogo from '../../Images/potion.png'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 
@@ -33,13 +32,6 @@ const Logo = styled(Link)`
   text-decoration: none;
   letter-spacing: 6px;
   font-family: 'Hyperwave', sans-serif;
-  animation: neonPulse 2s infinite;
-  ${props => props.theme.animations.neonPulse}
-`
-
-const PotionLogo = styled.img`
-  height: 2.5rem;
-  width: auto;
   animation: neonPulse 2s infinite;
   ${props => props.theme.animations.neonPulse}
 `
@@ -221,7 +213,6 @@ const Header = () => {
       <HeaderContainer>
         <LogoContainer>
           <Logo to="/">FLIPNOSIS</Logo>
-          <PotionLogo src={potionLogo} alt="Potion Logo" />
         </LogoContainer>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <CreateButton to="/create">

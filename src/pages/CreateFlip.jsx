@@ -41,7 +41,7 @@ const CreateFlip = () => {
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [priceUSD, setPriceUSD] = useState('')
-  const [rounds, setRounds] = useState(3)
+  const [rounds] = useState(5)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -253,26 +253,6 @@ const CreateFlip = () => {
                   />
                   <CurrencyLabel>USD</CurrencyLabel>
                 </InputWrapper>
-              </FormSection>
-
-              <FormSection>
-                <SectionTitle>Number of Rounds</SectionTitle>
-                <RoundsContainer>
-                  <RoundButton
-                    type="button"
-                    active={rounds === 3}
-                    onClick={() => setRounds(3)}
-                  >
-                    3 Rounds
-                  </RoundButton>
-                  <RoundButton
-                    type="button"
-                    active={rounds === 5}
-                    onClick={() => setRounds(5)}
-                  >
-                    5 Rounds
-                  </RoundButton>
-                </RoundsContainer>
               </FormSection>
 
               <SubmitButton type="submit" disabled={isSubmitting}>

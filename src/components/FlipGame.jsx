@@ -439,6 +439,22 @@ const FlipGame = () => {
     }
   }, [gameState?.phase, gameState?.winner, address, gameData])
 
+  const handleShare = (platform) => {
+    const shareText = `Join my game of Crypto Flipz! Game ID: ${gameId}`;
+    const shareUrl = window.location.href;
+    
+    if (platform === 'x') {
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+      window.open(twitterUrl, '_blank');
+    } else if (platform === 'telegram') {
+      const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+      window.open(telegramUrl, '_blank');
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(shareUrl);
+      showInfo('Link copied to clipboard!');
+    }
+  };
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -712,29 +728,68 @@ const FlipGame = () => {
                   <button
                     onClick={handleJoinGame}
                     style={{
-                      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                      color: '#000',
+                      background: '#FF1493',
+                      color: '#fff',
                       border: 'none',
-                      padding: '0.75rem 1.5rem',
+                      padding: '1rem 2rem',
                       borderRadius: '0.5rem',
-                      fontSize: '1rem',
-                      fontWeight: 'bold',
+                      fontSize: '1.2rem',
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      boxShadow: '0 0 15px rgba(255, 215, 0, 0.3)',
                       width: '100%',
-                      animation: 'buttonPulse 2s infinite'
+                      marginTop: '1rem',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      animation: 'pulse 2s infinite',
+                      boxShadow: '0 0 20px rgba(255, 20, 147, 0.4)',
+                      transition: 'all 0.3s ease'
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.02)'
-                      e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.5)'
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.6)';
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)'
-                      e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.3)'
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.4)';
                     }}
                   >
-                    Join Game
+                    <style>
+                      {`
+                        @keyframes pulse {
+                          0% {
+                            transform: scale(1);
+                            box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
+                          }
+                          50% {
+                            transform: scale(1.05);
+                            box-shadow: 0 0 40px rgba(255, 20, 147, 0.6);
+                          }
+                          100% {
+                            transform: scale(1);
+                            box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
+                          }
+                        }
+                        @keyframes shimmer {
+                          0% {
+                            background-position: -200% center;
+                          }
+                          100% {
+                            background-position: 200% center;
+                          }
+                        }
+                      `}
+                    </style>
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 3s infinite linear',
+                      pointerEvents: 'none'
+                    }} />
+                    Join Flip
                   </button>
                 </div>
               )}
@@ -784,12 +839,70 @@ const FlipGame = () => {
                 </div>
               </div>
 
-              {/* NEW: Share Button */}
+              {/* NEW: Share Buttons */}
               <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                  <button
+                    onClick={() => handleShare('x')}
+                    style={{
+                      background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+                      color: '#fff',
+                      border: '1px solid #333',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>𝕏</span>
+                    Share on X
+                  </button>
+
+                  <button
+                    onClick={() => handleShare('telegram')}
+                    style={{
+                      background: 'linear-gradient(135deg, #0088cc 0%, #006699 100%)',
+                      color: '#fff',
+                      border: '1px solid #006699',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 136, 204, 0.5)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>✈️</span>
+                    Share on TG
+                  </button>
+                </div>
+
                 <button
-                  onClick={handleShare}
+                  onClick={() => handleShare('copy')}
                   style={{
-                    background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+                    background: 'linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%)',
                     color: '#fff',
                     border: '1px solid #333',
                     padding: '0.5rem 1rem',
@@ -799,7 +912,8 @@ const FlipGame = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    margin: '0 auto'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'scale(1.05)';
@@ -810,8 +924,8 @@ const FlipGame = () => {
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
-                  <span style={{ fontSize: '1.2rem' }}>𝕏</span>
-                  Share on X
+                  <span style={{ fontSize: '1.2rem' }}>🔗</span>
+                  Copy Link
                 </button>
               </div>
             </div>
@@ -947,74 +1061,76 @@ const FlipGame = () => {
           />
 
           {/* Winner Screen */}
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.9)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '2rem',
-            backdropFilter: 'blur(10px)'
-          }}>
+          {gameState?.winner && (
             <div style={{
-              background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
-              border: '2px solid #FFD700',
-              borderRadius: '1rem',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.9)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
               padding: '2rem',
-              textAlign: 'center',
-              maxWidth: '500px',
-              width: '100%',
-              boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
+              backdropFilter: 'blur(10px)'
             }}>
-              <h2 style={{ color: '#FFD700', marginBottom: '1rem' }}>🎉 You Won! 🎉</h2>
-              <p style={{ color: '#fff', marginBottom: '2rem' }}>
-                Congratulations! You've won {gameState.potAmount} {gameState.currency}
-              </p>
-              <button
-                onClick={handleClaimWinnings}
-                style={{
-                  background: 'linear-gradient(135deg, #FF69B4 0%, #FF1493 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '1rem 2rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '1.2rem',
-                  cursor: 'pointer',
-                  width: '100%',
-                  marginBottom: '1rem',
-                  boxShadow: '0 0 20px rgba(255, 105, 180, 0.4)',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 105, 180, 0.6)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 105, 180, 0.4)';
-                }}
-              >
-                💰 Claim Your Winnings
-              </button>
-              <p style={{ 
-                color: '#ff4444', 
-                fontSize: '0.9rem', 
-                marginTop: '1rem',
-                border: '1px solid rgba(255, 68, 68, 0.3)',
-                padding: '0.5rem',
-                borderRadius: '0.5rem',
-                background: 'rgba(255, 68, 68, 0.1)'
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
+                border: '2px solid #FFD700',
+                borderRadius: '1rem',
+                padding: '2rem',
+                textAlign: 'center',
+                maxWidth: '500px',
+                width: '100%',
+                boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
               }}>
-                ⚠️ Warning: If you leave this screen without claiming, you will lose your winnings.
-              </p>
+                <h2 style={{ color: '#FFD700', marginBottom: '1rem' }}>🎉 You Won! 🎉</h2>
+                <p style={{ color: '#fff', marginBottom: '2rem' }}>
+                  Congratulations! You've won {gameState?.potAmount || 0} {gameState?.currency || 'ETH'}
+                </p>
+                <button
+                  onClick={handleClaimWinnings}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF69B4 0%, #FF1493 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '1rem 2rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '1.2rem',
+                    cursor: 'pointer',
+                    width: '100%',
+                    marginBottom: '1rem',
+                    boxShadow: '0 0 20px rgba(255, 105, 180, 0.4)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 105, 180, 0.6)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 105, 180, 0.4)';
+                  }}
+                >
+                  💰 Claim Your Winnings
+                </button>
+                <p style={{ 
+                  color: '#ff4444', 
+                  fontSize: '0.9rem', 
+                  marginTop: '1rem',
+                  border: '1px solid rgba(255, 68, 68, 0.3)',
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  background: 'rgba(255, 68, 68, 0.1)'
+                }}>
+                  ⚠️ Warning: If you leave this screen without claiming, you will lose your winnings.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </ContentWrapper>
       </Container>
       <style>
