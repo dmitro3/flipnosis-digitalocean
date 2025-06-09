@@ -367,6 +367,7 @@ const Home = () => {
                             fontSize: '0.7rem',
                             height: '28px',
                             minWidth: 'unset',
+                            width: 'auto',
                             textAlign: 'center',
                             color: '#000',
                             fontWeight: 'bold',
@@ -376,6 +377,7 @@ const Home = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             lineHeight: 1,
+                            marginLeft: 'auto',
                             '&:hover': {
                               background: theme.colors.neonPink,
                               color: '#000'

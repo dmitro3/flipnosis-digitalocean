@@ -23,6 +23,7 @@ import GoldGameInstructions from './GoldGameInstructions'
 import ShareButton from './ShareButton'
 import styled from '@emotion/styled'
 import GameResultPopup from './GameResultPopup'
+import GameChatBox from './GameChatBox'
 
 const BackgroundVideo = styled.video`
   position: fixed;
@@ -561,6 +562,15 @@ const FlipGame = () => {
                 playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
                 onPlayerChoice={handlePlayerChoice}
               />
+
+              {/* Game Chat Box */}
+              <div style={{ marginTop: '2rem' }}>
+                <GameChatBox 
+                  gameId={gameId}
+                  socket={socket}
+                  connected={connected}
+                />
+              </div>
             </div>
 
             {/* Player 2 Box */}
