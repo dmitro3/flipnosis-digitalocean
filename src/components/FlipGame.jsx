@@ -38,6 +38,41 @@ const BackgroundVideo = styled.video`
   opacity: 0.7;
 `
 
+const ChoiceAnimation = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 15rem;
+  font-weight: 900;
+  color: ${props => props.color};
+  text-transform: uppercase;
+  opacity: 0;
+  z-index: 1000;
+  pointer-events: none;
+  animation: choiceAnimation 1s ease-out forwards;
+  text-shadow: 0 0 20px ${props => props.color};
+
+  @keyframes choiceAnimation {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.5);
+    }
+    20% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+    80% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.5);
+    }
+  }
+`
+
 const Modal = styled.div`
   position: fixed;
   top: 0;
@@ -155,6 +190,11 @@ const FlipGame = () => {
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [nftOffer, setNftOffer] = useState(null)
 
+  // Add new state variables for choice animation
+  const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
+  const [choiceAnimationText, setChoiceAnimationText] = useState('')
+  const [choiceAnimationColor, setChoiceAnimationColor] = useState('')
+
   // WebSocket connection
   useEffect(() => {
     if (!gameId || !address) {
@@ -219,6 +259,18 @@ const FlipGame = () => {
                 joiner: data.joiner
               })
               setGameState(data)
+              
+              // Show opponent's choice animation if they just made a choice
+              if (data.phase === 'round_active' && 
+                  ((isCreator && data.joinerChoice) || (isJoiner && data.creatorChoice))) {
+                const opponentChoice = isCreator ? data.joinerChoice : data.creatorChoice
+                setChoiceAnimationText(opponentChoice.toUpperCase())
+                setChoiceAnimationColor('#FF1493') // Neon pink
+                setShowChoiceAnimation(true)
+                setTimeout(() => {
+                  setShowChoiceAnimation(false)
+                }, 1000)
+              }
               break
               
             case 'flip_animation':
@@ -416,6 +468,16 @@ const FlipGame = () => {
       showError('Not your turn')
       return
     }
+    
+    // Show animation for player's choice
+    setChoiceAnimationText(choice.toUpperCase())
+    setChoiceAnimationColor('#00FF41') // Neon green
+    setShowChoiceAnimation(true)
+    
+    // Hide animation after 1 second
+    setTimeout(() => {
+      setShowChoiceAnimation(false)
+    }, 1000)
     
     console.log('🎯 Sending player choice to server:', choice)
     
@@ -921,6 +983,14 @@ const FlipGame = () => {
       <BackgroundVideo autoPlay loop muted playsInline>
         <source src={hazeVideo} type="video/webm" />
       </BackgroundVideo>
+      
+      {/* Add the choice animation component */}
+      {showChoiceAnimation && (
+        <ChoiceAnimation color={choiceAnimationColor}>
+          {choiceAnimationText}
+        </ChoiceAnimation>
+      )}
+
       <Container style={{ 
         position: 'relative', 
         minHeight: '100vh',
