@@ -416,6 +416,26 @@ const Home = () => {
                           }}>
                             {flip.gameType === 'nft-vs-nft' ? '⚔️' : '💰'}
                           </div>
+                          {flip.status === 'completed' && (
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '2px',
+                              left: '2px',
+                              right: '2px',
+                              background: 'rgba(255, 0, 0, 0.9)',
+                              color: '#fff',
+                              fontSize: '8px',
+                              padding: '2px 4px',
+                              borderRadius: '2px',
+                              fontWeight: 'bold',
+                              textAlign: 'center',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
+                              boxShadow: '0 0 5px rgba(255, 0, 0, 0.5)'
+                            }}>
+                              Ended
+                            </div>
+                          )}
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ 

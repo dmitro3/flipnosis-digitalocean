@@ -1082,7 +1082,9 @@ const FlipGame = () => {
               {/* Round Indicators for Player 1 */}
               <GoldGameInstructions
                 isPlayerTurn={isMyTurn}
-                gamePhase={gameState?.phase}
+                gamePhase={gameState?.phase === 'round_active' ? 
+                  (gameState?.creatorChoice ? `SIDE\n${gameState.creatorChoice.toUpperCase()}` : 'round_active') : 
+                  gameState?.phase}
                 isPlayer={isPlayer}
                 playerNumber={1}
                 spectatorMode={!isPlayer}
@@ -1290,10 +1292,12 @@ const FlipGame = () => {
                 </div>
               )}
 
-              {/* Round Indicators for Player 2 - No NFT data */}
+              {/* Round Indicators for Player 2 */}
               <GoldGameInstructions
                 isPlayerTurn={isMyTurn}
-                gamePhase={gameState?.phase}
+                gamePhase={gameState?.phase === 'round_active' ? 
+                  (gameState?.joinerChoice ? `SIDE\n${gameState.joinerChoice.toUpperCase()}` : 'round_active') : 
+                  gameState?.phase}
                 isPlayer={isPlayer}
                 playerNumber={2}
                 spectatorMode={!isPlayer}
@@ -1337,20 +1341,32 @@ const FlipGame = () => {
 
               {/* NEW: Share Buttons */}
               <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  opacity: 0.8, 
+                  marginBottom: '0.5rem',
+                  color: theme.colors.textSecondary
+                }}>
+                  Share
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '0.5rem', 
+                  justifyContent: 'center'
+                }}>
                   <button
                     onClick={() => handleShare('x')}
                     style={{
                       background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
                       color: '#fff',
                       border: '1px solid #333',
-                      padding: '0.5rem 1rem',
+                      width: '32px',
+                      height: '32px',
                       borderRadius: '0.5rem',
-                      fontSize: '0.9rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
+                      justifyContent: 'center',
                       transition: 'all 0.3s ease'
                     }}
                     onMouseOver={(e) => {
@@ -1363,7 +1379,6 @@ const FlipGame = () => {
                     }}
                   >
                     <span style={{ fontSize: '1.2rem' }}>𝕏</span>
-                    Share on X
                   </button>
 
                   <button
@@ -1372,13 +1387,13 @@ const FlipGame = () => {
                       background: 'linear-gradient(135deg, #0088cc 0%, #006699 100%)',
                       color: '#fff',
                       border: '1px solid #006699',
-                      padding: '0.5rem 1rem',
+                      width: '32px',
+                      height: '32px',
                       borderRadius: '0.5rem',
-                      fontSize: '0.9rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
+                      justifyContent: 'center',
                       transition: 'all 0.3s ease'
                     }}
                     onMouseOver={(e) => {
@@ -1391,38 +1406,35 @@ const FlipGame = () => {
                     }}
                   >
                     <span style={{ fontSize: '1.2rem' }}>✈️</span>
-                    Share on TG
+                  </button>
+
+                  <button
+                    onClick={() => handleShare('copy')}
+                    style={{
+                      background: 'linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%)',
+                      color: '#fff',
+                      border: '1px solid #333',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                      e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>🔗</span>
                   </button>
                 </div>
-
-                <button
-                  onClick={() => handleShare('copy')}
-                  style={{
-                    background: 'linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%)',
-                    color: '#fff',
-                    border: '1px solid #333',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.3s ease',
-                    margin: '0 auto'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <span style={{ fontSize: '1.2rem' }}>🔗</span>
-                  Copy Link
-                </button>
               </div>
             </div>
           </div>
