@@ -24,6 +24,7 @@ import ShareButton from './ShareButton'
 import styled from '@emotion/styled'
 import GameResultPopup from './GameResultPopup'
 import GameChatBox from './GameChatBox'
+import NFTVerificationDisplay from './NFTVerificationDisplay'
 
 const BackgroundVideo = styled.video`
   position: fixed;
@@ -69,6 +70,10 @@ const FlipGame = () => {
   // Add state for popup
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [popupData, setPopupData] = useState(null)
+
+  // Add new state for enhanced NFT data
+  const [nftData, setNftData] = useState(null)
+  const [isLoadingNFT, setIsLoadingNFT] = useState(false)
 
   // WebSocket connection
   useEffect(() => {
@@ -237,6 +242,28 @@ const FlipGame = () => {
 
     loadGame()
   }, [gameId])
+
+  // Add function to fetch NFT data
+  const fetchNFTData = async (gameId) => {
+    try {
+      setIsLoadingNFT(true)
+      const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
+      if (!response.ok) throw new Error('Failed to fetch NFT data')
+      const data = await response.json()
+      setNftData(data)
+    } catch (error) {
+      console.error('Error fetching NFT data:', error)
+    } finally {
+      setIsLoadingNFT(false)
+    }
+  }
+
+  // Update useEffect to fetch NFT data when game starts
+  useEffect(() => {
+    if (gameId && gameState === 'in_progress') {
+      fetchNFTData(gameId)
+    }
+  }, [gameId, gameState])
 
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
@@ -520,6 +547,24 @@ const FlipGame = () => {
                 creatorWins={gameState?.creatorWins}
                 joinerWins={gameState?.joinerWins}
               />
+
+              {/* Add NFT Verification Display */}
+              {nftData && (
+                <div className="nft-verification-container">
+                  {isLoadingNFT ? (
+                    <div className="loading-spinner">Loading NFT data...</div>
+                  ) : (
+                    <NFTVerificationDisplay
+                      nftData={nftData}
+                      chainConfig={{
+                        name: nftData.chain,
+                        explorerUrl: getExplorerUrl(nftData.chain),
+                        marketplaceUrl: getMarketplaceUrl(nftData.chain)
+                      }}
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Center - Coin and Power Area */}
@@ -812,6 +857,25 @@ const FlipGame = () => {
       </Container>
     </ThemeProvider>
   )
+}
+
+// Add helper functions for chain URLs
+const getExplorerUrl = (chain) => {
+  const explorers = {
+    ethereum: 'https://etherscan.io',
+    polygon: 'https://polygonscan.com',
+    // Add more chains as needed
+  }
+  return explorers[chain.toLowerCase()] || 'https://etherscan.io'
+}
+
+const getMarketplaceUrl = (chain) => {
+  const marketplaces = {
+    ethereum: 'https://opensea.io/assets/ethereum',
+    polygon: 'https://opensea.io/assets/matic',
+    // Add more chains as needed
+  }
+  return marketplaces[chain.toLowerCase()] || 'https://opensea.io'
 }
 
 export default FlipGame

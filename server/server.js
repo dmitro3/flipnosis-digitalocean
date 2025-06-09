@@ -242,6 +242,11 @@ app.post('/api/debug/init', async (req, res) => {
         nft_image TEXT,
         nft_collection TEXT,
         nft_chain TEXT,
+        nft_description TEXT,
+        nft_attributes TEXT,
+        nft_token_type TEXT,
+        nft_external_url TEXT,
+        nft_animation_url TEXT,
         price_usd REAL NOT NULL,
         rounds INTEGER NOT NULL,
         status TEXT DEFAULT 'waiting',
@@ -341,6 +346,11 @@ function initializeDatabase() {
       nft_image TEXT,
       nft_collection TEXT,
       nft_chain TEXT,
+      nft_description TEXT,
+      nft_attributes TEXT,
+      nft_token_type TEXT,
+      nft_external_url TEXT,
+      nft_animation_url TEXT,
       price_usd REAL NOT NULL,
       rounds INTEGER NOT NULL,
       status TEXT DEFAULT 'waiting',
@@ -414,8 +424,10 @@ const dbHelpers = {
     return new Promise((resolve, reject) => {
       const sql = `INSERT INTO games (
         id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
-        nft_collection, nft_chain, price_usd, rounds, listing_fee_eth, listing_fee_hash
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        nft_collection, nft_chain, nft_description, nft_attributes, 
+        nft_token_type, nft_external_url, nft_animation_url,
+        price_usd, rounds, listing_fee_eth, listing_fee_hash
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       
       const values = [
         gameData.id,
@@ -426,6 +438,11 @@ const dbHelpers = {
         gameData.nft.image,
         gameData.nft.collection,
         gameData.nft.chain,
+        gameData.nft.metadata?.description || '',
+        JSON.stringify(gameData.nft.metadata?.attributes || []),
+        gameData.nft.tokenType || 'ERC721',
+        gameData.nft.metadata?.externalUrl || '',
+        gameData.nft.metadata?.animationUrl || '',
         gameData.priceUSD,
         gameData.rounds,
         gameData.listingFee?.amountETH,
@@ -452,8 +469,17 @@ const dbHelpers = {
         if (err) {
           console.error('❌ Error getting game:', err)
           reject(err)
-        } else {
+        } else if (row) {
+          // Parse the JSON attributes back to array
+          try {
+            row.nft_attributes = JSON.parse(row.nft_attributes || '[]')
+          } catch (parseError) {
+            console.error('Error parsing NFT attributes:', parseError)
+            row.nft_attributes = []
+          }
           resolve(row)
+        } else {
+          resolve(null)
         }
       })
     })
@@ -1755,5 +1781,72 @@ app.get('/api/games/creator/:address', async (req, res) => {
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
+  }
+})
+
+// Add new API endpoint to get enhanced NFT data
+app.get('/api/games/:gameId/nft', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const game = await dbHelpers.getGame(gameId)
+    
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Return comprehensive NFT data
+    const nftData = {
+      contractAddress: game.nft_contract,
+      tokenId: game.nft_token_id,
+      name: game.nft_name,
+      image: game.nft_image,
+      collection: game.nft_collection,
+      chain: game.nft_chain,
+      tokenType: game.nft_token_type,
+      metadata: {
+        description: game.nft_description,
+        attributes: game.nft_attributes, // Already parsed in getGame
+        externalUrl: game.nft_external_url,
+        animationUrl: game.nft_animation_url
+      }
+    }
+    
+    res.json(nftData)
+  } catch (error) {
+    console.error('API Error:', error)
+    res.status(500).json({ error: 'Failed to get NFT data' })
+  }
+})
+
+// Add NFT validation endpoint for enhanced security
+app.post('/api/nft/validate', async (req, res) => {
+  try {
+    const { contractAddress, tokenId, chain } = req.body
+    
+    // Here you could add additional validation logic:
+    // 1. Check if contract exists on blockchain
+    // 2. Verify token exists
+    // 3. Check if it's a valid NFT contract
+    // 4. Verify ownership (optional)
+    
+    // For now, basic validation
+    if (!contractAddress || !tokenId || !chain) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+    
+    // Return validation result
+    res.json({
+      isValid: true,
+      message: 'NFT validation successful',
+      details: {
+        contractAddress,
+        tokenId,
+        chain,
+        validatedAt: new Date().toISOString()
+      }
+    })
+  } catch (error) {
+    console.error('API Error:', error)
+    res.status(500).json({ error: 'Failed to validate NFT' })
   }
 }) 
