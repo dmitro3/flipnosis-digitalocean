@@ -1296,7 +1296,7 @@ const FlipGame = () => {
               <GoldGameInstructions
                 isPlayerTurn={isMyTurn}
                 gamePhase={gameState?.phase === 'round_active' ? 
-                  (gameState?.joinerChoice ? `SIDE\n${gameState.joinerChoice.toUpperCase()}` : 'round_active') : 
+                  (gameState?.creatorChoice ? `SIDE\n${gameState.creatorChoice === 'heads' ? 'TAILS' : 'HEADS'}` : 'round_active') : 
                   gameState?.phase}
                 isPlayer={isPlayer}
                 playerNumber={2}

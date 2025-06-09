@@ -118,7 +118,7 @@ const GoldGameInstructions = ({
           <div>
             <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>SIDE</div>
             <div style={{ color: '#FFD700', fontWeight: 'bold', textTransform: 'capitalize' }}>
-              {gamePhase || 'Waiting'}
+              {gamePhase?.split('\n')[1] || 'Waiting'}
             </div>
           </div>
         </div>
