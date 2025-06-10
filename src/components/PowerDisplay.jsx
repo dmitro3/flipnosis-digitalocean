@@ -97,19 +97,33 @@ const PowerDisplay = ({
               }}
               style={{
                 flex: 1,
-                padding: '1rem',
-                background: `linear-gradient(45deg, ${theme.colors.neonPink}, ${theme.colors.neonPurple})`,
-                border: `2px solid ${theme.colors.neonPink}`,
-                borderRadius: '0.75rem',
+                padding: '1.5rem',
+                background: 'linear-gradient(45deg, #00FF41, #FF1493, #FFD700)',
+                backgroundSize: '200% 200%',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '1rem',
                 color: 'white',
                 fontWeight: 'bold',
                 cursor: 'pointer',
-                fontSize: '1rem',
+                fontSize: '1.2rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 15px rgba(255, 20, 147, 0.3)'
+                boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)',
+                animation: 'gradientShift 2s ease infinite',
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+                position: 'relative',
+                overflow: 'hidden'
               }}
             >
-              👑 HEADS
+              <span style={{
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}>
+                👑 HEADS
+              </span>
             </button>
             
             <button
@@ -123,19 +137,33 @@ const PowerDisplay = ({
               }}
               style={{
                 flex: 1,
-                padding: '1rem',
-                background: `linear-gradient(45deg, ${theme.colors.neonBlue}, ${theme.colors.neonGreen})`,
-                border: `2px solid ${theme.colors.neonBlue}`,
-                borderRadius: '0.75rem',
+                padding: '1.5rem',
+                background: 'linear-gradient(45deg, #FF1493, #FFD700, #00FF41)',
+                backgroundSize: '200% 200%',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '1rem',
                 color: 'white',
                 fontWeight: 'bold',
                 cursor: 'pointer',
-                fontSize: '1rem',
+                fontSize: '1.2rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 15px rgba(0, 191, 255, 0.3)'
+                boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)',
+                animation: 'gradientShift 2s ease infinite',
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+                position: 'relative',
+                overflow: 'hidden'
               }}
             >
-              💎 TAILS
+              <span style={{
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}>
+                💎 TAILS
+              </span>
             </button>
           </div>
         </div>
