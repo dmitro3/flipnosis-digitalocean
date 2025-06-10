@@ -1083,19 +1083,17 @@ const FlipGame = () => {
               {/* Round Indicators for Player 1 */}
               <GoldGameInstructions
                 isPlayerTurn={isMyTurn}
-                gamePhase={gameState?.phase === 'round_active' ? 
-                  (gameState?.creatorChoice ? `SIDE\n${gameState.creatorChoice.toUpperCase()}` : 'round_active') : 
-                  gameState?.phase}
+                gamePhase={gameState?.phase}
                 isPlayer={isPlayer}
-                playerNumber={1}
+                playerNumber={isCreator ? 1 : 2}
                 spectatorMode={!isPlayer}
-                currentPower={gameState?.chargingPlayer === address ? 
-                  (gameState?.currentPlayer === gameState?.creator ? gameState?.creatorPower : gameState?.joinerPower) : 0
-                }
+                currentPower={isCreator ? gameState?.creatorPower : gameState?.joinerPower}
+                playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
                 currentRound={gameState?.currentRound}
                 maxRounds={gameState?.maxRounds}
                 creatorWins={gameState?.creatorWins}
                 joinerWins={gameState?.joinerWins}
+                turnTimeLeft={gameState?.turnTimeLeft}
                 nftData={nftData}
                 chainConfig={{
                   name: nftData?.chain || 'Ethereum',

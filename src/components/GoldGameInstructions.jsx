@@ -12,7 +12,8 @@ const GoldGameInstructions = ({
   currentRound = 1,
   maxRounds = 5,
   creatorWins = 0,
-  joinerWins = 0
+  joinerWins = 0,
+  turnTimeLeft = 20
 }) => {
   // Round indicator circles for each player box
   const renderRoundIndicators = (isCreator) => {
@@ -71,6 +72,34 @@ const GoldGameInstructions = ({
     )
   }
 
+  // Add timer display component
+  const renderTimer = () => {
+    if (gamePhase === 'round_active' && turnTimeLeft !== undefined) {
+      const color = turnTimeLeft <= 5 ? theme.colors.statusError : '#FFD700'
+      return (
+        <div style={{
+          marginTop: '1rem',
+          padding: '0.5rem',
+          background: 'rgba(0, 0, 0, 0.2)',
+          borderRadius: '0.5rem',
+          border: `1px solid ${color}`,
+          animation: turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+        }}>
+          <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Time Left</div>
+          <div style={{ 
+            color: color, 
+            fontWeight: 'bold',
+            fontSize: '1.2rem',
+            textShadow: `0 0 10px ${color}`
+          }}>
+            {turnTimeLeft}s
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div style={{
       marginTop: '2rem',
@@ -122,6 +151,7 @@ const GoldGameInstructions = ({
             </div>
           </div>
         </div>
+        {renderTimer()}
       </div>
 
       {renderRoundIndicators(playerNumber === 1)}
