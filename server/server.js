@@ -940,13 +940,7 @@ class GameSession {
     this.phase = 'round_active'
     this.broadcastGameState()
     
-    // Start charging power immediately
-    this.startCharging(this.currentPlayer)
-    
-    // Auto-flip after a short delay
-    setTimeout(() => {
-      this.stopCharging(this.currentPlayer)
-    }, 1000)
+    // Don't automatically start charging - wait for player input
   }
 
   startCharging(address) {
