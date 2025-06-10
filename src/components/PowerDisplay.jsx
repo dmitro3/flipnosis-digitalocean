@@ -98,8 +98,7 @@ const PowerDisplay = ({
               style={{
                 flex: 1,
                 padding: '1.5rem',
-                background: 'linear-gradient(45deg, #00FF41, #FF1493, #FFD700)',
-                backgroundSize: '200% 200%',
+                background: '#00FF41',
                 border: '2px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '1rem',
                 color: 'white',
@@ -108,7 +107,7 @@ const PowerDisplay = ({
                 fontSize: '1.2rem',
                 transition: 'all 0.3s ease',
                 boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)',
-                animation: 'gradientShift 2s ease infinite',
+                animation: 'colorPulse 2s ease infinite',
                 textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
                 position: 'relative',
                 overflow: 'hidden'
@@ -138,8 +137,7 @@ const PowerDisplay = ({
               style={{
                 flex: 1,
                 padding: '1.5rem',
-                background: 'linear-gradient(45deg, #FF1493, #FFD700, #00FF41)',
-                backgroundSize: '200% 200%',
+                background: '#00FF41',
                 border: '2px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '1rem',
                 color: 'white',
@@ -148,7 +146,7 @@ const PowerDisplay = ({
                 fontSize: '1.2rem',
                 transition: 'all 0.3s ease',
                 boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)',
-                animation: 'gradientShift 2s ease infinite',
+                animation: 'colorPulse 2s ease infinite',
                 textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
                 position: 'relative',
                 overflow: 'hidden'

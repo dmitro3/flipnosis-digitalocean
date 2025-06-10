@@ -1550,9 +1550,6 @@ const FlipGame = () => {
                   border: '1px solid rgba(255, 215, 0, 0.3)',
                   borderRadius: '1rem'
                 }}>
-                  <div style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                    🎯 CHOOSE YOUR SIDE!
-                  </div>
                   <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
                     Select heads or tails in your player box, then you can charge power and flip!
                   </div>
