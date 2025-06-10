@@ -74,7 +74,7 @@ const GoldGameInstructions = ({
 
   // Add timer display component
   const renderTimer = () => {
-    if (gamePhase === 'round_active' && turnTimeLeft !== undefined) {
+    if ((gamePhase === 'round_active' || gamePhase === 'choosing') && turnTimeLeft !== undefined) {
       const color = turnTimeLeft <= 5 ? theme.colors.statusError : '#FFD700'
       return (
         <div style={{
@@ -85,7 +85,9 @@ const GoldGameInstructions = ({
           border: `1px solid ${color}`,
           animation: turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
         }}>
-          <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Time Left</div>
+          <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+            {gamePhase === 'choosing' ? 'Choose Side' : 'Time Left'}
+          </div>
           <div style={{ 
             color: color, 
             fontWeight: 'bold',

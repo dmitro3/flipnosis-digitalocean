@@ -1577,6 +1577,17 @@ const FlipGame = () => {
                   <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
                     Select heads or tails in your player box, then you can charge power and flip!
                   </div>
+                  {gameState.turnTimeLeft !== undefined && (
+                    <div style={{ 
+                      color: gameState.turnTimeLeft <= 5 ? theme.colors.statusError : theme.colors.neonYellow,
+                      fontWeight: 'bold',
+                      fontSize: '1.2rem',
+                      marginTop: '0.5rem',
+                      animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                    }}>
+                      {gameState.turnTimeLeft}s to choose
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{
@@ -1591,6 +1602,17 @@ const FlipGame = () => {
                   <div style={{ color: theme.colors.textSecondary, marginTop: '0.5rem' }}>
                     Waiting for {!isCreator ? 'Player 1' : 'Player 2'} to choose heads or tails
                   </div>
+                  {gameState.turnTimeLeft !== undefined && (
+                    <div style={{ 
+                      color: gameState.turnTimeLeft <= 5 ? theme.colors.statusError : theme.colors.neonYellow,
+                      fontWeight: 'bold',
+                      fontSize: '1.2rem',
+                      marginTop: '0.5rem',
+                      animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                    }}>
+                      {gameState.turnTimeLeft}s remaining
+                    </div>
+                  )}
                 </div>
               )}
             </div>

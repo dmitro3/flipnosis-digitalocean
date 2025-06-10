@@ -791,12 +791,14 @@ class GameSession {
     this.resetPowers()
     this.resetChoices()
     
+    // START THE TIMER IMMEDIATELY when game begins
+    this.startTurnTimer()
+    
     console.log('✅ Game started:', {
       newPhase: this.phase,
       currentPlayer: this.currentPlayer,
       currentRound: this.currentRound,
-      creatorChoice: this.creatorChoice,
-      joinerChoice: this.joinerChoice
+      turnTimeLeft: this.turnTimeLeft
     })
     
     try {
@@ -808,7 +810,7 @@ class GameSession {
       console.error('Error updating game start:', error)
     }
     
-    console.log('🎯 Game started - Player 1 should choose heads or tails')
+    console.log('🎯 Game started with countdown - Player 1 has 20 seconds to choose')
     this.broadcastGameState()
   }
 
