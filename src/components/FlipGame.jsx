@@ -1613,49 +1613,69 @@ const FlipGame = () => {
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              zIndex: 1000,
+              zIndex: 9999,
               background: 'rgba(0, 0, 0, 0.9)',
               padding: '2rem',
               borderRadius: '2rem',
               border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
               textAlign: 'center',
               width: '80%',
-              maxWidth: '600px'
+              maxWidth: '600px',
+              pointerEvents: 'none'
             }}>
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                style={{
-                  width: '100%',
-                  borderRadius: '1rem',
-                  marginBottom: '1rem'
-                }}
-                src={roundResult.actualWinner === address ? 
-                  'images/video/LoseWin/final lose win/win.webm' : 
-                  'images/video/LoseWin/final lose win/lose.webm'
-                }
-                onError={(e) => {
-                  console.error('Video playback error:', e);
-                  console.log('Video source:', e.target.src);
-                }}
-                onLoadedData={() => {
-                  console.log('Video loaded successfully');
-                }}
-              />
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                paddingTop: '56.25%', // 16:9 aspect ratio
+                marginBottom: '1rem'
+              }}>
+                <video
+                  key={roundResult.actualWinner === address ? 'win' : 'lose'} // Force re-render
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '1rem',
+                    objectFit: 'cover'
+                  }}
+                  src={roundResult.actualWinner === address ? 
+                    'images/video/LoseWin/final lose win/win.webm' : 
+                    'images/video/LoseWin/final lose win/lose.webm'
+                  }
+                  onError={(e) => {
+                    console.error('Video playback error:', e);
+                    console.log('Video source:', e.target.src);
+                    // Try alternative path
+                    e.target.src = roundResult.actualWinner === address ? 
+                      '/images/video/LoseWin/final lose win/win.webm' : 
+                      '/images/video/LoseWin/final lose win/lose.webm';
+                  }}
+                  onLoadedData={(e) => {
+                    console.log('Video loaded successfully');
+                    e.target.play().catch(err => console.error('Play error:', err));
+                  }}
+                />
+              </div>
               <div style={{
                 fontSize: '1.5rem',
                 color: 'white',
                 fontWeight: 'bold',
-                marginTop: '1rem'
+                marginTop: '1rem',
+                pointerEvents: 'auto'
               }}>
                 Coin: {roundResult.result.toUpperCase()}
               </div>
               <div style={{
                 fontSize: '1.2rem',
                 color: 'rgba(255, 255, 255, 0.8)',
-                marginTop: '0.5rem'
+                marginTop: '0.5rem',
+                pointerEvents: 'auto'
               }}>
                 You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}
               </div>
