@@ -1614,26 +1614,41 @@ const FlipGame = () => {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 1000,
-              background: roundResult.actualWinner === address ? 
-                'linear-gradient(45deg, rgba(0, 255, 65, 0.9), rgba(0, 255, 65, 0.7))' : 
-                'linear-gradient(45deg, rgba(255, 20, 147, 0.9), rgba(255, 20, 147, 0.7))',
-              padding: '3rem 4rem',
+              background: 'rgba(0, 0, 0, 0.9)',
+              padding: '2rem',
               borderRadius: '2rem',
               border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
-              textAlign: 'center'
+              textAlign: 'center',
+              width: '80%',
+              maxWidth: '600px'
             }}>
+              <video
+                autoPlay
+                loop
+                muted
+                style={{
+                  width: '100%',
+                  borderRadius: '1rem',
+                  marginBottom: '1rem'
+                }}
+                src={roundResult.actualWinner === address ? 
+                  '/images/video/LoseWin/final lose win/win.webm' : 
+                  '/images/video/LoseWin/final lose win/lose.webm'
+                }
+              />
               <div style={{
-                fontSize: '4rem',
-                fontWeight: 'bold',
+                fontSize: '1.5rem',
                 color: 'white',
-                marginBottom: '1rem'
+                fontWeight: 'bold',
+                marginTop: '1rem'
               }}>
-                {roundResult.actualWinner === address ? '🏆 WINNER!' : '💔 LOSER!'}
-              </div>
-              <div style={{ fontSize: '1.5rem', color: 'white', fontWeight: 'bold' }}>
                 Coin: {roundResult.result.toUpperCase()}
               </div>
-              <div style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '0.5rem' }}>
+              <div style={{
+                fontSize: '1.2rem',
+                color: 'rgba(255, 255, 255, 0.8)',
+                marginTop: '0.5rem'
+              }}>
                 You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}
               </div>
             </div>
