@@ -174,7 +174,8 @@ export const PlayerCard = ({
   return (
     <GlassCard style={{
       border: isCurrentUser ? `2px solid ${cardColor}` : '1px solid rgba(255,255,255,0.1)',
-      animation: isPlayerTurn ? 'playerTurnGlow 2s ease-in-out infinite' : 'none'
+      animation: isPlayerTurn ? 'playerTurnGlow 2s ease-in-out infinite' : 'none',
+      transition: 'all 0.3s ease'
     }}>
       <div style={{ textAlign: 'center' }}>
         {/* Player Header */}
