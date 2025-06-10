@@ -144,56 +144,41 @@ const FlipGame = () => {
   const navigate = useNavigate()
   const { isConnected, address, provider } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
-
-  // API URL
-  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-
-  // Local state - ONLY for non-game logic
-  const [gameData, setGameData] = useState(null)
+  const { gameData, setGameData } = useState(null)
   const [loading, setLoading] = useState(true)
   const [joiningGame, setJoiningGame] = useState(false)
-
-  // WebSocket state - SINGLE SOURCE OF TRUTH for game
   const [socket, setSocket] = useState(null)
   const [connected, setConnected] = useState(false)
   const [gameState, setGameState] = useState(null)
   const [flipAnimation, setFlipAnimation] = useState(null)
   const [roundResult, setRoundResult] = useState(null)
-
-  // Refs for user input
   const isChargingRef = useRef(false)
-
-  // Player identification
   const isCreator = gameData?.creator === address
   const isJoiner = gameData?.joiner === address
   const isPlayer = isCreator || isJoiner
   const isMyTurn = gameState?.currentPlayer === address
-
-  // Add state for popup
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [popupData, setPopupData] = useState(null)
-
-  // Add new state for enhanced NFT data
   const [nftData, setNftData] = useState(null)
   const [isLoadingNFT, setIsLoadingNFT] = useState(false)
-
-  // Add these state variables to your existing FlipGame component
   const [offeredNFTs, setOfferedNFTs] = useState([])
   const [acceptedOffer, setAcceptedOffer] = useState(null)
   const [isNFTGame, setIsNFTGame] = useState(false)
-
-  // Add new state variables
   const [showNFTOfferModal, setShowNFTOfferModal] = useState(false)
   const [showNFTVerificationModal, setShowNFTVerificationModal] = useState(false)
   const [showNFTDetailsModal, setShowNFTDetailsModal] = useState(false)
   const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [nftOffer, setNftOffer] = useState(null)
-
-  // Add new state variables for choice animation
   const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
   const [choiceAnimationText, setChoiceAnimationText] = useState('')
   const [choiceAnimationColor, setChoiceAnimationColor] = useState('')
+  const [timeLeft, setTimeLeft] = useState(20)
+  const [isTimerActive, setIsTimerActive] = useState(false)
+  const [offerStatus, setOfferStatus] = useState('pending')
+
+  // API URL
+  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
   // WebSocket connection
   useEffect(() => {
@@ -943,6 +928,127 @@ const FlipGame = () => {
     )
   }
 
+  // Add timer effect
+  useEffect(() => {
+    let timer;
+    if (isTimerActive && timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isTimerActive) {
+      // Time's up - auto flip with max power
+      handleAutoFlip();
+    }
+    return () => clearInterval(timer);
+  }, [isTimerActive, timeLeft]);
+
+  // Add auto flip handler
+  const handleAutoFlip = async () => {
+    if (!gameState || !isPlayer) return;
+    
+    try {
+      const maxPower = 100;
+      const choice = gameState.creatorChoice === 'heads' ? 'tails' : 'heads';
+      
+      if (isCreator) {
+        await contract.flipCoin(gameId, choice, maxPower);
+      } else {
+        await contract.flipCoin(gameId, choice, maxPower);
+      }
+      
+      setIsTimerActive(false);
+      setTimeLeft(20);
+    } catch (error) {
+      console.error('Error in auto flip:', error);
+      showError('Failed to auto flip');
+    }
+  };
+
+  // Modify the game state effect to handle timer
+  useEffect(() => {
+    if (gameState) {
+      const isMyTurn = gameState.chargingPlayer === address;
+      const isFinalRound = gameState.currentRound === 5;
+      
+      // Start timer if it's player's turn
+      if (isMyTurn) {
+        setTimeLeft(20);
+        setIsTimerActive(true);
+      } else {
+        setIsTimerActive(false);
+      }
+
+      // Auto flip for final round
+      if (isFinalRound && gameState.phase === 'round_active') {
+        handleAutoFlip();
+      }
+    }
+  }, [gameState]);
+
+  // Add timer display component
+  const TimerDisplay = () => {
+    if (!isTimerActive) return null;
+    
+    return (
+      <div style={{
+        position: 'absolute',
+        top: '1rem',
+        right: '1rem',
+        background: 'rgba(0, 0, 0, 0.8)',
+        padding: '0.5rem 1rem',
+        borderRadius: '1rem',
+        color: timeLeft <= 5 ? '#ff4444' : '#ffffff',
+        fontSize: '1.2rem',
+        fontWeight: 'bold',
+        animation: timeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+      }}>
+        {timeLeft}s
+      </div>
+    );
+  };
+
+  // Add timer styles
+  const timerStyles = `
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+  `;
+
+  // Add final round message
+  const FinalRoundMessage = () => {
+    if (!gameState || gameState.currentRound !== 5) return null;
+    
+    return (
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        background: 'rgba(0, 0, 0, 0.9)',
+        padding: '1rem 2rem',
+        borderRadius: '1rem',
+        color: '#FFD700',
+        fontSize: '1.5rem',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        zIndex: 1000,
+        animation: 'fadeIn 0.5s ease-out'
+      }}>
+        FINAL ROUND FLIP
+      </div>
+    );
+  };
+
+  // Add final round styles
+  const finalRoundStyles = `
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  `;
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -980,6 +1086,12 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
+      <style>
+        {`
+          ${timerStyles}
+          ${finalRoundStyles}
+        `}
+      </style>
       <BackgroundVideo autoPlay loop muted playsInline>
         <source src={hazeVideo} type="video/webm" />
       </BackgroundVideo>
@@ -998,6 +1110,10 @@ const FlipGame = () => {
         zIndex: 1
       }}>
         <ContentWrapper>
+          {/* Add Timer and Final Round Message */}
+          <TimerDisplay />
+          <FinalRoundMessage />
+          
           {/* Main Game Area - Three Column Layout */}
           <div style={{ 
             display: 'grid', 
@@ -1020,14 +1136,15 @@ const FlipGame = () => {
               borderRadius: '1.5rem',
               backdropFilter: 'blur(10px)'
             }}>
-              {/* NFT Image - Small in bottom right */}
+              {/* NFT Image - At the bottom */}
               {nftData?.image && (
                 <div style={{
                   position: 'absolute',
-                  bottom: '1rem',
-                  right: '1rem',
-                  width: '120px',  // Doubled from 60px
-                  height: '120px', // Doubled from 60px
+                  bottom: '-140px',  // Position below the game display
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '120px',
+                  height: '120px',
                   borderRadius: '8px',
                   overflow: 'hidden',
                   border: '2px solid rgba(255, 215, 0, 0.3)',
@@ -1338,6 +1455,31 @@ const FlipGame = () => {
                   {gameState && <span> • {gameState.spectators} watching</span>}
                 </div>
               </div>
+
+              {/* NFT Image - Below Game Info */}
+              {nftData?.image && (
+                <div style={{
+                  marginTop: '1.5rem',
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  border: '2px solid rgba(255, 215, 0, 0.3)',
+                  boxShadow: '0 0 10px rgba(255, 215, 0, 0.2)',
+                  marginLeft: 'auto',
+                  marginRight: 'auto'
+                }}>
+                  <img 
+                    src={nftData.image} 
+                    alt="NFT" 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+              )}
 
               {/* NEW: Share Buttons */}
               <div style={{ marginTop: '1rem', textAlign: 'center' }}>
@@ -1796,21 +1938,6 @@ const FlipGame = () => {
           )}
         </ContentWrapper>
       </Container>
-      <style>
-        {`
-          @keyframes buttonPulse {
-            0% {
-              box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-            }
-            50% {
-              box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
-            }
-            100% {
-              box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-            }
-          }
-        `}
-      </style>
       
       {/* Add new modals */}
       {renderNFTOfferModal()}
