@@ -630,6 +630,7 @@ class GameSession {
     // Timer system
     this.turnTimer = null
     this.turnTimeLeft = 20 // 20 seconds per turn
+    this.remainingTimeForPower = 0 // Track remaining time for power phase
     
     console.log('✅ GameSession created:', {
       gameId,
@@ -678,7 +679,8 @@ class GameSession {
       spectators: this.clients.size,
       creatorChoice: this.creatorChoice,
       joinerChoice: this.joinerChoice,
-      turnTimeLeft: this.turnTimeLeft // Add timer to state
+      turnTimeLeft: this.turnTimeLeft,
+      remainingTimeForPower: this.remainingTimeForPower
     }
 
     console.log('📢 Broadcasting game state:', {
@@ -846,13 +848,8 @@ class GameSession {
     
     // Move to power charging phase after choice is made
     this.phase = 'round_active'
+    this.remainingTimeForPower = this.turnTimeLeft // Save remaining time for power phase
     console.log('🔄 Moving to round_active phase after choice')
-    
-    // Stop the choosing timer
-    this.stopTurnTimer()
-    
-    // Start charging power immediately
-    this.startCharging(address)
     
     this.broadcastGameState()
     return true
@@ -876,6 +873,7 @@ class GameSession {
     }
     
     this.turnTimeLeft = 20 // Reset to 20 seconds
+    this.remainingTimeForPower = 0 // Reset power time
     
     // Start the timer
     this.turnTimer = setInterval(() => {
@@ -893,32 +891,11 @@ class GameSession {
           // Auto-select heads or tails
           this.autoSelectChoice()
         } else if (this.phase === 'round_active') {
-          // Auto-flip at max power
+          // Auto-flip at current power
           this.autoFlip()
         }
       }
     }, 1000)
-  }
-
-  stopTurnTimer() {
-    if (this.turnTimer) {
-      clearInterval(this.turnTimer)
-      this.turnTimer = null
-    }
-  }
-
-  async autoFlip() {
-    console.log('⚡ Auto-flipping at max power for:', this.currentPlayer)
-    
-    // Set max power
-    if (this.currentPlayer === this.creator) {
-      this.creatorPower = 10
-    } else {
-      this.joinerPower = 10
-    }
-    
-    // Execute the flip
-    await this.executeFlip(this.currentPlayer, 10)
   }
 
   async autoSelectChoice() {
@@ -938,9 +915,25 @@ class GameSession {
     
     // Move to power charging phase
     this.phase = 'round_active'
+    this.remainingTimeForPower = 0 // No time left for power charging
     this.broadcastGameState()
     
-    // Don't automatically start charging - wait for player input
+    // Auto-flip immediately since no time left
+    this.autoFlip()
+  }
+
+  async autoFlip() {
+    console.log('⚡ Auto-flipping at current power for:', this.currentPlayer)
+    
+    // Set current power
+    if (this.currentPlayer === this.creator) {
+      this.creatorPower = 10
+    } else {
+      this.joinerPower = 10
+    }
+    
+    // Execute the flip
+    await this.executeFlip(this.currentPlayer, 10)
   }
 
   startCharging(address) {
@@ -1207,11 +1200,10 @@ class GameSession {
       // Start the timer immediately for choosing phase
       this.startTurnTimer()
       
-      // Check if this is the final round (round 5) and scores are tied
-      if (this.currentRound === 5 && this.creatorWins === this.joinerWins) {
-        console.log('🏆 Final round with tied scores - auto-flipping')
-        this.phase = 'round_active'
-        this.autoFlip()
+      // Check if this is the final round (round 5)
+      if (this.currentRound === 5) {
+        console.log('🏆 Final round - auto-selecting and flipping')
+        this.autoSelectChoice()
       }
       
       console.log('✅ Next round ready:', {
