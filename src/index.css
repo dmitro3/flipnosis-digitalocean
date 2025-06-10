@@ -783,19 +783,19 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
 
 @keyframes colorPulse {
   0% {
-    background-color: #00FF41; /* Neon Green */
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
-  }
-  33% {
     background-color: #FF1493; /* Neon Pink */
     box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+  }
+  33% {
+    background-color: #00FF41; /* Neon Green */
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
   }
   66% {
     background-color: #FFD700; /* Banana Yellow */
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
   }
   100% {
-    background-color: #00FF41; /* Back to Neon Green */
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+    background-color: #FF1493; /* Back to Neon Pink */
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
   }
 }

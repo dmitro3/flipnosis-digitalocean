@@ -76,15 +76,6 @@ const PowerDisplay = ({
             🎯 CHOOSE YOUR SIDE
           </div>
           
-          <div style={{
-            marginBottom: '1rem',
-            textAlign: 'center',
-            color: '#00FF41',
-            fontSize: '0.9rem'
-          }}>
-            Player {currentPlayer === creator ? '1' : '2'} - Make your choice!
-          </div>
-          
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button
               onClick={() => {
@@ -98,7 +89,7 @@ const PowerDisplay = ({
               style={{
                 flex: 1,
                 padding: '1.5rem',
-                background: '#00FF41',
+                background: '#FF1493',
                 border: '2px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '1rem',
                 color: 'white',
@@ -106,23 +97,14 @@ const PowerDisplay = ({
                 cursor: 'pointer',
                 fontSize: '1.2rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)',
-                animation: 'colorPulse 2s ease infinite',
+                boxShadow: '0 0 20px rgba(255, 20, 147, 0.5)',
                 textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                animation: 'colorPulse 2s ease infinite'
               }}
             >
-              <span style={{
-                position: 'relative',
-                zIndex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem'
-              }}>
-                👑 HEADS
-              </span>
+              HEADS
             </button>
             
             <button
@@ -137,7 +119,7 @@ const PowerDisplay = ({
               style={{
                 flex: 1,
                 padding: '1.5rem',
-                background: '#00FF41',
+                background: '#FF1493',
                 border: '2px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '1rem',
                 color: 'white',
@@ -145,23 +127,14 @@ const PowerDisplay = ({
                 cursor: 'pointer',
                 fontSize: '1.2rem',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 20px rgba(255, 255, 255, 0.1)',
-                animation: 'colorPulse 2s ease infinite',
+                boxShadow: '0 0 20px rgba(255, 20, 147, 0.5)',
                 textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                animation: 'colorPulse 2s ease infinite'
               }}
             >
-              <span style={{
-                position: 'relative',
-                zIndex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem'
-              }}>
-                💎 TAILS
-              </span>
+              TAILS
             </button>
           </div>
         </div>
