@@ -937,217 +937,127 @@ class GameSession {
   }
 
   startCharging(address) {
-    if (this.isFlipInProgress || address !== this.currentPlayer) return
-    
+    console.log('⚡ startCharging called:', {
+      address,
+      currentPlayer: this.currentPlayer,
+      phase: this.phase
+    })
+
+    if (this.phase !== 'round_active' || address !== this.currentPlayer) {
+      console.log('❌ Cannot start charging:', { 
+        phase: this.phase, 
+        currentPlayer: this.currentPlayer, 
+        address 
+      })
+      return
+    }
+
     this.chargingPlayer = address
-    this.broadcastGameState()
+    console.log('✅ Started charging for:', address)
     
     // Start power increase
     this.powerInterval = setInterval(() => {
-      if (address === this.creator) {
-        this.creatorPower = Math.min(10, this.creatorPower + 0.3)
+      if (this.chargingPlayer === this.creator) {
+        this.creatorPower = Math.min(10, this.creatorPower + 0.1)
       } else {
-        this.joinerPower = Math.min(10, this.joinerPower + 0.3)
+        this.joinerPower = Math.min(10, this.joinerPower + 0.1)
       }
       this.broadcastGameState()
     }, 100)
   }
 
-  async stopCharging(address) {
-    if (this.chargingPlayer !== address) return
-    
-    clearInterval(this.powerInterval)
-    this.chargingPlayer = null
-    
-    const power = address === this.creator ? this.creatorPower : this.joinerPower
-    
-    if (power > 0) {
-      await this.executeFlip(address, power)
-    }
-    
-    this.broadcastGameState()
-  }
+  stopCharging(address) {
+    console.log('🛑 stopCharging called:', {
+      address,
+      currentPlayer: this.currentPlayer,
+      phase: this.phase,
+      chargingPlayer: this.chargingPlayer
+    })
 
-  async executeFlip(address, power) {
-    if (this.isFlipInProgress || address !== this.currentPlayer) {
-      console.log('❌ Cannot execute flip:', {
-        isFlipInProgress: this.isFlipInProgress,
-        addressIsCurrentPlayer: address === this.currentPlayer,
-        currentPlayer: this.currentPlayer
+    if (this.phase !== 'round_active' || address !== this.currentPlayer || address !== this.chargingPlayer) {
+      console.log('❌ Cannot stop charging:', { 
+        phase: this.phase, 
+        currentPlayer: this.currentPlayer, 
+        address,
+        chargingPlayer: this.chargingPlayer
       })
       return
     }
+
+    // Clear the power increase interval
+    if (this.powerInterval) {
+      clearInterval(this.powerInterval)
+      this.powerInterval = null
+    }
+
+    this.chargingPlayer = null
+    console.log('✅ Stopped charging for:', address)
     
-    // Stop the turn timer
-    this.stopTurnTimer()
+    // Execute the flip immediately with current power
+    const power = address === this.creator ? this.creatorPower : this.joinerPower
+    console.log('🎯 Executing flip with power:', power)
     
-    console.log('🎲 Executing flip for:', address, 'with power:', power)
-    
-    this.isFlipInProgress = true
-    this.broadcastGameState()
-    
-    // Generate result
-    const result = Math.random() < 0.5 ? 'heads' : 'tails'
-    
-    // FIXED: Get the actual player choice instead of hardcoded values
-    const playerChoice = address === this.creator ? this.creatorChoice : this.joinerChoice
-    const isWinner = playerChoice === result
-    
-    console.log('🎲 Flip calculation:', {
-      address,
-      isCreator: address === this.creator,
-      playerChoice,
-      result,
-      isWinner,
-      power,
-      creatorChoice: this.creatorChoice,
-      joinerChoice: this.joinerChoice
+    // Execute flip synchronously
+    this.executeFlip(address, power).catch(error => {
+      console.error('❌ Error executing flip:', error)
     })
-    
-    // Calculate flip duration
-    const flipDuration = 4000 + (power * 800)
-    
-    console.log('⏱️ Flip duration:', flipDuration, 'ms')
-    
-    // Broadcast flip animation
-    this.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        try {
-          client.send(JSON.stringify({
-            type: 'flip_animation',
-            result: result,
-            duration: flipDuration,
-            playerChoice: playerChoice,
-            playerAddress: address,
-            power: power
-          }))
-        } catch (error) {
-          console.error('❌ Error sending flip animation:', error)
-        }
-      }
-    })
-    
-    // Process result after animation with extra logging
-    console.log('⏰ Setting timeout for processFlipResult in:', flipDuration + 1000, 'ms')
-    setTimeout(async () => {
-      console.log('⏰ Timeout fired - calling processFlipResult')
-      await this.processFlipResult(address, result, isWinner, power)
-    }, flipDuration + 1000)
   }
 
-  async processFlipResult(address, result, isWinner, power) {
+  async executeFlip(address, power) {
+    if (this.isFlipInProgress) {
+      console.log('⚠️ Flip already in progress')
+      return
+    }
+
+    this.isFlipInProgress = true
+    console.log('🎯 Starting flip execution for:', address, 'with power:', power)
+
     try {
-      if (this.roundCompleted) {
-        console.log('⚠️ Round already completed, skipping')
-        return
+      // Generate flip result
+      const result = Math.random() < 0.5 ? 'heads' : 'tails'
+      console.log('🎲 Flip result:', result)
+
+      // Get player's choice
+      const playerChoice = address === this.creator ? this.creatorChoice : this.joinerChoice
+      console.log('🎯 Player choice:', playerChoice)
+
+      // Determine if player won
+      const isWin = result === playerChoice
+      console.log('🏆 Player won:', isWin)
+
+      // Update scores
+      if (isWin) {
+        if (address === this.creator) {
+          this.creatorWins++
+        } else {
+          this.joinerWins++
+        }
       }
-      
-      console.log('🎯 Processing flip result:', {
-        address,
+
+      // Broadcast flip result
+      this.syncedFlip = {
         result,
-        isWinner,
         power,
-        currentRound: this.currentRound,
-        isCreator: address === this.creator,
-        playerChoice: address === this.creator ? this.creatorChoice : this.joinerChoice
-      })
-      
-      this.roundCompleted = true
-      
-      // FIXED: Update scores based on who actually won
-      if (isWinner) {
-        if (address === this.creator) {
-          this.creatorWins++
-          console.log('✅ CREATOR WINS! Score:', this.creatorWins, '-', this.joinerWins)
-        } else if (address === this.joiner) {
-          this.joinerWins++
-          console.log('✅ JOINER WINS! Score:', this.creatorWins, '-', this.joinerWins)
-        }
-      } else {
-        // The player who flipped lost, so the other player wins
-        if (address === this.creator) {
-          this.joinerWins++
-          console.log('✅ JOINER WINS (creator lost)! Score:', this.creatorWins, '-', this.joinerWins)
-        } else if (address === this.joiner) {
-          this.creatorWins++
-          console.log('✅ CREATOR WINS (joiner lost)! Score:', this.creatorWins, '-', this.joinerWins)
-        }
+        isWin,
+        player: address
       }
-
-      // Record in database
-      try {
-        await dbHelpers.recordRound(this.gameId, this.currentRound, result, address, power)
-        await dbHelpers.updateGame(this.gameId, { 
-          creator_wins: this.creatorWins,
-          joiner_wins: this.joinerWins
-        })
-        console.log('✅ Database updated successfully')
-      } catch (dbError) {
-        console.error('❌ Database error:', dbError)
-      }
-
-      // FIXED: Determine actual winner based on the flip result and player choices
-      const actualWinner = isWinner ? address : (address === this.creator ? this.joiner : this.creator)
-      
-      console.log('🏆 Round result summary:', {
-        flipResult: result,
-        currentPlayerAddress: address,
-        currentPlayerChoice: address === this.creator ? this.creatorChoice : this.joinerChoice,
-        currentPlayerWon: isWinner,
-        actualWinner: actualWinner,
-        newScore: `${this.creatorWins}-${this.joinerWins}`
-      })
-      
-      // Broadcast result to all clients with detailed information
-      try {
-        this.clients.forEach(client => {
-          if (client.readyState === WebSocket.OPEN) {
-            try {
-              client.send(JSON.stringify({
-                type: 'round_result',
-                result: result,
-                isWinner: isWinner,
-                playerAddress: address,
-                playerChoice: address === this.creator ? this.creatorChoice : this.joinerChoice,
-                actualWinner: actualWinner,
-                creatorWins: this.creatorWins,
-                joinerWins: this.joinerWins,
-                roundNumber: this.currentRound,
-                // Additional debug info
-                flipperWon: isWinner,
-                creatorChoice: this.creatorChoice,
-                joinerChoice: this.joinerChoice
-              }))
-            } catch (sendError) {
-              console.error('❌ Error sending result to client:', sendError)
-            }
-          }
-        })
-      } catch (broadcastError) {
-        console.error('❌ Broadcast error:', broadcastError)
-      }
-
-      // Check win condition
-      const winsNeeded = Math.ceil(this.maxRounds / 2)
-      if (this.creatorWins >= winsNeeded || this.joinerWins >= winsNeeded) {
-        console.log('🏆 Game complete! Final scores:', this.creatorWins, '-', this.joinerWins)
-        // End game after showing result
-        setTimeout(() => {
-          this.endGame()
-        }, 3000)
-        return
-      }
-
-      // Schedule next round - FIXED TIMING
-      console.log('⏳ Scheduling next round in 4 seconds...')
-      setTimeout(() => {
-        console.log('🔄 Timer fired - calling prepareNextRound')
-        this.prepareNextRound()
-      }, 4000)
-      
-    } catch (error) {
-      console.error('❌ Critical error in processFlipResult:', error)
       this.broadcastGameState()
+
+      // Wait for animation
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Check for game end
+      if (this.currentRound >= this.maxRounds) {
+        this.endGame()
+      } else {
+        // Prepare next round
+        this.prepareNextRound()
+      }
+
+    } catch (error) {
+      console.error('❌ Error in executeFlip:', error)
+    } finally {
+      this.isFlipInProgress = false
     }
   }
 
