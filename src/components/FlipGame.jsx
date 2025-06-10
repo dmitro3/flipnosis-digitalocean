@@ -1020,6 +1020,32 @@ const FlipGame = () => {
               borderRadius: '1.5rem',
               backdropFilter: 'blur(10px)'
             }}>
+              {/* NFT Image - At the bottom */}
+              {nftData?.image && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '-140px',  // Position below the game display
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  border: '2px solid rgba(255, 215, 0, 0.3)',
+                  boxShadow: '0 0 10px rgba(255, 215, 0, 0.2)'
+                }}>
+                  <img 
+                    src={nftData.image} 
+                    alt="NFT" 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+              )}
+              
               {/* Compact Header */}
               <div style={{
                 display: 'flex',
