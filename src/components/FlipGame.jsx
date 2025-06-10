@@ -1026,8 +1026,8 @@ const FlipGame = () => {
                   position: 'absolute',
                   bottom: '1rem',
                   right: '1rem',
-                  width: '60px',
-                  height: '60px',
+                  width: '120px',  // Doubled from 60px
+                  height: '120px', // Doubled from 60px
                   borderRadius: '8px',
                   overflow: 'hidden',
                   border: '2px solid rgba(255, 215, 0, 0.3)',
@@ -1632,7 +1632,6 @@ const FlipGame = () => {
                 <video
                   key={roundResult.actualWinner === address ? 'win' : 'lose'} // Force re-render
                   autoPlay
-                  loop
                   muted
                   playsInline
                   style={{
