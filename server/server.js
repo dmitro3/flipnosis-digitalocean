@@ -1236,6 +1236,9 @@ class GameSession {
       this.resetPowers()
       this.resetChoices()
       
+      // START THE TIMER IMMEDIATELY when switching players
+      this.startTurnTimer()
+      
       // Check if this is the final round (round 5) and scores are tied
       if (this.currentRound === 5 && this.creatorWins === this.joinerWins) {
         console.log('🏆 Final round with tied scores - auto-flipping')
@@ -1247,8 +1250,7 @@ class GameSession {
         newRound: this.currentRound,
         newCurrentPlayer: this.currentPlayer,
         phase: this.phase,
-        creatorChoice: this.creatorChoice,
-        joinerChoice: this.joinerChoice
+        turnTimeLeft: this.turnTimeLeft
       })
       
       // Broadcast the new round state
