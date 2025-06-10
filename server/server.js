@@ -785,11 +785,14 @@ class GameSession {
       return
     }
     
-    this.phase = 'choosing'  // Changed from 'round_active' to 'choosing'
+    this.phase = 'choosing'
     this.currentPlayer = this.creator  // Player 1 chooses first
     this.currentRound = 1
     this.resetPowers()
     this.resetChoices()
+    
+    // Start the timer immediately
+    this.startTurnTimer()
     
     console.log('✅ Game started:', {
       newPhase: this.phase,
@@ -845,8 +848,11 @@ class GameSession {
     this.phase = 'round_active'
     console.log('🔄 Moving to round_active phase after choice')
     
-    // Start the turn timer
-    this.startTurnTimer()
+    // Stop the choosing timer
+    this.stopTurnTimer()
+    
+    // Start charging power immediately
+    this.startCharging(address)
     
     this.broadcastGameState()
     return true
@@ -878,13 +884,18 @@ class GameSession {
       // Broadcast time remaining
       this.broadcastGameState()
       
-      // If time runs out, auto-flip at max power
+      // If time runs out, handle based on phase
       if (this.turnTimeLeft <= 0) {
         clearInterval(this.turnTimer)
         this.turnTimer = null
         
-        // Auto-flip at max power
-        this.autoFlip()
+        if (this.phase === 'choosing') {
+          // Auto-select heads or tails
+          this.autoSelectChoice()
+        } else if (this.phase === 'round_active') {
+          // Auto-flip at max power
+          this.autoFlip()
+        }
       }
     }, 1000)
   }
@@ -908,6 +919,34 @@ class GameSession {
     
     // Execute the flip
     await this.executeFlip(this.currentPlayer, 10)
+  }
+
+  async autoSelectChoice() {
+    console.log('🎲 Auto-selecting choice for:', this.currentPlayer)
+    
+    // Randomly select heads or tails
+    const choice = Math.random() < 0.5 ? 'heads' : 'tails'
+    
+    // Set the choice
+    if (this.currentPlayer === this.creator) {
+      this.creatorChoice = choice
+    } else {
+      this.joinerChoice = choice
+    }
+    
+    console.log('✅ Auto-selected:', choice, 'for', this.currentPlayer)
+    
+    // Move to power charging phase
+    this.phase = 'round_active'
+    this.broadcastGameState()
+    
+    // Start charging power immediately
+    this.startCharging(this.currentPlayer)
+    
+    // Auto-flip after a short delay
+    setTimeout(() => {
+      this.stopCharging(this.currentPlayer)
+    }, 1000)
   }
 
   startCharging(address) {
@@ -1170,6 +1209,9 @@ class GameSession {
       this.roundCompleted = false
       this.resetPowers()
       this.resetChoices()
+      
+      // Start the timer immediately for choosing phase
+      this.startTurnTimer()
       
       // Check if this is the final round (round 5) and scores are tied
       if (this.currentRound === 5 && this.creatorWins === this.joinerWins) {
