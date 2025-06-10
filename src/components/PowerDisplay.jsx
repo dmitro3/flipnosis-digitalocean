@@ -89,7 +89,7 @@ const PowerDisplay = ({
               style={{
                 flex: 1,
                 padding: '1.5rem',
-                background: '#00FF41',
+                background: 'linear-gradient(45deg, #00FF41, #00CC33)',
                 border: '2px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '1rem',
                 color: '#000000',

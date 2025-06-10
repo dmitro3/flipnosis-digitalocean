@@ -1626,15 +1626,23 @@ const FlipGame = () => {
                 autoPlay
                 loop
                 muted
+                playsInline
                 style={{
                   width: '100%',
                   borderRadius: '1rem',
                   marginBottom: '1rem'
                 }}
                 src={roundResult.actualWinner === address ? 
-                  '/images/video/LoseWin/final lose win/win.webm' : 
-                  '/images/video/LoseWin/final lose win/lose.webm'
+                  'images/video/LoseWin/final lose win/win.webm' : 
+                  'images/video/LoseWin/final lose win/lose.webm'
                 }
+                onError={(e) => {
+                  console.error('Video playback error:', e);
+                  console.log('Video source:', e.target.src);
+                }}
+                onLoadedData={() => {
+                  console.log('Video loaded successfully');
+                }}
               />
               <div style={{
                 fontSize: '1.5rem',
