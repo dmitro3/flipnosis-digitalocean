@@ -1015,8 +1015,8 @@ const FlipGame = () => {
               maxWidth: '600px',
               margin: '0 auto',
               padding: '2rem',
-              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
-              border: '2px solid rgba(255, 215, 0, 0.3)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '1.5rem',
               backdropFilter: 'blur(10px)'
             }}>
@@ -1235,7 +1235,7 @@ const FlipGame = () => {
                     fontWeight: 'bold',
                     fontSize: '1.125rem'
                   }}>
-                    {gameData?.price} {gameData?.currency}
+                    ${gameData?.priceUSD?.toFixed(2)}
                   </div>
                 </div>
 
@@ -1316,15 +1316,15 @@ const FlipGame = () => {
               maxWidth: '600px',
               margin: '0 auto',
               padding: '2rem',
-              background: 'linear-gradient(135deg, rgba(0, 191, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
-              border: '2px solid rgba(0, 191, 255, 0.3)',
+              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+              border: '2px solid rgba(255, 215, 0, 0.3)',
               borderRadius: '1.5rem',
               backdropFilter: 'blur(10px)'
             }}>
               
               {/* NFT IMAGE - Top */}
               {nftData?.image && (
-              <div style={{
+                <div style={{
                   textAlign: 'center',
                   marginBottom: '1.5rem'
                 }}>
@@ -1340,35 +1340,35 @@ const FlipGame = () => {
                       boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)'
                     }}
                   />
-                  </div>
-                )}
+                </div>
+              )}
 
               {/* SOCIAL SHARE */}
-                <div style={{
+              <div style={{
                 textAlign: 'center',
                 marginBottom: '1.5rem',
                 display: 'flex',
                 gap: '0.5rem',
                 justifyContent: 'center'
-                }}>
-                  <button
+              }}>
+                <button
                   onClick={() => {
                     const url = window.location.href
                     window.open(`https://twitter.com/intent/tweet?text=Join my game of Crypto Flipz! ${url}`, '_blank')
                   }}
-                    style={{
+                  style={{
                     background: 'rgba(255, 255, 255, 0.1)',
-                      color: '#fff',
+                    color: '#fff',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '0.5rem',
+                    borderRadius: '0.5rem',
                     padding: '0.5rem 1rem',
-                      cursor: 'pointer',
+                    cursor: 'pointer',
                     fontSize: '0.9rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                      transition: 'all 0.3s ease'
-                    }}
+                    transition: 'all 0.3s ease'
+                  }}
                 >
                   <span style={{ fontSize: '1.2rem' }}>𝕏</span> Share
                 </button>
@@ -1413,31 +1413,7 @@ const FlipGame = () => {
                   }}
                 >
                   <span style={{ fontSize: '1.2rem' }}>📋</span> Copy
-                  </button>
-                </div>
-
-              {/* GAME TITLE & INFO */}
-              <div style={{
-                textAlign: 'center',
-                marginBottom: '2rem',
-                padding: '1rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '1rem',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                <div style={{
-                  color: theme.colors.textSecondary,
-                  fontSize: '1rem',
-                  marginBottom: '0.25rem'
-                }}>
-                  FLIP#{gameId.slice(-6).toUpperCase()}
-                </div>
-                <div style={{ 
-                  color: theme.colors.textTertiary,
-                  fontSize: '0.9rem'
-                }}>
-                  Best of {gameData?.rounds} • ${gameData?.priceUSD?.toFixed(2)}
-                </div>
+                </button>
               </div>
 
               {/* NFT DETAILS */}
@@ -1456,17 +1432,17 @@ const FlipGame = () => {
                     color: theme.colors.neonYellow
                   }}>
                     {nftData.name}
-                </div>
+                  </div>
 
                   {/* Collection */}
                   <div style={{ marginBottom: '1rem' }}>
-                <div style={{ 
-                  fontSize: '0.8rem', 
-                  opacity: 0.8, 
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      opacity: 0.8, 
                       marginBottom: '0.25rem' 
-                }}>
+                    }}>
                       Collection
-                </div>
+                    </div>
                     <div style={{ 
                       fontWeight: 'bold',
                       fontSize: '1rem'
@@ -1493,9 +1469,9 @@ const FlipGame = () => {
                   </div>
                   
                   {/* Links */}
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '0.5rem', 
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '0.5rem', 
                     marginBottom: '1.5rem'
                   }}>
                     <a
