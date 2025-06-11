@@ -64,6 +64,53 @@ const WithdrawButton = styled(Button)`
   }
 `
 
+const FilterContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+`
+
+const FilterButton = styled(Button)`
+  background: ${props => props.active ? props.theme.colors.neonGreen : 'transparent'};
+  border: 1px solid ${props => props.theme.colors.neonGreen};
+  padding: 0.5rem 1rem;
+  color: ${props => props.active ? '#000B1A' : props.theme.colors.textPrimary};
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+`
+
+const FilterSelect = styled.select`
+  display: none;
+  background: transparent;
+  border: 1px solid ${props => props.theme.colors.neonGreen};
+  color: ${props => props.theme.colors.textPrimary};
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+  max-width: 200px;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+
+  option {
+    background: ${props => props.theme.colors.bgDark};
+    color: ${props => props.theme.colors.textPrimary};
+  }
+`
+
 const Home = () => {
   const { chains, isConnected, connectWallet } = useWallet()
   const [activeFilter, setActiveFilter] = useState('all')
@@ -316,22 +363,32 @@ const Home = () => {
         <ContentWrapper>
           {/* Chain Filters */}
           <TransparentCard style={{ background: theme.colors.bgDark }}>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {chainFilters.map(filter => (
-                <Button
-                  key={filter.key}
-                  onClick={() => setActiveFilter(filter.key)}
-                  style={{
-                    background: activeFilter === filter.key ? theme.colors.neonGreen : 'transparent',
-                    border: `1px solid ${theme.colors.neonGreen}`,
-                    padding: '0.5rem 1rem',
-                    color: activeFilter === filter.key ? '#000B1A' : theme.colors.textPrimary
-                  }}
-                >
-                  {filter.icon} {filter.name}
-                </Button>
-              ))}
-            </div>
+            <FilterContainer>
+              {/* Desktop Filters */}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {chainFilters.map(filter => (
+                  <FilterButton
+                    key={filter.key}
+                    onClick={() => setActiveFilter(filter.key)}
+                    active={activeFilter === filter.key}
+                  >
+                    {filter.icon} {filter.name}
+                  </FilterButton>
+                ))}
+              </div>
+
+              {/* Mobile Filter Dropdown */}
+              <FilterSelect
+                value={activeFilter}
+                onChange={(e) => setActiveFilter(e.target.value)}
+              >
+                {chainFilters.map(filter => (
+                  <option key={filter.key} value={filter.key}>
+                    {filter.icon} {filter.name}
+                  </option>
+                ))}
+              </FilterSelect>
+            </FilterContainer>
           </TransparentCard>
 
           {filteredFlips.length === 0 ? (

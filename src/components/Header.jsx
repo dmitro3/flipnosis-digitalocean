@@ -44,8 +44,8 @@ const Logo = styled(Link)`
   ${props => props.theme.animations.neonPulse}
   
   @media (max-width: 768px) {
-    font-size: 1.5rem;
-    letter-spacing: 2px;
+    font-size: 3rem;
+    letter-spacing: 4px;
   }
 `
 
