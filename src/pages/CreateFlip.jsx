@@ -6,6 +6,7 @@ import NFTSelector from '../components/NFTSelector'
 import PaymentService from '../services/PaymentService'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import MobileWalletConnector from '../components/MobileWalletConnector'
 import {
   Container,
   ContentWrapper,
@@ -35,7 +36,7 @@ import WalletConnectionModal from '../components/WalletConnectionModal'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
-  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address, chain } = useWallet()
+  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address, chain, isMobile } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
@@ -52,9 +53,10 @@ const CreateFlip = () => {
       address,
       nftsLoading,
       nftsCount: nfts?.length || 0,
-      chain
+      chain,
+      isMobile
     })
-  }, [isConnected, address, nftsLoading, nfts, chain])
+  }, [isConnected, address, nftsLoading, nfts, chain, isMobile])
 
   const createGameWithDatabase = async (gameData) => {
     try {
@@ -202,6 +204,12 @@ const CreateFlip = () => {
   }
 
   if (!isConnected) {
+    // Show mobile connector on mobile devices
+    if (isMobile) {
+      return <MobileWalletConnector />
+    }
+
+    // Show desktop wallet modal for desktop
     return (
       <ThemeProvider theme={theme}>
         <Container>

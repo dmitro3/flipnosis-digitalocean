@@ -7,6 +7,7 @@ import { theme } from '../styles/theme'
 import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
+import MobileWalletConnector from './MobileWalletConnector'
 
 const HeaderContainer = styled.header`
   background-color: ${props => props.theme.colors.bgDark};
@@ -197,12 +198,17 @@ const CloseButton = styled.button`
 `;
 
 const Header = () => {
-  const { address, connectWallet, disconnectWallet, isConnected, chain, chains, loading } = useWallet()
-  const [showInfo, setShowInfo] = useState(false);
+  const { address, connectWallet, disconnectWallet, isConnected, chain, chains, loading, isMobile } = useWallet()
+  const [showInfo, setShowInfo] = useState(false)
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   const handleConnect = async () => {
     try {
-      await connectWallet()
+      if (isMobile) {
+        setShowWalletModal(true)
+      } else {
+        await connectWallet()
+      }
     } catch (error) {
       console.error('Failed to connect wallet:', error)
     }
@@ -243,6 +249,7 @@ const Header = () => {
           )}
         </WalletSection>
         <InfoButton onClick={() => setShowInfo(true)} title="About FLIPNOSIS">i</InfoButton>
+
         {showInfo && (
           <ModalOverlay onClick={() => setShowInfo(false)}>
             <ModalContent onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
@@ -250,6 +257,45 @@ const Header = () => {
               <img src={FlipnosisInfoImg} alt="FLIPNOSIS Info" style={{ maxWidth: '80vw', maxHeight: '70vh', borderRadius: '0.5rem' }} />
             </ModalContent>
           </ModalOverlay>
+        )}
+
+        {/* Mobile Wallet Connector Modal */}
+        {showWalletModal && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50,
+            padding: '1rem'
+          }}>
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '400px'
+            }}>
+              <button
+                onClick={() => setShowWalletModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'none',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  zIndex: 1
+                }}
+              >
+                ×
+              </button>
+              <MobileWalletConnector />
+            </div>
+          </div>
         )}
       </HeaderContainer>
     </ThemeProvider>
