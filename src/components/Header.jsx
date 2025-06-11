@@ -284,6 +284,15 @@ const InfoButton = styled.button`
   }
 
   @media (max-width: 768px) {
+    display: none;
+  }
+`
+
+const MobileInfoButton = styled(InfoButton)`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
     margin: 0;
     width: 100%;
     border-radius: 0.5rem;
@@ -431,19 +440,18 @@ const Header = () => {
           )}
 
           {/* Info Button in Mobile Menu */}
-          <InfoButton onClick={() => {
+          <MobileInfoButton onClick={() => {
             setShowInfo(true)
             setIsMenuOpen(false)
           }}>
             About FLIPNOSIS
-          </InfoButton>
+          </MobileInfoButton>
         </MobileMenu>
 
         {/* Desktop Info Button */}
         <InfoButton 
           onClick={() => setShowInfo(true)} 
           title="About FLIPNOSIS"
-          style={{ display: isMobileState ? 'none' : 'flex' }}
         >
           i
         </InfoButton>
