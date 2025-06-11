@@ -300,10 +300,33 @@ export const WalletProvider = ({ children }) => {
     
     setLoading(true)
     try {
-      // Your existing NFT fetching logic here
       console.log('🎨 Fetching NFTs for:', { chain, address })
-      // ... existing implementation
-      return []
+      
+      // Initialize Alchemy SDK
+      const settings = {
+        apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
+        network: Network.ETH_MAINNET,
+      }
+      const alchemy = new Alchemy(settings)
+
+      // Get NFTs for the address
+      const nfts = await alchemy.nft.getNftsForOwner(address)
+      
+      // Process and format the NFTs
+      const formattedNfts = nfts.ownedNfts.map(nft => ({
+        tokenId: nft.tokenId,
+        contractAddress: nft.contract.address,
+        name: nft.title || `NFT #${nft.tokenId}`,
+        description: nft.description || '',
+        image: nft.media[0]?.gateway || nft.media[0]?.raw || '',
+        collection: nft.contract.name || 'Unknown Collection',
+        chain: chain
+      }))
+
+      console.log('✅ Found NFTs:', formattedNfts.length)
+      setNfts(formattedNfts)
+      return formattedNfts
+
     } catch (error) {
       console.error('❌ Error fetching NFTs:', error)
       return []
