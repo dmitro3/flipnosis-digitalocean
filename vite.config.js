@@ -7,13 +7,13 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      stream: 'stream-browserify',
-      crypto: 'crypto-browserify',
-      util: 'util',
-      buffer: 'buffer',
-      process: 'process/browser',
-      zlib: 'browserify-zlib',
-      path: 'path-browserify',
+      stream: resolve(__dirname, 'node_modules/stream-browserify'),
+      crypto: resolve(__dirname, 'node_modules/crypto-browserify'),
+      util: resolve(__dirname, 'node_modules/util'),
+      buffer: resolve(__dirname, 'node_modules/buffer'),
+      process: resolve(__dirname, 'node_modules/process/browser'),
+      zlib: resolve(__dirname, 'node_modules/browserify-zlib'),
+      path: resolve(__dirname, 'node_modules/path-browserify'),
       fs: false,
       net: false,
       tls: false,
@@ -32,13 +32,19 @@ export default defineConfig({
     ],
     esbuildOptions: {
       target: 'esnext',
-    },
+      define: {
+        global: 'globalThis'
+      }
+    }
   },
   build: {
     target: 'esnext',
     rollupOptions: {
       external: ['fsevents'],
     },
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
   },
   define: {
     'process.env': {},
