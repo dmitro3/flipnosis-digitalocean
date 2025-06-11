@@ -33,6 +33,7 @@ import {
 } from '../styles/components'
 import { ethers } from 'ethers'
 import WalletConnectionModal from '../components/WalletConnectionModal'
+import SimpleMobileConnector from '../components/SimpleMobileConnector'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
@@ -201,6 +202,10 @@ const CreateFlip = () => {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (!isConnected && isMobile) {
+    return <SimpleMobileConnector />
   }
 
   if (!isConnected) {
