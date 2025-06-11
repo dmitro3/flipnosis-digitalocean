@@ -25,6 +25,10 @@ const CONTRACT_CONFIG = {
     "function getGameProgress(uint256 gameId) external view returns (uint256 createdAt, uint256 expiresAt, uint8 maxRounds, uint8 currentRound, uint8 creatorWins, uint8 joinerWins, address winner, uint256 lastActionTime, uint256 countdownEndTime)",
     "function getGameRound(uint256 gameId, uint8 round) external view returns (uint8 result, uint8 power, bool completed, address flipper)",
     
+    // Emergency functions
+    "function emergencyWithdraw(address token, uint256 amount) external",
+    "function emergencyWithdrawNFT(address nftContract, uint256 tokenId) external",
+    
     // Events
     "event GameCreated(uint256 indexed gameId, address indexed creator, address indexed nftContract, uint256 tokenId, uint256 priceUSD, uint8 acceptedToken, string authInfo)",
     "event GameJoined(uint256 indexed gameId, address indexed joiner, uint8 choice)",
@@ -107,17 +111,7 @@ class ContractService {
       this.signer
     )
 
-    // Try a simple view function first
-    try {
-      const ethPrice = await this.contract.getETHPrice()
-      console.log('Contract initialized successfully. ETH Price:', ethPrice.toString())
-    } catch (error) {
-      console.error('Error initializing contract:', error)
-      if (error.code === 'CALL_EXCEPTION') {
-        throw new Error('Contract initialization failed. Please ensure the contract is deployed and the ABI matches.')
-      }
-      throw error
-    }
+    console.log('Contract initialized successfully')
   }
 
   // Create a new flip game
@@ -372,4 +366,8 @@ class ContractService {
   }
 }
 
-export default ContractService 
+// Create and export a singleton instance
+export const contractService = new ContractService()
+
+// Also export the class for testing purposes
+export { ContractService } 

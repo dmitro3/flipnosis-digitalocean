@@ -5,6 +5,8 @@ import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
 import hazeVideo from '../../Images/Video/haze.webm'
+import { contractService } from '../services/ContractService'
+import { ethers } from 'ethers'
 import {
   Container,
   ContentWrapper,
@@ -47,13 +49,29 @@ const BackgroundVideo = styled.video`
   opacity: 0.7;
 `
 
+const WithdrawButton = styled(Button)`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: ${props => props.theme.colors.neonPink};
+  z-index: 1000;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  box-shadow: 0 0 10px ${props => props.theme.colors.neonPink};
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px ${props => props.theme.colors.neonPink};
+  }
+`
+
 const Home = () => {
-  const { chains, isConnected } = useWallet()
+  const { chains, isConnected, connectWallet } = useWallet()
   const [activeFilter, setActiveFilter] = useState('all')
   const [flips, setFlips] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedFlip, setSelectedFlip] = useState(null)
   const [error, setError] = useState(null)
+  const [withdrawing, setWithdrawing] = useState(false)
 
   // API URL - will be Railway URL in production
   const API_URL = import.meta.env.VITE_API_URL || 'https://cryptoflipz2-production.up.railway.app'
@@ -163,6 +181,86 @@ const Home = () => {
       case 'active': return '🎮'
       case 'completed': return '🏆'
       default: return '❓'
+    }
+  }
+
+  const handleWithdraw = async () => {
+    if (!isConnected) {
+      await connectWallet()
+      return
+    }
+
+    try {
+      setWithdrawing(true)
+      
+      // Get the provider from the wallet context
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      const contractAddress = "0xcc55c4599e3deb5ce07d972b7b298723efb93384"
+      
+      // Create contract instance with full ABI
+      const contract = new ethers.Contract(
+        contractAddress,
+        [
+          // Emergency functions
+          "function emergencyWithdraw(address token, uint256 amount) external",
+          "function emergencyWithdrawNFT(address nftContract, uint256 tokenId) external",
+          "function owner() external view returns (address)"
+        ],
+        signer
+      )
+
+      // Check if the connected wallet is the contract owner
+      const owner = await contract.owner()
+      const signerAddress = await signer.getAddress()
+      
+      console.log('Contract owner:', owner)
+      console.log('Connected wallet:', signerAddress)
+      
+      if (owner.toLowerCase() !== signerAddress.toLowerCase()) {
+        throw new Error('Only the contract owner can withdraw funds')
+      }
+      
+      // Get contract balance
+      const balance = await provider.getBalance(contractAddress)
+      console.log('Contract ETH balance:', ethers.formatEther(balance), 'ETH')
+      
+      if (balance > 0) {
+        console.log('Withdrawing ETH...')
+        const tx = await contract.emergencyWithdraw("0x0000000000000000000000000000000000000000", balance)
+        console.log('ETH withdrawal transaction sent:', tx.hash)
+        await tx.wait()
+        alert('✅ ETH withdrawal successful!')
+      } else {
+        console.log('No ETH to withdraw')
+      }
+
+      // Check USDC balance
+      const usdcAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // Base USDC
+      const usdcContract = new ethers.Contract(
+        usdcAddress,
+        ["function balanceOf(address) view returns (uint256)"],
+        signer
+      )
+      const usdcBalance = await usdcContract.balanceOf(contractAddress)
+      console.log('Contract USDC balance:', ethers.formatUnits(usdcBalance, 6), 'USDC')
+      
+      if (usdcBalance > 0) {
+        console.log('Withdrawing USDC...')
+        const tx = await contract.emergencyWithdraw(usdcAddress, usdcBalance)
+        console.log('USDC withdrawal transaction sent:', tx.hash)
+        await tx.wait()
+        alert('✅ USDC withdrawal successful!')
+      } else {
+        console.log('No USDC to withdraw')
+      }
+
+      alert('All withdrawals completed!')
+    } catch (error) {
+      console.error('Withdrawal error:', error)
+      alert('❌ Error during withdrawal: ' + (error.message || 'Unknown error'))
+    } finally {
+      setWithdrawing(false)
     }
   }
 
@@ -611,6 +709,12 @@ const Home = () => {
           )}
         </ContentWrapper>
       </Container>
+      <WithdrawButton 
+        onClick={handleWithdraw}
+        disabled={withdrawing}
+      >
+        {withdrawing ? 'Withdrawing...' : 'Withdraw Funds'}
+      </WithdrawButton>
     </ThemeProvider>
   )
 }
