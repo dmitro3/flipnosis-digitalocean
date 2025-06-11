@@ -419,7 +419,6 @@ export const WalletProvider = ({ children }) => {
 
       // Fetch NFTs
       const response = await alchemy.nft.getNftsForOwner(address, {
-        excludeFilters: ['SPAM'],
         omitMetadata: false,
         pageSize: 100
       })
