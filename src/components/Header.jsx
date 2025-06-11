@@ -18,6 +18,13 @@ const HeaderContainer = styled.header`
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   z-index: 100;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `
 
 const LogoContainer = styled.div`
@@ -35,6 +42,21 @@ const Logo = styled(Link)`
   font-family: 'Hyperwave', sans-serif;
   animation: neonPulse 2s infinite;
   ${props => props.theme.animations.neonPulse}
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+  }
+`
+
+const DesktopNav = styled.div`
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `
 
 const CreateButton = styled(Link)`
@@ -76,17 +98,98 @@ const WalletSection = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`
+
+const MenuButton = styled.button`
+  display: none;
+  background: none;
+  border: none;
+  color: #00FF41;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  transition: ${props => props.theme.transitions.default};
+  
+  &:hover {
+    color: #39FF14;
+  }
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
+`
+
+const MobileMenu = styled.div`
+  position: fixed;
+  top: 0;
+  right: ${props => props.isOpen ? '0' : '-100%'};
+  width: 80%;
+  max-width: 300px;
+  height: 100vh;
+  background: ${props => props.theme.colors.bgDark};
+  padding: 2rem;
+  box-shadow: -2px 0 10px rgba(0, 255, 65, 0.2);
+  transition: right 0.3s ease-in-out;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+`
+
+const MenuOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: ${props => props.isOpen ? '1' : '0'};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transition: all 0.3s ease-in-out;
+  z-index: 999;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+`
+
+const MenuItem = styled(Link)`
+  color: ${props => props.theme.colors.textPrimary};
+  text-decoration: none;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: ${props => props.theme.transitions.default};
+  
+  &:hover {
+    background: rgba(0, 255, 65, 0.1);
+    color: #00FF41;
+  }
 `
 
 const WalletButton = styled.button`
   background: rgba(255, 255, 255, 0.1);
   color: ${props => props.theme.colors.neonPink};
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
   transition: ${props => props.theme.transitions.default};
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    margin-top: auto;
+  }
   
   &:hover {
     background: rgba(255, 255, 255, 0.15);
@@ -103,12 +206,23 @@ const WalletInfo = styled.div`
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
 `
 
 const WalletAddress = styled.div`
   color: ${props => props.theme.colors.neonPink};
   font-weight: 500;
   font-family: monospace;
+
+  @media (max-width: 768px) {
+    text-align: center;
+  }
 `
 
 const ChainIndicator = styled.div`
@@ -117,6 +231,10 @@ const ChainIndicator = styled.div`
   gap: 0.5rem;
   color: ${props => props.theme.colors.textSecondary};
   font-size: 0.875rem;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
 `
 
 const ChainDot = styled.div`
@@ -199,6 +317,7 @@ const CloseButton = styled.button`
 
 const Header = () => {
   const { address, connectWallet, disconnectWallet, isConnected, chain, chains, loading, isMobile } = useWallet()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
   const [showWalletModal, setShowWalletModal] = useState(false)
 
@@ -209,9 +328,15 @@ const Header = () => {
       } else {
         await connectWallet()
       }
+      setIsMenuOpen(false)
     } catch (error) {
       console.error('Failed to connect wallet:', error)
     }
+  }
+
+  const handleDisconnect = () => {
+    disconnectWallet()
+    setIsMenuOpen(false)
   }
 
   return (
@@ -220,12 +345,16 @@ const Header = () => {
         <LogoContainer>
           <Logo to="/">FLIPNOSIS</Logo>
         </LogoContainer>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+
+        {/* Desktop Navigation */}
+        <DesktopNav>
           <CreateButton to="/create">
             Create Flip
           </CreateButton>
           {isConnected && <MyFlipsDropdown />}
-        </div>
+        </DesktopNav>
+
+        {/* Desktop Wallet Section */}
         <WalletSection>
           {isConnected && address ? (
             <>
@@ -238,7 +367,7 @@ const Header = () => {
                   {address.slice(0, 6)}...{address.slice(-4)}
                 </WalletAddress>
               </WalletInfo>
-              <WalletButton onClick={disconnectWallet}>
+              <WalletButton onClick={handleDisconnect}>
                 Disconnect
               </WalletButton>
             </>
@@ -248,6 +377,40 @@ const Header = () => {
             </WalletButton>
           )}
         </WalletSection>
+
+        {/* Mobile Menu Button */}
+        <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? '✕' : '☰'}
+        </MenuButton>
+        
+        {/* Mobile Menu */}
+        <MenuOverlay isOpen={isMenuOpen} onClick={() => setIsMenuOpen(false)} />
+        <MobileMenu isOpen={isMenuOpen}>
+          <MenuItem to="/" onClick={() => setIsMenuOpen(false)}>Home</MenuItem>
+          <MenuItem to="/create" onClick={() => setIsMenuOpen(false)}>Create Flip</MenuItem>
+          {isConnected && <MenuItem to="/my-flips" onClick={() => setIsMenuOpen(false)}>My Flips</MenuItem>}
+          
+          {isConnected && address ? (
+            <>
+              <WalletInfo>
+                <ChainIndicator>
+                  <ChainDot chain={chain} />
+                  <span>{chains[chain]?.name || 'Unknown'}</span>
+                </ChainIndicator>
+                <WalletAddress>
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </WalletAddress>
+              </WalletInfo>
+              <WalletButton onClick={handleDisconnect}>
+                Disconnect
+              </WalletButton>
+            </>
+          ) : (
+            <WalletButton onClick={handleConnect} disabled={loading}>
+              {loading ? 'Connecting...' : 'Connect Wallet'}
+            </WalletButton>
+          )}
+        </MobileMenu>
         <InfoButton onClick={() => setShowInfo(true)} title="About FLIPNOSIS">i</InfoButton>
 
         {showInfo && (
