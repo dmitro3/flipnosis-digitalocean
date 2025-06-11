@@ -1061,7 +1061,7 @@ const FlipGame = () => {
                     </div>
                   </div>
                   
-                  {isCreator && (
+                  {gameState?.currentPlayer === gameData?.creator && (
                     <div style={{
                       background: theme.colors.neonPink,
                       color: '#000',
@@ -1070,7 +1070,7 @@ const FlipGame = () => {
                       fontSize: '0.8rem',
                       fontWeight: 'bold'
                     }}>
-                      YOU
+                      {isCreator ? 'YOUR TURN' : 'THEIR TURN'}
                     </div>
                   )}
                 </div>
@@ -1082,27 +1082,34 @@ const FlipGame = () => {
                   justifyContent: 'center',
                   marginBottom: '1rem'
                 }}>
-                  {[...Array(gameData?.rounds || 5)].map((_, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        background: i < (gameState?.creatorWins || 0) 
-                          ? theme.colors.neonPink 
-                          : 'rgba(255, 255, 255, 0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        color: i < (gameState?.creatorWins || 0) ? '#000' : '#fff'
-                      }}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
+                  {[...Array(gameData?.rounds || 5)].map((_, i) => {
+                    const isWin = i < (gameState?.creatorWins || 0);
+                    const isLoss = i < (gameState?.currentRound || 0) && !isWin;
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: isWin 
+                            ? theme.colors.neonPink 
+                            : isLoss
+                              ? theme.colors.neonPink
+                              : 'rgba(255, 255, 255, 0.2)',
+                          opacity: isLoss ? 0.3 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          color: isWin ? '#000' : '#fff'
+                        }}
+                      >
+                        {i + 1}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Player 2 */}
@@ -1138,16 +1145,16 @@ const FlipGame = () => {
                     </div>
                   </div>
                   
-                  {isJoiner && (
+                  {gameState?.currentPlayer === gameData?.joiner && (
                     <div style={{
-                      background: theme.colors.neonBlue,
+                      background: theme.colors.neonPink,
                       color: '#000',
                       padding: '0.25rem 0.75rem',
                       borderRadius: '0.5rem',
                       fontSize: '0.8rem',
                       fontWeight: 'bold'
                     }}>
-                      YOU
+                      {isJoiner ? 'YOUR TURN' : 'THEIR TURN'}
                     </div>
                   )}
                 </div>
@@ -1158,31 +1165,38 @@ const FlipGame = () => {
                   gap: '0.25rem',
                   justifyContent: 'center'
                 }}>
-                  {[...Array(gameData?.rounds || 5)].map((_, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        background: i < (gameState?.joinerWins || 0) 
-                          ? theme.colors.neonBlue 
-                          : 'rgba(255, 255, 255, 0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        color: i < (gameState?.joinerWins || 0) ? '#000' : '#fff'
-                      }}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
+                  {[...Array(gameData?.rounds || 5)].map((_, i) => {
+                    const isWin = i < (gameState?.joinerWins || 0);
+                    const isLoss = i < (gameState?.currentRound || 0) && !isWin;
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: isWin 
+                            ? theme.colors.neonBlue 
+                            : isLoss
+                              ? theme.colors.neonPink
+                              : 'rgba(255, 255, 255, 0.2)',
+                          opacity: isLoss ? 0.3 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          color: isWin ? '#000' : '#fff'
+                        }}
+                      >
+                        {i + 1}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* GAME INFO SECTION - Bottom */}
+              {/* Combined Game Info Section */}
               <div style={{
                 padding: '1rem',
                 background: 'rgba(255, 255, 255, 0.05)',
@@ -1223,24 +1237,24 @@ const FlipGame = () => {
                     👀 {gameState.spectators} watching
                   </div>
                 )}
-              </div>
 
-              {/* Game Instructions/Power Display */}
-              <div style={{ marginTop: '1rem' }}>
-                <GoldGameInstructions
-                  isPlayerTurn={isMyTurn}
-                  gamePhase={gameState?.phase}
-                  isPlayer={isPlayer}
-                  playerNumber={isCreator ? 1 : 2}
-                  spectatorMode={!isPlayer}
-                  currentPower={isCreator ? gameState?.creatorPower : gameState?.joinerPower}
-                  playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
-                  currentRound={gameState?.currentRound}
-                  maxRounds={gameState?.maxRounds}
-                  creatorWins={gameState?.creatorWins}
-                  joinerWins={gameState?.joinerWins}
-                  turnTimeLeft={gameState?.turnTimeLeft}
-                />
+                {/* Game Instructions/Power Display */}
+                <div style={{ marginTop: '1rem' }}>
+                  <GoldGameInstructions
+                    isPlayerTurn={isMyTurn}
+                    gamePhase={gameState?.phase}
+                    isPlayer={isPlayer}
+                    playerNumber={isCreator ? 1 : 2}
+                    spectatorMode={!isPlayer}
+                    currentPower={isCreator ? gameState?.creatorPower : gameState?.joinerPower}
+                    playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
+                    currentRound={gameState?.currentRound}
+                    maxRounds={gameState?.maxRounds}
+                    creatorWins={gameState?.creatorWins}
+                    joinerWins={gameState?.joinerWins}
+                    turnTimeLeft={gameState?.turnTimeLeft}
+                  />
+                </div>
               </div>
             </div>
 
