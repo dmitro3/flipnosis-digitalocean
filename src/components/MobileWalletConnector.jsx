@@ -228,63 +228,50 @@ const MobileWalletConnector = () => {
         {/* Mobile Connection */}
         {isMobile && (
           <>
-            {isMetaMaskBrowser ? (
-              // Already in MetaMask browser
+            <Description>
+              {isMetaMaskBrowser 
+                ? "Great! You're using MetaMask's built-in browser. Connect your wallet to continue."
+                : window.ethereum 
+                  ? "MetaMask detected! You can connect here or open in MetaMask's browser for the best experience."
+                  : "MetaMask not found. Please install MetaMask mobile app."
+              }
+            </Description>
+            
+            {/* Always show connect button if MetaMask is available */}
+            {window.ethereum && (
+              <ConnectButton 
+                onClick={handleConnect} 
+                disabled={connecting || loading}
+              >
+                {connecting ? '🔄 Connecting...' : '🔗 Connect MetaMask'}
+              </ConnectButton>
+            )}
+            
+            {/* Show additional options for external browsers */}
+            {!isMetaMaskBrowser && window.ethereum && (
+              <SecondaryButton onClick={openInMetaMask}>
+                🦊 Open in MetaMask Browser
+              </SecondaryButton>
+            )}
+            
+            {/* Show install option if no MetaMask */}
+            {!window.ethereum && (
               <>
-                <Description>
-                  Great! You're using MetaMask's built-in browser. 
-                  Connect your wallet to continue.
-                </Description>
-                
-                <ConnectButton 
-                  onClick={handleConnect} 
-                  disabled={connecting || loading}
-                >
-                  {connecting ? '🔄 Connecting...' : '🔗 Connect Wallet'}
+                <ConnectButton onClick={downloadMetaMask}>
+                  📥 Install MetaMask
                 </ConnectButton>
-              </>
-            ) : (
-              // External mobile browser
-              <>
-                <Description>
-                  For the best mobile experience, please open this game 
-                  in MetaMask's built-in browser.
-                </Description>
                 
-                {window.ethereum ? (
-                  // MetaMask installed but not in MetaMask browser
-                  <>
-                    <ConnectButton onClick={openInMetaMask}>
-                      🦊 Open in MetaMask
-                    </ConnectButton>
-                    
-                    <SecondaryButton 
-                      onClick={handleConnect} 
-                      disabled={connecting || loading}
-                    >
-                      {connecting ? '🔄 Connecting...' : '⚡ Try Connect Here'}
-                    </SecondaryButton>
-                  </>
-                ) : (
-                  // MetaMask not installed
-                  <>
-                    <ConnectButton onClick={downloadMetaMask}>
-                      📥 Install MetaMask
-                    </ConnectButton>
-                    
-                    <Instructions>
-                      <h4>📋 Setup Instructions:</h4>
-                      <ol>
-                        <li>Install MetaMask from your app store</li>
-                        <li>Create or import your wallet</li>
-                        <li>Copy this page's URL</li>
-                        <li>Open MetaMask app</li>
-                        <li>Tap the browser tab (🌐)</li>
-                        <li>Paste the URL and navigate here</li>
-                      </ol>
-                    </Instructions>
-                  </>
-                )}
+                <Instructions>
+                  <h4>📋 Setup Instructions:</h4>
+                  <ol>
+                    <li>Install MetaMask from your app store</li>
+                    <li>Create or import your wallet</li>
+                    <li>Copy this page's URL</li>
+                    <li>Open MetaMask app</li>
+                    <li>Tap the browser tab (🌐)</li>
+                    <li>Paste the URL and navigate here</li>
+                  </ol>
+                </Instructions>
               </>
             )}
           </>
