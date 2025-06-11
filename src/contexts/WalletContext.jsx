@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { ethers } from 'ethers'
 import { Network, Alchemy } from 'alchemy-sdk'
 import PaymentService from '../services/PaymentService'
+import WalletConnectProvider from '@walletconnect/web3-provider'
+import QRCodeModal from '@walletconnect/qrcode-modal'
 
 const WalletContext = createContext()
 
@@ -21,6 +23,8 @@ export const WalletProvider = ({ children }) => {
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState(null)
+  const [walletConnectProvider, setWalletConnectProvider] = useState(null)
+  const [connectionType, setConnectionType] = useState(null) // 'metamask' or 'walletconnect'
 
   // Chain configurations
   const chains = {
@@ -74,21 +78,65 @@ export const WalletProvider = ({ children }) => {
     }
   }
 
-  const connectWallet = async (selectedChain = null) => {
+  // Mobile detection
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  }
+
+  // Check if MetaMask is available
+  const isMetaMaskAvailable = () => {
+    return typeof window !== 'undefined' && typeof window.ethereum !== 'undefined'
+  }
+
+  // Check if we're in a mobile wallet's in-app browser
+  const isInWalletBrowser = () => {
+    const userAgent = navigator.userAgent.toLowerCase()
+    return userAgent.includes('metamask') || 
+           userAgent.includes('trust') || 
+           userAgent.includes('coinbase') ||
+           userAgent.includes('imtoken') ||
+           userAgent.includes('tokenpocket')
+  }
+
+  const connectWallet = async (selectedChain = null, preferredMethod = null) => {
     setLoading(true)
     try {
-      await connectEVM(selectedChain)
+      // Determine connection method
+      let method = preferredMethod
+      if (!method) {
+        if (isInWalletBrowser() || (!isMobile() && isMetaMaskAvailable())) {
+          method = 'metamask'
+        } else {
+          method = 'walletconnect'
+        }
+      }
+
+      console.log('🔌 Connecting with method:', method, 'Mobile:', isMobile(), 'MetaMask available:', isMetaMaskAvailable())
+
+      if (method === 'metamask') {
+        await connectMetaMask(selectedChain)
+      } else {
+        await connectWalletConnect(selectedChain)
+      }
+      
       return true
     } catch (error) {
       console.error('Failed to connect wallet:', error)
-      return false
+      throw error
     } finally {
       setLoading(false)
     }
   }
 
-  const connectEVM = async (selectedChain = null) => {
-    if (typeof window.ethereum === 'undefined') {
+  const connectMetaMask = async (selectedChain = null) => {
+    if (!isMetaMaskAvailable()) {
+      // On mobile, try to open MetaMask app
+      if (isMobile()) {
+        const currentUrl = window.location.href
+        const metamaskUrl = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`
+        window.open(metamaskUrl, '_blank')
+        throw new Error('Please open this app in MetaMask mobile browser')
+      }
       throw new Error('MetaMask not found. Please install MetaMask.')
     }
 
@@ -110,7 +158,7 @@ export const WalletProvider = ({ children }) => {
       const currentChain = Object.entries(chains).find(([_, config]) => config.id === currentChainId)?.[0]
       console.log('Current chain ID:', currentChainId, 'Mapped to chain:', currentChain)
       
-      // If user specified a chain and we're not on it, try to switch
+      // Handle chain switching logic (same as before)
       if (selectedChain && selectedChain !== currentChain) {
         const chainConfig = chains[selectedChain]
         if (chainConfig) {
@@ -121,7 +169,6 @@ export const WalletProvider = ({ children }) => {
             })
             setChain(selectedChain)
           } catch (switchError) {
-            // Chain doesn't exist, add it
             if (switchError.code === 4902) {
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
@@ -167,30 +214,120 @@ export const WalletProvider = ({ children }) => {
       setProvider(provider)
       setAddress(address)
       setIsConnected(true)
+      setConnectionType('metamask')
 
       // Listen for account changes
       window.ethereum.on('accountsChanged', handleAccountsChanged)
       window.ethereum.on('chainChanged', handleChainChanged)
 
     } catch (error) {
-      console.error('Connection error:', error)
+      console.error('MetaMask connection error:', error)
       throw error
     }
   }
 
-  const disconnectWallet = () => {
-    setIsConnected(false)
-    setAddress('')
-    setProvider(null)
-    setNfts([])
-    setChain('ethereum')
-    
-    if (window.ethereum) {
-      window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
-      window.ethereum.removeListener('chainChanged', handleChainChanged)
-    }
+  const connectWalletConnect = async (selectedChain = null) => {
+    try {
+      console.log('🔗 Initializing WalletConnect...')
+      
+      // Create WalletConnect provider
+      const wcProvider = new WalletConnectProvider({
+        rpc: {
+          1: chains.ethereum.rpc,
+          137: chains.polygon.rpc,
+          42161: chains.arbitrum.rpc,
+          56: chains.bnb.rpc,
+          43114: chains.avalanche.rpc,
+          8453: chains.base.rpc,
+        },
+        chainId: selectedChain ? chains[selectedChain].id : 1,
+        qrcode: true,
+        qrcodeModal: QRCodeModal,
+      })
 
-    localStorage.removeItem('connectedWallet')
+      // Enable session (triggers QR Code modal on desktop)
+      await wcProvider.enable()
+      
+      console.log('✅ WalletConnect enabled')
+
+      // Create ethers provider
+      const provider = new ethers.BrowserProvider(wcProvider)
+      const signer = await provider.getSigner()
+      const address = await signer.getAddress()
+
+      // Get current network
+      const network = await provider.getNetwork()
+      const chainId = Number(network.chainId)
+      const currentChain = Object.entries(chains).find(([_, config]) => config.id === chainId)?.[0] || 'ethereum'
+
+      setWalletConnectProvider(wcProvider)
+      setProvider(provider)
+      setAddress(address)
+      setChain(currentChain)
+      setIsConnected(true)
+      setConnectionType('walletconnect')
+
+      // Listen for WalletConnect events
+      wcProvider.on('accountsChanged', (accounts) => {
+        console.log('WC accounts changed:', accounts)
+        if (accounts.length === 0) {
+          disconnectWallet()
+        } else {
+          setAddress(accounts[0])
+        }
+      })
+
+      wcProvider.on('chainChanged', (chainId) => {
+        console.log('WC chain changed:', chainId)
+        const newChain = Object.entries(chains).find(([_, config]) => config.id === chainId)?.[0]
+        if (newChain) {
+          setChain(newChain)
+        }
+      })
+
+      wcProvider.on('disconnect', (code, reason) => {
+        console.log('WC disconnected:', code, reason)
+        disconnectWallet()
+      })
+
+    } catch (error) {
+      console.error('WalletConnect connection error:', error)
+      if (error.message.includes('User closed modal')) {
+        throw new Error('Connection cancelled by user')
+      }
+      throw error
+    }
+  }
+
+  const disconnectWallet = async () => {
+    try {
+      // Disconnect WalletConnect if it was used
+      if (walletConnectProvider && connectionType === 'walletconnect') {
+        await walletConnectProvider.disconnect()
+        setWalletConnectProvider(null)
+      }
+
+      // Remove MetaMask listeners if they were added
+      if (window.ethereum && connectionType === 'metamask') {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
+        window.ethereum.removeListener('chainChanged', handleChainChanged)
+      }
+
+      // Reset state
+      setIsConnected(false)
+      setAddress('')
+      setProvider(null)
+      setNfts([])
+      setChain('ethereum')
+      setConnectionType(null)
+      
+      localStorage.removeItem('connectedWallet')
+      localStorage.removeItem('walletconnect')
+      
+      console.log('✅ Wallet disconnected')
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error)
+    }
   }
 
   const handleAccountsChanged = (accounts) => {
@@ -250,117 +387,108 @@ export const WalletProvider = ({ children }) => {
                      window.__VITE_ALCHEMY_API_KEY__ || 
                      'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3' // Fallback to direct key
 
-      console.log('🔍 API Key found:', apiKey ? 'Yes (' + apiKey.slice(0, 10) + '...)' : 'No')
+      console.log('🔍 API Key found:', apiKey ? 'Yes' : 'No')
 
-      // Map chain to Alchemy network
-      let network
-      switch (chain) {
-        case 'ethereum':
-          network = Network.ETH_MAINNET
-          break
-        case 'polygon':
-          network = Network.MATIC_MAINNET
-          break
-        case 'arbitrum':
-          network = Network.ARB_MAINNET
-          break
-        case 'base':
-          network = Network.BASE_MAINNET
-          break
-        default:
-          console.error('❌ Unsupported network for Alchemy:', chain)
-          return []
-      }
-
-      console.log('🔧 Using Alchemy network:', network)
-
-      // Initialize Alchemy SDK
-      const settings = {
-        apiKey: apiKey,
-        network: network,
-        maxRetries: 3
-      }
-
-      console.log('🚀 Initializing Alchemy...')
-      const alchemy = new Alchemy(settings)
-
-      console.log('📡 Fetching NFTs for address:', address)
-      
-      // Use the correct method with free plan compatible options
-      const nftResponse = await alchemy.nft.getNftsForOwner(address, {
-        // Remove excludeFilters for free plan compatibility
-        // excludeFilters: ['SPAM'], // This requires paid plan
-        omitMetadata: false, // Include metadata
-        pageSize: 100 // Get up to 100 NFTs
-      })
-      
-      console.log('📊 NFT API Response:', {
-        totalCount: nftResponse.totalCount,
-        ownedNftsLength: nftResponse.ownedNfts?.length,
-        pageKey: nftResponse.pageKey
-      })
-      
-      if (!nftResponse || !nftResponse.ownedNfts) {
-        console.log('⚠️ No NFTs found or invalid response format')
+      if (!apiKey) {
+        console.warn('⚠️ No Alchemy API key found, using fallback method')
         return []
       }
 
-      console.log('🎨 Processing', nftResponse.ownedNfts.length, 'NFTs...')
+      // Map chain to Alchemy network
+      const networkMap = {
+        ethereum: Network.ETH_MAINNET,
+        polygon: Network.MATIC_MAINNET,
+        arbitrum: Network.ARB_MAINNET,
+        base: Network.BASE_MAINNET,
+      }
 
-      // Process NFTs
-      const mappedNFTs = nftResponse.ownedNfts
-        .filter(nft => {
-          // Basic validation
-          if (!nft.contract?.address || nft.tokenId === undefined) {
-            console.log('⚠️ Skipping NFT with missing contract or tokenId:', nft.contract?.address, nft.tokenId)
-            return false
-          }
-          
-          return true
-        })
-        .map(nft => {
+      const network = networkMap[chain]
+      if (!network) {
+        console.log(`⚠️ Chain ${chain} not supported by Alchemy, skipping NFT fetch`)
+        return []
+      }
+
+      // Configure Alchemy
+      const config = {
+        apiKey,
+        network
+      }
+
+      const alchemy = new Alchemy(config)
+      console.log('🔍 Alchemy configured for network:', network)
+
+      // Fetch NFTs
+      const response = await alchemy.nft.getNftsForOwner(address, {
+        excludeFilters: ['SPAM'],
+        omitMetadata: false,
+        pageSize: 100
+      })
+
+      console.log('📦 Raw Alchemy response:', response)
+
+      if (!response?.ownedNfts) {
+        console.log('❌ No ownedNfts in response')
+        return []
+      }
+
+      // Process and map NFTs
+      const mappedNFTs = response.ownedNfts
+        .map((nft) => {
           try {
-            const name = nft.name || nft.title || `Token #${nft.tokenId}`
-            
-            // Get image URL with better fallbacks
-            let imageUrl = ''
-            
-            // Try different image sources from Alchemy's response
-            if (nft.image?.cachedUrl) {
-              imageUrl = nft.image.cachedUrl
-            } else if (nft.image?.thumbnailUrl) {
-              imageUrl = nft.image.thumbnailUrl
-            } else if (nft.image?.pngUrl) {
-              imageUrl = nft.image.pngUrl
-            } else if (nft.image?.originalUrl) {
-              imageUrl = nft.image.originalUrl
-            } else if (nft.rawMetadata?.image) {
-              imageUrl = nft.rawMetadata.image
-            } else if (nft.media && nft.media.length > 0) {
-              imageUrl = nft.media[0]?.gateway || nft.media[0]?.raw || ''
-            }
-
-            // Convert IPFS URLs to HTTP
-            if (imageUrl && imageUrl.startsWith('ipfs://')) {
-              const hash = imageUrl.replace('ipfs://', '')
-              imageUrl = `https://ipfs.io/ipfs/${hash}`
-            }
-
-            // Fallback to a working placeholder if no image
-            if (!imageUrl) {
-              imageUrl = `https://picsum.photos/300/300?random=${nft.tokenId}`
-            }
-
-            const collection = nft.contract?.name || nft.contract?.symbol || 'Unknown Collection'
             const contractAddress = nft.contract?.address
             const tokenId = nft.tokenId
             
+            if (!contractAddress || !tokenId) {
+              console.log('⚠️ Skipping NFT missing contract address or tokenId:', nft)
+              return null
+            }
+
+            // Get name with fallback
+            const name = nft.title || 
+                        nft.rawMetadata?.name || 
+                        nft.contract?.name || 
+                        `Token #${tokenId}`
+
+            // Get collection name
+            const collection = nft.contract?.name || 
+                             nft.contract?.symbol || 
+                             'Unknown Collection'
+
+            // Get image with comprehensive fallback logic
+            let imageUrl = null
+            
+            // Try multiple image sources
+            const imageSources = [
+              nft.media?.[0]?.gateway,
+              nft.media?.[0]?.thumbnail,
+              nft.media?.[0]?.raw,
+              nft.rawMetadata?.image,
+              nft.rawMetadata?.image_url,
+              nft.rawMetadata?.imageUrl,
+              nft.rawMetadata?.animation_url,
+              nft.tokenUri?.gateway
+            ]
+
+            for (const source of imageSources) {
+              if (source && typeof source === 'string' && source.trim()) {
+                imageUrl = source.startsWith('ipfs://') 
+                  ? `https://ipfs.io/ipfs/${source.slice(7)}`
+                  : source
+                break
+              }
+            }
+
+            // Final fallback
+            if (!imageUrl) {
+              imageUrl = `https://via.placeholder.com/200x200/6366f1/ffffff?text=${encodeURIComponent(name.slice(0, 10))}`
+            }
+
             console.log('✅ Processed NFT:', {
               name,
               collection,
+              imageUrl: imageUrl?.substring(0, 100) + (imageUrl?.length > 100 ? '...' : ''),
               contractAddress,
-              tokenId,
-              hasImage: !!imageUrl
+              tokenId
             })
 
             return {
@@ -410,11 +538,43 @@ export const WalletProvider = ({ children }) => {
   // Save connection state
   useEffect(() => {
     if (isConnected) {
-      localStorage.setItem('connectedWallet', JSON.stringify({ chain, address }))
+      localStorage.setItem('connectedWallet', JSON.stringify({ 
+        chain, 
+        address, 
+        connectionType 
+      }))
     } else {
       localStorage.removeItem('connectedWallet')
     }
-  }, [isConnected, chain, address])
+  }, [isConnected, chain, address, connectionType])
+
+  // Auto-reconnect on page load
+  useEffect(() => {
+    const autoReconnect = async () => {
+      try {
+        const savedConnection = localStorage.getItem('connectedWallet')
+        if (savedConnection) {
+          const { connectionType: savedType } = JSON.parse(savedConnection)
+          console.log('🔄 Auto-reconnecting with:', savedType)
+          
+          if (savedType === 'metamask' && isMetaMaskAvailable()) {
+            await connectMetaMask()
+          } else if (savedType === 'walletconnect') {
+            // WalletConnect will auto-reconnect if session exists
+            const wcStorage = localStorage.getItem('walletconnect')
+            if (wcStorage) {
+              await connectWalletConnect()
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Auto-reconnect failed:', error)
+        localStorage.removeItem('connectedWallet')
+      }
+    }
+
+    autoReconnect()
+  }, [])
 
   const value = {
     isConnected,
@@ -428,7 +588,10 @@ export const WalletProvider = ({ children }) => {
     disconnectWallet,
     fetchNFTs,
     setChain,
-    user
+    user,
+    connectionType,
+    isMobile: isMobile(),
+    isMetaMaskAvailable: isMetaMaskAvailable()
   }
 
   return (

@@ -1,33 +1,47 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
-export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '')
-  
-  return {
-    plugins: [
-      react({
-        jsxImportSource: '@emotion/react',
-        babel: {
-          plugins: ['@emotion/babel-plugin']
-        }
-      })
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      stream: 'stream-browserify',
+      crypto: 'crypto-browserify',
+      util: 'util',
+      buffer: 'buffer',
+      process: 'process/browser',
+      zlib: 'browserify-zlib',
+      path: 'path-browserify',
+      fs: false,
+      net: false,
+      tls: false,
+      child_process: false,
+    },
+  },
+  optimizeDeps: {
+    include: [
+      'stream-browserify',
+      'crypto-browserify',
+      'util',
+      'buffer',
+      'process/browser',
+      'browserify-zlib',
+      'path-browserify',
     ],
-    define: {
-      global: 'globalThis',
-      // Explicitly expose environment variables
-      __VITE_ALCHEMY_API_KEY__: JSON.stringify(env.VITE_ALCHEMY_API_KEY),
+    esbuildOptions: {
+      target: 'esnext',
     },
-    resolve: {
-      alias: {
-        process: "process/browser",
-        stream: "stream-browserify",
-        util: "util",
-      },
+  },
+  build: {
+    target: 'esnext',
+    rollupOptions: {
+      external: ['fsevents'],
     },
-    optimizeDeps: {
-      include: ['process', 'stream-browserify', 'util']
-    }
-  }
+  },
+  define: {
+    'process.env': {},
+    global: 'globalThis',
+  },
 }) 

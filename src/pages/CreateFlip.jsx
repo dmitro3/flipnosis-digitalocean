@@ -31,6 +31,7 @@ import {
   LoadingSpinner
 } from '../styles/components'
 import { ethers } from 'ethers'
+import WalletConnectionModal from '../components/WalletConnectionModal'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
@@ -42,6 +43,7 @@ const CreateFlip = () => {
   const [gameType, setGameType] = useState('') // 'nft-vs-crypto' or 'nft-vs-nft'
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Debug logging
   useEffect(() => {
@@ -207,10 +209,19 @@ const CreateFlip = () => {
             <ConnectWalletPrompt>
               <PromptTitle>Connect Your Wallet</PromptTitle>
               <PromptText>Please connect your wallet to create a new flip game.</PromptText>
-              <Button onClick={connectWallet}>Connect Wallet</Button>
+              <Button onClick={() => setShowWalletModal(true)}>Connect Wallet</Button>
             </ConnectWalletPrompt>
           </ContentWrapper>
         </Container>
+        
+        <WalletConnectionModal
+          isOpen={showWalletModal}
+          onClose={() => setShowWalletModal(false)}
+          onSuccess={() => {
+            setShowWalletModal(false)
+            // Wallet is now connected, component will re-render
+          }}
+        />
       </ThemeProvider>
     )
   }
