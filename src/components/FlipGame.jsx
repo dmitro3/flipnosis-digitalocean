@@ -4,7 +4,6 @@ import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
-import MobileWalletConnector from './MobileWalletConnector'
 import {
   Container,
   ContentWrapper,
@@ -143,7 +142,7 @@ const NFTLink = styled.a`
 const FlipGame = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { isConnected, address, provider, isMobile } = useWallet()
+  const { isConnected, address, provider } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
 
   // API URL
@@ -195,23 +194,6 @@ const FlipGame = () => {
   const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
   const [choiceAnimationText, setChoiceAnimationText] = useState('')
   const [choiceAnimationColor, setChoiceAnimationColor] = useState('')
-
-  const fetchNFTData = async (gameId) => {
-    try {
-      setIsLoadingNFT(true)
-      console.log('🎨 Fetching NFT data for game:', gameId)
-      const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
-      if (!response.ok) throw new Error('Failed to fetch NFT data')
-      const data = await response.json()
-      console.log('✅ NFT data received:', data)
-      setNftData(data)
-    } catch (error) {
-      console.error('❌ Error fetching NFT data:', error)
-      setNftData(null)
-    } finally {
-      setIsLoadingNFT(false)
-    }
-  }
 
   // WebSocket connection
   useEffect(() => {
@@ -962,12 +944,6 @@ const FlipGame = () => {
   }
 
   if (!isConnected) {
-    // Show mobile connector on mobile devices
-    if (isMobile) {
-      return <MobileWalletConnector />
-    }
-
-    // Show desktop wallet modal for desktop
     return (
       <ThemeProvider theme={theme}>
         <Container>
@@ -2024,6 +2000,24 @@ const getMarketplaceUrl = (chain) => {
     // Add more chains as needed
   }
   return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
+}
+
+// Add the missing fetchNFTData function
+const fetchNFTData = async (gameId) => {
+  try {
+    setIsLoadingNFT(true)
+    console.log('🎨 Fetching NFT data for game:', gameId)
+    const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
+    if (!response.ok) throw new Error('Failed to fetch NFT data')
+    const data = await response.json()
+    console.log('✅ NFT data received:', data)
+    setNftData(data)
+  } catch (error) {
+    console.error('❌ Error fetching NFT data:', error)
+    setNftData(null)
+  } finally {
+    setIsLoadingNFT(false)
+  }
 }
 
 export default FlipGame

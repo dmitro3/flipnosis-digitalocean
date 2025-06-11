@@ -6,7 +6,6 @@ import NFTSelector from '../components/NFTSelector'
 import PaymentService from '../services/PaymentService'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
-import MobileWalletConnector from '../components/MobileWalletConnector'
 import {
   Container,
   ContentWrapper,
@@ -32,12 +31,10 @@ import {
   LoadingSpinner
 } from '../styles/components'
 import { ethers } from 'ethers'
-import WalletConnectionModal from '../components/WalletConnectionModal'
-import SimpleMobileConnector from '../components/SimpleMobileConnector'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
-  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address, chain, isMobile } = useWallet()
+  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
@@ -45,7 +42,6 @@ const CreateFlip = () => {
   const [gameType, setGameType] = useState('') // 'nft-vs-crypto' or 'nft-vs-nft'
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Debug logging
   useEffect(() => {
@@ -54,10 +50,9 @@ const CreateFlip = () => {
       address,
       nftsLoading,
       nftsCount: nfts?.length || 0,
-      chain,
-      isMobile
+      chain
     })
-  }, [isConnected, address, nftsLoading, nfts, chain, isMobile])
+  }, [isConnected, address, nftsLoading, nfts, chain])
 
   const createGameWithDatabase = async (gameData) => {
     try {
@@ -204,17 +199,7 @@ const CreateFlip = () => {
     }
   }
 
-  if (!isConnected && isMobile) {
-    return <SimpleMobileConnector />
-  }
-
   if (!isConnected) {
-    // Show mobile connector on mobile devices
-    if (isMobile) {
-      return <MobileWalletConnector />
-    }
-
-    // Show desktop wallet modal for desktop
     return (
       <ThemeProvider theme={theme}>
         <Container>
@@ -222,19 +207,10 @@ const CreateFlip = () => {
             <ConnectWalletPrompt>
               <PromptTitle>Connect Your Wallet</PromptTitle>
               <PromptText>Please connect your wallet to create a new flip game.</PromptText>
-              <Button onClick={() => setShowWalletModal(true)}>Connect Wallet</Button>
+              <Button onClick={connectWallet}>Connect Wallet</Button>
             </ConnectWalletPrompt>
           </ContentWrapper>
         </Container>
-        
-        <WalletConnectionModal
-          isOpen={showWalletModal}
-          onClose={() => setShowWalletModal(false)}
-          onSuccess={() => {
-            setShowWalletModal(false)
-            // Wallet is now connected, component will re-render
-          }}
-        />
       </ThemeProvider>
     )
   }
