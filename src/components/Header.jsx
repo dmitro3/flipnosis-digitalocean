@@ -5,6 +5,7 @@ import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
+import MobileInfoImg from '../../Images/Info/mobile.webp'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 import MobileWalletConnector from './MobileWalletConnector'
@@ -272,7 +273,6 @@ const InfoButton = styled.button`
   height: 2.5rem;
   font-size: 1.5rem;
   font-weight: bold;
-  margin-left: 1.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -282,7 +282,16 @@ const InfoButton = styled.button`
   &:hover {
     background: rgba(0,255,65,0.25);
   }
-`;
+
+  @media (max-width: 768px) {
+    margin: 0;
+    width: 100%;
+    border-radius: 0.5rem;
+    height: auto;
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+`
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -320,10 +329,20 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
   const [showWalletModal, setShowWalletModal] = useState(false)
+  const [isMobileState, setIsMobileState] = useState(isMobile)
+
+  // Add resize listener
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobileState(window.innerWidth <= 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const handleConnect = async () => {
     try {
-      if (isMobile) {
+      if (isMobileState) {
         setShowWalletModal(true)
       } else {
         await connectWallet()
@@ -410,14 +429,40 @@ const Header = () => {
               {loading ? 'Connecting...' : 'Connect Wallet'}
             </WalletButton>
           )}
+
+          {/* Info Button in Mobile Menu */}
+          <InfoButton onClick={() => {
+            setShowInfo(true)
+            setIsMenuOpen(false)
+          }}>
+            About FLIPNOSIS
+          </InfoButton>
         </MobileMenu>
-        <InfoButton onClick={() => setShowInfo(true)} title="About FLIPNOSIS">i</InfoButton>
+
+        {/* Desktop Info Button */}
+        <InfoButton 
+          onClick={() => setShowInfo(true)} 
+          title="About FLIPNOSIS"
+          style={{ display: isMobileState ? 'none' : 'flex' }}
+        >
+          i
+        </InfoButton>
 
         {showInfo && (
           <ModalOverlay onClick={() => setShowInfo(false)}>
             <ModalContent onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
               <CloseButton onClick={() => setShowInfo(false)} title="Close">×</CloseButton>
-              <img src={FlipnosisInfoImg} alt="FLIPNOSIS Info" style={{ maxWidth: '80vw', maxHeight: '70vh', borderRadius: '0.5rem' }} />
+              <img 
+                src={isMobileState ? MobileInfoImg : FlipnosisInfoImg} 
+                alt="FLIPNOSIS Info" 
+                style={{ 
+                  maxWidth: '80vw', 
+                  maxHeight: '70vh', 
+                  borderRadius: '0.5rem',
+                  width: '100%',
+                  height: 'auto'
+                }} 
+              />
             </ModalContent>
           </ModalOverlay>
         )}

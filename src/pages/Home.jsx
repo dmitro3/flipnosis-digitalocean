@@ -76,6 +76,16 @@ const FilterContainer = styled.div`
   }
 `
 
+const DesktopFilters = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`
+
 const FilterButton = styled(Button)`
   background: ${props => props.active ? props.theme.colors.neonGreen : 'transparent'};
   border: 1px solid ${props => props.theme.colors.neonGreen};
@@ -365,7 +375,7 @@ const Home = () => {
           <TransparentCard style={{ background: theme.colors.bgDark }}>
             <FilterContainer>
               {/* Desktop Filters */}
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <DesktopFilters>
                 {chainFilters.map(filter => (
                   <FilterButton
                     key={filter.key}
@@ -375,7 +385,7 @@ const Home = () => {
                     {filter.icon} {filter.name}
                   </FilterButton>
                 ))}
-              </div>
+              </DesktopFilters>
 
               {/* Mobile Filter Dropdown */}
               <FilterSelect
