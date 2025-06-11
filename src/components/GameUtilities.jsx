@@ -802,4 +802,22 @@ export const DualGameInstructions = ({ isPlayerTurn, gamePhase, isPlayer, player
       </div>
     </div>
   )
+}
+
+export const GoldGameInstructions = ({ 
+  isPlayerTurn, 
+  gamePhase, 
+  isPlayer, 
+  playerNumber, 
+  spectatorMode,
+  currentPower,
+  playerChoice,
+  currentRound,
+  maxRounds,
+  creatorWins,
+  joinerWins,
+  turnTimeLeft
+}) => {
+  // ... rest of the component logic stays the same
+  // Just remove any NFT-related rendering code from this component
 } 
