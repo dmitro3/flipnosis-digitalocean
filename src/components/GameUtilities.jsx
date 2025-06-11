@@ -802,7 +802,7 @@ export const DualGameInstructions = ({ isPlayerTurn, gamePhase, isPlayer, player
       </div>
     </div>
   )
-}
+} 
 
 export const GoldGameInstructions = ({ 
   isPlayerTurn, 

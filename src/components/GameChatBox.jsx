@@ -248,289 +248,127 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   }
 
   return (
-    <>
-      {/* Chat Button - Integrated into game UI */}
-      {!isChatOpen ? (
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
+      border: '2px solid #FFD700',
+      borderRadius: '1rem',
+      padding: '1rem',
+      width: '100%',
+      height: '400px',
+      display: 'flex',
+      flexDirection: 'column',
+      backdropFilter: 'blur(10px)'
+    }}>
+      {/* Chat Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '1rem',
+        paddingBottom: '0.5rem',
+        borderBottom: '1px solid rgba(255, 215, 0, 0.3)'
+      }}>
+        <div style={{
+          color: '#FFD700',
+          fontWeight: 'bold',
+          fontSize: '1.2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          💬 Game Chat
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: connected ? '#00FF00' : '#FF0000',
+            animation: connected ? 'pulse 2s infinite' : 'none'
+          }} />
+          <span style={{ 
+            color: theme.colors.textSecondary, 
+            fontSize: '0.8rem' 
+          }}>
+            {connected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
+      </div>
+
+      {/* Messages Container */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        marginBottom: '1rem',
+        padding: '0.5rem'
+      }}>
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            style={{
+              marginBottom: '0.5rem',
+              padding: '0.5rem',
+              background: msg.address === address ? 
+                'rgba(255, 215, 0, 0.1)' : 
+                'rgba(255, 255, 255, 0.05)',
+              borderRadius: '0.5rem',
+              maxWidth: '80%',
+              marginLeft: msg.address === address ? 'auto' : '0'
+            }}
+          >
+            <div style={{
+              fontSize: '0.8rem',
+              color: theme.colors.textSecondary,
+              marginBottom: '0.25rem'
+            }}>
+              {msg.address.slice(0, 6)}...{msg.address.slice(-4)}
+            </div>
+            <div style={{ color: '#fff' }}>{msg.text}</div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Message Input */}
+      <form onSubmit={sendMessage} style={{
+        display: 'flex',
+        gap: '0.5rem'
+      }}>
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          style={{
+            flex: 1,
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 215, 0, 0.3)',
+            borderRadius: '0.5rem',
+            padding: '0.75rem',
+            color: '#fff',
+            fontSize: '0.9rem'
+          }}
+        />
         <button
-          onClick={() => setIsChatOpen(true)}
+          type="submit"
           style={{
             background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-            border: '2px solid #FFD700',
-            borderRadius: '0.75rem',
+            border: 'none',
+            borderRadius: '0.5rem',
             padding: '0.75rem 1.5rem',
             color: '#000',
             fontWeight: 'bold',
             cursor: 'pointer',
-            fontSize: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 0 15px rgba(255, 215, 0, 0.3)',
-            position: 'relative'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.transform = 'translateY(-2px)'
-            e.target.style.boxShadow = '0 0 25px rgba(255, 215, 0, 0.5)'
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = 'translateY(0)'
-            e.target.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.3)'
+            fontSize: '0.9rem'
           }}
         >
-          💬 Chat
-          {unreadCount > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: '-8px',
-              right: '-8px',
-              background: '#ff0000',
-              color: 'white',
-              borderRadius: '50%',
-              width: '20px',
-              height: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.7rem',
-              fontWeight: 'bold'
-            }}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </div>
-          )}
+          Send
         </button>
-      ) : (
-        /* Chat Modal Popup */
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backdropFilter: 'blur(5px)'
-          }}
-          onClick={(e) => {
-            // Only close if clicking the backdrop, not the modal content
-            if (e.target === e.currentTarget) {
-              setIsChatOpen(false)
-            }
-          }}
-        >
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
-            border: '2px solid #FFD700',
-            borderRadius: '1rem',
-            padding: '1.5rem',
-            width: '90%',
-            maxWidth: '600px',
-            maxHeight: '80vh',
-            position: 'relative',
-            boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
-          }}>
-            {/* Close Button */}
-            <button
-              onClick={() => setIsChatOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '-15px',
-                right: '-15px',
-                background: 'rgba(255, 0, 0, 0.2)',
-                border: '1px solid rgba(255, 0, 0, 0.5)',
-                borderRadius: '50%',
-                width: '30px',
-                height: '30px',
-                color: '#fff',
-                fontSize: '1.2rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 10001,
-                boxShadow: '0 0 10px rgba(0, 0, 0, 0.5)'
-              }}
-            >
-              ✕
-            </button>
-
-            {/* Chat Content */}
-            <div style={{
-              background: 'rgba(0, 0, 0, 0.8)',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '1rem',
-              padding: '1rem',
-              width: '100%',
-              backdropFilter: 'blur(10px)'
-            }}>
-              {/* Chat Header */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '1rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '1px solid rgba(255, 215, 0, 0.3)'
-              }}>
-                <div style={{
-                  color: '#FFD700',
-                  fontWeight: 'bold',
-                  fontSize: '1.2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  💬 Game Chat
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: connected ? '#00FF00' : '#FF0000',
-                    animation: connected ? 'pulse 2s infinite' : 'none'
-                  }} />
-                  <span style={{ 
-                    color: theme.colors.textSecondary, 
-                    fontSize: '0.8rem' 
-                  }}>
-                    {connected ? 'Connected' : 'Disconnected'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Player Name Settings */}
-              <div style={{
-                marginBottom: '1rem',
-                padding: '0.75rem',
-                background: 'rgba(255, 215, 0, 0.1)',
-                borderRadius: '0.5rem',
-                border: '1px solid rgba(255, 215, 0, 0.2)'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  marginBottom: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem'
-                  }}>
-                    👤
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Your Name</div>
-                    <div style={{ color: '#FFD700', fontWeight: 'bold' }}>
-                      {playerName || 'Anonymous'}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setIsNameModalOpen(true)}
-                    style={{
-                      background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                      border: 'none',
-                      borderRadius: '0.5rem',
-                      padding: '0.5rem 1rem',
-                      color: '#000',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      fontSize: '0.8rem'
-                    }}
-                  >
-                    {playerName ? 'Change' : 'Set Name'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Messages Container */}
-              <div style={{
-                height: '400px',
-                overflowY: 'auto',
-                marginBottom: '1rem',
-                padding: '0.5rem'
-              }}>
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      marginBottom: '0.5rem',
-                      padding: '0.5rem',
-                      background: msg.address === address ? 
-                        'rgba(255, 215, 0, 0.1)' : 
-                        'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '0.5rem',
-                      maxWidth: '80%',
-                      marginLeft: msg.address === address ? 'auto' : '0'
-                    }}
-                  >
-                    <div style={{
-                      fontSize: '0.8rem',
-                      color: theme.colors.textSecondary,
-                      marginBottom: '0.25rem'
-                    }}>
-                      {msg.address.slice(0, 6)}...{msg.address.slice(-4)}
-                    </div>
-                    <div style={{ color: '#fff' }}>{msg.text}</div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Message Input */}
-              <form onSubmit={sendMessage} style={{
-                display: 'flex',
-                gap: '0.5rem'
-              }}>
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  style={{
-                    flex: 1,
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '0.5rem',
-                    padding: '0.75rem',
-                    color: '#fff',
-                    fontSize: '0.9rem'
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    padding: '0.75rem 1.5rem',
-                    color: '#000',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Send
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      </form>
 
       {/* Name Modal */}
       {isNameModalOpen && (
@@ -627,7 +465,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
           }
         `}
       </style>
-    </>
+    </div>
   )
 }
 
