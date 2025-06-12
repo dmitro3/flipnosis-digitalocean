@@ -2,7 +2,6 @@ import React from 'react'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
-import metamaskLogo from '../../Images/Info/metamask.webp'
 import hazeVideo from '../../Images/Video/haze.webm'
 
 const LandingContainer = styled.div`
@@ -80,11 +79,6 @@ const Button = styled.button`
   }
 `
 
-const MetaMaskLogo = styled.img`
-  width: 24px;
-  height: 24px;
-`
-
 const MobileLanding = ({ onContinue }) => {
   const handleMetaMask = () => {
     const metamaskUrl = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`
@@ -105,8 +99,7 @@ const MobileLanding = ({ onContinue }) => {
           </Description>
           <ButtonContainer>
             <Button primary onClick={handleMetaMask}>
-              <MetaMaskLogo src={metamaskLogo} alt="MetaMask" />
-              Open in MetaMask
+              🦊 Open in MetaMask
             </Button>
             <Button onClick={onContinue}>
               Continue to Site
