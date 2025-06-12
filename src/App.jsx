@@ -4,16 +4,27 @@ import { ToastProvider } from './contexts/ToastContext'
 import { WalletProvider } from './contexts/WalletContext'
 import { ProfileProvider } from './contexts/ProfileContext'
 import { router } from './Routes'
+import UserProfileHeader from './components/UserProfileHeader'
+import { ThemeProvider } from '@mui/material/styles'
+import { theme } from './theme'
+import { Routes, Router } from 'react-router-dom'
 
 function App() {
   return (
-    <ToastProvider>
-      <WalletProvider>
-        <ProfileProvider>
-          <RouterProvider router={router} />
-        </ProfileProvider>
-      </WalletProvider>
-    </ToastProvider>
+    <WalletProvider>
+      <ProfileProvider>
+        <ToastProvider>
+          <ThemeProvider theme={theme}>
+            <UserProfileHeader />
+            <Router>
+              <Routes>
+                <RouterProvider router={router} />
+              </Routes>
+            </Router>
+          </ThemeProvider>
+        </ToastProvider>
+      </ProfileProvider>
+    </WalletProvider>
   )
 }
 

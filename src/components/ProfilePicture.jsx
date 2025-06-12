@@ -1,96 +1,137 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useProfile } from '../contexts/ProfileContext'
-import { theme } from '../styles/theme'
+import { useWallet } from '../contexts/WalletContext'
+import styled from '@emotion/styled'
+
+const ProfilePictureContainer = styled.div`
+  position: relative;
+  width: ${props => props.size}px;
+  height: ${props => props.size}px;
+  border-radius: ${props => props.style?.borderRadius || '50%'};
+  overflow: hidden;
+  cursor: ${props => props.isClickable ? 'pointer' : 'default'};
+  border: ${props => props.style?.border || '2px solid rgba(255, 255, 255, 0.2)'};
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: ${props => props.isClickable ? 'scale(1.05)' : 'none'};
+    box-shadow: ${props => props.isClickable ? '0 0 15px rgba(255, 255, 255, 0.3)' : 'none'};
+  }
+`
+
+const ProfileImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`
+
+const UploadIcon = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  ${ProfilePictureContainer}:hover & {
+    opacity: 1;
+  }
+`
 
 const ProfilePicture = ({ 
   address, 
-  size = '40px', 
+  size = 40, 
   isClickable = false, 
   showUploadIcon = false,
   style = {} 
 }) => {
   const { getProfilePicture, setProfilePicture } = useProfile()
-  const fileInputRef = useRef(null)
-  const [profilePic, setProfilePic] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const { address: currentUserAddress } = useWallet()
+  const [imageUrl, setImageUrl] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
   
-  // Fetch profile picture when address changes
   useEffect(() => {
-    if (address) {
-      setLoading(true)
-      getProfilePicture(address).then(pic => {
-        setProfilePic(pic)
-        setLoading(false)
-      })
+    const fetchImage = async () => {
+      if (!address) return
+      
+      setIsLoading(true)
+      try {
+        // First try to get from local storage/cache
+        const cachedImage = await getProfilePicture(address)
+        if (cachedImage) {
+          setImageUrl(cachedImage)
+          return
+        }
+
+        // If not in cache, fetch from server
+        const response = await fetch(`/api/profiles/${address}/picture`)
+        if (response.ok) {
+          const blob = await response.blob()
+          const imageUrl = URL.createObjectURL(blob)
+          setImageUrl(imageUrl)
+          // Cache the image
+          await setProfilePicture(address, imageUrl)
+        }
+      } catch (error) {
+        console.error('Error fetching profile picture:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [address, getProfilePicture])
+
+    fetchImage()
+  }, [address, getProfilePicture, setProfilePicture])
   
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0]
-    if (file) {
+  const handleImageClick = async (e) => {
+    if (!isClickable || !currentUserAddress || currentUserAddress !== address) return
+
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+
       // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select an image file')
         return
       }
-      
-      // Validate file size (max 1MB for server storage)
-      if (file.size > 1024 * 1024) {
-        alert('Image must be smaller than 1MB')
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB')
         return
       }
-      
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const img = new Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d')
-          
-          // Set canvas size (96x96 for better server storage)
-          const maxSize = 96
-          canvas.width = maxSize
-          canvas.height = maxSize
-          
-          ctx.drawImage(img, 0, 0, maxSize, maxSize)
-          
-          // Convert to data URL with compression
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
-          
-          // Save to profile (this will upload to server)
-          setProfilePicture(address, dataUrl).then(() => {
-            setProfilePic(dataUrl)
-            
-            // Force refresh for all users viewing this address
-            window.dispatchEvent(new CustomEvent('profileUpdated', { 
-              detail: { address, imageData: dataUrl } 
-            }))
-          })
+
+      try {
+        const formData = new FormData()
+        formData.append('picture', file)
+
+        const response = await fetch(`/api/profiles/${address}/picture`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (response.ok) {
+          const blob = await response.blob()
+          const newImageUrl = URL.createObjectURL(blob)
+          setImageUrl(newImageUrl)
+          // Update cache
+          await setProfilePicture(address, newImageUrl)
         }
-        img.src = e.target.result
-      }
-      reader.readAsDataURL(file)
-    }
-    
-    event.target.value = ''
-  }
-  
-  // Add profile update listener
-  useEffect(() => {
-    const handleProfileUpdate = (event) => {
-      if (event.detail.address === address) {
-        setProfilePic(event.detail.imageData)
+      } catch (error) {
+        console.error('Error uploading profile picture:', error)
+        alert('Failed to upload image')
       }
     }
-    
-    window.addEventListener('profileUpdated', handleProfileUpdate)
-    return () => window.removeEventListener('profileUpdated', handleProfileUpdate)
-  }, [address])
-  
-  const handleClick = () => {
-    if (isClickable && fileInputRef.current) {
-      fileInputRef.current.click()
-    }
+
+    input.click()
   }
   
   const generateGradient = (address) => {
@@ -105,73 +146,36 @@ const ProfilePicture = ({
   }
   
   return (
-    <div
-      onClick={handleClick}
-      style={{
-        width: size,
-        height: size,
-        overflow: 'hidden',
-        cursor: isClickable ? 'pointer' : 'default',
-        position: 'relative',
-        background: profilePic ? 'transparent' : generateGradient(address),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.3s ease',
-        ...style
-      }}
+    <ProfilePictureContainer 
+      size={size} 
+      isClickable={isClickable}
+      onClick={handleImageClick}
+      style={style}
     >
-      {loading ? (
-        <div style={{ color: 'white', fontSize: '10px' }}>...</div>
-      ) : profilePic ? (
-        <img
-          src={profilePic}
-          alt="Profile"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
-        />
+      {imageUrl ? (
+        <ProfileImage src={imageUrl} alt="Profile" />
       ) : (
         <div style={{
-          color: 'white',
-          fontSize: parseInt(size) * 0.4 + 'px',
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(45deg, #FF1493, #00BFFF)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#fff',
+          fontSize: `${size * 0.4}px`,
           fontWeight: 'bold'
         }}>
-          {address ? address.slice(2, 4).toUpperCase() : '??'}
+          {address ? address.slice(2, 4).toUpperCase() : '?'}
         </div>
       )}
       
       {showUploadIcon && isClickable && (
-        <div style={{
-          position: 'absolute',
-          bottom: '0',
-          right: '0',
-          width: '16px',
-          height: '16px',
-          background: theme.colors.neonPink,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '10px',
-          color: 'white'
-        }}>
+        <UploadIcon>
           📷
-        </div>
+        </UploadIcon>
       )}
-      
-      {isClickable && (
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          style={{ display: 'none' }}
-        />
-      )}
-    </div>
+    </ProfilePictureContainer>
   )
 }
 

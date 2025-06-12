@@ -4,6 +4,102 @@ import { useProfile } from '../contexts/ProfileContext'
 import { useToast } from '../contexts/ToastContext'
 import { theme } from '../styles/theme'
 import ProfilePicture from './ProfilePicture'
+import styled from '@emotion/styled'
+
+const ChatContainer = styled.div`
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+`
+
+const MessagesContainer = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding-right: 0.5rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+`
+
+const Message = styled.div`
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: ${props => props.isCurrentUser ? 'rgba(255, 20, 147, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+  border: 1px solid ${props => props.isCurrentUser ? 'rgba(255, 20, 147, 0.3)' : 'rgba(255, 255, 255, 0.2)'};
+`
+
+const MessageHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  color: ${props => props.isCurrentUser ? '#FF1493' : '#00BFFF'};
+`
+
+const MessageContent = styled.div`
+  color: #fff;
+  word-break: break-word;
+`
+
+const InputContainer = styled.form`
+  display: flex;
+  gap: 0.5rem;
+`
+
+const Input = styled.input`
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  color: #fff;
+  font-size: 0.9rem;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(255, 20, 147, 0.5);
+    box-shadow: 0 0 10px rgba(255, 20, 147, 0.2);
+  }
+`
+
+const SendButton = styled.button`
+  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 20, 147, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`
 
 const GameChatBox = ({ gameId, socket, connected }) => {
   const { address, isConnected } = useWallet()
@@ -17,6 +113,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   const [playerName, setPlayerNameState] = useState('')
   const [isChatOpen, setIsChatOpen] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [playerNames, setPlayerNames] = useState({})
   
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -165,6 +262,21 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
+  useEffect(() => {
+    const loadPlayerNames = async () => {
+      const names = {}
+      for (const message of messages) {
+        if (!names[message.address]) {
+          const name = await getPlayerName(message.address)
+          names[message.address] = name
+        }
+      }
+      setPlayerNames(names)
+    }
+
+    loadPlayerNames()
+  }, [messages, getPlayerName])
+
   if (!isConnected) {
     return (
       <div style={{
@@ -182,17 +294,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   }
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(25, 20, 0, 0.9) 100%)',
-      border: '2px solid #FFD700',
-      borderRadius: '1rem',
-      padding: '1rem',
-      width: '100%',
-      height: '400px',
-      display: 'flex',
-      flexDirection: 'column',
-      backdropFilter: 'blur(10px)'
-    }}>
+    <ChatContainer>
       {/* Chat Header */}
       <div style={{
         display: 'flex',
@@ -234,85 +336,61 @@ const GameChatBox = ({ gameId, socket, connected }) => {
       </div>
 
       {/* Messages Container */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        marginBottom: '1rem',
-        padding: '0.5rem'
-      }}>
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: '0.5rem',
-              padding: '0.5rem',
-              background: msg.address === address ? 
-                'rgba(255, 215, 0, 0.1)' : 
-                'rgba(255, 255, 255, 0.05)',
-              borderRadius: '0.5rem',
-              maxWidth: '80%',
-              marginLeft: msg.address === address ? 'auto' : '0'
-            }}
-          >
-            <div style={{
-              fontSize: '0.8rem',
-              color: theme.colors.textSecondary,
-              marginBottom: '0.25rem'
-            }}>
-              {msg.name || `${msg.address.slice(0, 6)}...${msg.address.slice(-4)}`}
-            </div>
-            <div style={{ color: '#fff' }}>{msg.message}</div>
-            <div style={{
-              fontSize: '0.7rem',
-              color: theme.colors.textSecondary,
-              textAlign: 'right',
-              marginTop: '0.25rem'
-            }}>
-              {formatTimestamp(msg.timestamp)}
-            </div>
-          </div>
-        ))}
+      <MessagesContainer>
+        {messages.map((msg, index) => {
+          const isCurrentUser = msg.address === address
+          const displayName = playerNames[msg.address] || msg.address.slice(0, 6) + '...' + msg.address.slice(-4)
+          
+          return (
+            <Message key={index} isCurrentUser={isCurrentUser}>
+              <MessageHeader isCurrentUser={isCurrentUser}>
+                <span>{displayName}</span>
+                <span>{formatTimestamp(msg.timestamp)}</span>
+              </MessageHeader>
+              <MessageContent>{msg.message}</MessageContent>
+            </Message>
+          )
+        })}
         <div ref={messagesEndRef} />
-      </div>
+      </MessagesContainer>
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} style={{
-        display: 'flex',
-        gap: '0.5rem'
-      }}>
-        <input
+      <InputContainer onSubmit={handleSendMessage}>
+        <Input
           ref={inputRef}
           type="text"
           value={currentMessage}
           onChange={(e) => setCurrentMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Type your message..."
+          disabled={!connected}
           style={{
             flex: 1,
             background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 215, 0, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '0.5rem',
             padding: '0.75rem',
             color: '#fff',
             fontSize: '0.9rem'
           }}
         />
-        <button
+        <SendButton
           type="submit"
+          disabled={!connected || !currentMessage.trim()}
           style={{
-            background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+            background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
             border: 'none',
             borderRadius: '0.5rem',
             padding: '0.75rem 1.5rem',
-            color: '#000',
+            color: '#fff',
             fontWeight: 'bold',
             cursor: 'pointer',
             fontSize: '0.9rem'
           }}
         >
           Send
-        </button>
-      </form>
+        </SendButton>
+      </InputContainer>
 
       {/* Name Modal */}
       {isNameModalOpen && (
@@ -409,7 +487,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
           }
         `}
       </style>
-    </div>
+    </ChatContainer>
   )
 }
 

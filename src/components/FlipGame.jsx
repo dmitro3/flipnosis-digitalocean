@@ -1094,6 +1094,7 @@ const FlipGame = () => {
                   {[...Array(gameData?.rounds || 5)].map((_, i) => {
                     const isWin = i < (gameState?.creatorWins || 0);
                     const isLoss = i < (gameState?.currentRound || 0) && !isWin;
+                    const isCurrentRound = i === (gameState?.currentRound || 0);
                     return (
                       <div
                         key={i}
@@ -1101,23 +1102,27 @@ const FlipGame = () => {
                           width: '20px',
                           height: '20px',
                           borderRadius: '50%',
-                          background: isWin 
-                            ? '#00FF41' // Neon green
-                            : isLoss
-                              ? '#FF1493' // Neon pink
-                              : 'rgba(255, 255, 255, 0.2)',
-                          opacity: isLoss ? 0.7 : 1,
+                          background: isCurrentRound
+                            ? '#FFFF00' // Bright yellow for current round
+                            : isWin 
+                              ? '#00FF41' // Neon green for wins
+                              : isLoss
+                                ? '#FF1493' // Neon pink for losses
+                                : 'rgba(255, 255, 255, 0.2)',
+                          opacity: 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '10px',
                           fontWeight: 'bold',
-                          color: isWin || isLoss ? '#000' : '#fff',
-                          boxShadow: isWin 
-                            ? '0 0 10px #00FF41' 
-                            : isLoss 
-                              ? '0 0 10px #FF1493'
-                              : 'none'
+                          color: isCurrentRound || isWin || isLoss ? '#000' : '#fff',
+                          boxShadow: isCurrentRound
+                            ? '0 0 10px #FFFF00'
+                            : isWin 
+                              ? '0 0 10px #00FF41' 
+                              : isLoss 
+                                ? '0 0 10px #FF1493'
+                                : 'none'
                         }}
                       >
                         {i + 1}
@@ -1192,6 +1197,7 @@ const FlipGame = () => {
                   {[...Array(gameData?.rounds || 5)].map((_, i) => {
                     const isWin = i < (gameState?.joinerWins || 0);
                     const isLoss = i < (gameState?.currentRound || 0) && !isWin;
+                    const isCurrentRound = i === (gameState?.currentRound || 0);
                     return (
                       <div
                         key={i}
@@ -1199,23 +1205,27 @@ const FlipGame = () => {
                           width: '20px',
                           height: '20px',
                           borderRadius: '50%',
-                          background: isWin 
-                            ? '#00FF41' // Neon green
-                            : isLoss
-                              ? '#FF1493' // Neon pink
-                              : 'rgba(255, 255, 255, 0.2)',
-                          opacity: isLoss ? 0.7 : 1,
+                          background: isCurrentRound
+                            ? '#FFFF00' // Bright yellow for current round
+                            : isWin 
+                              ? '#00FF41' // Neon green for wins
+                              : isLoss
+                                ? '#FF1493' // Neon pink for losses
+                                : 'rgba(255, 255, 255, 0.2)',
+                          opacity: 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '10px',
                           fontWeight: 'bold',
-                          color: isWin || isLoss ? '#000' : '#fff',
-                          boxShadow: isWin 
-                            ? '0 0 10px #00FF41' 
-                            : isLoss 
-                              ? '0 0 10px #FF1493'
-                              : 'none'
+                          color: isCurrentRound || isWin || isLoss ? '#000' : '#fff',
+                          boxShadow: isCurrentRound
+                            ? '0 0 10px #FFFF00'
+                            : isWin 
+                              ? '0 0 10px #00FF41' 
+                              : isLoss 
+                                ? '0 0 10px #FF1493'
+                                : 'none'
                         }}
                       >
                         {i + 1}
