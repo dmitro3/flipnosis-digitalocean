@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { WalletProvider, useWallet } from './contexts/WalletContext'
 import { ToastProvider } from './contexts/ToastContext'
 import { ProfileProvider } from './contexts/ProfileContext'
@@ -7,6 +7,7 @@ import { theme } from './styles/theme'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './Routes'
 import DebugPanel from './components/DebugPanel'
+import MobileLanding from './components/MobileLanding'
 import styled from '@emotion/styled'
 
 const AppContainer = styled.div`
@@ -19,6 +20,11 @@ const AppContainer = styled.div`
 
 const AppContent = () => {
   const { isMobile } = useWallet()
+  const [showMobileLanding, setShowMobileLanding] = useState(isMobile)
+  
+  if (showMobileLanding) {
+    return <MobileLanding onContinue={() => setShowMobileLanding(false)} />
+  }
   
   return (
     <AppContainer>
