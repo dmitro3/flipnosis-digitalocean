@@ -135,13 +135,13 @@ const MobileMenu = styled.div`
   max-width: 300px;
   height: 100vh;
   background: ${props => props.theme.colors.bgDark};
-  padding: 1rem;
+  padding: 2rem;
   box-shadow: -2px 0 10px rgba(0, 255, 65, 0.2);
   transition: right 0.3s ease-in-out;
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
 
   @media (min-width: 769px) {
     display: none;
@@ -168,10 +168,9 @@ const MenuOverlay = styled.div`
 const MenuItem = styled(Link)`
   color: ${props => props.theme.colors.textPrimary};
   text-decoration: none;
-  padding: 0.75rem;
+  padding: 1rem;
   border-radius: 0.5rem;
   transition: ${props => props.theme.transitions.default};
-  font-size: 0.9rem;
   
   &:hover {
     background: rgba(0, 255, 65, 0.1);

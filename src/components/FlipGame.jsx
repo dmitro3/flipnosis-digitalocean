@@ -36,6 +36,8 @@ const BackgroundVideo = styled.video`
   object-fit: cover;
   z-index: -1;
   opacity: 0.7;
+  pointer-events: none;
+  background: #000;
 `
 
 const ChoiceAnimation = styled.div`
@@ -194,6 +196,24 @@ const FlipGame = () => {
   const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
   const [choiceAnimationText, setChoiceAnimationText] = useState('')
   const [choiceAnimationColor, setChoiceAnimationColor] = useState('')
+
+  const videoRef = useRef(null);
+  const [videoError, setVideoError] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      const playVideo = async () => {
+        try {
+          await video.play();
+        } catch (err) {
+          console.error('Video play error:', err);
+          setVideoError(true);
+        }
+      };
+      playVideo();
+    }
+  }, []);
 
   // WebSocket connection
   useEffect(() => {
@@ -980,7 +1000,18 @@ const FlipGame = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <BackgroundVideo autoPlay loop muted playsInline>
+      <BackgroundVideo 
+        ref={videoRef}
+        autoPlay 
+        loop 
+        muted 
+        playsInline
+        preload="auto"
+        onError={(e) => {
+          console.error('Video error:', e);
+          setVideoError(true);
+        }}
+      >
         <source src={hazeVideo} type="video/webm" />
       </BackgroundVideo>
       
@@ -1001,18 +1032,11 @@ const FlipGame = () => {
           {/* Main Game Area - Three Column Layout */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: '300px 1fr 300px',
+            gridTemplateColumns: '300px 1fr 300px', // Fixed widths for player cards
             gap: '2rem', 
             marginBottom: '2rem',
-            alignItems: 'start',
-            minHeight: '500px',
-            '@media (max-width: 768px)': {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-              padding: '1rem',
-              width: '100%'
-            }
+            alignItems: 'start', // Align to top
+            minHeight: '500px'
           }}>
             
             {/* LEFT CONTAINER - Players & Game Info */}
@@ -1025,12 +1049,7 @@ const FlipGame = () => {
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
               border: '2px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '1.5rem',
-              backdropFilter: 'blur(10px)',
-              '@media (max-width: 768px)': {
-                padding: '1rem',
-                width: '100%',
-                maxWidth: '100%'
-              }
+              backdropFilter: 'blur(10px)'
             }}>
               
               {/* PLAYERS SECTION - Top */}
@@ -1431,16 +1450,7 @@ const FlipGame = () => {
             </div>
 
             {/* Center - Coin and Power Area */}
-            <div style={{ 
-              textAlign: 'center', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center',
-              '@media (max-width: 768px)': {
-                width: '100%',
-                marginTop: '1rem'
-              }
-            }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {/* Coin */}
               <div style={{ 
                 display: 'flex', 
@@ -1483,10 +1493,15 @@ const FlipGame = () => {
 
             {/* RIGHT CONTAINER - NFT & Game Details */}
             <div style={{
-              '@media (max-width: 768px)': {
-                width: '100%',
-                marginTop: '1rem'
-              }
+              position: 'relative',
+              width: '100%',
+              maxWidth: '600px',
+              margin: '0 auto',
+              padding: '2rem',
+              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+              border: '2px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '1.5rem',
+              backdropFilter: 'blur(10px)'
             }}>
               
               {/* NFT IMAGE - Top */}

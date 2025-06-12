@@ -49,6 +49,21 @@ const BackgroundVideo = styled.video`
   opacity: 0.7;
 `
 
+const WithdrawButton = styled(Button)`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: ${props => props.theme.colors.neonPink};
+  z-index: 1000;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  box-shadow: 0 0 10px ${props => props.theme.colors.neonPink};
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px ${props => props.theme.colors.neonPink};
+  }
+`
+
 const FilterContainer = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -401,32 +416,17 @@ const Home = () => {
               display: 'grid',
               gridTemplateColumns: '240px 1fr 300px',
               gap: '1.5rem',
-              marginTop: '2rem',
-              '@media (max-width: 768px)': {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-                padding: '1rem'
-              }
+              marginTop: '2rem'
             }}>
               {/* Left Box - Selected Game */}
-              <div style={{
-                '@media (max-width: 768px)': {
-                  width: '100%',
-                  maxWidth: '100%'
-                }
-              }}>
+              <div>
                 {selectedFlip && (
                   <div style={{
                     background: 'rgba(0, 0, 0, 0.8)',
                     borderRadius: '1rem',
                     padding: '1.5rem',
                     border: `2px solid ${selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink}`,
-                    maxWidth: '240px',
-                    '@media (max-width: 768px)': {
-                      maxWidth: '100%',
-                      padding: '1rem'
-                    }
+                    maxWidth: '240px'
                   }}>
                     <div style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
                       <GameImage 
@@ -512,28 +512,29 @@ const Home = () => {
 
               {/* Middle Box - Available Flips */}
               <div style={{
-                '@media (max-width: 768px)': {
-                  width: '100%',
-                  marginTop: '1rem'
-                }
+                background: 'rgba(0, 0, 20, 0.95)',
+                borderRadius: '1rem',
+                padding: '1rem',
+                border: `1px solid ${theme.colors.neonBlue}`,
+                maxHeight: '600px',
+                overflowY: 'auto'
               }}>
-                <h2 style={{ 
-                  color: theme.colors.textPrimary,
-                  marginBottom: '1rem',
-                  '@media (max-width: 768px)': {
-                    fontSize: '1.2rem'
-                  }
-                }}>
-                  Available Flips
-                </h2>
                 <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                  gap: '1rem',
-                  '@media (max-width: 768px)': {
-                    gridTemplateColumns: '1fr',
-                    gap: '0.75rem'
-                  }
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: theme.colors.neonBlue,
+                  marginBottom: '1rem',
+                  padding: '0.5rem',
+                  borderBottom: `1px solid ${theme.colors.neonBlue}`,
+                  textShadow: '0 0 10px rgba(0, 150, 255, 0.5)'
+                }}>
+                  Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
+                </div>
+                <div style={{ 
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  padding: '0.5rem'
                 }}>
                   {filteredFlips.map(flip => (
                     <div
@@ -775,6 +776,12 @@ const Home = () => {
           )}
         </ContentWrapper>
       </Container>
+      <WithdrawButton 
+        onClick={handleWithdraw}
+        disabled={withdrawing}
+      >
+        {withdrawing ? 'Withdrawing...' : 'Withdraw Funds'}
+      </WithdrawButton>
     </ThemeProvider>
   )
 }

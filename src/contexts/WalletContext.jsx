@@ -21,29 +21,6 @@ export const WalletProvider = ({ children }) => {
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState(null)
-  const [isMobile, setIsMobile] = useState(false)
-  const [isMetaMaskBrowser, setIsMetaMaskBrowser] = useState(false)
-
-  // Detect mobile and MetaMask browser
-  useEffect(() => {
-    const checkEnvironment = () => {
-      const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-      const metamaskBrowser = window.ethereum?.isMetaMask && mobile
-      
-      setIsMobile(mobile)
-      setIsMetaMaskBrowser(metamaskBrowser)
-      
-      console.log('📱 Environment:', {
-        isMobile: mobile,
-        isMetaMaskBrowser: metamaskBrowser,
-        userAgent: navigator.userAgent
-      })
-    }
-
-    checkEnvironment()
-    window.addEventListener('resize', checkEnvironment)
-    return () => window.removeEventListener('resize', checkEnvironment)
-  }, [])
 
   // Chain configurations
   const chains = {
@@ -100,13 +77,6 @@ export const WalletProvider = ({ children }) => {
   const connectWallet = async (selectedChain = null) => {
     setLoading(true)
     try {
-      if (isMobile && !isMetaMaskBrowser && !window.ethereum) {
-        // Redirect to MetaMask app
-        const metamaskUrl = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`
-        window.location.href = metamaskUrl
-        return false
-      }
-
       await connectEVM(selectedChain)
       return true
     } catch (error) {
@@ -458,9 +428,7 @@ export const WalletProvider = ({ children }) => {
     disconnectWallet,
     fetchNFTs,
     setChain,
-    user,
-    isMobile,
-    isMetaMaskBrowser
+    user
   }
 
   return (

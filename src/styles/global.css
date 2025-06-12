@@ -33,26 +33,4 @@
 /* Custom loading spinner */
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-/* Hide debug panel */
-.debug-panel,
-.mobile-debug-area,
-.debug-toggle,
-.debug-container {
-    display: none !important;
-}
-
-/* Mobile Debug Area (from spinandmint) */
-.mobile-debug-area {
-    position: fixed;
-    bottom: 60px;
-    left: 20px;
-    width: calc(100% - 40px);
-    max-width: 400px;
-    padding: 10px;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    z-index: 999;
 } 

@@ -107,30 +107,32 @@ export const Grid = styled.div`
   }
 `
 
-export const GameCard = styled(GlassCard)`
-  cursor: pointer;
+export const GameCard = styled.div`
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
   overflow: hidden;
+  transition: all 0.3s ease;
   position: relative;
-  padding: 0;
-  max-width: 240px;
-  margin: 0 auto;
-  
-  ${props => props.selected && `
-    border-color: ${props.theme.colors.neonPink};
-    box-shadow: ${props.theme.shadows.neon};
-  `}
+
+  @media (max-width: 768px) {
+    order: 1;
+    margin-bottom: 1rem;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+  }
 `
 
 export const GameImage = styled.img`
   width: 100%;
-  aspect-ratio: 1;
+  height: 200px;
   object-fit: cover;
-  border-radius: 0.5rem 0.5rem 0 0;
-  transition: ${props => props.theme.transitions.default};
-  position: relative;
-  
-  &:hover {
-    transform: scale(1.02);
+
+  @media (max-width: 768px) {
+    height: 150px;
   }
 `
 
@@ -400,17 +402,26 @@ export const TwoBoxLayout = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   width: 100%;
-  
-  @media (max-width: 1024px) {
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 `
 
 export const ActiveGamesBox = styled.div`
   background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
   padding: 1.5rem;
-  height: fit-content;
+  height: 100%;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    order: 2;
+    margin-top: 1rem;
+  }
 `
 
 export const ActiveGamesTitle = styled.h2`
