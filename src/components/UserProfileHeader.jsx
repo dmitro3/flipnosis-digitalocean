@@ -51,11 +51,6 @@ const UserName = styled.div`
   font-size: 0.9rem;
 `;
 
-const UserAddress = styled.div`
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-`;
-
 const Modal = styled.div`
   position: fixed;
   top: 0;
@@ -187,11 +182,8 @@ const UserProfileHeader = ({ isInHeader = false }) => {
           />
           <UserInfo>
             <UserName>
-              {isLoading ? '...' : (playerName || `${address.slice(0, 6)}...${address.slice(-4)}`)}
+              {isLoading ? '...' : (playerName || 'Anonymous')}
             </UserName>
-            <UserAddress>
-              {address.slice(0, 6)}...{address.slice(-4)}
-            </UserAddress>
           </UserInfo>
         </ProfileSection>
       </Container>

@@ -1123,9 +1123,10 @@ const FlipGame = () => {
                     
                     if (roundNumber < currentRound) {
                       // This round is completed - determine winner
-                      if (roundNumber <= creatorWins) {
+                      const roundWinner = gameState?.roundResults?.[roundNumber - 1];
+                      if (roundWinner === 'creator') {
                         roundStatus = 'creator_won';
-                      } else {
+                      } else if (roundWinner === 'joiner') {
                         roundStatus = 'joiner_won';
                       }
                     } else if (roundNumber === currentRound) {
@@ -1144,10 +1145,8 @@ const FlipGame = () => {
                     const getShadowColor = () => {
                       switch (roundStatus) {
                         case 'current': return '0 0 10px #FFFF00';
-                        case 'creator_won': 
-                        case 'joiner_won': return roundStatus === 'creator_won' 
-                          ? (isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493')
-                          : (!isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493');
+                        case 'creator_won': return isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
+                        case 'joiner_won': return !isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
                         default: return 'none';
                       }
                     };
@@ -1282,9 +1281,10 @@ const FlipGame = () => {
                     
                     if (roundNumber < currentRound) {
                       // This round is completed - determine winner
-                      if (roundNumber <= creatorWins) {
+                      const roundWinner = gameState?.roundResults?.[roundNumber - 1];
+                      if (roundWinner === 'creator') {
                         roundStatus = 'creator_won';
-                      } else {
+                      } else if (roundWinner === 'joiner') {
                         roundStatus = 'joiner_won';
                       }
                     } else if (roundNumber === currentRound) {
@@ -1303,10 +1303,8 @@ const FlipGame = () => {
                     const getShadowColor = () => {
                       switch (roundStatus) {
                         case 'current': return '0 0 10px #FFFF00';
-                        case 'creator_won': 
-                        case 'joiner_won': return roundStatus === 'creator_won' 
-                          ? (isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493')
-                          : (!isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493');
+                        case 'creator_won': return isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
+                        case 'joiner_won': return !isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
                         default: return 'none';
                       }
                     };
@@ -1693,14 +1691,34 @@ const FlipGame = () => {
                     }}>
                       Contract Address
                     </div>
-                    <div style={{ 
-                      fontSize: '0.9rem',
-                      fontFamily: 'monospace',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      padding: '0.5rem',
-                      borderRadius: '0.25rem'
-                    }}>
-                      {nftData.contractAddress?.slice(0, 6)}...{nftData.contractAddress?.slice(-4)}
+                    <div 
+                      onClick={() => {
+                        navigator.clipboard.writeText(nftData.contractAddress);
+                        // You can add a toast notification here if you want
+                      }}
+                      style={{ 
+                        fontSize: '0.9rem',
+                        fontFamily: 'monospace',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        padding: '0.5rem',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
+                        e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)';
+                        e.currentTarget.style.border = 'none';
+                      }}
+                    >
+                      <span>{nftData.contractAddress?.slice(0, 6)}...{nftData.contractAddress?.slice(-4)}</span>
+                      <span style={{ opacity: 0.6 }}>📋</span>
                     </div>
                   </div>
                 </div>
