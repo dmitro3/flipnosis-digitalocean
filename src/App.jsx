@@ -1,13 +1,11 @@
-import React from 'react'
-import { RouterProvider } from 'react-router-dom'
-import { ToastProvider } from './contexts/ToastContext'
 import { WalletProvider } from './contexts/WalletContext'
+import { ToastProvider } from './contexts/ToastContext'
 import { ProfileProvider } from './contexts/ProfileContext'
 import { router } from './Routes'
 import UserProfileHeader from './components/UserProfileHeader'
-import { ThemeProvider } from '@mui/material/styles'
-import { theme } from './theme'
-import { Routes, Router } from 'react-router-dom'
+import { ThemeProvider } from '@emotion/react'
+import { theme } from './styles/theme'
+import { RouterProvider } from 'react-router-dom'
 
 function App() {
   return (
@@ -16,11 +14,7 @@ function App() {
         <ToastProvider>
           <ThemeProvider theme={theme}>
             <UserProfileHeader />
-            <Router>
-              <Routes>
-                <RouterProvider router={router} />
-              </Routes>
-            </Router>
+            <RouterProvider router={router} />
           </ThemeProvider>
         </ToastProvider>
       </ProfileProvider>
