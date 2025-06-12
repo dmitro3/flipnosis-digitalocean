@@ -58,13 +58,14 @@ const ProfilePicture = ({
           const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
           
           // Save to profile (this will upload to server)
-          setProfilePicture(address, dataUrl)
-          setProfilePic(dataUrl)
-          
-          // Force refresh for all users viewing this address
-          window.dispatchEvent(new CustomEvent('profileUpdated', { 
-            detail: { address, imageData: dataUrl } 
-          }))
+          setProfilePicture(address, dataUrl).then(() => {
+            setProfilePic(dataUrl)
+            
+            // Force refresh for all users viewing this address
+            window.dispatchEvent(new CustomEvent('profileUpdated', { 
+              detail: { address, imageData: dataUrl } 
+            }))
+          })
         }
         img.src = e.target.result
       }
@@ -109,10 +110,8 @@ const ProfilePicture = ({
       style={{
         width: size,
         height: size,
-        borderRadius: '50%',
         overflow: 'hidden',
         cursor: isClickable ? 'pointer' : 'default',
-        border: `2px solid ${theme.colors.neonGreen}`,
         position: 'relative',
         background: profilePic ? 'transparent' : generateGradient(address),
         display: 'flex',

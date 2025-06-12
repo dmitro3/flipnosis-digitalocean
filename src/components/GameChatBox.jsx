@@ -15,13 +15,11 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   const [isNameModalOpen, setIsNameModalOpen] = useState(false)
   const [tempName, setTempName] = useState('')
   const [playerName, setPlayerNameState] = useState('')
-  const [newMessage, setNewMessage] = useState('')
-  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  const wsRef = useRef(null)
   
   // Load player name on mount
   useEffect(() => {
@@ -97,7 +95,9 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     return true
   }
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (e) => {
+    e.preventDefault()
+    
     if (!connected || !socket || !address || !isConnected) {
       showError('Not connected to game')
       return
@@ -156,79 +156,13 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSendMessage()
+      handleSendMessage(e)
     }
-  }
-
-  const formatMessage = (msg) => {
-    // React automatically escapes any HTML content when using {msg}
-    // This prevents XSS attacks
-    return msg
   }
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
-
-  const truncateAddress = (addr) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
-  }
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  useEffect(() => {
-    // Clear unread count when opening chat
-    if (isChatOpen) {
-      setUnreadCount(0)
-    }
-  }, [isChatOpen])
-
-  useEffect(() => {
-    const ws = new WebSocket(`wss://your-websocket-server.com/game/${gameId}`)
-    wsRef.current = ws
-
-    ws.onopen = () => {
-      setConnected(true)
-    }
-
-    ws.onclose = () => {
-      setConnected(false)
-    }
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      setMessages(prev => [...prev, data])
-      
-      // When new message arrives and chat is closed
-      if (!isChatOpen && data.address !== address) {
-        setUnreadCount(prev => prev + 1)
-      }
-    }
-
-    return () => {
-      ws.close()
-    }
-  }, [gameId, address, isChatOpen])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const sendMessage = (e) => {
-    e.preventDefault()
-    if (!newMessage.trim()) return
-
-    const message = {
-      text: newMessage,
-      address: address,
-      timestamp: new Date().toISOString()
-    }
-
-    wsRef.current?.send(JSON.stringify(message))
-    setNewMessage('')
   }
 
   if (!isConnected) {
@@ -325,23 +259,33 @@ const GameChatBox = ({ gameId, socket, connected }) => {
               color: theme.colors.textSecondary,
               marginBottom: '0.25rem'
             }}>
-              {msg.address.slice(0, 6)}...{msg.address.slice(-4)}
+              {msg.name || `${msg.address.slice(0, 6)}...${msg.address.slice(-4)}`}
             </div>
-            <div style={{ color: '#fff' }}>{msg.text}</div>
+            <div style={{ color: '#fff' }}>{msg.message}</div>
+            <div style={{
+              fontSize: '0.7rem',
+              color: theme.colors.textSecondary,
+              textAlign: 'right',
+              marginTop: '0.25rem'
+            }}>
+              {formatTimestamp(msg.timestamp)}
+            </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input */}
-      <form onSubmit={sendMessage} style={{
+      <form onSubmit={handleSendMessage} style={{
         display: 'flex',
         gap: '0.5rem'
       }}>
         <input
+          ref={inputRef}
           type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          value={currentMessage}
+          onChange={(e) => setCurrentMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Type your message..."
           style={{
             flex: 1,

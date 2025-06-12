@@ -1046,7 +1046,16 @@ const FlipGame = () => {
                     alignItems: 'center',
                     gap: '0.75rem'
                   }}>
-                    <ProfilePicture address={gameData?.creator} size={40} />
+                    <ProfilePicture 
+                      address={gameData?.creator} 
+                      size={40} 
+                      isClickable={isCreator}
+                      showUploadIcon={isCreator}
+                      style={{
+                        borderRadius: '12px',
+                        border: `2px solid ${theme.colors.neonPink}`
+                      }}
+                    />
                     <div>
                       <div style={{ 
                         fontSize: '0.9rem', 
@@ -1088,26 +1097,31 @@ const FlipGame = () => {
                     return (
                       <div
                         key={i}
-                    style={{
+                        style={{
                           width: '20px',
                           height: '20px',
                           borderRadius: '50%',
                           background: isWin 
-                            ? theme.colors.neonPink 
+                            ? '#00FF41' // Neon green
                             : isLoss
-                              ? theme.colors.neonPink
+                              ? '#FF1493' // Neon pink
                               : 'rgba(255, 255, 255, 0.2)',
-                          opacity: isLoss ? 0.3 : 1,
+                          opacity: isLoss ? 0.7 : 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '10px',
                           fontWeight: 'bold',
-                          color: isWin ? '#000' : '#fff'
+                          color: isWin || isLoss ? '#000' : '#fff',
+                          boxShadow: isWin 
+                            ? '0 0 10px #00FF41' 
+                            : isLoss 
+                              ? '0 0 10px #FF1493'
+                              : 'none'
                         }}
                       >
                         {i + 1}
-                </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -1127,7 +1141,16 @@ const FlipGame = () => {
                   alignItems: 'center',
                     gap: '0.75rem'
                 }}>
-                    <ProfilePicture address={gameData?.joiner} size={40} />
+                    <ProfilePicture 
+                      address={gameData?.joiner} 
+                      size={40} 
+                      isClickable={isJoiner}
+                      showUploadIcon={isJoiner}
+                      style={{
+                        borderRadius: '12px',
+                        border: `2px solid ${theme.colors.neonBlue}`
+                      }}
+                    />
                   <div>
                       <div style={{ 
                         fontSize: '0.9rem', 
@@ -1177,17 +1200,22 @@ const FlipGame = () => {
                           height: '20px',
                           borderRadius: '50%',
                           background: isWin 
-                            ? theme.colors.neonBlue 
+                            ? '#00FF41' // Neon green
                             : isLoss
-                              ? theme.colors.neonPink
+                              ? '#FF1493' // Neon pink
                               : 'rgba(255, 255, 255, 0.2)',
-                          opacity: isLoss ? 0.3 : 1,
+                          opacity: isLoss ? 0.7 : 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '10px',
                           fontWeight: 'bold',
-                          color: isWin ? '#000' : '#fff'
+                          color: isWin || isLoss ? '#000' : '#fff',
+                          boxShadow: isWin 
+                            ? '0 0 10px #00FF41' 
+                            : isLoss 
+                              ? '0 0 10px #FF1493'
+                              : 'none'
                         }}
                       >
                         {i + 1}
@@ -1336,8 +1364,9 @@ const FlipGame = () => {
                       height: '200px',
                       borderRadius: '1rem',
                       objectFit: 'cover',
-                      border: '3px solid rgba(255, 215, 0, 0.3)',
-                      boxShadow: '0 0 20px rgba(255, 215, 0, 0.2)'
+                      border: '4px solid rgba(255, 255, 0, 0.6)',
+                      boxShadow: '0 0 30px rgba(255, 255, 0, 0.5), inset 0 0 30px rgba(255, 255, 0, 0.3)',
+                      animation: 'nftBananaGlow 2s ease-in-out infinite'
                     }}
                   />
                 </div>
@@ -1345,75 +1374,89 @@ const FlipGame = () => {
 
               {/* SOCIAL SHARE */}
               <div style={{
-                textAlign: 'center',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                gap: '0.5rem',
-                justifyContent: 'center'
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '1rem',
+                padding: '1rem',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                marginBottom: '1.5rem'
               }}>
-                <button
-                  onClick={() => {
-                    const url = window.location.href
-                    window.open(`https://twitter.com/intent/tweet?text=Join my game of Crypto Flipz! ${url}`, '_blank')
-                  }}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    color: '#fff',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '0.5rem',
-                    padding: '0.5rem 1rem',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <span style={{ fontSize: '1.2rem' }}>𝕏</span> Share
-                </button>
-                <button
-                  onClick={() => {
-                    const url = window.location.href
-                    window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=Join my game of Crypto Flipz!`, '_blank')
-                  }}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    color: '#fff',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '0.5rem',
-                    padding: '0.5rem 1rem',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <span style={{ fontSize: '1.2rem' }}>📱</span> TG
-                </button>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href)
-                    showSuccess('Game link copied to clipboard!')
-                  }}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    color: '#fff',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '0.5rem',
-                    padding: '0.5rem 1rem',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <span style={{ fontSize: '1.2rem' }}>📋</span> Copy
-                </button>
+                <div style={{
+                  color: theme.colors.textSecondary,
+                  fontSize: '0.875rem',
+                  marginBottom: '0.75rem',
+                  textAlign: 'center'
+                }}>
+                  Share
+                </div>
+                <div style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  justifyContent: 'center'
+                }}>
+                  <button
+                    onClick={() => {
+                      const url = window.location.href
+                      window.open(`https://twitter.com/intent/tweet?text=Join my game of Crypto Flipz! ${url}`, '_blank')
+                    }}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#fff',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '0.5rem',
+                      padding: '0.4rem 0.8rem',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <span style={{ fontSize: '1rem' }}>𝕏</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const url = window.location.href
+                      window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=Join my game of Crypto Flipz!`, '_blank')
+                    }}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#fff',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '0.5rem',
+                      padding: '0.4rem 0.8rem',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <span style={{ fontSize: '1rem' }}>✈️</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href)
+                      showSuccess('Game link copied to clipboard!')
+                    }}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#fff',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '0.5rem',
+                      padding: '0.4rem 0.8rem',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <span style={{ fontSize: '1rem' }}>📋</span>
+                  </button>
+                </div>
               </div>
 
               {/* NFT DETAILS */}
@@ -1550,7 +1593,7 @@ const FlipGame = () => {
                     style={{
                       background: joiningGame ? 
                         'rgba(255, 20, 147, 0.5)' : 
-                        'linear-gradient(45deg, #FF1493, #00BFFF)',
+                        'linear-gradient(45deg, #FF1493, #FF69B4)',
                       color: '#fff',
                       border: 'none',
                       padding: '1.5rem 3rem',
@@ -1562,7 +1605,7 @@ const FlipGame = () => {
                       transition: 'all 0.3s ease'
                     }}
                   >
-                    {joiningGame ? '⏳ Joining...' : '⚡ Join Battle!'}
+                    {joiningGame ? '⏳ Joining...' : 'Join Flip'}
                   </button>
                 </div>
               )}
@@ -1959,6 +2002,18 @@ const FlipGame = () => {
             }
             100% {
               box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            }
+          }
+
+          @keyframes nftBananaGlow {
+            0% {
+              box-shadow: 0 0 30px rgba(255, 255, 0, 0.5), inset 0 0 30px rgba(255, 255, 0, 0.3);
+            }
+            50% {
+              box-shadow: 0 0 50px rgba(255, 255, 0, 0.7), inset 0 0 50px rgba(255, 255, 0, 0.4);
+            }
+            100% {
+              box-shadow: 0 0 30px rgba(255, 255, 0, 0.5), inset 0 0 30px rgba(255, 255, 0, 0.3);
             }
           }
         `}
