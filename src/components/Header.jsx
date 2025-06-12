@@ -9,6 +9,7 @@ import MobileInfoImg from '../../Images/mobile.webp'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 import MobileWalletConnector from './MobileWalletConnector'
+import UserProfileHeader from './UserProfileHeader'
 
 const HeaderContainer = styled.header`
   background-color: ${props => props.theme.colors.bgDark};
@@ -386,6 +387,9 @@ const Header = () => {
         <WalletSection>
           {isConnected && address ? (
             <>
+              <div style={{ marginRight: '1rem' }}>
+                <UserProfileHeader isInHeader={true} />
+              </div>
               <WalletInfo>
                 <ChainIndicator>
                   <ChainDot chain={chain} />
@@ -414,25 +418,28 @@ const Header = () => {
         {/* Mobile Menu */}
         <MenuOverlay isOpen={isMenuOpen} onClick={() => setIsMenuOpen(false)} />
         <MobileMenu isOpen={isMenuOpen}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 style={{ color: '#00FF41', margin: 0 }}>Menu</h2>
+            <button 
+              onClick={() => setIsMenuOpen(false)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#00FF41', 
+                fontSize: '1.5rem',
+                cursor: 'pointer'
+              }}
+            >
+              ×
+            </button>
+          </div>
+          
           <MenuItem to="/" onClick={() => setIsMenuOpen(false)}>Home</MenuItem>
           <MenuItem to="/create" onClick={() => setIsMenuOpen(false)}>Create Flip</MenuItem>
-          {isConnected && <MenuItem to="/my-flips" onClick={() => setIsMenuOpen(false)}>My Flips</MenuItem>}
+          <MenuItem to="/my-flips" onClick={() => setIsMenuOpen(false)}>My Flips</MenuItem>
           
-          {isConnected && address ? (
-            <>
-              <WalletInfo>
-                <ChainIndicator>
-                  <ChainDot chain={chain} />
-                  <span>{chains[chain]?.name || 'Unknown'}</span>
-                </ChainIndicator>
-                <WalletAddress>
-                  {address.slice(0, 6)}...{address.slice(-4)}
-                </WalletAddress>
-              </WalletInfo>
-              <WalletButton onClick={handleDisconnect}>
-                Disconnect
-              </WalletButton>
-            </>
+          {isConnected ? (
+            <MobileWalletConnector />
           ) : (
             <WalletButton onClick={handleConnect} disabled={loading}>
               {loading ? 'Connecting...' : 'Connect Wallet'}

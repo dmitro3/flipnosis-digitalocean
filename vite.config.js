@@ -4,9 +4,17 @@ import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxImportSource: '@emotion/react',
+      babel: {
+        plugins: ['@emotion/babel-plugin']
+      }
+    })
+  ],
   resolve: {
     alias: {
+      '@': '/src',
       stream: resolve(__dirname, 'node_modules/stream-browserify'),
       crypto: resolve(__dirname, 'node_modules/crypto-browserify'),
       util: resolve(__dirname, 'node_modules/util'),

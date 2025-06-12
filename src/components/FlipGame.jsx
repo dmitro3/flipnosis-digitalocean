@@ -1051,6 +1051,7 @@ const FlipGame = () => {
                       size={40} 
                       isClickable={isCreator}
                       showUploadIcon={isCreator}
+                      profileData={gameState?.creatorProfile}
                       style={{
                         borderRadius: '12px',
                         border: `2px solid ${theme.colors.neonPink}`
@@ -1062,15 +1063,35 @@ const FlipGame = () => {
                         opacity: 0.8,
                         color: theme.colors.neonPink 
                       }}>
-                        👑 Player 1 {gameState?.creatorChoice && `(${gameState.creatorChoice.toUpperCase()})`}
+                        💎 Player 1 {gameState?.creatorChoice && `(${gameState.creatorChoice.toUpperCase()})`}
                       </div>
                       <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
-                        {gameData?.creator?.slice(0, 8)}...{gameData?.creator?.slice(-4)}
+                        {gameState?.creatorProfile?.name || 
+                         (gameData?.creator ? 
+                           `${gameData.creator.slice(0, 8)}...${gameData.creator.slice(-4)}` : 
+                           'Waiting...'
+                         )
+                        }
                       </div>
                     </div>
                   </div>
+
+                  {/* Timer - only show for current player */}
+                  {gameState?.currentPlayer === gameData?.creator && gameState?.turnTimeLeft !== undefined && (
+                    <div style={{
+                      background: theme.colors.neonPink,
+                      color: '#000',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                    }}>
+                      {gameState.turnTimeLeft}s
+                    </div>
+                  )}
                   
-                  {gameState?.currentPlayer === gameData?.creator && (
+                  {gameState?.currentPlayer === gameData?.creator && !gameState?.turnTimeLeft && (
                     <div style={{
                       background: theme.colors.neonPink,
                       color: '#000',
@@ -1092,9 +1113,45 @@ const FlipGame = () => {
                   marginBottom: '1rem'
                 }}>
                   {[...Array(gameData?.rounds || 5)].map((_, i) => {
-                    const isWin = i < (gameState?.creatorWins || 0);
-                    const isLoss = i < (gameState?.currentRound || 0) && !isWin;
-                    const isCurrentRound = i === (gameState?.currentRound || 0);
+                    const roundNumber = i + 1;
+                    const currentRound = gameState?.currentRound || 1;
+                    const creatorWins = gameState?.creatorWins || 0;
+                    const joinerWins = gameState?.joinerWins || 0;
+                    
+                    // Determine what happened in this round
+                    let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
+                    
+                    if (roundNumber < currentRound) {
+                      // This round is completed - determine winner
+                      if (roundNumber <= creatorWins) {
+                        roundStatus = 'creator_won';
+                      } else {
+                        roundStatus = 'joiner_won';
+                      }
+                    } else if (roundNumber === currentRound) {
+                      roundStatus = 'current';
+                    }
+                    
+                    const getBackgroundColor = () => {
+                      switch (roundStatus) {
+                        case 'current': return '#FFFF00'; // Yellow for current round
+                        case 'creator_won': return isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
+                        case 'joiner_won': return !isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
+                        default: return 'rgba(255, 255, 255, 0.2)'; // Gray for pending
+                      }
+                    };
+                    
+                    const getShadowColor = () => {
+                      switch (roundStatus) {
+                        case 'current': return '0 0 10px #FFFF00';
+                        case 'creator_won': 
+                        case 'joiner_won': return roundStatus === 'creator_won' 
+                          ? (isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493')
+                          : (!isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493');
+                        default: return 'none';
+                      }
+                    };
+                    
                     return (
                       <div
                         key={i}
@@ -1102,30 +1159,18 @@ const FlipGame = () => {
                           width: '20px',
                           height: '20px',
                           borderRadius: '50%',
-                          background: isCurrentRound
-                            ? '#FFFF00' // Bright yellow for current round
-                            : isWin 
-                              ? '#00FF41' // Neon green for wins
-                              : isLoss
-                                ? '#FF1493' // Neon pink for losses
-                                : 'rgba(255, 255, 255, 0.2)',
+                          background: getBackgroundColor(),
                           opacity: 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '10px',
                           fontWeight: 'bold',
-                          color: isCurrentRound || isWin || isLoss ? '#000' : '#fff',
-                          boxShadow: isCurrentRound
-                            ? '0 0 10px #FFFF00'
-                            : isWin 
-                              ? '0 0 10px #00FF41' 
-                              : isLoss 
-                                ? '0 0 10px #FF1493'
-                                : 'none'
+                          color: roundStatus === 'pending' ? '#fff' : '#000',
+                          boxShadow: getShadowColor()
                         }}
                       >
-                        {i + 1}
+                        {roundNumber}
                       </div>
                     );
                   })}
@@ -1165,6 +1210,7 @@ const FlipGame = () => {
                       size={40} 
                       isClickable={isJoiner}
                       showUploadIcon={isJoiner}
+                      profileData={gameState?.joinerProfile}
                       style={{
                         borderRadius: '12px',
                         border: `2px solid ${theme.colors.neonBlue}`
@@ -1179,26 +1225,43 @@ const FlipGame = () => {
                         💎 Player 2 {gameState?.joinerChoice && `(${gameState.joinerChoice.toUpperCase()})`}
                     </div>
                       <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
-                        {gameData?.joiner ? 
-                          `${gameData.joiner.slice(0, 8)}...${gameData.joiner.slice(-4)}` : 
-                          'Waiting...'
+                        {gameState?.joinerProfile?.name || 
+                         (gameData?.joiner ? 
+                           `${gameData.joiner.slice(0, 8)}...${gameData.joiner.slice(-4)}` : 
+                           'Waiting...'
+                         )
                         }
                   </div>
                 </div>
                   </div>
-                  
-                  {gameState?.currentPlayer === gameData?.joiner && (
-                  <div style={{
-                    background: theme.colors.neonPink,
-                    color: '#000',
+
+                  {/* Timer - only show for current player */}
+                  {gameState?.currentPlayer === gameData?.joiner && gameState?.turnTimeLeft !== undefined && (
+                    <div style={{
+                      background: theme.colors.neonBlue,
+                      color: '#000',
                       padding: '0.25rem 0.75rem',
                       borderRadius: '0.5rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 'bold'
-                  }}>
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                    }}>
+                      {gameState.turnTimeLeft}s
+                    </div>
+                  )}
+                  
+                  {gameState?.currentPlayer === gameData?.joiner && !gameState?.turnTimeLeft && (
+                    <div style={{
+                      background: theme.colors.neonBlue,
+                      color: '#000',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '0.5rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold'
+                    }}>
                       {isJoiner ? 'YOUR TURN' : 'THEIR TURN'}
-                  </div>
-                )}
+                    </div>
+                  )}
               </div>
 
                 {/* Round Wins for Player 2 */}
@@ -1209,9 +1272,45 @@ const FlipGame = () => {
                   marginTop: '1rem'
                 }}>
                   {[...Array(gameData?.rounds || 5)].map((_, i) => {
-                    const isWin = i < (gameState?.joinerWins || 0);
-                    const isLoss = i < (gameState?.currentRound || 0) && !isWin;
-                    const isCurrentRound = i === (gameState?.currentRound || 0);
+                    const roundNumber = i + 1;
+                    const currentRound = gameState?.currentRound || 1;
+                    const creatorWins = gameState?.creatorWins || 0;
+                    const joinerWins = gameState?.joinerWins || 0;
+                    
+                    // Determine what happened in this round
+                    let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
+                    
+                    if (roundNumber < currentRound) {
+                      // This round is completed - determine winner
+                      if (roundNumber <= creatorWins) {
+                        roundStatus = 'creator_won';
+                      } else {
+                        roundStatus = 'joiner_won';
+                      }
+                    } else if (roundNumber === currentRound) {
+                      roundStatus = 'current';
+                    }
+                    
+                    const getBackgroundColor = () => {
+                      switch (roundStatus) {
+                        case 'current': return '#FFFF00'; // Yellow for current round
+                        case 'creator_won': return isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
+                        case 'joiner_won': return !isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
+                        default: return 'rgba(255, 255, 255, 0.2)'; // Gray for pending
+                      }
+                    };
+                    
+                    const getShadowColor = () => {
+                      switch (roundStatus) {
+                        case 'current': return '0 0 10px #FFFF00';
+                        case 'creator_won': 
+                        case 'joiner_won': return roundStatus === 'creator_won' 
+                          ? (isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493')
+                          : (!isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493');
+                        default: return 'none';
+                      }
+                    };
+                    
                     return (
                       <div
                         key={i}
@@ -1219,30 +1318,18 @@ const FlipGame = () => {
                           width: '20px',
                           height: '20px',
                           borderRadius: '50%',
-                          background: isCurrentRound
-                            ? '#FFFF00' // Bright yellow for current round
-                            : isWin 
-                              ? '#00FF41' // Neon green for wins
-                              : isLoss
-                                ? '#FF1493' // Neon pink for losses
-                                : 'rgba(255, 255, 255, 0.2)',
+                          background: getBackgroundColor(),
                           opacity: 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '10px',
                           fontWeight: 'bold',
-                          color: isCurrentRound || isWin || isLoss ? '#000' : '#fff',
-                          boxShadow: isCurrentRound
-                            ? '0 0 10px #FFFF00'
-                            : isWin 
-                              ? '0 0 10px #00FF41' 
-                              : isLoss 
-                                ? '0 0 10px #FF1493'
-                                : 'none'
+                          color: roundStatus === 'pending' ? '#fff' : '#000',
+                          boxShadow: getShadowColor()
                         }}
                       >
-                        {i + 1}
+                        {roundNumber}
                       </div>
                     );
                   })}

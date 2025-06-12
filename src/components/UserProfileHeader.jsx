@@ -6,6 +6,13 @@ import styled from '@emotion/styled';
 import ProfilePicture from './ProfilePicture';
 
 const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 100;
+`;
+
+const FloatingHeaderContainer = styled.div`
   position: fixed;
   top: 1rem;
   right: 1rem;
@@ -122,7 +129,7 @@ const SaveButton = styled.button`
   }
 `;
 
-const UserProfileHeader = () => {
+const UserProfileHeader = ({ isInHeader = false }) => {
   const { address } = useWallet();
   const { getPlayerName, setPlayerName, getProfilePicture, setProfilePicture } = useProfile();
   const { showSuccess, showError } = useToast();
@@ -163,9 +170,11 @@ const UserProfileHeader = () => {
 
   if (!address) return null;
 
+  const Container = isInHeader ? HeaderContainer : FloatingHeaderContainer;
+
   return (
     <>
-      <HeaderContainer>
+      <Container>
         <ProfileSection onClick={() => setShowModal(true)}>
           <ProfilePicture 
             address={address}
@@ -185,7 +194,7 @@ const UserProfileHeader = () => {
             </UserAddress>
           </UserInfo>
         </ProfileSection>
-      </HeaderContainer>
+      </Container>
 
       {showModal && (
         <Modal>
@@ -201,22 +210,20 @@ const UserProfileHeader = () => {
                 showUploadIcon={true}
                 style={{
                   borderRadius: '12px',
-                  border: '2px solid rgba(255, 20, 147, 0.5)',
-                  margin: '0 auto'
+                  border: '2px solid rgba(255, 20, 147, 0.5)'
                 }}
               />
             </div>
 
             <Input
               type="text"
+              placeholder="Enter your name"
               value={playerName}
               onChange={(e) => setPlayerNameState(e.target.value)}
-              placeholder="Enter your name"
-              maxLength={20}
             />
 
             <SaveButton onClick={handleSave}>
-              Save Changes
+              Save Profile
             </SaveButton>
           </ModalContent>
         </Modal>

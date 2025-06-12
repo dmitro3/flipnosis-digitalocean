@@ -50,32 +50,37 @@ const ProfilePicture = ({
   size = 40, 
   isClickable = false, 
   showUploadIcon = false,
+  profileData = null,
   style = {} 
 }) => {
   const { getProfilePicture, setProfilePicture } = useProfile()
   const { address: currentUserAddress } = useWallet()
-  const [imageUrl, setImageUrl] = useState(null)
+  const [imageUrl, setImageUrl] = useState(profileData?.imageUrl || null)
   const [isLoading, setIsLoading] = useState(true)
   
   useEffect(() => {
-    const loadProfilePicture = async () => {
+    if (profileData?.imageUrl) {
+      setImageUrl(profileData.imageUrl)
+      setIsLoading(false)
+      return
+    }
+    
+    const loadImage = async () => {
       if (!address) return
       
       try {
         setIsLoading(true)
-        const picture = await getProfilePicture(address)
-        if (picture) {
-          setImageUrl(picture)
-        }
+        const url = await getProfilePicture(address)
+        setImageUrl(url)
       } catch (error) {
         console.error('Error loading profile picture:', error)
       } finally {
         setIsLoading(false)
       }
     }
-
-    loadProfilePicture()
-  }, [address, getProfilePicture])
+    
+    loadImage()
+  }, [address, profileData, getProfilePicture])
   
   const handleImageClick = async (e) => {
     if (!isClickable) return

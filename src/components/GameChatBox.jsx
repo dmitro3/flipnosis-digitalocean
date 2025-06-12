@@ -312,7 +312,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
           alignItems: 'center',
           gap: '0.5rem'
         }}>
-          💬 Game Chat
+          💬 Chat
         </div>
         <div style={{
           display: 'flex',

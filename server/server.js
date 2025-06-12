@@ -631,13 +631,17 @@ class GameSession {
     this.turnTimer = null
     this.turnTimeLeft = 20 // 20 seconds per turn
     
-    console.log('✅ GameSession created:', {
-      gameId,
-      phase: this.phase,
-      creator: this.creator,
-      joiner: this.joiner,
-      currentPlayer: this.currentPlayer
-    })
+    // NEW: NFT vs NFT properties
+    this.gameType = 'nft-vs-crypto' // Default
+    this.offeredNFTs = [] // Array of NFT offers
+    this.acceptedOffer = null // The accepted NFT offer
+    this.challengerPaid = false // Whether challenger paid their fee
+    
+    // NEW: Profile data
+    this.creatorProfile = null
+    this.joinerProfile = null
+    
+    console.log('✅ GameSession created with NFT support')
   }
 
   addClient(ws) {
@@ -678,6 +682,13 @@ class GameSession {
       spectators: this.clients.size,
       creatorChoice: this.creatorChoice,
       joinerChoice: this.joinerChoice,
+      gameType: this.gameType,
+      offeredNFTs: this.offeredNFTs,
+      acceptedOffer: this.acceptedOffer,
+      challengerPaid: this.challengerPaid,
+      // NEW: Include player profiles
+      creatorProfile: this.creatorProfile,
+      joinerProfile: this.joinerProfile,
       turnTimeLeft: this.turnTimeLeft // Add timer to state
     }
 
@@ -1454,6 +1465,71 @@ async function handleMessage(ws, data) {
         currentPlayer: session.currentPlayer
       })
       await session.stopCharging(data.address)
+      break
+
+    case 'chat_message':
+      console.log('💬 Chat message received:', {
+        gameId: data.gameId,
+        address: data.address,
+        name: data.name,
+        message: data.message
+      })
+      
+      // Validate message
+      if (!data.message || !data.address || !data.name) {
+        ws.send(JSON.stringify({ type: 'error', error: 'Invalid chat message' }))
+        return
+      }
+      
+      // Broadcast to all clients in this game
+      if (session) {
+        const chatData = {
+          type: 'chat_message',
+          id: Date.now().toString(),
+          gameId: data.gameId,
+          address: data.address,
+          name: data.name,
+          message: data.message,
+          timestamp: new Date().toISOString()
+        }
+        
+        session.clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            try {
+              client.send(JSON.stringify(chatData))
+            } catch (error) {
+              console.error('❌ Error sending chat message:', error)
+            }
+          }
+        })
+      }
+      break
+
+    case 'share_profile':
+      console.log('👤 Profile shared:', {
+        address: data.address,
+        name: data.name,
+        imageUrl: data.imageUrl
+      })
+      
+      if (session) {
+        if (data.address === session.creator) {
+          session.creatorProfile = {
+            name: data.name,
+            imageUrl: data.imageUrl,
+            address: data.address
+          }
+        } else if (data.address === session.joiner) {
+          session.joinerProfile = {
+            name: data.name,
+            imageUrl: data.imageUrl,
+            address: data.address
+          }
+        }
+        
+        // Broadcast updated state with profiles
+        session.broadcastGameState()
+      }
       break
 
     default:
