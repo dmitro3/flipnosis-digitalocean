@@ -4,67 +4,68 @@ import { useToast } from '../contexts/ToastContext'
 import styled from '@emotion/styled'
 
 const ConnectorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 1rem;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-`
-
-const ConnectorCard = styled.div`
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.5rem;
-  padding: 2rem;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 `
 
-const Title = styled.h1`
-  color: #fff;
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
+const Title = styled.h3`
+  color: #00ffff;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
   text-align: center;
-  background: linear-gradient(135deg, #00ffff, #0080ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 `
 
 const Description = styled.p`
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 2rem;
-  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
   text-align: center;
-  font-size: 1rem;
 `
 
 const Button = styled.button`
   width: 100%;
-  padding: 1rem;
-  border-radius: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   background: ${props => props.primary ? 'linear-gradient(135deg, #00ffff, #0080ff)' : 'rgba(255, 255, 255, 0.1)'};
   color: ${props => props.primary ? '#000' : '#fff'};
   border: ${props => props.primary ? 'none' : '1px solid rgba(255, 255, 255, 0.2)'};
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 255, 255, 0.2);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+  }
+`
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  
+  &:hover {
+    color: #fff;
   }
 `
 
@@ -128,6 +129,7 @@ const MobileWalletConnector = () => {
   } = useWallet()
   const { showError, showInfo } = useToast()
   const [connecting, setConnecting] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
 
   const handleConnect = async () => {
     setConnecting(true)
@@ -160,57 +162,43 @@ const MobileWalletConnector = () => {
     window.open(storeUrl, '_blank')
   }
 
+  if (!isVisible) return null
+
   return (
     <ConnectorContainer>
-      <ConnectorCard>
-        <MetaMaskLogo>🦊</MetaMaskLogo>
-        <Title>Connect Your Wallet</Title>
-        
-        <StatusIndicator connected={isConnected}>
-          {isConnected ? '✅ Connected' : '❌ Not Connected'}
-        </StatusIndicator>
+      <CloseButton onClick={() => setIsVisible(false)}>×</CloseButton>
+      <Title>Connect Wallet</Title>
+      
+      <Description>
+        {isMetaMaskBrowser 
+          ? "Connect your wallet to start playing"
+          : window.ethereum 
+            ? "Connect here or open in MetaMask for best experience"
+            : "Install MetaMask to play"
+        }
+      </Description>
 
-        <Description>
-          {isMetaMaskBrowser 
-            ? "You're using MetaMask's built-in browser. Connect your wallet to continue."
-            : window.ethereum 
-              ? "MetaMask detected! You can connect here or open in MetaMask's browser for the best experience."
-              : "MetaMask not found. Please install MetaMask mobile app."
-          }
-        </Description>
+      {window.ethereum && (
+        <Button 
+          primary 
+          onClick={handleConnect} 
+          disabled={connecting || loading}
+        >
+          {connecting ? '🔄 Connecting...' : '🔗 Connect MetaMask'}
+        </Button>
+      )}
 
-        {window.ethereum && (
-          <Button 
-            primary 
-            onClick={handleConnect} 
-            disabled={connecting || loading}
-          >
-            {connecting ? '🔄 Connecting...' : '🔗 Connect MetaMask'}
-          </Button>
-        )}
+      {!isMetaMaskBrowser && window.ethereum && (
+        <Button onClick={openInMetaMask}>
+          🦊 Open in MetaMask
+        </Button>
+      )}
 
-        {!isMetaMaskBrowser && window.ethereum && (
-          <Button onClick={openInMetaMask}>
-            🦊 Open in MetaMask Browser
-          </Button>
-        )}
-
-        {!window.ethereum && (
-          <Button onClick={downloadMetaMask}>
-            📱 Install MetaMask
-          </Button>
-        )}
-
-        <Instructions>
-          <h4>How to Connect:</h4>
-          <ol>
-            <li>Install MetaMask mobile app if you haven't already</li>
-            <li>Open this site in MetaMask's built-in browser</li>
-            <li>Click "Connect MetaMask" to link your wallet</li>
-            <li>Approve the connection request in MetaMask</li>
-          </ol>
-        </Instructions>
-      </ConnectorCard>
+      {!window.ethereum && (
+        <Button onClick={downloadMetaMask}>
+          📱 Install MetaMask
+        </Button>
+      )}
     </ConnectorContainer>
   )
 }
