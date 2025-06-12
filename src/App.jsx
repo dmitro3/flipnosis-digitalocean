@@ -1,13 +1,13 @@
-import { WalletProvider } from './contexts/WalletContext'
+import React from 'react'
+import { WalletProvider, useWallet } from './contexts/WalletContext'
 import { ToastProvider } from './contexts/ToastContext'
 import { ProfileProvider } from './contexts/ProfileContext'
-import { router } from './Routes'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from './styles/theme'
-import { RouterProvider } from 'react-router-dom'
-import { useWallet } from './contexts/WalletContext'
-import MobileWalletConnector from './components/MobileWalletConnector'
+import { BrowserRouter } from 'react-router-dom'
+import Home from './pages/Home'
 import DebugPanel from './components/DebugPanel'
+import Header from './components/Header'
 import styled from '@emotion/styled'
 
 const AppContainer = styled.div`
@@ -19,48 +19,31 @@ const AppContainer = styled.div`
 `
 
 const AppContent = () => {
-  const { isConnected, isMobile, isMetaMaskBrowser } = useWallet()
-
+  const { isMobile } = useWallet()
+  
   return (
-    <>
-      <RouterProvider router={router} />
-      {/* Show debug panel in development */}
-      {process.env.NODE_ENV === 'development' && <DebugPanel />}
-      {/* Show mobile connector as a modal when needed */}
-      {isMobile && !isConnected && (
-        <div style={{
-          position: 'fixed',
-          bottom: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          width: '90%',
-          maxWidth: 400
-        }}>
-          <MobileWalletConnector />
-        </div>
-      )}
-    </>
+    <AppContainer>
+      <Header />
+      <Home />
+      {isMobile && <DebugPanel />}
+      {!isMobile && process.env.NODE_ENV === 'development' && <DebugPanel />}
+    </AppContainer>
   )
 }
 
 const App = () => {
   return (
-    <WalletProvider>
-      <AppContainer>
-        {isMobile ? (
-          <>
-            <Home />
-            <DebugPanel />
-          </>
-        ) : (
-          <>
-            <Home />
-            {process.env.NODE_ENV === 'development' && <DebugPanel />}
-          </>
-        )}
-      </AppContainer>
-    </WalletProvider>
+    <BrowserRouter>
+      <ThemeProvider theme={theme}>
+        <WalletProvider>
+          <ToastProvider>
+            <ProfileProvider>
+              <AppContent />
+            </ProfileProvider>
+          </ToastProvider>
+        </WalletProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   )
 }
 
