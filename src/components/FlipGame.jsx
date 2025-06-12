@@ -1001,15 +1001,17 @@ const FlipGame = () => {
           {/* Main Game Area - Three Column Layout */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: '300px 1fr 300px', // Fixed widths for player cards
+            gridTemplateColumns: '300px 1fr 300px',
             gap: '2rem', 
             marginBottom: '2rem',
-            alignItems: 'start', // Align to top
+            alignItems: 'start',
             minHeight: '500px',
             '@media (max-width: 768px)': {
-              gridTemplateColumns: '1fr',
+              display: 'flex',
+              flexDirection: 'column',
               gap: '1rem',
-              padding: '1rem'
+              padding: '1rem',
+              width: '100%'
             }
           }}>
             
@@ -1023,7 +1025,12 @@ const FlipGame = () => {
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
               border: '2px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '1.5rem',
-              backdropFilter: 'blur(10px)'
+              backdropFilter: 'blur(10px)',
+              '@media (max-width: 768px)': {
+                padding: '1rem',
+                width: '100%',
+                maxWidth: '100%'
+              }
             }}>
               
               {/* PLAYERS SECTION - Top */}
@@ -1424,7 +1431,16 @@ const FlipGame = () => {
             </div>
 
             {/* Center - Coin and Power Area */}
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ 
+              textAlign: 'center', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              '@media (max-width: 768px)': {
+                width: '100%',
+                marginTop: '1rem'
+              }
+            }}>
               {/* Coin */}
               <div style={{ 
                 display: 'flex', 
@@ -1467,15 +1483,10 @@ const FlipGame = () => {
 
             {/* RIGHT CONTAINER - NFT & Game Details */}
             <div style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '600px',
-              margin: '0 auto',
-              padding: '2rem',
-              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
-              border: '2px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '1.5rem',
-              backdropFilter: 'blur(10px)'
+              '@media (max-width: 768px)': {
+                width: '100%',
+                marginTop: '1rem'
+              }
             }}>
               
               {/* NFT IMAGE - Top */}

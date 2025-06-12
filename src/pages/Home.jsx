@@ -403,15 +403,17 @@ const Home = () => {
               gap: '1.5rem',
               marginTop: '2rem',
               '@media (max-width: 768px)': {
-                gridTemplateColumns: '1fr',
-                gap: '1rem'
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                padding: '1rem'
               }
             }}>
               {/* Left Box - Selected Game */}
               <div style={{
                 '@media (max-width: 768px)': {
-                  maxWidth: '200px',
-                  margin: '0 auto'
+                  width: '100%',
+                  maxWidth: '100%'
                 }
               }}>
                 {selectedFlip && (
@@ -422,8 +424,8 @@ const Home = () => {
                     border: `2px solid ${selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink}`,
                     maxWidth: '240px',
                     '@media (max-width: 768px)': {
-                      padding: '1rem',
-                      maxWidth: '200px'
+                      maxWidth: '100%',
+                      padding: '1rem'
                     }
                   }}>
                     <div style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
@@ -510,29 +512,28 @@ const Home = () => {
 
               {/* Middle Box - Available Flips */}
               <div style={{
-                background: 'rgba(0, 0, 20, 0.95)',
-                borderRadius: '1rem',
-                padding: '1rem',
-                border: `1px solid ${theme.colors.neonBlue}`,
-                maxHeight: '600px',
-                overflowY: 'auto'
+                '@media (max-width: 768px)': {
+                  width: '100%',
+                  marginTop: '1rem'
+                }
               }}>
-                <div style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  color: theme.colors.neonBlue,
+                <h2 style={{ 
+                  color: theme.colors.textPrimary,
                   marginBottom: '1rem',
-                  padding: '0.5rem',
-                  borderBottom: `1px solid ${theme.colors.neonBlue}`,
-                  textShadow: '0 0 10px rgba(0, 150, 255, 0.5)'
+                  '@media (max-width: 768px)': {
+                    fontSize: '1.2rem'
+                  }
                 }}>
-                  Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
-                </div>
-                <div style={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
-                  padding: '0.5rem'
+                  Available Flips
+                </h2>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                  gap: '1rem',
+                  '@media (max-width: 768px)': {
+                    gridTemplateColumns: '1fr',
+                    gap: '0.75rem'
+                  }
                 }}>
                   {filteredFlips.map(flip => (
                     <div

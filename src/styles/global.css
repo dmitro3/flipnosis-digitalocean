@@ -35,11 +35,18 @@
   to { transform: rotate(360deg); }
 }
 
+/* Hide debug panel */
+.debug-panel,
+.mobile-debug-area,
+.debug-toggle,
+.debug-container {
+    display: none !important;
+}
+
 /* Mobile Debug Area (from spinandmint) */
 .mobile-debug-area {
-    display: none !important; /* Hide debug panel by default */
     position: fixed;
-    bottom: 60px; /* Above debug toggle/panel */
+    bottom: 60px;
     left: 20px;
     width: calc(100% - 40px);
     max-width: 400px;
