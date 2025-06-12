@@ -11,11 +11,15 @@ const ProfilePictureContainer = styled.div`
   overflow: hidden;
   cursor: ${props => props.isClickable ? 'pointer' : 'default'};
   border: ${props => props.style?.border || '2px solid rgba(255, 255, 255, 0.2)'};
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.3s ease;
 
   &:hover {
-    transform: ${props => props.isClickable ? 'scale(1.05)' : 'none'};
-    box-shadow: ${props => props.isClickable ? '0 0 15px rgba(255, 255, 255, 0.3)' : 'none'};
+    border-color: ${props => props.isClickable ? 'rgba(255, 20, 147, 0.5)' : props.style?.border};
+    box-shadow: ${props => props.isClickable ? '0 0 15px rgba(255, 20, 147, 0.3)' : 'none'};
   }
 `
 
@@ -27,16 +31,14 @@ const ProfileImage = styled.img`
 
 const UploadIcon = styled.div`
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 1.5rem;
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 
   ${ProfilePictureContainer}:hover & {
     opacity: 1;
@@ -56,81 +58,52 @@ const ProfilePicture = ({
   const [isLoading, setIsLoading] = useState(true)
   
   useEffect(() => {
-    const fetchImage = async () => {
+    const loadProfilePicture = async () => {
       if (!address) return
       
-      setIsLoading(true)
       try {
-        // First try to get from local storage/cache
-        const cachedImage = await getProfilePicture(address)
-        if (cachedImage) {
-          setImageUrl(cachedImage)
-          return
-        }
-
-        // If not in cache, fetch from server
-        const response = await fetch(`/api/profiles/${address}/picture`)
-        if (response.ok) {
-          const blob = await response.blob()
-          const imageUrl = URL.createObjectURL(blob)
-          setImageUrl(imageUrl)
-          // Cache the image
-          await setProfilePicture(address, imageUrl)
+        setIsLoading(true)
+        const picture = await getProfilePicture(address)
+        if (picture) {
+          setImageUrl(picture)
         }
       } catch (error) {
-        console.error('Error fetching profile picture:', error)
+        console.error('Error loading profile picture:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchImage()
-  }, [address, getProfilePicture, setProfilePicture])
+    loadProfilePicture()
+  }, [address, getProfilePicture])
   
   const handleImageClick = async (e) => {
-    if (!isClickable || !currentUserAddress || currentUserAddress !== address) return
+    if (!isClickable) return
 
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*'
-    input.onchange = async (e) => {
-      const file = e.target.files[0]
-      if (!file) return
-
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
-        return
-      }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB')
-        return
-      }
-
-      try {
-        const formData = new FormData()
-        formData.append('picture', file)
-
-        const response = await fetch(`/api/profiles/${address}/picture`, {
-          method: 'POST',
-          body: formData
-        })
-
-        if (response.ok) {
-          const blob = await response.blob()
-          const newImageUrl = URL.createObjectURL(blob)
-          setImageUrl(newImageUrl)
-          // Update cache
-          await setProfilePicture(address, newImageUrl)
+    input.onchange = async (event) => {
+      const file = event.target.files[0]
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          alert('Image size must be less than 5MB')
+          return
         }
-      } catch (error) {
-        console.error('Error uploading profile picture:', error)
-        alert('Failed to upload image')
+
+        const reader = new FileReader()
+        reader.onload = async (e) => {
+          try {
+            const imageData = e.target.result
+            await setProfilePicture(address, imageData)
+            setImageUrl(imageData)
+          } catch (error) {
+            console.error('Error uploading profile picture:', error)
+          }
+        }
+        reader.readAsDataURL(file)
       }
     }
-
     input.click()
   }
   
@@ -155,25 +128,16 @@ const ProfilePicture = ({
       {imageUrl ? (
         <ProfileImage src={imageUrl} alt="Profile" />
       ) : (
-        <div style={{
-          width: '100%',
-          height: '100%',
-          background: 'linear-gradient(45deg, #FF1493, #00BFFF)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontSize: `${size * 0.4}px`,
-          fontWeight: 'bold'
+        <div style={{ 
+          color: 'rgba(255, 255, 255, 0.5)',
+          fontSize: `${size * 0.4}px`
         }}>
-          {address ? address.slice(2, 4).toUpperCase() : '?'}
+          {address?.slice(0, 2).toUpperCase()}
         </div>
       )}
       
       {showUploadIcon && isClickable && (
-        <UploadIcon>
-          📷
-        </UploadIcon>
+        <UploadIcon>📷</UploadIcon>
       )}
     </ProfilePictureContainer>
   )

@@ -1130,6 +1130,20 @@ const FlipGame = () => {
                     );
                   })}
                 </div>
+
+                {/* Timer Display */}
+                {gameState?.turnTimeLeft !== undefined && (
+                  <div style={{
+                    textAlign: 'center',
+                    marginTop: '0.5rem',
+                    color: gameState.turnTimeLeft <= 5 ? '#FF1493' : '#FFFF00',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                  }}>
+                    {gameState.turnTimeLeft}s
+                  </div>
+                )}
               
                 {/* Player 2 */}
               <div style={{
@@ -1233,6 +1247,20 @@ const FlipGame = () => {
                     );
                   })}
                 </div>
+
+                {/* Timer Display */}
+                {gameState?.turnTimeLeft !== undefined && (
+                  <div style={{
+                    textAlign: 'center',
+                    marginTop: '0.5rem',
+                    color: gameState.turnTimeLeft <= 5 ? '#FF1493' : '#FFFF00',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                  }}>
+                    {gameState.turnTimeLeft}s
+                  </div>
+                )}
               </div>
 
               {/* Combined Game Info Section */}
