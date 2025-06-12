@@ -49,21 +49,6 @@ const BackgroundVideo = styled.video`
   opacity: 0.7;
 `
 
-const WithdrawButton = styled(Button)`
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: ${props => props.theme.colors.neonPink};
-  z-index: 1000;
-  padding: 12px 24px;
-  font-size: 1.1rem;
-  box-shadow: 0 0 10px ${props => props.theme.colors.neonPink};
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px ${props => props.theme.colors.neonPink};
-  }
-`
-
 const FilterContainer = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -776,12 +761,6 @@ const Home = () => {
           )}
         </ContentWrapper>
       </Container>
-      <WithdrawButton 
-        onClick={handleWithdraw}
-        disabled={withdrawing}
-      >
-        {withdrawing ? 'Withdrawing...' : 'Withdraw Funds'}
-      </WithdrawButton>
     </ThemeProvider>
   )
 }

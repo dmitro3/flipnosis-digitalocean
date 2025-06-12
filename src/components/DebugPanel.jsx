@@ -17,6 +17,16 @@ const DebugContainer = styled.div`
   font-family: monospace;
   font-size: 12px;
   color: #00ff00;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+
+  @media (max-width: 768px) {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: calc(100vw - 20px);
+    font-size: 10px;
+    padding: 10px;
+  }
 `
 
 const DebugHeader = styled.div`
@@ -32,6 +42,10 @@ const DebugTitle = styled.h3`
   margin: 0;
   color: #00ffff;
   font-size: 14px;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
 `
 
 const ToggleButton = styled.button`
@@ -46,11 +60,18 @@ const ToggleButton = styled.button`
   &:hover {
     background: rgba(0, 255, 255, 0.1);
   }
+
+  @media (max-width: 768px) {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
 `
 
 const DebugContent = styled.div`
   white-space: pre-wrap;
   word-break: break-all;
+  font-size: 10px;
+  line-height: 1.4;
 `
 
 const CopyButton = styled.button`
@@ -66,6 +87,20 @@ const CopyButton = styled.button`
   &:hover {
     background: rgba(0, 255, 0, 0.1);
   }
+
+  @media (max-width: 768px) {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+`
+
+const StatusIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+  font-size: 10px;
+  color: ${props => props.connected ? '#00ff00' : '#ff6b6b'};
 `
 
 const DebugPanel = () => {
@@ -138,9 +173,12 @@ const DebugPanel = () => {
           <DebugTitle>Debug Panel</DebugTitle>
           <ToggleButton onClick={() => setIsExpanded(true)}>Expand</ToggleButton>
         </DebugHeader>
-        <div>🟢 {isConnected ? 'Connected' : 'Disconnected'}</div>
+        <StatusIndicator connected={isConnected}>
+          {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+        </StatusIndicator>
         <div>📱 {isMobile ? 'Mobile' : 'Desktop'}</div>
         <div>🦊 {isMetaMaskBrowser ? 'MetaMask Browser' : 'External Browser'}</div>
+        <div>🔗 {window.ethereum ? 'MetaMask Detected' : 'No MetaMask'}</div>
       </DebugContainer>
     )
   }

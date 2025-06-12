@@ -8,6 +8,15 @@ import { RouterProvider } from 'react-router-dom'
 import { useWallet } from './contexts/WalletContext'
 import MobileWalletConnector from './components/MobileWalletConnector'
 import DebugPanel from './components/DebugPanel'
+import styled from '@emotion/styled'
+
+const AppContainer = styled.div`
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  position: relative;
+  overflow-x: hidden;
+`
 
 const AppContent = () => {
   const { isConnected, isMobile, isMetaMaskBrowser } = useWallet()
@@ -35,16 +44,22 @@ const AppContent = () => {
   )
 }
 
-function App() {
+const App = () => {
   return (
     <WalletProvider>
-      <ProfileProvider>
-        <ToastProvider>
-          <ThemeProvider theme={theme}>
-            <AppContent />
-          </ThemeProvider>
-        </ToastProvider>
-      </ProfileProvider>
+      <AppContainer>
+        {isMobile ? (
+          <>
+            <Home />
+            <DebugPanel />
+          </>
+        ) : (
+          <>
+            <Home />
+            {process.env.NODE_ENV === 'development' && <DebugPanel />}
+          </>
+        )}
+      </AppContainer>
     </WalletProvider>
   )
 }
