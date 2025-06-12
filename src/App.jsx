@@ -5,6 +5,19 @@ import { router } from './Routes'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from './styles/theme'
 import { RouterProvider } from 'react-router-dom'
+import { useWallet } from './contexts/WalletContext'
+import MobileWalletConnector from './components/MobileWalletConnector'
+
+const AppContent = () => {
+  const { isConnected, isMobile, isMetaMaskBrowser } = useWallet()
+
+  // Show mobile connector if on mobile and not connected
+  if (isMobile && !isConnected) {
+    return <MobileWalletConnector />
+  }
+
+  return <RouterProvider router={router} />
+}
 
 function App() {
   return (
@@ -12,7 +25,7 @@ function App() {
       <ProfileProvider>
         <ToastProvider>
           <ThemeProvider theme={theme}>
-            <RouterProvider router={router} />
+            <AppContent />
           </ThemeProvider>
         </ToastProvider>
       </ProfileProvider>

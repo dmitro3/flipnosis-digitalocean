@@ -8,51 +8,59 @@ const ConnectorContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
+  padding: 1rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 `
 
 const ConnectorCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
+  border-radius: 1.5rem;
   padding: 2rem;
-  max-width: 400px;
   width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 `
 
-const Title = styled.h2`
-  color: #00ffff;
+const Title = styled.h1`
+  color: #fff;
+  font-size: 1.8rem;
   margin-bottom: 1rem;
-  font-size: 1.5rem;
+  text-align: center;
+  background: linear-gradient(135deg, #00ffff, #0080ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 `
 
 const Description = styled.p`
   color: rgba(255, 255, 255, 0.8);
   margin-bottom: 2rem;
   line-height: 1.6;
+  text-align: center;
+  font-size: 1rem;
 `
 
-const ConnectButton = styled.button`
-  background: linear-gradient(135deg, #00ffff, #0080ff);
+const Button = styled.button`
+  width: 100%;
+  padding: 1rem;
+  border-radius: 1rem;
   border: none;
-  border-radius: 0.5rem;
-  color: #000;
-  cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
-  padding: 1rem 2rem;
+  cursor: pointer;
   transition: all 0.3s ease;
-  width: 100%;
   margin-bottom: 1rem;
-  
+  background: ${props => props.primary ? 'linear-gradient(135deg, #00ffff, #0080ff)' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.primary ? '#000' : '#fff'};
+  border: ${props => props.primary ? 'none' : '1px solid rgba(255, 255, 255, 0.2)'};
+
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 255, 255, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 255, 255, 0.2);
   }
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -60,24 +68,17 @@ const ConnectButton = styled.button`
   }
 `
 
-const SecondaryButton = styled(ConnectButton)`
-  background: rgba(255, 255, 255, 0.1);
-  color: #00ffff;
-  border: 1px solid #00ffff;
-  
-  &:hover {
-    background: rgba(0, 255, 255, 0.1);
-    color: #fff;
-  }
-`
-
-const DeviceInfo = styled.div`
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
+const MetaMaskLogo = styled.div`
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #f6851b, #e2761b);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem;
+  font-size: 2.5rem;
+  box-shadow: 0 8px 32px rgba(246, 133, 27, 0.3);
 `
 
 const StatusIndicator = styled.div`
@@ -85,28 +86,16 @@ const StatusIndicator = styled.div`
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   font-size: 0.9rem;
   color: ${props => props.connected ? '#00ff00' : '#ff6b6b'};
-`
-
-const MetaMaskLogo = styled.div`
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #f6851b, #e2761b);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  font-size: 2rem;
 `
 
 const Instructions = styled.div`
   background: rgba(255, 255, 255, 0.05);
   border-left: 3px solid #00ffff;
   padding: 1rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   border-radius: 0 0.5rem 0.5rem 0;
   text-align: left;
   
@@ -125,7 +114,7 @@ const Instructions = styled.div`
   }
   
   li {
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.5rem;
   }
 `
 
@@ -163,126 +152,64 @@ const MobileWalletConnector = () => {
   }
 
   const downloadMetaMask = () => {
-    if (isMobile) {
-      // Detect iOS or Android
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-      const storeUrl = isIOS 
-        ? 'https://apps.apple.com/us/app/metamask/id1438144202'
-        : 'https://play.google.com/store/apps/details?id=io.metamask'
-      
-      window.open(storeUrl, '_blank')
-    } else {
-      window.open('https://metamask.io/download/', '_blank')
-    }
-  }
-
-  if (isConnected) {
-    return null // Don't show connector if already connected
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const storeUrl = isIOS 
+      ? 'https://apps.apple.com/us/app/metamask/id1438144202'
+      : 'https://play.google.com/store/apps/details?id=io.metamask'
+    
+    window.open(storeUrl, '_blank')
   }
 
   return (
     <ConnectorContainer>
       <ConnectorCard>
         <MetaMaskLogo>🦊</MetaMaskLogo>
+        <Title>Connect Your Wallet</Title>
         
-        <Title>Connect MetaMask Wallet</Title>
-        
-        <DeviceInfo>
-          📱 Device: {isMobile ? 'Mobile' : 'Desktop'}<br/>
-          🌐 Browser: {isMetaMaskBrowser ? 'MetaMask' : 'External'}<br/>
-          🔗 MetaMask: {window.ethereum ? 'Detected' : 'Not Found'}
-        </DeviceInfo>
-
         <StatusIndicator connected={isConnected}>
-          <span>{isConnected ? '🟢' : '🔴'}</span>
-          {isConnected ? 'Connected' : 'Not Connected'}
+          {isConnected ? '✅ Connected' : '❌ Not Connected'}
         </StatusIndicator>
 
-        {/* Desktop Connection */}
-        {!isMobile && (
-          <>
-            <Description>
-              Connect your MetaMask wallet to start playing the NFT flipping game!
-            </Description>
-            
-            {window.ethereum ? (
-              <ConnectButton 
-                onClick={handleConnect} 
-                disabled={connecting || loading}
-              >
-                {connecting ? '🔄 Connecting...' : '🔗 Connect MetaMask'}
-              </ConnectButton>
-            ) : (
-              <>
-                <ConnectButton onClick={downloadMetaMask}>
-                  📥 Install MetaMask
-                </ConnectButton>
-                <Description style={{fontSize: '0.9rem', marginTop: '1rem'}}>
-                  MetaMask extension not found. Please install it first.
-                </Description>
-              </>
-            )}
-          </>
+        <Description>
+          {isMetaMaskBrowser 
+            ? "You're using MetaMask's built-in browser. Connect your wallet to continue."
+            : window.ethereum 
+              ? "MetaMask detected! You can connect here or open in MetaMask's browser for the best experience."
+              : "MetaMask not found. Please install MetaMask mobile app."
+          }
+        </Description>
+
+        {window.ethereum && (
+          <Button 
+            primary 
+            onClick={handleConnect} 
+            disabled={connecting || loading}
+          >
+            {connecting ? '🔄 Connecting...' : '🔗 Connect MetaMask'}
+          </Button>
         )}
 
-        {/* Mobile Connection */}
-        {isMobile && (
-          <>
-            <Description>
-              {isMetaMaskBrowser 
-                ? "Great! You're using MetaMask's built-in browser. Connect your wallet to continue."
-                : window.ethereum 
-                  ? "MetaMask detected! You can connect here or open in MetaMask's browser for the best experience."
-                  : "MetaMask not found. Please install MetaMask mobile app."
-              }
-            </Description>
-            
-            {/* Always show connect button if MetaMask is available */}
-            {window.ethereum && (
-              <ConnectButton 
-                onClick={handleConnect} 
-                disabled={connecting || loading}
-              >
-                {connecting ? '🔄 Connecting...' : '🔗 Connect MetaMask'}
-              </ConnectButton>
-            )}
-            
-            {/* Show additional options for external browsers */}
-            {!isMetaMaskBrowser && window.ethereum && (
-              <SecondaryButton onClick={openInMetaMask}>
-                🦊 Open in MetaMask Browser
-              </SecondaryButton>
-            )}
-            
-            {/* Show install option if no MetaMask */}
-            {!window.ethereum && (
-              <>
-                <ConnectButton onClick={downloadMetaMask}>
-                  📥 Install MetaMask
-                </ConnectButton>
-                
-                <Instructions>
-                  <h4>📋 Setup Instructions:</h4>
-                  <ol>
-                    <li>Install MetaMask from your app store</li>
-                    <li>Create or import your wallet</li>
-                    <li>Copy this page's URL</li>
-                    <li>Open MetaMask app</li>
-                    <li>Tap the browser tab (🌐)</li>
-                    <li>Paste the URL and navigate here</li>
-                  </ol>
-                </Instructions>
-              </>
-            )}
-          </>
+        {!isMetaMaskBrowser && window.ethereum && (
+          <Button onClick={openInMetaMask}>
+            🦊 Open in MetaMask Browser
+          </Button>
         )}
 
-        {/* Loading State */}
-        {(loading || connecting) && (
-          <DeviceInfo style={{marginTop: '1rem'}}>
-            🔄 {connecting ? 'Connecting wallet...' : 'Loading...'}
-          </DeviceInfo>
+        {!window.ethereum && (
+          <Button onClick={downloadMetaMask}>
+            📱 Install MetaMask
+          </Button>
         )}
+
+        <Instructions>
+          <h4>How to Connect:</h4>
+          <ol>
+            <li>Install MetaMask mobile app if you haven't already</li>
+            <li>Open this site in MetaMask's built-in browser</li>
+            <li>Click "Connect MetaMask" to link your wallet</li>
+            <li>Approve the connection request in MetaMask</li>
+          </ol>
+        </Instructions>
       </ConnectorCard>
     </ConnectorContainer>
   )
