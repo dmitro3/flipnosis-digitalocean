@@ -2013,7 +2013,7 @@ const FlipGame = () => {
           />
 
           {/* Winner Screen */}
-          {gameState?.winner && (
+          {gameState?.winner && ( 
             <div style={{
               position: 'fixed',
               top: 0,
