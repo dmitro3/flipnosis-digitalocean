@@ -4,10 +4,9 @@ import { ToastProvider } from './contexts/ToastContext'
 import { ProfileProvider } from './contexts/ProfileContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from './styles/theme'
-import { BrowserRouter } from 'react-router-dom'
-import Home from './pages/Home'
+import { RouterProvider } from 'react-router-dom'
+import { router } from './Routes'
 import DebugPanel from './components/DebugPanel'
-import Header from './components/Header'
 import styled from '@emotion/styled'
 
 const AppContainer = styled.div`
@@ -23,8 +22,7 @@ const AppContent = () => {
   
   return (
     <AppContainer>
-      <Header />
-      <Home />
+      <RouterProvider router={router} />
       {isMobile && <DebugPanel />}
       {!isMobile && process.env.NODE_ENV === 'development' && <DebugPanel />}
     </AppContainer>
@@ -33,17 +31,15 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <ThemeProvider theme={theme}>
-        <WalletProvider>
-          <ToastProvider>
-            <ProfileProvider>
-              <AppContent />
-            </ProfileProvider>
-          </ToastProvider>
-        </WalletProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <WalletProvider>
+        <ToastProvider>
+          <ProfileProvider>
+            <AppContent />
+          </ProfileProvider>
+        </ToastProvider>
+      </WalletProvider>
+    </ThemeProvider>
   )
 }
 

@@ -356,37 +356,6 @@ const Home = () => {
       </BackgroundVideo>
       <Container>
         <ContentWrapper>
-          {/* Header */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '2rem',
-            padding: '1rem',
-            background: 'rgba(0, 0, 0, 0.5)',
-            borderRadius: '8px',
-            border: `1px solid ${theme.colors.neonGreen}`
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <NeonText style={{ fontSize: '2rem' }}>Crypto Flipz</NeonText>
-              <ChainBadge>Base</ChainBadge>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <Button 
-                onClick={isConnected ? undefined : connectWallet}
-                style={{ 
-                  background: isConnected ? theme.colors.neonGreen : theme.colors.neonPink,
-                  color: isConnected ? '#000' : '#fff'
-                }}
-              >
-                {isConnected ? 'Connected' : 'Connect Wallet'}
-              </Button>
-              <Button as={Link} to="/create" style={{ background: theme.colors.neonBlue }}>
-                Create Flip
-              </Button>
-            </div>
-          </div>
-
           {/* Chain Filters */}
           <TransparentCard style={{ background: theme.colors.bgDark }}>
             <FilterContainer>
