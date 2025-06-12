@@ -1005,7 +1005,12 @@ const FlipGame = () => {
             gap: '2rem', 
             marginBottom: '2rem',
             alignItems: 'start', // Align to top
-            minHeight: '500px'
+            minHeight: '500px',
+            '@media (max-width: 768px)': {
+              gridTemplateColumns: '1fr',
+              gap: '1rem',
+              padding: '1rem'
+            }
           }}>
             
             {/* LEFT CONTAINER - Players & Game Info */}

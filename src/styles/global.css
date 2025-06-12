@@ -33,4 +33,19 @@
 /* Custom loading spinner */
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Mobile Debug Area (from spinandmint) */
+.mobile-debug-area {
+    display: none !important; /* Hide debug panel by default */
+    position: fixed;
+    bottom: 60px; /* Above debug toggle/panel */
+    left: 20px;
+    width: calc(100% - 40px);
+    max-width: 400px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 999;
 } 

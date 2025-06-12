@@ -401,17 +401,30 @@ const Home = () => {
               display: 'grid',
               gridTemplateColumns: '240px 1fr 300px',
               gap: '1.5rem',
-              marginTop: '2rem'
+              marginTop: '2rem',
+              '@media (max-width: 768px)': {
+                gridTemplateColumns: '1fr',
+                gap: '1rem'
+              }
             }}>
               {/* Left Box - Selected Game */}
-              <div>
+              <div style={{
+                '@media (max-width: 768px)': {
+                  maxWidth: '200px',
+                  margin: '0 auto'
+                }
+              }}>
                 {selectedFlip && (
                   <div style={{
                     background: 'rgba(0, 0, 0, 0.8)',
                     borderRadius: '1rem',
                     padding: '1.5rem',
                     border: `2px solid ${selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink}`,
-                    maxWidth: '240px'
+                    maxWidth: '240px',
+                    '@media (max-width: 768px)': {
+                      padding: '1rem',
+                      maxWidth: '200px'
+                    }
                   }}>
                     <div style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
                       <GameImage 
