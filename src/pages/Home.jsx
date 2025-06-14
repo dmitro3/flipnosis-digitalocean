@@ -38,6 +38,35 @@ import {
   PriceBadge
 } from '../styles/components'
 
+// Helper functions for chain URLs
+const getExplorerUrl = (chain) => {
+  if (!chain) return 'https://etherscan.io' // Default to Ethereum explorer
+  
+  const explorers = {
+    ethereum: 'https://etherscan.io',
+    polygon: 'https://polygonscan.com',
+    base: 'https://basescan.org',
+    arbitrum: 'https://arbiscan.io',
+    optimism: 'https://optimistic.etherscan.io',
+    // Add more chains as needed
+  }
+  return explorers[chain.toLowerCase()] || 'https://etherscan.io'
+}
+
+const getMarketplaceUrl = (chain) => {
+  if (!chain) return 'https://opensea.io/assets/ethereum' // Default to Ethereum marketplace
+  
+  const marketplaces = {
+    ethereum: 'https://opensea.io/assets/ethereum',
+    polygon: 'https://opensea.io/assets/matic',
+    base: 'https://opensea.io/assets/base',
+    arbitrum: 'https://opensea.io/assets/arbitrum',
+    optimism: 'https://opensea.io/assets/optimism',
+    // Add more chains as needed
+  }
+  return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
+}
+
 const BackgroundVideo = styled.video`
   position: fixed;
   top: 0;
@@ -392,11 +421,59 @@ const Home = () => {
                             </GameStat>
                           </>
                         )}
-                        <GameStat>
-                          <span>Rounds</span>
-                          <div>{selectedFlip.rounds}</div>
-                        </GameStat>
                       </GameStats>
+                      
+                      {/* Links */}
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '0.5rem', 
+                        marginBottom: '1rem'
+                      }}>
+                        <a
+                          href={`${getExplorerUrl(selectedFlip.nft.chain)}/token/${selectedFlip.nft.contractAddress}?a=${selectedFlip.nft.tokenId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '0.5rem',
+                            fontSize: '0.8rem',
+                            textDecoration: 'none',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            transition: 'all 0.3s ease',
+                            flex: 1,
+                            justifyContent: 'center'
+                          }}
+                        >
+                          🔍 Explorer
+                        </a>
+                        <a
+                          href={`${getMarketplaceUrl(selectedFlip.nft.chain)}/${selectedFlip.nft.contractAddress}/${selectedFlip.nft.tokenId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '0.5rem',
+                            fontSize: '0.8rem',
+                            textDecoration: 'none',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            transition: 'all 0.3s ease',
+                            flex: 1,
+                            justifyContent: 'center'
+                          }}
+                        >
+                          🛍️ OpenSea
+                        </a>
+                      </div>
                       
                       <GameFlipButton 
                         as={Link} 
@@ -509,13 +586,28 @@ const Home = () => {
                           )}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ 
-                            fontSize: '0.9rem', 
-                            fontWeight: 'bold',
-                            marginBottom: '0.25rem',
-                            color: theme.colors.textPrimary
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '0.5rem'
                           }}>
-                            {flip.nft.name}
+                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                              {flip.nft.name}
+                            </div>
+                            {flip.status === 'completed' && (
+                              <div style={{
+                                background: 'rgba(255, 20, 147, 0.2)',
+                                color: theme.colors.neonPink,
+                                padding: '0.25rem 0.75rem',
+                                borderRadius: '1rem',
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                border: `1px solid ${theme.colors.neonPink}`
+                              }}>
+                                ENDED
+                              </div>
+                            )}
                           </div>
                           <div style={{ 
                             fontSize: '0.8rem',

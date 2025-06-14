@@ -1,6 +1,55 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { theme } from '../styles/theme'
+import styled from '@emotion/styled'
+
+const WinnerPopup = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 494px;
+  height: 826px;
+  background: transparent;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+`;
+
+const LoserPopup = styled(WinnerPopup)`
+  // Inherits all styles from WinnerPopup
+`;
+
+const VideoContainer = styled.div`
+  position: relative;
+  width: 494px;
+  height: 826px;
+`;
+
+const MessageBox = styled.div`
+  position: absolute;
+  bottom: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid ${props => props.isWinner ? '#00ff00' : '#ff0000'};
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 0 20px ${props => props.isWinner ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'};
+`;
+
+const WarningText = styled.p`
+  color: #ff6b6b;
+  font-size: 14px;
+  margin: 10px 0;
+`;
 
 const GameResultPopup = ({ 
   isVisible, 
@@ -42,21 +91,10 @@ const GameResultPopup = ({
     }}>
       {/* Winner Popup */}
       {isWinner && (
-        <div style={{
-          position: 'relative',
-          width: '494px',
-          height: '826px',
-          borderRadius: '2rem',
-          overflow: 'hidden',
-          boxShadow: `0 0 50px ${theme.colors.statusSuccess}, 0 0 100px rgba(0, 255, 65, 0.3)`
-        }}>
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%'
-          }}>
+        <WinnerPopup>
+          <VideoContainer>
             <video
-              key="win" // Force re-render
+              key="win"
               autoPlay
               muted
               playsInline
@@ -72,7 +110,6 @@ const GameResultPopup = ({
               onError={(e) => {
                 console.error('Video playback error:', e);
                 console.log('Video source:', e.target.src);
-                // Try alternative paths
                 const paths = [
                   '/images/video/LoseWin/final lose win/endwin.webm',
                   'images/video/LoseWin/final lose win/endwin.webm',
@@ -87,76 +124,22 @@ const GameResultPopup = ({
                 e.target.play().catch(err => console.error('Play error:', err));
               }}
             />
-          </div>
-          
-          {/* Warning Message */}
-          <div style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(255, 0, 0, 0.8)',
-            padding: '10px 20px',
-            borderRadius: '10px',
-            color: 'white',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            width: '80%',
-            animation: 'pulse 2s infinite'
-          }}>
-            WARNING: If you leave, you will lose your winnings!
-          </div>
-
-          {/* Claim Button */}
-          <button
-            onClick={handleClaimWinnings}
-            style={{
-              position: 'absolute',
-              bottom: '80px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: theme.colors.statusSuccess,
-              color: 'white',
-              border: 'none',
-              padding: '15px 30px',
-              borderRadius: '10px',
-              fontSize: '1.2rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = 'translateX(-50%) scale(1.05)'
-              e.target.style.boxShadow = '0 0 30px rgba(0, 255, 65, 0.7)'
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateX(-50%)'
-              e.target.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.5)'
-            }}
-          >
-            CLAIM WINNINGS
-          </button>
-        </div>
+            <MessageBox isWinner={true}>
+              <h2>Congratulations!</h2>
+              <p>You've won the game!</p>
+              <WarningText>Warning: Leaving the game will result in a loss</WarningText>
+              <Button onClick={handleClaimWinnings}>Claim</Button>
+            </MessageBox>
+          </VideoContainer>
+        </WinnerPopup>
       )}
 
       {/* Loser Popup */}
       {!isWinner && (
-        <div style={{
-          position: 'relative',
-          width: '494px',
-          height: '826px',
-          borderRadius: '2rem',
-          overflow: 'hidden',
-          boxShadow: `0 0 50px ${theme.colors.statusError}, 0 0 100px rgba(255, 20, 147, 0.3)`
-        }}>
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%'
-          }}>
+        <LoserPopup>
+          <VideoContainer>
             <video
-              key="lose" // Force re-render
+              key="lose"
               autoPlay
               muted
               playsInline
@@ -172,7 +155,6 @@ const GameResultPopup = ({
               onError={(e) => {
                 console.error('Video playback error:', e);
                 console.log('Video source:', e.target.src);
-                // Try alternative paths
                 const paths = [
                   '/images/video/LoseWin/final lose win/endlose.webm',
                   'images/video/LoseWin/final lose win/endlose.webm',
@@ -187,39 +169,13 @@ const GameResultPopup = ({
                 e.target.play().catch(err => console.error('Play error:', err));
               }}
             />
-          </div>
-
-          {/* Try Again Button */}
-          <button
-            onClick={handleBackToHome}
-            style={{
-              position: 'absolute',
-              bottom: '40px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: theme.colors.statusError,
-              color: 'white',
-              border: 'none',
-              padding: '15px 30px',
-              borderRadius: '10px',
-              fontSize: '1.2rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(255, 20, 147, 0.5)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = 'translateX(-50%) scale(1.05)'
-              e.target.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.7)'
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateX(-50%)'
-              e.target.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.5)'
-            }}
-          >
-            TRY AGAIN
-          </button>
-        </div>
+            <MessageBox isWinner={false}>
+              <h2>Game Over</h2>
+              <p>Better luck next time!</p>
+              <Button onClick={handleBackToHome}>Try Again</Button>
+            </MessageBox>
+          </VideoContainer>
+        </LoserPopup>
       )}
     </div>
   )
