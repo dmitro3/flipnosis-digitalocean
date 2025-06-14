@@ -109,21 +109,36 @@ export const WalletProvider = ({ children }) => {
       const nfts = await alchemy.nft.getNftsForOwner(address)
       
       // Transform the NFTs into our format
-      const formattedNFTs = nfts.ownedNfts.map(nft => ({
-        contractAddress: nft.contract.address,
-        tokenId: nft.tokenId,
-        name: nft.title || `#${nft.tokenId}`,
-        image: nft.media[0]?.gateway || nft.media[0]?.raw || '',
-        collection: nft.contract.name || 'Unknown Collection',
-        chain: currentChain.name.toLowerCase(),
-        tokenType: nft.tokenType,
-        metadata: {
-          description: nft.description,
-          attributes: nft.rawMetadata?.attributes || [],
-          externalUrl: nft.rawMetadata?.external_url,
-          animationUrl: nft.rawMetadata?.animation_url
+      const formattedNFTs = nfts.ownedNfts.map(nft => {
+        // Get the best available image URL
+        let imageUrl = ''
+        if (nft.media && nft.media.length > 0) {
+          imageUrl = nft.media[0]?.gateway || nft.media[0]?.raw || ''
+        } else if (nft.rawMetadata?.image) {
+          imageUrl = nft.rawMetadata.image
         }
-      }))
+
+        // Handle IPFS URLs
+        if (imageUrl.startsWith('ipfs://')) {
+          imageUrl = `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}`
+        }
+
+        return {
+          contractAddress: nft.contract.address,
+          tokenId: nft.tokenId,
+          name: nft.title || `#${nft.tokenId}`,
+          image: imageUrl || 'https://via.placeholder.com/300?text=No+Image',
+          collection: nft.contract.name || 'Unknown Collection',
+          chain: currentChain.name.toLowerCase(),
+          tokenType: nft.tokenType,
+          metadata: {
+            description: nft.description || '',
+            attributes: nft.rawMetadata?.attributes || [],
+            externalUrl: nft.rawMetadata?.external_url || '',
+            animationUrl: nft.rawMetadata?.animation_url || ''
+          }
+        }
+      })
 
       console.log('✅ Loaded NFTs:', formattedNFTs)
       setNfts(formattedNFTs)
