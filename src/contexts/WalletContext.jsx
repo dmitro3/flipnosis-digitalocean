@@ -105,8 +105,16 @@ export const WalletProvider = ({ children }) => {
         network: currentChain.network
       })
 
-      // Get NFTs for the address
-      const nfts = await alchemy.nft.getNftsForOwner(address)
+      // Get NFTs for the address with metadata
+      const nfts = await alchemy.nft.getNftsForOwner(address, {
+        contractAddresses: [], // Empty array means all contracts
+        withMetadata: true,    // Include metadata
+        withMedia: true,       // Include media
+        pageSize: 100,         // Get more NFTs per page
+        pageKey: undefined     // Start from the beginning
+      })
+      
+      console.log('🔍 Raw Alchemy response:', nfts)
       
       // Transform the NFTs into our format
       const formattedNFTs = nfts.ownedNfts.map(nft => {
@@ -125,6 +133,12 @@ export const WalletProvider = ({ children }) => {
         if (!imageUrl && nft.rawMetadata?.image) {
           console.log('📸 Raw metadata image:', nft.rawMetadata.image)
           imageUrl = nft.rawMetadata.image
+        }
+
+        // If still no image, try metadata
+        if (!imageUrl && nft.metadata?.image) {
+          console.log('📸 Metadata image:', nft.metadata.image)
+          imageUrl = nft.metadata.image
         }
 
         // Handle different URL formats
@@ -157,7 +171,7 @@ export const WalletProvider = ({ children }) => {
         const formattedNft = {
           contractAddress: nft.contract.address,
           tokenId: nft.tokenId,
-          name: nft.title || `#${nft.tokenId}`,
+          name: nft.title || nft.name || `#${nft.tokenId}`,
           image: imageUrl || placeholderImage,
           collection: nft.contract.name || 'Unknown Collection',
           chain: currentChain.name.toLowerCase(),
