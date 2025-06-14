@@ -510,14 +510,28 @@ const FlipGame = () => {
   }
 
   const handleJoinGame = async () => {
-    if (!gameData || !provider || !address || joiningGame) return
+    if (!gameData || !provider || !address || joiningGame) {
+      console.log('❌ Cannot join game:', { 
+        hasGameData: !!gameData, 
+        hasProvider: !!provider, 
+        hasAddress: !!address, 
+        isJoining: joiningGame 
+      })
+      return
+    }
 
     try {
       setJoiningGame(true)
       showInfo('Processing payment...')
       
       const paymentResult = await PaymentService.calculateETHAmount(gameData.priceUSD)
+      
+      // Get signer from provider
       const signer = await provider.getSigner()
+      if (!signer) {
+        throw new Error('Failed to get signer')
+      }
+      
       const feeRecipient = PaymentService.getFeeRecipient()
       
       const txResult = await PaymentService.buildTransaction(feeRecipient, paymentResult.weiAmount, provider)

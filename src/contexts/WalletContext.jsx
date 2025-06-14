@@ -25,6 +25,7 @@ export const WalletProvider = ({ children }) => {
   
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [provider, setProvider] = useState(null)
 
   // Chain information
   const chains = {
@@ -60,7 +61,15 @@ export const WalletProvider = ({ children }) => {
         throw new Error('No wallet connector available')
       }
 
-      connect({ connector })
+      // Connect using the selected connector
+      const result = await connect({ connector })
+      
+      // Create a new provider after connection
+      if (window.ethereum) {
+        const newProvider = new ethers.BrowserProvider(window.ethereum)
+        setProvider(newProvider)
+      }
+
       return true
     } catch (error) {
       console.error('Connection error:', error)
@@ -225,6 +234,14 @@ export const WalletProvider = ({ children }) => {
     }
   }, [isConnected, address])
 
+  // Update provider when chain changes
+  useEffect(() => {
+    if (window.ethereum && isConnected) {
+      const newProvider = new ethers.BrowserProvider(window.ethereum)
+      setProvider(newProvider)
+    }
+  }, [chainId, isConnected])
+
   const value = {
     // Connection state
     isConnected,
@@ -255,7 +272,7 @@ export const WalletProvider = ({ children }) => {
     connectors,
     
     // Provider (for ethers.js compatibility)
-    provider: window.ethereum ? new ethers.BrowserProvider(window.ethereum) : null,
+    provider,
   }
 
   return (
