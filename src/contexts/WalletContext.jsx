@@ -3,6 +3,7 @@ import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } fro
 import { useConnectors } from 'wagmi'
 import { useToast } from './ToastContext'
 import { Alchemy, Network } from 'alchemy-sdk'
+import { ethers } from 'ethers'
 
 const WalletContext = createContext()
 
@@ -254,7 +255,7 @@ export const WalletProvider = ({ children }) => {
     connectors,
     
     // Provider (for ethers.js compatibility)
-    provider: window.ethereum,
+    provider: window.ethereum ? new ethers.BrowserProvider(window.ethereum) : null,
   }
 
   return (
