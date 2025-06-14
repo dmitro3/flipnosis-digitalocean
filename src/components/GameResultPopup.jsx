@@ -68,16 +68,15 @@ const GameResultPopup = ({
                 height: '100%',
                 objectFit: 'cover'
               }}
-              src="/Images/Video/End/endwin.webm"
+              src="/images/video/LoseWin/final lose win/endwin.webm"
               onError={(e) => {
                 console.error('Video playback error:', e);
                 console.log('Video source:', e.target.src);
                 // Try alternative paths
                 const paths = [
-                  '/Images/Video/End/endwin.webm',
-                  'Images/Video/End/endwin.webm',
-                  '../Images/Video/End/endwin.webm',
-                  '../../Images/Video/End/endwin.webm'
+                  '/images/video/LoseWin/final lose win/endwin.webm',
+                  'images/video/LoseWin/final lose win/endwin.webm',
+                  './images/video/LoseWin/final lose win/endwin.webm'
                 ];
                 const currentIndex = paths.indexOf(e.target.src);
                 const nextIndex = (currentIndex + 1) % paths.length;
@@ -169,16 +168,15 @@ const GameResultPopup = ({
                 height: '100%',
                 objectFit: 'cover'
               }}
-              src="/Images/Video/End/endlose.webm"
+              src="/images/video/LoseWin/final lose win/endlose.webm"
               onError={(e) => {
                 console.error('Video playback error:', e);
                 console.log('Video source:', e.target.src);
                 // Try alternative paths
                 const paths = [
-                  '/Images/Video/End/endlose.webm',
-                  'Images/Video/End/endlose.webm',
-                  '../Images/Video/End/endlose.webm',
-                  '../../Images/Video/End/endlose.webm'
+                  '/images/video/LoseWin/final lose win/endlose.webm',
+                  'images/video/LoseWin/final lose win/endlose.webm',
+                  './images/video/LoseWin/final lose win/endlose.webm'
                 ];
                 const currentIndex = paths.indexOf(e.target.src);
                 const nextIndex = (currentIndex + 1) % paths.length;
