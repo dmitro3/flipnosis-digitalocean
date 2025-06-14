@@ -1175,10 +1175,19 @@ const FlipGame = () => {
                     
                     const getShadowColor = () => {
                       switch (roundStatus) {
-                        case 'current': return '0 0 10px #FFFF00';
-                        case 'creator_won': return isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
-                        case 'joiner_won': return !isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
+                        case 'current': return '0 0 10px #FFFF00, 0 0 20px #FFFF00';
+                        case 'creator_won': return isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
+                        case 'joiner_won': return !isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
                         default: return 'none';
+                      }
+                    };
+
+                    const getTextColor = () => {
+                      switch (roundStatus) {
+                        case 'current': return '#000000';
+                        case 'creator_won': return isCreator ? '#000000' : '#000000';
+                        case 'joiner_won': return !isCreator ? '#000000' : '#000000';
+                        default: return '#ffffff';
                       }
                     };
                     
@@ -1186,18 +1195,21 @@ const FlipGame = () => {
                       <div
                         key={i}
                         style={{
-                          width: '20px',
-                          height: '20px',
+                          width: '24px',
+                          height: '24px',
                           borderRadius: '50%',
                           background: getBackgroundColor(),
                           opacity: 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '10px',
+                          fontSize: '12px',
                           fontWeight: 'bold',
-                          color: roundStatus === 'pending' ? '#fff' : '#000',
-                          boxShadow: getShadowColor()
+                          color: getTextColor(),
+                          boxShadow: getShadowColor(),
+                          transition: 'all 0.3s ease',
+                          transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
+                          animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
                         }}
                       >
                         {roundNumber}
@@ -1333,10 +1345,19 @@ const FlipGame = () => {
                     
                     const getShadowColor = () => {
                       switch (roundStatus) {
-                        case 'current': return '0 0 10px #FFFF00';
-                        case 'creator_won': return isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
-                        case 'joiner_won': return !isCreator ? '0 0 10px #00FF41' : '0 0 10px #FF1493';
+                        case 'current': return '0 0 10px #FFFF00, 0 0 20px #FFFF00';
+                        case 'creator_won': return isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
+                        case 'joiner_won': return !isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
                         default: return 'none';
+                      }
+                    };
+
+                    const getTextColor = () => {
+                      switch (roundStatus) {
+                        case 'current': return '#000000';
+                        case 'creator_won': return isCreator ? '#000000' : '#000000';
+                        case 'joiner_won': return !isCreator ? '#000000' : '#000000';
+                        default: return '#ffffff';
                       }
                     };
                     
@@ -1344,18 +1365,21 @@ const FlipGame = () => {
                       <div
                         key={i}
                         style={{
-                          width: '20px',
-                          height: '20px',
+                          width: '24px',
+                          height: '24px',
                           borderRadius: '50%',
                           background: getBackgroundColor(),
                           opacity: 1,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '10px',
+                          fontSize: '12px',
                           fontWeight: 'bold',
-                          color: roundStatus === 'pending' ? '#fff' : '#000',
-                          boxShadow: getShadowColor()
+                          color: getTextColor(),
+                          boxShadow: getShadowColor(),
+                          transition: 'all 0.3s ease',
+                          transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
+                          animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
                         }}
                       >
                         {roundNumber}
