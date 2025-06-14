@@ -50,18 +50,37 @@ const GameResultPopup = ({
           overflow: 'hidden',
           boxShadow: `0 0 50px ${theme.colors.statusSuccess}, 0 0 100px rgba(0, 255, 65, 0.3)`
         }}>
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            }}
-            src="/Images/Video/End/endwin.webm"
-          />
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%'
+          }}>
+            <video
+              key="win" // Force re-render
+              autoPlay
+              muted
+              playsInline
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+              src="images/video/End/endwin.webm"
+              onError={(e) => {
+                console.error('Video playback error:', e);
+                console.log('Video source:', e.target.src);
+                // Try alternative path
+                e.target.src = '/images/video/End/endwin.webm';
+              }}
+              onLoadedData={(e) => {
+                console.log('Video loaded successfully');
+                e.target.play().catch(err => console.error('Play error:', err));
+              }}
+            />
+          </div>
           
           {/* Warning Message */}
           <div style={{
@@ -124,18 +143,37 @@ const GameResultPopup = ({
           overflow: 'hidden',
           boxShadow: `0 0 50px ${theme.colors.statusError}, 0 0 100px rgba(255, 20, 147, 0.3)`
         }}>
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            }}
-            src="/Images/Video/End/endlose.webm"
-          />
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%'
+          }}>
+            <video
+              key="lose" // Force re-render
+              autoPlay
+              muted
+              playsInline
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+              src="images/video/End/endlose.webm"
+              onError={(e) => {
+                console.error('Video playback error:', e);
+                console.log('Video source:', e.target.src);
+                // Try alternative path
+                e.target.src = '/images/video/End/endlose.webm';
+              }}
+              onLoadedData={(e) => {
+                console.log('Video loaded successfully');
+                e.target.play().catch(err => console.error('Play error:', err));
+              }}
+            />
+          </div>
 
           {/* Try Again Button */}
           <button
