@@ -112,7 +112,7 @@ const NFTSelector = ({ isOpen, onClose, onSelect, nfts = [], loading = false }) 
               <Grid>
                 {nfts.map((nft) => (
                   <GameCard
-                    key={nft.id}
+                    key={`${nft.contractAddress}-${nft.tokenId}`}
                     onClick={() => {
                       onSelect(nft)
                       onClose()
@@ -122,6 +122,13 @@ const NFTSelector = ({ isOpen, onClose, onSelect, nfts = [], loading = false }) 
                     <GameImage
                       src={nft.image}
                       alt={nft.name}
+                      onError={(e) => {
+                        console.error('❌ Image failed to load:', nft.image)
+                        e.target.src = '/placeholder-nft.svg'
+                      }}
+                      onLoad={() => {
+                        console.log('✅ Image loaded successfully:', nft.image)
+                      }}
                     />
                     <div style={{ padding: '1rem' }}>
                       <h3 style={{

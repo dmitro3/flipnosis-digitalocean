@@ -110,21 +110,27 @@ export const WalletProvider = ({ children }) => {
       
       // Transform the NFTs into our format
       const formattedNFTs = nfts.ownedNfts.map(nft => {
+        console.log('🔍 Raw NFT data:', nft)
+        
         // Get the best available image URL
         let imageUrl = ''
         
         // Try to get image from media array first
         if (nft.media && nft.media.length > 0) {
+          console.log('📸 Media array:', nft.media)
           imageUrl = nft.media[0]?.gateway || nft.media[0]?.raw || ''
         }
         
         // If no media, try rawMetadata
         if (!imageUrl && nft.rawMetadata?.image) {
+          console.log('📸 Raw metadata image:', nft.rawMetadata.image)
           imageUrl = nft.rawMetadata.image
         }
 
         // Handle different URL formats
         if (imageUrl) {
+          console.log('🖼️ Original image URL:', imageUrl)
+          
           // Handle IPFS URLs
           if (imageUrl.startsWith('ipfs://')) {
             imageUrl = `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}`
@@ -141,12 +147,14 @@ export const WalletProvider = ({ children }) => {
           else if (!imageUrl.startsWith('http')) {
             imageUrl = `https://ipfs.io/ipfs/${imageUrl}`
           }
+          
+          console.log('🖼️ Processed image URL:', imageUrl)
         }
 
         // Use a local placeholder if no image is available
-        const placeholderImage = '/placeholder-nft.png'
+        const placeholderImage = '/placeholder-nft.svg'
 
-        return {
+        const formattedNft = {
           contractAddress: nft.contract.address,
           tokenId: nft.tokenId,
           name: nft.title || `#${nft.tokenId}`,
@@ -161,6 +169,9 @@ export const WalletProvider = ({ children }) => {
             animationUrl: nft.rawMetadata?.animation_url || ''
           }
         }
+
+        console.log('✅ Formatted NFT:', formattedNft)
+        return formattedNft
       })
 
       console.log('✅ Loaded NFTs:', formattedNFTs)
