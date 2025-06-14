@@ -510,13 +510,23 @@ const FlipGame = () => {
   }
 
   const handleJoinGame = async () => {
-    if (!gameData || !provider || !address || joiningGame) {
+    console.log('🔍 Join game attempt:', {
+      hasGameData: !!gameData,
+      hasProvider: !!provider,
+      hasAddress: !!address,
+      isJoining: joiningGame,
+      isConnected: isConnected
+    })
+
+    if (!gameData || !provider || !address || joiningGame || !isConnected) {
       console.log('❌ Cannot join game:', { 
         hasGameData: !!gameData, 
         hasProvider: !!provider, 
         hasAddress: !!address, 
-        isJoining: joiningGame 
+        isJoining: joiningGame,
+        isConnected: isConnected
       })
+      showError('Please ensure your wallet is connected')
       return
     }
 
@@ -529,7 +539,7 @@ const FlipGame = () => {
       // Get signer from provider
       const signer = await provider.getSigner()
       if (!signer) {
-        throw new Error('Failed to get signer')
+        throw new Error('Failed to get signer - please ensure your wallet is connected')
       }
       
       const feeRecipient = PaymentService.getFeeRecipient()

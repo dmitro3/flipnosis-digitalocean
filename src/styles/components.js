@@ -10,6 +10,11 @@ export const Container = styled.div`
 export const ContentWrapper = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+  padding: 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
 `
 
 export const GlassCard = styled.div`
@@ -103,7 +108,9 @@ export const Grid = styled.div`
   }
   
   @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
+    gap: 0.75rem;
+    padding: 0.5rem;
   }
 `
 
@@ -116,8 +123,8 @@ export const GameCard = styled.div`
   position: relative;
 
   @media (max-width: 768px) {
-    order: 1;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0.75rem;
   }
 
   &:hover {
@@ -132,7 +139,7 @@ export const GameImage = styled.img`
   object-fit: cover;
 
   @media (max-width: 768px) {
-    height: 150px;
+    height: 180px;
   }
 `
 
@@ -188,6 +195,8 @@ export const GameDetails = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0.5rem;
   }
 `
 
@@ -407,6 +416,7 @@ export const TwoBoxLayout = styled.div`
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 1rem;
+    margin-bottom: 1rem;
   }
 `
 
@@ -419,8 +429,9 @@ export const ActiveGamesBox = styled.div`
   overflow-y: auto;
 
   @media (max-width: 768px) {
-    order: 2;
-    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-top: 0.75rem;
   }
 `
 
@@ -567,4 +578,66 @@ export const TransparentCard = styled.div`
   padding: 1rem;
   transition: ${props => props.theme.transitions.default};
   margin-bottom: 2rem;
+`
+
+export const FilterContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+`
+
+export const FilterButton = styled.button`
+  background: ${props => props.active ? 'rgba(0, 255, 65, 0.2)' : 'rgba(0, 0, 0, 0.3)'};
+  border: 1px solid ${props => props.active ? 'rgba(0, 255, 65, 0.4)' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.theme.colors.textPrimary};
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+
+  @media (max-width: 768px) {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    flex: 1;
+    min-width: calc(33.333% - 0.25rem);
+    text-align: center;
+  }
+
+  &:hover {
+    background: ${props => props.active ? 'rgba(0, 255, 65, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
+  }
+`
+
+export const FilterSelect = styled.select`
+  display: none;
+  background: transparent;
+  border: 1px solid ${props => props.theme.colors.neonGreen};
+  color: ${props => props.theme.colors.textPrimary};
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+  max-width: 200px;
+
+  @media (max-width: 768px) {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+
+  option {
+    background: ${props => props.theme.colors.bgDark};
+    color: ${props => props.theme.colors.textPrimary};
+  }
 ` 

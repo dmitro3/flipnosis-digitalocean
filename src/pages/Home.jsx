@@ -200,14 +200,16 @@ const Home = () => {
   })
 
   const chainFilters = [
-    { key: 'all', name: 'All', icon: '🌐' },
-    { key: 'nft-vs-crypto', name: 'NFT vs Crypto', icon: '💎💰' },
-    { key: 'nft-vs-nft', name: 'NFT vs NFT', icon: '⚔️' },
-    { key: 'base', name: 'Base', icon: '🔵' },
+    { key: 'all', name: 'ALL', icon: '🌐' },
+    { key: 'nft-vs-crypto', name: 'NFT VS CRYPTO', icon: '💎💰' },
+    { key: 'nft-vs-nft', name: 'NFT VS NFT', icon: '⚔️' },
+    { key: 'ethereum', name: 'ETH', icon: '💎' },
+    { key: 'base', name: 'BASE', icon: '🔵' },
     { key: 'bnb', name: 'BNB', icon: '🟡' },
-    { key: 'avalanche', name: 'Avalanche', icon: '🔴' },
-    { key: 'polygon', name: 'Polygon', icon: '🟣' },
-    { key: 'arbitrum', name: 'Arbitrum', icon: '🔷' }
+    { key: 'avalanche', name: 'AVAX', icon: '🔴' },
+    { key: 'polygon', name: 'POLY', icon: '🟣' },
+    { key: 'arbitrum', name: 'ARB', icon: '🔷' },
+    { key: 'optimism', name: 'OPT', icon: '🔶' }
   ]
 
   const handleSelectFlip = (flip) => {

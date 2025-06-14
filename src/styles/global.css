@@ -5,11 +5,13 @@
   button {
     min-height: 44px; /* Apple's recommended touch target size */
     min-width: 44px;
+    padding: 0.75rem 1rem;
   }
   
   /* Prevent zoom on input focus on iOS */
   input, select, textarea {
     font-size: 16px !important;
+    padding: 0.75rem;
   }
   
   /* Improve modal positioning on mobile */
@@ -17,6 +19,57 @@
     padding: 1rem;
     max-height: 90vh;
     overflow-y: auto;
+    width: 95%;
+    margin: 0 auto;
+  }
+
+  /* Improve spacing and readability */
+  h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Improve card layouts */
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Improve form elements */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Improve button spacing */
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .button-group button {
+    width: 100%;
   }
 }
 
@@ -28,9 +81,39 @@
 #walletconnect-qrcode-modal .walletconnect-modal__base {
   background: rgba(0, 0, 0, 0.9) !important;
   backdrop-filter: blur(8px) !important;
+  width: 95% !important;
+  max-width: 400px !important;
+  margin: 0 auto !important;
 }
 
 /* Custom loading spinner */
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Improve mobile navigation */
+@media (max-width: 768px) {
+  .nav-menu {
+    padding: 1rem;
+  }
+
+  .nav-item {
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+
+  /* Improve mobile header */
+  .app-header {
+    padding: 0.75rem;
+  }
+
+  .logo {
+    max-width: 120px;
+  }
+
+  /* Improve mobile footer */
+  .app-footer {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
 } 

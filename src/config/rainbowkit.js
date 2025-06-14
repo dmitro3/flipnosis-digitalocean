@@ -1,5 +1,5 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
-import { base, mainnet, polygon, arbitrum, optimism } from 'wagmi/chains'
+import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'wagmi/chains'
 
 // Define your supported chains
 export const chains = [
@@ -7,7 +7,9 @@ export const chains = [
   mainnet,
   polygon,
   arbitrum,
-  optimism
+  optimism,
+  bsc,
+  avalanche
 ]
 
 // Get WalletConnect Project ID

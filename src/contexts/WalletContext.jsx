@@ -25,6 +25,7 @@ export const WalletProvider = ({ children }) => {
   
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [isWalletConnected, setIsWalletConnected] = useState(false)
   const [provider, setProvider] = useState(null)
 
   // Chain information
@@ -33,12 +34,44 @@ export const WalletProvider = ({ children }) => {
     137: { name: 'Polygon', symbol: 'MATIC', network: Network.MATIC_MAINNET },
     8453: { name: 'Base', symbol: 'ETH', network: Network.BASE_MAINNET },
     42161: { name: 'Arbitrum', symbol: 'ETH', network: Network.ARB_MAINNET },
-    10: { name: 'Optimism', symbol: 'ETH', network: Network.OPT_MAINNET }
+    10: { name: 'Optimism', symbol: 'ETH', network: Network.OPT_MAINNET },
+    56: { name: 'BSC', symbol: 'BNB', network: Network.BSC_MAINNET },
+    43114: { name: 'Avalanche', symbol: 'AVAX', network: Network.AVAX_MAINNET }
   }
 
   // Mobile detection
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const isMetaMaskBrowser = window.ethereum?.isMetaMask && isMobile
+
+  // Update connection state when account changes
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+          setIsWalletConnected(accounts.length > 0)
+        } catch (error) {
+          console.error('Error checking connection:', error)
+          setIsWalletConnected(false)
+        }
+      }
+    }
+
+    checkConnection()
+
+    // Listen for account changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        setIsWalletConnected(accounts.length > 0)
+      })
+    }
+
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', () => {})
+      }
+    }
+  }, [])
 
   // Connect wallet function
   const connectWallet = async () => {
@@ -66,14 +99,16 @@ export const WalletProvider = ({ children }) => {
       
       // Create a new provider after connection
       if (window.ethereum) {
-        const newProvider = new ethers.BrowserProvider(window.ethereum)
-        setProvider(newProvider)
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        setProvider(provider)
+        setIsWalletConnected(true)
       }
 
       return true
     } catch (error) {
       console.error('Connection error:', error)
       showError(`Failed to connect: ${error.message}`)
+      setIsWalletConnected(false)
       return false
     } finally {
       setLoading(false)
@@ -84,6 +119,7 @@ export const WalletProvider = ({ children }) => {
   const disconnectWallet = () => {
     disconnect()
     setNfts([])
+    setIsWalletConnected(false)
     showInfo('Wallet disconnected')
   }
 
@@ -236,15 +272,15 @@ export const WalletProvider = ({ children }) => {
 
   // Update provider when chain changes
   useEffect(() => {
-    if (window.ethereum && isConnected) {
+    if (window.ethereum && isWalletConnected) {
       const newProvider = new ethers.BrowserProvider(window.ethereum)
       setProvider(newProvider)
     }
-  }, [chainId, isConnected])
+  }, [chainId, isWalletConnected])
 
   const value = {
     // Connection state
-    isConnected,
+    isConnected: isWalletConnected,
     isConnecting,
     loading,
     address,
