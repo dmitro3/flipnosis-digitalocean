@@ -114,18 +114,18 @@ export const WalletProvider = ({ children }) => {
         pageKey: undefined     // Start from the beginning
       })
       
-      console.log('🔍 Raw Alchemy response:', nfts)
+      console.log('🔍 Raw Alchemy response:', JSON.stringify(nfts, null, 2))
       
       // Transform the NFTs into our format
-      const formattedNFTs = nfts.ownedNfts.map(nft => {
-        console.log('🔍 Raw NFT data:', nft)
+      const formattedNFTs = await Promise.all(nfts.ownedNfts.map(async nft => {
+        console.log('🔍 Full NFT data:', JSON.stringify(nft, null, 2))
         
         // Get the best available image URL
         let imageUrl = ''
         
         // Try to get image from media array first
         if (nft.media && nft.media.length > 0) {
-          console.log('📸 Media array:', nft.media)
+          console.log('📸 Media array:', JSON.stringify(nft.media, null, 2))
           imageUrl = nft.media[0]?.gateway || nft.media[0]?.raw || ''
         }
         
@@ -139,6 +139,21 @@ export const WalletProvider = ({ children }) => {
         if (!imageUrl && nft.metadata?.image) {
           console.log('📸 Metadata image:', nft.metadata.image)
           imageUrl = nft.metadata.image
+        }
+
+        // If still no image, try tokenUri
+        if (!imageUrl && nft.tokenUri?.raw) {
+          console.log('📸 Token URI:', nft.tokenUri.raw)
+          try {
+            const response = await fetch(nft.tokenUri.raw)
+            const metadata = await response.json()
+            console.log('📸 Token URI metadata:', metadata)
+            if (metadata.image) {
+              imageUrl = metadata.image
+            }
+          } catch (error) {
+            console.error('❌ Error fetching token URI:', error)
+          }
         }
 
         // Handle different URL formats
@@ -186,7 +201,7 @@ export const WalletProvider = ({ children }) => {
 
         console.log('✅ Formatted NFT:', formattedNft)
         return formattedNft
-      })
+      }))
 
       console.log('✅ Loaded NFTs:', formattedNFTs)
       setNfts(formattedNFTs)
