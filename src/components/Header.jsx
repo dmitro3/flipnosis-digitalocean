@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useWallet } from '../contexts/WalletContext'
+import { useToast } from '../contexts/ToastContext'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
@@ -8,7 +10,6 @@ import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
 import MobileInfoImg from '../../Images/mobile.webp'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
-import MobileWalletConnector from './MobileWalletConnector'
 import UserProfileHeader from './UserProfileHeader'
 
 const HeaderContainer = styled.header`
@@ -334,39 +335,39 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
-const Header = () => {
-  const { address, connectWallet, disconnectWallet, isConnected, chain, chains, loading, isMobile } = useWallet()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [showInfo, setShowInfo] = useState(false)
-  const [showWalletModal, setShowWalletModal] = useState(false)
-  const [isMobileState, setIsMobileState] = useState(isMobile)
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1rem;
+`;
 
-  // Add resize listener
-  React.useEffect(() => {
-    const handleResize = () => {
-      setIsMobileState(window.innerWidth <= 768)
+const ModalBody = styled.div`
+  max-width: 600px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const Header = () => {
+  const { isConnected } = useWallet()
+  const { showInfo } = useToast()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [showInfoModal, setShowInfoModal] = useState(false)
+
+  const handleResize = () => {
+    if (window.innerWidth > 768) {
+      setIsMenuOpen(false)
     }
+  }
+
+  React.useEffect(() => {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
-
-  const handleConnect = async () => {
-    try {
-      if (isMobileState) {
-        setShowWalletModal(true)
-      } else {
-        await connectWallet()
-      }
-      setIsMenuOpen(false)
-    } catch (error) {
-      console.error('Failed to connect wallet:', error)
-    }
-  }
-
-  const handleDisconnect = () => {
-    disconnectWallet()
-    setIsMenuOpen(false)
-  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -375,47 +376,21 @@ const Header = () => {
           <Logo to="/">FLIPNOSIS</Logo>
         </LogoContainer>
 
-        {/* Desktop Navigation */}
         <DesktopNav>
-          <CreateButton to="/create">
-            Create Flip
-          </CreateButton>
-          {isConnected && <MyFlipsDropdown />}
+          <CreateButton to="/create">Create Flip</CreateButton>
+          <ConnectButton 
+            showBalance={{
+              smallScreen: false,
+              largeScreen: true,
+            }}
+          />
+          {isConnected && <UserProfileHeader isInHeader={true} />}
         </DesktopNav>
 
-        {/* Desktop Wallet Section */}
-        <WalletSection>
-          {isConnected && address ? (
-            <>
-              <div style={{ marginRight: '1rem' }}>
-                <UserProfileHeader isInHeader={true} />
-              </div>
-              <WalletInfo>
-                <ChainIndicator>
-                  <ChainDot chain={chain} />
-                  <span>{chains[chain]?.name || 'Unknown'}</span>
-                </ChainIndicator>
-                <WalletAddress>
-                  {address.slice(0, 6)}...{address.slice(-4)}
-                </WalletAddress>
-              </WalletInfo>
-              <WalletButton onClick={handleDisconnect}>
-                Disconnect
-              </WalletButton>
-            </>
-          ) : (
-            <WalletButton onClick={handleConnect} disabled={loading}>
-              {loading ? 'Connecting...' : 'Connect Wallet'}
-            </WalletButton>
-          )}
-        </WalletSection>
-
-        {/* Mobile Menu Button */}
         <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? '✕' : '☰'}
         </MenuButton>
         
-        {/* Mobile Menu */}
         <MenuOverlay isOpen={isMenuOpen} onClick={() => setIsMenuOpen(false)} />
         <MobileMenu isOpen={isMenuOpen}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -436,89 +411,34 @@ const Header = () => {
           
           <MenuItem to="/" onClick={() => setIsMenuOpen(false)}>Home</MenuItem>
           <MenuItem to="/create" onClick={() => setIsMenuOpen(false)}>Create Flip</MenuItem>
-          <MenuItem to="/my-flips" onClick={() => setIsMenuOpen(false)}>My Flips</MenuItem>
-          
-          {isConnected ? (
-            <MobileWalletConnector />
-          ) : (
-            <WalletButton onClick={handleConnect} disabled={loading}>
-              {loading ? 'Connecting...' : 'Connect Wallet'}
-            </WalletButton>
-          )}
-
-          {/* Info Button in Mobile Menu */}
-          <MobileInfoButton onClick={() => {
-            setShowInfo(true)
-            setIsMenuOpen(false)
-          }}>
-            About FLIPNOSIS
-          </MobileInfoButton>
+          <ConnectButton 
+            showBalance={{
+              smallScreen: false,
+              largeScreen: true,
+            }}
+          />
+          {isConnected && <UserProfileHeader isInHeader={true} />}
         </MobileMenu>
 
-        {/* Desktop Info Button */}
         <InfoButton 
-          onClick={() => setShowInfo(true)} 
+          onClick={() => setShowInfoModal(true)} 
           title="About FLIPNOSIS"
         >
           i
         </InfoButton>
 
-        {showInfo && (
-          <ModalOverlay onClick={() => setShowInfo(false)}>
-            <ModalContent onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
-              <CloseButton onClick={() => setShowInfo(false)} title="Close">×</CloseButton>
-              <img 
-                src={isMobileState ? MobileInfoImg : FlipnosisInfoImg} 
-                alt="FLIPNOSIS Info" 
-                style={{ 
-                  maxWidth: '80vw', 
-                  maxHeight: '70vh', 
-                  borderRadius: '0.5rem',
-                  width: '100%',
-                  height: 'auto'
-                }} 
-              />
+        {showInfoModal && (
+          <ModalOverlay onClick={() => setShowInfoModal(false)}>
+            <ModalContent onClick={e => e.stopPropagation()}>
+              <ModalHeader>
+                <h2>About FLIPNOSIS</h2>
+                <CloseButton onClick={() => setShowInfoModal(false)}>×</CloseButton>
+              </ModalHeader>
+              <ModalBody>
+                <img src={FlipnosisInfoImg} alt="FLIPNOSIS Info" style={{ width: '100%', maxWidth: '600px' }} />
+              </ModalBody>
             </ModalContent>
           </ModalOverlay>
-        )}
-
-        {/* Mobile Wallet Connector Modal */}
-        {showWalletModal && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-            padding: '1rem'
-          }}>
-            <div style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '400px'
-            }}>
-              <button
-                onClick={() => setShowWalletModal(false)}
-                style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: 'none',
-                  border: 'none',
-                  color: 'white',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  zIndex: 1
-                }}
-              >
-                ×
-              </button>
-              <MobileWalletConnector />
-            </div>
-          </div>
         )}
       </HeaderContainer>
     </ThemeProvider>
