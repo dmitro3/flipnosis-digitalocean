@@ -123,22 +123,17 @@ export const WalletProvider = ({ children }) => {
         // Get the best available image URL
         let imageUrl = ''
         
-        // Try to get image from media array first
-        if (nft.media && nft.media.length > 0) {
-          console.log('📸 Media array:', JSON.stringify(nft.media, null, 2))
-          imageUrl = nft.media[0]?.gateway || nft.media[0]?.raw || ''
+        // Try to get image from the new Alchemy image object format
+        if (nft.image) {
+          console.log('📸 Image object:', JSON.stringify(nft.image, null, 2))
+          // Use cachedUrl first, then pngUrl, then originalUrl
+          imageUrl = nft.image.cachedUrl || nft.image.pngUrl || nft.image.originalUrl || ''
         }
         
-        // If no media, try rawMetadata
-        if (!imageUrl && nft.rawMetadata?.image) {
-          console.log('📸 Raw metadata image:', nft.rawMetadata.image)
-          imageUrl = nft.rawMetadata.image
-        }
-
-        // If still no image, try metadata
-        if (!imageUrl && nft.metadata?.image) {
-          console.log('📸 Metadata image:', nft.metadata.image)
-          imageUrl = nft.metadata.image
+        // If no image object, try raw metadata
+        if (!imageUrl && nft.raw?.metadata?.image) {
+          console.log('📸 Raw metadata image:', nft.raw.metadata.image)
+          imageUrl = nft.raw.metadata.image
         }
 
         // If still no image, try tokenUri
