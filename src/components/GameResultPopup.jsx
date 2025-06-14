@@ -2,6 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
+import { Button } from '../styles/components'
 
 const WinnerPopup = styled.div`
   position: fixed;
