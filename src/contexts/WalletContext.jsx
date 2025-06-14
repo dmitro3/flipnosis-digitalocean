@@ -112,22 +112,45 @@ export const WalletProvider = ({ children }) => {
       const formattedNFTs = nfts.ownedNfts.map(nft => {
         // Get the best available image URL
         let imageUrl = ''
+        
+        // Try to get image from media array first
         if (nft.media && nft.media.length > 0) {
           imageUrl = nft.media[0]?.gateway || nft.media[0]?.raw || ''
-        } else if (nft.rawMetadata?.image) {
+        }
+        
+        // If no media, try rawMetadata
+        if (!imageUrl && nft.rawMetadata?.image) {
           imageUrl = nft.rawMetadata.image
         }
 
-        // Handle IPFS URLs
-        if (imageUrl.startsWith('ipfs://')) {
-          imageUrl = `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}`
+        // Handle different URL formats
+        if (imageUrl) {
+          // Handle IPFS URLs
+          if (imageUrl.startsWith('ipfs://')) {
+            imageUrl = `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}`
+          }
+          // Handle data URLs
+          else if (imageUrl.startsWith('data:')) {
+            imageUrl = imageUrl
+          }
+          // Handle relative URLs
+          else if (imageUrl.startsWith('/')) {
+            imageUrl = `https://ipfs.io${imageUrl}`
+          }
+          // Handle other URLs
+          else if (!imageUrl.startsWith('http')) {
+            imageUrl = `https://ipfs.io/ipfs/${imageUrl}`
+          }
         }
+
+        // Use a local placeholder if no image is available
+        const placeholderImage = '/placeholder-nft.png'
 
         return {
           contractAddress: nft.contract.address,
           tokenId: nft.tokenId,
           name: nft.title || `#${nft.tokenId}`,
-          image: imageUrl || 'https://via.placeholder.com/300?text=No+Image',
+          image: imageUrl || placeholderImage,
           collection: nft.contract.name || 'Unknown Collection',
           chain: currentChain.name.toLowerCase(),
           tokenType: nft.tokenType,
