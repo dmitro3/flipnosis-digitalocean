@@ -68,12 +68,20 @@ const GameResultPopup = ({
                 height: '100%',
                 objectFit: 'cover'
               }}
-              src="images/video/End/endwin.webm"
+              src="/Images/Video/End/endwin.webm"
               onError={(e) => {
                 console.error('Video playback error:', e);
                 console.log('Video source:', e.target.src);
-                // Try alternative path
-                e.target.src = '/images/video/End/endwin.webm';
+                // Try alternative paths
+                const paths = [
+                  '/Images/Video/End/endwin.webm',
+                  'Images/Video/End/endwin.webm',
+                  '../Images/Video/End/endwin.webm',
+                  '../../Images/Video/End/endwin.webm'
+                ];
+                const currentIndex = paths.indexOf(e.target.src);
+                const nextIndex = (currentIndex + 1) % paths.length;
+                e.target.src = paths[nextIndex];
               }}
               onLoadedData={(e) => {
                 console.log('Video loaded successfully');
@@ -161,12 +169,20 @@ const GameResultPopup = ({
                 height: '100%',
                 objectFit: 'cover'
               }}
-              src="images/video/End/endlose.webm"
+              src="/Images/Video/End/endlose.webm"
               onError={(e) => {
                 console.error('Video playback error:', e);
                 console.log('Video source:', e.target.src);
-                // Try alternative path
-                e.target.src = '/images/video/End/endlose.webm';
+                // Try alternative paths
+                const paths = [
+                  '/Images/Video/End/endlose.webm',
+                  'Images/Video/End/endlose.webm',
+                  '../Images/Video/End/endlose.webm',
+                  '../../Images/Video/End/endlose.webm'
+                ];
+                const currentIndex = paths.indexOf(e.target.src);
+                const nextIndex = (currentIndex + 1) % paths.length;
+                e.target.src = paths[nextIndex];
               }}
               onLoadedData={(e) => {
                 console.log('Video loaded successfully');
