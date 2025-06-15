@@ -666,16 +666,31 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
 
 /* Mobile-specific styles */
 @media (max-width: 768px) {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+
   .debug-panel {
     display: none !important;
   }
 
   .ContentWrapper {
     padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
   }
 
   .GlassCard {
     margin-bottom: 1rem;
+    width: 100%;
   }
 
   /* Stack components vertically */
@@ -702,5 +717,33 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
 
   .live-flips {
     order: 3;
+  }
+
+  /* Header adjustments */
+  header {
+    padding: 0.5rem 1rem;
+  }
+
+  .Logo {
+    font-size: 2rem !important;
+    letter-spacing: 2px !important;
+  }
+
+  /* Container adjustments */
+  .Container {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+
+  /* Form adjustments */
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  /* Button adjustments */
+  button {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
   }
 }

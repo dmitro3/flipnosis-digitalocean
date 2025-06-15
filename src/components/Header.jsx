@@ -26,7 +26,13 @@ const HeaderContainer = styled.header`
   overflow-x: hidden;
 
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
   }
 `
 
@@ -34,6 +40,10 @@ const LogoContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
 `
 
 const Logo = styled(Link)`
@@ -47,8 +57,8 @@ const Logo = styled(Link)`
   ${props => props.theme.animations.neonPulse}
   
   @media (max-width: 768px) {
-    font-size: 3rem;
-    letter-spacing: 4px;
+    font-size: 2rem;
+    letter-spacing: 2px;
   }
 `
 
@@ -115,34 +125,30 @@ const MenuButton = styled.button`
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.5rem;
-  align-items: center;
-  justify-content: center;
-  transition: ${props => props.theme.transitions.default};
-  
-  &:hover {
-    color: #39FF14;
-  }
+  z-index: 1001;
 
   @media (max-width: 768px) {
-    display: flex;
+    display: block;
   }
 `
 
 const MobileMenu = styled.div`
   position: fixed;
   top: 0;
-  right: ${props => props.isOpen ? '0' : '-100%'};
+  right: 0;
   width: 80%;
   max-width: 300px;
   height: 100vh;
-  background: ${props => props.theme.colors.bgDark};
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
   padding: 2rem;
-  box-shadow: -2px 0 10px rgba(0, 255, 65, 0.2);
-  transition: right 0.3s ease-in-out;
+  transform: translateX(${props => props.isOpen ? '0' : '100%'});
+  transition: transform 0.3s ease;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-y: auto;
 
   @media (min-width: 769px) {
     display: none;
@@ -156,14 +162,11 @@ const MenuOverlay = styled.div`
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  opacity: ${props => props.isOpen ? '1' : '0'};
+  backdrop-filter: blur(5px);
+  opacity: ${props => props.isOpen ? 1 : 0};
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease;
   z-index: 999;
-
-  @media (min-width: 769px) {
-    display: none;
-  }
 `
 
 const MenuItem = styled(Link)`

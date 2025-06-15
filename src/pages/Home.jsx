@@ -411,12 +411,14 @@ const Home = () => {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '240px 1fr 300px',
+              gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '240px 1fr 300px',
               gap: '1.5rem',
               marginTop: '2rem'
             }}>
               {/* Left Box - Selected Game */}
-              <div>
+              <div style={{
+                order: window.innerWidth <= 768 ? 1 : 0
+              }}>
                 {selectedFlip && (
                   <div style={{
                     background: 'rgba(0, 0, 0, 0.8)',
@@ -561,8 +563,9 @@ const Home = () => {
                 borderRadius: '1rem',
                 padding: '1rem',
                 border: `1px solid ${theme.colors.neonBlue}`,
-                maxHeight: '600px',
-                overflowY: 'auto'
+                maxHeight: window.innerWidth <= 768 ? 'none' : '600px',
+                overflowY: 'auto',
+                order: window.innerWidth <= 768 ? 2 : 0
               }}>
                 <div style={{
                   fontSize: '1.2rem',
@@ -757,8 +760,9 @@ const Home = () => {
                 borderRadius: '1rem',
                 padding: '1rem',
                 border: `1px solid ${theme.colors.neonPink}`,
-                maxHeight: '600px',
-                overflowY: 'auto'
+                maxHeight: window.innerWidth <= 768 ? 'none' : '600px',
+                overflowY: 'auto',
+                order: window.innerWidth <= 768 ? 3 : 0
               }}>
                 <div style={{
                   fontSize: '1.2rem',
