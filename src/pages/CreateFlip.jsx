@@ -43,6 +43,7 @@ const CreateFlip = () => {
   const [gameType, setGameType] = useState('') // 'nft-vs-crypto' or 'nft-vs-nft'
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // Debug logging
   useEffect(() => {
@@ -96,107 +97,55 @@ const CreateFlip = () => {
 
   const handleCreateFlip = async (e) => {
     e.preventDefault()
-    setError('')
-    setIsSubmitting(true)
+    
+    if (!address) {
+      throw new Error('Wallet not connected')
+    }
+
+    if (!selectedNFT) {
+      throw new Error('Please select an NFT')
+    }
+
+    if (!priceUSD || isNaN(priceUSD) || parseFloat(priceUSD) <= 0) {
+      throw new Error('Please enter a valid price in USD')
+    }
+
+    if (!gameType) {
+      throw new Error('Please select a game type')
+    }
+
+    if (!totalRounds || totalRounds < 1 || totalRounds > 10) {
+      throw new Error('Please enter a valid number of rounds (1-10)')
+    }
 
     try {
-      if (!selectedNFT) {
-        throw new Error('Please select an NFT')
-      }
+      setLoading(true)
+      showInfo('Creating flip game...')
 
-      if (!gameType) {
-        throw new Error('Please select a game type')
-      }
+      // Initialize contract service with Wagmi clients
+      await contractService.init(publicClient, walletClient)
 
-      // Validate price for NFT vs Crypto
-      if (gameType === 'nft-vs-crypto') {
-        if (!priceUSD || isNaN(priceUSD) || parseFloat(priceUSD) <= 0) {
-          throw new Error('Please enter a valid price in USD')
-        }
-      }
-
-      if (!provider || !address) {
-        throw new Error('Wallet not connected')
-      }
-
-      showInfo('Processing listing fee payment...')
-
-      // Calculate listing fee (50¢ for NFT vs NFT, $0.10 for NFT vs Crypto)
-      const listingFeeUSD = gameType === 'nft-vs-nft' ? 0.50 : 0.10
-      console.log('Listing fee USD:', listingFeeUSD)
-
-      const feeCalculation = await PaymentService.calculateETHFee(listingFeeUSD)
-      console.log('Fee calculation result:', feeCalculation)
-
-      if (!feeCalculation.success) {
-        console.error('Fee calculation failed:', feeCalculation.error)
-        throw new Error('Failed to calculate listing fee: ' + feeCalculation.error)
-      }
-
-      const feeAmountETH = feeCalculation.ethAmount
-      console.log(`Listing fee: $${listingFeeUSD} = ${feeAmountETH} ETH`)
-
-      // Send listing fee payment
-      const signer = await provider.getSigner()
-      const feeRecipient = PaymentService.getFeeRecipient()
-      const feeAmountWei = ethers.parseEther(feeAmountETH.toString())
-
-      const txResult = await PaymentService.buildTransaction(feeRecipient, feeAmountWei, provider)
-      if (!txResult.success) {
-        throw new Error('Failed to build transaction: ' + txResult.error)
-      }
-
-      const feeTx = await signer.sendTransaction(txResult.txConfig)
-      showInfo('Confirming transaction...')
-      
-      const feeReceipt = await feeTx.wait()
-      showSuccess('Listing fee paid successfully!')
-
-      // Create game data
-      const gameData = {
-        creator: address,
-        joiner: null,
-        gameType: gameType, // NEW: Add game type
-        nft: {
-          contractAddress: selectedNFT.contractAddress,
-          tokenId: selectedNFT.tokenId,
-          name: selectedNFT.name,
-          image: selectedNFT.image,
-          collection: selectedNFT.collection,
-          chain: selectedNFT.chain
-        },
-        price: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0, // No price for NFT vs NFT
-        priceUSD: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0,
-        currency: gameType === 'nft-vs-crypto' ? 'USD' : 'NFT',
-        rounds: 5, // Default to 5 rounds
-        status: 'waiting',
-        offeredNFTs: [], // NEW: Array to store NFT offers for NFT vs NFT games
-        listingFee: {
-          amountUSD: listingFeeUSD,
-          amountETH: feeAmountETH,
-          transactionHash: feeReceipt.hash,
-          paidAt: new Date().toISOString()
-        }
-      }
-
-      // Create game (with database)
-      const result = await createGameWithDatabase(gameData)
+      // Create the game
+      const result = await contractService.createGame(
+        selectedNFT.contractAddress,
+        selectedNFT.tokenId,
+        parseFloat(priceUSD),
+        totalRounds,
+        PaymentToken.ETH,
+        authInfo
+      )
 
       if (!result.success) {
-        throw new Error('Failed to create game')
+        throw new Error(result.error || 'Failed to create game')
       }
 
-      showSuccess(`${gameType === 'nft-vs-nft' ? 'NFT vs NFT' : 'NFT vs Crypto'} game created! Game ID: ${result.gameId}`)
-      
-      // Navigate to the game
-      navigate(`/game/${result.gameId}`)
-
-    } catch (err) {
-      console.error('Failed to create flip:', err)
-      setError(err.message)
-      showError(err.message)
+      showSuccess('Flip game created successfully!')
+      navigate(`/flip/${result.gameId}`)
+    } catch (error) {
+      console.error('Error creating flip:', error)
+      showError(error.message || 'Failed to create flip game')
     } finally {
-      setIsSubmitting(false)
+      setLoading(false)
     }
   }
 
