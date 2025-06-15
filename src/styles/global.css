@@ -1,75 +1,103 @@
-/* Mobile-specific improvements */
+/* Base styles */
+:root {
+  --mobile-padding: 0.5rem;
+  --desktop-padding: 2rem;
+  --container-max-width: 1200px;
+}
 
-/* Improve button touch targets on mobile */
+/* Mobile-specific improvements */
 @media (max-width: 768px) {
+  /* Base element improvements */
   button {
-    min-height: 44px; /* Apple's recommended touch target size */
+    min-height: 44px;
     min-width: 44px;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem;
+    width: 100%;
+    font-size: 16px;
   }
   
-  /* Prevent zoom on input focus on iOS */
   input, select, textarea {
     font-size: 16px !important;
     padding: 0.75rem;
+    width: 100%;
   }
   
-  /* Improve modal positioning on mobile */
-  .wallet-modal {
-    padding: 1rem;
+  /* Modal improvements */
+  .wallet-modal,
+  [data-rk] div[role="dialog"] {
+    padding: var(--mobile-padding);
     max-height: 90vh;
     overflow-y: auto;
     width: 95%;
     margin: 0 auto;
+    position: fixed;
+    top: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
-  /* Improve spacing and readability */
-  h1 {
-    font-size: 1.75rem;
-    margin-bottom: 1rem;
-  }
+  /* Typography improvements */
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  p { font-size: 1rem; }
 
-  h2 {
-    font-size: 1.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  p {
-    font-size: 1rem;
-    line-height: 1.5;
-    margin-bottom: 0.75rem;
-  }
-
-  /* Improve card layouts */
+  /* Layout improvements */
   .card {
-    padding: 1rem;
+    padding: var(--mobile-padding);
     margin-bottom: 1rem;
+    width: 100%;
   }
 
-  /* Improve form elements */
   .form-group {
     margin-bottom: 1rem;
+    width: 100%;
   }
 
-  .form-label {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Improve button spacing */
   .button-group {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    width: 100%;
   }
 
-  .button-group button {
+  /* Navigation improvements */
+  .nav-menu {
+    padding: var(--mobile-padding);
     width: 100%;
+  }
+
+  .nav-item {
+    padding: 0.75rem;
+    font-size: 1rem;
+    width: 100%;
+  }
+
+  /* Header improvements */
+  .app-header {
+    padding: var(--mobile-padding);
+    width: 100%;
+  }
+
+  .logo {
+    max-width: 120px;
+  }
+
+  /* Footer improvements */
+  .app-footer {
+    padding: var(--mobile-padding);
+    font-size: 0.9rem;
+    width: 100%;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+  .Container,
+  .ContentWrapper {
+    max-width: var(--container-max-width);
+    padding: var(--desktop-padding);
+    margin: 0 auto;
   }
 }
 
@@ -91,59 +119,9 @@
   to { transform: rotate(360deg); }
 }
 
-/* Improve mobile navigation */
-@media (max-width: 768px) {
-  .nav-menu {
-    padding: 1rem;
-  }
-
-  .nav-item {
-    padding: 0.75rem;
-    font-size: 1rem;
-  }
-
-  /* Improve mobile header */
-  .app-header {
-    padding: 0.75rem;
-  }
-
-  .logo {
-    max-width: 120px;
-  }
-
-  /* Improve mobile footer */
-  .app-footer {
-    padding: 1rem;
-    font-size: 0.9rem;
-  }
-}
-
-/* Rainbow Kit mobile improvements */
+/* Rainbow Kit improvements */
 [data-rk] {
   --rk-fonts-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Improve mobile modal positioning */
-@media (max-width: 768px) {
-  [data-rk] div[role="dialog"] {
-    margin: 0 !important;
-    max-height: 90vh !important;
-    width: 95% !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    top: 5vh !important;
-  }
-
-  /* Improve button sizes on mobile */
-  [data-rk] button {
-    min-height: 48px !important;
-    font-size: 16px !important;
-  }
-
-  /* Prevent zoom on mobile */
-  [data-rk] input {
-    font-size: 16px !important;
-  }
 }
 
 /* Fix wallet connection button */
@@ -153,6 +131,8 @@
   color: #000000 !important;
   font-weight: 600 !important;
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.5) !important;
+  width: 100%;
+  min-height: 44px;
 }
 
 .rainbow-button:hover {
