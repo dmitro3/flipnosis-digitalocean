@@ -8,8 +8,40 @@ const CONTRACT_CONFIG = {
   
   // Contract ABI (exact function signatures from contract)
   abi: [
-    // Core game functions
-    "function createGame(tuple(address nftContract, uint256 tokenId, uint256 priceUSD, uint8 acceptedToken, uint8 maxRounds, string authInfo) params) external returns (uint256)",
+    {
+      name: 'createGame',
+      type: 'function',
+      stateMutability: 'nonpayable',
+      inputs: [
+        {
+          name: 'params',
+          type: 'tuple',
+          components: [
+            { name: 'nftContract', type: 'address' },
+            { name: 'tokenId', type: 'uint256' },
+            { name: 'priceUSD', type: 'uint256' },
+            { name: 'acceptedToken', type: 'uint8' },
+            { name: 'maxRounds', type: 'uint8' },
+            { name: 'authInfo', type: 'string' }
+          ]
+        }
+      ],
+      outputs: [{ name: '', type: 'uint256' }]
+    },
+    {
+      name: 'GameCreated',
+      type: 'event',
+      anonymous: false,
+      inputs: [
+        { name: 'gameId', type: 'uint256', indexed: true },
+        { name: 'creator', type: 'address', indexed: true },
+        { name: 'nftContract', type: 'address', indexed: true },
+        { name: 'tokenId', type: 'uint256' },
+        { name: 'priceUSD', type: 'uint256' },
+        { name: 'acceptedToken', type: 'uint8' },
+        { name: 'authInfo', type: 'string' }
+      ]
+    },
     "function joinGame(uint256 gameId, uint8 choice) external",
     "function startCountdown(uint256 gameId) external",
     "function flip(uint256 gameId, uint8 power) external",
@@ -27,7 +59,6 @@ const CONTRACT_CONFIG = {
     "function emergencyWithdrawNFT(address nftContract, uint256 tokenId) external",
     
     // Events
-    "event GameCreated(uint256 indexed gameId, address indexed creator, address indexed nftContract, uint256 tokenId, uint256 priceUSD, uint8 acceptedToken, string authInfo)",
     "event GameJoined(uint256 indexed gameId, address indexed joiner, uint8 choice)",
     "event FlipResultEvent(uint256 indexed gameId, uint8 round, uint8 result, uint8 power, address flipper)",
     "event GameCompleted(uint256 indexed gameId, address indexed winner, uint256 winnings, uint256 platformFee)",
