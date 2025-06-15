@@ -1053,12 +1053,12 @@ const FlipGame = () => {
         zIndex: 1
       }}>
         <ContentWrapper>
-          {/* Main Game Area - Responsive Layout */}
+          {/* Main Game Area - Three Column Layout */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '300px 1fr 300px',
-            gap: '2rem', 
-            marginBottom: '2rem',
+            gap: window.innerWidth <= 768 ? '1rem' : '2rem', 
+            marginBottom: window.innerWidth <= 768 ? '1rem' : '2rem',
             alignItems: 'start',
             minHeight: '500px'
           }}>
@@ -1067,14 +1067,16 @@ const FlipGame = () => {
             <div style={{
               position: 'relative',
               width: '100%',
-              maxWidth: '600px',
+              maxWidth: window.innerWidth <= 768 ? '300px' : '600px',
               margin: '0 auto',
-              padding: '2rem',
+              padding: window.innerWidth <= 768 ? '1rem' : '2rem',
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
               border: '2px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '1.5rem',
               backdropFilter: 'blur(10px)',
-              order: window.innerWidth <= 768 ? 1 : 0
+              order: window.innerWidth <= 768 ? 1 : 0,
+              transform: window.innerWidth <= 768 ? 'scale(0.5)' : 'none',
+              transformOrigin: 'top center'
             }}>
               {/* Player 1 Info */}
               <div style={{
@@ -1085,7 +1087,7 @@ const FlipGame = () => {
               }}>
                 <ProfilePicture 
                   address={gameData?.creator} 
-                  size={40} 
+                  size={window.innerWidth <= 768 ? 20 : 40} 
                   isClickable={isCreator}
                   showUploadIcon={isCreator}
                   profileData={gameState?.creatorProfile}
@@ -1096,13 +1098,16 @@ const FlipGame = () => {
                 />
                 <div>
                   <div style={{ 
-                    fontSize: '0.9rem', 
+                    fontSize: window.innerWidth <= 768 ? '0.45rem' : '0.9rem', 
                     opacity: 0.8,
                     color: theme.colors.neonPink 
                   }}>
                     💎 Player 1 {gameState?.creatorChoice && `(${gameState.creatorChoice.toUpperCase()})`}
                   </div>
-                  <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                  <div style={{ 
+                    fontWeight: 'bold', 
+                    fontSize: window.innerWidth <= 768 ? '0.5rem' : '1rem' 
+                  }}>
                     {gameState?.creatorProfile?.name || 
                      (gameData?.creator ? 
                        `${gameData.creator.slice(0, 8)}...${gameData.creator.slice(-4)}` : 
@@ -1119,14 +1124,14 @@ const FlipGame = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '1rem',
-                padding: '1rem',
+                padding: window.innerWidth <= 768 ? '0.5rem' : '1rem',
                 background: 'rgba(0, 0, 0, 0.3)',
                 borderRadius: '1rem'
               }}>
                 <div>
                   <div style={{ 
                     color: theme.colors.textSecondary,
-                    fontSize: '0.875rem',
+                    fontSize: window.innerWidth <= 768 ? '0.4375rem' : '0.875rem',
                     marginBottom: '0.25rem'
                   }}>
                     Status
@@ -1134,7 +1139,7 @@ const FlipGame = () => {
                   <div style={{ 
                     color: theme.colors.textPrimary,
                     fontWeight: 'bold',
-                    fontSize: '1.125rem'
+                    fontSize: window.innerWidth <= 768 ? '0.5625rem' : '1.125rem'
                   }}>
                     {gameState?.phase === 'waiting' ? 'Waiting for Player 2' :
                      gameState?.phase === 'round_active' ? 'Round Active' :
@@ -1145,7 +1150,7 @@ const FlipGame = () => {
                 <div>
                   <div style={{ 
                     color: theme.colors.textSecondary,
-                    fontSize: '0.875rem',
+                    fontSize: window.innerWidth <= 768 ? '0.4375rem' : '0.875rem',
                     marginBottom: '0.25rem'
                   }}>
                     Rounds
@@ -1153,7 +1158,7 @@ const FlipGame = () => {
                   <div style={{ 
                     color: theme.colors.textPrimary,
                     fontWeight: 'bold',
-                    fontSize: '1.125rem'
+                    fontSize: window.innerWidth <= 768 ? '0.5625rem' : '1.125rem'
                   }}>
                     Best of {gameData?.rounds}
                   </div>
@@ -1167,14 +1172,16 @@ const FlipGame = () => {
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'center',
-              order: window.innerWidth <= 768 ? 2 : 0
+              order: window.innerWidth <= 768 ? 2 : 0,
+              transform: window.innerWidth <= 768 ? 'scale(0.5)' : 'none',
+              transformOrigin: 'center'
             }}>
               {/* Coin */}
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'center', 
                 alignItems: 'center',
-                marginBottom: '2rem'
+                marginBottom: window.innerWidth <= 768 ? '1rem' : '2rem'
               }}>
                 <ReliableGoldCoin
                   isFlipping={!!flipAnimation}
@@ -1213,27 +1220,29 @@ const FlipGame = () => {
             <div style={{
               position: 'relative',
               width: '100%',
-              maxWidth: '600px',
+              maxWidth: window.innerWidth <= 768 ? '300px' : '600px',
               margin: '0 auto',
-              padding: '2rem',
+              padding: window.innerWidth <= 768 ? '1rem' : '2rem',
               background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
               border: '2px solid rgba(255, 215, 0, 0.3)',
               borderRadius: '1.5rem',
               backdropFilter: 'blur(10px)',
-              order: window.innerWidth <= 768 ? 3 : 0
+              order: window.innerWidth <= 768 ? 3 : 0,
+              transform: window.innerWidth <= 768 ? 'scale(0.5)' : 'none',
+              transformOrigin: 'top center'
             }}>
               {/* NFT IMAGE - Top */}
               {nftData?.image && (
                 <div style={{
                   textAlign: 'center',
-                  marginBottom: '1.5rem'
+                  marginBottom: window.innerWidth <= 768 ? '0.75rem' : '1.5rem'
                 }}>
                   <img 
                     src={nftData.image} 
                     alt="NFT" 
                     style={{
-                      width: '200px',
-                      height: '200px',
+                      width: window.innerWidth <= 768 ? '100px' : '200px',
+                      height: window.innerWidth <= 768 ? '100px' : '200px',
                       borderRadius: '1rem',
                       objectFit: 'cover',
                       border: '4px solid rgba(255, 255, 0, 0.6)',
@@ -1245,24 +1254,50 @@ const FlipGame = () => {
               )}
 
               {/* Game Info */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>Game Info</h3>
+              <div style={{ marginBottom: window.innerWidth <= 768 ? '0.75rem' : '1.5rem' }}>
+                <h3 style={{ 
+                  color: 'white', 
+                  marginBottom: '0.5rem',
+                  fontSize: window.innerWidth <= 768 ? '0.75rem' : '1.5rem'
+                }}>Game Info</h3>
                 <div style={{ 
                   background: 'rgba(0, 0, 0, 0.3)',
-                  padding: '1rem',
+                  padding: window.innerWidth <= 768 ? '0.5rem' : '1rem',
                   borderRadius: '0.75rem'
                 }}>
                   <div style={{ marginBottom: '0.5rem' }}>
-                    <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>Game ID</div>
-                    <div style={{ color: 'white', fontWeight: 'bold' }}>{gameId}</div>
+                    <div style={{ 
+                      color: theme.colors.textSecondary, 
+                      fontSize: window.innerWidth <= 768 ? '0.4375rem' : '0.875rem' 
+                    }}>Game ID</div>
+                    <div style={{ 
+                      color: 'white', 
+                      fontWeight: 'bold',
+                      fontSize: window.innerWidth <= 768 ? '0.5rem' : '1rem'
+                    }}>{gameId}</div>
                   </div>
                   <div style={{ marginBottom: '0.5rem' }}>
-                    <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>Collection</div>
-                    <div style={{ color: 'white', fontWeight: 'bold' }}>{nftData?.collection}</div>
+                    <div style={{ 
+                      color: theme.colors.textSecondary, 
+                      fontSize: window.innerWidth <= 768 ? '0.4375rem' : '0.875rem' 
+                    }}>Collection</div>
+                    <div style={{ 
+                      color: 'white', 
+                      fontWeight: 'bold',
+                      fontSize: window.innerWidth <= 768 ? '0.5rem' : '1rem'
+                    }}>{nftData?.collection}</div>
                   </div>
                   <div>
-                    <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>Contract Address</div>
-                    <div style={{ color: 'white', fontWeight: 'bold', wordBreak: 'break-all' }}>
+                    <div style={{ 
+                      color: theme.colors.textSecondary, 
+                      fontSize: window.innerWidth <= 768 ? '0.4375rem' : '0.875rem' 
+                    }}>Contract Address</div>
+                    <div style={{ 
+                      color: 'white', 
+                      fontWeight: 'bold', 
+                      wordBreak: 'break-all',
+                      fontSize: window.innerWidth <= 768 ? '0.5rem' : '1rem'
+                    }}>
                       {nftData?.contractAddress}
                     </div>
                   </div>
@@ -1270,13 +1305,17 @@ const FlipGame = () => {
               </div>
 
               {/* Share Buttons */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>Share Game</h3>
+              <div style={{ marginBottom: window.innerWidth <= 768 ? '0.75rem' : '1.5rem' }}>
+                <h3 style={{ 
+                  color: 'white', 
+                  marginBottom: '0.5rem',
+                  fontSize: window.innerWidth <= 768 ? '0.75rem' : '1.5rem'
+                }}>Share Game</h3>
                 <ShareButton gameId={gameId} />
               </div>
 
               {/* Game Chat Box */}
-              <div style={{ marginTop: '2rem' }}>
+              <div style={{ marginTop: window.innerWidth <= 768 ? '1rem' : '2rem' }}>
                 <GameChatBox 
                   gameId={gameId}
                   socket={socket}
@@ -1285,6 +1324,37 @@ const FlipGame = () => {
               </div>
             </div>
           </div>
+
+          {/* JOIN GAME BUTTON - Only show if game is waiting and user is not creator */}
+          {gameData?.status === 'waiting' && !isCreator && !isJoiner && (
+            <div style={{
+              marginTop: '2rem',
+              textAlign: 'center',
+              transform: window.innerWidth <= 768 ? 'scale(0.5)' : 'none',
+              transformOrigin: 'center'
+            }}>
+              <button
+                onClick={handleJoinGame}
+                disabled={joiningGame || !isConnected}
+                style={{
+                  background: joiningGame ? 
+                    'rgba(255, 20, 147, 0.5)' : 
+                    'linear-gradient(45deg, #FF1493, #FF69B4)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: window.innerWidth <= 768 ? '0.75rem 1.5rem' : '1.5rem 3rem',
+                  borderRadius: '1rem',
+                  fontSize: window.innerWidth <= 768 ? '0.65rem' : '1.3rem',
+                  fontWeight: 'bold',
+                  cursor: joiningGame ? 'not-allowed' : 'pointer',
+                  width: window.innerWidth <= 768 ? '200px' : '100%',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {joiningGame ? '⏳ Joining...' : 'Join Flip'}
+              </button>
+            </div>
+          )}
         </ContentWrapper>
       </Container>
 
