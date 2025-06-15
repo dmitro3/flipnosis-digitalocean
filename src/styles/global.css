@@ -116,4 +116,46 @@
     padding: 1rem;
     font-size: 0.9rem;
   }
+}
+
+/* Rainbow Kit mobile improvements */
+[data-rk] {
+  --rk-fonts-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Improve mobile modal positioning */
+@media (max-width: 768px) {
+  [data-rk] div[role="dialog"] {
+    margin: 0 !important;
+    max-height: 90vh !important;
+    width: 95% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: 5vh !important;
+  }
+
+  /* Improve button sizes on mobile */
+  [data-rk] button {
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
+
+  /* Prevent zoom on mobile */
+  [data-rk] input {
+    font-size: 16px !important;
+  }
+}
+
+/* Fix wallet connection button */
+.rainbow-button {
+  background: linear-gradient(45deg, #00FF41, #39FF14) !important;
+  border: 2px solid #00FF41 !important;
+  color: #000000 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.5) !important;
+}
+
+.rainbow-button:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.8) !important;
+  transform: scale(1.05) !important;
 } 

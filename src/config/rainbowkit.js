@@ -20,4 +20,6 @@ export const config = getDefaultConfig({
   projectId,
   chains,
   ssr: false, // If using SSR, set this to true
+  // Add mobile wallet support
+  wallets: [],
 }) 

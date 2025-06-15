@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+import { parseEther, formatEther } from 'viem'
 
 export class PaymentService {
   static ETH_PRICE_USD = 2500 // Update periodically
@@ -101,6 +102,25 @@ export class PaymentService {
         error: error.message,
         ethAmount: 0.000001
       }
+    }
+  }
+
+  // Add new method for Wagmi transactions
+  static async sendTransactionWithWagmi(walletClient, to, value) {
+    if (!walletClient) {
+      throw new Error('Wallet client not available')
+    }
+
+    try {
+      const hash = await walletClient.sendTransaction({
+        to,
+        value: parseEther(value.toString()),
+      })
+      
+      return { hash }
+    } catch (error) {
+      console.error('Transaction failed:', error)
+      throw error
     }
   }
 }

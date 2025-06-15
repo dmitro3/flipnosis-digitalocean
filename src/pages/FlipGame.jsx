@@ -1,27 +1,39 @@
-import WalletConnectionModal from '../components/WalletConnectionModal'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useWallet } from '../contexts/WalletContext'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { ThemeProvider } from '@emotion/react'
+import { theme } from '../styles/theme'
+import {
+  Container,
+  ContentWrapper,
+  GlassCard,
+  NeonText,
+  Button
+} from '../styles/components'
 
-const [showWalletModal, setShowWalletModal] = useState(false)
+const FlipGame = () => {
+  const navigate = useNavigate()
+  const { isConnected } = useWallet()
 
-if (!isConnected) {
-  return (
-    <ThemeProvider theme={theme}>
-      <Container>
-        <ContentWrapper>
-          <GlassCard style={{ textAlign: 'center', padding: '3rem' }}>
-            <NeonText>Connect Your Wallet</NeonText>
-            <Button onClick={() => setShowWalletModal(true)}>Connect Wallet</Button>
-          </GlassCard>
-        </ContentWrapper>
-      </Container>
-      
-      <WalletConnectionModal
-        isOpen={showWalletModal}
-        onClose={() => setShowWalletModal(false)}
-        onSuccess={() => {
-          setShowWalletModal(false)
-          // Wallet is now connected, component will re-render
-        }}
-      />
-    </ThemeProvider>
-  )
-} 
+  if (!isConnected) {
+    return (
+      <ThemeProvider theme={theme}>
+        <Container>
+          <ContentWrapper>
+            <GlassCard style={{ textAlign: 'center', padding: '3rem' }}>
+              <NeonText>Connect Your Wallet</NeonText>
+              <ConnectButton />
+              <br />
+              <Button onClick={() => navigate('/')} style={{ marginTop: '1rem' }}>Go Home</Button>
+            </GlassCard>
+          </ContentWrapper>
+        </Container>
+      </ThemeProvider>
+    )
+  }
+
+  // ... rest of the component code ...
+}
+
+export default FlipGame 

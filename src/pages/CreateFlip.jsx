@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import NFTSelector from '../components/NFTSelector'
 import PaymentService from '../services/PaymentService'
 import { ThemeProvider } from '@emotion/react'
@@ -34,7 +35,7 @@ import { ethers } from 'ethers'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
-  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address, chain } = useWallet()
+  const { isConnected, nfts, loading: nftsLoading, provider, address, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
@@ -207,7 +208,7 @@ const CreateFlip = () => {
             <ConnectWalletPrompt>
               <PromptTitle>Connect Your Wallet</PromptTitle>
               <PromptText>Please connect your wallet to create a new flip game.</PromptText>
-              <Button onClick={connectWallet}>Connect Wallet</Button>
+              <ConnectButton />
             </ConnectWalletPrompt>
           </ContentWrapper>
         </Container>
