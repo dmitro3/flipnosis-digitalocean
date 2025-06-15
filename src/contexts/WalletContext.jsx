@@ -61,21 +61,48 @@ export const WalletProvider = ({ children }) => {
         throw new Error('Unsupported network')
       }
 
+      const apiKey = import.meta.env.VITE_ALCHEMY_API_KEY
+      if (!apiKey) {
+        console.error('Alchemy API key not found')
+        throw new Error('Alchemy API key not configured')
+      }
+
       // Initialize Alchemy
       const alchemy = new Alchemy({
-        apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
+        apiKey,
         network: currentChain.network
       })
 
-      // Get NFTs for the address
-      const nftsForOwner = await alchemy.nft.getNftsForOwner(address, {
-        excludeFilters: ['SPAM'],
-        omitMetadata: false
+      console.log('🔍 Loading NFTs for:', {
+        address,
+        chain: currentChain.name,
+        network: currentChain.network
       })
 
-      console.log('Raw NFTs from Alchemy:', nftsForOwner)
+      // Get NFTs for the address with pagination
+      let allNFTs = []
+      let pageKey = null
+      
+      do {
+        const nftsForOwner = await alchemy.nft.getNftsForOwner(address, {
+          excludeFilters: ['SPAM'],
+          omitMetadata: false,
+          pageKey: pageKey
+        })
 
-      const formattedNFTs = await Promise.all(nftsForOwner.ownedNfts.map(async (nft) => {
+        console.log('📦 Raw NFTs from Alchemy:', {
+          count: nftsForOwner.ownedNfts.length,
+          pageKey: nftsForOwner.pageKey,
+          totalCount: nftsForOwner.totalCount
+        })
+
+        allNFTs = [...allNFTs, ...nftsForOwner.ownedNfts]
+        pageKey = nftsForOwner.pageKey
+      } while (pageKey)
+
+      console.log('🎨 Total NFTs found:', allNFTs.length)
+
+      const formattedNFTs = await Promise.all(allNFTs.map(async (nft) => {
         const formattedNft = {
           contractAddress: nft.contract.address,
           tokenId: nft.tokenId,
@@ -87,15 +114,18 @@ export const WalletProvider = ({ children }) => {
           animationUrl: nft.media?.[0]?.format === 'mp4' ? nft.media[0].gateway : nft.animation_url || ''
         }
 
-        console.log('✅ Formatted NFT:', formattedNft)
         return formattedNft
       }))
 
-      console.log('✅ Loaded NFTs:', formattedNFTs)
+      console.log('✅ Loaded NFTs:', {
+        count: formattedNFTs.length,
+        nfts: formattedNFTs
+      })
+      
       setNfts(formattedNFTs)
     } catch (error) {
-      console.error('Error loading NFTs:', error)
-      showError('Failed to load NFTs')
+      console.error('❌ Error loading NFTs:', error)
+      showError('Failed to load NFTs: ' + error.message)
     } finally {
       setLoading(false)
     }

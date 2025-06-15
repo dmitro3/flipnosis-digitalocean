@@ -1,4 +1,3 @@
-import { ethers } from 'ethers'
 import { parseEther, formatEther } from 'viem'
 
 export class PaymentService {
@@ -17,7 +16,7 @@ export class PaymentService {
       return {
         success: true,
         ethAmount: parseFloat(finalEthAmount.toFixed(8)),
-        weiAmount: ethers.parseEther(finalEthAmount.toFixed(18))
+        weiAmount: parseEther(finalEthAmount.toFixed(18))
       }
     } catch (error) {
       console.error('Payment calculation error:', error)
@@ -25,52 +24,43 @@ export class PaymentService {
         success: false,
         error: error.message,
         ethAmount: 0,
-        weiAmount: 0
+        weiAmount: 0n
       }
     }
   }
 
-  static async buildTransaction(to, valueWei, provider) {
+  static async buildTransaction(to, valueWei, publicClient) {
     try {
       console.log('🔧 Building transaction for Base network...')
       
-      // Simple transaction config for Base network
-      const txConfig = {
+      // Get gas estimate
+      const gasEstimate = await publicClient.estimateGas({
         to,
         value: valueWei,
-        gasLimit: 21000 // Standard ETH transfer
-      }
-
-      try {
-        // Try to get gas price (fallback method for Base)
-        const gasPrice = await provider.getGasPrice()
-        txConfig.gasPrice = gasPrice * 120n / 100n // 20% buffer
-        console.log('✅ Using legacy gas price:', ethers.formatUnits(txConfig.gasPrice, 'gwei'), 'gwei')
-      } catch (gasPriceError) {
-        // Ultimate fallback
-        console.warn('⚠️ Using fallback gas price')
-        txConfig.gasPrice = ethers.parseUnits('1', 'gwei') // 1 gwei fallback for Base
-      }
-
-      console.log('✅ Transaction config ready:', {
-        to: txConfig.to,
-        value: ethers.formatEther(txConfig.value),
-        gasLimit: txConfig.gasLimit.toString(),
-        gasPrice: ethers.formatUnits(txConfig.gasPrice, 'gwei') + ' gwei'
       })
 
-      return { success: true, txConfig }
+      // Add 20% buffer to gas estimate
+      const gasLimit = gasEstimate * 120n / 100n
+
+      console.log('✅ Transaction config ready:', {
+        to,
+        value: formatEther(valueWei),
+        gasLimit: gasLimit.toString()
+      })
+
+      return { 
+        success: true, 
+        txConfig: {
+          to,
+          value: valueWei,
+          gas: gasLimit
+        }
+      }
     } catch (error) {
       console.error('❌ Error building transaction:', error)
       return { 
         success: false, 
-        error: error.message,
-        txConfig: {
-          to,
-          value: valueWei,
-          gasLimit: 21000,
-          gasPrice: ethers.parseUnits('1', 'gwei')
-        }
+        error: error.message
       }
     }
   }
@@ -105,8 +95,8 @@ export class PaymentService {
     }
   }
 
-  // Add new method for Wagmi transactions
-  static async sendTransactionWithWagmi(walletClient, to, value) {
+  // Send transaction using Wagmi
+  static async sendTransaction(walletClient, to, value) {
     if (!walletClient) {
       throw new Error('Wallet client not available')
     }
@@ -117,10 +107,10 @@ export class PaymentService {
         value: parseEther(value.toString()),
       })
       
-      return { hash }
+      return { success: true, hash }
     } catch (error) {
       console.error('Transaction failed:', error)
-      throw error
+      return { success: false, error: error.message }
     }
   }
 }
