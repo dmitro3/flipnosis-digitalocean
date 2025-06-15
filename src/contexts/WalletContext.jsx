@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAccount, useChainId, useSwitchChain, useWalletClient, usePublicClient } from 'wagmi'
 import { useToast } from './ToastContext'
 import { Alchemy, Network } from 'alchemy-sdk'
-import { createWalletClient, custom } from 'viem'
+import { ethers } from 'ethers'
 
 const WalletContext = createContext()
 
@@ -121,9 +121,13 @@ export const WalletProvider = ({ children }) => {
   const getEthersProvider = () => {
     if (!window.ethereum) return null
     
-    // Use the existing window.ethereum for ethers compatibility
-    const { ethers } = require('ethers')
-    return new ethers.BrowserProvider(window.ethereum)
+    try {
+      // Use ethers directly since it's imported at the top
+      return new ethers.BrowserProvider(window.ethereum)
+    } catch (error) {
+      console.error('Failed to create ethers provider:', error)
+      return null
+    }
   }
 
   const value = {
