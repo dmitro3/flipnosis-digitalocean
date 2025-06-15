@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
+import { useToast } from '../contexts/ToastContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import hazeVideo from '../../Images/Video/haze.webm'
-import { contractService } from '../services/ContractService'
-import { ethers } from 'ethers'
+import { PaymentService } from '../services/PaymentService'
 import {
   Container,
   ContentWrapper,
@@ -137,15 +137,34 @@ const FilterSelect = styled.select`
 `
 
 const Home = () => {
-  const { chains, isConnected } = useWallet()
+  const navigate = useNavigate()
+  const { showSuccess, showError, showInfo } = useToast()
+  const { 
+    isConnected, 
+    address, 
+    chain,
+    walletClient,
+    publicClient
+  } = useWallet()
   const [activeFilter, setActiveFilter] = useState('all')
   const [flips, setFlips] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [selectedFlip, setSelectedFlip] = useState(null)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState('')
 
   // API URL - will be Railway URL in production
   const API_URL = import.meta.env.VITE_API_URL || 'https://cryptoflipz2-production.up.railway.app'
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Home Debug:', {
+      isConnected,
+      address,
+      chain,
+      hasWalletClient: !!walletClient,
+      hasPublicClient: !!publicClient
+    })
+  }, [isConnected, address, chain, walletClient, publicClient])
 
   // Fetch games from database
   const fetchGames = async () => {
@@ -254,6 +273,48 @@ const Home = () => {
       case 'active': return '🎮'
       case 'completed': return '🏆'
       default: return '❓'
+    }
+  }
+
+  const handleCreateGame = async () => {
+    if (!isConnected) {
+      showError('Please connect your wallet first')
+      return
+    }
+
+    try {
+      setLoading(true)
+      showInfo('Creating new game...')
+
+      // Create game data
+      const gameData = {
+        creator: address,
+        joiner: null,
+        status: 'waiting',
+        createdAt: new Date().toISOString()
+      }
+
+      // Create game in database
+      const response = await fetch('/api/games', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(gameData)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create game')
+      }
+
+      const result = await response.json()
+      showSuccess('Game created successfully!')
+      navigate(`/game/${result.gameId}`)
+    } catch (error) {
+      console.error('Error creating game:', error)
+      showError(error.message || 'Failed to create game')
+    } finally {
+      setLoading(false)
     }
   }
 
