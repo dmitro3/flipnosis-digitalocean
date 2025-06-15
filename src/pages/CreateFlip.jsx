@@ -39,7 +39,8 @@ const CreateFlip = () => {
   const { showSuccess, showError, showInfo } = useToast()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
-  const [priceUSD, setPriceUSD] = useState('')
+  const [price, setPrice] = useState('')
+  const [authInfo, setAuthInfo] = useState('')
   const [gameType, setGameType] = useState('') // 'nft-vs-crypto' or 'nft-vs-nft'
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -51,7 +52,7 @@ const CreateFlip = () => {
       isConnected,
       address,
       nftsLoading,
-      nftsCount: nfts?.length || 0,
+      nftsCount: nfts.length,
       chain
     })
   }, [isConnected, address, nftsLoading, nfts, chain])
@@ -106,16 +107,8 @@ const CreateFlip = () => {
       throw new Error('Please select an NFT')
     }
 
-    if (!priceUSD || isNaN(priceUSD) || parseFloat(priceUSD) <= 0) {
-      throw new Error('Please enter a valid price in USD')
-    }
-
-    if (!gameType) {
-      throw new Error('Please select a game type')
-    }
-
-    if (!totalRounds || totalRounds < 1 || totalRounds > 10) {
-      throw new Error('Please enter a valid number of rounds (1-10)')
+    if (!price || price <= 0) {
+      throw new Error('Please enter a valid price')
     }
 
     try {
@@ -125,12 +118,12 @@ const CreateFlip = () => {
       // Initialize contract service with Wagmi clients
       await contractService.init(publicClient, walletClient)
 
-      // Create the game
+      // Create the game with fixed 5 rounds
       const result = await contractService.createGame(
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
-        parseFloat(priceUSD),
-        totalRounds,
+        parseFloat(price),
+        5, // Fixed to 5 rounds
         PaymentToken.ETH,
         authInfo
       )
@@ -264,8 +257,8 @@ const CreateFlip = () => {
                       step="0.01"
                       min="0"
                       placeholder="Enter price in USD"
-                      value={priceUSD}
-                      onChange={(e) => setPriceUSD(e.target.value)}
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
                       required
                     />
                     <CurrencyLabel>USD</CurrencyLabel>
@@ -295,6 +288,19 @@ const CreateFlip = () => {
                   </div>
                 </FormSection>
               )}
+
+              {/* Auth Info Input */}
+              <FormSection>
+                <SectionTitle>Auth Info (Optional)</SectionTitle>
+                <InputWrapper>
+                  <Input
+                    type="text"
+                    value={authInfo}
+                    onChange={(e) => setAuthInfo(e.target.value)}
+                    placeholder="Enter any additional info"
+                  />
+                </InputWrapper>
+              </FormSection>
 
               <SubmitButton type="submit" disabled={isSubmitting || !gameType}>
                 {isSubmitting ? (
