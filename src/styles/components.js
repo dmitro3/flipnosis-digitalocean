@@ -377,8 +377,22 @@ export const SubmitButton = styled(Button)`
 `
 
 export const ConnectWalletPrompt = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
   text-align: center;
-  padding: 4rem 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 1rem;
+  margin: 2rem 0;
+
+  /* Rainbow Kit ConnectButton customization */
+  [data-rk] {
+    width: 100%;
+    max-width: 300px;
+  }
 `
 
 export const PromptTitle = styled(NeonText)`

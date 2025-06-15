@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import hazeVideo from '../../Images/Video/haze.webm'
 import { contractService } from '../services/ContractService'
 import { ethers } from 'ethers'
@@ -136,7 +137,7 @@ const FilterSelect = styled.select`
 `
 
 const Home = () => {
-  const { chains, isConnected, connectWallet } = useWallet()
+  const { chains, isConnected } = useWallet()
   const [activeFilter, setActiveFilter] = useState('all')
   const [flips, setFlips] = useState([])
   const [loading, setLoading] = useState(true)
