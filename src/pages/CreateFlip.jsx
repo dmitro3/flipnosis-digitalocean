@@ -36,8 +36,16 @@ import { contractService, PaymentToken } from '../services/ContractService'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
-  const { isConnected, nfts, loading: nftsLoading, provider, address, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
+  const { 
+    isConnected, 
+    nfts, 
+    loading: nftsLoading, 
+    address, 
+    chain,
+    walletClient,
+    publicClient
+  } = useWallet()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [price, setPrice] = useState('')
@@ -54,9 +62,11 @@ const CreateFlip = () => {
       address,
       nftsLoading,
       nftsCount: nfts.length,
-      chain
+      chain,
+      hasWalletClient: !!walletClient,
+      hasPublicClient: !!publicClient
     })
-  }, [isConnected, address, nftsLoading, nfts, chain])
+  }, [isConnected, address, nftsLoading, nfts, chain, walletClient, publicClient])
 
   const createGameWithDatabase = async (gameData) => {
     try {
@@ -110,6 +120,10 @@ const CreateFlip = () => {
 
     if (!price || price <= 0) {
       throw new Error('Please enter a valid price')
+    }
+
+    if (!walletClient || !publicClient) {
+      throw new Error('Wallet clients not initialized')
     }
 
     try {
