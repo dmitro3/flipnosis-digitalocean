@@ -179,45 +179,123 @@ const MyFlipsDropdown = () => {
   if (!isConnected) return null
 
   return (
-    <DropdownContainer>
-      <DropdownButton onClick={() => setIsOpen(!isOpen)}>
-        My Flips
-      </DropdownButton>
+    <div style={{
+      position: 'relative',
+      display: 'inline-block'
+    }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: 'white',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.5rem 1rem',
+          fontSize: '1rem',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        <span>My Flips</span>
+        <span style={{ 
+          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.3s ease'
+        }}>
+          ▼
+        </span>
+      </button>
+
       {isOpen && (
-        <DropdownContent>
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: '0',
+          background: 'rgba(0, 0, 0, 0.9)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '0.5rem',
+          padding: '1rem',
+          minWidth: '300px',
+          zIndex: 1000,
+          marginTop: '0.5rem',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+        }}>
           {loading ? (
-            <EmptyState>Loading...</EmptyState>
+            <div style={{ textAlign: 'center', padding: '1rem' }}>
+              Loading...
+            </div>
           ) : myFlips.length === 0 ? (
-            <EmptyState>No active flips found</EmptyState>
+            <div style={{ textAlign: 'center', padding: '1rem' }}>
+              No flips found
+            </div>
           ) : (
-            myFlips.map(flip => (
-              <FlipItem key={flip.id}>
-                <FlipInfo>
-                  <FlipTitle>{flip.nft_name || 'Unknown NFT'}</FlipTitle>
-                  <FlipStatus>
-                    Status: {flip.status}
-                    {flip.joiner && ` • Joined by ${flip.joiner.slice(0, 6)}...${flip.joiner.slice(-4)}`}
-                  </FlipStatus>
-                </FlipInfo>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <Link to={`/game/${flip.id}`} style={{ textDecoration: 'none' }}>
-                    <CancelButton>View</CancelButton>
-                  </Link>
-                  {flip.status === 'waiting' && (
-                    <CancelButton 
-                      onClick={() => handleCancelFlip(flip.id)}
-                      disabled={loading}
-                    >
-                      Cancel
-                    </CancelButton>
-                  )}
+            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {myFlips.map((flip) => (
+                <div
+                  key={flip.id}
+                  style={{
+                    padding: '0.75rem',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    cursor: 'pointer',
+                    transition: 'background 0.3s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                  onClick={() => {
+                    handleCancelFlip(flip.id)
+                    setIsOpen(false)
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <div style={{ 
+                        fontSize: '0.9rem',
+                        color: theme.colors.textSecondary
+                      }}>
+                        Game #{flip.id.slice(-6).toUpperCase()}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.8rem',
+                        color: theme.colors.textSecondary
+                      }}>
+                        {flip.nft?.name || 'Unknown NFT'}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '0.25rem 0.5rem',
+                      background: flip.status === 'waiting' ? 
+                        'rgba(255, 215, 0, 0.2)' : 
+                        flip.status === 'active' ? 
+                        'rgba(0, 255, 65, 0.2)' : 
+                        'rgba(255, 20, 147, 0.2)',
+                      borderRadius: '0.25rem',
+                      fontSize: '0.8rem',
+                      color: flip.status === 'waiting' ? 
+                        '#FFD700' : 
+                        flip.status === 'active' ? 
+                        '#00FF41' : 
+                        '#FF1493'
+                    }}>
+                      {flip.status.charAt(0).toUpperCase() + flip.status.slice(1)}
+                    </div>
+                  </div>
                 </div>
-              </FlipItem>
-            ))
+              ))}
+            </div>
           )}
-        </DropdownContent>
+        </div>
       )}
-    </DropdownContainer>
+    </div>
   )
 }
 
