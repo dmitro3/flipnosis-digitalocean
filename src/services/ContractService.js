@@ -102,12 +102,28 @@ class ContractService {
       }
 
       // First approve NFT transfer
+      const nftAbi = [
+        {
+          name: 'approve',
+          type: 'function',
+          stateMutability: 'nonpayable',
+          inputs: [
+            { name: 'to', type: 'address' },
+            { name: 'tokenId', type: 'uint256' }
+          ],
+          outputs: [{ type: 'bool' }]
+        }
+      ]
+
       const approveTx = await this.walletClient.writeContract({
         address: nftContract,
-        abi: ["function approve(address to, uint256 tokenId) external"],
+        abi: nftAbi,
         functionName: 'approve',
         args: [CONTRACT_CONFIG.address, tokenId]
       })
+
+      // Wait for approval transaction
+      await this.publicClient.waitForTransactionReceipt({ hash: approveTx })
 
       // Convert price to USD with 6 decimals (e.g., $1.50 = 1500000)
       const priceUSDFormatted = Math.floor(priceUSD * 1000000)
