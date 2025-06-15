@@ -32,6 +32,7 @@ import {
   LoadingSpinner
 } from '../styles/components'
 import { ethers } from 'ethers'
+import { contractService, PaymentToken } from '../services/ContractService'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
