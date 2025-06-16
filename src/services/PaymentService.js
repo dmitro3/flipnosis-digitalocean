@@ -102,10 +102,24 @@ export class PaymentService {
     }
 
     try {
-      const hash = await walletClient.sendTransaction({
+      console.log('📤 Sending transaction:', {
+        to,
+        value: value.toString(),
+        valueInWei: parseEther(value.toString()).toString()
+      })
+
+      // Prepare the transaction
+      const request = await walletClient.prepareTransactionRequest({
         to,
         value: parseEther(value.toString()),
+        chain: walletClient.chain,
+        account: walletClient.account
       })
+
+      // Send the transaction
+      const hash = await walletClient.sendTransaction(request)
+      
+      console.log('✅ Transaction sent:', hash)
       
       return { success: true, hash }
     } catch (error) {

@@ -1,5 +1,13 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
-import { getDefaultWallets } from '@rainbow-me/rainbowkit'
+import { 
+  metaMaskWallet,
+  rainbowWallet,
+  walletConnectWallet,
+  coinbaseWallet,
+  trustWallet,
+  injectedWallet
+} from '@rainbow-me/rainbowkit/wallets'
+import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'wagmi/chains'
 import { http } from 'wagmi'
 
@@ -42,19 +50,34 @@ if (!projectId) {
   throw new Error('WalletConnect Project ID is required')
 }
 
-// Get default wallets
-const { wallets } = getDefaultWallets({
+// Configure wallets with mobile-first approach
+const wallets = [
+  {
+    groupName: 'Popular',
+    wallets: [
+      injectedWallet,
+      metaMaskWallet,
+      coinbaseWallet,
+      walletConnectWallet,
+      rainbowWallet,
+      trustWallet
+    ],
+  },
+]
+
+const connectors = connectorsForWallets(wallets, {
   appName: 'FLIPNOSIS',
   projectId,
-  chains
+  chains,
 })
 
-// Create the config
+// Create the config with mobile-friendly settings
 const config = getDefaultConfig({
   appName: 'FLIPNOSIS',
   projectId,
   chains,
   ssr: false,
+  connectors,
   transports: {
     [base.id]: http(),
     [mainnet.id]: http(),
@@ -64,7 +87,6 @@ const config = getDefaultConfig({
     [bsc.id]: http(),
     [avalanche.id]: http(),
   },
-  wallets
 })
 
 console.log('✅ Rainbow Kit configuration created successfully')

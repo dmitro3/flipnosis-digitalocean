@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
+import { useWalletConnection } from '../utils/useWalletConnection'
 import NFTSelector from '../components/NFTSelector'
 import PaymentService from '../services/PaymentService'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import {
   Container,
   ContentWrapper,
@@ -30,53 +32,53 @@ import {
   ErrorMessage,
   LoadingSpinner
 } from '../styles/components'
-import { ethers } from 'ethers'
 
 const CreateFlip = () => {
   const navigate = useNavigate()
-  const { isConnected, connectWallet, nfts, loading: nftsLoading, provider, address, chain } = useWallet()
+  const { nfts, loading: nftsLoading, publicClient, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
+  const { isFullyConnected, connectionError, address, walletClient } = useWalletConnection()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [priceUSD, setPriceUSD] = useState('')
   const [gameType, setGameType] = useState('') // 'nft-vs-crypto' or 'nft-vs-nft'
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
 
-  // Handle wallet connection
-  const handleConnectWallet = async () => {
-    try {
-      setIsConnecting(true)
-      setError('')
-      const success = await connectWallet()
-      if (success) {
-        showSuccess('Wallet connected successfully')
-      }
-    } catch (error) {
-      console.error('Connection error:', error)
-      showError(`Failed to connect: ${error.message}`)
-      setError(`Failed to connect: ${error.message}`)
-    } finally {
-      setIsConnecting(false)
+  // Debug logging for mobile
+  useEffect(() => {
+    console.log('🔍 CreateFlip - Wallet state:', {
+      isFullyConnected,
+      connectionError,
+      address,
+      hasWalletClient: !!walletClient,
+      chain: chain?.name
+    })
+  }, [isFullyConnected, connectionError, address, walletClient, chain])
+
+  // Show connection error if any
+  useEffect(() => {
+    if (connectionError) {
+      setError(connectionError)
     }
-  }
+  }, [connectionError])
 
-  if (!isConnected) {
+  if (!isFullyConnected || !address) {
     return (
       <ThemeProvider theme={theme}>
         <Container>
           <ContentWrapper>
             <ConnectWalletPrompt>
               <PromptTitle>Connect Your Wallet</PromptTitle>
-              <PromptText>Please connect your wallet to create a new flip game.</PromptText>
-              {error && <ErrorMessage>{error}</ErrorMessage>}
-              <Button 
-                onClick={handleConnectWallet}
-                disabled={isConnecting}
-              >
-                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-              </Button>
+              <PromptText>
+                {connectionError || 'Please connect your wallet to create a new flip game.'}
+              </PromptText>
+              <ConnectButton />
+              {connectionError && (
+                <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#FF6B6B' }}>
+                  {connectionError}
+                </div>
+              )}
             </ConnectWalletPrompt>
           </ContentWrapper>
         </Container>
@@ -144,8 +146,8 @@ const CreateFlip = () => {
         }
       }
 
-      if (!provider || !address) {
-        throw new Error('Wallet not connected')
+      if (!walletClient || !address) {
+        throw new Error('Wallet not connected properly. Please reconnect your wallet.')
       }
 
       showInfo('Processing listing fee payment...')
@@ -165,21 +167,43 @@ const CreateFlip = () => {
       const feeAmountETH = feeCalculation.ethAmount
       console.log(`Listing fee: $${listingFeeUSD} = ${feeAmountETH} ETH`)
 
-      // Send listing fee payment
-      const signer = await provider.getSigner()
+      // Send listing fee payment using walletClient
       const feeRecipient = PaymentService.getFeeRecipient()
-      const feeAmountWei = ethers.parseEther(feeAmountETH.toString())
-
-      const txResult = await PaymentService.buildTransaction(feeRecipient, feeAmountWei, provider)
+      
+      // Use the PaymentService.sendTransaction method which handles walletClient
+      const txResult = await PaymentService.sendTransaction(walletClient, feeRecipient, feeAmountETH.toString())
+      
       if (!txResult.success) {
-        throw new Error('Failed to build transaction: ' + txResult.error)
+        throw new Error('Transaction failed: ' + txResult.error)
       }
 
-      const feeTx = await signer.sendTransaction(txResult.txConfig)
       showInfo('Confirming transaction...')
       
-      const feeReceipt = await feeTx.wait()
-      showSuccess('Listing fee paid successfully!')
+      // Wait for transaction confirmation
+      let receipt = null
+      let attempts = 0
+      const maxAttempts = 60 // 2 minutes max wait
+      
+      while (!receipt && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        try {
+          receipt = await publicClient.getTransactionReceipt({ hash: txResult.hash })
+          if (receipt && receipt.status === 'success') {
+            showSuccess('Listing fee paid successfully!')
+            break
+          } else if (receipt && receipt.status === 'reverted') {
+            throw new Error('Transaction reverted')
+          }
+        } catch (e) {
+          // Transaction might not be mined yet, continue waiting
+          console.log(`⏳ Waiting for confirmation... (${attempts + 1}/${maxAttempts})`)
+        }
+        attempts++
+      }
+      
+      if (!receipt) {
+        throw new Error('Transaction confirmation timeout. Please check your wallet.')
+      }
 
       // Create game data
       const gameData = {
@@ -203,7 +227,7 @@ const CreateFlip = () => {
         listingFee: {
           amountUSD: listingFeeUSD,
           amountETH: feeAmountETH,
-          transactionHash: feeReceipt.hash,
+          transactionHash: txResult.hash,
           paidAt: new Date().toISOString()
         }
       }

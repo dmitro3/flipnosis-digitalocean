@@ -144,17 +144,48 @@ export const WalletProvider = ({ children }) => {
     }
   }, [isConnected, address])
 
+  // Debug logging for mobile
+  useEffect(() => {
+    console.log('🔍 WalletContext state:', {
+      isConnected,
+      address,
+      chainId,
+      hasWalletClient: !!walletClient,
+      hasPublicClient: !!publicClient,
+      isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    })
+  }, [isConnected, address, chainId, walletClient, publicClient])
+
   // Create ethers-compatible provider for legacy code
   const getEthersProvider = () => {
-    if (!window.ethereum) return null
-    
-    try {
-      // Use ethers directly since it's imported at the top
-      return new ethers.BrowserProvider(window.ethereum)
-    } catch (error) {
-      console.error('Failed to create ethers provider:', error)
-      return null
+    // For mobile wallets, we should use the walletClient's transport
+    if (walletClient && walletClient.transport) {
+      try {
+        // Create a custom provider that works with mobile wallets
+        const provider = {
+          // Minimal provider interface for compatibility
+          getSigner: () => {
+            console.warn('getSigner() is deprecated. Use walletClient directly for transactions.')
+            return null
+          },
+          // Add other methods if needed for compatibility
+        }
+        return provider
+      } catch (error) {
+        console.error('Failed to create provider wrapper:', error)
+      }
     }
+    
+    // Fallback to window.ethereum if available
+    if (window.ethereum) {
+      try {
+        return new ethers.BrowserProvider(window.ethereum)
+      } catch (error) {
+        console.error('Failed to create ethers provider:', error)
+      }
+    }
+    
+    return null
   }
 
   const value = {
