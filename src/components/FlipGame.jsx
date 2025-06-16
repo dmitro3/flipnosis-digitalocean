@@ -1060,7 +1060,7 @@ const FlipGame = () => {
                   !gameData.joiner && 
                   gameData.creator !== address && 
                   gameData.status === 'waiting' &&
-                  isConnected
+                  isFullyConnected
 
   return (
     <ThemeProvider theme={theme}>
@@ -1851,7 +1851,7 @@ const FlipGame = () => {
                 }}>
                   <button
                     onClick={handleJoinGame}
-                    disabled={joiningGame || !isConnected}
+                    disabled={joiningGame || !isFullyConnected}
                     style={{
                       background: joiningGame ? 
                         'rgba(255, 20, 147, 0.5)' : 
