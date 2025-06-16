@@ -1,5 +1,5 @@
 import '@rainbow-me/rainbowkit/styles.css'
-import './global.css'
+import './styles/global.css'
 import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
