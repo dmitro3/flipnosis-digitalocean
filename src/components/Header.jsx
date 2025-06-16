@@ -123,7 +123,7 @@ const MenuButton = styled.button`
   background: none;
   border: none;
   color: #00FF41;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   cursor: pointer;
   padding: 0.5rem;
   z-index: 2001;
@@ -166,8 +166,7 @@ const MenuOverlay = styled.div`
   backdrop-filter: blur(5px);
   opacity: ${props => props.isOpen ? 1 : 0};
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  pointer-events: ${props => props.isOpen ? 'auto' : 'none'};
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition: all 0.3s ease;
   z-index: 1999;
 `
 
