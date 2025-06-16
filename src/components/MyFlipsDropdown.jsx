@@ -57,8 +57,15 @@ const DropdownContent = styled.div`
   min-width: 300px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 2100;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  
+  @media (max-width: 768px) {
+    min-width: 280px;
+    max-width: 90vw;
+    right: 0;
+    left: auto;
+  }
 `
 
 const FlipItem = styled.div`

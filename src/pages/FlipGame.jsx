@@ -5,6 +5,7 @@ import { useWalletConnection } from '../utils/useWalletConnection'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import styled from '@emotion/styled'
 import {
   Container,
   ContentWrapper,
@@ -12,6 +13,71 @@ import {
   NeonText,
   Button
 } from '../styles/components'
+
+const GameLayoutContainer = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+    margin-top: 80px; /* Account for fixed header */
+  }
+`
+
+const DesktopLayout = styled.div`
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 2rem;
+  align-items: start;
+  min-height: 500px;
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+`
+
+const MobileLayout = styled.div`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+  }
+`
+
+const MobilePlayerSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+`
+
+const MobileCoinContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+`
+
+const MobileGameInfoSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+`
+
+const MobileChatContainer = styled.div`
+  width: 100%;
+  margin-top: 1rem;
+`
 
 const FlipGame = () => {
   const navigate = useNavigate()
@@ -39,7 +105,66 @@ const FlipGame = () => {
     )
   }
 
-  // ... rest of the component code ...
+  return (
+    <ThemeProvider theme={theme}>
+      <Container>
+        <GameLayoutContainer>
+          {/* Desktop Layout - Hidden on Mobile */}
+          <DesktopLayout>
+            {/* Existing desktop layout code stays exactly the same */}
+          </DesktopLayout>
+          
+          {/* Mobile Layout - Hidden on Desktop */}
+          <MobileLayout>
+            {/* Player 1 Container */}
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              {/* Player 1 content - same as desktop but in mobile container */}
+            </div>
+            
+            {/* Coin Container - Smaller Size */}
+            <MobileCoinContainer>
+              <div style={{ 
+                width: '200px', // Smaller than desktop
+                height: '200px',
+                position: 'relative'
+              }}>
+                {/* Coin component */}
+              </div>
+            </MobileCoinContainer>
+            
+            {/* Player 2 Container */}
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              {/* Player 2 content - same as desktop but in mobile container */}
+            </div>
+            
+            {/* Game Info Boxes - Stacked Vertically */}
+            <MobileGameInfoSection>
+              {/* Power meter */}
+              {/* Choice buttons */}
+              {/* Game status */}
+              {/* Results */}
+              {/* All other game elements stacked vertically */}
+            </MobileGameInfoSection>
+            
+            {/* Chat at the bottom */}
+            <MobileChatContainer>
+              {/* Chat component */}
+            </MobileChatContainer>
+          </MobileLayout>
+        </GameLayoutContainer>
+      </Container>
+    </ThemeProvider>
+  )
 }
 
 export default FlipGame 

@@ -33,6 +33,7 @@ const HeaderContainer = styled.header`
     right: 0;
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(10px);
+    z-index: 1000;
   }
 `
 
@@ -122,10 +123,10 @@ const MenuButton = styled.button`
   background: none;
   border: none;
   color: #00FF41;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   cursor: pointer;
   padding: 0.5rem;
-  z-index: 1001;
+  z-index: 2001;
 
   @media (max-width: 768px) {
     display: block;
@@ -136,18 +137,18 @@ const MobileMenu = styled.div`
   position: fixed;
   top: 0;
   right: 0;
-  width: 80%;
-  max-width: 300px;
+  width: 70%;
+  max-width: 250px;
   height: 100vh;
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(10px);
-  padding: 2rem;
+  padding: 1.5rem;
   transform: translateX(${props => props.isOpen ? '0' : '100%'});
   transition: transform 0.3s ease;
-  z-index: 1000;
+  z-index: 2000;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   overflow-y: auto;
 
   @media (min-width: 769px) {
@@ -165,8 +166,9 @@ const MenuOverlay = styled.div`
   backdrop-filter: blur(5px);
   opacity: ${props => props.isOpen ? 1 : 0};
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transition: all 0.3s ease;
-  z-index: 999;
+  pointer-events: ${props => props.isOpen ? 'auto' : 'none'};
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 1999;
 `
 
 const MenuItem = styled(Link)`

@@ -158,4 +158,74 @@
 .rainbow-button:hover {
   box-shadow: 0 0 30px rgba(0, 255, 65, 0.8) !important;
   transform: scale(1.05) !important;
+}
+
+/* Fix mobile viewport and prevent horizontal scroll */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+  
+  /* Fix any elements that might cause horizontal overflow */
+  * {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  
+  /* Ensure main content is below fixed header */
+  main {
+    padding-top: 80px;
+  }
+  
+  /* Fix z-index hierarchy for mobile */
+  .mobile-menu {
+    z-index: 2000;
+  }
+  
+  .mobile-menu-overlay {
+    z-index: 1999;
+  }
+  
+  .mobile-menu-button {
+    z-index: 2001;
+  }
+  
+  .dropdown-content {
+    z-index: 2100;
+  }
+  
+  /* Improve touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+  }
+  
+  /* Fix coin container positioning */
+  .coin-container {
+    transform: none !important;
+    position: relative !important;
+  }
+
+  /* Selected NFT container adjustments */
+  .selected-nft-container,
+  .selected-flip-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto 1rem;
+    padding: 1rem;
+  }
+  
+  .selected-nft {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  /* Ensure proper spacing */
+  .ContentWrapper {
+    padding: 1rem;
+    margin-top: 80px; /* Account for fixed header */
+  }
 } 
