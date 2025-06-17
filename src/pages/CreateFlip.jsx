@@ -266,12 +266,12 @@ const CreateFlip = () => {
               {/* NEW: Game Type Selection */}
               <FormSection>
                 <SectionTitle>Choose Game Type</SectionTitle>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <button
                     type="button"
                     onClick={() => setGameType('nft-vs-crypto')}
                     style={{
-                      flex: 1,
+                      width: '100%',
                       padding: '1.5rem',
                       background: gameType === 'nft-vs-crypto' ? 
                         'linear-gradient(45deg, #FF1493, #FF69B4)' : 
@@ -297,7 +297,7 @@ const CreateFlip = () => {
                     type="button"
                     onClick={() => setGameType('nft-vs-nft')}
                     style={{
-                      flex: 1,
+                      width: '100%',
                       padding: '1.5rem',
                       background: gameType === 'nft-vs-nft' ? 
                         'linear-gradient(45deg, #00FF41, #39FF14)' : 

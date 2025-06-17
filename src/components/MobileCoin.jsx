@@ -29,7 +29,7 @@ const Face = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(45deg, #FFD700, #B8860B);
+  background: linear-gradient(45deg, #FFE135, #FFD700);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
   border: 2px solid #DAA520;
   overflow: hidden;
@@ -53,6 +53,23 @@ const Face = styled.div`
     animation: shine 3s infinite;
   }
 
+  /* Add texture pattern */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+      radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+      radial-gradient(circle at 75% 25%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+      radial-gradient(circle at 25% 75%, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.5;
+  }
+
   @keyframes shine {
     0% {
       transform: translateX(-100%) rotate(45deg);
@@ -68,6 +85,7 @@ const Symbol = styled.div`
   color: #4A3728;
   margin-bottom: 0.5rem;
   text-shadow: 0 0 5px rgba(74, 55, 40, 0.5);
+  filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.5));
 `;
 
 const Text = styled.div`
@@ -78,6 +96,7 @@ const Text = styled.div`
   letter-spacing: 2px;
   text-shadow: 0 0 5px rgba(74, 55, 40, 0.5);
   font-weight: 600;
+  filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.5));
 `;
 
 const Heads = styled(Face)`
@@ -95,13 +114,14 @@ const Edge = styled.div`
   border-radius: 50%;
   background: repeating-linear-gradient(
     90deg,
-    #DAA520,
-    #DAA520 2px,
-    #B8860B 2px,
-    #B8860B 4px
+    #FFE135,
+    #FFE135 2px,
+    #FFD700 2px,
+    #FFD700 4px
   );
   transform: rotateX(90deg);
   transform-style: preserve-3d;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 `;
 
 const MobileCoin = ({

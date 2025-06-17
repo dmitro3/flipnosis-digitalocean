@@ -1366,7 +1366,7 @@ const FlipGame = () => {
               <div style={{ marginBottom: '1rem' }}>
                 <h3 style={{ color: theme.colors.neonYellow, marginBottom: '0.5rem' }}>Game Info</h3>
                 <div style={{ color: theme.colors.textSecondary }}>
-                  {/* Game Price */}
+                  {/* Entry Fee */}
                   <div style={{ 
                     padding: '0.75rem',
                     background: 'rgba(255, 255, 255, 0.05)',
@@ -1379,7 +1379,7 @@ const FlipGame = () => {
                       alignItems: 'center',
                       marginBottom: '0.5rem'
                     }}>
-                      <span>Entry Fee:</span>
+                      <span>Cost:</span>
                       <span style={{ 
                         color: theme.colors.neonGreen,
                         fontWeight: 'bold'
@@ -1403,12 +1403,34 @@ const FlipGame = () => {
                       marginBottom: '0.5rem'
                     }}>
                       <span>Contract:</span>
-                      <span style={{ 
-                        fontFamily: 'monospace',
-                        fontSize: '0.9rem'
-                      }}>
-                        {gameData?.contractAddress ? 
-                          `${gameData.contractAddress.slice(0, 6)}...${gameData.contractAddress.slice(-4)}` : 
+                      <span 
+                        onClick={() => {
+                          if (gameData?.nft?.contractAddress) {
+                            navigator.clipboard.writeText(gameData.nft.contractAddress);
+                            showSuccess('Contract address copied to clipboard!');
+                          }
+                        }}
+                        style={{ 
+                          color: theme.colors.textPrimary,
+                          fontFamily: 'monospace',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          padding: '0.25rem 0.5rem',
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          borderRadius: '0.25rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
+                          e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)';
+                          e.currentTarget.style.border = 'none';
+                        }}
+                      >
+                        {gameData?.nft?.contractAddress ? 
+                          `${gameData.nft.contractAddress.slice(0, 6)}...${gameData.nft.contractAddress.slice(-4)}` : 
                           'Unknown'
                         }
                       </span>
@@ -1440,26 +1462,61 @@ const FlipGame = () => {
                         <p style={{ marginTop: '0.5rem', textAlign: 'center' }}>{gameData.nft.name}</p>
                         <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Collection: {gameData.nft.collection}</p>
                         <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Token ID: {gameData.nft.tokenId}</p>
-                        <p style={{ 
-                          fontSize: '0.8rem', 
-                          opacity: 0.7,
-                          wordBreak: 'break-all',
-                          marginTop: '0.5rem'
-                        }}>
-                          Contract: {gameData.nft.contract}
-                        </p>
                       </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        gap: '0.5rem', 
+                      <div style={{
+                        display: 'flex',
+                        gap: '0.5rem',
                         marginTop: '0.5rem',
                         justifyContent: 'center'
                       }}>
-                        <Button onClick={() => window.open(`https://opensea.io/assets/${gameData.nft.contract}/${gameData.nft.tokenId}`, '_blank')}>
+                        <Button 
+                          onClick={() => window.open(`https://opensea.io/assets/${gameData.nft.contract}/${gameData.nft.tokenId}`, '_blank')}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '0.5rem',
+                            fontSize: '0.8rem',
+                            textDecoration: 'none',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            transition: 'all 0.3s ease',
+                            flex: 1,
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <img 
+                            src="/images/opensea.png" 
+                            alt="OpenSea" 
+                            style={{ 
+                              width: '16px', 
+                              height: '16px',
+                              objectFit: 'contain'
+                            }} 
+                          />
                           OpenSea
                         </Button>
-                        <Button onClick={() => window.open(`https://basescan.org/token/${gameData.nft.contract}?a=${gameData.nft.tokenId}`, '_blank')}>
-                          Explorer
+                        <Button 
+                          onClick={() => window.open(`https://basescan.org/token/${gameData.nft.contract}?a=${gameData.nft.tokenId}`, '_blank')}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '0.5rem',
+                            fontSize: '0.8rem',
+                            textDecoration: 'none',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            transition: 'all 0.3s ease',
+                            flex: 1,
+                            justifyContent: 'center'
+                          }}
+                        >
+                          🔍 Explorer
                         </Button>
                       </div>
                     </>
@@ -1507,7 +1564,7 @@ const FlipGame = () => {
                       fontWeight: 'bold',
                       fontSize: '1rem'
                     }}>
-                      Player 1 {isCreator && '(You)'}
+                      {gameState?.creatorProfile?.name || 'Player 1'} {isCreator && '(You)'}
                     </div>
                   </div>
                   <div style={{
@@ -1609,7 +1666,7 @@ const FlipGame = () => {
                       fontWeight: 'bold',
                       fontSize: '1rem'
                     }}>
-                      Player 2 {isJoiner && '(You)'}
+                      {gameState?.joinerProfile?.name || 'Player 2'} {isJoiner && '(You)'}
                     </div>
                   </div>
                   <div style={{
@@ -1698,6 +1755,16 @@ const FlipGame = () => {
                       onClick={() => window.open(getMarketplaceUrl(gameData?.chain), '_blank')}
                       style={{ flex: 1 }}
                     >
+                      <img 
+                        src="/images/opensea.png" 
+                        alt="OpenSea" 
+                        style={{ 
+                          width: '16px', 
+                          height: '16px',
+                          objectFit: 'contain',
+                          marginRight: '0.4rem'
+                        }} 
+                      />
                       View on OpenSea
                     </Button>
                   </ButtonGroup>
@@ -2036,7 +2103,7 @@ const FlipGame = () => {
                         opacity: 0.8,
                         color: theme.colors.neonPink 
                       }}>
-                        💎 Player 1 {gameState?.creatorChoice && `(${gameState.creatorChoice.toUpperCase()})`}
+                        💎 {gameState?.creatorProfile?.name || 'Player 1'} {gameState?.creatorChoice && `(${gameState.creatorChoice.toUpperCase()})`}
                       </div>
                       <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
                         {gameState?.creatorProfile?.name || 
@@ -2205,7 +2272,7 @@ const FlipGame = () => {
                         opacity: 0.8,
                         color: theme.colors.neonBlue 
                       }}>
-                        💎 Player 2 {gameState?.joinerChoice && `(${gameState.joinerChoice.toUpperCase()})`}
+                        💎 {gameState?.joinerProfile?.name || 'Player 2'} {gameState?.joinerChoice && `(${gameState.joinerChoice.toUpperCase()})`}
                       </div>
                       <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
                         {gameState?.joinerProfile?.name || 
@@ -2660,21 +2727,30 @@ const FlipGame = () => {
                       href={`${getMarketplaceUrl(nftData?.chain)}/${nftData.contractAddress}/${nftData.tokenId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                    style={{
+                      style={{
                         background: 'rgba(255, 255, 255, 0.1)',
                         padding: '0.4rem 0.8rem',
-                      borderRadius: '0.5rem',
+                        borderRadius: '0.5rem',
                         fontSize: '0.8rem',
                         textDecoration: 'none',
                         color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: '0.4rem',
                         border: '1px solid rgba(255, 255, 255, 0.2)',
-                      transition: 'all 0.3s ease'
-                    }}
+                        transition: 'all 0.3s ease'
+                      }}
                     >
-                      🛍️ OpenSea
+                      <img 
+                        src="/images/opensea.png" 
+                        alt="OpenSea" 
+                        style={{ 
+                          width: '16px', 
+                          height: '16px',
+                          objectFit: 'contain'
+                        }} 
+                      />
+                      OpenSea
                     </a>
                   </div>
                   

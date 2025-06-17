@@ -328,6 +328,7 @@ const ModalContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 90vw;
 `;
 const CloseButton = styled.button`
   background: none;
@@ -349,12 +350,13 @@ const ModalHeader = styled.div`
 `;
 
 const ModalBody = styled.div`
-  max-width: 600px;
+  max-width: 90vw;
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 1rem;
 `;
 
 const Header = () => {
@@ -419,7 +421,8 @@ const Header = () => {
                   style={{ 
                     maxWidth: '100%', 
                     height: 'auto',
-                    borderRadius: '1rem'
+                    borderRadius: '1rem',
+                    objectFit: 'contain'
                   }} 
                 />
               </ModalBody>

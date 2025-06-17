@@ -649,7 +649,16 @@ const Home = () => {
                             justifyContent: 'center'
                           }}
                         >
-                          🛍️ OpenSea
+                          <img 
+                            src="images/opensea.png" 
+                            alt="OpenSea" 
+                            style={{ 
+                              width: '16px', 
+                              height: '16px',
+                              objectFit: 'contain'
+                            }} 
+                          />
+                          OpenSea
                         </a>
                       </div>
                       
@@ -762,8 +771,8 @@ const Home = () => {
 
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                  gap: window.innerWidth <= 768 ? '0.5rem' : '1rem',
+                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
+                  gap: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
                   margin: '1rem 0',
                   width: '100%',
                   overflowX: 'hidden'
@@ -775,14 +784,15 @@ const Home = () => {
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
                         borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
-                        padding: window.innerWidth <= 768 ? '0.25rem' : '1rem',
+                        padding: window.innerWidth <= 768 ? '0.25rem' : '0.75rem',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: window.innerWidth <= 768 ? '0.15rem' : '0.75rem',
-                        height: window.innerWidth <= 768 ? 'auto' : 'auto'
+                        gap: window.innerWidth <= 768 ? '0.15rem' : '0.5rem',
+                        height: window.innerWidth <= 768 ? 'auto' : '280px',
+                        width: '100%'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.02)';
@@ -798,11 +808,17 @@ const Home = () => {
                         aspectRatio: '1',
                         borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
                         overflow: 'hidden',
-                        width: '100%'
+                        width: '100%',
+                        height: window.innerWidth <= 768 ? 'auto' : '180px'
                       }}>
                         <GameImage 
                           src={flip.nft.image} 
                           alt={flip.nft.name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
                         />
                         <div style={{
                           position: 'absolute',
@@ -812,9 +828,9 @@ const Home = () => {
                             'linear-gradient(45deg, #00FF41, #39FF14)' : 
                             'linear-gradient(45deg, #FF1493, #FF69B4)',
                           color: flip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
-                          padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.25rem 0.5rem',
+                          padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.15rem 0.35rem',
                           borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.7rem',
+                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
                           fontWeight: 'bold'
                         }}>
                           {flip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
@@ -823,11 +839,13 @@ const Home = () => {
                       <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: window.innerWidth <= 768 ? '0.1rem' : '0.5rem',
-                        padding: window.innerWidth <= 768 ? '0.1rem' : '0.5rem'
+                        gap: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
+                        padding: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
+                        height: window.innerWidth <= 768 ? 'auto' : '80px',
+                        justifyContent: 'space-between'
                       }}>
                         <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.9rem',
+                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.8rem',
                           fontWeight: 'bold',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -836,7 +854,7 @@ const Home = () => {
                           {flip.nft.name}
                         </div>
                         <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.8rem',
+                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.7rem',
                           color: theme.colors.textSecondary,
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -845,7 +863,7 @@ const Home = () => {
                           {flip.nft.collection}
                         </div>
                         <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.9rem',
+                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.8rem',
                           fontWeight: 'bold',
                           color: theme.colors.neonBlue
                         }}>
