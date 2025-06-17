@@ -411,81 +411,158 @@ const Home = () => {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '240px 1fr 300px',
+              gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '240px 1fr',
               gap: '1.5rem',
               marginTop: '2rem'
             }}>
               {/* Left Box - Selected Game */}
               <div style={{
-                order: window.innerWidth <= 768 ? 1 : 0
+                order: window.innerWidth <= 768 ? 1 : 0,
+                width: window.innerWidth <= 768 ? '100%' : '240px'
               }}>
                 {selectedFlip && (
                   <div style={{
                     background: 'rgba(0, 0, 0, 0.8)',
                     borderRadius: '1rem',
-                    padding: '1.5rem',
+                    padding: window.innerWidth <= 768 ? '1.25rem' : '1.5rem',
                     border: `2px solid ${selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink}`,
-                    maxWidth: '240px'
+                    maxWidth: window.innerWidth <= 768 ? '100%' : '240px'
                   }}>
-                    <div style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
-                      <GameImage 
-                        src={selectedFlip.nft.image} 
-                        alt={selectedFlip.nft.name}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        top: '0.5rem',
-                        right: '0.5rem',
-                        background: selectedFlip.gameType === 'nft-vs-nft' ? 
-                          'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                          'linear-gradient(45deg, #FF1493, #FF69B4)',
-                        color: selectedFlip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold'
+                    <div style={{ 
+                      fontSize: '1.2rem', 
+                      fontWeight: 'bold', 
+                      color: theme.colors.neonBlue,
+                      borderBottom: `2px solid ${theme.colors.neonBlue}`,
+                      paddingBottom: '0.5rem',
+                      marginBottom: '1rem',
+                      textShadow: `0 0 10px ${theme.colors.neonBlue}`
+                    }}>
+                      Current Flip
+                    </div>
+                    <div style={{ 
+                      display: 'flex',
+                      flexDirection: window.innerWidth <= 768 ? 'row' : 'column',
+                      gap: window.innerWidth <= 768 ? '1rem' : '1rem',
+                      alignItems: window.innerWidth <= 768 ? 'flex-start' : 'stretch'
+                    }}>
+                      <div style={{ 
+                        position: 'relative', 
+                        aspectRatio: '1', 
+                        borderRadius: '0.75rem', 
+                        overflow: 'hidden',
+                        width: window.innerWidth <= 768 ? '60%' : '100%',
+                        flexShrink: 0
                       }}>
-                        {selectedFlip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                        <GameImage 
+                          src={selectedFlip.nft.image} 
+                          alt={selectedFlip.nft.name}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '0.5rem',
+                          right: '0.5rem',
+                          background: selectedFlip.gameType === 'nft-vs-nft' ? 
+                            'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                            'linear-gradient(45deg, #FF1493, #FF69B4)',
+                          color: selectedFlip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          fontSize: '0.7rem',
+                          fontWeight: 'bold'
+                        }}>
+                          {selectedFlip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                        </div>
                       </div>
+
+                      {window.innerWidth <= 768 && (
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.5rem',
+                          flex: 1
+                        }}>
+                          <div style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.5rem',
+                            borderRadius: '0.5rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)'
+                          }}>
+                            <div style={{ fontSize: '0.7rem', color: theme.colors.textSecondary }}>Price</div>
+                            <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>${selectedFlip.priceUSD.toFixed(2)}</div>
+                          </div>
+                          <div style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.5rem',
+                            borderRadius: '0.5rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)'
+                          }}>
+                            <div style={{ fontSize: '0.7rem', color: theme.colors.textSecondary }}>Type</div>
+                            <div style={{ 
+                              fontSize: '0.9rem', 
+                              fontWeight: 'bold',
+                              color: selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink
+                            }}>
+                              {selectedFlip.gameType === 'nft-vs-nft' ? 'NFT Battle' : 'NFT vs Crypto'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
-                    <GameInfo>
-                      <GameTitle>{selectedFlip.nft.name}</GameTitle>
-                      <GameCollection>{selectedFlip.nft.collection}</GameCollection>
+                    <GameInfo style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1rem'
+                    }}>
+                      <div>
+                        <GameTitle style={{
+                          fontSize: '1.2rem',
+                          marginBottom: '0.5rem'
+                        }}>{selectedFlip.nft.name}</GameTitle>
+                        <GameCollection style={{
+                          fontSize: '0.9rem'
+                        }}>{selectedFlip.nft.collection}</GameCollection>
+                      </div>
                       
-                      <GameStats>
-                        {selectedFlip.gameType === 'nft-vs-nft' ? (
-                          <>
-                            <GameStat>
-                              <span>Type</span>
-                              <div style={{ color: theme.colors.neonGreen }}>NFT Battle</div>
-                            </GameStat>
-                            <GameStat>
-                              <span>Stakes</span>
-                              <div>Winner Takes All</div>
-                            </GameStat>
-                            {selectedFlip.challengerNFT && (
+                      {window.innerWidth > 768 && (
+                        <GameStats style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr',
+                          gap: '0.75rem'
+                        }}>
+                          {selectedFlip.gameType === 'nft-vs-nft' ? (
+                            <>
                               <GameStat>
-                                <span>VS</span>
-                                <div style={{ color: theme.colors.neonYellow }}>
-                                  {selectedFlip.challengerNFT.name}
-                                </div>
+                                <span>Type</span>
+                                <div style={{ color: theme.colors.neonGreen }}>NFT Battle</div>
                               </GameStat>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <GameStat>
-                              <span>Price</span>
-                              <div>${selectedFlip.priceUSD.toFixed(2)}</div>
-                            </GameStat>
-                            <GameStat>
-                              <span>Type</span>
-                              <div style={{ color: theme.colors.neonPink }}>NFT vs Crypto</div>
-                            </GameStat>
-                          </>
-                        )}
-                      </GameStats>
+                              <GameStat>
+                                <span>Stakes</span>
+                                <div>Winner Takes All</div>
+                              </GameStat>
+                              {selectedFlip.challengerNFT && (
+                                <GameStat>
+                                  <span>VS</span>
+                                  <div style={{ color: theme.colors.neonYellow }}>
+                                    {selectedFlip.challengerNFT.name}
+                                  </div>
+                                </GameStat>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <GameStat>
+                                <span>Price</span>
+                                <div>${selectedFlip.priceUSD.toFixed(2)}</div>
+                              </GameStat>
+                              <GameStat>
+                                <span>Type</span>
+                                <div style={{ color: theme.colors.neonPink }}>NFT vs Crypto</div>
+                              </GameStat>
+                            </>
+                          )}
+                        </GameStats>
+                      )}
                       
                       {/* Links */}
                       <div style={{ 
@@ -539,19 +616,76 @@ const Home = () => {
                         </a>
                       </div>
                       
-                      <GameFlipButton 
-                        as={Link} 
-                        to={`/game/${selectedFlip.id}`}
-                        style={{
-                          background: selectedFlip.gameType === 'nft-vs-nft' ? 
-                            'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                            'linear-gradient(45deg, #FF1493, #FF69B4)',
-                          color: selectedFlip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {selectedFlip.gameType === 'nft-vs-nft' ? '⚔️ Join Battle' : '💎 View Flip'}
-                      </GameFlipButton>
+                      <div style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        marginTop: '1rem'
+                      }}>
+                        <Button 
+                          onClick={() => navigate(`/flip/${selectedFlip.id}`)}
+                          style={{
+                            flex: 2,
+                            background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '0.5rem',
+                            fontSize: '1rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            textShadow: '0 0 10px rgba(255, 20, 147, 0.5)',
+                            boxShadow: '0 0 20px rgba(255, 20, 147, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                            e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.5)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
+                          }}
+                        >
+                          View Flip
+                        </Button>
+                        {selectedFlip.gameType === 'nft-vs-nft' && !selectedFlip.challengerNFT && (
+                          <Button 
+                            onClick={() => navigate(`/flip/${selectedFlip.id}/join`)}
+                            style={{
+                              flex: 1,
+                              background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
+                              color: '#fff',
+                              border: 'none',
+                              padding: '0.75rem 1.5rem',
+                              borderRadius: '0.5rem',
+                              fontSize: '1rem',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              textShadow: '0 0 10px rgba(255, 20, 147, 0.5)',
+                              boxShadow: '0 0 20px rgba(255, 20, 147, 0.3)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.5rem'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                              e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
+                            }}
+                          >
+                            <span>⚔️</span> Join Battle
+                          </Button>
+                        )}
+                      </div>
                     </GameInfo>
                   </div>
                 )}
@@ -579,261 +713,99 @@ const Home = () => {
                   Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
                 </div>
                 <div style={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
-                  padding: '0.5rem'
+                  display: 'grid', 
+                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                  gap: window.innerWidth <= 768 ? '0.5rem' : '1rem',
+                  margin: '1rem 0',
+                  width: '100%',
+                  overflowX: 'hidden'
                 }}>
                   {filteredFlips.map(flip => (
                     <div
                       key={flip.id}
-                      onClick={() => handleSelectFlip(flip)}
+                      onClick={() => setSelectedFlip(flip)}
                       style={{
-                        background: 'rgba(0, 0, 0, 0.6)',
-                        borderRadius: '0.75rem',
-                        padding: '0.75rem',
-                        border: `1px solid ${flip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonBlue}`,
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
+                        padding: window.innerWidth <= 768 ? '0.25rem' : '1rem',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                        }
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: window.innerWidth <= 768 ? '0.15rem' : '0.75rem',
+                        height: window.innerWidth <= 768 ? 'auto' : 'auto'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ 
-                          width: '60px', 
-                          height: '60px', 
-                          borderRadius: '0.5rem',
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                          position: 'relative'
+                      <div style={{ 
+                        position: 'relative',
+                        aspectRatio: '1',
+                        borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
+                        overflow: 'hidden',
+                        width: '100%'
+                      }}>
+                        <GameImage 
+                          src={flip.nft.image} 
+                          alt={flip.nft.name}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '0.25rem',
+                          right: '0.25rem',
+                          background: flip.gameType === 'nft-vs-nft' ? 
+                            'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                            'linear-gradient(45deg, #FF1493, #FF69B4)',
+                          color: flip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
+                          padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.25rem 0.5rem',
+                          borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
+                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.7rem',
+                          fontWeight: 'bold'
                         }}>
-                          <GameImage 
-                            src={flip.nft.image} 
-                            alt={flip.nft.name}
-                          />
-                          <div style={{
-                            position: 'absolute',
-                            top: '2px',
-                            right: '2px',
-                            background: flip.gameType === 'nft-vs-nft' ? 
-                              'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                              'linear-gradient(45deg, #FF1493, #FF69B4)',
-                            color: flip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
-                            fontSize: '8px',
-                            padding: '1px 3px',
-                            borderRadius: '2px',
-                            fontWeight: 'bold'
-                          }}>
-                            {flip.gameType === 'nft-vs-nft' ? '⚔️' : '💰'}
-                          </div>
-                          {flip.status === 'completed' && (
-                            <div style={{
-                              position: 'absolute',
-                              bottom: '2px',
-                              left: '2px',
-                              right: '2px',
-                              background: 'rgba(255, 0, 0, 0.9)',
-                              color: '#fff',
-                              fontSize: '8px',
-                              padding: '2px 4px',
-                              borderRadius: '2px',
-                              fontWeight: 'bold',
-                              textAlign: 'center',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                              boxShadow: '0 0 5px rgba(255, 0, 0, 0.5)'
-                            }}>
-                              Ended
-                            </div>
-                          )}
+                          {flip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '0.5rem'
-                          }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
-                              {flip.nft.name}
-                            </div>
-                            {flip.status === 'completed' && (
-                              <div style={{
-                                background: 'rgba(255, 20, 147, 0.2)',
-                                color: theme.colors.neonPink,
-                                padding: '0.25rem 0.75rem',
-                                borderRadius: '1rem',
-                                fontSize: '0.9rem',
-                                fontWeight: 'bold',
-                                border: `1px solid ${theme.colors.neonPink}`
-                              }}>
-                                ENDED
-                              </div>
-                            )}
-                          </div>
-                          <div style={{ 
-                            fontSize: '0.8rem',
-                            color: theme.colors.textSecondary,
-                            marginBottom: '0.5rem'
-                          }}>
-                            {flip.nft.collection}
-                          </div>
-                          <div style={{ 
-                            display: 'flex', 
-                            gap: '0.75rem',
-                            fontSize: '0.8rem',
-                            color: theme.colors.textSecondary,
-                            alignItems: 'center'
-                          }}>
-                            <span>{flip.rounds} Rounds</span>
-                            <span>{flip.chain}</span>
-                            <span>
-                              {flip.gameType === 'nft-vs-nft' ? (
-                                <span style={{ 
-                                  color: theme.colors.neonGreen,
-                                  fontWeight: 'bold'
-                                }}>
-                                  ⚔️ NFT Battle
-                                </span>
-                              ) : (
-                                <span style={{ 
-                                  color: theme.colors.neonPink,
-                                  fontWeight: 'bold'
-                                }}>
-                                  ${flip.priceUSD.toFixed(2)}
-                                </span>
-                              )}
-                            </span>
-                            {flip.gameType === 'nft-vs-nft' && flip.challengerNFT && (
-                              <span style={{
-                                color: theme.colors.neonYellow,
-                                fontSize: '0.7rem'
-                              }}>
-                                vs {flip.challengerNFT.name}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <GameFlipButton 
-                          as={Link} 
-                          to={`/game/${flip.id}`}
-                          style={{
-                            padding: '0.2rem 0.6rem',
-                            fontSize: '0.7rem',
-                            height: '28px',
-                            minWidth: 'unset',
-                            width: 'auto',
-                            textAlign: 'center',
-                            color: '#fff',
-                            fontWeight: 'bold',
-                            background: flip.gameType === 'nft-vs-nft' ? 
-                              'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                              'linear-gradient(45deg, #FF1493, #FF69B4)',
-                            alignSelf: 'center',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            lineHeight: 1,
-                            marginLeft: 'auto',
-                            '&:hover': {
-                              background: flip.gameType === 'nft-vs-nft' ? 
-                                'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                                'linear-gradient(45deg, #FF1493, #FF69B4)',
-                              color: flip.gameType === 'nft-vs-nft' ? '#000' : '#fff'
-                            }
-                          }}
-                        >
-                          {flip.gameType === 'nft-vs-nft' ? 'BATTLE' : 'VIEW FLIP'}
-                        </GameFlipButton>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Box - Live Games */}
-              <div style={{
-                background: 'rgba(0, 0, 20, 0.95)',
-                borderRadius: '1rem',
-                padding: '1rem',
-                border: `1px solid ${theme.colors.neonPink}`,
-                maxHeight: window.innerWidth <= 768 ? 'none' : '600px',
-                overflowY: 'auto',
-                order: window.innerWidth <= 768 ? 3 : 0
-              }}>
-                <div style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  color: theme.colors.neonPink,
-                  marginBottom: '1rem',
-                  padding: '0.5rem',
-                  borderBottom: `1px solid ${theme.colors.neonPink}`,
-                  textShadow: '0 0 10px rgba(255, 105, 180, 0.5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <LiveDot />
-                  Live Games ({flips.filter(f => f.status === 'active').length})
-                </div>
-                
-                <div style={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem'
-                }}>
-                  {flips
-                    .filter(flip => flip.status === 'active' || flip.status === 'joined')
-                    .map(flip => (
-                      <div
-                        key={flip.id}
-                        onClick={() => handleSelectFlip(flip)}
-                        style={{
-                          background: 'rgba(0, 0, 0, 0.6)',
-                          borderRadius: '0.75rem',
-                          padding: '0.75rem',
-                          border: `1px solid ${theme.colors.neonPink}`,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                          }
-                        }}
-                      >
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: window.innerWidth <= 768 ? '0.1rem' : '0.5rem',
+                        padding: window.innerWidth <= 768 ? '0.1rem' : '0.5rem'
+                      }}>
                         <div style={{ 
-                          fontSize: '0.9rem', 
+                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.9rem',
                           fontWeight: 'bold',
-                          marginBottom: '0.25rem',
-                          color: theme.colors.textPrimary
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
                         }}>
                           {flip.nft.name}
                         </div>
                         <div style={{ 
-                          display: 'flex', 
-                          gap: '0.75rem',
-                          fontSize: '0.8rem',
-                          color: theme.colors.textSecondary
+                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.8rem',
+                          color: theme.colors.textSecondary,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
                         }}>
-                          <span>${(flip?.priceUSD || 0).toFixed(2)}</span>
-                          <span>•</span>
-                          <span>{flip.creatorWins || 0}-{flip.joinerWins || 0}</span>
-                          <span>•</span>
-                          <span>{getStatusIcon(flip.status)} {flip.status}</span>
-                          <span>•</span>
-                          <span>{flip.chain}</span>
+                          {flip.nft.collection}
+                        </div>
+                        <div style={{ 
+                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.9rem',
+                          fontWeight: 'bold',
+                          color: theme.colors.neonBlue
+                        }}>
+                          ${flip.priceUSD.toFixed(2)}
                         </div>
                       </div>
-                    ))}
-                  
-                  {flips.filter(flip => flip.status === 'active' || flip.status === 'joined').length === 0 && (
-                    <p style={{ color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', padding: '1rem' }}>
-                      No active games at the moment
-                    </p>
-                  )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
