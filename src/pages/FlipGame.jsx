@@ -13,6 +13,7 @@ import {
   NeonText,
   Button
 } from '../styles/components'
+import FlipGameComponent from '../components/FlipGame'
 
 const GameLayoutContainer = styled.div`
   width: 100%;
@@ -105,112 +106,7 @@ const FlipGame = () => {
     )
   }
 
-  return (
-    <ThemeProvider theme={theme}>
-      <Container>
-        <ContentWrapper>
-          {/* Main Game Area - Responsive Layout */}
-          <div style={{ 
-            // Desktop Layout
-            display: window.innerWidth > 768 ? 'grid' : 'none',
-            gridTemplateColumns: '300px 1fr 300px',
-            gap: '2rem', 
-            marginBottom: '2rem',
-            alignItems: 'start',
-            minHeight: '500px'
-          }}>
-            {/* Your existing desktop layout code stays exactly the same */}
-          </div>
-
-          {/* NEW: Mobile Layout - Only shows on mobile */}
-          <div style={{
-            display: window.innerWidth <= 768 ? 'flex' : 'none',
-            flexDirection: 'column',
-            gap: '1rem',
-            width: '100%',
-            marginBottom: '2rem'
-          }}>
-            {/* Mobile: Player 1 Container */}
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              width: '100%'
-            }}>
-              {/* Player 1 content */}
-            </div>
-
-            {/* Mobile: Coin Container - Smaller */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '1rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              width: '100%'
-            }}>
-              <div style={{ width: '200px', height: '200px' }}>
-                {/* Coin component */}
-              </div>
-            </div>
-
-            {/* Mobile: Player 2 Container */}
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              width: '100%'
-            }}>
-              {/* Player 2 content */}
-            </div>
-
-            {/* Mobile: Power Display */}
-            <div style={{
-              width: '100%',
-              padding: '1rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              {/* Power display content */}
-            </div>
-
-            {/* Mobile: Game Info */}
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              textAlign: 'center',
-              width: '100%'
-            }}>
-              {/* Game info content */}
-            </div>
-
-            {/* Mobile: NFT Details */}
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '1rem',
-              padding: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              width: '100%'
-            }}>
-              {/* NFT details content */}
-            </div>
-
-            {/* Mobile: Chat Box */}
-            <div style={{ width: '100%' }}>
-              {/* Chat component */}
-            </div>
-          </div>
-        </ContentWrapper>
-      </Container>
-    </ThemeProvider>
-  )
+  return <FlipGameComponent />
 }
 
 export default FlipGame 

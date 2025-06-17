@@ -26,6 +26,7 @@ import GameResultPopup from './GameResultPopup'
 import GameChatBox from './GameChatBox'
 import NFTVerificationDisplay from './NFTVerificationDisplay'
 import NFTOfferComponent from './NFTOfferComponent'
+import MobileCoin from './MobileCoin'
 
 const BackgroundVideo = styled.video`
   position: fixed;
@@ -126,10 +127,10 @@ const CloseButton = styled.button`
 
 const NFTImage = styled.img`
   width: 100%;
-  max-width: 300px;
+  max-width: 200px;
   height: auto;
   border-radius: 1rem;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
 `
 
 const NFTLink = styled.a`
@@ -161,7 +162,49 @@ const MobilePlayerBox = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
   margin-bottom: 0.5rem;
-`
+`;
+
+const MobileNFTBox = styled.div`
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  margin: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const NFTDetails = styled.div`
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+`;
+
+const NFTDetailRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const NFTLabel = styled.span`
+  color: ${props => props.theme.colors.textSecondary};
+`;
+
+const NFTValue = styled.span`
+  color: ${props => props.theme.colors.textPrimary};
+  font-family: monospace;
+`;
 
 const MobileCoinBox = styled.div`
   display: flex;
@@ -177,6 +220,27 @@ const MobileCoinBox = styled.div`
   max-width: 300px;
   margin-left: auto;
   margin-right: auto;
+  touch-action: none;
+`
+
+const MobileStatusBox = styled.div`
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  margin: 0.5rem 0;
+`
+
+const MobileChatBox = styled.div`
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  margin: 0.5rem 0;
+  height: 300px;
+  overflow-y: auto;
 `
 
 const DesktopOnlyLayout = styled.div`
@@ -188,6 +252,103 @@ const DesktopOnlyLayout = styled.div`
   min-height: 500px;
 
   @media (max-width: 768px) {
+    display: none;
+  }
+`
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
+  padding: 0.5rem;
+`
+
+const MobileBottomNav = styled.div`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+`
+
+const MobileNavButton = styled.button`
+  flex: ${props => props.isJoinButton ? '2' : '1'};
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: ${props => props.isJoinButton ? 'linear-gradient(45deg, #FF1493, #FF69B4)' : 'rgba(255, 255, 255, 0.05)'};
+  color: white;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: ${props => props.isJoinButton ? '0 0 20px rgba(255, 20, 147, 0.5)' : '0 0 10px rgba(255, 255, 255, 0.2)'};
+  }
+`
+
+const MobileHidden = styled.div`
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const MobileOnly = styled.div`
+  display: none;
+  @media (max-width: 768px) {
+    display: block;
+  }
+`;
+
+const MobileInfoPanel = styled.div`
+  position: fixed;
+  bottom: ${props => props.isOpen ? '80px' : '-100%'};
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: bottom 0.3s ease;
+  z-index: 999;
+  max-height: 80vh;
+  overflow-y: auto;
+
+  @media (min-width: 769px) {
+    display: none;
+  }
+`
+
+const MobileChatPanel = styled.div`
+  position: fixed;
+  bottom: ${props => props.isOpen ? '80px' : '-100%'};
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: bottom 0.3s ease;
+  z-index: 999;
+  height: 60vh;
+
+  @media (min-width: 769px) {
     display: none;
   }
 `
@@ -251,6 +412,9 @@ const FlipGame = () => {
 
   const videoRef = useRef(null);
   const [videoError, setVideoError] = useState(false);
+
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   useEffect(() => {
     const video = videoRef.current;
@@ -1178,236 +1342,394 @@ const FlipGame = () => {
               </div>
             )}
 
-            {/* Player 1 Box (Creator) */}
-            <MobilePlayerBox style={{
-              background: isCreator ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-              border: `2px solid ${isCreator ? '#FF1493' : 'rgba(255, 255, 255, 0.1)'}`
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '0.75rem'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: isCreator ? '#FF1493' : '#666',
-                    boxShadow: isCreator ? '0 0 10px #FF1493' : 'none'
-                  }} />
-                  <div style={{
-                    color: theme.colors.textPrimary,
-                    fontWeight: 'bold',
-                    fontSize: '1rem'
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav>
+              <MobileNavButton onClick={() => setIsInfoOpen(!isInfoOpen)}>
+                <span>ℹ️</span> Info
+              </MobileNavButton>
+              <MobileNavButton onClick={() => setIsChatOpen(!isChatOpen)}>
+                <span>💬</span> Chat
+              </MobileNavButton>
+              <MobileNavButton 
+                isJoinButton 
+                onClick={handleJoinGame}
+                disabled={joiningGame || !isFullyConnected}
+              >
+                {joiningGame ? '⏳ Joining...' : 'Join Flip'}
+              </MobileNavButton>
+            </MobileBottomNav>
+
+            {/* Mobile Info Panel */}
+            <MobileInfoPanel isOpen={isInfoOpen}>
+              <div style={{ marginBottom: '1rem' }}>
+                <h3 style={{ color: theme.colors.neonYellow, marginBottom: '0.5rem' }}>Game Info</h3>
+                <div style={{ color: theme.colors.textSecondary }}>
+                  {/* Game Price */}
+                  <div style={{ 
+                    padding: '0.75rem',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '0.75rem',
+                    marginBottom: '1rem'
                   }}>
-                    Player 1 {isCreator && '(You)'}
-                  </div>
-                </div>
-                <div style={{
-                  fontSize: '0.9rem',
-                  color: theme.colors.textSecondary,
-                  fontFamily: 'monospace'
-                }}>
-                  {gameData?.creator ? 
-                    `${gameData.creator.slice(0, 6)}...${gameData.creator.slice(-4)}` : 
-                    'Waiting...'
-                  }
-                </div>
-              </div>
-
-              {/* Rounds Display for Player 1 */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.75rem',
-                background: 'rgba(0, 0, 0, 0.3)',
-                borderRadius: '0.5rem',
-                marginBottom: '0.5rem'
-              }}>
-                <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
-                  Rounds Won:
-                </span>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  {[1, 2, 3, 4, 5].map(round => (
-                    <div
-                      key={`p1-round-${round}`}
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        background: (gameState?.creatorWins || 0) >= round ? 
-                          'linear-gradient(45deg, #FFD700, #FFA500)' : 
-                          'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        color: (gameState?.creatorWins || 0) >= round ? '#000' : '#666'
-                      }}
-                    >
-                      {round}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.5rem'
+                    }}>
+                      <span>Entry Fee:</span>
+                      <span style={{ 
+                        color: theme.colors.neonGreen,
+                        fontWeight: 'bold'
+                      }}>
+                        ${(gameData?.priceUSD || 0).toFixed(2)}
+                      </span>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Contract Info */}
+                  <div style={{ 
+                    padding: '0.75rem',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '0.75rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.5rem'
+                    }}>
+                      <span>Contract:</span>
+                      <span style={{ 
+                        fontFamily: 'monospace',
+                        fontSize: '0.9rem'
+                      }}>
+                        {gameData?.contractAddress ? 
+                          `${gameData.contractAddress.slice(0, 6)}...${gameData.contractAddress.slice(-4)}` : 
+                          'Unknown'
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* NFT Info */}
+                  {gameData?.nft && (
+                    <>
+                      <div style={{ 
+                        margin: '1rem 0',
+                        padding: '1rem',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '0.75rem',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        <img 
+                          src={gameData.nft.image} 
+                          alt={gameData.nft.name}
+                          style={{
+                            width: '100%',
+                            maxWidth: '200px',
+                            height: 'auto',
+                            borderRadius: '0.5rem',
+                            margin: '0 auto',
+                            display: 'block'
+                          }}
+                        />
+                        <p style={{ marginTop: '0.5rem', textAlign: 'center' }}>{gameData.nft.name}</p>
+                        <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Collection: {gameData.nft.collection}</p>
+                        <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Token ID: {gameData.nft.tokenId}</p>
+                        <p style={{ 
+                          fontSize: '0.8rem', 
+                          opacity: 0.7,
+                          wordBreak: 'break-all',
+                          marginTop: '0.5rem'
+                        }}>
+                          Contract: {gameData.nft.contract}
+                        </p>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '0.5rem', 
+                        marginTop: '0.5rem',
+                        justifyContent: 'center'
+                      }}>
+                        <Button onClick={() => window.open(`https://opensea.io/assets/${gameData.nft.contract}/${gameData.nft.tokenId}`, '_blank')}>
+                          OpenSea
+                        </Button>
+                        <Button onClick={() => window.open(`https://basescan.org/token/${gameData.nft.contract}?a=${gameData.nft.tokenId}`, '_blank')}>
+                          Explorer
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
+            </MobileInfoPanel>
 
-              {/* Player 1 Status */}
-              <div style={{
-                fontSize: '0.85rem',
-                color: gameState?.currentPlayer === gameData?.creator ? 
-                  theme.colors.neonGreen : theme.colors.textSecondary,
-                textAlign: 'center',
-                padding: '0.5rem',
-                background: gameState?.currentPlayer === gameData?.creator ? 
-                  'rgba(0, 255, 65, 0.1)' : 'transparent',
-                borderRadius: '0.5rem'
-              }}>
-                {gameState?.currentPlayer === gameData?.creator ? 
-                  'Your Turn' : 
-                  gameState?.phase === 'waiting' ? 'Waiting for opponent' : 'Waiting'
-                }
-              </div>
-            </MobilePlayerBox>
-
-            {/* Coin Container - Smaller for Mobile */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '50%',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              margin: '0 auto 1rem',
-              width: '250px',
-              height: '250px'
-            }}>
-              <ReliableGoldCoin
-                isFlipping={!!flipAnimation}
-                flipResult={flipAnimation?.result}
-                flipDuration={1200}
-                onPowerCharge={handlePowerChargeStart}
-                onPowerRelease={handlePowerChargeStop}
-                isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
-                isCharging={gameState?.chargingPlayer === address}
-                chargingPlayer={gameState?.chargingPlayer}
-                gamePhase={gameState?.phase}
-                creatorPower={gameState?.creatorPower || 0}
-                joinerPower={gameState?.joinerPower || 0}
-                creatorChoice={gameState?.creatorChoice}
-                joinerChoice={gameState?.joinerChoice}
-                isCreator={isCreator}
-                size={220}
+            {/* Mobile Chat Panel */}
+            <MobileChatPanel isOpen={isChatOpen}>
+              <GameChatBox 
+                gameId={gameId}
+                socket={socket}
+                connected={connected}
               />
-            </div>
+            </MobileChatPanel>
 
-            {/* Player 2 Box (Joiner) */}
-            <MobilePlayerBox style={{
-              background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-              border: `2px solid ${isJoiner ? '#00BFFF' : 'rgba(255, 255, 255, 0.1)'}`
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '0.75rem'
+            {/* Mobile layout */}
+            <MobileOnlyLayout>
+              {/* Player 1 Box */}
+              <MobilePlayerBox style={{
+                background: isCreator ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                border: `2px solid ${isCreator ? '#FF1493' : 'rgba(255, 255, 255, 0.1)'}`
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem'
+                  justifyContent: 'space-between',
+                  marginBottom: '0.75rem'
                 }}>
                   <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: isJoiner ? '#00BFFF' : '#666',
-                    boxShadow: isJoiner ? '0 0 10px #00BFFF' : 'none'
-                  }} />
-                  <div style={{
-                    color: theme.colors.textPrimary,
-                    fontWeight: 'bold',
-                    fontSize: '1rem'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    Player 2 {isJoiner && '(You)'}
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: isCreator ? '#FF1493' : '#666',
+                      boxShadow: isCreator ? '0 0 10px #FF1493' : 'none'
+                    }} />
+                    <div style={{
+                      color: theme.colors.textPrimary,
+                      fontWeight: 'bold',
+                      fontSize: '1rem'
+                    }}>
+                      Player 1 {isCreator && '(You)'}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: theme.colors.textSecondary,
+                    fontFamily: 'monospace'
+                  }}>
+                    {gameData?.creator ? 
+                      `${gameData.creator.slice(0, 6)}...${gameData.creator.slice(-4)}` : 
+                      'Waiting...'
+                    }
                   </div>
                 </div>
+
+                {/* Rounds Display for Player 1 */}
                 <div style={{
-                  fontSize: '0.9rem',
-                  color: theme.colors.textSecondary,
-                  fontFamily: 'monospace'
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.75rem',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: '0.5rem',
+                  marginBottom: '0.5rem'
                 }}>
-                  {gameData?.joiner ? 
-                    `${gameData.joiner.slice(0, 6)}...${gameData.joiner.slice(-4)}` : 
-                    'Waiting...'
-                  }
+                  <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
+                    Rounds Won:
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    {[1, 2, 3, 4, 5].map(round => (
+                      <div
+                        key={`p1-round-${round}`}
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: (gameState?.creatorWins || 0) >= round ? 
+                            'linear-gradient(45deg, #FFD700, #FFA500)' : 
+                            'rgba(255, 255, 255, 0.1)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          fontWeight: 'bold',
+                          color: (gameState?.creatorWins || 0) >= round ? '#000' : '#666'
+                        }}
+                      >
+                        {round}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </MobilePlayerBox>
 
-              {/* Rounds Display for Player 2 */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.75rem',
-                background: 'rgba(0, 0, 0, 0.3)',
-                borderRadius: '0.5rem',
-                marginBottom: '0.5rem'
+              {/* Coin */}
+              <MobileCoinBox>
+                <MobileCoin
+                  isFlipping={flipAnimation?.isFlipping}
+                  flipResult={flipAnimation?.result}
+                  flipDuration={flipAnimation?.duration}
+                  creatorPower={gameState?.creatorPower || 0}
+                  joinerPower={gameState?.joinerPower || 0}
+                  isPlayerTurn={isMyTurn}
+                  chargingPlayer={gameState?.chargingPlayer}
+                  isCreator={isCreator}
+                  creatorChoice={gameState?.creatorChoice}
+                  joinerChoice={gameState?.joinerChoice}
+                  onMouseDown={isMyTurn ? handlePowerChargeStart : undefined}
+                  onMouseUp={isMyTurn ? handlePowerChargeStop : undefined}
+                  size={200}
+                />
+              </MobileCoinBox>
+
+              {/* Player 2 Box - Moved below coin */}
+              <MobilePlayerBox style={{
+                background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                border: `2px solid ${isJoiner ? '#00BFFF' : 'rgba(255, 255, 255, 0.1)'}`
               }}>
-                <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
-                  Rounds Won:
-                </span>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  {[1, 2, 3, 4, 5].map(round => (
-                    <div
-                      key={`p2-round-${round}`}
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        background: (gameState?.joinerWins || 0) >= round ? 
-                          'linear-gradient(45deg, #FFD700, #FFA500)' : 
-                          'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        color: (gameState?.joinerWins || 0) >= round ? '#000' : '#666'
-                      }}
-                    >
-                      {round}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '0.75rem'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: isJoiner ? '#00BFFF' : '#666',
+                      boxShadow: isJoiner ? '0 0 10px #00BFFF' : 'none'
+                    }} />
+                    <div style={{
+                      color: theme.colors.textPrimary,
+                      fontWeight: 'bold',
+                      fontSize: '1rem'
+                    }}>
+                      Player 2 {isJoiner && '(You)'}
                     </div>
-                  ))}
+                  </div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: theme.colors.textSecondary,
+                    fontFamily: 'monospace'
+                  }}>
+                    {gameData?.joiner ? 
+                      `${gameData.joiner.slice(0, 6)}...${gameData.joiner.slice(-4)}` : 
+                      'Waiting...'
+                    }
+                  </div>
                 </div>
-              </div>
 
-              {/* Player 2 Status */}
-              <div style={{
-                fontSize: '0.85rem',
-                color: gameState?.currentPlayer === gameData?.joiner ? 
-                  theme.colors.neonGreen : theme.colors.textSecondary,
-                textAlign: 'center',
-                padding: '0.5rem',
-                background: gameState?.currentPlayer === gameData?.joiner ? 
-                  'rgba(0, 255, 65, 0.1)' : 'transparent',
-                borderRadius: '0.5rem'
-              }}>
-                {gameState?.currentPlayer === gameData?.joiner ? 
-                  'Your Turn' : 
-                  gameState?.phase === 'waiting' ? 'Waiting for players' : 'Waiting'
-                }
-              </div>
-            </MobilePlayerBox>
+                {/* Rounds Display for Player 2 */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.75rem',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
+                    Rounds Won:
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    {[1, 2, 3, 4, 5].map(round => (
+                      <div
+                        key={`p2-round-${round}`}
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: (gameState?.joinerWins || 0) >= round ? 
+                            'linear-gradient(45deg, #FFD700, #FFA500)' : 
+                            'rgba(255, 255, 255, 0.1)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          fontWeight: 'bold',
+                          color: (gameState?.joinerWins || 0) >= round ? '#000' : '#666'
+                        }}
+                      >
+                        {round}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </MobilePlayerBox>
+
+              {/* NFT Box */}
+              <MobileHidden>
+                <MobileNFTBox>
+                  {gameData?.nftImage && (
+                    <NFTImage src={gameData.nftImage} alt="NFT" />
+                  )}
+                  <NFTDetails>
+                    <NFTDetailRow>
+                      <NFTLabel>Collection:</NFTLabel>
+                      <NFTValue>{gameData?.collectionName || 'Unknown'}</NFTValue>
+                    </NFTDetailRow>
+                    <NFTDetailRow>
+                      <NFTLabel>Token ID:</NFTLabel>
+                      <NFTValue>{gameData?.tokenId || 'Unknown'}</NFTValue>
+                    </NFTDetailRow>
+                    <NFTDetailRow>
+                      <NFTLabel>Contract:</NFTLabel>
+                      <NFTValue>{gameData?.contractAddress ? 
+                        `${gameData.contractAddress.slice(0, 6)}...${gameData.contractAddress.slice(-4)}` : 
+                        'Unknown'
+                      }</NFTValue>
+                    </NFTDetailRow>
+                  </NFTDetails>
+                  <ButtonGroup>
+                    <Button
+                      onClick={() => window.open(getExplorerUrl(gameData?.chain), '_blank')}
+                      style={{ flex: 1 }}
+                    >
+                      View on Explorer
+                    </Button>
+                    <Button
+                      onClick={() => window.open(getMarketplaceUrl(gameData?.chain), '_blank')}
+                      style={{ flex: 1 }}
+                    >
+                      View on OpenSea
+                    </Button>
+                  </ButtonGroup>
+                </MobileNFTBox>
+              </MobileHidden>
+
+              {/* Game Status */}
+              <MobileHidden>
+                <MobileStatusBox>
+                  <div style={{
+                    fontSize: '0.85rem',
+                    color: gameState?.currentPlayer === address ? 
+                      theme.colors.neonGreen : theme.colors.textSecondary,
+                    textAlign: 'center',
+                    padding: '0.5rem',
+                    background: gameState?.currentPlayer === address ? 
+                      'rgba(0, 255, 65, 0.1)' : 'transparent',
+                    borderRadius: '0.5rem'
+                  }}>
+                    {gameState?.currentPlayer === address ? 
+                      'Your Turn' : 
+                      gameState?.phase === 'waiting' ? 'Waiting for opponent' : 'Waiting'
+                    }
+                  </div>
+                </MobileStatusBox>
+              </MobileHidden>
+
+              {/* Chat - Moved to end */}
+              <MobileHidden>
+                <MobileChatBox>
+                  <GameChatBox gameId={gameId} />
+                </MobileChatBox>
+              </MobileHidden>
+            </MobileOnlyLayout>
 
             {/* Mobile Power Display */}
             <div style={{
@@ -1433,226 +1755,230 @@ const FlipGame = () => {
             </div>
 
             {/* Mobile Game Info */}
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              textAlign: 'center',
-              marginBottom: '1rem'
-            }}>
-              <div style={{
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
-                marginBottom: '0.5rem',
-                color: theme.colors.neonYellow
-              }}>
-                Game Status
-              </div>
-              <div style={{
-                fontSize: '0.9rem',
-                color: theme.colors.textSecondary,
-                marginBottom: '1rem'
-              }}>
-                {gameState?.phase === 'waiting' ? 'Waiting for players' :
-                 gameState?.phase === 'choosing' ? 'Players choosing sides' :
-                 gameState?.phase === 'round_active' ? 'Round in progress' :
-                 gameState?.phase === 'flipping' ? 'Coin flipping!' :
-                 gameState?.phase === 'game_complete' ? 'Game complete!' : 'Unknown'}
-              </div>
-              
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '1rem',
-                marginTop: '1rem'
-              }}>
                 <div style={{
-                  padding: '0.75rem',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  borderRadius: '0.5rem',
-                  textAlign: 'center'
+                  padding: '1rem',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '1rem',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  textAlign: 'center',
+                  marginBottom: '1rem'
                 }}>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '0.25rem' }}>
-                    Prize Pool
-                  </div>
-                  <div style={{ 
-                    fontSize: '1rem', 
+                  <div style={{
+                    fontSize: '1.1rem',
                     fontWeight: 'bold',
-                    color: theme.colors.neonGreen
+                    marginBottom: '0.5rem',
+                    color: theme.colors.neonYellow
                   }}>
-                    ${gameData?.priceUSD || 0}
+                    Game Status
+                  </div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: theme.colors.textSecondary,
+                    marginBottom: '1rem'
+                  }}>
+                    {gameState?.phase === 'waiting' ? 'Waiting for players' :
+                     gameState?.phase === 'choosing' ? 'Players choosing sides' :
+                     gameState?.phase === 'round_active' ? 'Round in progress' :
+                     gameState?.phase === 'flipping' ? 'Coin flipping!' :
+                     gameState?.phase === 'game_complete' ? 'Game complete!' : 'Unknown'}
+                  </div>
+                  
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '1rem',
+                    marginTop: '1rem'
+                  }}>
+                    <div style={{
+                      padding: '0.75rem',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '0.5rem',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '0.25rem' }}>
+                        Prize Pool
+                      </div>
+                      <div style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: 'bold',
+                        color: theme.colors.neonGreen
+                      }}>
+                        ${gameData?.priceUSD || 0}
+                      </div>
+                    </div>
+                    
+                    <div style={{
+                      padding: '0.75rem',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '0.5rem',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '0.25rem' }}>
+                        Best of
+                      </div>
+                      <div style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: 'bold',
+                        color: theme.colors.textPrimary
+                      }}>
+                        {gameData?.rounds || 5}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <div style={{
-                  padding: '0.75rem',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  borderRadius: '0.5rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '0.25rem' }}>
-                    Best of
-                  </div>
-                  <div style={{ 
-                    fontSize: '1rem', 
-                    fontWeight: 'bold',
-                    color: theme.colors.textPrimary
-                  }}>
-                    {gameData?.rounds || 5}
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Mobile NFT Details */}
-            {nftData && (
+            <MobileHidden>
+              {nftData && (
               <div style={{
                 background: 'rgba(255, 255, 255, 0.05)',
                 borderRadius: '1rem',
-                padding: '1rem',
+                  padding: '1rem',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 marginBottom: '1rem'
               }}>
                 <div style={{
                   fontSize: '1.1rem',
                   fontWeight: 'bold',
-                  marginBottom: '1rem',
-                  color: theme.colors.neonYellow,
-                  textAlign: 'center'
+                    marginBottom: '1rem',
+                    color: theme.colors.neonYellow,
+                    textAlign: 'center'
                 }}>
-                  {nftData.name}
+                    {nftData.name}
                 </div>
 
-                {/* NFT Image */}
+                  {/* NFT Image */}
                 <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
+                    display: 'flex',
+                    justifyContent: 'center',
                   marginBottom: '1rem'
                 }}>
-                  <img
-                    src={nftData.image}
-                    alt={nftData.name}
-                    style={{
-                      width: '200px',
-                      height: '200px',
-                      objectFit: 'cover',
-                      borderRadius: '0.75rem',
-                      border: '2px solid rgba(255, 255, 255, 0.1)'
-                    }}
-                    onError={(e) => {
-                      e.target.src = `https://picsum.photos/200/200?random=${gameId}`
-                    }}
-                  />
+                    <img
+                      src={nftData.image}
+                      alt={nftData.name}
+                      style={{
+                        width: '200px',
+                        height: '200px',
+                        objectFit: 'cover',
+                        borderRadius: '0.75rem',
+                        border: '2px solid rgba(255, 255, 255, 0.1)'
+                      }}
+                      onError={(e) => {
+                        e.target.src = `https://picsum.photos/200/200?random=${gameId}`
+                      }}
+                    />
                 </div>
-
-                {/* Collection Info */}
+                
+                  {/* Collection Info */}
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
                   gap: '1rem',
-                  marginBottom: '1rem'
+                    marginBottom: '1rem'
                 }}>
-                  <div>
-                    <div style={{ 
-                      fontSize: '0.8rem', 
-                      opacity: 0.8, 
-                      marginBottom: '0.25rem' 
-                    }}>
-                      Collection
+                    <div>
+                  <div style={{
+                        fontSize: '0.8rem', 
+                        opacity: 0.8, 
+                        marginBottom: '0.25rem' 
+                      }}>
+                        Collection
                     </div>
                     <div style={{ 
-                      fontSize: '0.9rem',
-                      color: theme.colors.textPrimary,
-                      wordBreak: 'break-word'
-                    }}>
-                      {nftData.collection || 'Unknown'}
+                        fontSize: '0.9rem',
+                        color: theme.colors.textPrimary,
+                        wordBreak: 'break-word'
+                      }}>
+                        {nftData.collection || 'Unknown'}
                     </div>
                   </div>
                   
-                  <div>
+                    <div>
+                  <div style={{
+                        fontSize: '0.8rem', 
+                        opacity: 0.8, 
+                        marginBottom: '0.25rem' 
+                      }}>
+                        Token ID
+                    </div>
+                    <div style={{ 
+                        fontSize: '0.9rem',
+                        color: theme.colors.textPrimary,
+                        fontFamily: 'monospace'
+                      }}>
+                        #{nftData.tokenId}
+                    </div>
+                  </div>
+                </div>
+
+                  {/* Contract Address */}
+                  <div style={{ marginBottom: '1rem' }}>
                     <div style={{ 
                       fontSize: '0.8rem', 
                       opacity: 0.8, 
                       marginBottom: '0.25rem' 
                     }}>
-                      Token ID
-                    </div>
-                    <div style={{ 
-                      fontSize: '0.9rem',
-                      color: theme.colors.textPrimary,
-                      fontFamily: 'monospace'
-                    }}>
-                      #{nftData.tokenId}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contract Address */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{ 
-                    fontSize: '0.8rem', 
-                    opacity: 0.8, 
-                    marginBottom: '0.25rem' 
-                  }}>
-                    Contract
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.5rem',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    borderRadius: '0.5rem'
-                  }}>
-                    <span style={{
-                      fontSize: '0.8rem',
-                      fontFamily: 'monospace',
-                      color: theme.colors.textSecondary,
-                      flex: 1,
-                      wordBreak: 'break-all'
-                    }}>
-                      {nftData.contractAddress}
-                    </span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(nftData.contractAddress)
-                        showSuccess('Address copied!')
-                      }}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        color: '#fff',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '0.5rem',
-                        padding: '0.4rem 0.8rem',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        transition: 'all 0.3s ease',
-                        minHeight: '44px',
-                        minWidth: '44px'
-                      }}
-                    >
-                      <span style={{ fontSize: '1rem' }}>📋</span>
-                    </button>
-                  </div>
-                </div>
+                      Contract
               </div>
-            )}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '0.5rem'
+                    }}>
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontFamily: 'monospace',
+                        color: theme.colors.textSecondary,
+                        flex: 1,
+                        wordBreak: 'break-all'
+                      }}>
+                        {nftData.contractAddress}
+                      </span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(nftData.contractAddress)
+                          showSuccess('Address copied!')
+                        }}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          color: '#fff',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: '0.5rem',
+                          padding: '0.4rem 0.8rem',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          transition: 'all 0.3s ease',
+                          minHeight: '44px',
+                          minWidth: '44px'
+                        }}
+                      >
+                        <span style={{ fontSize: '1rem' }}>📋</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </MobileHidden>
 
             {/* Mobile Chat Container */}
-            <div style={{
-              marginBottom: '2rem'
-            }}>
+            <MobileHidden>
+              <div style={{
+                marginBottom: '2rem'
+              }}>
               <GameChatBox 
                 gameId={gameId}
                 socket={socket}
                 connected={connected}
-                isMobile={true}
-              />
-            </div>
+                  isMobile={true}
+                />
+              </div>
+            </MobileHidden>
           </MobileOnlyLayout>
 
           {/* Desktop Layout - Only shows on desktop */}
@@ -1703,7 +2029,7 @@ const FlipGame = () => {
                       }}
                     />
                     <div>
-                      <div style={{ 
+                    <div style={{
                         fontSize: '0.9rem', 
                         opacity: 0.8,
                         color: theme.colors.neonPink 
@@ -1745,12 +2071,12 @@ const FlipGame = () => {
                       fontWeight: 'bold'
                     }}>
                       {isCreator ? 'YOUR TURN' : 'THEIR TURN'}
-                    </div>
+                  </div>
                   )}
                 </div>
 
                 {/* Round Wins for Player 1 */}
-                <div style={{
+                  <div style={{
                   display: 'flex',
                   gap: '0.25rem',
                   justifyContent: 'center',
@@ -1826,7 +2152,7 @@ const FlipGame = () => {
                         }}
                       >
                         {roundNumber}
-                      </div>
+                  </div>
                     );
                   })}
                 </div>
@@ -1857,7 +2183,7 @@ const FlipGame = () => {
                 }}>
                   <div style={{
                     display: 'flex',
-                    alignItems: 'center',
+                  alignItems: 'center',
                     gap: '0.75rem'
                   }}>
                     <ProfilePicture 
@@ -1895,7 +2221,7 @@ const FlipGame = () => {
                       background: theme.colors.neonBlue,
                       color: '#000',
                       padding: '0.25rem 0.75rem',
-                      borderRadius: '0.5rem',
+                  borderRadius: '0.5rem',
                       fontSize: '0.8rem',
                       fontWeight: 'bold',
                       animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
@@ -1998,7 +2324,7 @@ const FlipGame = () => {
                       </div>
                     );
                   })}
-                </div>
+                  </div>
 
                 {/* Timer Display */}
                 {gameState?.turnTimeLeft !== undefined && (
@@ -2011,7 +2337,7 @@ const FlipGame = () => {
                     animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
                   }}>
                     {gameState.turnTimeLeft}s
-                  </div>
+                </div>
                 )}
               </div>
 

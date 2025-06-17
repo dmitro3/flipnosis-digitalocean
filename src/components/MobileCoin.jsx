@@ -1,0 +1,200 @@
+import React, { useEffect, useRef } from 'react';
+import styled from '@emotion/styled';
+
+const CoinContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const Coin = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.1s linear;
+  transform: ${props => props.isFlipping ? `rotateY(${props.rotation}deg)` : 'rotateY(0deg)'};
+`;
+
+const Face = styled.div`
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(45deg, #FFD700, #B8860B);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  border: 2px solid #DAA520;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 45%,
+      rgba(255, 255, 255, 0.5) 50%,
+      rgba(255, 255, 255, 0.1) 55%,
+      transparent 100%
+    );
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+  }
+
+  @keyframes shine {
+    0% {
+      transform: translateX(-100%) rotate(45deg);
+    }
+    100% {
+      transform: translateX(100%) rotate(45deg);
+    }
+  }
+`;
+
+const Symbol = styled.div`
+  font-size: 3rem;
+  color: #4A3728;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 5px rgba(74, 55, 40, 0.5);
+`;
+
+const Text = styled.div`
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  color: #4A3728;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 5px rgba(74, 55, 40, 0.5);
+  font-weight: 600;
+`;
+
+const Heads = styled(Face)`
+  transform: rotateY(0deg);
+`;
+
+const Tails = styled(Face)`
+  transform: rotateY(180deg);
+`;
+
+const Edge = styled.div`
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: repeating-linear-gradient(
+    90deg,
+    #DAA520,
+    #DAA520 2px,
+    #B8860B 2px,
+    #B8860B 4px
+  );
+  transform: rotateX(90deg);
+  transform-style: preserve-3d;
+`;
+
+const MobileCoin = ({
+  isFlipping = false,
+  flipResult = null,
+  flipDuration = 3000,
+  creatorPower = 0,
+  joinerPower = 0,
+  isPlayerTurn = false,
+  chargingPlayer = null,
+  isCreator = false,
+  creatorChoice = null,
+  joinerChoice = null,
+  onMouseDown,
+  onMouseUp,
+  size = 200
+}) => {
+  const rotationRef = useRef(0);
+  const animationFrameRef = useRef(null);
+  const startTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (isFlipping) {
+      startTimeRef.current = performance.now();
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTimeRef.current;
+        const progress = Math.min(elapsed / flipDuration, 1);
+        
+        // Calculate rotation based on progress
+        // This creates a smooth flipping animation
+        const baseRotation = progress * 360 * 5; // 5 full rotations
+        const bounce = Math.sin(progress * Math.PI) * 20; // Add some bounce
+        rotationRef.current = baseRotation + bounce;
+
+        if (progress < 1) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+        } else {
+          // Ensure final rotation matches the result
+          rotationRef.current = flipResult === 'heads' ? 0 : 180;
+        }
+      };
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isFlipping, flipDuration, flipResult]);
+
+  // Handle charging animation
+  useEffect(() => {
+    if (chargingPlayer && !isFlipping) {
+      const animate = (currentTime) => {
+        rotationRef.current = (rotationRef.current + 2) % 360;
+        animationFrameRef.current = requestAnimationFrame(animate);
+      };
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [chargingPlayer, isFlipping]);
+
+  return (
+    <CoinContainer
+      style={{ width: size, height: size }}
+      onMouseDown={isPlayerTurn ? onMouseDown : undefined}
+      onMouseUp={isPlayerTurn ? onMouseUp : undefined}
+      onTouchStart={isPlayerTurn ? onMouseDown : undefined}
+      onTouchEnd={isPlayerTurn ? onMouseUp : undefined}
+    >
+      <Coin
+        isFlipping={isFlipping || chargingPlayer}
+        rotation={rotationRef.current}
+      >
+        <Heads>
+          <Symbol>♔</Symbol>
+          <Text>Heads</Text>
+        </Heads>
+        <Tails>
+          <Symbol>♦</Symbol>
+          <Text>Tails</Text>
+        </Tails>
+        <Edge />
+      </Coin>
+    </CoinContainer>
+  );
+};
+
+export default MobileCoin; 
