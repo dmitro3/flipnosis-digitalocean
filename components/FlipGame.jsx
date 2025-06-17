@@ -1,4 +1,5 @@
 import { isMobileDevice, getDevicePerformanceTier } from '../utils/deviceDetection'
+import SmartGoldCoin from './SmartGoldCoin'
 
 const FlipGame = () => {
   // ... your existing state ...
@@ -29,7 +30,7 @@ const FlipGame = () => {
           margin: '0 auto'
         }}
       >
-        <ReliableGoldCoin
+        <SmartGoldCoin
           isFlipping={flipAnimation?.isFlipping}
           flipResult={flipAnimation?.result}
           flipDuration={flipAnimation?.duration}
