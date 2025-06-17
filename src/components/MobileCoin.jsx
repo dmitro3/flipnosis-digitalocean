@@ -122,6 +122,7 @@ const MobileCoin = ({
   const rotationRef = useRef(0);
   const animationFrameRef = useRef(null);
   const startTimeRef = useRef(0);
+  const coinRef = useRef(null);
 
   useEffect(() => {
     if (isFlipping) {
@@ -130,17 +131,40 @@ const MobileCoin = ({
         const elapsed = currentTime - startTimeRef.current;
         const progress = Math.min(elapsed / flipDuration, 1);
         
-        // Calculate rotation based on progress
-        // This creates a smooth flipping animation
-        const baseRotation = progress * 360 * 5; // 5 full rotations
-        const bounce = Math.sin(progress * Math.PI) * 20; // Add some bounce
-        rotationRef.current = baseRotation + bounce;
+        // Calculate total power for speed scaling
+        const totalPower = creatorPower + joinerPower;
+        const powerRatio = Math.min(totalPower / 10, 1);
+        
+        // Calculate rotation based on power and progress
+        const minFlips = 4;
+        const maxFlips = 15;
+        const totalFlips = minFlips + (powerRatio * (maxFlips - minFlips));
+        
+        // Base rotation with power-based speed
+        const baseRotation = progress * 360 * totalFlips;
+        
+        // Add vertical motion during flip
+        const verticalOffset = Math.sin(progress * Math.PI) * 20 * (1 - progress * 0.2);
+        
+        // Add small wobble for realism
+        const wobble = Math.sin(progress * Math.PI * totalFlips * 0.1) * 5 * (1 - progress);
+        
+        // Apply all transformations
+        rotationRef.current = baseRotation;
+        
+        // Update coin position for vertical motion
+        if (coinRef.current) {
+          coinRef.current.style.transform = `rotateY(${baseRotation}deg) translateY(${verticalOffset}px) rotateZ(${wobble}deg)`;
+        }
 
         if (progress < 1) {
           animationFrameRef.current = requestAnimationFrame(animate);
         } else {
           // Ensure final rotation matches the result
-          rotationRef.current = flipResult === 'heads' ? 0 : 180;
+          const finalRotation = flipResult === 'heads' ? 0 : 180;
+          if (coinRef.current) {
+            coinRef.current.style.transform = `rotateY(${finalRotation}deg)`;
+          }
         }
       };
 
@@ -152,7 +176,7 @@ const MobileCoin = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isFlipping, flipDuration, flipResult]);
+  }, [isFlipping, flipDuration, flipResult, creatorPower, joinerPower]);
 
   // Handle charging animation
   useEffect(() => {
@@ -180,6 +204,7 @@ const MobileCoin = ({
       onTouchEnd={isPlayerTurn ? onMouseUp : undefined}
     >
       <Coin
+        ref={coinRef}
         isFlipping={isFlipping || chargingPlayer}
         rotation={rotationRef.current}
       >

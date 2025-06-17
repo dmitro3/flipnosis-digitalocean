@@ -1350,13 +1350,15 @@ const FlipGame = () => {
               <MobileNavButton onClick={() => setIsChatOpen(!isChatOpen)}>
                 <span>💬</span> Chat
               </MobileNavButton>
-              <MobileNavButton 
-                isJoinButton 
-                onClick={handleJoinGame}
-                disabled={joiningGame || !isFullyConnected}
-              >
-                {joiningGame ? '⏳ Joining...' : 'Join Flip'}
-              </MobileNavButton>
+              {canJoin && (
+                <MobileNavButton 
+                  isJoinButton 
+                  onClick={handleJoinGame}
+                  disabled={joiningGame || !isFullyConnected}
+                >
+                  {joiningGame ? '⏳ Joining...' : 'Join Flip'}
+                </MobileNavButton>
+              )}
             </MobileBottomNav>
 
             {/* Mobile Info Panel */}
@@ -2957,12 +2959,15 @@ const FlipGame = () => {
             }}>
               <div style={{
                 position: 'relative',
-                width: '100%',
-                paddingTop: '56.25%', // 16:9 aspect ratio
-                marginBottom: '1rem'
+                width: '60%', // Reduced from 100%
+                height: '60%', // Reduced from 100%
+                margin: '0 auto',
+                borderRadius: '1rem',
+                overflow: 'hidden',
+                pointerEvents: 'none'
               }}>
                 <video
-                  key={roundResult.actualWinner === address ? 'win' : 'lose'} // Force re-render
+                  key={roundResult.actualWinner === address ? 'win' : 'lose'}
                   autoPlay
                   muted
                   playsInline
