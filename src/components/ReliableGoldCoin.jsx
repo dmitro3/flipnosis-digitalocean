@@ -106,7 +106,7 @@ const ReliableGoldCoin = ({
       
       // "HEADS" text below crown - NOW WITH DYNAMIC COLOR
       ctx.fillStyle = headsColor // Use dynamic color
-      ctx.font = `bold ${size * 0.08}px Arial`
+      ctx.font = `bold ${size * 0.18}px Hyperwave` // Increased size by 50%
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('HEADS', size/2, size/2 + size * 0.12) // Below crown
@@ -145,7 +145,7 @@ const ReliableGoldCoin = ({
       
       // "TAILS" text below diamond - NOW WITH DYNAMIC COLOR
       ctx.fillStyle = tailsColor // Use dynamic color
-      ctx.font = `bold ${size * 0.08}px Arial`
+      ctx.font = `bold ${size * 0.18}px Hyperwave` // Increased size by 50%
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('TAILS', size/2, size/2 + size * 0.12) // Below diamond
