@@ -9,8 +9,8 @@ const WinnerPopup = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 494px;
-  height: 826px;
+  width: 296px;
+  height: 496px;
   background: transparent;
   z-index: 1000;
   display: flex;
@@ -26,8 +26,8 @@ const LoserPopup = styled(WinnerPopup)`
 
 const VideoContainer = styled.div`
   position: relative;
-  width: 494px;
-  height: 826px;
+  width: 296px;
+  height: 496px;
 `;
 
 const MessageBox = styled.div`

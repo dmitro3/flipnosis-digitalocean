@@ -2959,12 +2959,9 @@ const FlipGame = () => {
             }}>
               <div style={{
                 position: 'relative',
-                width: '60%', // Reduced from 100%
-                height: '60%', // Reduced from 100%
-                margin: '0 auto',
-                borderRadius: '1rem',
-                overflow: 'hidden',
-                pointerEvents: 'none'
+                width: '100%',
+                paddingTop: '56.25%', // 16:9 aspect ratio
+                marginBottom: '1rem'
               }}>
                 <video
                   key={roundResult.actualWinner === address ? 'win' : 'lose'}
