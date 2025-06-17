@@ -2097,7 +2097,7 @@ const FlipGame = () => {
                 <ReliableGoldCoin
                   isFlipping={!!flipAnimation}
                   flipResult={flipAnimation?.result}
-                  flipDuration={1200}
+                  flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
                   isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
@@ -2109,7 +2109,7 @@ const FlipGame = () => {
                   creatorChoice={gameState?.creatorChoice}
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
-                  size={220}
+                  size={440}
                 />
               </div>
 
