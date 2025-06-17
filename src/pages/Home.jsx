@@ -771,7 +771,7 @@ const Home = () => {
 
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
+                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(8, 1fr)',
                   gap: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
                   margin: '1rem 0',
                   width: '100%',
@@ -784,14 +784,14 @@ const Home = () => {
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
                         borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
-                        padding: window.innerWidth <= 768 ? '0.25rem' : '0.75rem',
+                        padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: window.innerWidth <= 768 ? '0.15rem' : '0.5rem',
-                        height: window.innerWidth <= 768 ? 'auto' : '280px',
+                        gap: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
+                        height: window.innerWidth <= 768 ? 'auto' : '210px',
                         width: '100%'
                       }}
                       onMouseEnter={(e) => {
@@ -809,7 +809,7 @@ const Home = () => {
                         borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
                         overflow: 'hidden',
                         width: '100%',
-                        height: window.innerWidth <= 768 ? 'auto' : '180px'
+                        height: window.innerWidth <= 768 ? 'auto' : '135px'
                       }}>
                         <GameImage 
                           src={flip.nft.image} 
@@ -841,11 +841,11 @@ const Home = () => {
                         flexDirection: 'column',
                         gap: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
                         padding: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
-                        height: window.innerWidth <= 768 ? 'auto' : '80px',
+                        height: window.innerWidth <= 768 ? 'auto' : '60px',
                         justifyContent: 'space-between'
                       }}>
                         <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.8rem',
+                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
                           fontWeight: 'bold',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -854,7 +854,7 @@ const Home = () => {
                           {flip.nft.name}
                         </div>
                         <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.7rem',
+                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
                           color: theme.colors.textSecondary,
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -863,7 +863,7 @@ const Home = () => {
                           {flip.nft.collection}
                         </div>
                         <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.8rem',
+                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
                           fontWeight: 'bold',
                           color: theme.colors.neonBlue
                         }}>

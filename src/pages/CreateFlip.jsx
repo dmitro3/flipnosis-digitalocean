@@ -384,7 +384,16 @@ const CreateFlip = () => {
                 </FormSection>
               )}
 
-              <SubmitButton type="submit" disabled={isSubmitting || !gameType}>
+              <SubmitButton 
+                type="submit" 
+                disabled={isSubmitting || !gameType} 
+                style={{ 
+                  color: '#000',
+                  background: 'linear-gradient(45deg, #00FF41, #39FF14)',
+                  border: 'none',
+                  fontWeight: 'bold'
+                }}
+              >
                 {isSubmitting ? (
                   <>
                     <LoadingSpinner /> Creating {gameType === 'nft-vs-nft' ? 'NFT Battle' : 'Flip'}...
