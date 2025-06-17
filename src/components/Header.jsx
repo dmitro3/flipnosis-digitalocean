@@ -11,6 +11,7 @@ import MobileInfoImg from '../../Images/mobile.webp'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 import UserProfileHeader from './UserProfileHeader'
+import PortalMenu from './PortalMenu'
 
 const HeaderContainer = styled.header`
   background-color: ${props => props.theme.colors.bgDark};
@@ -33,7 +34,7 @@ const HeaderContainer = styled.header`
     right: 0;
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(10px);
-    z-index: 1000;
+    z-index: 9998;
   }
 `
 
@@ -58,8 +59,8 @@ const Logo = styled(Link)`
   ${props => props.theme.animations.neonPulse}
   
   @media (max-width: 768px) {
-    font-size: 2rem;
-    letter-spacing: 2px;
+    font-size: 2.5rem;
+    letter-spacing: 4px;
   }
 `
 
@@ -126,7 +127,7 @@ const MenuButton = styled.button`
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.5rem;
-  z-index: 2001;
+  z-index: 100000;
 
   @media (max-width: 768px) {
     display: block;
@@ -145,7 +146,7 @@ const MobileMenu = styled.div`
   padding: 1.5rem;
   transform: translateX(${props => props.isOpen ? '0' : '100%'});
   transition: transform 0.3s ease;
-  z-index: 2000;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -167,7 +168,7 @@ const MenuOverlay = styled.div`
   opacity: ${props => props.isOpen ? 1 : 0};
   visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
   transition: all 0.3s ease;
-  z-index: 1999;
+  z-index: 99998;
 `
 
 const MenuItem = styled(Link)`
@@ -394,35 +395,8 @@ const Header = () => {
         <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? '✕' : '☰'}
         </MenuButton>
-        
-        <MenuOverlay isOpen={isMenuOpen} onClick={() => setIsMenuOpen(false)} />
-        <MobileMenu isOpen={isMenuOpen}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ color: '#00FF41', margin: 0 }}>Menu</h2>
-            <button 
-              onClick={() => setIsMenuOpen(false)}
-              style={{ 
-                background: 'none', 
-                border: 'none', 
-                color: '#00FF41', 
-                fontSize: '1.5rem',
-                cursor: 'pointer'
-              }}
-            >
-              ×
-            </button>
-          </div>
-          
-          <MenuItem to="/" onClick={() => setIsMenuOpen(false)}>Home</MenuItem>
-          <MenuItem to="/create" onClick={() => setIsMenuOpen(false)}>Create Flip</MenuItem>
-          <ConnectButton 
-            showBalance={{
-              smallScreen: false,
-              largeScreen: true,
-            }}
-          />
-          {isConnected && <UserProfileHeader isInHeader={true} />}
-        </MobileMenu>
+
+        <PortalMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
         <InfoButton 
           onClick={() => setShowInfoModal(true)} 
@@ -434,12 +408,20 @@ const Header = () => {
         {showInfoModal && (
           <ModalOverlay onClick={() => setShowInfoModal(false)}>
             <ModalContent onClick={e => e.stopPropagation()}>
+              <CloseButton onClick={() => setShowInfoModal(false)}>×</CloseButton>
               <ModalHeader>
-                <h2>About FLIPNOSIS</h2>
-                <CloseButton onClick={() => setShowInfoModal(false)}>×</CloseButton>
+                <h2 style={{ color: '#00FF41', margin: 0 }}>About FLIPNOSIS</h2>
               </ModalHeader>
               <ModalBody>
-                <img src={FlipnosisInfoImg} alt="FLIPNOSIS Info" style={{ width: '100%', maxWidth: '600px' }} />
+                <img 
+                  src={window.innerWidth <= 768 ? MobileInfoImg : FlipnosisInfoImg} 
+                  alt="FLIPNOSIS Info" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    height: 'auto',
+                    borderRadius: '1rem'
+                  }} 
+                />
               </ModalBody>
             </ModalContent>
           </ModalOverlay>

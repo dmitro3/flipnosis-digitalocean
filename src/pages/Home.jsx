@@ -136,6 +136,33 @@ const FilterSelect = styled.select`
   }
 `
 
+const SearchInput = styled.input`
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid ${props => props.theme.colors.neonBlue};
+  color: ${props => props.theme.colors.textPrimary};
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  width: 100%;
+  max-width: 300px;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.neonPink};
+    box-shadow: 0 0 10px ${props => props.theme.colors.neonPink};
+  }
+
+  &::placeholder {
+    color: ${props => props.theme.colors.textSecondary};
+  }
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+  }
+`
+
 const Home = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
@@ -147,6 +174,7 @@ const Home = () => {
     publicClient
   } = useWallet()
   const [activeFilter, setActiveFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [flips, setFlips] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedFlip, setSelectedFlip] = useState(null)
@@ -241,11 +269,20 @@ const Home = () => {
   }, [])
 
   const filteredFlips = flips.filter(flip => {
-    if (activeFilter === 'all') return true
-    if (activeFilter === 'nft-vs-crypto' || activeFilter === 'nft-vs-nft') {
-      return flip.gameType === activeFilter
-    }
-    return flip.chain === activeFilter
+    // First apply the chain/game type filter
+    const matchesFilter = activeFilter === 'all' || 
+      (activeFilter === 'nft-vs-crypto' || activeFilter === 'nft-vs-nft' ? 
+        flip.gameType === activeFilter : 
+        flip.chain === activeFilter);
+
+    // Then apply the search filter
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || 
+      flip.nft.name.toLowerCase().includes(searchLower) ||
+      flip.nft.collection.toLowerCase().includes(searchLower) ||
+      flip.description.toLowerCase().includes(searchLower);
+
+    return matchesFilter && matchesSearch;
   })
 
   const chainFilters = [
@@ -622,7 +659,7 @@ const Home = () => {
                         marginTop: '1rem'
                       }}>
                         <Button 
-                          onClick={() => navigate(`/flip/${selectedFlip.id}`)}
+                          onClick={() => navigate(`/game/${selectedFlip.id}`)}
                           style={{
                             flex: 2,
                             background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
@@ -712,6 +749,17 @@ const Home = () => {
                 }}>
                   Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
                 </div>
+
+                {/* Search Input */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <SearchInput
+                    type="text"
+                    placeholder="Search NFTs or collections..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
                 <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',

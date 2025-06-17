@@ -21,7 +21,8 @@ const ReliableGoldCoin = ({
   // Optional image props - if not provided, uses procedural gold textures
   headsImage = null,
   tailsImage = null,
-  edgeImage = null
+  edgeImage = null,
+  size = 400 // NEW: size prop for responsive coin
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
@@ -198,7 +199,7 @@ const ReliableGoldCoin = ({
       antialias: true, 
       alpha: true
     })
-    renderer.setSize(400, 400)
+    renderer.setSize(size, size)
     renderer.setClearColor(0x000000, 0)
 
     if (!mountRef.current.querySelector('canvas')) {
@@ -577,8 +578,8 @@ const ReliableGoldCoin = ({
       onTouchStart={isPlayerTurn ? onPowerCharge : undefined}
       onTouchEnd={isPlayerTurn ? onPowerRelease : undefined}
       style={{
-        width: '400px',
-        height: '400px',
+        width: size,
+        height: size,
         cursor: isPlayerTurn ? 'pointer' : 'default',
         userSelect: 'none',
         background: chargingPlayer ? 

@@ -141,6 +141,57 @@ const NFTLink = styled.a`
   }
 `
 
+// Add these styled components at the top with the other styled components
+const MobileOnlyLayout = styled.div`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.5rem;
+    width: 100%;
+  }
+`
+
+const MobilePlayerBox = styled.div`
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  margin-bottom: 0.5rem;
+`
+
+const MobileCoinBox = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  margin: 0.5rem 0;
+  aspect-ratio: 1;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+`
+
+const DesktopOnlyLayout = styled.div`
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  align-items: start;
+  min-height: 500px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`
+
 const FlipGame = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
@@ -1093,31 +1144,530 @@ const FlipGame = () => {
         zIndex: 1
       }}>
         <ContentWrapper>
-          {/* Main Game Area - Three Column Layout */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '300px 1fr 300px', // Fixed widths for player cards
-            gap: '2rem', 
-            marginBottom: '2rem',
-            alignItems: 'start', // Align to top
-            minHeight: '500px'
-          }}>
-            
-            {/* LEFT CONTAINER - Players & Game Info */}
-            <div style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '600px',
-              margin: '0 auto',
-              padding: '2rem',
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '1.5rem',
-              backdropFilter: 'blur(10px)'
+          {/* Mobile Layout - Only shows on mobile */}
+          <MobileOnlyLayout>
+            {/* Join Game Button - Top Priority */}
+            {canJoin && (
+              <div style={{
+                position: 'sticky',
+                top: '0',
+                zIndex: 100,
+                padding: '1rem',
+                background: 'rgba(0, 0, 0, 0.9)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '0 0 1rem 1rem',
+                marginBottom: '1rem'
+              }}>
+                <Button
+                  onClick={handleJoinGame}
+                  disabled={joiningGame}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(45deg, #00FF41, #39FF14)',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
+                  }}
+                >
+                  {joiningGame ? 'Joining...' : 'JOIN FLIP'}
+                </Button>
+              </div>
+            )}
+
+            {/* Player 1 Box (Creator) */}
+            <MobilePlayerBox style={{
+              background: isCreator ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+              border: `2px solid ${isCreator ? '#FF1493' : 'rgba(255, 255, 255, 0.1)'}`
             }}>
-              
-              {/* PLAYERS SECTION - Top */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '0.75rem'
+              }}>
                 <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: isCreator ? '#FF1493' : '#666',
+                    boxShadow: isCreator ? '0 0 10px #FF1493' : 'none'
+                  }} />
+                  <div style={{
+                    color: theme.colors.textPrimary,
+                    fontWeight: 'bold',
+                    fontSize: '1rem'
+                  }}>
+                    Player 1 {isCreator && '(You)'}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: theme.colors.textSecondary,
+                  fontFamily: 'monospace'
+                }}>
+                  {gameData?.creator ? 
+                    `${gameData.creator.slice(0, 6)}...${gameData.creator.slice(-4)}` : 
+                    'Waiting...'
+                  }
+                </div>
+              </div>
+
+              {/* Rounds Display for Player 1 */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.75rem',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '0.5rem',
+                marginBottom: '0.5rem'
+              }}>
+                <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
+                  Rounds Won:
+                </span>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {[1, 2, 3, 4, 5].map(round => (
+                    <div
+                      key={`p1-round-${round}`}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: (gameState?.creatorWins || 0) >= round ? 
+                          'linear-gradient(45deg, #FFD700, #FFA500)' : 
+                          'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        color: (gameState?.creatorWins || 0) >= round ? '#000' : '#666'
+                      }}
+                    >
+                      {round}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Player 1 Status */}
+              <div style={{
+                fontSize: '0.85rem',
+                color: gameState?.currentPlayer === gameData?.creator ? 
+                  theme.colors.neonGreen : theme.colors.textSecondary,
+                textAlign: 'center',
+                padding: '0.5rem',
+                background: gameState?.currentPlayer === gameData?.creator ? 
+                  'rgba(0, 255, 65, 0.1)' : 'transparent',
+                borderRadius: '0.5rem'
+              }}>
+                {gameState?.currentPlayer === gameData?.creator ? 
+                  'Your Turn' : 
+                  gameState?.phase === 'waiting' ? 'Waiting for opponent' : 'Waiting'
+                }
+              </div>
+            </MobilePlayerBox>
+
+            {/* Coin Container - Smaller for Mobile */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '50%',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              margin: '0 auto 1rem',
+              width: '250px',
+              height: '250px'
+            }}>
+              <ReliableGoldCoin
+                isFlipping={!!flipAnimation}
+                flipResult={flipAnimation?.result}
+                flipDuration={flipAnimation?.duration}
+                onPowerCharge={handlePowerChargeStart}
+                onPowerRelease={handlePowerChargeStop}
+                isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
+                isCharging={gameState?.chargingPlayer === address}
+                chargingPlayer={gameState?.chargingPlayer}
+                gamePhase={gameState?.phase}
+                creatorPower={gameState?.creatorPower || 0}
+                joinerPower={gameState?.joinerPower || 0}
+                creatorChoice={gameState?.creatorChoice}
+                joinerChoice={gameState?.joinerChoice}
+                isCreator={isCreator}
+                size={220}
+              />
+            </div>
+
+            {/* Player 2 Box (Joiner) */}
+            <MobilePlayerBox style={{
+              background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+              border: `2px solid ${isJoiner ? '#00BFFF' : 'rgba(255, 255, 255, 0.1)'}`
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '0.75rem'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: isJoiner ? '#00BFFF' : '#666',
+                    boxShadow: isJoiner ? '0 0 10px #00BFFF' : 'none'
+                  }} />
+                  <div style={{
+                    color: theme.colors.textPrimary,
+                    fontWeight: 'bold',
+                    fontSize: '1rem'
+                  }}>
+                    Player 2 {isJoiner && '(You)'}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: theme.colors.textSecondary,
+                  fontFamily: 'monospace'
+                }}>
+                  {gameData?.joiner ? 
+                    `${gameData.joiner.slice(0, 6)}...${gameData.joiner.slice(-4)}` : 
+                    'Waiting...'
+                  }
+                </div>
+              </div>
+
+              {/* Rounds Display for Player 2 */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.75rem',
+                background: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '0.5rem',
+                marginBottom: '0.5rem'
+              }}>
+                <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
+                  Rounds Won:
+                </span>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {[1, 2, 3, 4, 5].map(round => (
+                    <div
+                      key={`p2-round-${round}`}
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: (gameState?.joinerWins || 0) >= round ? 
+                          'linear-gradient(45deg, #FFD700, #FFA500)' : 
+                          'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        color: (gameState?.joinerWins || 0) >= round ? '#000' : '#666'
+                      }}
+                    >
+                      {round}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Player 2 Status */}
+              <div style={{
+                fontSize: '0.85rem',
+                color: gameState?.currentPlayer === gameData?.joiner ? 
+                  theme.colors.neonGreen : theme.colors.textSecondary,
+                textAlign: 'center',
+                padding: '0.5rem',
+                background: gameState?.currentPlayer === gameData?.joiner ? 
+                  'rgba(0, 255, 65, 0.1)' : 'transparent',
+                borderRadius: '0.5rem'
+              }}>
+                {gameState?.currentPlayer === gameData?.joiner ? 
+                  'Your Turn' : 
+                  gameState?.phase === 'waiting' ? 'Waiting for players' : 'Waiting'
+                }
+              </div>
+            </MobilePlayerBox>
+
+            {/* Mobile Power Display */}
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              marginBottom: '1rem'
+            }}>
+              <PowerDisplay
+                creatorPower={gameState?.creatorPower || 0}
+                joinerPower={gameState?.joinerPower || 0}
+                currentPlayer={gameState?.currentPlayer}
+                creator={gameState?.creator}
+                joiner={gameState?.joiner}
+                chargingPlayer={gameState?.chargingPlayer}
+                gamePhase={gameState?.phase}
+                isMyTurn={isMyTurn}
+                playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
+                onChoiceSelect={handlePlayerChoice}
+                isMobile={true}
+              />
+            </div>
+
+            {/* Mobile Game Info */}
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              textAlign: 'center',
+              marginBottom: '1rem'
+            }}>
+              <div style={{
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                marginBottom: '0.5rem',
+                color: theme.colors.neonYellow
+              }}>
+                Game Status
+              </div>
+              <div style={{
+                fontSize: '0.9rem',
+                color: theme.colors.textSecondary,
+                marginBottom: '1rem'
+              }}>
+                {gameState?.phase === 'waiting' ? 'Waiting for players' :
+                 gameState?.phase === 'choosing' ? 'Players choosing sides' :
+                 gameState?.phase === 'round_active' ? 'Round in progress' :
+                 gameState?.phase === 'flipping' ? 'Coin flipping!' :
+                 gameState?.phase === 'game_complete' ? 'Game complete!' : 'Unknown'}
+              </div>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '1rem',
+                marginTop: '1rem'
+              }}>
+                <div style={{
+                  padding: '0.75rem',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: '0.5rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '0.25rem' }}>
+                    Prize Pool
+                  </div>
+                  <div style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 'bold',
+                    color: theme.colors.neonGreen
+                  }}>
+                    ${gameData?.priceUSD || 0}
+                  </div>
+                </div>
+                
+                <div style={{
+                  padding: '0.75rem',
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: '0.5rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '0.25rem' }}>
+                    Best of
+                  </div>
+                  <div style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 'bold',
+                    color: theme.colors.textPrimary
+                  }}>
+                    {gameData?.rounds || 5}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile NFT Details */}
+            {nftData && (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '1rem',
+                padding: '1rem',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                marginBottom: '1rem'
+              }}>
+                <div style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  marginBottom: '1rem',
+                  color: theme.colors.neonYellow,
+                  textAlign: 'center'
+                }}>
+                  {nftData.name}
+                </div>
+
+                {/* NFT Image */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <img
+                    src={nftData.image}
+                    alt={nftData.name}
+                    style={{
+                      width: '200px',
+                      height: '200px',
+                      objectFit: 'cover',
+                      borderRadius: '0.75rem',
+                      border: '2px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                    onError={(e) => {
+                      e.target.src = `https://picsum.photos/200/200?random=${gameId}`
+                    }}
+                  />
+                </div>
+
+                {/* Collection Info */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <div>
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      opacity: 0.8, 
+                      marginBottom: '0.25rem' 
+                    }}>
+                      Collection
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.9rem',
+                      color: theme.colors.textPrimary,
+                      wordBreak: 'break-word'
+                    }}>
+                      {nftData.collection || 'Unknown'}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      opacity: 0.8, 
+                      marginBottom: '0.25rem' 
+                    }}>
+                      Token ID
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.9rem',
+                      color: theme.colors.textPrimary,
+                      fontFamily: 'monospace'
+                    }}>
+                      #{nftData.tokenId}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contract Address */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ 
+                    fontSize: '0.8rem', 
+                    opacity: 0.8, 
+                    marginBottom: '0.25rem' 
+                  }}>
+                    Contract
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    borderRadius: '0.5rem'
+                  }}>
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontFamily: 'monospace',
+                      color: theme.colors.textSecondary,
+                      flex: 1,
+                      wordBreak: 'break-all'
+                    }}>
+                      {nftData.contractAddress}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(nftData.contractAddress)
+                        showSuccess('Address copied!')
+                      }}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        color: '#fff',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '0.5rem',
+                        padding: '0.4rem 0.8rem',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        transition: 'all 0.3s ease',
+                        minHeight: '44px',
+                        minWidth: '44px'
+                      }}
+                    >
+                      <span style={{ fontSize: '1rem' }}>📋</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Chat Container */}
+            <div style={{
+              marginBottom: '2rem'
+            }}>
+              <GameChatBox 
+                gameId={gameId}
+                socket={socket}
+                connected={connected}
+                isMobile={true}
+              />
+            </div>
+          </MobileOnlyLayout>
+
+          {/* Desktop Layout - Only shows on desktop */}
+          <DesktopOnlyLayout>
+            {/* Keep the existing desktop layout code here */}
+            {/* LEFT CONTAINER - Players & Game Info */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '1.5rem',
+              position: 'relative'
+            }}>
+              {/* Rest of the desktop layout code remains unchanged */}
+              {/* PLAYERS SECTION - Top */}
+              <div style={{
                 marginBottom: '1rem',
                 padding: '1rem',
                 background: 'rgba(255, 255, 255, 0.05)',
@@ -1165,8 +1715,7 @@ const FlipGame = () => {
                          (gameData?.creator ? 
                            `${gameData.creator.slice(0, 8)}...${gameData.creator.slice(-4)}` : 
                            'Waiting...'
-                         )
-                        }
+                         )}
                       </div>
                     </div>
                   </div>
@@ -1297,20 +1846,20 @@ const FlipGame = () => {
                 )}
               
                 {/* Player 2 */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   padding: '0.75rem',
                   background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '0.75rem',
                   border: `2px solid ${isJoiner ? theme.colors.neonBlue : 'rgba(255, 255, 255, 0.1)'}`
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                    gap: '0.75rem'
                 }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}>
                     <ProfilePicture 
                       address={gameData?.joiner} 
                       size={40} 
@@ -1322,23 +1871,22 @@ const FlipGame = () => {
                         border: `2px solid ${theme.colors.neonBlue}`
                       }}
                     />
-                  <div>
+                    <div>
                       <div style={{ 
                         fontSize: '0.9rem', 
                         opacity: 0.8,
                         color: theme.colors.neonBlue 
                       }}>
                         💎 Player 2 {gameState?.joinerChoice && `(${gameState.joinerChoice.toUpperCase()})`}
-                    </div>
+                      </div>
                       <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
                         {gameState?.joinerProfile?.name || 
                          (gameData?.joiner ? 
                            `${gameData.joiner.slice(0, 8)}...${gameData.joiner.slice(-4)}` : 
                            'Waiting...'
-                         )
-                        }
-                  </div>
-                </div>
+                         )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Timer - only show for current player */}
@@ -1368,7 +1916,7 @@ const FlipGame = () => {
                       {isJoiner ? 'YOUR TURN' : 'THEIR TURN'}
                     </div>
                   )}
-              </div>
+                </div>
 
                 {/* Round Wins for Player 2 */}
                 <div style={{
@@ -1561,6 +2109,7 @@ const FlipGame = () => {
                   creatorChoice={gameState?.creatorChoice}
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
+                  size={440}
                 />
               </div>
 
@@ -1872,7 +2421,7 @@ const FlipGame = () => {
                 </div>
               )}
             </div>
-          </div>
+          </DesktopOnlyLayout>
 
           {/* NFT vs NFT Offer Component */}
           {isNFTGame && gameState?.phase === 'waiting' && (
