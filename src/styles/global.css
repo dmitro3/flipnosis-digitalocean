@@ -200,13 +200,6 @@
     display: none !important;
   }
   
-  /* Mobile coin container */
-  .mobile-coin-container {
-    max-width: 200px !important;
-    height: 200px !important;
-    margin: 0 auto !important;
-  }
-  
   /* Mobile player containers */
   .mobile-player-container {
     width: 100% !important;

@@ -26,7 +26,6 @@ import GameResultPopup from './GameResultPopup'
 import GameChatBox from './GameChatBox'
 import NFTVerificationDisplay from './NFTVerificationDisplay'
 import NFTOfferComponent from './NFTOfferComponent'
-import MobileCoin from './MobileCoin'
 
 const BackgroundVideo = styled.video`
   position: fixed;
@@ -221,6 +220,13 @@ const MobileCoinBox = styled.div`
   margin-left: auto;
   margin-right: auto;
   touch-action: none;
+  
+  /* Ensure Three.js canvas is properly contained */
+  canvas {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 50%;
+  }
 `
 
 const MobileStatusBox = styled.div`
@@ -1621,19 +1627,21 @@ const FlipGame = () => {
 
               {/* Coin */}
               <MobileCoinBox>
-                <MobileCoin
-                  isFlipping={flipAnimation?.isFlipping}
+                <ReliableGoldCoin
+                  isFlipping={!!flipAnimation}
                   flipResult={flipAnimation?.result}
                   flipDuration={flipAnimation?.duration}
+                  onPowerCharge={handlePowerChargeStart}
+                  onPowerRelease={handlePowerChargeStop}
+                  isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
+                  isCharging={gameState?.chargingPlayer === address}
+                  chargingPlayer={gameState?.chargingPlayer}
+                  gamePhase={gameState?.phase}
                   creatorPower={gameState?.creatorPower || 0}
                   joinerPower={gameState?.joinerPower || 0}
-                  isPlayerTurn={isMyTurn}
-                  chargingPlayer={gameState?.chargingPlayer}
-                  isCreator={isCreator}
                   creatorChoice={gameState?.creatorChoice}
                   joinerChoice={gameState?.joinerChoice}
-                  onMouseDown={isMyTurn ? handlePowerChargeStart : undefined}
-                  onMouseUp={isMyTurn ? handlePowerChargeStop : undefined}
+                  isCreator={isCreator}
                   size={200}
                 />
               </MobileCoinBox>
