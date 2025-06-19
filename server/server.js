@@ -986,10 +986,17 @@ class GameSession {
     await this.executeFlip(this.currentPlayer, 10)
   }
 
-  startCharging(address) {
+  startCharging(address, preCalculatedResult = null) {
     if (this.isFlipInProgress || address !== this.currentPlayer) return
     
     this.chargingPlayer = address
+    
+    // Store pre-calculated result if provided
+    if (preCalculatedResult && (preCalculatedResult === 'heads' || preCalculatedResult === 'tails')) {
+      this.preCalculatedResult = preCalculatedResult
+      console.log('🎲 Pre-calculated result stored:', preCalculatedResult, 'for player:', address)
+    }
+    
     this.broadcastGameState()
     
     // Start power increase
@@ -1036,8 +1043,17 @@ class GameSession {
     this.isFlipInProgress = true
     this.broadcastGameState()
     
-    // Generate result
-    const result = Math.random() < 0.5 ? 'heads' : 'tails'
+    // Use pre-calculated result if available, otherwise generate new one
+    let result
+    if (this.preCalculatedResult) {
+      result = this.preCalculatedResult
+      console.log('🎲 Using pre-calculated result:', result)
+      // Clear the pre-calculated result after use
+      this.preCalculatedResult = null
+    } else {
+      result = Math.random() < 0.5 ? 'heads' : 'tails'
+      console.log('⚠️ No pre-calculated result, generated:', result)
+    }
     
     // FIXED: Get the actual player choice instead of hardcoded values
     const playerChoice = address === this.creator ? this.creatorChoice : this.joinerChoice
@@ -1454,9 +1470,10 @@ async function handleMessage(ws, data) {
       console.log('⚡ Start charging:', {
         address: data.address,
         currentPhase: session.phase,
-        currentPlayer: session.currentPlayer
+        currentPlayer: session.currentPlayer,
+        preCalculatedResult: data.preCalculatedResult
       })
-      session.startCharging(data.address)
+      session.startCharging(data.address, data.preCalculatedResult)
       break
 
     case 'stop_charging':

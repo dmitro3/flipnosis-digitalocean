@@ -723,10 +723,21 @@ const FlipGame = () => {
     }
     
     isChargingRef.current = true
+    // Don't send start_charging yet - wait for pre-calculated result
+  }
+
+  // NEW: Handle pre-calculated result from coin component
+  const handlePreCalculatedResult = (result) => {
+    if (!socket || !isChargingRef.current) return
+    
+    console.log('🎲 Received pre-calculated result:', result)
+    
+    // Now send start_charging with pre-calculated result
     socket.send(JSON.stringify({
       type: 'start_charging',
       gameId,
-      address
+      address,
+      preCalculatedResult: result
     }))
   }
 
@@ -1717,6 +1728,7 @@ const FlipGame = () => {
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
                   size={200}
+                  onPreCalculatedResult={handlePreCalculatedResult}
                 />
               </MobileCoinBox>
 
@@ -2587,6 +2599,7 @@ const FlipGame = () => {
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
                   size={440}
+                  onPreCalculatedResult={handlePreCalculatedResult}
                 />
               </div>
 

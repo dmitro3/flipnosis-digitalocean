@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import * as THREE from 'three'
 import { isMobileDevice } from '../../utils/deviceDetection'
 
@@ -23,7 +23,8 @@ const ReliableGoldCoin = ({
   headsImage = null,
   tailsImage = null,
   edgeImage = null,
-  size = 400 // NEW: size prop for responsive coin
+  size = 400, // NEW: size prop for responsive coin
+  onPreCalculatedResult = null // NEW: callback for pre-calculated result
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
@@ -34,6 +35,11 @@ const ReliableGoldCoin = ({
   const targetAngleRef = useRef(0) // Default to heads (0°)
   const texturesRef = useRef({}) // Store preloaded textures
   const isMobile = isMobileDevice() // Detect mobile once
+  
+  // NEW: Track when charging started and pre-calculated result
+  const [chargingStarted, setChargingStarted] = useState(false)
+  const preCalculatedResultRef = useRef(null)
+  const preCalculatedRotationsRef = useRef(null)
 
   // NEW: Function to determine text colors based on player choices
   const getTextColors = () => {
@@ -516,17 +522,54 @@ const ReliableGoldCoin = ({
     }
   }, [creatorChoice, joinerChoice, isCreator])
 
-  // NATURAL FLIP ANIMATION - Calculates exact path to result from start
+  // NEW: Pre-calculate result when charging starts
+  useEffect(() => {
+    if (isCharging && !chargingStarted && isPlayerTurn) {
+      console.log('⚡ Charging started - pre-calculating flip result')
+      setChargingStarted(true)
+      
+      // Pre-calculate the result NOW (when charging starts)
+      const totalPower = creatorPower + joinerPower
+      const powerRatio = Math.min(totalPower / 10, 1)
+      
+      // Generate random result
+      const randomValue = Math.random()
+      const result = randomValue < 0.5 ? 'heads' : 'tails'
+      preCalculatedResultRef.current = result
+      
+      // Pre-calculate rotations based on power
+      const minRotations = 4
+      const maxRotations = 25
+      const baseRotations = minRotations + (Math.pow(powerRatio, 1.5) * (maxRotations - minRotations))
+      preCalculatedRotationsRef.current = baseRotations
+      
+      console.log('🎲 Pre-calculated flip:', {
+        result,
+        rotations: baseRotations.toFixed(1),
+        randomValue: randomValue.toFixed(3)
+      })
+      
+      // Call the callback if provided
+      if (onPreCalculatedResult) {
+        onPreCalculatedResult(result)
+      }
+    } else if (!isCharging && chargingStarted) {
+      setChargingStarted(false)
+    }
+  }, [isCharging, chargingStarted, isPlayerTurn, creatorPower, joinerPower, onPreCalculatedResult])
+
+  // ENHANCED FLIP ANIMATION - Uses pre-calculated result and ensures flat landing
   useEffect(() => {
     if (!isFlipping || !flipResult || !flipDuration || !coinRef.current) {
       return
     }
 
-    console.log('🎬 Starting NATURAL flip animation:', { 
+    console.log('🎬 Starting ENHANCED flip animation:', { 
       flipResult, 
       flipDuration, 
       isAnimating: isAnimatingRef.current,
-      totalPower: creatorPower + joinerPower
+      totalPower: creatorPower + joinerPower,
+      preCalculatedResult: preCalculatedResultRef.current
     })
     
     // FORCE STOP any current animation
@@ -548,41 +591,43 @@ const ReliableGoldCoin = ({
       coin.position.y = 0
       coin.position.z = 0
       
-      // Calculate flip parameters based on TOTAL power
+      // Get current rotation normalized to 0-2π range
+      const currentRotation = coin.rotation.x % (Math.PI * 2)
+      
+      // Determine target angle - ENSURE PROPER FACE ORIENTATION
+      // For a cylinder in Three.js:
+      // rotation.x = 0 or 2π = top face visible (heads)
+      // rotation.x = π = bottom face visible (tails)
+      let targetAngle
+      if (flipResult === 'heads') {
+        targetAngle = 0 // Show top face
+      } else {
+        targetAngle = Math.PI // Show bottom face
+      }
+      
+      // Use pre-calculated rotations or calculate based on current power
       const totalPower = creatorPower + joinerPower
-      const powerRatio = Math.min(totalPower / 10, 1) // 0 to 1 ratio
+      const powerRatio = Math.min(totalPower / 10, 1)
+      const baseRotations = preCalculatedRotationsRef.current || 
+        (4 + (Math.pow(powerRatio, 1.5) * 21))
       
-      // Determine target angle based on result - FIXED to land flat on faces
-      const targetAngle = (flipResult === 'tails') ? 0 : Math.PI // 0° for tails, 180° for heads
+      // Calculate total rotation to reach target angle
+      const fullRotations = Math.floor(baseRotations) * (Math.PI * 2)
+      const totalRotation = fullRotations + targetAngle - currentRotation
       
-      // Calculate base rotations based on power (MUCH better graduation)
-      // Power 1: 4 rotations, Power 5: 10 rotations, Power 10: 25 rotations (crazy fast!)
-      const minRotations = 4   // Minimum flips for low power
-      const maxRotations = 25  // Maximum flips for high power
-      const baseRotations = minRotations + (Math.pow(powerRatio, 1.5) * (maxRotations - minRotations))
-      
-      // Calculate EXACT total rotation needed to land on target
-      const currentRotation = coin.rotation.x
-      const fullRotations = Math.floor(baseRotations) * (Math.PI * 2) // Full 360° rotations
-      const finalRotation = currentRotation + fullRotations + targetAngle
-      const totalRotationNeeded = finalRotation - currentRotation
-      
-      console.log('🎲 NATURAL Flip calculations:', { 
+      console.log('🎲 ENHANCED Flip calculations:', { 
         totalPower, 
         powerRatio: powerRatio.toFixed(2),
         baseRotations: baseRotations.toFixed(1),
+        currentRotation: (currentRotation * 180 / Math.PI).toFixed(0) + '°',
         targetAngle: (targetAngle * 180 / Math.PI).toFixed(0) + '°',
-        totalRotationNeeded: (totalRotationNeeded * 180 / Math.PI).toFixed(0) + '°',
+        totalRotation: (totalRotation * 180 / Math.PI).toFixed(0) + '°',
         flipResult,
-        flipDuration: flipDuration + 'ms',
-        speedLevel: totalPower >= 9 ? '🚀 INSANE!' : totalPower >= 7 ? '⚡ VERY FAST' : totalPower >= 5 ? '🏃 FAST' : totalPower >= 3 ? '🚶 NORMAL' : '🐌 SLOW'
+        flipDuration: flipDuration + 'ms'
       })
       
-      // Calculate rotation speed to complete in the given duration
-      const rotationPerFrame = totalRotationNeeded / (flipDuration / 16.67) // 60fps
-      
       let flipStartTime = Date.now()
-      let currentRotationAmount = 0
+      let accumulatedRotation = 0
       
       const animateFlip = () => {
         if (!isAnimatingRef.current || !coinRef.current) return
@@ -591,42 +636,63 @@ const ReliableGoldCoin = ({
         const progress = Math.min(elapsed / flipDuration, 1)
         
         if (progress < 1) {
-          // SMOOTH DECELERATION - starts fast, ends naturally slow
-          let speedMultiplier
-          if (progress < 0.7) {
-            // Full speed for first 70%
-            speedMultiplier = 1
+          // Enhanced easing curve for more natural motion
+          let easedProgress
+          if (progress < 0.6) {
+            // Accelerate for first 60%
+            easedProgress = Math.pow(progress / 0.6, 0.8) * 0.6
           } else {
-            // Smooth deceleration in final 30% using ease-out curve
-            const decelerationPhase = (progress - 0.7) / 0.3
-            speedMultiplier = Math.pow(1 - decelerationPhase, 2) // Quadratic ease-out
+            // Decelerate for last 40% with stronger ease-out
+            const decelPhase = (progress - 0.6) / 0.4
+            easedProgress = 0.6 + (1 - Math.pow(1 - decelPhase, 3)) * 0.4
           }
           
-          // Apply smooth rotation increment
-          const frameRotation = rotationPerFrame * speedMultiplier
-          coin.rotation.x += frameRotation
-          currentRotationAmount += frameRotation
+          // Calculate rotation for this frame
+          const targetRotation = totalRotation * easedProgress
+          const deltaRotation = targetRotation - accumulatedRotation
+          coin.rotation.x += deltaRotation
+          accumulatedRotation = targetRotation
           
-          // Add realistic vertical motion during flip
-          coin.position.y = Math.sin(progress * Math.PI) * 0.6 * (1 - progress * 0.3)
+          // Enhanced vertical motion - higher arc
+          const heightMultiplier = 1 + (powerRatio * 0.5) // Higher jumps with more power
+          coin.position.y = Math.sin(progress * Math.PI) * 0.8 * heightMultiplier * (1 - progress * 0.2)
           
-          // Subtle wobble for realism (decreases over time)
-          coin.rotation.z = Math.sin(currentRotationAmount * 0.1) * 0.03 * (1 - progress)
+          // Dynamic wobble that decreases over time
+          const wobbleIntensity = 0.05 * (1 - progress)
+          coin.rotation.z = Math.sin(accumulatedRotation * 0.15) * wobbleIntensity
+          
+          // Slight tilt for realism
+          coin.rotation.y = Math.PI / 2 + Math.sin(progress * Math.PI * 2) * 0.02
           
           requestAnimationFrame(animateFlip)
         } else {
-          // PERFECT LANDING - ensure it lands flat on the correct face
-          coin.rotation.x = finalRotation
-          coin.rotation.y = Math.PI / 2  // Keep consistent Y rotation
-          coin.rotation.z = 0            // No wobble
-          coin.position.y = 0            // Flat on ground
-          coin.position.x = 0            // Centered
-          coin.position.z = 0            // Centered
-          coin.scale.set(1, 1, 1)        // Normal size
+          // PERFECT LANDING - ensure exact face alignment
+          const finalRotation = currentRotation + totalRotation
+          
+          // Normalize to ensure proper face is showing
+          if (flipResult === 'heads') {
+            // Ensure we're at a multiple of 2π (top face)
+            coin.rotation.x = Math.round(finalRotation / (Math.PI * 2)) * (Math.PI * 2)
+          } else {
+            // Ensure we're at π + multiple of 2π (bottom face)
+            coin.rotation.x = Math.PI + Math.round((finalRotation - Math.PI) / (Math.PI * 2)) * (Math.PI * 2)
+          }
+          
+          // Reset all other properties for clean landing
+          coin.rotation.y = Math.PI / 2
+          coin.rotation.z = 0
+          coin.position.y = 0
+          coin.position.x = 0
+          coin.position.z = 0
+          coin.scale.set(1, 1, 1)
           
           isAnimatingRef.current = false
-          console.log('✅ NATURAL flip animation complete - landed FLAT on:', flipResult, 
-                     'at angle:', (finalRotation * 180 / Math.PI).toFixed(0) + '°')
+          console.log('✅ ENHANCED flip complete - landed PERFECTLY on:', flipResult, 
+                     'at angle:', (coin.rotation.x * 180 / Math.PI).toFixed(0) + '°')
+          
+          // Clear pre-calculated values
+          preCalculatedResultRef.current = null
+          preCalculatedRotationsRef.current = null
         }
       }
       
@@ -641,13 +707,27 @@ const ReliableGoldCoin = ({
     }
   }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower])
 
+  // Enhanced power charge handler that includes pre-calculated result
+  const handlePowerChargeStart = (e) => {
+    if (!isPlayerTurn || !onPowerCharge) return
+    
+    // Call original handler
+    onPowerCharge(e)
+    
+    // If we have a pre-calculated result, pass it up
+    if (preCalculatedResultRef.current && onPowerCharge.length > 1) {
+      // Pass pre-calculated result as second parameter if handler accepts it
+      onPowerCharge(e, preCalculatedResultRef.current)
+    }
+  }
+
   return (
     <div
       ref={mountRef}
-      onMouseDown={isPlayerTurn ? onPowerCharge : undefined}
+      onMouseDown={isPlayerTurn ? handlePowerChargeStart : undefined}
       onMouseUp={isPlayerTurn ? onPowerRelease : undefined}
       onMouseLeave={isPlayerTurn ? onPowerRelease : undefined}
-      onTouchStart={isPlayerTurn ? onPowerCharge : undefined}
+      onTouchStart={isPlayerTurn ? handlePowerChargeStart : undefined}
       onTouchEnd={isPlayerTurn ? onPowerRelease : undefined}
       style={{
         width: size,
