@@ -369,7 +369,7 @@ const ReliableGoldCoin = ({
       // Handle different states
       if (isAnimatingRef.current) {
         // Flip animation is handled separately - DON'T INTERFERE
-      } else if (chargingPlayer && !isAnimatingRef.current && !isMobile) {
+      } else if ((chargingPlayer || isCharging) && !isAnimatingRef.current && !isMobile) {
         // CHARGING EFFECTS - DISABLED ON MOBILE
         const intensity = (creatorPower + joinerPower) / 20 // Use total power for intensity
         const chargeIntensity = Math.min(1, intensity * 2) // More dramatic scaling
@@ -707,18 +707,14 @@ const ReliableGoldCoin = ({
     }
   }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower])
 
-  // Enhanced power charge handler that includes pre-calculated result
+  // Enhanced power charge handler
   const handlePowerChargeStart = (e) => {
     if (!isPlayerTurn || !onPowerCharge) return
     
+    console.log('🎮 Coin clicked - starting charge')
+    
     // Call original handler
     onPowerCharge(e)
-    
-    // If we have a pre-calculated result, pass it up
-    if (preCalculatedResultRef.current && onPowerCharge.length > 1) {
-      // Pass pre-calculated result as second parameter if handler accepts it
-      onPowerCharge(e, preCalculatedResultRef.current)
-    }
   }
 
   return (

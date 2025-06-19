@@ -968,26 +968,59 @@ class GameSession {
       this.phase = 'round_active'
     }
     
-    // Set max power
+    // Use medium power for better animation (results in ~3 second flip)
+    const autoPower = 5
+    
+    // Set medium power
     if (this.currentPlayer === this.creator) {
-      this.creatorPower = 10
+      this.creatorPower = autoPower
     } else {
-      this.joinerPower = 10
+      this.joinerPower = autoPower
     }
+    
+    // Pre-calculate result for auto-flip
+    this.preCalculatedResult = Math.random() < 0.5 ? 'heads' : 'tails'
     
     console.log('🎯 Auto-flip summary:', {
       currentPlayer: this.currentPlayer,
       creatorChoice: this.creatorChoice,
       joinerChoice: this.joinerChoice,
-      power: 10
+      power: autoPower,
+      preCalculatedResult: this.preCalculatedResult
     })
     
-    // Execute the flip
-    await this.executeFlip(this.currentPlayer, 10)
+    // Broadcast state update
+    this.broadcastGameState()
+    
+    // Wait a moment for UI to update
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Execute the flip with medium power
+    await this.executeFlip(this.currentPlayer, autoPower)
   }
 
   startCharging(address, preCalculatedResult = null) {
-    if (this.isFlipInProgress || address !== this.currentPlayer) return
+    console.log('⚡ startCharging called:', {
+      address,
+      currentPlayer: this.currentPlayer,
+      isFlipInProgress: this.isFlipInProgress,
+      phase: this.phase,
+      preCalculatedResult
+    })
+    
+    if (this.isFlipInProgress || address !== this.currentPlayer) {
+      console.log('❌ Cannot start charging:', {
+        isFlipInProgress: this.isFlipInProgress,
+        isCurrentPlayer: address === this.currentPlayer
+      })
+      return
+    }
+    
+    // Ensure we're in the right phase
+    if (this.phase !== 'round_active') {
+      console.log('❌ Wrong phase for charging:', this.phase)
+      return
+    }
     
     this.chargingPlayer = address
     
@@ -1070,9 +1103,9 @@ class GameSession {
       joinerChoice: this.joinerChoice
     })
     
-    // Calculate flip duration - MUCH better power graduation
-    // Power 1: 6 seconds, Power 5: 3 seconds, Power 10: 0.8 seconds (super fast!)
-    const flipDuration = Math.max(800, 6000 - (power * 520))
+    // Calculate flip duration - Better power graduation
+    // Power 1: 5 seconds, Power 5: 3 seconds, Power 10: 1.5 seconds
+    const flipDuration = Math.max(1500, 5000 - (power * 350))
     
     console.log('⏱️ Flip duration:', flipDuration, 'ms')
     

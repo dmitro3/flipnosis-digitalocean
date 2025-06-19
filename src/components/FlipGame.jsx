@@ -710,10 +710,35 @@ const FlipGame = () => {
     }
   }, [gameData, nftData, isLoadingNFT])
 
+  // Store pre-calculated result
+  const preCalculatedResultRef = useRef(null)
+
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
+    console.log('💥 handlePowerChargeStart called:', {
+      isMyTurn,
+      hasSocket: !!socket,
+      isCharging: isChargingRef.current,
+      gamePhase: gameState?.phase,
+      currentPlayer: gameState?.currentPlayer,
+      myAddress: address
+    })
+    
     // Only allow charging if player has made their choice and it's the charging phase
-    if (!isMyTurn || !socket || isChargingRef.current || gameState?.phase !== 'round_active') return
+    if (!isMyTurn || !socket || isChargingRef.current) {
+      console.log('❌ Cannot start charging:', {
+        isMyTurn,
+        hasSocket: !!socket,
+        isCharging: isChargingRef.current
+      })
+      return
+    }
+    
+    // Allow charging in both 'round_active' and after choosing
+    if (gameState?.phase !== 'round_active' && gameState?.phase !== 'choosing') {
+      console.log('❌ Wrong phase for charging:', gameState?.phase)
+      return
+    }
     
     // Check if player has made their choice
     const playerChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice
@@ -723,28 +748,27 @@ const FlipGame = () => {
     }
     
     isChargingRef.current = true
-    // Don't send start_charging yet - wait for pre-calculated result
-  }
-
-  // NEW: Handle pre-calculated result from coin component
-  const handlePreCalculatedResult = (result) => {
-    if (!socket || !isChargingRef.current) return
     
-    console.log('🎲 Received pre-calculated result:', result)
-    
-    // Now send start_charging with pre-calculated result
+    // Send start_charging immediately with pre-calculated result if available
     socket.send(JSON.stringify({
       type: 'start_charging',
       gameId,
       address,
-      preCalculatedResult: result
+      preCalculatedResult: preCalculatedResultRef.current
     }))
+  }
+
+  // NEW: Handle pre-calculated result from coin component
+  const handlePreCalculatedResult = (result) => {
+    console.log('🎲 Received pre-calculated result:', result)
+    preCalculatedResultRef.current = result
   }
 
   const handlePowerChargeStop = () => {
     if (!socket || !isChargingRef.current) return
     
     isChargingRef.current = false
+    preCalculatedResultRef.current = null // Clear pre-calculated result
     socket.send(JSON.stringify({
       type: 'stop_charging',
       gameId,
@@ -1718,7 +1742,7 @@ const FlipGame = () => {
                   flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
-                  isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
+                  isPlayerTurn={isMyTurn}
                   isCharging={gameState?.chargingPlayer === address}
                   chargingPlayer={gameState?.chargingPlayer}
                   gamePhase={gameState?.phase}
@@ -2589,7 +2613,7 @@ const FlipGame = () => {
                   flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
-                  isPlayerTurn={isMyTurn && gameState?.phase === 'round_active'}
+                  isPlayerTurn={isMyTurn}
                   isCharging={gameState?.chargingPlayer === address}
                   chargingPlayer={gameState?.chargingPlayer}
                   gamePhase={gameState?.phase}
