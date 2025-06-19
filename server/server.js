@@ -1054,8 +1054,9 @@ class GameSession {
       joinerChoice: this.joinerChoice
     })
     
-    // Calculate flip duration
-    const flipDuration = 4000 + (power * 800)
+    // Calculate flip duration - MUCH better power graduation
+    // Power 1: 6 seconds, Power 5: 3 seconds, Power 10: 0.8 seconds (super fast!)
+    const flipDuration = Math.max(800, 6000 - (power * 520))
     
     console.log('⏱️ Flip duration:', flipDuration, 'ms')
     

@@ -17,7 +17,7 @@ const ReliableGoldCoin = ({
   joinerPower = 0,
   // NEW: Add props for player choices and player identification
   creatorChoice = null,
-  joinerChoice = null,
+  joinerChoice = null, 
   isCreator = false,
   // Optional image props - if not provided, uses procedural gold textures
   headsImage = null,
@@ -31,7 +31,7 @@ const ReliableGoldCoin = ({
   const rendererRef = useRef(null)
   const animationIdRef = useRef(null)
   const isAnimatingRef = useRef(false)
-  const targetAngleRef = useRef(Math.PI / 2) // Default to heads
+  const targetAngleRef = useRef(0) // Default to heads (0°)
   const texturesRef = useRef({}) // Store preloaded textures
   const isMobile = isMobileDevice() // Detect mobile once
 
@@ -350,7 +350,7 @@ const ReliableGoldCoin = ({
     coinRef.current = coin
 
     // IMPORTANT: Set initial rotation like the working example
-    coin.rotation.x = Math.PI / 2  // This makes it face the camera correctly
+    coin.rotation.x = 0        // Start flat showing heads (0°)
     coin.rotation.y = Math.PI / 2  // Initial orientation
 
     // Animation loop
@@ -552,13 +552,14 @@ const ReliableGoldCoin = ({
       const totalPower = creatorPower + joinerPower
       const powerRatio = Math.min(totalPower / 10, 1) // 0 to 1 ratio
       
-      // Determine target angle based on result
-      const targetAngle = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
+      // Determine target angle based on result - FIXED to land flat on faces
+      const targetAngle = (flipResult === 'tails') ? 0 : Math.PI // 0° for tails, 180° for heads
       
-      // Calculate base rotations based on power (more power = more spins)
-      const minRotations = 3  // Minimum flips for low power
-      const maxRotations = 12 // Maximum flips for high power
-      const baseRotations = minRotations + (powerRatio * (maxRotations - minRotations))
+      // Calculate base rotations based on power (MUCH better graduation)
+      // Power 1: 4 rotations, Power 5: 10 rotations, Power 10: 25 rotations (crazy fast!)
+      const minRotations = 4   // Minimum flips for low power
+      const maxRotations = 25  // Maximum flips for high power
+      const baseRotations = minRotations + (Math.pow(powerRatio, 1.5) * (maxRotations - minRotations))
       
       // Calculate EXACT total rotation needed to land on target
       const currentRotation = coin.rotation.x
@@ -572,7 +573,9 @@ const ReliableGoldCoin = ({
         baseRotations: baseRotations.toFixed(1),
         targetAngle: (targetAngle * 180 / Math.PI).toFixed(0) + '°',
         totalRotationNeeded: (totalRotationNeeded * 180 / Math.PI).toFixed(0) + '°',
-        flipResult 
+        flipResult,
+        flipDuration: flipDuration + 'ms',
+        speedLevel: totalPower >= 9 ? '🚀 INSANE!' : totalPower >= 7 ? '⚡ VERY FAST' : totalPower >= 5 ? '🏃 FAST' : totalPower >= 3 ? '🚶 NORMAL' : '🐌 SLOW'
       })
       
       // Calculate rotation speed to complete in the given duration
@@ -612,16 +615,18 @@ const ReliableGoldCoin = ({
           
           requestAnimationFrame(animateFlip)
         } else {
-          // PERFECT LANDING - no corrections needed since we calculated the exact path
+          // PERFECT LANDING - ensure it lands flat on the correct face
           coin.rotation.x = finalRotation
-          coin.rotation.z = 0
-          coin.position.y = 0
-          coin.position.x = 0
-          coin.position.z = 0
-          coin.scale.set(1, 1, 1)
+          coin.rotation.y = Math.PI / 2  // Keep consistent Y rotation
+          coin.rotation.z = 0            // No wobble
+          coin.position.y = 0            // Flat on ground
+          coin.position.x = 0            // Centered
+          coin.position.z = 0            // Centered
+          coin.scale.set(1, 1, 1)        // Normal size
           
           isAnimatingRef.current = false
-          console.log('✅ NATURAL flip animation complete - landed perfectly on:', flipResult)
+          console.log('✅ NATURAL flip animation complete - landed FLAT on:', flipResult, 
+                     'at angle:', (finalRotation * 180 / Math.PI).toFixed(0) + '°')
         }
       }
       
