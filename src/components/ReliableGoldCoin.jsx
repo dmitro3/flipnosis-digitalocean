@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
+import { isMobileDevice } from '../../utils/deviceDetection'
 
 const ReliableGoldCoin = ({ 
   isFlipping, 
@@ -31,6 +32,8 @@ const ReliableGoldCoin = ({
   const animationIdRef = useRef(null)
   const isAnimatingRef = useRef(false)
   const targetAngleRef = useRef(Math.PI / 2) // Default to heads
+  const texturesRef = useRef({}) // Store preloaded textures
+  const isMobile = isMobileDevice() // Detect mobile once
 
   // NEW: Function to determine text colors based on player choices
   const getTextColors = () => {
@@ -79,112 +82,131 @@ const ReliableGoldCoin = ({
 
   // Create procedural gold textures with dynamic colors
   const createGoldTexture = (type, size = 512) => {
-    const canvas = document.createElement('canvas')
-    canvas.width = size
-    canvas.height = size
-    const ctx = canvas.getContext('2d')
-
-    // Get current text colors
+    // Check if we have a cached texture for this type and color combo
     const { headsColor, tailsColor } = getTextColors()
+    const cacheKey = `${type}-${type === 'heads' ? headsColor : type === 'tails' ? tailsColor : 'default'}`
+    
+    if (texturesRef.current[cacheKey]) {
+      return texturesRef.current[cacheKey]
+    }
+
+    const canvas = document.createElement('canvas')
+    // Use smaller texture size on mobile for better performance
+    const textureSize = isMobile ? 256 : size
+    canvas.width = textureSize
+    canvas.height = textureSize
+    const ctx = canvas.getContext('2d')
 
     if (type === 'heads') {
       // Gold gradient background - BRIGHTER
-      const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
+      const gradient = ctx.createRadialGradient(textureSize/2, textureSize/2, 0, textureSize/2, textureSize/2, textureSize/2)
       gradient.addColorStop(0, '#FFEF94') // Much brighter center
       gradient.addColorStop(0.5, '#FFD700') // Bright gold
       gradient.addColorStop(0.8, '#DAA520') // Medium gold
       gradient.addColorStop(1, '#B8860B') // Darker edge
       ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, size, size)
+      ctx.fillRect(0, 0, textureSize, textureSize)
       
       // Crown symbol - positioned higher
       ctx.fillStyle = '#8B4513' // Darker brown for contrast
-      ctx.font = `bold ${size * 0.2}px serif`
+      ctx.font = `bold ${textureSize * 0.2}px serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('♔', size/2, size/2 - size * 0.08) // Moved up
+      ctx.fillText('♔', textureSize/2, textureSize/2 - textureSize * 0.08) // Moved up
       
       // "HEADS" text below crown - NOW WITH DYNAMIC COLOR
       ctx.fillStyle = headsColor // Use dynamic color
-      ctx.font = `bold ${size * 0.18}px Hyperwave` // Increased size by 50%
+      ctx.font = `bold ${textureSize * 0.18}px Hyperwave` // Increased size by 50%
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('HEADS', size/2, size/2 + size * 0.12) // Below crown
+      ctx.fillText('HEADS', textureSize/2, textureSize/2 + textureSize * 0.12) // Below crown
       
       // Add glow effect for green text
       if (headsColor === '#00FF00') {
         ctx.shadowColor = '#00FF00'
         ctx.shadowBlur = 10
-        ctx.fillText('HEADS', size/2, size/2 + size * 0.12)
+        ctx.fillText('HEADS', textureSize/2, textureSize/2 + textureSize * 0.12)
         ctx.shadowBlur = 0 // Reset shadow
       }
       
       // Decorative border - more prominent
       ctx.strokeStyle = '#8B7D6B'
-      ctx.lineWidth = size * 0.025 // Thicker border
+      ctx.lineWidth = textureSize * 0.025 // Thicker border
       ctx.beginPath()
-      ctx.arc(size/2, size/2, size * 0.42, 0, Math.PI * 2)
+      ctx.arc(textureSize/2, textureSize/2, textureSize * 0.42, 0, Math.PI * 2)
       ctx.stroke()
       
     } else if (type === 'tails') {
       // Gold gradient background - BRIGHTER  
-      const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
+      const gradient = ctx.createRadialGradient(textureSize/2, textureSize/2, 0, textureSize/2, textureSize/2, textureSize/2)
       gradient.addColorStop(0, '#FFEF94') // Much brighter center
       gradient.addColorStop(0.5, '#FFD700') // Bright gold
       gradient.addColorStop(0.8, '#DAA520') // Medium gold
       gradient.addColorStop(1, '#B8860B') // Darker edge
       ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, size, size)
+      ctx.fillRect(0, 0, textureSize, textureSize)
       
       // Diamond symbol - positioned higher
       ctx.fillStyle = '#8B4513' // Darker brown for contrast
-      ctx.font = `bold ${size * 0.2}px serif`
+      ctx.font = `bold ${textureSize * 0.2}px serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('♦', size/2, size/2 - size * 0.08) // Moved up
+      ctx.fillText('♦', textureSize/2, textureSize/2 - textureSize * 0.08) // Moved up
       
       // "TAILS" text below diamond - NOW WITH DYNAMIC COLOR
       ctx.fillStyle = tailsColor // Use dynamic color
-      ctx.font = `bold ${size * 0.18}px Hyperwave` // Increased size by 50%
+      ctx.font = `bold ${textureSize * 0.18}px Hyperwave` // Increased size by 50%
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('TAILS', size/2, size/2 + size * 0.12) // Below diamond
+      ctx.fillText('TAILS', textureSize/2, textureSize/2 + textureSize * 0.12) // Below diamond
       
       // Add glow effect for green text
       if (tailsColor === '#00FF00') {
         ctx.shadowColor = '#00FF00'
         ctx.shadowBlur = 10
-        ctx.fillText('TAILS', size/2, size/2 + size * 0.12)
+        ctx.fillText('TAILS', textureSize/2, textureSize/2 + textureSize * 0.12)
         ctx.shadowBlur = 0 // Reset shadow
       }
       
       // Decorative border - more prominent
       ctx.strokeStyle = '#8B7D6B'
-      ctx.lineWidth = size * 0.025 // Thicker border
+      ctx.lineWidth = textureSize * 0.025 // Thicker border
       ctx.beginPath()
-      ctx.arc(size/2, size/2, size * 0.42, 0, Math.PI * 2)
+      ctx.arc(textureSize/2, textureSize/2, textureSize * 0.42, 0, Math.PI * 2)
       ctx.stroke()
       
     } else if (type === 'edge') {
       // Brighter edge pattern
       ctx.fillStyle = '#FFEF94' // Much brighter base
-      ctx.fillRect(0, 0, size, size)
+      ctx.fillRect(0, 0, textureSize, textureSize)
       
       // Vertical lines pattern (reeding) - more contrast
       ctx.strokeStyle = '#B8860B' // Darker lines for contrast
       ctx.lineWidth = 3 // Slightly thicker
-      for (let i = 0; i < size; i += 8) {
+      for (let i = 0; i < textureSize; i += 8) {
         ctx.beginPath()
         ctx.moveTo(i, 0)
-        ctx.lineTo(i, size)
+        ctx.lineTo(i, textureSize)
         ctx.stroke()
       }
     }
 
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
+    
+    // Cache the texture
+    texturesRef.current[cacheKey] = texture
+    
     return texture
   }
+
+  // Preload textures on mount
+  useEffect(() => {
+    // Preload default textures
+    createGoldTexture('heads')
+    createGoldTexture('tails')
+    createGoldTexture('edge')
+  }, [])
 
   // Initialize Three.js scene ONCE
   useEffect(() => {
@@ -196,11 +218,17 @@ const ReliableGoldCoin = ({
 
     const renderer = new THREE.WebGLRenderer({ 
       canvas: mountRef.current.querySelector('canvas') || document.createElement('canvas'),
-      antialias: true, 
-      alpha: true
+      antialias: !isMobile, // Disable antialiasing on mobile for performance
+      alpha: true,
+      powerPreference: isMobile ? "low-power" : "high-performance"
     })
     renderer.setSize(size, size)
     renderer.setClearColor(0x000000, 0)
+    
+    // Lower pixel ratio on mobile for better performance
+    if (isMobile) {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    }
 
     if (!mountRef.current.querySelector('canvas')) {
       mountRef.current.appendChild(renderer.domElement)
@@ -209,38 +237,44 @@ const ReliableGoldCoin = ({
     sceneRef.current = scene
     rendererRef.current = renderer
 
-    // LIGHTING SETUP - WORKING BRIGHT CONFIGURATION
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.5) // Very bright ambient
-    scene.add(ambientLight)
+    // LIGHTING SETUP - ZERO LIGHTS ON MOBILE
+    if (isMobile) {
+      // NO LIGHTS AT ALL - Just use unlit materials
+      console.log('📱 Mobile detected: Using unlit materials with no lights')
+    } else {
+      // Desktop gets full lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 2.5) // Very bright ambient
+      scene.add(ambientLight)
 
-    // Primary directional light - front facing
-    const mainLight = new THREE.DirectionalLight(0xFFFFFF, 4.0) // Very bright
-    mainLight.position.set(0, 0, 10) // Directly in front
-    scene.add(mainLight)
+      // Primary directional light - front facing
+      const mainLight = new THREE.DirectionalLight(0xFFFFFF, 4.0) // Very bright
+      mainLight.position.set(0, 0, 10) // Directly in front
+      scene.add(mainLight)
 
-    // Top light
-    const topLight = new THREE.DirectionalLight(0xFFE4B5, 3.0)
-    topLight.position.set(0, 5, 5)
-    scene.add(topLight)
+      // Top light
+      const topLight = new THREE.DirectionalLight(0xFFE4B5, 3.0)
+      topLight.position.set(0, 5, 5)
+      scene.add(topLight)
 
-    // Left side light
-    const leftLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
-    leftLight.position.set(-5, 2, 5)
-    scene.add(leftLight)
+      // Left side light
+      const leftLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
+      leftLight.position.set(-5, 2, 5)
+      scene.add(leftLight)
 
-    // Right side light
-    const rightLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
-    rightLight.position.set(5, 2, 5)
-    scene.add(rightLight)
+      // Right side light
+      const rightLight = new THREE.DirectionalLight(0xFFE4B5, 2.5)
+      rightLight.position.set(5, 2, 5)
+      scene.add(rightLight)
 
-    // Bottom fill light
-    const bottomLight = new THREE.DirectionalLight(0xFFFFFF, 2.0)
-    bottomLight.position.set(0, -3, 5)
-    scene.add(bottomLight)
+      // Bottom fill light
+      const bottomLight = new THREE.DirectionalLight(0xFFFFFF, 2.0)
+      bottomLight.position.set(0, -3, 5)
+      scene.add(bottomLight)
+    }
 
-    // MATERIALS SETUP - MUCH BRIGHTER GOLD with less metalness
-    const metalness = 0.6 // Reduced from 0.9 - less mirror-like
-    const roughness = 0.1 // Slightly increased from 0.05 - less perfect reflection
+    // MATERIALS SETUP - Different for mobile vs desktop
+    const metalness = isMobile ? 0 : 0.6 // No metalness on mobile
+    const roughness = isMobile ? 1 : 0.1 // Full roughness on mobile
 
     // Create or load textures
     const textureHeads = headsImage ? 
@@ -257,9 +291,27 @@ const ReliableGoldCoin = ({
 
     // Set up edge texture to repeat horizontally
     textureEdge.wrapS = THREE.RepeatWrapping
-    textureEdge.repeat.set(20, 1)
+    textureEdge.repeat.set(isMobile ? 10 : 20, 1) // Less repetition on mobile
 
-    const materials = [
+    const materials = isMobile ? [
+      // Mobile uses MeshBasicMaterial - no lighting calculations needed
+      // Circumference (edge)
+      new THREE.MeshBasicMaterial({
+        map: textureEdge,
+        color: 0xFFFFCC
+      }),
+      // Heads side (top)
+      new THREE.MeshBasicMaterial({
+        map: textureHeads,
+        color: 0xFFFFCC
+      }),
+      // Tails side (bottom)
+      new THREE.MeshBasicMaterial({
+        map: textureTails,
+        color: 0xFFFFCC
+      })
+    ] : [
+      // Desktop uses full MeshStandardMaterial
       // Circumference (edge) - MUCH BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureEdge,
@@ -289,8 +341,9 @@ const ReliableGoldCoin = ({
       })
     ]
 
-    // COIN GEOMETRY - Based on working example
-    const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 100)
+    // COIN GEOMETRY - SIMPLIFIED FOR MOBILE
+    const geometrySegments = isMobile ? 32 : 100 // Much fewer segments on mobile
+    const geometry = new THREE.CylinderGeometry(3, 3, 0.4, geometrySegments)
     const coin = new THREE.Mesh(geometry, materials)
     
     scene.add(coin)
@@ -310,8 +363,8 @@ const ReliableGoldCoin = ({
       // Handle different states
       if (isAnimatingRef.current) {
         // Flip animation is handled separately - DON'T INTERFERE
-      } else if (chargingPlayer && !isAnimatingRef.current) {
-        // FEROCIOUS CHARGING EFFECTS - visible to all players
+      } else if (chargingPlayer && !isAnimatingRef.current && !isMobile) {
+        // CHARGING EFFECTS - DISABLED ON MOBILE
         const intensity = (creatorPower + joinerPower) / 20 // Use total power for intensity
         const chargeIntensity = Math.min(1, intensity * 2) // More dramatic scaling
         
@@ -326,25 +379,27 @@ const ReliableGoldCoin = ({
         
         // INTENSE MATERIAL EFFECTS - PINK ELECTRIC ENERGY
         materials.forEach((material, index) => {
-          // Crazy emissive pulsing
-          const emissivePulse = Math.sin(time * 20) * 0.5 + 0.5
-          material.emissiveIntensity = 0.6 + emissivePulse * chargeIntensity
-          
-          // Electric pink energy effect
-          const pinkIntensity = Math.sin(time * 25) * chargeIntensity
-          const redComponent = Math.floor(255 * (0.2 + pinkIntensity * 0.8))
-          const greenComponent = Math.floor(20 * (1 + pinkIntensity))
-          const blueComponent = Math.floor(147 * (0.3 + pinkIntensity * 0.7))
-          
-          material.emissive.setRGB(
-            redComponent / 255,
-            greenComponent / 255, 
-            blueComponent / 255
-          )
-          
-          // Make the coin surface more reflective during charging
-          material.metalness = 0.6 + chargeIntensity * 0.4
-          material.roughness = Math.max(0.05, 0.1 - chargeIntensity * 0.05)
+          if (material.emissiveIntensity !== undefined) { // Only for StandardMaterial
+            // Crazy emissive pulsing
+            const emissivePulse = Math.sin(time * 20) * 0.5 + 0.5
+            material.emissiveIntensity = 0.6 + emissivePulse * chargeIntensity
+            
+            // Electric pink energy effect
+            const pinkIntensity = Math.sin(time * 25) * chargeIntensity
+            const redComponent = Math.floor(255 * (0.2 + pinkIntensity * 0.8))
+            const greenComponent = Math.floor(20 * (1 + pinkIntensity))
+            const blueComponent = Math.floor(147 * (0.3 + pinkIntensity * 0.7))
+            
+            material.emissive.setRGB(
+              redComponent / 255,
+              greenComponent / 255, 
+              blueComponent / 255
+            )
+            
+            // Make the coin surface more reflective during charging
+            material.metalness = 0.6 + chargeIntensity * 0.4
+            material.roughness = Math.max(0.05, 0.1 - chargeIntensity * 0.05)
+          }
         })
         
         // Add random jitter for frenzied effect
@@ -353,12 +408,16 @@ const ReliableGoldCoin = ({
         
       } else if (!isAnimatingRef.current) {
         // Reset effects when not charging
-        materials.forEach(material => {
-          material.emissiveIntensity = 0.4
-          material.emissive.setHex(0x554400) // Back to gold
-          material.metalness = 0.6
-          material.roughness = 0.1
-        })
+        if (!isMobile) {
+          materials.forEach(material => {
+            if (material.emissiveIntensity !== undefined) {
+              material.emissiveIntensity = 0.4
+              material.emissive.setHex(0x554400) // Back to gold
+              material.metalness = 0.6
+              material.roughness = 0.1
+            }
+          })
+        }
         coin.scale.set(1, 1, 1)
         coin.position.x = 0
         coin.position.z = 0
@@ -369,11 +428,11 @@ const ReliableGoldCoin = ({
         
         if (isWaitingInRound || isWaitingToStart) {
           // Very gentle continuous rotation when waiting
-          coin.rotation.x += 0.005
+          coin.rotation.x += isMobile ? 0.003 : 0.005 // Even slower on mobile
           coin.position.y = Math.sin(time * 1.5) * 0.05
         } else {
           // Minimal rotation when not active
-          coin.rotation.x += 0.002
+          coin.rotation.x += isMobile ? 0.001 : 0.002 // Slower on mobile
           coin.position.y = 0
         }
       }
@@ -382,7 +441,27 @@ const ReliableGoldCoin = ({
       animationIdRef.current = requestAnimationFrame(animate)
     }
 
-    animate()
+    // Start animation with reduced framerate on mobile
+    if (isMobile) {
+      let lastTime = 0
+      const targetFPS = 30
+      const frameDelay = 1000 / targetFPS
+      
+      const throttledAnimate = (currentTime) => {
+        const deltaTime = currentTime - lastTime
+        
+        if (deltaTime >= frameDelay) {
+          animate()
+          lastTime = currentTime
+        }
+        
+        animationIdRef.current = requestAnimationFrame(throttledAnimate)
+      }
+      
+      throttledAnimate(0)
+    } else {
+      animate()
+    }
 
     return () => {
       if (animationIdRef.current) {
@@ -397,10 +476,16 @@ const ReliableGoldCoin = ({
       geometry.dispose()
       renderer.dispose()
       
+      // Clear texture cache
+      Object.values(texturesRef.current).forEach(texture => {
+        texture.dispose()
+      })
+      texturesRef.current = {}
+      
       sceneRef.current = null
       rendererRef.current = null
     }
-  }, [headsImage, tailsImage, edgeImage])
+  }, [headsImage, tailsImage, edgeImage, isMobile, size])
 
   // NEW: Update textures when player choices change
   useEffect(() => {
