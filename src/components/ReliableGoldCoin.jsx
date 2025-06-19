@@ -425,10 +425,11 @@ const ReliableGoldCoin = ({
         // Idle state
         const isWaitingInRound = gamePhase === 'round_active' && !isPlayerTurn
         const isWaitingToStart = gamePhase === 'waiting' || gamePhase === 'ready'
+        const isWaitingForJoiner = gamePhase === 'waiting' || gamePhase === 'lobby'
         
-        if (isWaitingInRound || isWaitingToStart) {
-          // Very gentle continuous rotation when waiting
-          coin.rotation.x += isMobile ? 0.003 : 0.005 // Even slower on mobile
+        if (isWaitingInRound || isWaitingToStart || isWaitingForJoiner) {
+          // SLOW, gentle continuous rotation when waiting (same speed for all waiting states)
+          coin.rotation.x += isMobile ? 0.002 : 0.003 // Consistent slow speed
           coin.position.y = Math.sin(time * 1.5) * 0.05
         } else {
           // Minimal rotation when not active
@@ -515,13 +516,13 @@ const ReliableGoldCoin = ({
     }
   }, [creatorChoice, joinerChoice, isCreator])
 
-  // FIXED FLIP ANIMATION - Ensures proper power-based speed
+  // NATURAL FLIP ANIMATION - Calculates exact path to result from start
   useEffect(() => {
     if (!isFlipping || !flipResult || !flipDuration || !coinRef.current) {
       return
     }
 
-    console.log('🎬 Starting FIXED flip animation:', { 
+    console.log('🎬 Starting NATURAL flip animation:', { 
       flipResult, 
       flipDuration, 
       isAnimating: isAnimatingRef.current,
@@ -551,29 +552,34 @@ const ReliableGoldCoin = ({
       const totalPower = creatorPower + joinerPower
       const powerRatio = Math.min(totalPower / 10, 1) // 0 to 1 ratio
       
-      // DRAMATIC speed scaling based on power
-      const minSpeed = 0.03  // Slower at low power
-      const maxSpeed = 0.4   // MUCH faster at high power
-      const rotationSpeed = minSpeed + (powerRatio * (maxSpeed - minSpeed))
+      // Determine target angle based on result
+      const targetAngle = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
       
-      // More flips at higher power
-      const minFlips = 4
-      const maxFlips = 15
-      const totalFlips = minFlips + (powerRatio * (maxFlips - minFlips))
+      // Calculate base rotations based on power (more power = more spins)
+      const minRotations = 3  // Minimum flips for low power
+      const maxRotations = 12 // Maximum flips for high power
+      const baseRotations = minRotations + (powerRatio * (maxRotations - minRotations))
       
-      console.log('🎲 FIXED Flip parameters:', { 
+      // Calculate EXACT total rotation needed to land on target
+      const currentRotation = coin.rotation.x
+      const fullRotations = Math.floor(baseRotations) * (Math.PI * 2) // Full 360° rotations
+      const finalRotation = currentRotation + fullRotations + targetAngle
+      const totalRotationNeeded = finalRotation - currentRotation
+      
+      console.log('🎲 NATURAL Flip calculations:', { 
         totalPower, 
         powerRatio: powerRatio.toFixed(2),
-        rotationSpeed: rotationSpeed.toFixed(3), 
-        totalFlips: totalFlips.toFixed(1),
+        baseRotations: baseRotations.toFixed(1),
+        targetAngle: (targetAngle * 180 / Math.PI).toFixed(0) + '°',
+        totalRotationNeeded: (totalRotationNeeded * 180 / Math.PI).toFixed(0) + '°',
         flipResult 
       })
       
-      // Set target angle based on result
-      targetAngleRef.current = (flipResult === 'tails') ? (3 * Math.PI / 2) : (Math.PI / 2)
+      // Calculate rotation speed to complete in the given duration
+      const rotationPerFrame = totalRotationNeeded / (flipDuration / 16.67) // 60fps
       
       let flipStartTime = Date.now()
-      let currentRotationSpeed = rotationSpeed
+      let currentRotationAmount = 0
       
       const animateFlip = () => {
         if (!isAnimatingRef.current || !coinRef.current) return
@@ -582,51 +588,32 @@ const ReliableGoldCoin = ({
         const progress = Math.min(elapsed / flipDuration, 1)
         
         if (progress < 1) {
-          // POWER-BASED rotation with dramatic deceleration at the end
+          // SMOOTH DECELERATION - starts fast, ends naturally slow
           let speedMultiplier
-          if (progress < 0.85) {
-            // Full speed for 85% of the duration
+          if (progress < 0.7) {
+            // Full speed for first 70%
             speedMultiplier = 1
           } else {
-            // Dramatic slowdown in final 15%
-            const endPhase = (progress - 0.85) / 0.15
-            speedMultiplier = Math.pow(1 - endPhase, 3) // Cubic slowdown
+            // Smooth deceleration in final 30% using ease-out curve
+            const decelerationPhase = (progress - 0.7) / 0.3
+            speedMultiplier = Math.pow(1 - decelerationPhase, 2) // Quadratic ease-out
           }
           
-          // Apply current speed
-          const currentSpeed = currentRotationSpeed * speedMultiplier
-          coin.rotation.x += currentSpeed
+          // Apply smooth rotation increment
+          const frameRotation = rotationPerFrame * speedMultiplier
+          coin.rotation.x += frameRotation
+          currentRotationAmount += frameRotation
           
-          // Add vertical motion during flip
-          coin.position.y = Math.sin(progress * Math.PI) * 0.6 * (1 - progress * 0.2)
+          // Add realistic vertical motion during flip
+          coin.position.y = Math.sin(progress * Math.PI) * 0.6 * (1 - progress * 0.3)
           
-          // Small wobble for realism
-          coin.rotation.z = Math.sin(progress * Math.PI * totalFlips * 0.1) * 0.05 * (1 - progress)
+          // Subtle wobble for realism (decreases over time)
+          coin.rotation.z = Math.sin(currentRotationAmount * 0.1) * 0.03 * (1 - progress)
           
           requestAnimationFrame(animateFlip)
         } else {
-          // Start precision landing phase
-          landOnTarget()
-        }
-      }
-      
-      const landOnTarget = () => {
-        if (!isAnimatingRef.current || !coinRef.current) return
-        
-        const currentRotation = coin.rotation.x
-        const targetAngle = targetAngleRef.current
-        
-        // Calculate shortest path to target
-        let deltaAngle = (currentRotation % (Math.PI * 2)) - targetAngle
-        
-        // Normalize to shortest rotation
-        while (deltaAngle > Math.PI) deltaAngle -= Math.PI * 2
-        while (deltaAngle < -Math.PI) deltaAngle += Math.PI * 2
-        
-        // Close enough?
-        if (Math.abs(deltaAngle) < 0.05) {
-          // EXACT final position
-          coin.rotation.x = targetAngle
+          // PERFECT LANDING - no corrections needed since we calculated the exact path
+          coin.rotation.x = finalRotation
           coin.rotation.z = 0
           coin.position.y = 0
           coin.position.x = 0
@@ -634,13 +621,8 @@ const ReliableGoldCoin = ({
           coin.scale.set(1, 1, 1)
           
           isAnimatingRef.current = false
-          console.log('✅ FIXED flip animation complete:', flipResult)
-          return
+          console.log('✅ NATURAL flip animation complete - landed perfectly on:', flipResult)
         }
-        
-        // Smooth approach to target
-        coin.rotation.x -= deltaAngle * 0.15
-        requestAnimationFrame(landOnTarget)
       }
       
       // Start the animation
