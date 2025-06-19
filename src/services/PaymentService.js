@@ -105,19 +105,69 @@ export class PaymentService {
       console.log('📤 Sending transaction:', {
         to,
         value: value.toString(),
-        valueInWei: parseEther(value.toString()).toString()
+        valueInWei: parseEther(value.toString()).toString(),
+        from: walletClient.account.address
       })
 
-      // Prepare the transaction
-      const request = await walletClient.prepareTransactionRequest({
-        to,
-        value: parseEther(value.toString()),
-        chain: walletClient.chain,
-        account: walletClient.account
+      // Get current gas prices from the network
+      let feeData
+      try {
+        feeData = await walletClient.estimateFeesPerGas()
+        console.log('📡 Raw fee estimation from network:', feeData)
+      } catch (error) {
+        console.warn('⚠️ Failed to estimate fees, using fallback:', error)
+        // Fallback gas prices for Base network
+        feeData = {
+          maxFeePerGas: parseEther('0.000000002'), // 2 gwei
+          maxPriorityFeePerGas: parseEther('0.000000001') // 1 gwei
+        }
+      }
+      
+      // Set minimum acceptable fees for Base network (higher minimum)
+      const minBaseFee = parseEther('0.000000002') // 2 gwei minimum
+      const minPriorityFee = parseEther('0.000000001') // 1 gwei minimum
+      
+      const maxFeePerGas = feeData.maxFeePerGas && feeData.maxFeePerGas > minBaseFee 
+        ? feeData.maxFeePerGas 
+        : minBaseFee
+
+      const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > minPriorityFee
+        ? feeData.maxPriorityFeePerGas
+        : minPriorityFee
+
+      console.log('💰 Final gas fees being used:', {
+        maxFeePerGas: maxFeePerGas.toString() + ' wei (' + (Number(maxFeePerGas) / 1e9).toFixed(2) + ' gwei)',
+        maxPriorityFeePerGas: maxPriorityFeePerGas.toString() + ' wei (' + (Number(maxPriorityFeePerGas) / 1e9).toFixed(2) + ' gwei)',
+        originalEstimation: feeData
       })
 
-      // Send the transaction
-      const hash = await walletClient.sendTransaction(request)
+      // Try direct transaction first (bypassing prepareTransactionRequest which might have gas issues)
+      let hash
+      try {
+        console.log('🎯 Attempting direct transaction...')
+        hash = await walletClient.sendTransaction({
+          to,
+          value: parseEther(value.toString()),
+          gas: 21000n, // Standard ETH transfer gas
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+        console.log('✅ Direct transaction succeeded!')
+      } catch (directError) {
+        console.warn('⚠️ Direct transaction failed, trying with prepareTransactionRequest:', directError.message)
+        
+        // Fallback to prepareTransactionRequest
+        const request = await walletClient.prepareTransactionRequest({
+          to,
+          value: parseEther(value.toString()),
+          chain: walletClient.chain,
+          account: walletClient.account,
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+
+        hash = await walletClient.sendTransaction(request)
+      }
       
       console.log('✅ Transaction sent:', hash)
       
