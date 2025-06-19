@@ -45,7 +45,7 @@ const ChoiceAnimation = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 15rem;
+  font-size: ${props => props.isMobile ? '6rem' : '10rem'};
   font-weight: 900;
   color: ${props => props.color};
   text-transform: uppercase;
@@ -58,11 +58,11 @@ const ChoiceAnimation = styled.div`
   @keyframes choiceAnimation {
     0% {
       opacity: 0;
-      transform: translate(-50%, -50%) scale(0.5);
+      transform: translate(-50%, -50%) scale(0.2);
     }
     20% {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1.2);
+      transform: translate(-50%, -50%) scale(1.1);
     }
     80% {
       opacity: 1;
@@ -70,7 +70,44 @@ const ChoiceAnimation = styled.div`
     }
     100% {
       opacity: 0;
-      transform: translate(-50%, -50%) scale(1.5);
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+  }
+`
+
+const AutoFlipAnimation = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: ${props => props.isMobile ? '4rem' : '6rem'};
+  font-weight: 900;
+  color: #FFD700;
+  text-transform: uppercase;
+  opacity: 0;
+  z-index: 1000;
+  pointer-events: none;
+  animation: autoFlipAnimation 2s ease-out forwards;
+  text-shadow: 0 0 30px #FFD700, 0 0 60px #FFD700;
+  text-align: center;
+  line-height: 1.2;
+
+  @keyframes autoFlipAnimation {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.1) translateZ(-100px);
+    }
+    20% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.2) translateZ(50px);
+    }
+    60% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1) translateZ(0px);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.5) translateZ(100px);
     }
   }
 `
@@ -362,7 +399,7 @@ const MobileChatPanel = styled.div`
 const FlipGame = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { publicClient } = useWallet()
+  const { publicClient, isMobile } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const { isFullyConnected, connectionError, address, walletClient } = useWalletConnection()
 
@@ -415,6 +452,10 @@ const FlipGame = () => {
   const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
   const [choiceAnimationText, setChoiceAnimationText] = useState('')
   const [choiceAnimationColor, setChoiceAnimationColor] = useState('')
+
+  // Add state for auto-flip animation
+  const [showAutoFlipAnimation, setShowAutoFlipAnimation] = useState(false)
+  const previousTurnTimeLeftRef = useRef(null)
 
   const videoRef = useRef(null);
   const [videoError, setVideoError] = useState(false);
@@ -572,6 +613,32 @@ const FlipGame = () => {
       }
     }
   }, [gameId, address])
+
+  // Auto-flip detection
+  useEffect(() => {
+    if (!gameState) return
+    
+    const currentTurnTimeLeft = gameState.turnTimeLeft
+    const previousTurnTimeLeft = previousTurnTimeLeftRef.current
+    
+    // Detect auto-flip: timer went from positive number to 0 or undefined
+    if (previousTurnTimeLeft !== null && 
+        previousTurnTimeLeft > 0 && 
+        (currentTurnTimeLeft === 0 || currentTurnTimeLeft === undefined) &&
+        gameState.phase === 'round_active') {
+      
+      console.log('⚡ Auto-flip detected! Showing animation...')
+      setShowAutoFlipAnimation(true)
+      
+      // Hide animation after 2 seconds
+      setTimeout(() => {
+        setShowAutoFlipAnimation(false)
+      }, 2000)
+    }
+    
+    // Update the ref with current value
+    previousTurnTimeLeftRef.current = currentTurnTimeLeft
+  }, [gameState?.turnTimeLeft, gameState?.phase])
 
   // Load game data from database
   useEffect(() => {
@@ -1302,9 +1369,16 @@ const FlipGame = () => {
       
       {/* Add the choice animation component */}
       {showChoiceAnimation && (
-        <ChoiceAnimation color={choiceAnimationColor}>
+        <ChoiceAnimation color={choiceAnimationColor} isMobile={isMobile}>
           {choiceAnimationText}
         </ChoiceAnimation>
+      )}
+
+      {/* Add the auto-flip animation component */}
+      {showAutoFlipAnimation && (
+        <AutoFlipAnimation isMobile={isMobile}>
+          FINAL ROUND<br />AUTOFLIP
+        </AutoFlipAnimation>
       )}
 
       <Container style={{ 
