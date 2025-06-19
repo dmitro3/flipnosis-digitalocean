@@ -1,5 +1,14 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit'
+import { getDefaultConfig, connectorsForWallets } from '@rainbow-me/rainbowkit'
+import { 
+  metaMaskWallet,
+  rainbowWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+  trustWallet,
+  injectedWallet
+} from '@rainbow-me/rainbowkit/wallets'
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'wagmi/chains'
+import { createConfig, http } from 'wagmi'
 
 console.log('Initializing Rainbow Kit with:', {
   projectId: 'fd95ed98ecab7ef051bdcaa27f9d0547',
@@ -40,13 +49,55 @@ if (!projectId) {
   throw new Error('WalletConnect Project ID is required')
 }
 
-// Create the config using getDefaultConfig which handles all wallet setup
-const config = getDefaultConfig({
-  appName: 'FLIPNOSIS',
-  projectId,
-  chains,
-  ssr: false, // Not using server-side rendering
-})
+// Check if we're on mobile
+const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+// Create custom connectors to handle MetaMask mobile properly
+let config
+
+if (isMobile) {
+  // On mobile, use a custom configuration that prioritizes direct connection for MetaMask
+  const connectors = connectorsForWallets(
+    [
+      {
+        groupName: 'Popular',
+        wallets: [
+          injectedWallet, // This will handle MetaMask on mobile without WalletConnect
+          coinbaseWallet,
+          rainbowWallet,
+          trustWallet,
+          walletConnectWallet, // Generic WalletConnect for other wallets
+        ],
+      },
+    ],
+    {
+      appName: 'FLIPNOSIS',
+      projectId,
+    }
+  )
+
+  config = createConfig({
+    chains,
+    connectors,
+    transports: {
+      [base.id]: http(),
+      [mainnet.id]: http(),
+      [polygon.id]: http(),
+      [arbitrum.id]: http(),
+      [optimism.id]: http(),
+      [bsc.id]: http(),
+      [avalanche.id]: http(),
+    },
+  })
+} else {
+  // On desktop, use the default config which handles everything automatically
+  config = getDefaultConfig({
+    appName: 'FLIPNOSIS',
+    projectId,
+    chains,
+    ssr: false,
+  })
+}
 
 console.log('✅ Rainbow Kit configuration created successfully')
 
