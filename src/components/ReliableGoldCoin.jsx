@@ -220,7 +220,9 @@ const ReliableGoldCoin = ({
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(55, 1, 1, 10)
+    // Position camera to look straight at the coin
     camera.position.set(0, 0, 7)
+    camera.lookAt(0, 0, 0)
 
     const renderer = new THREE.WebGLRenderer({ 
       canvas: mountRef.current.querySelector('canvas') || document.createElement('canvas'),
@@ -299,6 +301,10 @@ const ReliableGoldCoin = ({
     textureEdge.wrapS = THREE.RepeatWrapping
     textureEdge.repeat.set(isMobile ? 10 : 20, 1) // Less repetition on mobile
 
+    // IMPORTANT: Material order for cylinder geometry:
+    // Index 0: Side/edge material
+    // Index 1: Top cap (positive Y) - This is HEADS
+    // Index 2: Bottom cap (negative Y) - This is TAILS
     const materials = isMobile ? [
       // Mobile uses MeshBasicMaterial - no lighting calculations needed
       // Circumference (edge)
@@ -306,12 +312,12 @@ const ReliableGoldCoin = ({
         map: textureEdge,
         color: 0xFFFFCC
       }),
-      // Heads side (top)
+      // Top cap - HEADS
       new THREE.MeshBasicMaterial({
         map: textureHeads,
         color: 0xFFFFCC
       }),
-      // Tails side (bottom)
+      // Bottom cap - TAILS
       new THREE.MeshBasicMaterial({
         map: textureTails,
         color: 0xFFFFCC
@@ -327,7 +333,7 @@ const ReliableGoldCoin = ({
         emissive: 0x443300, // Warm glow
         emissiveIntensity: 0.3 // Increased from 0.1
       }),
-      // Heads side (top) - MUCH BRIGHTER
+      // Top cap - HEADS - MUCH BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureHeads,
         metalness: metalness,
@@ -336,7 +342,7 @@ const ReliableGoldCoin = ({
         emissive: 0x554400, // Stronger warm glow
         emissiveIntensity: 0.4 // Increased from 0.15
       }),
-      // Tails side (bottom) - MUCH BRIGHTER
+      // Bottom cap - TAILS - MUCH BRIGHTER
       new THREE.MeshStandardMaterial({
         map: textureTails,
         metalness: metalness,
@@ -355,9 +361,12 @@ const ReliableGoldCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // IMPORTANT: Set initial rotation like the working example
-    coin.rotation.x = 0        // Start flat showing heads (0°)
-    coin.rotation.y = Math.PI / 2  // Initial orientation
+    // IMPORTANT: Set initial rotation for proper face orientation
+    // For a cylinder in Three.js: rotation.x controls which face shows
+    // 0 = top face (heads), π = bottom face (tails)
+    coin.rotation.x = Math.PI / 2  // Start showing edge
+    coin.rotation.y = 0           // No Y rotation needed
+    coin.rotation.z = 0           // No Z rotation
 
     // Animation loop
     const animate = () => {
@@ -377,7 +386,8 @@ const ReliableGoldCoin = ({
         // FRENZIED ROTATION AND MOVEMENT
         coin.position.y = Math.sin(time * 12) * 0.25 * (1 + chargeIntensity)
         coin.rotation.x += 0.05 * (1 + chargeIntensity * 3) // Much faster rotation
-        coin.rotation.z += Math.sin(time * 8) * 0.02 * chargeIntensity // Z-axis wobble
+        coin.rotation.z = Math.sin(time * 8) * 0.02 * chargeIntensity // Z-axis wobble (not cumulative)
+        coin.rotation.y = Math.sin(time * 10) * 0.1 * chargeIntensity // Y-axis wobble
         
         // VIOLENT PULSING SCALE
         const pulseScale = 1 + Math.sin(time * 15) * 0.15 * chargeIntensity
@@ -434,12 +444,14 @@ const ReliableGoldCoin = ({
         const isWaitingForJoiner = gamePhase === 'waiting' || gamePhase === 'lobby'
         
         if (isWaitingInRound || isWaitingToStart || isWaitingForJoiner) {
-          // SLOW, gentle continuous rotation when waiting (same speed for all waiting states)
-          coin.rotation.x += isMobile ? 0.002 : 0.003 // Consistent slow speed
+          // SLOW, gentle continuous rotation when waiting
+          coin.rotation.x += isMobile ? 0.002 : 0.003
+          coin.rotation.y = Math.sin(time * 0.5) * 0.1 // Gentle Y wobble
           coin.position.y = Math.sin(time * 1.5) * 0.05
         } else {
           // Minimal rotation when not active
-          coin.rotation.x += isMobile ? 0.001 : 0.002 // Slower on mobile
+          coin.rotation.x += isMobile ? 0.001 : 0.002
+          coin.rotation.y = Math.sin(time * 0.3) * 0.05 // Very subtle Y wobble
           coin.position.y = 0
         }
       }
@@ -591,18 +603,21 @@ const ReliableGoldCoin = ({
       coin.position.y = 0
       coin.position.z = 0
       
-      // Get current rotation normalized to 0-2π range
-      const currentRotation = coin.rotation.x % (Math.PI * 2)
+      // Get current rotation
+      const currentRotation = coin.rotation.x
       
-      // Determine target angle - ENSURE PROPER FACE ORIENTATION
-      // For a cylinder in Three.js:
-      // rotation.x = 0 or 2π = top face visible (heads)
-      // rotation.x = π = bottom face visible (tails)
+      // Determine target angle - FIXED FOR PROPER FACE ORIENTATION
+      // The cylinder needs to rotate around X axis to show faces
+      // rotation.x = π/2 = edge visible
+      // rotation.x = 0 or 2π = face visible (perpendicular to camera)
+      // We need to add/subtract π/2 to show the correct face
       let targetAngle
       if (flipResult === 'heads') {
-        targetAngle = 0 // Show top face
+        // For heads, we want the top face visible
+        targetAngle = 0
       } else {
-        targetAngle = Math.PI // Show bottom face
+        // For tails, we want the bottom face visible (flip 180°)
+        targetAngle = Math.PI
       }
       
       // Use pre-calculated rotations or calculate based on current power
@@ -661,26 +676,30 @@ const ReliableGoldCoin = ({
           const wobbleIntensity = 0.05 * (1 - progress)
           coin.rotation.z = Math.sin(accumulatedRotation * 0.15) * wobbleIntensity
           
-          // Slight tilt for realism
-          coin.rotation.y = Math.PI / 2 + Math.sin(progress * Math.PI * 2) * 0.02
+          // Keep Y rotation consistent for proper face viewing
+          coin.rotation.y = Math.sin(progress * Math.PI * 2) * 0.1
           
           requestAnimationFrame(animateFlip)
         } else {
           // PERFECT LANDING - ensure exact face alignment
-          const finalRotation = currentRotation + totalRotation
+          // The issue is the coin's orientation - we need to land at the right angle
+          // to show the face, not the edge
           
-          // Normalize to ensure proper face is showing
           if (flipResult === 'heads') {
-            // Ensure we're at a multiple of 2π (top face)
-            coin.rotation.x = Math.round(finalRotation / (Math.PI * 2)) * (Math.PI * 2)
+            // For heads: land flat showing top face
+            // This means rotation.x should be 0 or multiple of 2π
+            const rounds = Math.round(accumulatedRotation / (Math.PI * 2))
+            coin.rotation.x = rounds * (Math.PI * 2)
           } else {
-            // Ensure we're at π + multiple of 2π (bottom face)
-            coin.rotation.x = Math.PI + Math.round((finalRotation - Math.PI) / (Math.PI * 2)) * (Math.PI * 2)
+            // For tails: land flat showing bottom face
+            // This means rotation.x should be π or π + multiple of 2π
+            const rounds = Math.round((accumulatedRotation - Math.PI) / (Math.PI * 2))
+            coin.rotation.x = Math.PI + (rounds * (Math.PI * 2))
           }
           
           // Reset all other properties for clean landing
-          coin.rotation.y = Math.PI / 2
-          coin.rotation.z = 0
+          coin.rotation.y = 0  // No Y rotation
+          coin.rotation.z = 0  // No Z rotation
           coin.position.y = 0
           coin.position.x = 0
           coin.position.z = 0
