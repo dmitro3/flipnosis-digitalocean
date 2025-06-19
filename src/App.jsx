@@ -12,6 +12,7 @@ import { theme } from './styles/theme'
 import { RouterProvider } from 'react-router-dom'
 import { config } from './config/rainbowkit'
 import React from 'react'
+import { useMetaMaskMobileFix } from './utils/useMetaMaskMobileFix'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -72,6 +73,12 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// Component to apply MetaMask mobile fix
+function MetaMaskFixWrapper({ children }) {
+  useMetaMaskMobileFix()
+  return children
+}
+
 function App() {
   // Add debug logging
   console.log('🔍 App.jsx - Config check:', { 
@@ -96,15 +103,17 @@ function App() {
             initialChain={chains[0]}
             chains={chains}
           >
-            <ToastProvider>
-              <WalletProvider>
-                <ProfileProvider>
-                  <ThemeProvider theme={theme}>
-                    <RouterProvider router={router} />
-                  </ThemeProvider>
-                </ProfileProvider>
-              </WalletProvider>
-            </ToastProvider>
+            <MetaMaskFixWrapper>
+              <ToastProvider>
+                <WalletProvider>
+                  <ProfileProvider>
+                    <ThemeProvider theme={theme}>
+                      <RouterProvider router={router} />
+                    </ThemeProvider>
+                  </ProfileProvider>
+                </WalletProvider>
+              </ToastProvider>
+            </MetaMaskFixWrapper>
           </RainbowKitProvider>
         </QueryClientProvider>
       </WagmiProvider>

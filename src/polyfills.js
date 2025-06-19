@@ -4,6 +4,17 @@ import process from 'process'
 window.Buffer = Buffer
 window.process = process
 
+// Fix for mobile wallet connections
+if (typeof window !== 'undefined') {
+  // Ensure global is defined (required by some wallet SDKs)
+  window.global = window.global || window
+  
+  // Fix for URL constructor on some mobile browsers
+  if (!window.URL && window.webkitURL) {
+    window.URL = window.webkitURL
+  }
+}
+
 // Polyfill for require
 window.require = function(module) {
   switch (module) {
