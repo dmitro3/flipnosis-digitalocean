@@ -351,9 +351,8 @@ const ReliableGoldCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // IMPORTANT: Set initial rotation with forward tilt
-    const forwardTilt = Math.PI / 4 // 45 degrees
-    coin.rotation.x = -forwardTilt  // Start tilted forward showing heads
+    // IMPORTANT: Set initial rotation
+    coin.rotation.x = 0  // Start showing heads (0°)
     coin.rotation.y = Math.PI / 2   // Initial orientation
 
     // Animation loop
@@ -491,11 +490,11 @@ const ReliableGoldCoin = ({
     }
   }, [headsImage, tailsImage, edgeImage, isMobile, size])
 
-  // NEW: Update textures when player choices change
+  // NEW: Update textures and rotation when player choices change
   useEffect(() => {
     if (!coinRef.current || !sceneRef.current) return
     
-    console.log('🎨 Updating coin textures due to choice change:', {
+    console.log('🎨 Updating coin due to choice change:', {
       creatorChoice,
       joinerChoice,
       isCreator
@@ -517,17 +516,28 @@ const ReliableGoldCoin = ({
       coin.material[2].map = newTailsTexture
       coin.material[2].needsUpdate = true
     }
+    
+    // IMMEDIATELY show the player's chosen side
+    const myChoice = isCreator ? creatorChoice : joinerChoice
+    if (myChoice && !isAnimatingRef.current) {
+      console.log('🎯 Setting coin to show chosen side:', myChoice)
+      if (myChoice === 'heads') {
+        coin.rotation.x = 0 // Show heads
+      } else if (myChoice === 'tails') {
+        coin.rotation.x = Math.PI // Show tails
+      }
+    }
   }, [creatorChoice, joinerChoice, isCreator])
 
   // Removed pre-calculation logic - result will be determined on server instantly when released
 
-  // SIMPLIFIED FLIP ANIMATION - Reliable and mathematically perfect landing
+  // DETERMINISTIC FLIP ANIMATION - Guaranteed perfect landing
   useEffect(() => {
     if (!isFlipping || !flipResult || !flipDuration || !coinRef.current) {
       return
     }
 
-    console.log('🎬 Starting SIMPLIFIED flip animation:', { 
+    console.log('🎬 Starting DETERMINISTIC flip animation:', { 
       flipResult, 
       flipDuration, 
       totalPower: creatorPower + joinerPower
@@ -546,38 +556,43 @@ const ReliableGoldCoin = ({
       isAnimatingRef.current = true
       const coin = coinRef.current
       
-      // RESET COIN TO CLEAN STATE
+      // RESET COIN TO CLEAN STATE (except rotation)
       coin.scale.set(1, 1, 1)
       coin.position.x = 0
       coin.position.y = 0
       coin.position.z = 0
       
-      // Get current rotation
+      // Get starting position (should be showing player's choice)
       const startRotation = coin.rotation.x
-      
-      // Determine target angle with 45-degree forward tilt
-      // rotation.x = -45° = heads (top face tilted forward)
-      // rotation.x = π - 45° = tails (bottom face tilted forward)
-      const forwardTilt = Math.PI / 4 // 45 degrees
-      const targetFace = flipResult === 'heads' ? -forwardTilt : (Math.PI - forwardTilt)
+      const myChoice = isCreator ? creatorChoice : joinerChoice
       
       // Calculate power-based rotations
       const totalPower = creatorPower + joinerPower
       const powerRatio = Math.min(totalPower / 10, 1)
       
-      // Minimum 5 spins for power 1, up to 30 spins for power 10
+      // Base spins determined by power (5 to 30 full rotations)
       const minSpins = 5
       const maxSpins = 30
-      const spinCount = minSpins + Math.floor(powerRatio * (maxSpins - minSpins))
+      const baseSpins = minSpins + Math.floor(powerRatio * (maxSpins - minSpins))
       
-      // Total rotation = full spins + final position
-      const totalRotation = (spinCount * Math.PI * 2) + targetFace - startRotation
+      // DETERMINISTIC CALCULATION:
+      // If result matches our choice, do even number of half-flips (land on same side)
+      // If result doesn't match, do odd number of half-flips (land on opposite side)
+      const needsToFlip = (myChoice !== flipResult)
+      const halfFlips = baseSpins * 2 + (needsToFlip ? 1 : 0)
       
-      console.log('🎲 SIMPLIFIED Flip calculations:', { 
-        totalPower, 
+      // Total rotation in radians
+      const totalRotation = halfFlips * Math.PI
+      
+      console.log('🎲 DETERMINISTIC Flip calculations:', { 
+        totalPower,
         powerRatio: powerRatio.toFixed(2),
-        spinCount,
-        targetFace: flipResult,
+        myChoice,
+        flipResult,
+        needsToFlip,
+        baseSpins,
+        halfFlips,
+        startingSide: startRotation === 0 ? 'heads' : 'tails',
         flipDuration: flipDuration + 'ms'
       })
       
@@ -605,7 +620,7 @@ const ReliableGoldCoin = ({
           coin.rotation.x = startRotation + (totalRotation * easedProgress)
           
           // Vertical motion - higher with more power
-          const jumpHeight = 0.5 + (powerRatio * 1.0) // Increased jump height
+          const jumpHeight = 0.5 + (powerRatio * 1.0)
           coin.position.y = Math.sin(progress * Math.PI) * jumpHeight
           
           // Dynamic wobble that increases then decreases
@@ -617,11 +632,11 @@ const ReliableGoldCoin = ({
           
           requestAnimationFrame(animateFlip)
         } else {
-          // PERFECT LANDING - with forward tilt
+          // PERFECT LANDING - deterministic result
           if (flipResult === 'heads') {
-            coin.rotation.x = -forwardTilt // Tilted forward for heads
+            coin.rotation.x = 0 // Exactly 0 for heads
           } else {
-            coin.rotation.x = Math.PI - forwardTilt // Tilted forward for tails
+            coin.rotation.x = Math.PI // Exactly π for tails
           }
           
           // Reset all other properties
@@ -633,7 +648,7 @@ const ReliableGoldCoin = ({
           coin.scale.set(1, 1, 1)
           
           isAnimatingRef.current = false
-          console.log('✅ SIMPLIFIED flip complete - landed PERFECTLY on:', flipResult, 'with forward tilt')
+          console.log('✅ DETERMINISTIC flip complete - landed PERFECTLY on:', flipResult)
         }
       }
       
@@ -646,7 +661,7 @@ const ReliableGoldCoin = ({
     return () => {
       isAnimatingRef.current = false
     }
-  }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower])
+  }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower, creatorChoice, joinerChoice, isCreator])
 
   // Enhanced power charge handler
   const handlePowerChargeStart = (e) => {
