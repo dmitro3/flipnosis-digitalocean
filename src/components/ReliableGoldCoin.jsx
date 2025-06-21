@@ -29,11 +29,12 @@ const ReliableGoldCoin = ({
   const coinRef = useRef(null)
   const sceneRef = useRef(null)
   const rendererRef = useRef(null)
-  const animationIdRef = useRef(null)
+  const animationIdRef = useRef(false)
   const isAnimatingRef = useRef(false)
   const targetAngleRef = useRef(0) // Default to heads (0°)
   const texturesRef = useRef({}) // Store preloaded textures
   const isMobile = isMobileDevice() // Detect mobile once
+  const currentCoinSideRef = useRef('heads') // Track current coin side
   
   // Removed pre-calculation logic - keeping it simple
 
@@ -354,6 +355,9 @@ const ReliableGoldCoin = ({
     // IMPORTANT: Set initial rotation with 90-degree forward tilt
     coin.rotation.x = -Math.PI / 2  // Start showing heads tilted 90° forward
     coin.rotation.y = Math.PI / 2   // Initial orientation
+    
+    // Initialize coin side tracking
+    currentCoinSideRef.current = flipResult || 'heads'
 
     // Animation loop
     const animate = () => {
@@ -512,16 +516,20 @@ const ReliableGoldCoin = ({
       console.log('🎯 Setting coin to show chosen side (no previous flip):', myChoice)
       if (myChoice === 'heads') {
         coin.rotation.x = -Math.PI / 2 // Show heads tilted 90° forward
+        currentCoinSideRef.current = 'heads'
       } else if (myChoice === 'tails') {
         coin.rotation.x = Math.PI / 2 // Show tails tilted 90° forward
+        currentCoinSideRef.current = 'tails'
       }
     } else if (flipResult && !isAnimatingRef.current) {
       // If we have a flip result and we're not animating, stay on that result
       console.log('🎯 Keeping coin on last flip result:', flipResult)
       if (flipResult === 'heads') {
         coin.rotation.x = -Math.PI / 2 // Show heads tilted 90° forward
+        currentCoinSideRef.current = 'heads'
       } else if (flipResult === 'tails') {
         coin.rotation.x = Math.PI / 2 // Show tails tilted 90° forward
+        currentCoinSideRef.current = 'tails'
       }
     }
   }, [creatorChoice, joinerChoice, isCreator, flipResult])
@@ -572,16 +580,18 @@ const ReliableGoldCoin = ({
       const maxSpins = 30
       const baseSpins = minSpins + Math.floor(powerRatio * (maxSpins - minSpins))
       
-      // SIMPLIFIED DETERMINISTIC CALCULATION:
-      // Calculate how many half-flips we need to go from current position to target result
-      const currentSide = startRotation === -Math.PI / 2 ? 'heads' : 'tails'
+      // CRITICAL FIX: Calculate how many half-flips we need to go from current position to target result
+      const currentSide = currentCoinSideRef.current // Use tracked side instead of calculating from rotation
       const needsToFlip = currentSide !== flipResult
-      const halfFlips = baseSpins * 2 + (needsToFlip ? 1 : 0) // Odd if we need to flip, even if we don't
+      
+      // If we need to flip, do odd number of half-flips (land on opposite side)
+      // If we don't need to flip, do even number of half-flips (land on same side)
+      const halfFlips = baseSpins * 2 + (needsToFlip ? 1 : 0)
       
       // Total rotation in radians
       const totalRotation = halfFlips * Math.PI
       
-      console.log('🎲 SIMPLIFIED DETERMINISTIC Flip calculations:', { 
+      console.log('🎲 FIXED DETERMINISTIC Flip calculations:', { 
         totalPower,
         powerRatio: powerRatio.toFixed(2),
         myChoice,
@@ -592,6 +602,8 @@ const ReliableGoldCoin = ({
         halfFlips,
         startingSide: currentSide,
         targetSide: flipResult,
+        startingRotation: (startRotation * 180 / Math.PI).toFixed(0) + '°',
+        totalRotation: (totalRotation * 180 / Math.PI).toFixed(0) + '°',
         flipDuration: flipDuration + 'ms'
       })
       
@@ -634,8 +646,10 @@ const ReliableGoldCoin = ({
           // PERFECT LANDING - deterministic result with 90-degree forward tilt
           if (flipResult === 'heads') {
             coin.rotation.x = -Math.PI / 2 // Heads tilted 90° forward
+            currentCoinSideRef.current = 'heads'
           } else {
             coin.rotation.x = Math.PI / 2 // Tails tilted 90° forward
+            currentCoinSideRef.current = 'tails'
           }
           
           // Reset all other properties
@@ -708,7 +722,7 @@ const ReliableGoldCoin = ({
       {process.env.NODE_ENV === 'development' && (
         <div style={{
           position: 'absolute',
-          top: '-80px',
+          top: '-100px',
           left: '50%',
           transform: 'translateX(-50%)',
           background: 'rgba(0, 0, 0, 0.8)',
@@ -722,6 +736,7 @@ const ReliableGoldCoin = ({
         }}>
           <div>Flip: {flipResult || 'none'}</div>
           <div>Choice: {isCreator ? creatorChoice : joinerChoice || 'none'}</div>
+          <div>Current Side: {currentCoinSideRef.current}</div>
           <div>Flipping: {isFlipping ? 'yes' : 'no'}</div>
           <div>Animating: {isAnimatingRef.current ? 'yes' : 'no'}</div>
         </div>
