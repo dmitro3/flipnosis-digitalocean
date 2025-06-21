@@ -351,8 +351,8 @@ const ReliableGoldCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // IMPORTANT: Set initial rotation
-    coin.rotation.x = 0  // Start showing heads (0°)
+    // IMPORTANT: Set initial rotation with 90-degree forward tilt
+    coin.rotation.x = -Math.PI / 2  // Start showing heads tilted 90° forward
     coin.rotation.y = Math.PI / 2   // Initial orientation
 
     // Animation loop
@@ -370,10 +370,8 @@ const ReliableGoldCoin = ({
         const intensity = (creatorPower + joinerPower) / 20 // Use total power for intensity
         const chargeIntensity = Math.min(1, intensity * 2) // More dramatic scaling
         
-        // FRENZIED ROTATION AND MOVEMENT
+        // MOVEMENT EFFECTS ONLY - NO ROTATION
         coin.position.y = Math.sin(time * 12) * 0.25 * (1 + chargeIntensity)
-        coin.rotation.x += 0.05 * (1 + chargeIntensity * 3) // Much faster rotation
-        coin.rotation.z += Math.sin(time * 8) * 0.02 * chargeIntensity // Z-axis wobble
         
         // VIOLENT PULSING SCALE
         const pulseScale = 1 + Math.sin(time * 15) * 0.15 * chargeIntensity
@@ -423,21 +421,9 @@ const ReliableGoldCoin = ({
         coin.scale.set(1, 1, 1)
         coin.position.x = 0
         coin.position.z = 0
+        coin.position.y = 0 // Keep coin at rest position
         
-        // Idle state
-        const isWaitingInRound = gamePhase === 'round_active' && !isPlayerTurn
-        const isWaitingToStart = gamePhase === 'waiting' || gamePhase === 'ready'
-        const isWaitingForJoiner = gamePhase === 'waiting' || gamePhase === 'lobby'
-        
-        if (isWaitingInRound || isWaitingToStart || isWaitingForJoiner) {
-          // SLOW, gentle continuous rotation when waiting (same speed for all waiting states)
-          coin.rotation.x += isMobile ? 0.002 : 0.003 // Consistent slow speed
-          coin.position.y = Math.sin(time * 1.5) * 0.05
-        } else {
-          // Minimal rotation when not active
-          coin.rotation.x += isMobile ? 0.001 : 0.002 // Slower on mobile
-          coin.position.y = 0
-        }
+        // NO IDLE ROTATION - Coin stays at its current position
       }
 
       rendererRef.current.render(scene, camera)
@@ -517,14 +503,14 @@ const ReliableGoldCoin = ({
       coin.material[2].needsUpdate = true
     }
     
-    // IMMEDIATELY show the player's chosen side
+    // IMMEDIATELY show the player's chosen side with 90-degree forward tilt
     const myChoice = isCreator ? creatorChoice : joinerChoice
     if (myChoice && !isAnimatingRef.current) {
       console.log('🎯 Setting coin to show chosen side:', myChoice)
       if (myChoice === 'heads') {
-        coin.rotation.x = 0 // Show heads
+        coin.rotation.x = -Math.PI / 2 // Show heads tilted 90° forward
       } else if (myChoice === 'tails') {
-        coin.rotation.x = Math.PI // Show tails
+        coin.rotation.x = Math.PI / 2 // Show tails tilted 90° forward
       }
     }
   }, [creatorChoice, joinerChoice, isCreator])
@@ -631,25 +617,25 @@ const ReliableGoldCoin = ({
           coin.position.z = Math.sin(progress * Math.PI * 2) * 0.1
           
           requestAnimationFrame(animateFlip)
-        } else {
-          // PERFECT LANDING - deterministic result
-          if (flipResult === 'heads') {
-            coin.rotation.x = 0 // Exactly 0 for heads
-          } else {
-            coin.rotation.x = Math.PI // Exactly π for tails
+                  } else {
+            // PERFECT LANDING - deterministic result with 90-degree forward tilt
+            if (flipResult === 'heads') {
+              coin.rotation.x = -Math.PI / 2 // Heads tilted 90° forward
+            } else {
+              coin.rotation.x = Math.PI / 2 // Tails tilted 90° forward
+            }
+            
+            // Reset all other properties
+            coin.rotation.y = Math.PI / 2
+            coin.rotation.z = 0
+            coin.position.y = 0
+            coin.position.x = 0
+            coin.position.z = 0
+            coin.scale.set(1, 1, 1)
+            
+            isAnimatingRef.current = false
+            console.log('✅ DETERMINISTIC flip complete - landed PERFECTLY on:', flipResult, 'with 90° tilt')
           }
-          
-          // Reset all other properties
-          coin.rotation.y = Math.PI / 2
-          coin.rotation.z = 0
-          coin.position.y = 0
-          coin.position.x = 0
-          coin.position.z = 0
-          coin.scale.set(1, 1, 1)
-          
-          isAnimatingRef.current = false
-          console.log('✅ DETERMINISTIC flip complete - landed PERFECTLY on:', flipResult)
-        }
       }
       
       // Start the animation
