@@ -999,13 +999,12 @@ class GameSession {
     await this.executeFlip(this.currentPlayer, autoPower)
   }
 
-  startCharging(address, preCalculatedResult = null) {
+  startCharging(address) {
     console.log('⚡ startCharging called:', {
       address,
       currentPlayer: this.currentPlayer,
       isFlipInProgress: this.isFlipInProgress,
-      phase: this.phase,
-      preCalculatedResult
+      phase: this.phase
     })
     
     if (this.isFlipInProgress || address !== this.currentPlayer) {
@@ -1023,13 +1022,6 @@ class GameSession {
     }
     
     this.chargingPlayer = address
-    
-    // Store pre-calculated result if provided
-    if (preCalculatedResult && (preCalculatedResult === 'heads' || preCalculatedResult === 'tails')) {
-      this.preCalculatedResult = preCalculatedResult
-      console.log('🎲 Pre-calculated result stored:', preCalculatedResult, 'for player:', address)
-    }
-    
     this.broadcastGameState()
     
     // Start power increase
@@ -1076,17 +1068,9 @@ class GameSession {
     this.isFlipInProgress = true
     this.broadcastGameState()
     
-    // Use pre-calculated result if available, otherwise generate new one
-    let result
-    if (this.preCalculatedResult) {
-      result = this.preCalculatedResult
-      console.log('🎲 Using pre-calculated result:', result)
-      // Clear the pre-calculated result after use
-      this.preCalculatedResult = null
-    } else {
-      result = Math.random() < 0.5 ? 'heads' : 'tails'
-      console.log('⚠️ No pre-calculated result, generated:', result)
-    }
+    // Generate instant result on release
+    const result = Math.random() < 0.5 ? 'heads' : 'tails'
+    console.log('🎲 Instant flip result generated:', result)
     
     // FIXED: Get the actual player choice instead of hardcoded values
     const playerChoice = address === this.creator ? this.creatorChoice : this.joinerChoice
@@ -1103,9 +1087,9 @@ class GameSession {
       joinerChoice: this.joinerChoice
     })
     
-    // Calculate flip duration - Better power graduation
-    // Power 1: 5 seconds, Power 5: 3 seconds, Power 10: 1.5 seconds
-    const flipDuration = Math.max(1500, 5000 - (power * 350))
+    // Calculate flip duration based on power
+    // Power affects duration: 1 power = 3s, 10 power = 1.5s
+    const flipDuration = Math.max(1500, 3000 - (power * 150))
     
     console.log('⏱️ Flip duration:', flipDuration, 'ms')
     
@@ -1503,10 +1487,9 @@ async function handleMessage(ws, data) {
       console.log('⚡ Start charging:', {
         address: data.address,
         currentPhase: session.phase,
-        currentPlayer: session.currentPlayer,
-        preCalculatedResult: data.preCalculatedResult
+        currentPlayer: session.currentPlayer
       })
-      session.startCharging(data.address, data.preCalculatedResult)
+      session.startCharging(data.address)
       break
 
     case 'stop_charging':

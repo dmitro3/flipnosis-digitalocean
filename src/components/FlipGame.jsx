@@ -710,9 +710,6 @@ const FlipGame = () => {
     }
   }, [gameData, nftData, isLoadingNFT])
 
-  // Store pre-calculated result
-  const preCalculatedResultRef = useRef(null)
-
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
     console.log('💥 handlePowerChargeStart called:', {
@@ -749,26 +746,18 @@ const FlipGame = () => {
     
     isChargingRef.current = true
     
-    // Send start_charging immediately with pre-calculated result if available
+    // Send start_charging immediately - no pre-calculation
     socket.send(JSON.stringify({
       type: 'start_charging',
       gameId,
-      address,
-      preCalculatedResult: preCalculatedResultRef.current
+      address
     }))
-  }
-
-  // NEW: Handle pre-calculated result from coin component
-  const handlePreCalculatedResult = (result) => {
-    console.log('🎲 Received pre-calculated result:', result)
-    preCalculatedResultRef.current = result
   }
 
   const handlePowerChargeStop = () => {
     if (!socket || !isChargingRef.current) return
     
     isChargingRef.current = false
-    preCalculatedResultRef.current = null // Clear pre-calculated result
     socket.send(JSON.stringify({
       type: 'stop_charging',
       gameId,
@@ -1752,7 +1741,6 @@ const FlipGame = () => {
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
                   size={200}
-                  onPreCalculatedResult={handlePreCalculatedResult}
                 />
               </MobileCoinBox>
 
@@ -2623,7 +2611,6 @@ const FlipGame = () => {
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
                   size={440}
-                  onPreCalculatedResult={handlePreCalculatedResult}
                 />
               </div>
 
