@@ -559,6 +559,13 @@ const FlipGame = () => {
               
             case 'flip_animation':
               console.log('🎬 Flip animation received:', data)
+              console.log('🎬 Flip animation details:', {
+                result: data.result,
+                duration: data.duration,
+                playerChoice: data.playerChoice,
+                playerAddress: data.playerAddress,
+                power: data.power
+              })
               setFlipAnimation(data)
               setRoundResult(null)
               break
@@ -584,6 +591,7 @@ const FlipGame = () => {
               })
               setRoundResult(data)
               setLastFlipResult(data.result) // Save the last flip result
+              setFlipAnimation(null) // Clear the animation so coin uses roundResult
               setTimeout(() => setRoundResult(null), 4000)
               break
               
@@ -1021,6 +1029,7 @@ const FlipGame = () => {
           case 'round_result':
             setRoundResult(data)
             setLastFlipResult(data.result) // Save the last flip result
+            setFlipAnimation(null) // Clear the animation so coin uses roundResult
             setTimeout(() => setRoundResult(null), 4000)
             break
 
@@ -1747,7 +1756,7 @@ const FlipGame = () => {
               <MobileCoinBox>
                 <ReliableGoldCoin
                   isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result || lastFlipResult}
+                  flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
                   flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
@@ -2617,7 +2626,7 @@ const FlipGame = () => {
               }}>
                 <ReliableGoldCoin
                   isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result || lastFlipResult}
+                  flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
                   flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
