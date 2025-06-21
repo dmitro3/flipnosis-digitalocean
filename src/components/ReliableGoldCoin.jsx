@@ -483,7 +483,9 @@ const ReliableGoldCoin = ({
     console.log('🎨 Updating coin due to choice change:', {
       creatorChoice,
       joinerChoice,
-      isCreator
+      isCreator,
+      flipResult,
+      isAnimating: isAnimatingRef.current
     })
     
     // Recreate textures with new colors
@@ -503,17 +505,26 @@ const ReliableGoldCoin = ({
       coin.material[2].needsUpdate = true
     }
     
-    // IMMEDIATELY show the player's chosen side with 90-degree forward tilt
+    // ONLY show the player's chosen side if we're in the choosing phase AND no flip has happened yet
+    // If a flip has already happened, keep the coin on the last result
     const myChoice = isCreator ? creatorChoice : joinerChoice
-    if (myChoice && !isAnimatingRef.current) {
-      console.log('🎯 Setting coin to show chosen side:', myChoice)
+    if (myChoice && !isAnimatingRef.current && !flipResult) {
+      console.log('🎯 Setting coin to show chosen side (no previous flip):', myChoice)
       if (myChoice === 'heads') {
         coin.rotation.x = -Math.PI / 2 // Show heads tilted 90° forward
       } else if (myChoice === 'tails') {
         coin.rotation.x = Math.PI / 2 // Show tails tilted 90° forward
       }
+    } else if (flipResult && !isAnimatingRef.current) {
+      // If we have a flip result and we're not animating, stay on that result
+      console.log('🎯 Keeping coin on last flip result:', flipResult)
+      if (flipResult === 'heads') {
+        coin.rotation.x = -Math.PI / 2 // Show heads tilted 90° forward
+      } else if (flipResult === 'tails') {
+        coin.rotation.x = Math.PI / 2 // Show tails tilted 90° forward
+      }
     }
-  }, [creatorChoice, joinerChoice, isCreator])
+  }, [creatorChoice, joinerChoice, isCreator, flipResult])
 
   // Removed pre-calculation logic - result will be determined on server instantly when released
 
@@ -548,7 +559,7 @@ const ReliableGoldCoin = ({
       coin.position.y = 0
       coin.position.z = 0
       
-      // Get starting position (should be showing player's choice)
+      // Get starting position (should be showing the last flip result or player's choice)
       const startRotation = coin.rotation.x
       const myChoice = isCreator ? creatorChoice : joinerChoice
       
@@ -562,9 +573,10 @@ const ReliableGoldCoin = ({
       const baseSpins = minSpins + Math.floor(powerRatio * (maxSpins - minSpins))
       
       // SIMPLIFIED DETERMINISTIC CALCULATION:
-      // Always do an odd number of half-flips to ensure we land on the opposite side
-      // This guarantees the coin lands on the flipResult side
-      const halfFlips = baseSpins * 2 + 1 // Always odd number
+      // Calculate how many half-flips we need to go from current position to target result
+      const currentSide = startRotation === -Math.PI / 2 ? 'heads' : 'tails'
+      const needsToFlip = currentSide !== flipResult
+      const halfFlips = baseSpins * 2 + (needsToFlip ? 1 : 0) // Odd if we need to flip, even if we don't
       
       // Total rotation in radians
       const totalRotation = halfFlips * Math.PI
@@ -574,9 +586,11 @@ const ReliableGoldCoin = ({
         powerRatio: powerRatio.toFixed(2),
         myChoice,
         flipResult,
+        currentSide,
+        needsToFlip,
         baseSpins,
         halfFlips,
-        startingSide: startRotation === -Math.PI / 2 ? 'heads' : 'tails',
+        startingSide: currentSide,
         targetSide: flipResult,
         flipDuration: flipDuration + 'ms'
       })
@@ -694,7 +708,7 @@ const ReliableGoldCoin = ({
       {process.env.NODE_ENV === 'development' && (
         <div style={{
           position: 'absolute',
-          top: '-60px',
+          top: '-80px',
           left: '50%',
           transform: 'translateX(-50%)',
           background: 'rgba(0, 0, 0, 0.8)',
@@ -709,6 +723,7 @@ const ReliableGoldCoin = ({
           <div>Flip: {flipResult || 'none'}</div>
           <div>Choice: {isCreator ? creatorChoice : joinerChoice || 'none'}</div>
           <div>Flipping: {isFlipping ? 'yes' : 'no'}</div>
+          <div>Animating: {isAnimatingRef.current ? 'yes' : 'no'}</div>
         </div>
       )}
     </div>

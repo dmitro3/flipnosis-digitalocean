@@ -417,6 +417,7 @@ const FlipGame = () => {
   const [gameState, setGameState] = useState(null)
   const [flipAnimation, setFlipAnimation] = useState(null)
   const [roundResult, setRoundResult] = useState(null)
+  const [lastFlipResult, setLastFlipResult] = useState(null) // Track the last flip result
 
   // Refs for user input
   const isChargingRef = useRef(false)
@@ -582,6 +583,7 @@ const FlipGame = () => {
                 joinerChoice: data.joinerChoice
               })
               setRoundResult(data)
+              setLastFlipResult(data.result) // Save the last flip result
               setTimeout(() => setRoundResult(null), 4000)
               break
               
@@ -1018,6 +1020,7 @@ const FlipGame = () => {
             
           case 'round_result':
             setRoundResult(data)
+            setLastFlipResult(data.result) // Save the last flip result
             setTimeout(() => setRoundResult(null), 4000)
             break
 
@@ -1744,7 +1747,7 @@ const FlipGame = () => {
               <MobileCoinBox>
                 <ReliableGoldCoin
                   isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result}
+                  flipResult={flipAnimation?.result || lastFlipResult}
                   flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
@@ -2614,7 +2617,7 @@ const FlipGame = () => {
               }}>
                 <ReliableGoldCoin
                   isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result}
+                  flipResult={flipAnimation?.result || lastFlipResult}
                   flipDuration={flipAnimation?.duration}
                   onPowerCharge={handlePowerChargeStart}
                   onPowerRelease={handlePowerChargeStop}
