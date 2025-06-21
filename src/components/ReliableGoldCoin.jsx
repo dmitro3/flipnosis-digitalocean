@@ -351,9 +351,10 @@ const ReliableGoldCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // IMPORTANT: Set initial rotation like the working example
-    coin.rotation.x = 0        // Start flat showing heads (0°)
-    coin.rotation.y = Math.PI / 2  // Initial orientation
+    // IMPORTANT: Set initial rotation with forward tilt
+    const forwardTilt = Math.PI / 4 // 45 degrees
+    coin.rotation.x = -forwardTilt  // Start tilted forward showing heads
+    coin.rotation.y = Math.PI / 2   // Initial orientation
 
     // Animation loop
     const animate = () => {
@@ -554,17 +555,20 @@ const ReliableGoldCoin = ({
       // Get current rotation
       const startRotation = coin.rotation.x
       
-      // Determine target angle - SIMPLE AND RELIABLE
-      // rotation.x = 0 = heads (top face)
-      // rotation.x = π = tails (bottom face)
-      const targetFace = flipResult === 'heads' ? 0 : Math.PI
+      // Determine target angle with 45-degree forward tilt
+      // rotation.x = -45° = heads (top face tilted forward)
+      // rotation.x = π - 45° = tails (bottom face tilted forward)
+      const forwardTilt = Math.PI / 4 // 45 degrees
+      const targetFace = flipResult === 'heads' ? -forwardTilt : (Math.PI - forwardTilt)
       
       // Calculate power-based rotations
       const totalPower = creatorPower + joinerPower
       const powerRatio = Math.min(totalPower / 10, 1)
       
-      // Power affects spin count: 1 power = 4 spins, 10 power = 25 spins
-      const spinCount = 4 + Math.floor(powerRatio * 21)
+      // Minimum 5 spins for power 1, up to 30 spins for power 10
+      const minSpins = 5
+      const maxSpins = 30
+      const spinCount = minSpins + Math.floor(powerRatio * (maxSpins - minSpins))
       
       // Total rotation = full spins + final position
       const totalRotation = (spinCount * Math.PI * 2) + targetFace - startRotation
@@ -586,26 +590,38 @@ const ReliableGoldCoin = ({
         const progress = Math.min(elapsed / flipDuration, 1)
         
         if (progress < 1) {
-          // Simple easing: fast start, slow end
-          const easedProgress = 1 - Math.pow(1 - progress, 3)
+          // Enhanced easing for dramatic slowdown
+          let easedProgress
+          if (progress < 0.7) {
+            // Fast spinning for first 70%
+            easedProgress = progress / 0.7 * 0.85
+          } else {
+            // Dramatic slowdown for last 30%
+            const slowPhase = (progress - 0.7) / 0.3
+            easedProgress = 0.85 + (1 - Math.pow(1 - slowPhase, 4)) * 0.15
+          }
           
           // Apply rotation
           coin.rotation.x = startRotation + (totalRotation * easedProgress)
           
           // Vertical motion - higher with more power
-          const jumpHeight = 0.5 + (powerRatio * 0.5)
+          const jumpHeight = 0.5 + (powerRatio * 1.0) // Increased jump height
           coin.position.y = Math.sin(progress * Math.PI) * jumpHeight
           
-          // Subtle wobble that reduces over time
-          coin.rotation.z = Math.sin(elapsed * 0.01) * 0.02 * (1 - progress)
+          // Dynamic wobble that increases then decreases
+          const wobbleIntensity = Math.sin(progress * Math.PI) * 0.03
+          coin.rotation.z = Math.sin(elapsed * 0.015) * wobbleIntensity
+          
+          // Slight forward/backward motion for drama
+          coin.position.z = Math.sin(progress * Math.PI * 2) * 0.1
           
           requestAnimationFrame(animateFlip)
         } else {
-          // PERFECT LANDING - mathematically guaranteed
+          // PERFECT LANDING - with forward tilt
           if (flipResult === 'heads') {
-            coin.rotation.x = 0 // Exactly 0 for heads
+            coin.rotation.x = -forwardTilt // Tilted forward for heads
           } else {
-            coin.rotation.x = Math.PI // Exactly π for tails
+            coin.rotation.x = Math.PI - forwardTilt // Tilted forward for tails
           }
           
           // Reset all other properties
@@ -617,7 +633,7 @@ const ReliableGoldCoin = ({
           coin.scale.set(1, 1, 1)
           
           isAnimatingRef.current = false
-          console.log('✅ SIMPLIFIED flip complete - landed PERFECTLY on:', flipResult)
+          console.log('✅ SIMPLIFIED flip complete - landed PERFECTLY on:', flipResult, 'with forward tilt')
         }
       }
       

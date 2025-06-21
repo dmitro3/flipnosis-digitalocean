@@ -1088,8 +1088,9 @@ class GameSession {
     })
     
     // Calculate flip duration based on power
-    // Power affects duration: 1 power = 3s, 10 power = 1.5s
-    const flipDuration = Math.max(1500, 3000 - (power * 150))
+    // Power 1 = 5 seconds, Power 10 = 10 seconds
+    // Higher power = longer, more dramatic flip
+    const flipDuration = 5000 + (power * 500)
     
     console.log('⏱️ Flip duration:', flipDuration, 'ms')
     
