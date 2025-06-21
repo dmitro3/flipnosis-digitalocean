@@ -564,6 +564,23 @@ const FlipGame = () => {
               
             case 'round_result':
               console.log('🏁 Round result received:', data)
+              console.log('🏁 Round result details:', {
+                result: data.result,
+                isWinner: data.isWinner,
+                playerAddress: data.playerAddress,
+                playerChoice: data.playerChoice,
+                actualWinner: data.actualWinner,
+                creatorWins: data.creatorWins,
+                joinerWins: data.joinerWins,
+                roundNumber: data.roundNumber,
+                myAddress: address,
+                isCreator,
+                isJoiner,
+                // Additional debug info
+                flipperWon: data.flipperWon,
+                creatorChoice: data.creatorChoice,
+                joinerChoice: data.joinerChoice
+              })
               setRoundResult(data)
               setTimeout(() => setRoundResult(null), 4000)
               break
@@ -3130,14 +3147,15 @@ const FlipGame = () => {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 9999,
-              background: 'rgba(0, 0, 0, 0.9)',
+              background: 'rgba(0, 0, 0, 0.95)',
               padding: '2rem',
               borderRadius: '2rem',
               border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
               textAlign: 'center',
-              width: '80%',
+              width: '90%',
               maxWidth: '600px',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              boxShadow: `0 0 50px ${roundResult.actualWinner === address ? 'rgba(0, 255, 65, 0.5)' : 'rgba(255, 20, 147, 0.5)'}`
             }}>
               <div style={{
                 position: 'relative',
@@ -3177,22 +3195,57 @@ const FlipGame = () => {
                   }}
                 />
               </div>
+              
+              {/* Clear Result Display */}
               <div style={{
-                fontSize: '1.5rem',
+                fontSize: '2.5rem',
                 color: 'white',
                 fontWeight: 'bold',
-                marginTop: '1rem',
-                pointerEvents: 'auto'
+                marginBottom: '1rem',
+                pointerEvents: 'auto',
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.5)'
               }}>
-                Coin: {roundResult.result.toUpperCase()}
+                {roundResult.result === 'heads' ? '👑 HEADS' : '💎 TAILS'}
               </div>
+              
+              {/* Player Choice Display */}
               <div style={{
                 fontSize: '1.2rem',
-                color: 'rgba(255, 255, 255, 0.8)',
-                marginTop: '0.5rem',
-                pointerEvents: 'auto'
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '1rem',
+                pointerEvents: 'auto',
+                padding: '0.5rem 1rem',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
-                You are: {isCreator ? 'HEADS 👑' : 'TAILS 💎'}
+                You chose: <strong>{roundResult.playerChoice?.toUpperCase()}</strong>
+              </div>
+              
+              {/* Win/Lose Status */}
+              <div style={{
+                fontSize: '1.8rem',
+                color: roundResult.actualWinner === address ? '#00FF41' : '#FF1493',
+                fontWeight: 'bold',
+                marginBottom: '1rem',
+                pointerEvents: 'auto',
+                textShadow: `0 0 15px ${roundResult.actualWinner === address ? 'rgba(0, 255, 65, 0.7)' : 'rgba(255, 20, 147, 0.7)'}`,
+                animation: 'pulse 1s infinite'
+              }}>
+                {roundResult.actualWinner === address ? '🎉 YOU WON!' : '💔 YOU LOST!'}
+              </div>
+              
+              {/* Explanation */}
+              <div style={{
+                fontSize: '1rem',
+                color: 'rgba(255, 255, 255, 0.7)',
+                pointerEvents: 'auto',
+                fontStyle: 'italic'
+              }}>
+                {roundResult.result === roundResult.playerChoice 
+                  ? `Your choice (${roundResult.playerChoice}) matched the result (${roundResult.result})!`
+                  : `Your choice (${roundResult.playerChoice}) did not match the result (${roundResult.result}).`
+                }
               </div>
             </div>
           )}

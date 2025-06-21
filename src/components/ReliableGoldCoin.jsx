@@ -561,24 +561,23 @@ const ReliableGoldCoin = ({
       const maxSpins = 30
       const baseSpins = minSpins + Math.floor(powerRatio * (maxSpins - minSpins))
       
-      // DETERMINISTIC CALCULATION:
-      // If result matches our choice, do even number of half-flips (land on same side)
-      // If result doesn't match, do odd number of half-flips (land on opposite side)
-      const needsToFlip = (myChoice !== flipResult)
-      const halfFlips = baseSpins * 2 + (needsToFlip ? 1 : 0)
+      // SIMPLIFIED DETERMINISTIC CALCULATION:
+      // Always do an odd number of half-flips to ensure we land on the opposite side
+      // This guarantees the coin lands on the flipResult side
+      const halfFlips = baseSpins * 2 + 1 // Always odd number
       
       // Total rotation in radians
       const totalRotation = halfFlips * Math.PI
       
-      console.log('🎲 DETERMINISTIC Flip calculations:', { 
+      console.log('🎲 SIMPLIFIED DETERMINISTIC Flip calculations:', { 
         totalPower,
         powerRatio: powerRatio.toFixed(2),
         myChoice,
         flipResult,
-        needsToFlip,
         baseSpins,
         halfFlips,
-        startingSide: startRotation === 0 ? 'heads' : 'tails',
+        startingSide: startRotation === -Math.PI / 2 ? 'heads' : 'tails',
+        targetSide: flipResult,
         flipDuration: flipDuration + 'ms'
       })
       
@@ -617,25 +616,25 @@ const ReliableGoldCoin = ({
           coin.position.z = Math.sin(progress * Math.PI * 2) * 0.1
           
           requestAnimationFrame(animateFlip)
-                  } else {
-            // PERFECT LANDING - deterministic result with 90-degree forward tilt
-            if (flipResult === 'heads') {
-              coin.rotation.x = -Math.PI / 2 // Heads tilted 90° forward
-            } else {
-              coin.rotation.x = Math.PI / 2 // Tails tilted 90° forward
-            }
-            
-            // Reset all other properties
-            coin.rotation.y = Math.PI / 2
-            coin.rotation.z = 0
-            coin.position.y = 0
-            coin.position.x = 0
-            coin.position.z = 0
-            coin.scale.set(1, 1, 1)
-            
-            isAnimatingRef.current = false
-            console.log('✅ DETERMINISTIC flip complete - landed PERFECTLY on:', flipResult, 'with 90° tilt')
+        } else {
+          // PERFECT LANDING - deterministic result with 90-degree forward tilt
+          if (flipResult === 'heads') {
+            coin.rotation.x = -Math.PI / 2 // Heads tilted 90° forward
+          } else {
+            coin.rotation.x = Math.PI / 2 // Tails tilted 90° forward
           }
+          
+          // Reset all other properties
+          coin.rotation.y = Math.PI / 2
+          coin.rotation.z = 0
+          coin.position.y = 0
+          coin.position.x = 0
+          coin.position.z = 0
+          coin.scale.set(1, 1, 1)
+          
+          isAnimatingRef.current = false
+          console.log('✅ DETERMINISTIC flip complete - landed PERFECTLY on:', flipResult, 'with 90° tilt')
+        }
       }
       
       // Start the animation
@@ -685,10 +684,33 @@ const ReliableGoldCoin = ({
         justifyContent: 'center',
         // Subtle outer ring when charging
         border: chargingPlayer ? '2px solid rgba(255, 20, 147, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-        animation: chargingPlayer ? 'chargingRingPulse 0.3s ease-in-out infinite' : 'none'
+        animation: chargingPlayer ? 'chargingRingPulse 0.3s ease-in-out infinite' : 'none',
+        position: 'relative'
       }}
     >
       <canvas style={{ width: '100%', height: '100%' }} />
+      
+      {/* Debug overlay - only show in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          position: 'absolute',
+          top: '-60px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '0.5rem',
+          borderRadius: '0.5rem',
+          fontSize: '0.75rem',
+          whiteSpace: 'nowrap',
+          zIndex: 10,
+          pointerEvents: 'none'
+        }}>
+          <div>Flip: {flipResult || 'none'}</div>
+          <div>Choice: {isCreator ? creatorChoice : joinerChoice || 'none'}</div>
+          <div>Flipping: {isFlipping ? 'yes' : 'no'}</div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1076,7 +1076,7 @@ class GameSession {
     const playerChoice = address === this.creator ? this.creatorChoice : this.joinerChoice
     const isWinner = playerChoice === result
     
-    console.log('🎲 Flip calculation:', {
+    console.log('🎲 FLIP RESULT CALCULATION:', {
       address,
       isCreator: address === this.creator,
       playerChoice,
@@ -1084,7 +1084,10 @@ class GameSession {
       isWinner,
       power,
       creatorChoice: this.creatorChoice,
-      joinerChoice: this.joinerChoice
+      joinerChoice: this.joinerChoice,
+      // Additional clarity
+      playerChoiceMatchesResult: playerChoice === result,
+      winnerDetermination: playerChoice === result ? 'PLAYER WINS' : 'OPPONENT WINS'
     })
     
     // Calculate flip duration based on power
@@ -1174,13 +1177,17 @@ class GameSession {
       // FIXED: Determine actual winner based on the flip result and player choices
       const actualWinner = isWinner ? address : (address === this.creator ? this.joiner : this.creator)
       
-      console.log('🏆 Round result summary:', {
+      console.log('🏆 ROUND RESULT SUMMARY:', {
         flipResult: result,
         currentPlayerAddress: address,
         currentPlayerChoice: address === this.creator ? this.creatorChoice : this.joinerChoice,
         currentPlayerWon: isWinner,
         actualWinner: actualWinner,
-        newScore: `${this.creatorWins}-${this.joinerWins}`
+        newScore: `${this.creatorWins}-${this.joinerWins}`,
+        // Additional clarity
+        winnerExplanation: isWinner 
+          ? `${address} won because their choice (${address === this.creator ? this.creatorChoice : this.joinerChoice}) matched the result (${result})`
+          : `${actualWinner} won because ${address}'s choice (${address === this.creator ? this.creatorChoice : this.joinerChoice}) did not match the result (${result})`
       })
       
       // Broadcast result to all clients with detailed information
