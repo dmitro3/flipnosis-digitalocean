@@ -20,6 +20,7 @@ import PaymentService from '../services/PaymentService'
 import ProfilePicture from './ProfilePicture'
 import baseEthLogo from '../../Images/baseeth.webp'
 import hazeVideo from '../../Images/Video/haze.webm'
+import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
 import GoldGameInstructions from './GoldGameInstructions'
 import ShareButton from './ShareButton'
 import styled from '@emotion/styled'
@@ -1456,7 +1457,7 @@ const FlipGame = () => {
           setVideoError(true);
         }}
       >
-        <source src={hazeVideo} type="video/webm" />
+        <source src={isMobileScreen ? mobileVideo : hazeVideo} type="video/webm" />
       </BackgroundVideo>
       
       {/* Add the choice animation component */}
@@ -1797,6 +1798,35 @@ const FlipGame = () => {
                   </div>
                 </div>
               </MobilePlayerBox>
+
+              {/* MOBILE COIN */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                margin: '1rem 0',
+                padding: '1rem'
+              }}>
+                <OptimizedGoldCoin
+                  isFlipping={!!flipAnimation}
+                  flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
+                  flipDuration={flipAnimation?.duration}
+                  onPowerCharge={handlePowerChargeStart}
+                  onPowerRelease={handlePowerChargeStop}
+                  isPlayerTurn={isMyTurn}
+                  isCharging={gameState?.chargingPlayer === address}
+                  chargingPlayer={gameState?.chargingPlayer}
+                  gamePhase={gameState?.phase}
+                  creatorPower={gameState?.creatorPower || 0}
+                  joinerPower={gameState?.joinerPower || 0}
+                  creatorChoice={gameState?.creatorChoice}
+                  joinerChoice={gameState?.joinerChoice}
+                  isCreator={isCreator}
+                  size={280} // Smaller size for mobile
+                  customHeadsImage={customHeadsImage}
+                  customTailsImage={customTailsImage}
+                />
+              </div>
 
               {/* Player 2 Box - Moved below coin */}
               <MobilePlayerBox style={{
@@ -2524,52 +2554,45 @@ const FlipGame = () => {
                       💎 Tails
                     </button>
 
-                    {/* Test Flip Button - Only show if choice is made */}
-                    {gameState?.creatorChoice && (
-                      <button
-                        onClick={() => {
-                          const results = ['heads', 'tails']
-                          const randomResult = results[Math.floor(Math.random() * results.length)]
-                          const isWinner = randomResult === gameState.creatorChoice
-                          
-                          showInfo(`🎲 Flipping coin... You chose ${gameState.creatorChoice.toUpperCase()}!`)
-                          
-                          // Start flip animation
-                          setTimeout(() => {
-                            setFlipAnimation({
-                              result: randomResult,
-                              duration: 4000 // Longer duration
-                            })
-                            setRoundResult({ result: randomResult })
-                          }, 1000)
-                          
-                          // Show result popup after animation
-                          setTimeout(() => {
-                            setPopupData({
-                              result: randomResult,
-                              isWinner: isWinner,
-                              winnings: isWinner ? '0.1 ETH' : '0 ETH',
-                              gameId: gameId
-                            })
-                            setShowResultPopup(true)
-                            showSuccess(`🪙 Result: ${randomResult.toUpperCase()}! ${isWinner ? 'You WON!' : 'You lost...'}`)
-                          }, 6000)
-                        }}
-                        style={{
-                          background: 'linear-gradient(45deg, #00FF41, #39FF14)',
-                          color: '#000',
-                          border: 'none',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '0.4rem',
-                          cursor: 'pointer',
-                          fontWeight: 'bold',
-                          fontSize: '0.8rem',
-                          marginBottom: '0.5rem'
-                        }}
-                      >
-                        🎲 Test Flip Now!
-                      </button>
-                    )}
+                                         {/* Test Flip Button - Only show if choice is made */}
+                     {gameState?.creatorChoice && (
+                       <button
+                         onClick={() => {
+                           const results = ['heads', 'tails']
+                           const randomResult = results[Math.floor(Math.random() * results.length)]
+                           const isWinner = randomResult === gameState.creatorChoice
+                           
+                           showInfo(`🎲 Flipping coin... You chose ${gameState.creatorChoice.toUpperCase()}!`)
+                           
+                           // Start flip animation
+                           setTimeout(() => {
+                             setFlipAnimation({
+                               result: randomResult,
+                               duration: 4000 // Longer duration
+                             })
+                             setRoundResult({ result: randomResult })
+                           }, 1000)
+                           
+                           // Just show simple result message - no popup
+                           setTimeout(() => {
+                             showSuccess(`🪙 Result: ${randomResult.toUpperCase()}! ${isWinner ? 'You WON!' : 'You lost...'}`)
+                           }, 5500)
+                         }}
+                         style={{
+                           background: 'linear-gradient(45deg, #00FF41, #39FF14)',
+                           color: '#000',
+                           border: 'none',
+                           padding: '0.4rem 0.8rem',
+                           borderRadius: '0.4rem',
+                           cursor: 'pointer',
+                           fontWeight: 'bold',
+                           fontSize: '0.8rem',
+                           marginBottom: '0.5rem'
+                         }}
+                       >
+                         🎲 Test Flip Now!
+                       </button>
+                     )}
                   </div>
                 )}
 
