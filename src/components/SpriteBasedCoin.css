@@ -1,7 +1,7 @@
 .sprite-coin-container {
   position: relative;
   margin: 0 auto;
-  perspective: 1000px;
+  perspective: 800px;
   perspective-origin: center center;
   transform-style: preserve-3d;
   will-change: transform;
@@ -33,6 +33,14 @@
     inset 0 0 20px rgba(255, 255, 255, 0.3);
   background-size: cover;
   background-position: center;
+}
+
+.heads-side {
+  transform: rotateX(0deg) translateZ(2px);
+}
+
+.tails-side {
+  transform: rotateX(180deg) translateZ(2px);
 }
 
 .coin-face {
@@ -90,24 +98,37 @@
   }
 }
 
-/* Edge segments */
+/* Edge segments - FIXED positioning */
 .coin-edge {
   position: absolute;
-  width: 20px;
-  height: 100%;
+  width: 8px;
+  height: 4px;
   left: 50%;
-  top: 0;
-  margin-left: -10px;
-  background: linear-gradient(to right, 
-    #B8860B, 
-    #DAA520 20%, 
-    #FFD700 40%, 
-    #DAA520 60%, 
-    #B8860B
+  top: 50%;
+  margin-left: -4px;
+  margin-top: -2px;
+  background: linear-gradient(to bottom, 
+    #DAA520, 
+    #FFD700 50%, 
+    #DAA520
   );
-  transform-origin: center bottom;
-  border-radius: 2px;
+  border-radius: 1px;
+  transform-origin: center center;
 }
+
+/* Position edge segments around the circumference */
+.coin-edge:nth-child(1) { transform: translateX(-50%) translateY(-50%) rotateZ(0deg) translateX(48%); }
+.coin-edge:nth-child(2) { transform: translateX(-50%) translateY(-50%) rotateZ(30deg) translateX(48%); }
+.coin-edge:nth-child(3) { transform: translateX(-50%) translateY(-50%) rotateZ(60deg) translateX(48%); }
+.coin-edge:nth-child(4) { transform: translateX(-50%) translateY(-50%) rotateZ(90deg) translateX(48%); }
+.coin-edge:nth-child(5) { transform: translateX(-50%) translateY(-50%) rotateZ(120deg) translateX(48%); }
+.coin-edge:nth-child(6) { transform: translateX(-50%) translateY(-50%) rotateZ(150deg) translateX(48%); }
+.coin-edge:nth-child(7) { transform: translateX(-50%) translateY(-50%) rotateZ(180deg) translateX(48%); }
+.coin-edge:nth-child(8) { transform: translateX(-50%) translateY(-50%) rotateZ(210deg) translateX(48%); }
+.coin-edge:nth-child(9) { transform: translateX(-50%) translateY(-50%) rotateZ(240deg) translateX(48%); }
+.coin-edge:nth-child(10) { transform: translateX(-50%) translateY(-50%) rotateZ(270deg) translateX(48%); }
+.coin-edge:nth-child(11) { transform: translateX(-50%) translateY(-50%) rotateZ(300deg) translateX(48%); }
+.coin-edge:nth-child(12) { transform: translateX(-50%) translateY(-50%) rotateZ(330deg) translateX(48%); }
 
 /* Charging effects */
 .charging-effects {
@@ -167,25 +188,8 @@
 }
 
 .sprite-coin-container.flipping .coin-wrapper {
-  animation: coinBounce 3s ease-out;
-}
-
-@keyframes coinBounce {
-  0% {
-    transform: translateY(0) rotateX(0deg);
-  }
-  30% {
-    transform: translateY(-30px) rotateX(1080deg);
-  }
-  60% {
-    transform: translateY(-10px) rotateX(2160deg);
-  }
-  80% {
-    transform: translateY(-5px) rotateX(2520deg);
-  }
-  100% {
-    transform: translateY(0) rotateX(2880deg);
-  }
+  /* Remove the CSS animation - we're using JavaScript control */
+  animation: none;
 }
 
 /* Mobile optimizations */
@@ -199,8 +203,10 @@
   }
   
   .coin-edge {
-    width: 15px;
-    margin-left: -7.5px;
+    width: 6px;
+    height: 3px;
+    margin-left: -3px;
+    margin-top: -1.5px;
   }
   
   /* Reduce effects on mobile for better performance */
