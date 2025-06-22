@@ -1685,62 +1685,42 @@ const FlipGame = () => {
                 </div>
               </MobileInfoPanel>
 
-              {/* Player 1 Box */}
+              {/* Player 1 Box - Profile Image */}
               <MobilePlayerBox style={{
                 background: isCreator ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                border: `2px solid ${isCreator ? '#FF1493' : 'rgba(255, 255, 255, 0.1)'}`
+                border: `2px solid ${isCreator ? '#FF1493' : 'rgba(255, 255, 255, 0.1)'}`,
+                padding: '0.5rem',
+                marginBottom: '0.5rem',
+                borderRadius: '12px',
+                height: '60px',
+                width: '100%'
               }}>
                 <div style={{
                   display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: '0.75rem'
+                  alignItems: 'center'
                 }}>
+                  {/* Profile Image */}
                   <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: gameState?.creatorProfile?.profilePicture ? 
+                      `url(${gameState.creatorProfile.profilePicture})` : 
+                      'linear-gradient(45deg, #FF1493, #FF69B4)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    justifyContent: 'center',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
                   }}>
-                    <div style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: isCreator ? '#FF1493' : '#666',
-                      boxShadow: isCreator ? '0 0 10px #FF1493' : 'none'
-                    }} />
-                    <div style={{
-                      color: theme.colors.textPrimary,
-                      fontWeight: 'bold',
-                      fontSize: '1rem'
-                    }}>
-                      {gameState?.creatorProfile?.name || 'Player 1'} {isCreator && '(You)'}
-                    </div>
+                    {!gameState?.creatorProfile?.profilePicture && 'P1'}
                   </div>
-                  <div style={{
-                    fontSize: '0.9rem',
-                    color: theme.colors.textSecondary,
-                    fontFamily: 'monospace'
-                  }}>
-                    {gameData?.creator ? 
-                      `${gameData.creator.slice(0, 6)}...${gameData.creator.slice(-4)}` : 
-                      'Waiting...'
-                    }
-                  </div>
-                </div>
-
-                {/* Rounds Display for Player 1 */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.75rem',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  borderRadius: '0.5rem',
-                  marginBottom: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
-                    Rounds Won:
-                  </span>
                   <div style={{ display: 'flex', gap: '0.25rem' }}>
                     {[1, 2, 3, 4, 5].map(round => (
                       <div
@@ -1773,8 +1753,10 @@ const FlipGame = () => {
                 display: 'flex', 
                 justifyContent: 'center', 
                 alignItems: 'center',
-                margin: '1rem 0',
-                padding: '1rem'
+                margin: '0.5rem auto',
+                padding: '0.5rem',
+                width: '100%',
+                textAlign: 'center'
               }}>
                 <OptimizedGoldCoin
                   isFlipping={!!flipAnimation}
@@ -1797,62 +1779,43 @@ const FlipGame = () => {
                 />
               </div>
 
-              {/* Player 2 Box - Moved below coin */}
+              {/* Player 2 Box - Profile Image */}
               <MobilePlayerBox style={{
                 background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                border: `2px solid ${isJoiner ? '#00BFFF' : 'rgba(255, 255, 255, 0.1)'}`
+                border: `2px solid ${isJoiner ? '#00BFFF' : 'rgba(255, 255, 255, 0.1)'}`,
+                padding: '0.5rem',
+                marginBottom: '0.5rem',
+                marginTop: '-10px',
+                borderRadius: '12px',
+                height: '60px',
+                width: '100%'
               }}>
                 <div style={{
                   display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: '0.75rem'
+                  alignItems: 'center'
                 }}>
+                  {/* Profile Image */}
                   <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: gameState?.joinerProfile?.profilePicture ? 
+                      `url(${gameState.joinerProfile.profilePicture})` : 
+                      'linear-gradient(45deg, #00BFFF, #87CEEB)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem'
+                    justifyContent: 'center',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
                   }}>
-                    <div style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: isJoiner ? '#00BFFF' : '#666',
-                      boxShadow: isJoiner ? '0 0 10px #00BFFF' : 'none'
-                    }} />
-                    <div style={{
-                      color: theme.colors.textPrimary,
-                      fontWeight: 'bold',
-                      fontSize: '1rem'
-                    }}>
-                      {gameState?.joinerProfile?.name || 'Player 2'} {isJoiner && '(You)'}
-                    </div>
+                    {!gameState?.joinerProfile?.profilePicture && 'P2'}
                   </div>
-                  <div style={{
-                    fontSize: '0.9rem',
-                    color: theme.colors.textSecondary,
-                    fontFamily: 'monospace'
-                  }}>
-                    {gameData?.joiner ? 
-                      `${gameData.joiner.slice(0, 6)}...${gameData.joiner.slice(-4)}` : 
-                      'Waiting...'
-                    }
-                  </div>
-                </div>
-
-                {/* Rounds Display for Player 2 */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.75rem',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  borderRadius: '0.5rem',
-                  marginBottom: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: theme.colors.textSecondary }}>
-                    Rounds Won:
-                  </span>
                   <div style={{ display: 'flex', gap: '0.25rem' }}>
                     {[1, 2, 3, 4, 5].map(round => (
                       <div
@@ -1879,6 +1842,25 @@ const FlipGame = () => {
                   </div>
                 </div>
               </MobilePlayerBox>
+
+              {/* Mobile Power Display - Heads/Tails Choice */}
+              <div style={{ 
+                marginBottom: '1rem',
+                padding: '0.5rem'
+              }}>
+                <PowerDisplay
+                  creatorPower={gameState?.creatorPower || 0}
+                  joinerPower={gameState?.joinerPower || 0}
+                  currentPlayer={gameState?.currentPlayer}
+                  creator={gameState?.creator}
+                  joiner={gameState?.joiner}
+                  chargingPlayer={gameState?.chargingPlayer}
+                  gamePhase={gameState?.phase}
+                  isMyTurn={isMyTurn}
+                  playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
+                  onChoiceSelect={handlePlayerChoice}
+                />
+              </div>
 
               {/* NFT Box */}
               <MobileHidden>

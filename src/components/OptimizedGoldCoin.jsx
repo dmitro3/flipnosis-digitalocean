@@ -161,6 +161,13 @@ const OptimizedGoldCoin = ({
     renderer.setClearColor(0x000000, 0)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
+    // Style the canvas for proper centering
+    renderer.domElement.style.display = 'block'
+    renderer.domElement.style.margin = '0 auto'
+    renderer.domElement.style.position = 'relative'
+    renderer.domElement.style.left = '50%'
+    renderer.domElement.style.transform = 'translateX(-50%)'
+    
     mountRef.current.appendChild(renderer.domElement)
     sceneRef.current = scene
     rendererRef.current = renderer
@@ -415,6 +422,8 @@ const OptimizedGoldCoin = ({
         position: 'relative',
         margin: '0 auto',
         display: 'block',
+        left: '50%',
+        transform: 'translateX(-50%)',
         background: isCharging ? 
           `radial-gradient(circle, rgba(255,20,147,0.1) 0%, transparent 70%)` : 
           'transparent',
