@@ -1487,37 +1487,6 @@ const FlipGame = () => {
           {/* Mobile Layout - Only shows on mobile */}
           {isMobileScreen ? (
             <MobileOnlyLayout>
-              {/* Join Game Button - Top Priority */}
-              {canJoin && (
-                <div style={{
-                  position: 'sticky',
-                  top: '0',
-                  zIndex: 100,
-                  padding: '1rem',
-                  background: 'rgba(0, 0, 0, 0.9)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '0 0 1rem 1rem',
-                  marginBottom: '1rem'
-                }}>
-                  <Button
-                    onClick={handleJoinGame}
-                    disabled={joiningGame}
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      fontSize: '1.2rem',
-                      fontWeight: 'bold',
-                      background: 'linear-gradient(45deg, #00FF41, #39FF14)',
-                      color: '#000',
-                      border: 'none',
-                      borderRadius: '0.75rem',
-                      boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
-                    }}
-                  >
-                    {joiningGame ? 'Joining...' : 'JOIN FLIP'}
-                  </Button>
-                </div>
-              )}
 
               {/* Mobile Bottom Navigation */}
               <MobileBottomNav>

@@ -204,9 +204,10 @@ const OptimizedGoldCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // Set initial rotation
-    coin.rotation.x = 0
+    // Set initial rotation - tilt coin toward viewer so face is visible
+    coin.rotation.x = -Math.PI / 6 // Tilt 30 degrees toward viewer
     coin.rotation.y = Math.PI / 2
+    coin.rotation.z = 0
 
     // Optimized animation loop
     const animate = () => {
@@ -339,9 +340,10 @@ const OptimizedGoldCoin = ({
     const startTime = Date.now()
     const duration = flipDuration
     
-    // Calculate rotations needed
+    // Calculate rotations needed - account for base tilt
+    const baseTilt = -Math.PI / 6 // 30 degree tilt toward viewer
     const startRotation = coin.rotation.x
-    const targetFace = flipResult === 'heads' ? 0 : Math.PI
+    const targetFace = flipResult === 'heads' ? baseTilt : (Math.PI + baseTilt)
     const rotations = performanceRef.current.level === 'low' ? 3 : 5
     const totalRotation = Math.PI * 2 * rotations + (targetFace - (startRotation % (Math.PI * 2)))
 
@@ -361,8 +363,9 @@ const OptimizedGoldCoin = ({
         
         requestAnimationFrame(animateFlip)
       } else {
-        // Perfect landing
+        // Perfect landing - maintain tilt for visibility
         coin.rotation.x = targetFace
+        coin.rotation.y = Math.PI / 2 // Preserve side rotation
         coin.position.y = 0
         coin.rotation.z = 0
         coin.scale.set(1, 1, 1)
