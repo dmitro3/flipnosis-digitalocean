@@ -56,11 +56,44 @@ export const ProfileProvider = ({ children }) => {
     }))
   }
 
+  // Coin image functions
+  const getCoinHeadsImage = async (playerAddress) => {
+    return profiles[playerAddress]?.coinHeadsImage || null
+  }
+
+  const setCoinHeadsImage = async (playerAddress, imageUrl) => {
+    setProfiles(prev => ({
+      ...prev,
+      [playerAddress]: {
+        ...prev[playerAddress],
+        coinHeadsImage: imageUrl
+      }
+    }))
+  }
+
+  const getCoinTailsImage = async (playerAddress) => {
+    return profiles[playerAddress]?.coinTailsImage || null
+  }
+
+  const setCoinTailsImage = async (playerAddress, imageUrl) => {
+    setProfiles(prev => ({
+      ...prev,
+      [playerAddress]: {
+        ...prev[playerAddress],
+        coinTailsImage: imageUrl
+      }
+    }))
+  }
+
   const value = {
     getPlayerName,
     setPlayerName,
     getProfilePicture,
-    setProfilePicture
+    setProfilePicture,
+    getCoinHeadsImage,
+    setCoinHeadsImage,
+    getCoinTailsImage,
+    setCoinTailsImage
   }
 
   return (

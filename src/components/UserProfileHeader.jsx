@@ -4,6 +4,7 @@ import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import styled from '@emotion/styled';
 import ProfilePicture from './ProfilePicture';
+import CoinImageCustomizer from './CoinImageCustomizer';
 
 const HeaderContainer = styled.div`
   display: flex;
@@ -70,7 +71,9 @@ const ModalContent = styled.div`
   border-radius: 1rem;
   padding: 2rem;
   width: 90%;
-  max-width: 400px;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
   position: relative;
 `;
 
@@ -87,6 +90,30 @@ const CloseButton = styled.button`
 
   &:hover {
     color: #fff;
+  }
+`;
+
+const TabContainer = styled.div`
+  display: flex;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid rgba(255, 20, 147, 0.3);
+`;
+
+const TabButton = styled.button`
+  flex: 1;
+  padding: 1rem;
+  background: ${props => props.active ? 'rgba(255, 20, 147, 0.2)' : 'transparent'};
+  border: none;
+  color: ${props => props.active ? '#FF1493' : '#fff'};
+  font-size: 1.1rem;
+  font-weight: ${props => props.active ? 'bold' : 'normal'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: ${props => props.active ? '2px solid #FF1493' : 'none'};
+  margin-bottom: -2px;
+
+  &:hover {
+    background: rgba(255, 20, 147, 0.1);
   }
 `;
 
@@ -126,11 +153,23 @@ const SaveButton = styled.button`
 
 const UserProfileHeader = ({ isInHeader = false }) => {
   const { address } = useWallet();
-  const { getPlayerName, setPlayerName, getProfilePicture, setProfilePicture } = useProfile();
+  const { 
+    getPlayerName, 
+    setPlayerName, 
+    getProfilePicture, 
+    setProfilePicture,
+    getCoinHeadsImage,
+    setCoinHeadsImage,
+    getCoinTailsImage,
+    setCoinTailsImage
+  } = useProfile();
   const { showSuccess, showError } = useToast();
   const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
   const [playerName, setPlayerNameState] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [currentHeadsImage, setCurrentHeadsImage] = useState(null);
+  const [currentTailsImage, setCurrentTailsImage] = useState(null);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -139,7 +178,12 @@ const UserProfileHeader = ({ isInHeader = false }) => {
       try {
         setIsLoading(true);
         const name = await getPlayerName(address);
+        const headsImage = await getCoinHeadsImage(address);
+        const tailsImage = await getCoinTailsImage(address);
+        
         setPlayerNameState(name || '');
+        setCurrentHeadsImage(headsImage);
+        setCurrentTailsImage(tailsImage);
       } catch (error) {
         console.error('Error loading user data:', error);
       } finally {
@@ -148,7 +192,7 @@ const UserProfileHeader = ({ isInHeader = false }) => {
     };
 
     loadUserData();
-  }, [address, getPlayerName]);
+  }, [address, getPlayerName, getCoinHeadsImage, getCoinTailsImage]);
 
   const handleSave = async () => {
     if (!address) return;
@@ -156,10 +200,35 @@ const UserProfileHeader = ({ isInHeader = false }) => {
     try {
       await setPlayerName(address, playerName);
       showSuccess('Profile updated successfully!');
-      setShowModal(false);
     } catch (error) {
       console.error('Error saving profile:', error);
       showError('Failed to update profile');
+    }
+  };
+
+  const handleHeadsImageChange = async (imageUrl) => {
+    if (!address) return;
+    
+    try {
+      await setCoinHeadsImage(address, imageUrl);
+      setCurrentHeadsImage(imageUrl);
+      showSuccess('Heads image updated!');
+    } catch (error) {
+      console.error('Error saving heads image:', error);
+      showError('Failed to save heads image');
+    }
+  };
+
+  const handleTailsImageChange = async (imageUrl) => {
+    if (!address) return;
+    
+    try {
+      await setCoinTailsImage(address, imageUrl);
+      setCurrentTailsImage(imageUrl);
+      showSuccess('Tails image updated!');
+    } catch (error) {
+      console.error('Error saving tails image:', error);
+      showError('Failed to save tails image');
     }
   };
 
@@ -192,31 +261,60 @@ const UserProfileHeader = ({ isInHeader = false }) => {
         <Modal>
           <ModalContent>
             <CloseButton onClick={() => setShowModal(false)}>×</CloseButton>
-            <h2 style={{ color: '#fff', marginBottom: '1.5rem' }}>Edit Profile</h2>
             
-            <div style={{ marginBottom: '1.5rem' }}>
-              <ProfilePicture 
-                address={address}
-                size={100}
-                isClickable={true}
-                showUploadIcon={true}
-                style={{
-                  borderRadius: '12px',
-                  border: '2px solid rgba(255, 20, 147, 0.5)'
-                }}
-              />
-            </div>
+            <TabContainer>
+              <TabButton 
+                active={activeTab === 'profile'} 
+                onClick={() => setActiveTab('profile')}
+              >
+                Profile
+              </TabButton>
+              <TabButton 
+                active={activeTab === 'coin'} 
+                onClick={() => setActiveTab('coin')}
+              >
+                Customize Coin
+              </TabButton>
+            </TabContainer>
 
-            <Input
-              type="text"
-              placeholder="Enter your name"
-              value={playerName}
-              onChange={(e) => setPlayerNameState(e.target.value)}
-            />
+            {activeTab === 'profile' ? (
+              <div>
+                <h2 style={{ color: '#fff', marginBottom: '1.5rem' }}>Edit Profile</h2>
+                
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <ProfilePicture 
+                    address={address}
+                    size={100}
+                    isClickable={true}
+                    showUploadIcon={true}
+                    style={{
+                      borderRadius: '12px',
+                      border: '2px solid rgba(255, 20, 147, 0.5)'
+                    }}
+                  />
+                </div>
 
-            <SaveButton onClick={handleSave}>
-              Save Profile
-            </SaveButton>
+                <Input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={playerName}
+                  onChange={(e) => setPlayerNameState(e.target.value)}
+                />
+
+                <SaveButton onClick={handleSave}>
+                  Save Profile
+                </SaveButton>
+              </div>
+            ) : (
+              <div>
+                <CoinImageCustomizer
+                  onHeadsImageChange={handleHeadsImageChange}
+                  onTailsImageChange={handleTailsImageChange}
+                  currentHeadsImage={currentHeadsImage}
+                  currentTailsImage={currentTailsImage}
+                />
+              </div>
+            )}
           </ModalContent>
         </Modal>
       )}
