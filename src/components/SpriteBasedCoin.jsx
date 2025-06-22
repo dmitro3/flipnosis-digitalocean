@@ -27,10 +27,10 @@ const SpriteBasedCoin = ({
   // Test mode states (development only)
   const [testMode, setTestMode] = useState(false)
   
-  // Check if we're on mobile and in development
+  // Check if we're on mobile - show test interface in all environments
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768
   const isDevelopment = process.env.NODE_ENV === 'development'
-  const showTestInterface = isMobile && isDevelopment
+  const showTestInterface = isMobile // Available in all environments now
   
   // Generate 120 frames for ultra-smooth animation (60fps for 2 seconds)
   const totalFrames = 120
