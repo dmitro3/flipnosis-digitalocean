@@ -1722,28 +1722,70 @@ const FlipGame = () => {
                     {!gameState?.creatorProfile?.profilePicture && 'P1'}
                   </div>
                   <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    {[1, 2, 3, 4, 5].map(round => (
-                      <div
-                        key={`p1-round-${round}`}
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: (gameState?.creatorWins || 0) >= round ? 
-                            'linear-gradient(45deg, #FFD700, #FFA500)' : 
-                            'rgba(255, 255, 255, 0.1)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.7rem',
-                          fontWeight: 'bold',
-                          color: (gameState?.creatorWins || 0) >= round ? '#000' : '#666'
-                        }}
-                      >
-                        {round}
-                      </div>
-                    ))}
+                    {[1, 2, 3, 4, 5].map(round => {
+                      const roundNumber = round;
+                      const currentRound = gameState?.currentRound || 1;
+                      
+                      // Determine what happened in this round
+                      let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
+                      
+                      if (roundNumber < currentRound) {
+                        // This round is completed - determine winner
+                        const roundWinner = gameState?.roundResults?.[roundNumber - 1];
+                        if (roundWinner === 'creator') {
+                          roundStatus = 'creator_won';
+                        } else if (roundWinner === 'joiner') {
+                          roundStatus = 'joiner_won';
+                        }
+                      } else if (roundNumber === currentRound) {
+                        roundStatus = 'current';
+                      }
+                      
+                      const getBackgroundColor = () => {
+                        switch (roundStatus) {
+                          case 'current': return '#FFFF00'; // Yellow for current round
+                          case 'creator_won': return '#00FF41'; // Green for creator win
+                          case 'joiner_won': return '#FF1493'; // Pink for creator loss (joiner win)
+                          default: return 'rgba(255, 255, 255, 0.1)'; // Gray for pending
+                        }
+                      };
+                      
+                      const getTextColor = () => {
+                        switch (roundStatus) {
+                          case 'current': return '#000';
+                          case 'creator_won': return '#000';
+                          case 'joiner_won': return '#000';
+                          default: return '#666';
+                        }
+                      };
+                      
+                      return (
+                        <div
+                          key={`p1-round-${round}`}
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: getBackgroundColor(),
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            color: getTextColor(),
+                            boxShadow: roundStatus === 'current' ? '0 0 10px #FFFF00' : 
+                                     roundStatus === 'creator_won' ? '0 0 8px #00FF41' :
+                                     roundStatus === 'joiner_won' ? '0 0 8px #FF1493' : 'none',
+                            transition: 'all 0.3s ease',
+                            transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
+                            animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
+                          }}
+                        >
+                          {round}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </MobilePlayerBox>
@@ -1753,8 +1795,8 @@ const FlipGame = () => {
                 display: 'flex', 
                 justifyContent: 'center', 
                 alignItems: 'center',
-                margin: '0.5rem auto',
-                padding: '0.5rem',
+                margin: '0.25rem auto',
+                padding: '0.25rem',
                 width: '100%',
                 textAlign: 'center'
               }}>
@@ -1785,7 +1827,7 @@ const FlipGame = () => {
                 border: `2px solid ${isJoiner ? '#00BFFF' : 'rgba(255, 255, 255, 0.1)'}`,
                 padding: '0.5rem',
                 marginBottom: '0.5rem',
-                marginTop: '-10px',
+                marginTop: '-15px',
                 borderRadius: '12px',
                 height: '60px',
                 width: '100%'
@@ -1817,28 +1859,70 @@ const FlipGame = () => {
                     {!gameState?.joinerProfile?.profilePicture && 'P2'}
                   </div>
                   <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    {[1, 2, 3, 4, 5].map(round => (
-                      <div
-                        key={`p2-round-${round}`}
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: (gameState?.joinerWins || 0) >= round ? 
-                            'linear-gradient(45deg, #FFD700, #FFA500)' : 
-                            'rgba(255, 255, 255, 0.1)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.7rem',
-                          fontWeight: 'bold',
-                          color: (gameState?.joinerWins || 0) >= round ? '#000' : '#666'
-                        }}
-                      >
-                        {round}
-                      </div>
-                    ))}
+                    {[1, 2, 3, 4, 5].map(round => {
+                      const roundNumber = round;
+                      const currentRound = gameState?.currentRound || 1;
+                      
+                      // Determine what happened in this round
+                      let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
+                      
+                      if (roundNumber < currentRound) {
+                        // This round is completed - determine winner
+                        const roundWinner = gameState?.roundResults?.[roundNumber - 1];
+                        if (roundWinner === 'creator') {
+                          roundStatus = 'creator_won';
+                        } else if (roundWinner === 'joiner') {
+                          roundStatus = 'joiner_won';
+                        }
+                      } else if (roundNumber === currentRound) {
+                        roundStatus = 'current';
+                      }
+                      
+                      const getBackgroundColor = () => {
+                        switch (roundStatus) {
+                          case 'current': return '#FFFF00'; // Yellow for current round
+                          case 'creator_won': return '#FF1493'; // Pink for joiner loss (creator win)
+                          case 'joiner_won': return '#00FF41'; // Green for joiner win
+                          default: return 'rgba(255, 255, 255, 0.1)'; // Gray for pending
+                        }
+                      };
+                      
+                      const getTextColor = () => {
+                        switch (roundStatus) {
+                          case 'current': return '#000';
+                          case 'creator_won': return '#000';
+                          case 'joiner_won': return '#000';
+                          default: return '#666';
+                        }
+                      };
+                      
+                      return (
+                        <div
+                          key={`p2-round-${round}`}
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: getBackgroundColor(),
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            color: getTextColor(),
+                            boxShadow: roundStatus === 'current' ? '0 0 10px #FFFF00' : 
+                                     roundStatus === 'creator_won' ? '0 0 8px #FF1493' :
+                                     roundStatus === 'joiner_won' ? '0 0 8px #00FF41' : 'none',
+                            transition: 'all 0.3s ease',
+                            transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
+                            animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
+                          }}
+                        >
+                          {round}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </MobilePlayerBox>
@@ -1968,168 +2052,151 @@ const FlipGame = () => {
                     marginBottom: '1rem',
                     padding: '0.75rem',
                     background: isCreator ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '0.75rem',
-                    border: `2px solid ${isCreator ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.1)'}`
+                    borderRadius: '12px',
+                    border: `2px solid ${isCreator ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.1)'}`,
+                    height: '60px'
                   }}>
+                    <ProfilePicture 
+                      address={gameData?.creator} 
+                      size={40} 
+                      isClickable={isCreator}
+                      showUploadIcon={isCreator}
+                      profileData={gameState?.creatorProfile}
+                      style={{
+                        borderRadius: '12px',
+                        border: `2px solid ${theme.colors.neonPink}`
+                      }}
+                    />
+                    
+                    {/* Round indicators */}
                     <div style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem'
+                      gap: '0.25rem',
+                      alignItems: 'center'
                     }}>
-                      <ProfilePicture 
-                        address={gameData?.creator} 
-                        size={40} 
-                        isClickable={isCreator}
-                        showUploadIcon={isCreator}
-                        profileData={gameState?.creatorProfile}
-                        style={{
-                          borderRadius: '12px',
-                          border: `2px solid ${theme.colors.neonPink}`
-                        }}
-                      />
-                      <div>
-                      <div style={{
-                          fontSize: '0.9rem', 
-                          opacity: 0.8,
-                          color: theme.colors.neonPink 
-                        }}>
-                          💎 {gameState?.creatorProfile?.name || 'Player 1'} {gameState?.creatorChoice && `(${gameState.creatorChoice.toUpperCase()})`}
-                        </div>
-                        <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
-                          {gameState?.creatorProfile?.name || 
-                           (gameData?.creator ? 
-                             `${gameData.creator.slice(0, 8)}...${gameData.creator.slice(-4)}` : 
-                             'Waiting...'
-                           )}
-                        </div>
-                      </div>
-                    </div>
+                      {[...Array(gameData?.rounds || 5)].map((_, i) => {
+                        const roundNumber = i + 1;
+                        const currentRound = gameState?.currentRound || 1;
+                        const creatorWins = gameState?.creatorWins || 0;
+                        const joinerWins = gameState?.joinerWins || 0;
+                        
+                        // Determine what happened in this round
+                        let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
+                        
+                        if (roundNumber < currentRound) {
+                          // This round is completed - determine winner
+                          const roundWinner = gameState?.roundResults?.[roundNumber - 1];
+                          if (roundWinner === 'creator') {
+                            roundStatus = 'creator_won';
+                          } else if (roundWinner === 'joiner') {
+                            roundStatus = 'joiner_won';
+                          }
+                        } else if (roundNumber === currentRound) {
+                          roundStatus = 'current';
+                        }
+                        
+                        const getBackgroundColor = () => {
+                          switch (roundStatus) {
+                            case 'current': return '#FFFF00'; // Yellow for current round
+                            case 'creator_won': return '#00FF41'; // Green for creator win
+                            case 'joiner_won': return '#FF1493'; // Pink for creator loss (joiner win)
+                            default: return 'rgba(255, 255, 255, 0.2)'; // Gray for pending
+                          }
+                        };
+                        
+                        const getShadowColor = () => {
+                          switch (roundStatus) {
+                            case 'current': return '0 0 10px #FFFF00, 0 0 20px #FFFF00';
+                            case 'creator_won': return '0 0 10px #00FF41, 0 0 20px #00FF41';
+                            case 'joiner_won': return '0 0 10px #FF1493, 0 0 20px #FF1493';
+                            default: return 'none';
+                          }
+                        };
 
-                    {/* Timer - only show for current player */}
-                    {gameState?.currentPlayer === gameData?.creator && gameState?.turnTimeLeft !== undefined && (
-                      <div style={{
-                        background: theme.colors.neonPink,
-                        color: '#000',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
-                      }}>
-                        {gameState.turnTimeLeft}s
-                      </div>
-                    )}
-                    
-                    {gameState?.currentPlayer === gameData?.creator && !gameState?.turnTimeLeft && (
-                      <div style={{
-                        background: theme.colors.neonPink,
-                        color: '#000',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {isCreator ? 'YOUR TURN' : 'THEIR TURN'}
-                    </div>
-                    )}
-                  </div>
-
-                  {/* Round Wins for Player 1 */}
-                    <div style={{
-                    display: 'flex',
-                    gap: '0.25rem',
-                    justifyContent: 'center',
-                    marginBottom: '1rem'
-                  }}>
-                    {[...Array(gameData?.rounds || 5)].map((_, i) => {
-                      const roundNumber = i + 1;
-                      const currentRound = gameState?.currentRound || 1;
-                      const creatorWins = gameState?.creatorWins || 0;
-                      const joinerWins = gameState?.joinerWins || 0;
-                      
-                      // Determine what happened in this round
-                      let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
-                      
-                      if (roundNumber < currentRound) {
-                        // This round is completed - determine winner
-                        const roundWinner = gameState?.roundResults?.[roundNumber - 1];
-                        if (roundWinner === 'creator') {
-                          roundStatus = 'creator_won';
-                        } else if (roundWinner === 'joiner') {
-                          roundStatus = 'joiner_won';
-                        }
-                      } else if (roundNumber === currentRound) {
-                        roundStatus = 'current';
-                      }
-                      
-                      const getBackgroundColor = () => {
-                        switch (roundStatus) {
-                          case 'current': return '#FFFF00'; // Yellow for current round
-                          case 'creator_won': return isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
-                          case 'joiner_won': return !isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
-                          default: return 'rgba(255, 255, 255, 0.2)'; // Gray for pending
-                        }
-                      };
-                      
-                      const getShadowColor = () => {
-                        switch (roundStatus) {
-                          case 'current': return '0 0 10px #FFFF00, 0 0 20px #FFFF00';
-                          case 'creator_won': return isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
-                          case 'joiner_won': return !isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
-                          default: return 'none';
-                        }
-                      };
-
-                      const getTextColor = () => {
-                        switch (roundStatus) {
-                          case 'current': return '#000000';
-                          case 'creator_won': return isCreator ? '#000000' : '#000000';
-                          case 'joiner_won': return !isCreator ? '#000000' : '#000000';
-                          default: return '#ffffff';
-                        }
-                      };
-                      
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            background: getBackgroundColor(),
-                            opacity: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            color: getTextColor(),
-                            boxShadow: getShadowColor(),
-                            transition: 'all 0.3s ease',
-                            transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
-                            animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
-                          }}
-                        >
-                          {roundNumber}
-                  </div>
+                        const getTextColor = () => {
+                          switch (roundStatus) {
+                            case 'current': return '#000000';
+                            case 'creator_won': return '#000000';
+                            case 'joiner_won': return '#000000';
+                            default: return '#ffffff';
+                          }
+                        };
+                        
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              background: getBackgroundColor(),
+                              opacity: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              color: getTextColor(),
+                              boxShadow: getShadowColor(),
+                              transition: 'all 0.3s ease',
+                              transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
+                              animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
+                            }}
+                          >
+                            {roundNumber}
+                          </div>
                         );
                       })}
                     </div>
+                  </div>
 
-                    {/* Timer Display */}
-                    {gameState?.turnTimeLeft !== undefined && (
-                      <div style={{
-                        textAlign: 'center',
-                        marginTop: '0.5rem',
+                  {/* Timer Display Box */}
+                  {gameState?.turnTimeLeft !== undefined && (
+                    <div style={{
+                      padding: '1.5rem',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 0, 0.2), rgba(255, 215, 0, 0.1))',
+                      borderRadius: '1rem',
+                      border: `2px solid ${gameState.turnTimeLeft <= 5 ? '#FF1493' : '#FFFF00'}`,
+                      textAlign: 'center',
+                      marginBottom: '1rem',
+                      boxShadow: gameState.turnTimeLeft <= 5 
+                        ? '0 0 30px rgba(255, 20, 147, 0.6), inset 0 0 20px rgba(255, 20, 147, 0.3)'
+                        : '0 0 30px rgba(255, 255, 0, 0.6), inset 0 0 20px rgba(255, 255, 0, 0.3)',
+                      animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                    }}>
+                      <div style={{ 
                         color: gameState.turnTimeLeft <= 5 ? '#FF1493' : '#FFFF00',
-                        fontSize: '1.2rem',
+                        fontSize: '0.9rem',
                         fontWeight: 'bold',
-                        animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
+                        marginBottom: '0.5rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '2px'
+                      }}>
+                        Turn Timer
+                      </div>
+                      <div style={{
+                        fontSize: '3rem',
+                        fontWeight: 'bold',
+                        color: gameState.turnTimeLeft <= 5 ? '#FF1493' : '#FFFF00',
+                        textShadow: gameState.turnTimeLeft <= 5 
+                          ? '0 0 20px rgba(255, 20, 147, 0.8)'
+                          : '0 0 20px rgba(255, 255, 0, 0.8)',
+                        fontFamily: 'monospace'
                       }}>
                         {gameState.turnTimeLeft}s
                       </div>
-                    )}
-                  
+                      {gameState?.currentPlayer && (
+                        <div style={{
+                          fontSize: '0.8rem',
+                          color: 'rgba(255, 255, 255, 0.8)',
+                          marginTop: '0.5rem'
+                        }}>
+                          {gameState.currentPlayer === address ? "Your Turn" : "Opponent's Turn"}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Player 2 */}
                   <div style={{
                     display: 'flex',
@@ -2137,167 +2204,105 @@ const FlipGame = () => {
                     justifyContent: 'space-between',
                     padding: '0.75rem',
                     background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '0.75rem',
-                    border: `2px solid ${isJoiner ? theme.colors.neonBlue : 'rgba(255, 255, 255, 0.1)'}`
+                    borderRadius: '12px',
+                    border: `2px solid ${isJoiner ? theme.colors.neonBlue : 'rgba(255, 255, 255, 0.1)'}`,
+                    height: '60px'
                   }}>
+                    <ProfilePicture 
+                      address={gameData?.joiner} 
+                      size={40} 
+                      isClickable={isJoiner}
+                      showUploadIcon={isJoiner}
+                      profileData={gameState?.joinerProfile}
+                      style={{
+                        borderRadius: '12px',
+                        border: `2px solid ${theme.colors.neonBlue}`
+                      }}
+                    />
+                    
+                    {/* Round indicators */}
                     <div style={{
                       display: 'flex',
-                    alignItems: 'center',
-                      gap: '0.75rem'
+                      gap: '0.25rem',
+                      alignItems: 'center'
                     }}>
-                      <ProfilePicture 
-                        address={gameData?.joiner} 
-                        size={40} 
-                        isClickable={isJoiner}
-                        showUploadIcon={isJoiner}
-                        profileData={gameState?.joinerProfile}
-                        style={{
-                          borderRadius: '12px',
-                          border: `2px solid ${theme.colors.neonBlue}`
-                        }}
-                      />
-                      <div>
-                        <div style={{ 
-                          fontSize: '0.9rem', 
-                          opacity: 0.8,
-                          color: theme.colors.neonBlue 
-                        }}>
-                          💎 {gameState?.joinerProfile?.name || 'Player 2'} {gameState?.joinerChoice && `(${gameState.joinerChoice.toUpperCase()})`}
-                        </div>
-                        <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
-                          {gameState?.joinerProfile?.name || 
-                           (gameData?.joiner ? 
-                             `${gameData.joiner.slice(0, 8)}...${gameData.joiner.slice(-4)}` : 
-                             'Waiting...'
-                           )}
-                        </div>
-                      </div>
-                    </div>
+                      {[...Array(gameData?.rounds || 5)].map((_, i) => {
+                        const roundNumber = i + 1;
+                        const currentRound = gameState?.currentRound || 1;
+                        const creatorWins = gameState?.creatorWins || 0;
+                        const joinerWins = gameState?.joinerWins || 0;
+                        
+                        // Determine what happened in this round
+                        let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
+                        
+                        if (roundNumber < currentRound) {
+                          // This round is completed - determine winner
+                          const roundWinner = gameState?.roundResults?.[roundNumber - 1];
+                          if (roundWinner === 'creator') {
+                            roundStatus = 'creator_won';
+                          } else if (roundWinner === 'joiner') {
+                            roundStatus = 'joiner_won';
+                          }
+                        } else if (roundNumber === currentRound) {
+                          roundStatus = 'current';
+                        }
+                        
+                        const getBackgroundColor = () => {
+                          switch (roundStatus) {
+                            case 'current': return '#FFFF00'; // Yellow for current round
+                            case 'creator_won': return '#FF1493'; // Pink for joiner loss (creator win)
+                            case 'joiner_won': return '#00FF41'; // Green for joiner win
+                            default: return 'rgba(255, 255, 255, 0.2)'; // Gray for pending
+                          }
+                        };
+                        
+                        const getShadowColor = () => {
+                          switch (roundStatus) {
+                            case 'current': return '0 0 10px #FFFF00, 0 0 20px #FFFF00';
+                            case 'creator_won': return '0 0 10px #FF1493, 0 0 20px #FF1493';
+                            case 'joiner_won': return '0 0 10px #00FF41, 0 0 20px #00FF41';
+                            default: return 'none';
+                          }
+                        };
 
-                    {/* Timer - only show for current player */}
-                    {gameState?.currentPlayer === gameData?.joiner && gameState?.turnTimeLeft !== undefined && (
-                      <div style={{
-                        background: theme.colors.neonBlue,
-                        color: '#000',
-                        padding: '0.25rem 0.75rem',
-                    borderRadius: '0.5rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
-                      }}>
-                        {gameState.turnTimeLeft}s
-                      </div>
-                    )}
-                    
-                    {gameState?.currentPlayer === gameData?.joiner && !gameState?.turnTimeLeft && (
-                      <div style={{
-                        background: theme.colors.neonBlue,
-                        color: '#000',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {isJoiner ? 'YOUR TURN' : 'THEIR TURN'}
-                      </div>
-                    )}
+                        const getTextColor = () => {
+                          switch (roundStatus) {
+                            case 'current': return '#000000';
+                            case 'creator_won': return '#000000';
+                            case 'joiner_won': return '#000000';
+                            default: return '#ffffff';
+                          }
+                        };
+                        
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              background: getBackgroundColor(),
+                              opacity: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              color: getTextColor(),
+                              boxShadow: getShadowColor(),
+                              transition: 'all 0.3s ease',
+                              transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
+                              animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
+                            }}
+                          >
+                            {roundNumber}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  {/* Round Wins for Player 2 */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.25rem',
-                    justifyContent: 'center',
-                    marginTop: '1rem'
-                  }}>
-                    {[...Array(gameData?.rounds || 5)].map((_, i) => {
-                      const roundNumber = i + 1;
-                      const currentRound = gameState?.currentRound || 1;
-                      const creatorWins = gameState?.creatorWins || 0;
-                      const joinerWins = gameState?.joinerWins || 0;
-                      
-                      // Determine what happened in this round
-                      let roundStatus = 'pending'; // pending, current, creator_won, joiner_won
-                      
-                      if (roundNumber < currentRound) {
-                        // This round is completed - determine winner
-                        const roundWinner = gameState?.roundResults?.[roundNumber - 1];
-                        if (roundWinner === 'creator') {
-                          roundStatus = 'creator_won';
-                        } else if (roundWinner === 'joiner') {
-                          roundStatus = 'joiner_won';
-                        }
-                      } else if (roundNumber === currentRound) {
-                        roundStatus = 'current';
-                      }
-                      
-                      const getBackgroundColor = () => {
-                        switch (roundStatus) {
-                          case 'current': return '#FFFF00'; // Yellow for current round
-                          case 'creator_won': return isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
-                          case 'joiner_won': return !isCreator ? '#00FF41' : '#FF1493'; // Green if you won, pink if you lost
-                          default: return 'rgba(255, 255, 255, 0.2)'; // Gray for pending
-                        }
-                      };
-                      
-                      const getShadowColor = () => {
-                        switch (roundStatus) {
-                          case 'current': return '0 0 10px #FFFF00, 0 0 20px #FFFF00';
-                          case 'creator_won': return isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
-                          case 'joiner_won': return !isCreator ? '0 0 10px #00FF41, 0 0 20px #00FF41' : '0 0 10px #FF1493, 0 0 20px #FF1493';
-                          default: return 'none';
-                        }
-                      };
 
-                      const getTextColor = () => {
-                        switch (roundStatus) {
-                          case 'current': return '#000000';
-                          case 'creator_won': return isCreator ? '#000000' : '#000000';
-                          case 'joiner_won': return !isCreator ? '#000000' : '#000000';
-                          default: return '#ffffff';
-                        }
-                      };
-                      
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            background: getBackgroundColor(),
-                            opacity: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            color: getTextColor(),
-                            boxShadow: getShadowColor(),
-                            transition: 'all 0.3s ease',
-                            transform: roundStatus === 'current' ? 'scale(1.1)' : 'scale(1)',
-                            animation: roundStatus === 'current' ? 'pulse 2s infinite' : 'none'
-                          }}
-                        >
-                          {roundNumber}
-                        </div>
-                      );
-                    })}
-                    </div>
-
-                  {/* Timer Display */}
-                  {gameState?.turnTimeLeft !== undefined && (
-                    <div style={{
-                      textAlign: 'center',
-                      marginTop: '0.5rem',
-                      color: gameState.turnTimeLeft <= 5 ? '#FF1493' : '#FFFF00',
-                      fontSize: '1.2rem',
-                      fontWeight: 'bold',
-                      animation: gameState.turnTimeLeft <= 5 ? 'pulse 1s infinite' : 'none'
-                    }}>
-                      {gameState.turnTimeLeft}s
-                  </div>
-                  )}
                 </div>
 
                 {/* Combined Game Info Section */}
@@ -2385,8 +2390,7 @@ const FlipGame = () => {
                     marginLeft: 'auto',
                     marginRight: 'auto',
                     position: 'relative',
-                    padding: '20px',
-                    transform: 'translateX(50px)' // Shift right to center
+                    padding: '20px'
                   }}
                 >
                   <OptimizedGoldCoin

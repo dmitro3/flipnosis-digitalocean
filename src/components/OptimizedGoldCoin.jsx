@@ -61,14 +61,14 @@ const OptimizedGoldCoin = ({
     const perfLevel = performanceRef.current.level
     
     if (isMobile) {
-      return perfLevel === 'low' ? 8 : 12
+      return perfLevel === 'low' ? 24 : 32
     }
     
     switch (perfLevel) {
-      case 'low': return 12
-      case 'medium': return 16
-      case 'high': return 20
-      default: return 16
+      case 'low': return 32
+      case 'medium': return 48
+      case 'high': return 64
+      default: return 48
     }
   }
 
@@ -422,8 +422,6 @@ const OptimizedGoldCoin = ({
         position: 'relative',
         margin: '0 auto',
         display: 'block',
-        left: '50%',
-        transform: 'translateX(-50%)',
         background: isCharging ? 
           `radial-gradient(circle, rgba(255,20,147,0.1) 0%, transparent 70%)` : 
           'transparent',
