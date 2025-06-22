@@ -17,7 +17,7 @@ const MobileOptimizedCoin = ({
   isCreator = false,
   customHeadsImage = null,
   customTailsImage = null,
-  size = 280
+  size = 187
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
@@ -209,14 +209,32 @@ const MobileOptimizedCoin = ({
   }
 
   const simulateFlip = (result) => {
-    if (isAnimatingRef.current || !coinRef.current) return
+    if (!coinRef.current) {
+      console.warn('⚠️ No coin ref available for flip')
+      return
+    }
     
-    console.log('🎬 Mobile 3D flip:', { result })
+    if (isAnimatingRef.current) {
+      console.log('⏸️ Flip already in progress, skipping')
+      return
+    }
+    
+    console.log('🎬 Mobile 3D flip starting:', { 
+      result, 
+      testMode,
+      isFlipping,
+      currentSide: currentCoinSideRef.current,
+      coinVisible: coinRef.current?.visible !== false
+    })
+    
     isAnimatingRef.current = true
     
     const coin = coinRef.current
     const currentSide = currentCoinSideRef.current
     const needsToFlip = currentSide !== result
+    
+    // Ensure coin is visible during flip
+    coin.visible = true
     
     // Power calculations
     const totalPower = creatorPower + joinerPower || 5
@@ -227,11 +245,29 @@ const MobileOptimizedCoin = ({
     const totalRotation = halfFlips * Math.PI
     const duration = 2500 + (powerRatio * 1500)
     
+    console.log('📊 Mobile flip params:', {
+      currentSide,
+      targetSide: result,
+      needsToFlip,
+      rotations: baseRotations.toFixed(1),
+      duration: duration + 'ms',
+      power: totalPower
+    })
+    
     const startRotation = coin.rotation.x
     const startTime = Date.now()
     
     const animateFlip = () => {
-      if (!isAnimatingRef.current || !coinRef.current) return
+      if (!coinRef.current) {
+        console.warn('⚠️ Coin disappeared during animation')
+        isAnimatingRef.current = false
+        return
+      }
+      
+      if (!isAnimatingRef.current) {
+        console.log('⏹️ Animation stopped externally')
+        return
+      }
       
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
@@ -268,11 +304,16 @@ const MobileOptimizedCoin = ({
         coin.rotation.y = Math.PI / 2
         coin.rotation.z = 0
         coin.position.set(0, 0, 0)
+        coin.visible = true // Ensure visibility
         
         currentCoinSideRef.current = result
         isAnimatingRef.current = false
         
-        console.log('✅ Mobile 3D flip complete:', result)
+        console.log('✅ Mobile 3D flip complete:', { 
+          result, 
+          finalRotation: coin.rotation.x,
+          visible: coin.visible 
+        })
       }
     }
     
@@ -329,14 +370,31 @@ const MobileOptimizedCoin = ({
     // Initial position
     coin.rotation.x = -Math.PI / 2
     coin.rotation.y = Math.PI / 2
+    coin.visible = true // Ensure initial visibility
     currentCoinSideRef.current = 'heads'
+    
+    console.log('🪙 Mobile coin initialized:', {
+      position: coin.position,
+      rotation: coin.rotation,
+      visible: coin.visible,
+      scale: coin.scale
+    })
 
     // Animation loop
     const animate = () => {
-      if (!coinRef.current || !rendererRef.current) return
+      if (!coinRef.current || !rendererRef.current) {
+        console.warn('⚠️ Missing refs in animation loop:', {
+          coin: !!coinRef.current,
+          renderer: !!rendererRef.current
+        })
+        return
+      }
 
       const coin = coinRef.current
       const time = Date.now() * 0.001
+      
+      // Ensure coin stays visible
+      coin.visible = true
       
       if (!isAnimatingRef.current) {
         if (isCharging) {
@@ -350,10 +408,10 @@ const MobileOptimizedCoin = ({
         }
       }
 
-      // FPS monitoring
+      // FPS monitoring with visibility check
       frameCountRef.current++
       if (Date.now() - lastFPSCheck.current > 1000) {
-        console.log(`📱 Mobile 3D FPS: ${frameCountRef.current}`)
+        console.log(`📱 Mobile 3D FPS: ${frameCountRef.current} | Coin visible: ${coin.visible} | Test: ${testMode}`)
         frameCountRef.current = 0
         lastFPSCheck.current = Date.now()
       }

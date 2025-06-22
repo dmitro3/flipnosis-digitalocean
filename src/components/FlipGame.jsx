@@ -1816,7 +1816,7 @@ const FlipGame = () => {
                   creatorChoice={gameState?.creatorChoice}
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
-                  size={280} // Optimized size for mobile
+                  size={187} // Smaller for optimization (1/3 reduction)
                   customHeadsImage={customHeadsImage}
                   customTailsImage={customTailsImage}
                 />
