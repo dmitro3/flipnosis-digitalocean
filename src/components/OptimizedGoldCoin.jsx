@@ -205,7 +205,7 @@ const OptimizedGoldCoin = ({
     coinRef.current = coin
 
     // Set initial rotation - tilt coin toward viewer so face is visible
-    coin.rotation.x = -Math.PI / 6 // Tilt 30 degrees toward viewer
+    coin.rotation.x = -Math.PI / 4 // Tilt 45 degrees toward viewer
     coin.rotation.y = Math.PI / 2
     coin.rotation.z = 0
 
@@ -340,9 +340,13 @@ const OptimizedGoldCoin = ({
     const startTime = Date.now()
     const duration = flipDuration
     
-    // Calculate rotations needed - account for base tilt
-    const baseTilt = -Math.PI / 6 // 30 degree tilt toward viewer
+    // Calculate rotations - SIMPLE: winning side faces viewer
+    const baseTilt = -Math.PI / 4 // 45 degree tilt toward viewer
     const startRotation = coin.rotation.x
+    
+    // WINNING SIDE ALWAYS FACES YOU:
+    // - If heads wins, heads faces you (baseTilt)
+    // - If tails wins, tails faces you (flip + baseTilt)
     const targetFace = flipResult === 'heads' ? baseTilt : (Math.PI + baseTilt)
     const rotations = performanceRef.current.level === 'low' ? 3 : 5
     const totalRotation = Math.PI * 2 * rotations + (targetFace - (startRotation % (Math.PI * 2)))
