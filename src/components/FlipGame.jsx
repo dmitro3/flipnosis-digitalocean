@@ -16,6 +16,7 @@ import {
 } from '../styles/components'
 import OptimizedGoldCoin from './OptimizedGoldCoin'
 import SpriteBasedCoin from './SpriteBasedCoin'
+import MobileOptimizedCoin from './MobileOptimizedCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
 import ProfilePicture from './ProfilePicture'
@@ -1791,7 +1792,7 @@ const FlipGame = () => {
                 </div>
               </MobilePlayerBox>
 
-              {/* MOBILE COIN - Enhanced Version */}
+              {/* MOBILE COIN - Optimized 3D Version */}
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'center', 
@@ -1801,7 +1802,7 @@ const FlipGame = () => {
                 width: '100%',
                 textAlign: 'center'
               }}>
-                <SpriteBasedCoin
+                <MobileOptimizedCoin
                   isFlipping={!!flipAnimation}
                   flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
                   flipDuration={flipAnimation?.duration}
@@ -1810,13 +1811,12 @@ const FlipGame = () => {
                   isPlayerTurn={isMyTurn}
                   isCharging={gameState?.chargingPlayer === address}
                   chargingPlayer={gameState?.chargingPlayer}
-                  gamePhase={gameState?.phase}
                   creatorPower={gameState?.creatorPower || 0}
                   joinerPower={gameState?.joinerPower || 0}
                   creatorChoice={gameState?.creatorChoice}
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
-                  size={280} // Smaller size for mobile
+                  size={280} // Optimized size for mobile
                   customHeadsImage={customHeadsImage}
                   customTailsImage={customTailsImage}
                 />
