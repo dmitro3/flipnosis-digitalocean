@@ -15,6 +15,7 @@ import {
   LoadingSpinner
 } from '../styles/components'
 import OptimizedGoldCoin from './OptimizedGoldCoin'
+import SpriteBasedCoin from './SpriteBasedCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
 import ProfilePicture from './ProfilePicture'
@@ -1790,7 +1791,7 @@ const FlipGame = () => {
                 </div>
               </MobilePlayerBox>
 
-              {/* MOBILE COIN */}
+              {/* MOBILE COIN - Enhanced Version */}
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'center', 
@@ -1800,7 +1801,7 @@ const FlipGame = () => {
                 width: '100%',
                 textAlign: 'center'
               }}>
-                <OptimizedGoldCoin
+                <SpriteBasedCoin
                   isFlipping={!!flipAnimation}
                   flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
                   flipDuration={flipAnimation?.duration}

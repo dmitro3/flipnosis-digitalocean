@@ -1,0 +1,234 @@
+.sprite-coin-container {
+  position: relative;
+  margin: 0 auto;
+  perspective: 1000px;
+  perspective-origin: center center;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.coin-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.coin-side {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  background: radial-gradient(circle at 30% 30%, #FFFFFF, #FFD700 30%, #FFA500 70%, #CD853F);
+  border: 3px solid #8B7355;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 0 20px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.3);
+  background-size: cover;
+  background-position: center;
+}
+
+.coin-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.coin-symbol {
+  font-size: 3rem;
+  color: #2C1810;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: bold;
+}
+
+.coin-text {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2C1810;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  font-family: 'Arial', sans-serif;
+  letter-spacing: 1px;
+}
+
+/* Player choice selection styles */
+.coin-face.selected {
+  position: relative;
+}
+
+.selection-ring {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 4px solid #FF0000;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: selectionPulse 2s ease-in-out infinite;
+}
+
+@keyframes selectionPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+/* Edge segments */
+.coin-edge {
+  position: absolute;
+  width: 20px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  margin-left: -10px;
+  background: linear-gradient(to right, 
+    #B8860B, 
+    #DAA520 20%, 
+    #FFD700 40%, 
+    #DAA520 60%, 
+    #B8860B
+  );
+  transform-origin: center bottom;
+  border-radius: 2px;
+}
+
+/* Charging effects */
+.charging-effects {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.power-ring {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  border: 3px solid #00BFFF;
+  border-radius: 50%;
+  animation: powerRingPulse 1s ease-in-out infinite;
+}
+
+@keyframes powerRingPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+.energy-particles {
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  right: -30px;
+  bottom: -30px;
+  background: radial-gradient(circle, transparent 60%, #00BFFF 70%, transparent 80%);
+  border-radius: 50%;
+  animation: energyRotate 2s linear infinite;
+  opacity: 0.6;
+}
+
+@keyframes energyRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Flip animation states */
+.sprite-coin-container.flipping {
+  filter: brightness(1.1);
+}
+
+.sprite-coin-container.flipping .coin-wrapper {
+  animation: coinBounce 3s ease-out;
+}
+
+@keyframes coinBounce {
+  0% {
+    transform: translateY(0) rotateX(0deg);
+  }
+  30% {
+    transform: translateY(-30px) rotateX(1080deg);
+  }
+  60% {
+    transform: translateY(-10px) rotateX(2160deg);
+  }
+  80% {
+    transform: translateY(-5px) rotateX(2520deg);
+  }
+  100% {
+    transform: translateY(0) rotateX(2880deg);
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .coin-symbol {
+    font-size: 2rem;
+  }
+  
+  .coin-text {
+    font-size: 1rem;
+  }
+  
+  .coin-edge {
+    width: 15px;
+    margin-left: -7.5px;
+  }
+  
+  /* Reduce effects on mobile for better performance */
+  .sprite-coin-container.flipping {
+    filter: none;
+  }
+  
+  .coin-side {
+    box-shadow: 
+      0 0 10px rgba(0, 0, 0, 0.3),
+      inset 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Performance optimizations */
+.sprite-coin-container * {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .sprite-coin-container .coin-wrapper,
+  .power-ring,
+  .energy-particles,
+  .selection-ring {
+    animation: none !important;
+    transition: none !important;
+  }
+} 
