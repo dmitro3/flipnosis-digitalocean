@@ -19,29 +19,29 @@ const CoinSelector = ({
       id: 'plain',
       type: 'default',
       name: 'Classic',
-      headsImage: '/Images/Coins/plainh.png',
-      tailsImage: '/Images/Coins/plaint.png'
+      headsImage: '/coins/plainh.png',
+      tailsImage: '/coins/plaint.png'
     },
     {
       id: 'skull',
       type: 'default', 
       name: 'Skull',
-      headsImage: '/Images/Coins/skullh.png',
-      tailsImage: '/Images/Coins/skullt.png'
+      headsImage: '/coins/skullh.png',
+      tailsImage: '/coins/skullt.png'
     },
     {
       id: 'trump',
       type: 'default',
       name: 'Trump',
-      headsImage: '/Images/Coins/trumpheads.webp',
-      tailsImage: '/Images/Coins/trumptails.webp'
+      headsImage: '/coins/trumpheads.webp',
+      tailsImage: '/coins/trumptails.webp'
     },
     {
       id: 'mario',
       type: 'default',
       name: 'Mario Bros',
-      headsImage: '/Images/Coins/mario.png',
-      tailsImage: '/Images/Coins/luigi.png'
+      headsImage: '/coins/mario.png',
+      tailsImage: '/coins/luigi.png'
     }
   ]
 
@@ -65,7 +65,21 @@ const CoinSelector = ({
 
   const handleCoinSelect = (coin) => {
     setSelectedCoinType(coin.id)
-    onCoinSelect(coin)
+    
+    // For default coins, only send the essential data (not large image data)
+    if (coin.type === 'default') {
+      const optimizedCoin = {
+        id: coin.id,
+        type: coin.type,
+        name: coin.name,
+        headsImage: coin.headsImage, // These are just paths, not large data
+        tailsImage: coin.tailsImage
+      }
+      onCoinSelect(optimizedCoin)
+    } else {
+      // For custom coins, send the full data (which includes base64 images)
+      onCoinSelect(coin)
+    }
   }
 
   const hasCustomCoin = customHeadsImage && customTailsImage
