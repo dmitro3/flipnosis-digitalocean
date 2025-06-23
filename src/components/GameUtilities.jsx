@@ -525,7 +525,7 @@ export const LiveScoreDisplay = ({ gameState }) => {
   )
 }
 
-// Player Card Component
+// Live Player Card Component - CLEANED UP
 export const LivePlayerCard = ({ 
   player, 
   isCurrentUser, 
@@ -535,67 +535,67 @@ export const LivePlayerCard = ({
   score = 0,
   gamePhase,
   isActiveTurn = false,
-  spectatorMode = false,
   playerChoice = null
 }) => {
-  const isPlayer1 = playerNumber === 1
-  const cardColor = isPlayer1 ? theme.colors.neonPink : theme.colors.neonBlue
+  if (!player && !nft && !cryptoAmount) {
+    return (
+      <div style={{
+        padding: '1rem',
+        borderRadius: '1rem',
+        border: '2px dashed rgba(255, 255, 255, 0.3)',
+        background: 'rgba(255, 255, 255, 0.05)',
+        textAlign: 'center',
+        minHeight: '200px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          fontSize: '3rem',
+          opacity: 0.5,
+          marginBottom: '0.5rem'
+        }}>
+          ⏳
+        </div>
+        <div style={{ color: theme.colors.textSecondary }}>
+          Waiting for player...
+        </div>
+      </div>
+    )
+  }
+
+  const cardColor = playerNumber === 1 ? theme.colors.neonPink : theme.colors.neonBlue
   
   return (
     <div style={{
-      background: 'rgba(0, 0, 0, 0.3)',
-      border: isCurrentUser ? `2px solid ${cardColor}` : '1px solid rgba(255,255,255,0.1)',
+      background: isCurrentUser ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+      border: `2px solid ${isCurrentUser ? '#FFD700' : cardColor}`,
       borderRadius: '1rem',
       padding: '1rem',
-      animation: isActiveTurn ? 'playerReady 1s infinite' : 'none'
+      transition: 'all 0.3s ease',
+      boxShadow: isActiveTurn ? `0 0 20px ${cardColor}` : 'none'
     }}>
-      <div style={{ textAlign: 'center' }}>
-        {/* Player Header */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}>
+        {/* Player indicator */}
         <div style={{
-          padding: '1rem',
-          background: isCurrentUser ? 
-            `linear-gradient(45deg, ${cardColor}, ${isPlayer1 ? theme.colors.neonPurple : theme.colors.neonGreen})` : 
-            'rgba(255,255,255,0.1)',
-          borderRadius: '1rem',
-          marginBottom: '1rem'
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '1rem',
+          color: cardColor,
+          fontWeight: 'bold'
         }}>
-          <h3 style={{ color: 'white', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-            PLAYER {playerNumber} {isCurrentUser && '(YOU)'}
-          </h3>
-          <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-            {player ? `${player.slice(0, 6)}...${player.slice(-4)}` : 'Waiting...'}
-          </div>
-          
-          {/* Player Choice Display */}
-          {playerChoice && (
-            <div style={{
-              marginTop: '0.5rem',
-              padding: '0.25rem 0.75rem',
-              background: playerChoice === 'heads' ? theme.colors.neonPink : theme.colors.neonBlue,
-              borderRadius: '1rem',
-              fontSize: '0.75rem',
-              fontWeight: 'bold'
-            }}>
-              {playerChoice === 'heads' ? '👑 HEADS' : '💎 TAILS'}
-            </div>
-          )}
-          
-          {isActiveTurn && gamePhase === 'round_active' && (
-            <div style={{
-              marginTop: '0.5rem',
-              padding: '0.25rem 0.75rem',
-              background: theme.colors.statusSuccess,
-              borderRadius: '1rem',
-              fontSize: '0.75rem',
-              fontWeight: 'bold',
-              animation: 'powerPulse 1s ease-in-out infinite'
-            }}>
-              YOUR TURN
-            </div>
-          )}
+          <span>Player {playerNumber}</span>
+          {isCurrentUser && <span>👑</span>}
+          {isActiveTurn && <span>⚡</span>}
         </div>
         
-        {/* NFT or Crypto Display */}
+        {/* NFT/Crypto display */}
         <div style={{ position: 'relative', marginBottom: '1rem' }}>
           {nft ? (
             <img
@@ -644,46 +644,6 @@ export const LivePlayerCard = ({
   )
 }
 
-// Spectator Counter
-export const SpectatorCounter = ({ count, isLive = false }) => {
-  if (count === 0) return null
-  
-  return (
-    <div style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      background: 'rgba(0, 191, 255, 0.1)',
-      padding: '0.5rem 1rem',
-      borderRadius: '1rem',
-      border: '1px solid rgba(0, 191, 255, 0.3)'
-    }}>
-      <span style={{ 
-        fontSize: '1rem',
-        animation: isLive ? 'livePulse 2s infinite' : 'none'
-      }}>
-        👥
-      </span>
-      <span style={{ 
-        color: theme.colors.neonBlue,
-        fontWeight: 'bold',
-        fontSize: '0.875rem'
-      }}>
-        {count} watching
-      </span>
-      {isLive && (
-        <div style={{
-          width: '8px',
-          height: '8px',
-          background: '#ff0000',
-          borderRadius: '50%',
-          animation: 'livePulse 1s infinite'
-        }} />
-      )}
-    </div>
-  )
-}
-
 // Round Result Display
 export const LiveRoundResult = ({ 
   flipResult, 
@@ -694,82 +654,63 @@ export const LiveRoundResult = ({
 }) => {
   if (!flipResult) return null
   
+  const resultColor = flipResult === 'heads' ? theme.colors.neonBlue : theme.colors.neonPink
+  const winColor = isWinner ? theme.colors.statusSuccess : theme.colors.statusError
+  
   return (
-    <div style={{ 
-      textAlign: 'center', 
-      background: `linear-gradient(45deg, ${theme.colors.neonPink}20, ${theme.colors.neonBlue}20)`,
-      border: `2px solid ${theme.colors.neonYellow}`,
-      borderRadius: '1rem',
+    <div style={{
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      background: 'rgba(0, 0, 0, 0.9)',
       padding: '2rem',
-      marginTop: '2rem',
-      animation: 'resultReveal 0.5s ease-out'
+      borderRadius: '1rem',
+      border: `2px solid ${resultColor}`,
+      textAlign: 'center',
+      zIndex: 1000,
+      minWidth: '300px'
     }}>
       <div style={{
-        fontSize: '4rem',
-        marginBottom: '1rem',
-        animation: 'resultReveal 1s ease-out'
+        fontSize: '3rem',
+        marginBottom: '1rem'
       }}>
-        {flipResult === 'heads' ? '👑' : '💎'}
+        {flipResult === 'heads' ? '👑' : '🗲'}
       </div>
       
-      <h3 style={{ 
-        fontSize: '2rem', 
+      <h2 style={{
+        color: resultColor,
         marginBottom: '1rem',
-        color: theme.colors.neonYellow,
-        textShadow: `0 0 10px ${theme.colors.neonYellow}`
+        textTransform: 'uppercase'
       }}>
-        RESULT: {flipResult.toUpperCase()}!
-      </h3>
-
-      {playerChoice && (
-        <p style={{ 
-          color: theme.colors.textSecondary,
-          fontSize: '1rem',
-          marginBottom: '1rem'
-        }}>
-          {isCurrentUser ? 'You' : 'Opponent'} chose: {playerChoice.toUpperCase()}
-        </p>
-      )}
+        {flipResult}
+      </h2>
       
-      <p style={{ 
-        color: isWinner ? theme.colors.statusSuccess : theme.colors.statusError,
-        fontSize: '1.25rem',
-        fontWeight: 'bold'
+      <div style={{
+        color: winColor,
+        fontSize: '1.5rem',
+        fontWeight: 'bold',
+        marginBottom: '0.5rem'
       }}>
-        {isWinner ? '🎉 ROUND WON!' : '💔 ROUND LOST'}
+        {isWinner ? '🎉 YOU WIN!' : '💔 YOU LOSE'}
+      </div>
+      
+      <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+        You chose: {playerChoice}
       </p>
-      
-      {isWinner && (
-        <div style={{
-          fontSize: '2rem',
-          animation: 'winCelebration 1s ease-in-out infinite'
-        }}>
-          🎉
-        </div>
-      )}
     </div>
   )
 }
 
-// Game Instructions for dual-player system
-export const DualGameInstructions = ({ isPlayerTurn, gamePhase, isPlayer, playerNumber, spectatorMode }) => {
-  if (spectatorMode) {
-    return (
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-          Watch both players charge power and flip the coin!
-        </p>
-      </div>
-    )
-  }
-
+// Game Instructions - SIMPLIFIED (removed spectatorMode)
+export const DualGameInstructions = ({ isPlayerTurn, gamePhase, isPlayer, playerNumber }) => {
   if (gamePhase !== 'round_active') return null
   
   if (!isPlayer) {
     return (
       <div style={{ marginTop: '2rem', textAlign: 'center' }}>
         <p style={{ color: theme.colors.textSecondary }}>
-          Watch the players battle it out!
+          Game in progress - join to play!
         </p>
       </div>
     )
@@ -802,7 +743,7 @@ export const DualGameInstructions = ({ isPlayerTurn, gamePhase, isPlayer, player
       </div>
     </div>
   )
-} 
+}
 
 export const GoldGameInstructions = ({ 
   isPlayerTurn, 

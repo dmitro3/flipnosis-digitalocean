@@ -405,7 +405,6 @@ const FlipGame = () => {
   const navigate = useNavigate()
   const { publicClient, isMobile } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
-  // Removed useProfile hook - coins now come only from game data
   const { isFullyConnected, connectionError, address, walletClient } = useWalletConnection()
 
   // API URL
@@ -416,13 +415,17 @@ const FlipGame = () => {
   const [loading, setLoading] = useState(true)
   const [joiningGame, setJoiningGame] = useState(false)
 
+  // NEW: Enhanced join state management
+  const [joinInProgress, setJoinInProgress] = useState(false)
+  const [joiningPlayer, setJoiningPlayer] = useState(null)
+
   // WebSocket state - SINGLE SOURCE OF TRUTH for game
   const [socket, setSocket] = useState(null)
   const [connected, setConnected] = useState(false)
   const [gameState, setGameState] = useState(null)
   const [flipAnimation, setFlipAnimation] = useState(null)
   const [roundResult, setRoundResult] = useState(null)
-  const [lastFlipResult, setLastFlipResult] = useState(null) // Track the last flip result
+  const [lastFlipResult, setLastFlipResult] = useState(null)
 
   // Custom coin images
   const [customHeadsImage, setCustomHeadsImage] = useState(null)
@@ -449,24 +452,68 @@ const FlipGame = () => {
   // Add these state variables to your existing FlipGame component
   const [offeredNFTs, setOfferedNFTs] = useState([])
   const [acceptedOffer, setAcceptedOffer] = useState(null)
+  const [challengerPaid, setChallengerPaid] = useState(false)
   const [isNFTGame, setIsNFTGame] = useState(false)
 
-  // Add new state variables
+  // Choice animation states
+  const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
+  const [choiceAnimationText, setChoiceAnimationText] = useState('')
+  const [choiceAnimationColor, setChoiceAnimationColor] = useState('#00FF41')
+
+  // Auto-flip animation state
+  const [showAutoFlipAnimation, setShowAutoFlipAnimation] = useState(false)
+
+  // NFT modal states (needed for NFT vs NFT games)
   const [showNFTOfferModal, setShowNFTOfferModal] = useState(false)
   const [showNFTVerificationModal, setShowNFTVerificationModal] = useState(false)
   const [showNFTDetailsModal, setShowNFTDetailsModal] = useState(false)
   const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [nftOffer, setNftOffer] = useState(null)
+  const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
 
-  // Add new state variables for choice animation
-  const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
-  const [choiceAnimationText, setChoiceAnimationText] = useState('')
-  const [choiceAnimationColor, setChoiceAnimationColor] = useState('')
-
-  // Add state for auto-flip animation
-  const [showAutoFlipAnimation, setShowAutoFlipAnimation] = useState(false)
-  const previousTurnTimeLeftRef = useRef(null)
+  // NEW: Join button state calculation
+  const getJoinButtonState = () => {
+    if (!gameData) return { text: 'Loading...', disabled: true, color: 'gray' }
+    
+    // If there's a join in progress
+    if (joinInProgress || gameState?.joinInProgress) {
+      const playerJoining = joiningPlayer || gameState?.joiningPlayer
+      if (playerJoining === address) {
+        return { text: '⏳ Joining...', disabled: true, color: 'yellow' }
+      } else {
+        return { text: '👤 Player Joining...', disabled: true, color: 'blue' }
+      }
+    }
+    
+    // If game already has joiner
+    if (gameData.joiner || gameState?.joiner) {
+      return { text: 'Game Full', disabled: true, color: 'gray' }
+    }
+    
+    // If creator tries to join own game
+    if (gameData.creator === address) {
+      return { text: 'Your Game', disabled: true, color: 'gray' }
+    }
+    
+    // If game is not waiting
+    if (gameData.status !== 'waiting' && gameState?.phase !== 'waiting') {
+      return { text: 'In Progress', disabled: true, color: 'gray' }
+    }
+    
+    // If user is joining
+    if (joiningGame) {
+      return { text: '⏳ Processing...', disabled: true, color: 'yellow' }
+    }
+    
+    // If not connected
+    if (!isFullyConnected) {
+      return { text: 'Connect Wallet', disabled: true, color: 'red' }
+    }
+    
+    // Ready to join
+    return { text: 'Join Flip', disabled: false, color: 'green' }
+  }
 
   const videoRef = useRef(null);
   const [videoError, setVideoError] = useState(false);
@@ -920,40 +967,66 @@ const FlipGame = () => {
       hasAddress: !!address,
       isJoining: joiningGame,
       isFullyConnected: isFullyConnected,
-      connectionError
+      joinInProgress,
+      joiningPlayer
     })
 
-    if (!gameData || !walletClient || !address || joiningGame || !isFullyConnected) {
-      console.log('❌ Cannot join game:', { 
-        hasGameData: !!gameData, 
-        hasWalletClient: !!walletClient, 
-        hasAddress: !!address, 
-        isJoining: joiningGame,
-        isFullyConnected: isFullyConnected
-      })
-      showError(connectionError || 'Please ensure your wallet is connected properly')
+    const buttonState = getJoinButtonState()
+    if (buttonState.disabled) {
+      console.log('❌ Cannot join game:', buttonState.text)
+      showError(buttonState.text)
       return
     }
 
     try {
       setJoiningGame(true)
+      
+      // Step 1: Start the join process (claim slot)
+      console.log('🎯 Step 1: Starting join process...')
+      const startJoinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/start-join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerAddress: address })
+      })
+      
+      if (!startJoinResponse.ok) {
+        const error = await startJoinResponse.json()
+        throw new Error(error.error || 'Failed to start join process')
+      }
+      
+      // Also notify via WebSocket for real-time updates
+      if (socket) {
+        socket.send(JSON.stringify({
+          type: 'start_join_process',
+          gameId,
+          address
+        }))
+      }
+      
+      console.log('✅ Join process started, now processing payment...')
       showInfo('Processing payment...')
       
+      // Step 2: Process payment
       const paymentResult = await PaymentService.calculateETHAmount(gameData.priceUSD)
-      
-      // Use walletClient for transaction
       const feeRecipient = PaymentService.getFeeRecipient()
       
-      // Send transaction using walletClient
       const txResult = await PaymentService.sendTransaction(walletClient, feeRecipient, paymentResult.ethAmount.toString())
       
       if (!txResult.success) {
+        // Cancel join process if payment fails
+        if (socket) {
+          socket.send(JSON.stringify({
+            type: 'cancel_join_process',
+            gameId,
+            address
+          }))
+        }
         throw new Error('Transaction failed: ' + txResult.error)
       }
       
       showInfo('Confirming payment...')
       
-      // Wait for transaction confirmation
+      // Step 3: Wait for transaction confirmation
       let receipt = null
       let attempts = 0
       while (!receipt && attempts < 30) {
@@ -971,10 +1044,19 @@ const FlipGame = () => {
       }
       
       if (!receipt) {
+        // Cancel join process if payment confirmation fails
+        if (socket) {
+          socket.send(JSON.stringify({
+            type: 'cancel_join_process',
+            gameId,
+            address
+          }))
+        }
         throw new Error('Transaction confirmation timeout')
       }
       
-      // Update game in database first
+      // Step 4: Complete the join process
+      console.log('🎯 Step 4: Completing join process...')
       const joinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/simple-join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -987,13 +1069,12 @@ const FlipGame = () => {
       
       if (!joinResponse.ok) {
         const error = await joinResponse.json()
-        throw new Error(error.error || 'Failed to join game')
+        throw new Error(error.error || 'Failed to complete join')
       }
       
-      // Update local state
+      // Step 5: Update local state and notify WebSocket
       setGameData(prev => ({ ...prev, joiner: address, status: 'joined' }))
       
-      // Tell server via WebSocket
       if (socket) {
         socket.send(JSON.stringify({
           type: 'join_game',
@@ -1071,7 +1152,7 @@ const FlipGame = () => {
     }
   }, [gameData])
 
-  // Enhanced WebSocket message handler (add to existing useEffect)
+  // Enhanced WebSocket message handler
   useEffect(() => {
     if (!socket) return
 
@@ -1083,21 +1164,53 @@ const FlipGame = () => {
         switch (data.type) {
           case 'game_state':
             setGameState(data)
+            // Update local join state from game state
+            if (data.joinInProgress !== undefined) {
+              setJoinInProgress(data.joinInProgress)
+              setJoiningPlayer(data.joiningPlayer)
+            }
+            break
+
+          case 'game_info':
+            // Basic game info for non-players
+            setJoinInProgress(data.joinInProgress || false)
+            setJoiningPlayer(data.joiningPlayer || null)
+            break
+
+          case 'join_state_update':
+            // Real-time join state updates
+            setJoinInProgress(data.joinInProgress || false)
+            setJoiningPlayer(data.joiningPlayer || null)
+            // Update gameData if joiner changed
+            if (data.joiner && data.joiner !== gameData?.joiner) {
+              setGameData(prev => ({ ...prev, joiner: data.joiner }))
+            }
+            break
+
+          case 'join_process_response':
+            if (data.success) {
+              showInfo('Join process started - processing payment...')
+            } else {
+              showError(data.error || 'Failed to start join process')
+              setJoiningGame(false)
+            }
             break
             
           case 'flip_animation':
+            console.log('🎬 Flip animation received:', data)
             setFlipAnimation(data)
             setRoundResult(null)
             break
             
           case 'round_result':
+            console.log('🏁 Round result received:', data)
             setRoundResult(data)
-            setLastFlipResult(data.result) // Save the last flip result
-            setFlipAnimation(null) // Clear the animation so coin uses roundResult
+            setLastFlipResult(data.result)
+            setFlipAnimation(null)
             setTimeout(() => setRoundResult(null), 4000)
             break
 
-          // NEW: Handle NFT offers
+          // NFT offer handling
           case 'nft_offer_received':
             console.log('🎯 NFT offer received:', data.offer)
             setOfferedNFTs(prev => [...prev, data.offer])
@@ -1106,25 +1219,30 @@ const FlipGame = () => {
             }
             break
 
-          // NEW: Handle offer acceptance
           case 'nft_offer_accepted':
             console.log('✅ NFT offer accepted:', data.acceptedOffer)
             setAcceptedOffer(data.acceptedOffer)
             
-            // Show payment prompt to the challenger
             if (data.acceptedOffer.offererAddress === address) {
-              handlePaymentForAcceptedOffer(data.acceptedOffer)
+              showInfo('Your NFT offer was accepted! Please pay to join the battle.')
             }
             break
 
-          // NEW: Handle game start after NFT payment
-          case 'nft_game_ready':
-            console.log('🎮 NFT game ready to start')
-            showSuccess('Battle payment confirmed! Game starting...')
+          case 'challenger_payment_confirmed':
+            console.log('💰 Challenger payment confirmed')
+            setChallengerPaid(true)
+            showSuccess('Payment confirmed! Game starting...')
             break
             
           case 'error':
+            console.log('❌ Error received:', data.error)
             showError(data.error)
+            setJoiningGame(false)
+            break
+
+          case 'chat_message':
+            // Only players receive chat messages now
+            console.log('💬 Chat message received:', data)
             break
         }
       } catch (error) {
@@ -1134,7 +1252,7 @@ const FlipGame = () => {
 
     socket.addEventListener('message', handleMessage)
     return () => socket.removeEventListener('message', handleMessage)
-  }, [socket, address, isCreator])
+  }, [socket, address, gameData, isCreator, showError, showInfo, showSuccess])
 
   // NEW: Handle payment for accepted NFT offer
   const handlePaymentForAcceptedOffer = async (offer) => {
@@ -1316,6 +1434,27 @@ const FlipGame = () => {
     }
   }
 
+  // NFT Modal Handlers
+  const handleNFTOfferAccepted = (offer) => {
+    console.log('NFT offer accepted:', offer)
+    setAcceptedOffer(offer)
+    setShowNFTOfferModal(false)
+    showSuccess('NFT offer accepted!')
+  }
+
+  const handleNFTOfferRejected = () => {
+    console.log('NFT offer rejected')
+    setShowNFTOfferModal(false)
+    showInfo('NFT offer rejected')
+  }
+
+  const handleNFTVerificationComplete = (nft) => {
+    console.log('NFT verification complete:', nft)
+    setSelectedNFT(nft)
+    setShowNFTVerificationModal(false)
+    showSuccess('NFT verified successfully!')
+  }
+
   const renderNFTOfferModal = () => {
     if (!showNFTOfferModal) return null
 
@@ -1461,11 +1600,7 @@ const FlipGame = () => {
     )
   }
 
-  const canJoin = gameData && 
-                  !gameData.joiner && 
-                  gameData.creator !== address && 
-                  gameData.status === 'waiting' &&
-                  isFullyConnected
+  // REMOVED: canJoin variable - now using getJoinButtonState() for enhanced logic
 
   return (
     <ThemeProvider theme={theme}>
@@ -1520,15 +1655,27 @@ const FlipGame = () => {
                 <MobileNavButton onClick={() => setIsChatOpen(!isChatOpen)}>
                   <span>💬</span> Chat
                 </MobileNavButton>
-                {canJoin && (
-                  <MobileNavButton 
-                    isJoinButton 
-                    onClick={handleJoinGame}
-                    disabled={joiningGame || !isFullyConnected}
-                  >
-                    {joiningGame ? '⏳ Joining...' : 'Join Flip'}
-                  </MobileNavButton>
-                )}
+                {!isPlayer && (() => {
+                  const buttonState = getJoinButtonState()
+                  return (
+                    <MobileNavButton 
+                      isJoinButton 
+                      onClick={handleJoinGame}
+                      disabled={buttonState.disabled}
+                      style={{
+                        background: buttonState.disabled ? 
+                          'rgba(100, 100, 100, 0.5)' : 
+                          buttonState.color === 'green' ? 'linear-gradient(45deg, #00FF41, #00BF31)' :
+                          buttonState.color === 'yellow' ? 'linear-gradient(45deg, #FFD700, #FFA500)' :
+                          buttonState.color === 'blue' ? 'linear-gradient(45deg, #00BFFF, #1E90FF)' :
+                          'rgba(100, 100, 100, 0.5)',
+                        opacity: buttonState.disabled ? 0.6 : 1
+                      }}
+                    >
+                      {buttonState.text}
+                    </MobileNavButton>
+                  )
+                })()}
               </MobileBottomNav>
 
               {/* Mobile Info Panel */}
@@ -2863,31 +3010,49 @@ const FlipGame = () => {
                 )}
 
                 {/* JOIN GAME BUTTON - Only show if game is waiting and user is not creator */}
-                {gameData?.status === 'waiting' && !isCreator && !isJoiner && (
+                {/* Enhanced Join Button */}
+                {!isPlayer && (
                   <div style={{
                     marginTop: '2rem',
                     textAlign: 'center'
                   }}>
-                    <button
-                      onClick={handleJoinGame}
-                      disabled={joiningGame || !isFullyConnected}
-                      style={{
-                        background: joiningGame ? 
-                          'rgba(255, 20, 147, 0.5)' : 
-                          'linear-gradient(45deg, #FF1493, #FF69B4)',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '1.5rem 3rem',
-                        borderRadius: '1rem',
-                        fontSize: '1.3rem',
-                        fontWeight: 'bold',
-                        cursor: joiningGame ? 'not-allowed' : 'pointer',
-                        width: '100%',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      {joiningGame ? '⏳ Joining...' : 'Join Flip'}
-                    </button>
+                    {(() => {
+                      const buttonState = getJoinButtonState()
+                      const getButtonColor = () => {
+                        switch (buttonState.color) {
+                          case 'green': return 'linear-gradient(45deg, #00FF41, #00BF31)'
+                          case 'yellow': return 'linear-gradient(45deg, #FFD700, #FFA500)'
+                          case 'blue': return 'linear-gradient(45deg, #00BFFF, #1E90FF)'
+                          case 'red': return 'linear-gradient(45deg, #FF4444, #CC0000)'
+                          default: return 'rgba(100, 100, 100, 0.5)'
+                        }
+                      }
+                      
+                      return (
+                        <button
+                          onClick={handleJoinGame}
+                          disabled={buttonState.disabled}
+                          style={{
+                            background: buttonState.disabled ? 
+                              'rgba(100, 100, 100, 0.5)' : 
+                              getButtonColor(),
+                            color: '#fff',
+                            border: 'none',
+                            padding: '1.5rem 3rem',
+                            borderRadius: '1rem',
+                            fontSize: '1.3rem',
+                            fontWeight: 'bold',
+                            cursor: buttonState.disabled ? 'not-allowed' : 'pointer',
+                            width: '100%',
+                            transition: 'all 0.3s ease',
+                            opacity: buttonState.disabled ? 0.6 : 1,
+                            boxShadow: !buttonState.disabled ? '0 0 20px rgba(0, 255, 65, 0.3)' : 'none'
+                          }}
+                        >
+                          {buttonState.text}
+                        </button>
+                      )
+                    })()}
                   </div>
                 )}
               </div>
@@ -2979,18 +3144,21 @@ const FlipGame = () => {
             </div>
           )}
 
-          {/* Spectator Mode Message */}
-          {!isPlayer && (
+          {/* Game Access Message */}
+          {!isPlayer && gameState?.phase && gameState.phase !== 'waiting' && (
             <div style={{
               marginTop: '2rem',
               textAlign: 'center',
               padding: '1rem',
-              background: 'rgba(255, 215, 0, 0.1)',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
+              background: 'rgba(0, 191, 255, 0.1)',
+              border: '1px solid rgba(0, 191, 255, 0.3)',
               borderRadius: '1rem'
             }}>
-              <p style={{ color: '#FFD700', fontWeight: 'bold', margin: 0 }}>
-                👀 SPECTATING
+              <p style={{ color: '#00BFFF', fontWeight: 'bold', margin: 0 }}>
+                🎮 GAME IN PROGRESS
+              </p>
+              <p style={{ color: '#888', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
+                Join a game to see the action!
               </p>
             </div>
           )}

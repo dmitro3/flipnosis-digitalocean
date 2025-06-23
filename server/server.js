@@ -259,8 +259,8 @@ app.post('/api/debug/init', async (req, res) => {
         entry_fee_hash TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         started_at DATETIME,
-        completed_at DATETIME,
-        total_spectators INTEGER DEFAULT 0
+        completed_at DATETIME
+        -- REMOVED: total_spectators (no longer tracking spectators)
       )`, (err) => {
         if (err) {
           console.error('❌ Error creating games table:', err)
@@ -364,8 +364,8 @@ function initializeDatabase() {
       coin TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       started_at DATETIME,
-      completed_at DATETIME,
-      total_spectators INTEGER DEFAULT 0
+      completed_at DATETIME
+      -- REMOVED: total_spectators (no longer tracking spectators)
     )`, (err) => {
       if (err) {
         console.error('❌ Error creating games table:', err)
@@ -608,10 +608,38 @@ const dbHelpers = {
   }
 }
 
+// Add global game viewers tracking (before GameSession class)
+const gameViewers = new Map() // gameId -> Set of WebSocket connections
+
+// Global function to broadcast to all viewers of a game
+function broadcastToGameViewers(gameId, message) {
+  const viewers = gameViewers.get(gameId)
+  if (!viewers) return
+  
+  const deadViewers = new Set()
+  viewers.forEach(ws => {
+    if (ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify(message))
+      } catch (error) {
+        console.error('❌ Error broadcasting to viewer:', error)
+        deadViewers.add(ws)
+      }
+    } else {
+      deadViewers.add(ws)
+    }
+  })
+  
+  // Clean up dead connections
+  deadViewers.forEach(ws => {
+    viewers.delete(ws)
+  })
+}
+
 class GameSession {
   constructor(gameId) {
-    console.log('🎮 Creating new GameSession:', gameId)
     this.gameId = gameId
+    this.clients = new Set() // Only actual players now
     this.creator = null
     this.joiner = null
     this.phase = 'waiting'
@@ -620,49 +648,58 @@ class GameSession {
     this.creatorWins = 0
     this.joinerWins = 0
     this.winner = null
-    
-    // Simple power system
     this.creatorPower = 0
     this.joinerPower = 0
     this.chargingPlayer = null
     this.currentPlayer = null
-    
-    // Player choices for each round
+    this.isFlipInProgress = false
     this.creatorChoice = null
     this.joinerChoice = null
-    
-    // Control flags
-    this.isFlipInProgress = false
-    this.gameData = null
-    this.clients = new Set()
-    this.lastActionTime = Date.now()
-    this.roundCompleted = false
-    this.syncedFlip = null
-    
-    // Timer system
     this.turnTimer = null
-    this.turnTimeLeft = 20 // 20 seconds per turn
+    this.turnTimeLeft = 20
+    this.powerInterval = null
+    this.preCalculatedResult = null
     
-    // NEW: NFT vs NFT properties
-    this.gameType = 'nft-vs-crypto' // Default
-    this.offeredNFTs = [] // Array of NFT offers
-    this.acceptedOffer = null // The accepted NFT offer
-    this.challengerPaid = false // Whether challenger paid their fee
+    // NEW: Join state management
+    this.joinInProgress = false
+    this.joiningPlayer = null
     
-    // NEW: Profile data
+    // NFT vs NFT fields
+    this.gameType = 'crypto-vs-crypto'
+    this.offeredNFTs = []
+    this.acceptedOffer = null
+    this.challengerPaid = false
+    
+    // Player profiles
     this.creatorProfile = null
     this.joinerProfile = null
     
-    console.log('✅ GameSession created with NFT support')
+    // Coin customization
+    this.coin = null
   }
 
-  addClient(ws) {
-    console.log('🔌 Adding client to game:', {
-      gameId: this.gameId,
-      currentClients: this.clients.size,
-      phase: this.phase
-    })
-    this.clients.add(ws)
+  addClient(ws, playerAddress) {
+    // Only add if they're a player in this game
+    if (playerAddress === this.creator || playerAddress === this.joiner) {
+      console.log('🔌 Adding player client to game:', {
+        gameId: this.gameId,
+        playerAddress,
+        isCreator: playerAddress === this.creator,
+        isJoiner: playerAddress === this.joiner
+      })
+      this.clients.add(ws)
+    } else {
+      console.log('❌ Rejected non-player client:', {
+        gameId: this.gameId,
+        playerAddress,
+        creator: this.creator,
+        joiner: this.joiner
+      })
+      ws.send(JSON.stringify({ 
+        type: 'error', 
+        error: 'Only game players can connect to game session' 
+      }))
+    }
   }
 
   removeClient(ws) {
@@ -691,30 +728,29 @@ class GameSession {
       chargingPlayer: this.chargingPlayer,
       currentPlayer: this.currentPlayer,
       isFlipInProgress: this.isFlipInProgress,
-      spectators: this.clients.size,
       creatorChoice: this.creatorChoice,
       joinerChoice: this.joinerChoice,
       gameType: this.gameType,
       offeredNFTs: this.offeredNFTs,
       acceptedOffer: this.acceptedOffer,
       challengerPaid: this.challengerPaid,
-      // NEW: Include player profiles
       creatorProfile: this.creatorProfile,
       joinerProfile: this.joinerProfile,
-      turnTimeLeft: this.turnTimeLeft, // Add timer to state
-      coin: this.coin // NEW: Add coin data to game state
+      turnTimeLeft: this.turnTimeLeft,
+      coin: this.coin,
+      joinInProgress: this.joinInProgress,
+      joiningPlayer: this.joiningPlayer
     }
 
     console.log('📢 Broadcasting game state:', {
       gameId: this.gameId,
       phase: this.phase,
       currentPlayer: this.currentPlayer,
-      creatorChoice: this.creatorChoice,
-      joinerChoice: this.joinerChoice,
-      clients: this.clients.size
+      clients: this.clients.size,
+      joinInProgress: this.joinInProgress
     })
 
-    // Safely broadcast to all clients
+    // Safely broadcast to all clients (only players now)
     const deadClients = new Set()
     
     this.clients.forEach(client => {
@@ -736,6 +772,84 @@ class GameSession {
     })
   }
 
+  // NEW: Start join process
+  async startJoinProcess(address) {
+    if (this.joinInProgress) {
+      return { success: false, error: 'Another player is already joining' }
+    }
+    
+    if (this.joiner) {
+      return { success: false, error: 'Game already has a second player' }
+    }
+    
+    if (this.creator === address) {
+      return { success: false, error: 'Creator cannot join their own game' }
+    }
+    
+    if (this.phase !== 'waiting') {
+      return { success: false, error: 'Game is not accepting new players' }
+    }
+    
+    this.joinInProgress = true
+    this.joiningPlayer = address
+    
+    // Broadcast updated state to show "Player Joining..." 
+    this.broadcastToAll()
+    
+    console.log('🎯 Join process started for:', address)
+    return { success: true }
+  }
+
+  // NEW: Complete join process
+  async completeJoinProcess(address, entryFeeHash) {
+    if (!this.joinInProgress || this.joiningPlayer !== address) {
+      return { success: false, error: 'No valid join process for this player' }
+    }
+    
+    this.joiner = address
+    this.phase = 'ready'
+    this.joinInProgress = false
+    this.joiningPlayer = null
+    
+    console.log('✅ Join process completed for:', address)
+    this.broadcastToAll()
+    
+    // Auto-start the choosing phase after 2 seconds
+    setTimeout(() => {
+      if (this.phase === 'ready' && this.creator && this.joiner) {
+        console.log('🚀 AUTO-STARTING game - entering choosing phase WITH TIMER')
+        this.startGameWithTimer()
+      }
+    }, 2000)
+    
+    return { success: true }
+  }
+
+  // NEW: Cancel join process
+  async cancelJoinProcess(address) {
+    if (this.joinInProgress && this.joiningPlayer === address) {
+      this.joinInProgress = false
+      this.joiningPlayer = null
+      this.broadcastToAll()
+      console.log('❌ Join process cancelled for:', address)
+    }
+  }
+
+  // NEW: Broadcast to ALL potential viewers (not just players)
+  broadcastToAll() {
+    const state = {
+      type: 'join_state_update',
+      gameId: this.gameId,
+      joiner: this.joiner,
+      phase: this.phase,
+      joinInProgress: this.joinInProgress,
+      joiningPlayer: this.joiningPlayer
+    }
+
+    // This will be handled by the main WebSocket handler to broadcast to all viewers
+    broadcastToGameViewers(this.gameId, state)
+  }
+
   async setGameData(data) {
     this.gameData = data
     this.creator = data.creator
@@ -747,55 +861,6 @@ class GameSession {
       console.error('Error saving game:', error)
     }
     this.broadcastGameState()
-  }
-
-  async setJoiner(address, entryFeeHash) {
-    console.log('🎮 setJoiner called:', { 
-      address, 
-      currentPhase: this.phase,
-      creator: this.creator,
-      joiner: this.joiner
-    })
-    
-    // Only set if not already set
-    if (this.joiner) {
-      console.log('⚠️ Joiner already set:', this.joiner)
-      this.broadcastGameState()
-      return
-    }
-    
-    this.joiner = address
-    this.phase = 'ready'
-    
-    console.log('✅ Player 2 joined via WebSocket:', address)
-    console.log('🔄 Game state after join:', { 
-      phase: this.phase,
-      creator: this.creator,
-      joiner: this.joiner,
-      currentPlayer: this.currentPlayer
-    })
-    
-    this.broadcastGameState()
-    
-    // Auto-start the choosing phase after 2 seconds
-    console.log('⏰ Setting up auto-start timer...')
-    setTimeout(() => {
-      console.log('⏰ Auto-start timer fired:', {
-        currentPhase: this.phase,
-        hasCreator: !!this.creator,
-        hasJoiner: !!this.joiner
-      })
-      if (this.phase === 'ready' && this.creator && this.joiner) {
-        console.log('🚀 AUTO-STARTING game - entering choosing phase WITH TIMER')
-        this.startGameWithTimer()
-      } else {
-        console.log('⚠️ Auto-start conditions not met:', {
-          phase: this.phase,
-          creator: this.creator,
-          joiner: this.joiner
-        })
-      }
-    }, 2000)
   }
 
   async startGame() {
@@ -1427,43 +1492,66 @@ wss.on('connection', (ws) => {
 async function handleMessage(ws, data) {
   const { type, gameId } = data
 
-  console.log('📡 Received message:', { type, gameId, data })
-
-  let session = activeSessions.get(gameId)
-  if (!session && (type === 'connect_to_game' || type === 'join_game')) {
-    console.log('🎮 Creating new game session:', gameId)
-    session = new GameSession(gameId)
-    activeSessions.set(gameId, session)
-    
-    // Load existing game data
-    try {
-      const gameData = await dbHelpers.getGame(gameId)
-      if (gameData) {
-        console.log('📂 Loading existing game data:', gameData)
-        await session.loadFromDatabase()
-      }
-    } catch (error) {
-      console.error('Error loading game data:', error)
-    }
-  }
-
-  if (!session) {
-    console.error('❌ No session found for game:', gameId)
-    ws.send(JSON.stringify({ type: 'error', error: 'Game session not found' }))
+  if (!gameId) {
+    console.error('❌ No gameId provided')
+    ws.send(JSON.stringify({ type: 'error', error: 'Game ID required' }))
     return
   }
 
-  session.addClient(ws)
+  // Initialize game viewers if needed
+  if (!gameViewers.has(gameId)) {
+    gameViewers.set(gameId, new Set())
+  }
+
+  let session = activeSessions.get(gameId)
+  
+  if (!session) {
+    session = new GameSession(gameId)
+    await session.loadFromDatabase()
+    activeSessions.set(gameId, session)
+  }
 
   switch (type) {
     case 'connect_to_game':
-      console.log('🔗 Player connected:', { 
+      console.log('🔗 Connection request:', { 
         address: data.address,
         currentPhase: session.phase,
         creator: session.creator,
         joiner: session.joiner
       })
-      // Session automatically broadcasts state when client is added
+      
+      // Add to viewers for join state updates
+      gameViewers.get(gameId).add(ws)
+      
+      // If they're a player, add to game session
+      if (data.address === session.creator || data.address === session.joiner) {
+        session.addClient(ws, data.address)
+      } else {
+        // Send basic game info to non-players
+        ws.send(JSON.stringify({
+          type: 'game_info',
+          gameId: session.gameId,
+          creator: session.creator,
+          joiner: session.joiner,
+          phase: session.phase,
+          joinInProgress: session.joinInProgress,
+          joiningPlayer: session.joiningPlayer
+        }))
+      }
+      break
+
+    case 'start_join_process':
+      console.log('🎯 Starting join process:', {
+        address: data.address,
+        gameId
+      })
+      
+      const startResult = await session.startJoinProcess(data.address)
+      ws.send(JSON.stringify({
+        type: 'join_process_response',
+        success: startResult.success,
+        error: startResult.error
+      }))
       break
 
     case 'join_game':
@@ -1475,18 +1563,29 @@ async function handleMessage(ws, data) {
       })
       
       if (data.role === 'joiner' && data.entryFeeHash) {
-        console.log('🎯 Player 2 joining game')
-        await session.setJoiner(data.address, data.entryFeeHash)
+        console.log('🎯 Completing join process')
+        const joinResult = await session.completeJoinProcess(data.address, data.entryFeeHash)
+        if (joinResult.success) {
+          // Now add them as a player client
+          session.addClient(ws, data.address)
+        }
       } else if (data.role === 'creator') {
         console.log('🎯 Creator connecting to game')
         if (!session.creator) {
           session.creator = data.address
         }
-        session.broadcastGameState()
-      } else {
-        console.log('👀 Spectator viewing:', data.address)
+        session.addClient(ws, data.address)
         session.broadcastGameState()
       }
+      break
+
+    case 'cancel_join_process':
+      console.log('❌ Cancelling join process:', {
+        address: data.address,
+        gameId
+      })
+      
+      await session.cancelJoinProcess(data.address)
       break
 
     case 'player_choice':
@@ -1542,7 +1641,13 @@ async function handleMessage(ws, data) {
         return
       }
       
-      // Broadcast to all clients in this game
+      // Only allow players to chat
+      if (data.address !== session.creator && data.address !== session.joiner) {
+        ws.send(JSON.stringify({ type: 'error', error: 'Only players can chat' }))
+        return
+      }
+      
+      // Broadcast to all players in this game
       if (session) {
         const chatData = {
           type: 'chat_message',
@@ -1598,6 +1703,14 @@ async function handleMessage(ws, data) {
       ws.send(JSON.stringify({ type: 'error', error: 'Unknown message type' }))
       break
   }
+  
+  // Clean up viewer connection when WebSocket closes
+  ws.on('close', () => {
+    const viewers = gameViewers.get(gameId)
+    if (viewers) {
+      viewers.delete(ws)
+    }
+  })
 }
 
 // REST API endpoints for analytics
@@ -2124,4 +2237,125 @@ app.post('/api/nft/validate', async (req, res) => {
     console.error('API Error:', error)
     res.status(500).json({ error: 'Failed to validate NFT' })
   }
-}) 
+})
+
+// Enhanced join endpoint with race condition protection
+app.post('/api/games/:gameId/start-join', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { playerAddress } = req.body
+    
+    console.log('🎯 Starting join process for game:', { gameId, playerAddress })
+    
+    // Get or create session
+    let session = gameSessions.get(gameId)
+    if (!session) {
+      session = new GameSession(gameId)
+      await session.loadFromDatabase()
+      gameSessions.set(gameId, session)
+    }
+    
+    const result = await session.startJoinProcess(playerAddress)
+    
+    if (result.success) {
+      // Set a timeout to auto-cancel if not completed
+      setTimeout(async () => {
+        await session.cancelJoinProcess(playerAddress)
+      }, 60000) // 1 minute timeout
+      
+      res.json({ success: true, gameId })
+    } else {
+      res.status(400).json({ error: result.error })
+    }
+    
+  } catch (error) {
+    console.error('❌ Error starting join process:', error)
+    res.status(500).json({ error: 'Failed to start join process', details: error.message })
+  }
+})
+
+// Simple join endpoint - now works with the join process
+app.post('/api/games/:gameId/simple-join', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { joinerAddress, paymentTxHash, paymentAmount } = req.body
+    
+    console.log('🎮 Completing join for game:', {
+      gameId,
+      joinerAddress,
+      paymentTxHash,
+      paymentAmount
+    })
+    
+    // Get current game state
+    const game = await dbHelpers.getGame(gameId)
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Update database first
+    const updates = {
+      joiner: joinerAddress,
+      status: 'joined',
+      entry_fee_hash: paymentTxHash
+    }
+    
+    await dbHelpers.updateGame(gameId, updates)
+    
+    // Record the payment transaction
+    await dbHelpers.recordTransaction(
+      gameId,
+      joinerAddress,
+      'entry_fee',
+      paymentAmount,
+      paymentAmount / 2500, // Approximate ETH amount
+      paymentTxHash
+    )
+    
+    // Update session if exists
+    const session = gameSessions.get(gameId)
+    if (session) {
+      await session.completeJoinProcess(joinerAddress, paymentTxHash)
+    }
+    
+    console.log('✅ Join completed successfully:', gameId)
+    res.json({ success: true, gameId })
+    
+  } catch (error) {
+    console.error('❌ Error in simple join:', error)
+    res.status(500).json({ error: 'Failed to join game', details: error.message })
+  }
+})
+
+// Get join status endpoint
+app.get('/api/games/:gameId/join-status', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    
+    const session = gameSessions.get(gameId)
+    if (session) {
+      res.json({
+        joinInProgress: session.joinInProgress,
+        joiningPlayer: session.joiningPlayer,
+        joiner: session.joiner,
+        phase: session.phase
+      })
+    } else {
+      // Get from database
+      const game = await dbHelpers.getGame(gameId)
+      if (game) {
+        res.json({
+          joinInProgress: false,
+          joiningPlayer: null,
+          joiner: game.joiner,
+          phase: game.status === 'waiting' ? 'waiting' : game.status
+        })
+      } else {
+        res.status(404).json({ error: 'Game not found' })
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error getting join status:', error)
+    res.status(500).json({ error: 'Failed to get join status' })
+  }
+})

@@ -232,7 +232,7 @@ const Home = () => {
         winner: game.winner,
         creatorWins: game.creator_wins || 0,
         joinerWins: game.joiner_wins || 0,
-        spectators: game.total_spectators || 0,
+        // REMOVED: spectators count (no longer tracking spectators)
         challengerNFT: game.challenger_nft_name ? {
           name: game.challenger_nft_name,
           image: game.challenger_nft_image,

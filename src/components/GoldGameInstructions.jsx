@@ -6,7 +6,6 @@ const GoldGameInstructions = ({
   gamePhase, 
   isPlayer, 
   playerNumber, 
-  spectatorMode,
   currentPower = 0,
   playerChoice = null,
   currentRound = 1,
@@ -45,47 +44,152 @@ const GoldGameInstructions = ({
     return null
   }
 
+  // Render instructions based on game phase and player status
+  const renderInstructions = () => {
+    // If not a player, show simplified message
+    if (!isPlayer) {
+      return (
+        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+            Game in progress - join to participate!
+          </p>
+        </div>
+      )
+    }
+
+    // Player-specific instructions based on game phase
+    if (gamePhase === 'choosing') {
+      return (
+        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <p style={{ 
+            color: theme.colors.neonYellow, 
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            marginBottom: '0.5rem'
+          }}>
+            {isPlayerTurn ? 'YOUR TURN TO CHOOSE!' : 'WAITING FOR OPPONENT...'}
+          </p>
+          <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+            {isPlayerTurn ? 'Select heads or tails below' : 'Opponent is making their choice'}
+          </p>
+        </div>
+      )
+    }
+
+    if (gamePhase === 'round_active') {
+      return (
+        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <p style={{ 
+            color: theme.colors.statusSuccess, 
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            marginBottom: '0.5rem'
+          }}>
+            {isPlayerTurn ? 'CHARGE YOUR POWER!' : 'OPPONENT IS CHARGING...'}
+          </p>
+          <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            {isPlayerTurn ? 'Hold the coin to charge, release to flip!' : 'Wait for your opponent to flip'}
+          </p>
+          {isPlayerTurn && (
+            <p style={{ 
+              color: playerNumber === 1 ? theme.colors.neonPink : theme.colors.neonBlue, 
+              fontSize: '0.875rem',
+              fontWeight: 'bold'
+            }}>
+              You chose: {playerChoice?.toUpperCase() || 'NONE'}
+            </p>
+          )}
+        </div>
+      )
+    }
+
+    // Default instructions
+    return (
+      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <p style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
+          Game ready - waiting for next phase
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div style={{
-      marginTop: '2rem',
-      textAlign: 'center',
-      padding: '1.5rem',
-      background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
-      border: '2px solid rgba(255, 215, 0, 0.3)',
+      background: 'rgba(0, 0, 0, 0.3)',
       borderRadius: '1rem',
-      backdropFilter: 'blur(10px)'
+      padding: '1rem',
+      border: '1px solid rgba(255, 255, 255, 0.1)'
     }}>
-      {/* Game Info */}
+      {/* Score Display */}
       <div style={{
-        marginTop: '1.5rem',
-        padding: '1rem',
-        background: 'rgba(0, 0, 0, 0.2)',
-        borderRadius: '0.8rem',
-        border: '1px solid rgba(255, 215, 0, 0.2)'
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1rem'
       }}>
-        <h3 style={{
-          color: '#FFD700',
-          fontSize: '1rem',
-          marginBottom: '1rem',
-          textAlign: 'left'
-        }}>
-          Game Info
-        </h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '1rem',
-          textAlign: 'left'
-        }}>
-          <div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>SIDE</div>
-            <div style={{ color: '#FFD700', fontWeight: 'bold', textTransform: 'capitalize' }}>
-              {gamePhase?.split('\n')[1] || 'Waiting'}
-            </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: theme.colors.neonPink, fontSize: '1.5rem', fontWeight: 'bold' }}>
+            {creatorWins}
+          </div>
+          <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
+            Player 1
           </div>
         </div>
-        {renderTimer()}
+        
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: theme.colors.textPrimary, fontSize: '1rem', fontWeight: 'bold' }}>
+            Round {currentRound} / {maxRounds}
+          </div>
+          {renderTimer()}
+        </div>
+        
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: theme.colors.neonBlue, fontSize: '1.5rem', fontWeight: 'bold' }}>
+            {joinerWins}
+          </div>
+          <div style={{ color: theme.colors.textSecondary, fontSize: '0.75rem' }}>
+            Player 2
+          </div>
+        </div>
       </div>
+
+      {/* Power Display */}
+      {isPlayer && gamePhase === 'round_active' && (
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+            Power Level
+          </div>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '1rem',
+            padding: '0.5rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <div style={{
+              width: `${(currentPower / 10) * 100}%`,
+              height: '20px',
+              background: `linear-gradient(90deg, ${theme.colors.neonGreen}, ${theme.colors.neonYellow})`,
+              borderRadius: '1rem',
+              transition: 'width 0.1s ease',
+              minWidth: currentPower > 0 ? '10%' : '0%'
+            }} />
+          </div>
+          <div style={{
+            color: theme.colors.neonYellow,
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            marginTop: '0.5rem'
+          }}>
+            {currentPower}/10
+          </div>
+        </div>
+      )}
+
+      {/* Instructions */}
+      {renderInstructions()}
     </div>
   )
 }
