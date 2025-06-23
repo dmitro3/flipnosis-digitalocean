@@ -741,7 +741,7 @@ const Home = () => {
               <div style={{
                 background: 'rgba(0, 0, 20, 0.95)',
                 borderRadius: '1rem',
-                padding: '1rem',
+                padding: window.innerWidth <= 768 ? '0.75rem' : '1rem',
                 border: `1px solid ${theme.colors.neonBlue}`,
                 maxHeight: window.innerWidth <= 768 ? 'none' : '600px',
                 overflowY: 'auto',
@@ -772,10 +772,11 @@ const Home = () => {
                 <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(8, 1fr)',
-                  gap: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
+                  gap: window.innerWidth <= 768 ? '0.25rem' : '0.75rem',
                   margin: '1rem 0',
                   width: '100%',
-                  overflowX: 'hidden'
+                  overflowX: 'hidden',
+                  padding: window.innerWidth <= 768 ? '0 0.25rem' : '0'
                 }}>
                   {filteredFlips.map(flip => (
                     <div

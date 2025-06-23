@@ -525,76 +525,7 @@ const MobileOptimizedCoin = ({
         onTouchEnd={!testMode ? onPowerRelease : undefined}
       />
 
-      {/* Test Interface */}
-      <div style={{
-        position: 'absolute',
-        top: size + 10,
-        left: 0,
-        right: 0,
-        background: 'rgba(0, 0, 0, 0.8)',
-        borderRadius: '12px',
-        padding: '12px',
-        color: '#fff',
-        fontSize: '14px'
-      }}>
-        <div style={{ marginBottom: '10px', textAlign: 'center' }}>
-          <button
-            onClick={() => setTestMode(!testMode)}
-            style={{
-              background: testMode ? '#00FF41' : '#666',
-              color: testMode ? '#000' : '#fff',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            {testMode ? '3D TEST ON' : 'ENABLE 3D TEST'}
-          </button>
-        </div>
 
-        {testMode && (
-          <>
-            <div style={{ 
-              fontSize: '12px', 
-              textAlign: 'center', 
-              marginBottom: '10px',
-              color: '#ccc'
-            }}>
-              Mobile Optimized Three.js Coin
-            </div>
-
-            <div style={{ textAlign: 'center' }}>
-              <button
-                onClick={testFlip}
-                disabled={isAnimatingRef.current}
-                style={{
-                  background: !isAnimatingRef.current ? '#FF1493' : '#444',
-                  color: !isAnimatingRef.current ? '#fff' : '#999',
-                  border: 'none',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  cursor: !isAnimatingRef.current ? 'pointer' : 'not-allowed'
-                }}
-              >
-                {isAnimatingRef.current ? 'FLIPPING...' : 'FLIP 3D!'}
-              </button>
-            </div>
-
-            <div style={{
-              textAlign: 'center',
-              marginTop: '8px',
-              fontSize: '12px',
-              color: '#aaa'
-            }}>
-              Current: {currentCoinSideRef.current.toUpperCase()}
-            </div>
-          </>
-        )}
-      </div>
     </div>
   )
 }

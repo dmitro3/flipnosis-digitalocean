@@ -52,7 +52,7 @@ const MenuItem = styled(Link)`
   border-radius: 0.5rem;
   transition: all 0.3s ease;
   background: rgba(0, 255, 65, 0.05);
-  border: 1px solid rgba(0, 255, 65, 0.1);
+  border: 2px solid rgba(0, 255, 65, 0.6);
   margin-bottom: 0.5rem;
   
   &:hover {
@@ -60,7 +60,7 @@ const MenuItem = styled(Link)`
     color: #00FF41;
     transform: translateY(-2px);
     box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
-    border-color: rgba(0, 255, 65, 0.3);
+    border-color: rgba(0, 255, 65, 0.8);
   }
 `;
 
@@ -110,7 +110,7 @@ const StyledConnectButton = styled.div`
 `;
 
 const UserSection = styled.div`
-  margin-top: auto;
+  margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(0, 255, 65, 0.2);
 `;

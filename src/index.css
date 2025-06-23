@@ -225,7 +225,36 @@ body {
   }
 }
 
-/* Add green flashing animation for player turn indicator */
+/* Add colorful flashing animation for player turn indicator */
+@keyframes playerTurnFlash {
+  0% {
+    border-color: rgba(255, 20, 147, 0.8);
+    box-shadow: 0 0 25px rgba(255, 20, 147, 0.5);
+    background: rgba(255, 20, 147, 0.15);
+  }
+  25% {
+    border-color: rgba(255, 255, 0, 0.8);
+    box-shadow: 0 0 25px rgba(255, 255, 0, 0.5);
+    background: rgba(255, 255, 0, 0.15);
+  }
+  50% {
+    border-color: rgba(0, 191, 255, 0.8);
+    box-shadow: 0 0 25px rgba(0, 191, 255, 0.5);
+    background: rgba(0, 191, 255, 0.15);
+  }
+  75% {
+    border-color: rgba(0, 255, 65, 0.8);
+    box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
+    background: rgba(0, 255, 65, 0.15);
+  }
+  100% {
+    border-color: rgba(255, 20, 147, 0.8);
+    box-shadow: 0 0 25px rgba(255, 20, 147, 0.5);
+    background: rgba(255, 20, 147, 0.15);
+  }
+}
+
+/* Keep the original for desktop if needed */
 @keyframes playerTurnGlow {
   0%, 100% {
     border-color: rgba(0, 149, 255, 0.5);

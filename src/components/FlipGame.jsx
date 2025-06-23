@@ -317,8 +317,8 @@ const MobileBottomNav = styled.div`
   left: 0;
   right: 0;
   display: flex;
-  gap: 0.5rem;
-  padding: 1rem;
+  gap: 0.25rem;
+  padding: 0.5rem;
   background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -331,22 +331,24 @@ const MobileBottomNav = styled.div`
 
 const MobileNavButton = styled.button`
   flex: ${props => props.isJoinButton ? '2' : '1'};
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 2px solid rgba(0, 255, 65, 0.6);
   background: ${props => props.isJoinButton ? 'linear-gradient(45deg, #FF1493, #FF69B4)' : 'rgba(255, 255, 255, 0.05)'};
   color: white;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.875rem;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: ${props => props.isJoinButton ? '0 0 20px rgba(255, 20, 147, 0.5)' : '0 0 10px rgba(255, 255, 255, 0.2)'};
+    border-color: rgba(0, 255, 65, 0.8);
+    box-shadow: ${props => props.isJoinButton ? '0 0 20px rgba(255, 20, 147, 0.5)' : '0 0 15px rgba(0, 255, 65, 0.3)'};
   }
 `
 
@@ -365,16 +367,16 @@ const MobileOnly = styled.div`
 
 const MobileInfoPanel = styled.div`
   position: fixed;
-  bottom: ${props => props.isOpen ? '80px' : '-100%'};
+  bottom: ${props => props.isOpen ? '60px' : '-100%'};
   left: 0;
   right: 0;
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(10px);
-  padding: 1rem;
+  padding: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   transition: bottom 0.3s ease;
   z-index: 999;
-  max-height: 80vh;
+  max-height: 70vh;
   overflow-y: auto;
 
   @media (min-width: 769px) {
@@ -384,16 +386,16 @@ const MobileInfoPanel = styled.div`
 
 const MobileChatPanel = styled.div`
   position: fixed;
-  bottom: ${props => props.isOpen ? '80px' : '-100%'};
+  bottom: ${props => props.isOpen ? '60px' : '-100%'};
   left: 0;
   right: 0;
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(10px);
-  padding: 1rem;
+  padding: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   transition: bottom 0.3s ease;
   z-index: 999;
-  height: 60vh;
+  height: 50vh;
 
   @media (min-width: 769px) {
     display: none;
@@ -1681,26 +1683,26 @@ const FlipGame = () => {
 
               {/* Mobile Info Panel */}
               <MobileInfoPanel isOpen={isInfoOpen}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <h3 style={{ color: theme.colors.neonYellow, marginBottom: '0.5rem' }}>Game Info</h3>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <h3 style={{ color: theme.colors.neonYellow, marginBottom: '0.25rem', fontSize: '1rem' }}>Game Info</h3>
                   <div style={{ color: theme.colors.textSecondary }}>
                     {/* Entry Fee */}
                     <div style={{ 
-                      padding: '0.75rem',
+                      padding: '0.5rem',
                       background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '0.75rem',
-                      marginBottom: '1rem'
+                      borderRadius: '0.5rem',
+                      marginBottom: '0.5rem'
                     }}>
                       <div style={{ 
                         display: 'flex', 
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.5rem'
+                        alignItems: 'center'
                       }}>
-                        <span>Cost:</span>
+                        <span style={{ fontSize: '0.875rem' }}>Cost:</span>
                         <span style={{ 
                           color: theme.colors.neonGreen,
-                          fontWeight: 'bold'
+                          fontWeight: 'bold',
+                          fontSize: '0.875rem'
                         }}>
                           ${(gameData?.priceUSD || 0).toFixed(2)}
                         </span>
@@ -1709,18 +1711,17 @@ const FlipGame = () => {
 
                     {/* Contract Info */}
                     <div style={{ 
-                      padding: '0.75rem',
+                      padding: '0.5rem',
                       background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '0.75rem',
-                      marginBottom: '1rem'
+                      borderRadius: '0.5rem',
+                      marginBottom: '0.5rem'
                     }}>
                       <div style={{ 
                         display: 'flex', 
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.5rem'
+                        alignItems: 'center'
                       }}>
-                        <span>Contract:</span>
+                        <span style={{ fontSize: '0.875rem' }}>Contract:</span>
                         <span 
                           onClick={() => {
                             if (gameData?.nft?.contractAddress) {
@@ -1759,10 +1760,10 @@ const FlipGame = () => {
                     {gameData?.nft && (
                       <>
                         <div style={{ 
-                          margin: '1rem 0',
-                          padding: '1rem',
+                          margin: '0.5rem 0',
+                          padding: '0.5rem',
                           background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '0.75rem',
+                          borderRadius: '0.5rem',
                           border: '1px solid rgba(255, 255, 255, 0.1)'
                         }}>
                           <img 
@@ -1770,35 +1771,35 @@ const FlipGame = () => {
                             alt={gameData.nft.name}
                             style={{
                               width: '100%',
-                              maxWidth: '200px',
+                              maxWidth: '120px',
                               height: 'auto',
-                              borderRadius: '0.5rem',
+                              borderRadius: '0.25rem',
                               margin: '0 auto',
                               display: 'block'
                             }}
                           />
-                          <p style={{ marginTop: '0.5rem', textAlign: 'center' }}>{gameData.nft.name}</p>
-                          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Collection: {gameData.nft.collection}</p>
-                          <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>Token ID: {gameData.nft.tokenId}</p>
+                          <p style={{ marginTop: '0.25rem', textAlign: 'center', fontSize: '0.8rem', margin: '0.25rem 0' }}>{gameData.nft.name}</p>
+                          <p style={{ fontSize: '0.75rem', opacity: 0.8, margin: '0.125rem 0' }}>Collection: {gameData.nft.collection}</p>
+                          <p style={{ fontSize: '0.75rem', opacity: 0.8, margin: '0.125rem 0' }}>Token ID: {gameData.nft.tokenId}</p>
                         </div>
                         <div style={{
                           display: 'flex',
-                          gap: '0.5rem',
-                          marginTop: '0.5rem',
+                          gap: '0.25rem',
+                          marginTop: '0.25rem',
                           justifyContent: 'center'
                         }}>
                           <Button 
                             onClick={() => window.open(`https://opensea.io/assets/${gameData.nft.contract}/${gameData.nft.tokenId}`, '_blank')}
                             style={{
                               background: 'rgba(255, 255, 255, 0.1)',
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '0.5rem',
-                              fontSize: '0.8rem',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.7rem',
                               textDecoration: 'none',
                               color: '#fff',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.4rem',
+                              gap: '0.25rem',
                               border: '1px solid rgba(255, 255, 255, 0.2)',
                               transition: 'all 0.3s ease',
                               flex: 1,
@@ -1809,8 +1810,8 @@ const FlipGame = () => {
                               src="/images/opensea.png" 
                               alt="OpenSea" 
                               style={{ 
-                                width: '16px', 
-                                height: '16px',
+                                width: '12px', 
+                                height: '12px',
                                 objectFit: 'contain'
                               }} 
                             />
@@ -1820,21 +1821,21 @@ const FlipGame = () => {
                             onClick={() => window.open(`https://etherscan.io/token/${gameData.nft.contract}?a=${gameData.nft.tokenId}`, '_blank')}
                             style={{
                               background: 'rgba(255, 255, 255, 0.1)',
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '0.5rem',
-                              fontSize: '0.8rem',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.7rem',
                               textDecoration: 'none',
                               color: '#fff',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.4rem',
+                              gap: '0.25rem',
                               border: '1px solid rgba(255, 255, 255, 0.2)',
                               transition: 'all 0.3s ease',
                               flex: 1,
                               justifyContent: 'center'
                             }}
                           >
-                            <span style={{ fontSize: '1rem' }}>🔍</span>
+                            <span style={{ fontSize: '0.8rem' }}>🔍</span>
                             Etherscan
                           </Button>
                         </div>
@@ -1865,7 +1866,10 @@ const FlipGame = () => {
                 marginBottom: '0.5rem',
                 borderRadius: '12px',
                 height: '60px',
-                width: '100%'
+                width: '100%',
+                animation: (isMyTurn && isCreator && (gameState?.phase === 'choosing' || gameState?.phase === 'round_active')) ? 
+                  'playerTurnFlash 1.5s ease-in-out infinite' : 'none',
+                transition: 'all 0.3s ease'
               }}>
                 <div style={{
                   display: 'flex',
@@ -2001,7 +2005,10 @@ const FlipGame = () => {
                 marginTop: '-15px',
                 borderRadius: '12px',
                 height: '60px',
-                width: '100%'
+                width: '100%',
+                animation: (isMyTurn && isJoiner && (gameState?.phase === 'choosing' || gameState?.phase === 'round_active')) ? 
+                  'playerTurnFlash 1.5s ease-in-out infinite' : 'none',
+                transition: 'all 0.3s ease'
               }}>
                 <div style={{
                   display: 'flex',
@@ -2225,7 +2232,10 @@ const FlipGame = () => {
                     background: isCreator ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                     borderRadius: '12px',
                     border: `2px solid ${isCreator ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.1)'}`,
-                    height: '60px'
+                    height: '60px',
+                    animation: (isMyTurn && isCreator && (gameState?.phase === 'choosing' || gameState?.phase === 'round_active')) ? 
+                      'playerTurnFlash 1.5s ease-in-out infinite' : 'none',
+                    transition: 'all 0.3s ease'
                   }}>
                     <ProfilePicture 
                       address={gameData?.creator} 
@@ -2377,7 +2387,10 @@ const FlipGame = () => {
                     background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
                     borderRadius: '12px',
                     border: `2px solid ${isJoiner ? theme.colors.neonBlue : 'rgba(255, 255, 255, 0.1)'}`,
-                    height: '60px'
+                    height: '60px',
+                    animation: (isMyTurn && isJoiner && (gameState?.phase === 'choosing' || gameState?.phase === 'round_active')) ? 
+                      'playerTurnFlash 1.5s ease-in-out infinite' : 'none',
+                    transition: 'all 0.3s ease'
                   }}>
                     <ProfilePicture 
                       address={gameData?.joiner} 
@@ -2585,142 +2598,7 @@ const FlipGame = () => {
                   />
                 </div>
 
-                {/* TEST BUTTONS - Development Only */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div style={{ 
-                    textAlign: 'center', 
-                    marginBottom: '1rem',
-                    padding: '1rem',
-                    background: 'rgba(255, 255, 0, 0.1)',
-                    borderRadius: '0.5rem',
-                    border: '1px solid rgba(255, 255, 0, 0.3)'
-                  }}>
-                    <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#FFD700' }}>
-                      🧪 Test Controls
-                    </div>
-                    
-                    {/* Test Mode Activation */}
-                    <button
-                      onClick={() => {
-                        setGameState(prev => ({
-                          ...prev,
-                          phase: 'choosing',
-                          currentPlayer: address,
-                          creatorPower: 0,
-                          joinerPower: 0,
-                          creatorChoice: null,
-                          joinerChoice: null
-                        }))
-                        showInfo('🧪 Test mode activated! Choose heads or tails first!')
-                      }}
-                      style={{
-                        background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                        color: '#000',
-                        border: 'none',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '0.4rem',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '0.8rem',
-                        marginRight: '0.5rem',
-                        marginBottom: '0.5rem'
-                      }}
-                    >
-                      🧪 Activate Test
-                    </button>
 
-                    {/* Choice Buttons */}
-                    <button
-                      onClick={() => {
-                        setGameState(prev => ({
-                          ...prev,
-                          creatorChoice: 'heads',
-                          phase: 'playing'
-                        }))
-                        showInfo('💰 You chose HEADS! Now hold the coin to charge power!')
-                      }}
-                      style={{
-                        background: gameState?.creatorChoice === 'heads' ? 'linear-gradient(45deg, #FF1493, #FF69B4)' : 'rgba(255, 255, 255, 0.1)',
-                        color: '#fff',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '0.4rem',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '0.8rem',
-                        marginRight: '0.5rem',
-                        marginBottom: '0.5rem'
-                      }}
-                    >
-                      👑 Heads
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setGameState(prev => ({
-                          ...prev,
-                          creatorChoice: 'tails',
-                          phase: 'playing'
-                        }))
-                        showInfo('💎 You chose TAILS! Now hold the coin to charge power!')
-                      }}
-                      style={{
-                        background: gameState?.creatorChoice === 'tails' ? 'linear-gradient(45deg, #FF1493, #FF69B4)' : 'rgba(255, 255, 255, 0.1)',
-                        color: '#fff',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '0.4rem',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '0.8rem',
-                        marginRight: '0.5rem',
-                        marginBottom: '0.5rem'
-                      }}
-                    >
-                      💎 Tails
-                    </button>
-
-                                         {/* Test Flip Button - Only show if choice is made */}
-                     {gameState?.creatorChoice && (
-                       <button
-                         onClick={() => {
-                           const results = ['heads', 'tails']
-                           const randomResult = results[Math.floor(Math.random() * results.length)]
-                           const isWinner = randomResult === gameState.creatorChoice
-                           
-                           showInfo(`🎲 Flipping coin... You chose ${gameState.creatorChoice.toUpperCase()}!`)
-                           
-                           // Start flip animation
-                           setTimeout(() => {
-                             setFlipAnimation({
-                               result: randomResult,
-                               duration: 4000 // Longer duration
-                             })
-                             // Note: No setRoundResult for test flip to avoid video overlay
-                           }, 1000)
-                           
-                           // Just show simple result message - no popup
-                           setTimeout(() => {
-                             showSuccess(`🪙 Result: ${randomResult.toUpperCase()}! ${isWinner ? 'You WON!' : 'You lost...'}`)
-                           }, 5500)
-                         }}
-                         style={{
-                           background: 'linear-gradient(45deg, #00FF41, #39FF14)',
-                           color: '#000',
-                           border: 'none',
-                           padding: '0.4rem 0.8rem',
-                           borderRadius: '0.4rem',
-                           cursor: 'pointer',
-                           fontWeight: 'bold',
-                           fontSize: '0.8rem',
-                           marginBottom: '0.5rem'
-                         }}
-                       >
-                         🎲 Test Flip Now!
-                       </button>
-                     )}
-                  </div>
-                )}
 
                 {/* Power Display with Choice Buttons */}
                 <PowerDisplay
@@ -2744,8 +2622,8 @@ const FlipGame = () => {
                 maxWidth: '600px',
                 margin: '0 auto',
                 padding: '2rem',
-                background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
-                border: '2px solid rgba(255, 215, 0, 0.3)',
+                background: 'linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%)',
+                border: '2px solid rgba(0, 255, 65, 0.3)',
                 borderRadius: '1.5rem',
                 backdropFilter: 'blur(10px)'
               }}>
@@ -2764,8 +2642,8 @@ const FlipGame = () => {
                         height: '200px',
                         borderRadius: '1rem',
                         objectFit: 'cover',
-                        border: '4px solid rgba(255, 255, 0, 0.6)',
-                        boxShadow: '0 0 30px rgba(255, 255, 0, 0.5), inset 0 0 30px rgba(255, 255, 0, 0.3)',
+                        border: '4px solid rgba(0, 255, 65, 0.6)',
+                        boxShadow: '0 0 30px rgba(0, 255, 65, 0.5), inset 0 0 30px rgba(0, 255, 65, 0.3)',
                         animation: 'nftBananaGlow 2s ease-in-out infinite'
                       }}
                     />

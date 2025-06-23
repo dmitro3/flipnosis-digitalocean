@@ -91,7 +91,8 @@ const CoinSelector = ({
       border: '1px solid rgba(255, 215, 0, 0.3)',
       borderRadius: '1rem',
       padding: '2rem',
-      width: '95%',
+      width: '100%',
+      maxWidth: '1200px',
       margin: '0 auto'
     }}>
       <h3 style={{
