@@ -479,31 +479,46 @@ const FlipGame = () => {
 
   // Update coin images when game state changes (use creator's selected coin)
   useEffect(() => {
+    console.log('🪙 Coin useEffect triggered - gameState?.coin:', gameState?.coin);
+    
     if (gameState?.coin) {
       console.log('🪙 Using game creator\'s selected coin:', gameState.coin);
       setGameCoin(gameState.coin);
       
-      // Set the custom coin images based on the creator's selection
-      if (gameState.coin.type === 'custom') {
-        setCustomHeadsImage(gameState.coin.headsImage);
-        setCustomTailsImage(gameState.coin.tailsImage);
-      } else {
-        // For default coins, use the image paths
-        setCustomHeadsImage(gameState.coin.headsImage);
-        setCustomTailsImage(gameState.coin.tailsImage);
-      }
+      // ALWAYS use the game's selected coin, regardless of type
+      setCustomHeadsImage(gameState.coin.headsImage);
+      setCustomTailsImage(gameState.coin.tailsImage);
+      
+      console.log('🪙 Set coin images to:', {
+        heads: gameState.coin.headsImage,
+        tails: gameState.coin.tailsImage,
+        type: gameState.coin.type
+      });
     } else {
-      // Fallback: load user's personal coin images (for backward compatibility)
+      console.log('🪙 No game coin data, checking for fallback...');
+      
+      // Only use personal coins if NO game coin is specified (backward compatibility)
       const loadCustomCoinImages = async () => {
         if (!address) return;
         
         try {
           const headsImage = await getCoinHeadsImage(address);
           const tailsImage = await getCoinTailsImage(address);
-          setCustomHeadsImage(headsImage);
-          setCustomTailsImage(tailsImage);
+          
+          // Only set if we actually got personal images
+          if (headsImage && tailsImage) {
+            console.log('🪙 Using personal fallback coins');
+            setCustomHeadsImage(headsImage);
+            setCustomTailsImage(tailsImage);
+          } else {
+            console.log('🪙 No personal coins, leaving null for default rendering');
+            setCustomHeadsImage(null);
+            setCustomTailsImage(null);
+          }
         } catch (error) {
           console.error('Error loading custom coin images:', error);
+          setCustomHeadsImage(null);
+          setCustomTailsImage(null);
         }
       };
 
@@ -599,8 +614,10 @@ const FlipGame = () => {
                 creatorChoice: data.creatorChoice,
                 joinerChoice: data.joinerChoice,
                 creator: data.creator,
-                joiner: data.joiner
+                joiner: data.joiner,
+                coin: data.coin // NEW: Log coin data
               })
+              console.log('🪙 Coin data in game state:', data.coin);
               setGameState(data)
               
               // Show opponent's choice animation if they just made a choice
@@ -751,7 +768,18 @@ const FlipGame = () => {
             price: dbGame.price_usd,
             priceUSD: dbGame.price_usd,
             rounds: dbGame.rounds,
-            status: dbGame.status
+            status: dbGame.status,
+            coin: dbGame.coin ? (typeof dbGame.coin === 'string' ? JSON.parse(dbGame.coin) : dbGame.coin) : null // NEW: Load coin data
+          }
+          
+          console.log('🪙 Loaded game coin data:', gameData.coin);
+          
+          // NEW: Set coin data immediately if available
+          if (gameData.coin) {
+            console.log('🪙 Setting coin data from database:', gameData.coin);
+            setGameCoin(gameData.coin);
+            setCustomHeadsImage(gameData.coin.headsImage);
+            setCustomTailsImage(gameData.coin.tailsImage);
           }
           
           setGameData(gameData)
