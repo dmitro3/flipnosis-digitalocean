@@ -1,6 +1,20 @@
 import React, { useRef, useEffect, useState } from 'react'
 import * as THREE from 'three'
 
+// MODIFICATION 1: Add power configurations array for mobile
+const powerConfigs = [
+  { minFlips: 5, duration: 2000, speed: 1 },     // Level 1
+  { minFlips: 6, duration: 3000, speed: 1.2 },   // Level 2
+  { minFlips: 7, duration: 4000, speed: 1.4 },   // Level 3
+  { minFlips: 8, duration: 5000, speed: 1.6 },   // Level 4
+  { minFlips: 9, duration: 6000, speed: 1.8 },   // Level 5
+  { minFlips: 10, duration: 7000, speed: 2 },    // Level 6
+  { minFlips: 12, duration: 8000, speed: 2.3 },  // Level 7
+  { minFlips: 14, duration: 10000, speed: 2.6 }, // Level 8
+  { minFlips: 16, duration: 12000, speed: 3 },   // Level 9
+  { minFlips: 20, duration: 15000, speed: 3.5 }  // Level 10
+];
+
 const MobileOptimizedCoin = ({ 
   isFlipping, 
   flipResult, 
@@ -198,6 +212,46 @@ const MobileOptimizedCoin = ({
     return material
   }
 
+  // MODIFICATION 3: Mobile landing function to make coin stand on edge
+  const landOnEdgeMobile = (targetRotation, isHeads) => {
+    if (!coinRef.current) return
+    
+    const landingDuration = 600; // Faster for mobile
+    const startTime = Date.now();
+    const coin = coinRef.current
+    const startRotationX = coin.rotation.x;
+    
+    // Calculate nearest edge position
+    const currentRotations = Math.floor(startRotationX / (Math.PI * 2));
+    const finalRotationX = currentRotations * Math.PI * 2 + targetRotation;
+    
+    const animateLanding = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / landingDuration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 2);
+      
+      // Rotate to edge position (X-axis only)
+      coin.rotation.x = startRotationX + (finalRotationX - startRotationX) * easeOut;
+      coin.position.y = 0;
+      
+      // Always maintain proper orientation
+      coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
+      coin.rotation.z = 0;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateLanding);
+      } else {
+        coin.rotation.x = finalRotationX;
+        coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
+        coin.rotation.z = 0;
+        currentCoinSideRef.current = isHeads ? 'heads' : 'tails';
+        isAnimatingRef.current = false;
+      }
+    };
+    
+    animateLanding();
+  };
+
   // Test flip
   const testFlip = () => {
     if (!testMode || isAnimatingRef.current) return
@@ -208,6 +262,7 @@ const MobileOptimizedCoin = ({
     simulateFlip(result)
   }
 
+  // MODIFICATION 4: Update mobile flipCoin function with power-based mechanics
   const simulateFlip = (result) => {
     if (!coinRef.current) {
       console.warn('⚠️ No coin ref available for flip')
@@ -219,7 +274,7 @@ const MobileOptimizedCoin = ({
       return
     }
     
-    console.log('🎬 Mobile 3D flip starting:', { 
+    console.log('🎬 Mobile 3D flip starting with power mechanics:', { 
       result, 
       testMode,
       isFlipping,
@@ -228,34 +283,29 @@ const MobileOptimizedCoin = ({
     })
     
     isAnimatingRef.current = true
-    
     const coin = coinRef.current
-    const currentSide = currentCoinSideRef.current
-    const needsToFlip = currentSide !== result
     
     // Ensure coin is visible during flip
     coin.visible = true
     
-    // Power calculations
-    const totalPower = creatorPower + joinerPower || 5
-    const powerRatio = Math.min(totalPower / 10, 1)
+    // Calculate power level from creator and joiner power (1-10)
+    const totalPower = (creatorPower || 0) + (joinerPower || 0) || 5;
+    const powerLevel = Math.max(1, Math.min(10, Math.ceil(totalPower)));
     
-    const baseRotations = 8 + (powerRatio * 10)
-    const halfFlips = Math.floor(baseRotations * 2) + (needsToFlip ? 1 : 0)
-    const totalRotation = halfFlips * Math.PI
-    const duration = 2500 + (powerRatio * 1500)
+    // Get power configuration
+    const config = powerConfigs[Math.max(0, powerLevel - 1)];
+    const { minFlips, duration, speed } = config;
     
-    console.log('📊 Mobile flip params:', {
-      currentSide,
-      targetSide: result,
-      needsToFlip,
-      rotations: baseRotations.toFixed(1),
-      duration: duration + 'ms',
-      power: totalPower
-    })
+    // Simplified animation for mobile performance
+    const rotationsPerFlip = Math.PI * 2;
+    const totalRotation = minFlips * rotationsPerFlip + (Math.random() * Math.PI * 2);
     
-    const startRotation = coin.rotation.x
-    const startTime = Date.now()
+    const isHeads = result === 'heads';
+    const targetEdgeRotation = isHeads ? 0 : Math.PI;
+    
+    const startTime = Date.now();
+    const startRotation = coin.rotation.x;
+    const launchHeight = 4 + (powerLevel * 0.3);
     
     const animateFlip = () => {
       if (!coinRef.current) {
@@ -269,55 +319,25 @@ const MobileOptimizedCoin = ({
         return
       }
       
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 2); // Lighter easing for mobile
+      
+      // Height animation
+      coin.position.y = Math.sin(progress * Math.PI) * launchHeight;
+      
+      // Simplified rotation for performance
+      coin.rotation.x = startRotation + (totalRotation * easeOut * speed);
       
       if (progress < 1) {
-        // Three-phase easing
-        let easedProgress
-        if (progress < 0.2) {
-          easedProgress = (progress / 0.2) * 0.4
-        } else if (progress < 0.8) {
-          const midProgress = (progress - 0.2) / 0.6
-          easedProgress = 0.4 + (midProgress * 0.5)
-        } else {
-          const endProgress = (progress - 0.8) / 0.2
-          const eased = 1 - Math.pow(1 - endProgress, 4)
-          easedProgress = 0.9 + (eased * 0.1)
-        }
-        
-        coin.rotation.x = startRotation + (totalRotation * easedProgress)
-        
-        // Vertical motion
-        const jumpHeight = 0.5 + (powerRatio * 0.3)
-        coin.position.y = Math.sin(progress * Math.PI) * jumpHeight
-        
-        // Wobble
-        const wobble = Math.sin(elapsed * 0.02) * 0.02 * (1 - progress)
-        coin.rotation.z = wobble
-        coin.rotation.y = Math.PI / 2 + wobble * 0.5
-        
-        requestAnimationFrame(animateFlip)
+        requestAnimationFrame(animateFlip);
       } else {
-        // Complete
-        coin.rotation.x = startRotation + totalRotation
-        coin.rotation.y = Math.PI / 2
-        coin.rotation.z = 0
-        coin.position.set(0, 0, 0)
-        coin.visible = true // Ensure visibility
-        
-        currentCoinSideRef.current = result
-        isAnimatingRef.current = false
-        
-        console.log('✅ Mobile 3D flip complete:', { 
-          result, 
-          finalRotation: coin.rotation.x,
-          visible: coin.visible 
-        })
+        // Mobile landing
+        landOnEdgeMobile(targetEdgeRotation, isHeads);
       }
-    }
+    };
     
-    animateFlip()
+    animateFlip();
   }
 
   // Initialize scene
@@ -328,7 +348,9 @@ const MobileOptimizedCoin = ({
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000)
-    camera.position.set(0, 0, 8)
+    // MODIFICATION 7: Camera adjustment for better edge viewing on mobile
+    camera.position.set(0, 3, 10) // Slightly higher and further back
+    camera.lookAt(0, 0, 0)
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: false,
@@ -364,12 +386,16 @@ const MobileOptimizedCoin = ({
     const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 32)
     const coin = new THREE.Mesh(geometry, materials)
     
+    // MODIFICATION 6: Make the coin edge thicker so it looks good standing up
+    coin.scale.y = 1.5 // Makes the edge 50% thicker
+    
     scene.add(coin)
     coinRef.current = coin
 
-    // Initial position
-    coin.rotation.x = -Math.PI / 2
-    coin.rotation.y = Math.PI / 2
+    // Initial position - clean wheel-like orientation
+    coin.rotation.x = 0 // Start flat
+    coin.rotation.y = Math.PI / 2 // Rotated 90 degrees left for proper facing
+    coin.rotation.z = 0 // No tilt
     coin.visible = true // Ensure initial visibility
     currentCoinSideRef.current = 'heads'
     

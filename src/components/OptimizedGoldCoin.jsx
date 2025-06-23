@@ -1,6 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 
+// MODIFICATION 1: Add power configurations array to your existing code
+const powerConfigs = [
+  { minFlips: 5, duration: 2000, speed: 1 },     // Level 1
+  { minFlips: 6, duration: 3000, speed: 1.2 },   // Level 2
+  { minFlips: 7, duration: 4000, speed: 1.4 },   // Level 3
+  { minFlips: 8, duration: 5000, speed: 1.6 },   // Level 4
+  { minFlips: 9, duration: 6000, speed: 1.8 },   // Level 5
+  { minFlips: 10, duration: 7000, speed: 2 },    // Level 6
+  { minFlips: 12, duration: 8000, speed: 2.3 },  // Level 7
+  { minFlips: 14, duration: 10000, speed: 2.6 }, // Level 8
+  { minFlips: 16, duration: 12000, speed: 3 },   // Level 9
+  { minFlips: 20, duration: 15000, speed: 3.5 }  // Level 10
+];
+
 const OptimizedGoldCoin = ({
   isFlipping = false,
   flipResult = null,
@@ -150,7 +164,9 @@ const OptimizedGoldCoin = ({
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000)
-    camera.position.set(0, 0, 8)
+    // MODIFICATION 7: Camera adjustment for better edge viewing
+    camera.position.set(0, 3, 10) // Slightly higher and further back
+    camera.lookAt(0, 0, 0)
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: performanceRef.current.level !== 'low',
@@ -208,13 +224,16 @@ const OptimizedGoldCoin = ({
     const geometry = new THREE.CylinderGeometry(3, 3, 0.4, segments)
     const coin = new THREE.Mesh(geometry, materials)
     
+    // MODIFICATION 6: Make the coin edge thicker so it looks good standing up
+    coin.scale.y = 1.5 // Makes the edge 50% thicker
+    
     scene.add(coin)
     coinRef.current = coin
 
-    // Set initial rotation - tilt coin toward viewer so face is visible
-    coin.rotation.x = -Math.PI / 4 // Tilt 45 degrees toward viewer
-    coin.rotation.y = Math.PI / 2
-    coin.rotation.z = 0
+    // Set initial rotation - clean wheel-like orientation
+    coin.rotation.x = 0 // Start flat
+    coin.rotation.y = Math.PI / 2 // Rotated 90 degrees left for proper facing
+    coin.rotation.z = 0 // No tilt
 
     // Optimized animation loop
     const animate = () => {
@@ -338,59 +357,141 @@ const OptimizedGoldCoin = ({
     }
   }, [customHeadsImage, customTailsImage, creatorChoice, joinerChoice])
 
-  // Optimized flip animation
-  useEffect(() => {
-    if (!isFlipping || !flipResult || !coinRef.current) return
-
-    isAnimatingRef.current = true
+  // MODIFICATION 3: New landing function to make coin stand on edge
+  const landOnEdge = (targetRotation, isHeads) => {
+    if (!coinRef.current) return
+    
+    const landingDuration = 800;
+    const startTime = Date.now();
     const coin = coinRef.current
-    const startTime = Date.now()
-    const duration = flipDuration
+    const startRotation = {
+      x: coin.rotation.x,
+      y: coin.rotation.y,
+      z: coin.rotation.z
+    };
     
-    // Calculate rotations - SIMPLE: winning side faces viewer
-    const baseTilt = -Math.PI / 4 // 45 degree tilt toward viewer
-    const startRotation = coin.rotation.x
+    // Calculate the nearest edge position
+    const currentRotations = Math.floor(startRotation.x / (Math.PI * 2));
+    const finalRotationX = currentRotations * Math.PI * 2 + targetRotation;
     
-    // WINNING SIDE ALWAYS FACES YOU:
-    // - If heads wins, heads faces you (baseTilt)
-    // - If tails wins, tails faces you (flip + baseTilt)
-    const targetFace = flipResult === 'heads' ? baseTilt : (Math.PI + baseTilt)
-    const rotations = performanceRef.current.level === 'low' ? 3 : 5
-    const totalRotation = Math.PI * 2 * rotations + (targetFace - (startRotation % (Math.PI * 2)))
-
-    const animateFlip = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
+    const animateLanding = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / landingDuration, 1);
+      
+      // Smooth easing for landing
+      const easeInOut = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      // Rotate to target edge position (standing upright)
+      coin.rotation.x = startRotation.x + (finalRotationX - startRotation.x) * easeInOut;
+      
+      // Always maintain proper orientation
+      coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
+      coin.rotation.z = 0;
+      
+      // Ensure coin is at ground level
+      coin.position.y = 0;
+      
+      // Add a subtle bounce effect when landing
+      if (progress < 0.3) {
+        coin.position.y = Math.sin(progress * 10) * 0.1 * (1 - progress * 3);
+      }
       
       if (progress < 1) {
-        // Smooth easing
-        const eased = 1 - Math.pow(1 - progress, 3)
-        
-        // Apply rotation
-        coin.rotation.x = startRotation + (totalRotation * eased)
-        
-        // Simple arc motion
-        coin.position.y = Math.sin(progress * Math.PI) * 0.5
-        
-        requestAnimationFrame(animateFlip)
+        requestAnimationFrame(animateLanding);
       } else {
-        // Perfect landing - maintain tilt for visibility
-        coin.rotation.x = targetFace
-        coin.rotation.y = Math.PI / 2 // Preserve side rotation
-        coin.position.y = 0
-        coin.rotation.z = 0
-        coin.scale.set(1, 1, 1)
+        // Ensure perfect edge alignment
+        coin.rotation.x = finalRotationX;
+        coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
+        coin.rotation.z = 0;
         
-        isAnimatingRef.current = false
+        // Animation complete
+        isAnimatingRef.current = false;
       }
-    }
+    };
     
-    animateFlip()
+    animateLanding();
+  };
+
+  // MODIFICATION 2: Replace your existing flipCoin function
+  useEffect(() => {
+    if (!isFlipping || !flipResult || !coinRef.current) return
+    
+    const flipCoin = () => {
+      if (isAnimatingRef.current) return;
+      
+      isAnimatingRef.current = true;
+      const coin = coinRef.current;
+      
+      // Calculate power level from creator and joiner power (1-10)
+      const totalPower = (creatorPower || 0) + (joinerPower || 0);
+      const powerLevel = Math.max(1, Math.min(10, Math.ceil(totalPower)));
+      
+      // Get power configuration based on current power level
+      const config = powerConfigs[Math.max(0, powerLevel - 1)];
+      const { minFlips, duration, speed } = config;
+      
+      // Calculate total rotation to ensure minimum flips
+      const rotationsPerFlip = Math.PI * 2;
+      const baseRotation = minFlips * rotationsPerFlip;
+      const extraRotation = Math.random() * Math.PI * 4; // Add some randomness
+      const totalRotation = baseRotation + extraRotation;
+      
+      // Determine result (using flipResult)
+      const isHeads = flipResult === 'heads';
+      
+      // For edge landing: the coin will stand upright
+      // 0 rotation = north edge down (heads), π rotation = south edge down (tails)
+      const targetEdgeRotation = isHeads ? 0 : Math.PI;
+      
+      // Animation variables
+      const startTime = Date.now();
+      const startRotation = {
+        x: coin.rotation.x,
+        y: coin.rotation.y,
+        z: coin.rotation.z
+      };
+      
+      // Initial launch parameters
+      const launchHeight = 5 + (powerLevel * 0.5); // Higher launch with more power
+      const spinSpeed = speed;
+      
+      const animateFlip = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for realistic motion
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
+        // Height animation (parabolic arc)
+        const heightProgress = Math.sin(progress * Math.PI);
+        coin.position.y = heightProgress * launchHeight;
+        
+        // Rotation animation with speed multiplier (X-axis only - like a wheel)
+        coin.rotation.x = startRotation.x + (totalRotation * easeOut * spinSpeed);
+        
+        // Keep Y and Z rotation stable (no wobble)
+        coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
+        coin.rotation.z = 0;
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateFlip);
+        } else {
+          // Start landing sequence
+          landOnEdge(targetEdgeRotation, isHeads);
+        }
+      };
+      
+      animateFlip();
+    };
+    
+    flipCoin();
     
     return () => {
-      isAnimatingRef.current = false
-    }
-  }, [isFlipping, flipResult, flipDuration])
+      isAnimatingRef.current = false;
+    };
+  }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower])
 
   // Touch/mouse handlers
   const handleInteractionStart = (e) => {

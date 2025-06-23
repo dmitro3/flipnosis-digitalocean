@@ -2526,7 +2526,7 @@ const FlipGame = () => {
                                result: randomResult,
                                duration: 4000 // Longer duration
                              })
-                             setRoundResult({ result: randomResult })
+                             // Note: No setRoundResult for test flip to avoid video overlay
                            }, 1000)
                            
                            // Just show simple result message - no popup
