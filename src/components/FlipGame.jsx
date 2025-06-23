@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
-import { useProfile } from '../contexts/ProfileContext'
+// Removed useProfile import - game now only uses game-specific coin data
 import { useWalletConnection } from '../utils/useWalletConnection'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
@@ -405,7 +405,7 @@ const FlipGame = () => {
   const navigate = useNavigate()
   const { publicClient, isMobile } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
-  const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
+  // Removed useProfile hook - coins now come only from game data
   const { isFullyConnected, connectionError, address, walletClient } = useWalletConnection()
 
   // API URL
@@ -477,7 +477,7 @@ const FlipGame = () => {
   // Add screen size detection
   const [isMobileScreen, setIsMobileScreen] = useState(false)
 
-  // Update coin images when game state changes (use creator's selected coin)
+  // Update coin images when game state changes (use creator's selected coin ONLY)
   useEffect(() => {
     console.log('🪙 Coin useEffect triggered - gameState?.coin:', gameState?.coin);
     
@@ -495,36 +495,13 @@ const FlipGame = () => {
         type: gameState.coin.type
       });
     } else {
-      console.log('🪙 No game coin data, checking for fallback...');
+      console.log('🪙 No game coin data - using default null (no fallback to profile)');
       
-      // Only use personal coins if NO game coin is specified (backward compatibility)
-      const loadCustomCoinImages = async () => {
-        if (!address) return;
-        
-        try {
-          const headsImage = await getCoinHeadsImage(address);
-          const tailsImage = await getCoinTailsImage(address);
-          
-          // Only set if we actually got personal images
-          if (headsImage && tailsImage) {
-            console.log('🪙 Using personal fallback coins');
-            setCustomHeadsImage(headsImage);
-            setCustomTailsImage(tailsImage);
-          } else {
-            console.log('🪙 No personal coins, leaving null for default rendering');
-            setCustomHeadsImage(null);
-            setCustomTailsImage(null);
-          }
-        } catch (error) {
-          console.error('Error loading custom coin images:', error);
-          setCustomHeadsImage(null);
-          setCustomTailsImage(null);
-        }
-      };
-
-      loadCustomCoinImages();
+      // NO FALLBACK TO PERSONAL COINS - game must specify coin
+      setCustomHeadsImage(null);
+      setCustomTailsImage(null);
     }
-  }, [gameState?.coin, address, getCoinHeadsImage, getCoinTailsImage]);
+  }, [gameState?.coin]);
 
   useEffect(() => {
     const video = videoRef.current;
