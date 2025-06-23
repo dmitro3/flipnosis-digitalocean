@@ -9,8 +9,9 @@ const WinnerPopup = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 320px;
-  height: 520px;
+  /* Responsive sizing: Mobile 20% smaller, Desktop 40% larger */
+  width: ${props => props.isMobile ? '256px' : '448px'}; /* 320px * 0.8 = 256px for mobile, 320px * 1.4 = 448px for desktop */
+  height: ${props => props.isMobile ? '416px' : '728px'}; /* 520px * 0.8 = 416px for mobile, 520px * 1.4 = 728px for desktop */
   background: rgba(0, 0, 0, 0.3);
   border: 3px solid #00FF41;
   border-radius: 1.5rem;
@@ -50,8 +51,9 @@ const LoserPopup = styled(WinnerPopup)`
 
 const VideoContainer = styled.div`
   position: relative;
-  width: 280px;
-  height: 400px;
+  /* Responsive sizing: Mobile 20% smaller, Desktop 40% larger */
+  width: ${props => props.isMobile ? '224px' : '392px'}; /* 280px * 0.8 = 224px for mobile, 280px * 1.4 = 392px for desktop */
+  height: ${props => props.isMobile ? '320px' : '560px'}; /* 400px * 0.8 = 320px for mobile, 400px * 1.4 = 560px for desktop */
   border-radius: 1rem;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.5);
@@ -92,6 +94,9 @@ const GameResultPopup = ({
 }) => {
   const navigate = useNavigate()
 
+  // Device detection
+  const isMobileScreen = window.innerWidth <= 768
+
   if (!isVisible) return null
 
   const handleBackToHome = () => {
@@ -121,8 +126,8 @@ const GameResultPopup = ({
     }}>
       {/* Winner Popup */}
       {isWinner && (
-        <WinnerPopup>
-          <VideoContainer>
+        <WinnerPopup isMobile={isMobileScreen}>
+          <VideoContainer isMobile={isMobileScreen}>
             <video
               key="win"
               autoPlay
@@ -166,18 +171,64 @@ const GameResultPopup = ({
               </h2>
               <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>You've won the game!</p>
               <WarningText>⚠️ Warning: Leaving the game will result in a loss</WarningText>
-              <Button 
-                onClick={handleClaimWinnings}
-                style={{
-                  background: 'linear-gradient(45deg, #00FF41, #39FF14)',
-                  color: '#000',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  boxShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
-                }}
-              >
-                Claim Winnings
-              </Button>
+              
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+                <button
+                  onClick={handleClaimWinnings}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #00FF41, #39FF14)',
+                    color: '#000',
+                    border: 'none',
+                    padding: '1rem',
+                    borderRadius: '0.8rem',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 20px rgba(0, 255, 65, 0.4)',
+                    transition: 'all 0.3s ease',
+                    textTransform: 'uppercase'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 65, 0.6)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.4)';
+                  }}
+                >
+                  💰 COLLECT
+                </button>
+                <button
+                  onClick={handleBackToHome}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '1rem',
+                    borderRadius: '0.8rem',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 20px rgba(255, 20, 147, 0.4)',
+                    transition: 'all 0.3s ease',
+                    textTransform: 'uppercase'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.6)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.4)';
+                  }}
+                >
+                  🏠 HOME
+                </button>
+              </div>
             </MessageBox>
           </VideoContainer>
         </WinnerPopup>
@@ -185,8 +236,8 @@ const GameResultPopup = ({
 
       {/* Loser Popup */}
       {!isWinner && (
-        <LoserPopup>
-          <VideoContainer>
+        <LoserPopup isMobile={isMobileScreen}>
+          <VideoContainer isMobile={isMobileScreen}>
             <video
               key="lose"
               autoPlay
@@ -228,18 +279,35 @@ const GameResultPopup = ({
                 💔 Game Over
               </h2>
               <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Better luck next time!</p>
-              <Button 
+              
+              {/* Action Button */}
+              <button
                 onClick={handleBackToHome}
                 style={{
-                  background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#fff',
-                  fontWeight: 'bold',
                   border: 'none',
-                  boxShadow: '0 0 15px rgba(255, 20, 147, 0.5)'
+                  padding: '1rem',
+                  borderRadius: '0.8rem',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(255, 20, 147, 0.4)',
+                  transition: 'all 0.3s ease',
+                  textTransform: 'uppercase'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.6)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.4)';
                 }}
               >
-                Try Again
-              </Button>
+                🏠 HOME
+              </button>
             </MessageBox>
           </VideoContainer>
         </LoserPopup>
