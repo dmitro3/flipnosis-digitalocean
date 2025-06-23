@@ -434,6 +434,7 @@ const FlipGame = () => {
 
   // Refs for user input
   const isChargingRef = useRef(false)
+  const previousTurnTimeLeftRef = useRef(null)
 
   // Player identification
   const isCreator = gameData?.creator === address
