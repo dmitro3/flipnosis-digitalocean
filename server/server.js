@@ -2248,11 +2248,11 @@ app.post('/api/games/:gameId/start-join', async (req, res) => {
     console.log('🎯 Starting join process for game:', { gameId, playerAddress })
     
     // Get or create session
-    let session = gameSessions.get(gameId)
+    let session = activeSessions.get(gameId)
     if (!session) {
       session = new GameSession(gameId)
       await session.loadFromDatabase()
-      gameSessions.set(gameId, session)
+      activeSessions.set(gameId, session)
     }
     
     const result = await session.startJoinProcess(playerAddress)
@@ -2313,7 +2313,7 @@ app.post('/api/games/:gameId/simple-join', async (req, res) => {
     )
     
     // Update session if exists
-    const session = gameSessions.get(gameId)
+    const session = activeSessions.get(gameId)
     if (session) {
       await session.completeJoinProcess(joinerAddress, paymentTxHash)
     }
@@ -2332,7 +2332,7 @@ app.get('/api/games/:gameId/join-status', async (req, res) => {
   try {
     const { gameId } = req.params
     
-    const session = gameSessions.get(gameId)
+    const session = activeSessions.get(gameId)
     if (session) {
       res.json({
         joinInProgress: session.joinInProgress,
