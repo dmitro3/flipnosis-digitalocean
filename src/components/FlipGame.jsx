@@ -427,6 +427,7 @@ const FlipGame = () => {
   // Custom coin images
   const [customHeadsImage, setCustomHeadsImage] = useState(null)
   const [customTailsImage, setCustomTailsImage] = useState(null)
+  const [gameCoin, setGameCoin] = useState(null)
 
   // Refs for user input
   const isChargingRef = useRef(false)
@@ -476,23 +477,39 @@ const FlipGame = () => {
   // Add screen size detection
   const [isMobileScreen, setIsMobileScreen] = useState(false)
 
-  // Load custom coin images when address changes
+  // Update coin images when game state changes (use creator's selected coin)
   useEffect(() => {
-    const loadCustomCoinImages = async () => {
-      if (!address) return;
+    if (gameState?.coin) {
+      console.log('🪙 Using game creator\'s selected coin:', gameState.coin);
+      setGameCoin(gameState.coin);
       
-      try {
-        const headsImage = await getCoinHeadsImage(address);
-        const tailsImage = await getCoinTailsImage(address);
-        setCustomHeadsImage(headsImage);
-        setCustomTailsImage(tailsImage);
-      } catch (error) {
-        console.error('Error loading custom coin images:', error);
+      // Set the custom coin images based on the creator's selection
+      if (gameState.coin.type === 'custom') {
+        setCustomHeadsImage(gameState.coin.headsImage);
+        setCustomTailsImage(gameState.coin.tailsImage);
+      } else {
+        // For default coins, use the image paths
+        setCustomHeadsImage(gameState.coin.headsImage);
+        setCustomTailsImage(gameState.coin.tailsImage);
       }
-    };
+    } else {
+      // Fallback: load user's personal coin images (for backward compatibility)
+      const loadCustomCoinImages = async () => {
+        if (!address) return;
+        
+        try {
+          const headsImage = await getCoinHeadsImage(address);
+          const tailsImage = await getCoinTailsImage(address);
+          setCustomHeadsImage(headsImage);
+          setCustomTailsImage(tailsImage);
+        } catch (error) {
+          console.error('Error loading custom coin images:', error);
+        }
+      };
 
-    loadCustomCoinImages();
-  }, [address, getCoinHeadsImage, getCoinTailsImage]);
+      loadCustomCoinImages();
+    }
+  }, [gameState?.coin, address, getCoinHeadsImage, getCoinTailsImage]);
 
   useEffect(() => {
     const video = videoRef.current;

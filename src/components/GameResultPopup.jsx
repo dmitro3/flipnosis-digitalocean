@@ -9,9 +9,9 @@ const WinnerPopup = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  /* Responsive sizing: Mobile 20% smaller, Desktop 40% larger */
-  width: ${props => props.isMobile ? '256px' : '448px'}; /* 320px * 0.8 = 256px for mobile, 320px * 1.4 = 448px for desktop */
-  height: ${props => props.isMobile ? '416px' : '728px'}; /* 520px * 0.8 = 416px for mobile, 520px * 1.4 = 728px for desktop */
+  /* Responsive sizing: Mobile good as is, Desktop 20% smaller */
+  width: ${props => props.isMobile ? '256px' : '358px'}; /* 320px * 0.8 = 256px for mobile, 448px * 0.8 = 358px for desktop */
+  height: ${props => props.isMobile ? '416px' : '582px'}; /* 520px * 0.8 = 416px for mobile, 728px * 0.8 = 582px for desktop */
   background: rgba(0, 0, 0, 0.3);
   border: 3px solid #00FF41;
   border-radius: 1.5rem;
@@ -51,25 +51,24 @@ const LoserPopup = styled(WinnerPopup)`
 
 const VideoContainer = styled.div`
   position: relative;
-  /* Responsive sizing: Mobile 20% smaller, Desktop 40% larger */
-  width: ${props => props.isMobile ? '224px' : '392px'}; /* 280px * 0.8 = 224px for mobile, 280px * 1.4 = 392px for desktop */
-  height: ${props => props.isMobile ? '320px' : '560px'}; /* 400px * 0.8 = 320px for mobile, 400px * 1.4 = 560px for desktop */
+  /* Responsive sizing: Mobile good as is, Desktop 20% smaller */
+  width: ${props => props.isMobile ? '224px' : '314px'}; /* 280px * 0.8 = 224px for mobile, 392px * 0.8 = 314px for desktop */
+  height: ${props => props.isMobile ? '280px' : '400px'}; /* Reduced height to make room for buttons, 320px for mobile, 448px for desktop */
   border-radius: 1rem;
-  overflow: hidden;
+  overflow: visible; /* Changed to visible so buttons can appear below */
   background: rgba(0, 0, 0, 0.5);
 `;
 
 const MessageBox = styled.div`
   position: absolute;
-  bottom: -120px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
-  max-width: 400px;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
   border: 2px solid ${props => props.isWinner ? '#00ff00' : '#ff1493'};
   border-radius: 1rem;
-  padding: 20px;
+  padding: 15px;
   text-align: center;
   color: white;
   box-shadow: 0 0 20px ${props => props.isWinner ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 20, 147, 0.5)'};
@@ -165,15 +164,15 @@ const GameResultPopup = ({
               <h2 style={{ 
                 color: '#00FF41', 
                 textShadow: '0 0 10px #00FF41',
-                marginBottom: '0.5rem'
+                marginBottom: '0.3rem',
+                fontSize: '1.2rem'
               }}>
-                🎉 Congratulations!
+                🎉 You Won!
               </h2>
-              <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>You've won the game!</p>
-              <WarningText>⚠️ Warning: Leaving the game will result in a loss</WarningText>
+              <p style={{ fontSize: '0.9rem', marginBottom: '0.8rem' }}>Congratulations!</p>
               
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
                 <button
                   onClick={handleClaimWinnings}
                   style={{
@@ -181,22 +180,22 @@ const GameResultPopup = ({
                     background: 'linear-gradient(135deg, #00FF41, #39FF14)',
                     color: '#000',
                     border: 'none',
-                    padding: '1rem',
-                    borderRadius: '0.8rem',
-                    fontSize: '1.2rem',
+                    padding: '0.7rem 0.5rem',
+                    borderRadius: '0.6rem',
+                    fontSize: '1rem',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    boxShadow: '0 0 20px rgba(0, 255, 65, 0.4)',
+                    boxShadow: '0 0 15px rgba(0, 255, 65, 0.4)',
                     transition: 'all 0.3s ease',
                     textTransform: 'uppercase'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 65, 0.6)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.6)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 65, 0.4)';
                   }}
                 >
                   💰 COLLECT
@@ -208,22 +207,22 @@ const GameResultPopup = ({
                     background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                     color: '#fff',
                     border: 'none',
-                    padding: '1rem',
-                    borderRadius: '0.8rem',
-                    fontSize: '1.2rem',
+                    padding: '0.7rem 0.5rem',
+                    borderRadius: '0.6rem',
+                    fontSize: '1rem',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    boxShadow: '0 0 20px rgba(255, 20, 147, 0.4)',
+                    boxShadow: '0 0 15px rgba(255, 20, 147, 0.4)',
                     transition: 'all 0.3s ease',
                     textTransform: 'uppercase'
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.6)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.6)';
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 20, 147, 0.4)';
                   }}
                 >
                   🏠 HOME
@@ -274,11 +273,12 @@ const GameResultPopup = ({
               <h2 style={{ 
                 color: '#FF1493', 
                 textShadow: '0 0 10px #FF1493',
-                marginBottom: '0.5rem'
+                marginBottom: '0.3rem',
+                fontSize: '1.2rem'
               }}>
-                💔 Game Over
+                💔 You Lost
               </h2>
-              <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Better luck next time!</p>
+              <p style={{ fontSize: '0.9rem', marginBottom: '0.8rem' }}>Better luck next time!</p>
               
               {/* Action Button */}
               <button
@@ -288,22 +288,22 @@ const GameResultPopup = ({
                   background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
                   color: '#fff',
                   border: 'none',
-                  padding: '1rem',
-                  borderRadius: '0.8rem',
-                  fontSize: '1.2rem',
+                  padding: '0.7rem',
+                  borderRadius: '0.6rem',
+                  fontSize: '1rem',
                   fontWeight: 'bold',
                   cursor: 'pointer',
-                  boxShadow: '0 0 20px rgba(255, 20, 147, 0.4)',
+                  boxShadow: '0 0 15px rgba(255, 20, 147, 0.4)',
                   transition: 'all 0.3s ease',
                   textTransform: 'uppercase'
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.6)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.6)';
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.4)';
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 20, 147, 0.4)';
                 }}
               >
                 🏠 HOME

@@ -360,6 +360,7 @@ function initializeDatabase() {
       listing_fee_eth REAL,
       listing_fee_hash TEXT,
       entry_fee_hash TEXT,
+      coin TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       started_at DATETIME,
       completed_at DATETIME,
@@ -369,6 +370,15 @@ function initializeDatabase() {
         console.error('❌ Error creating games table:', err)
       } else {
         console.log('✅ Games table ready')
+        
+        // Add coin column to existing tables if it doesn't exist
+        db.run(`ALTER TABLE games ADD COLUMN coin TEXT`, (alterErr) => {
+          if (alterErr && !alterErr.message.includes('duplicate column')) {
+            console.error('❌ Error adding coin column:', alterErr)
+          } else if (!alterErr) {
+            console.log('✅ Added coin column to games table')
+          }
+        })
       }
     })
 
@@ -426,8 +436,8 @@ const dbHelpers = {
         id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
         nft_collection, nft_chain, nft_description, nft_attributes, 
         nft_token_type, nft_external_url, nft_animation_url,
-        price_usd, rounds, listing_fee_eth, listing_fee_hash
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        price_usd, rounds, listing_fee_eth, listing_fee_hash, coin
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       
       const values = [
         gameData.id,
@@ -446,7 +456,8 @@ const dbHelpers = {
         gameData.priceUSD,
         gameData.rounds,
         gameData.listingFee?.amountETH,
-        gameData.listingFee?.transactionHash
+        gameData.listingFee?.transactionHash,
+        JSON.stringify(gameData.coin || {}) // NEW: Store coin data as JSON
       ]
       
       db.run(sql, values, function(err) {
@@ -689,7 +700,8 @@ class GameSession {
       // NEW: Include player profiles
       creatorProfile: this.creatorProfile,
       joinerProfile: this.joinerProfile,
-      turnTimeLeft: this.turnTimeLeft // Add timer to state
+      turnTimeLeft: this.turnTimeLeft, // Add timer to state
+      coin: this.coin // NEW: Add coin data to game state
     }
 
     console.log('📢 Broadcasting game state:', {
@@ -727,6 +739,7 @@ class GameSession {
     this.gameData = data
     this.creator = data.creator
     this.maxRounds = data.rounds
+    this.coin = data.coin // NEW: Store coin data
     try {
       await dbHelpers.createGame(data)
     } catch (error) {
@@ -1324,6 +1337,11 @@ class GameSession {
         this.maxRounds = gameData.rounds
         this.creatorWins = gameData.creator_wins || 0
         this.joinerWins = gameData.joiner_wins || 0
+        
+        // NEW: Load coin data
+        if (gameData.coin) {
+          this.coin = typeof gameData.coin === 'string' ? JSON.parse(gameData.coin) : gameData.coin
+        }
         
         console.log('📊 Loading game from DB:', {
           creator: this.creator,

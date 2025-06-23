@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import NFTSelector from '../components/NFTSelector'
+import CoinSelector from '../components/CoinSelector'
 import PaymentService from '../services/PaymentService'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
@@ -42,6 +43,7 @@ const CreateFlip = () => {
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [priceUSD, setPriceUSD] = useState('')
   const [gameType, setGameType] = useState('') // 'nft-vs-crypto' or 'nft-vs-nft'
+  const [selectedCoin, setSelectedCoin] = useState(null)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -139,6 +141,10 @@ const CreateFlip = () => {
         throw new Error('Please select a game type')
       }
 
+      if (!selectedCoin) {
+        throw new Error('Please select a coin design')
+      }
+
       // Validate price for NFT vs Crypto
       if (gameType === 'nft-vs-crypto') {
         if (!priceUSD || isNaN(priceUSD) || parseFloat(priceUSD) <= 0) {
@@ -218,6 +224,7 @@ const CreateFlip = () => {
           collection: selectedNFT.collection,
           chain: selectedNFT.chain
         },
+        coin: selectedCoin, // NEW: Add selected coin data
         price: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0, // No price for NFT vs NFT
         priceUSD: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0,
         currency: gameType === 'nft-vs-crypto' ? 'USD' : 'NFT',
@@ -384,9 +391,36 @@ const CreateFlip = () => {
                 </FormSection>
               )}
 
+              {/* Coin Selection */}
+              <FormSection>
+                <SectionTitle>Choose Coin Design</SectionTitle>
+                <CoinSelector
+                  onCoinSelect={setSelectedCoin}
+                  selectedCoin={selectedCoin}
+                  showCustomOption={true}
+                />
+                {selectedCoin && (
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    background: 'rgba(0, 255, 65, 0.1)',
+                    border: '1px solid rgba(0, 255, 65, 0.3)',
+                    borderRadius: '0.5rem',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ color: '#00FF41', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                      ✅ Selected: {selectedCoin.name}
+                    </div>
+                    <div style={{ color: '#fff', fontSize: '0.9rem', opacity: 0.8 }}>
+                      This coin design will be used for both players in the game
+                    </div>
+                  </div>
+                )}
+              </FormSection>
+
               <SubmitButton 
                 type="submit" 
-                disabled={isSubmitting || !gameType} 
+                disabled={isSubmitting || !gameType || !selectedCoin} 
                 style={{ 
                   color: '#000',
                   background: 'linear-gradient(45deg, #00FF41, #39FF14)',
