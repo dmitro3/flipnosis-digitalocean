@@ -1,18 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react'
 import * as THREE from 'three'
 
-// MODIFICATION 1: Add power configurations array for mobile
+// MODIFICATION 1: Add power configurations array for mobile (durations reduced by half)
 const powerConfigs = [
-  { minFlips: 5, duration: 2000, speed: 1 },     // Level 1
-  { minFlips: 6, duration: 3000, speed: 1.2 },   // Level 2
-  { minFlips: 7, duration: 4000, speed: 1.4 },   // Level 3
-  { minFlips: 8, duration: 5000, speed: 1.6 },   // Level 4
-  { minFlips: 9, duration: 6000, speed: 1.8 },   // Level 5
-  { minFlips: 10, duration: 7000, speed: 2 },    // Level 6
-  { minFlips: 12, duration: 8000, speed: 2.3 },  // Level 7
-  { minFlips: 14, duration: 10000, speed: 2.6 }, // Level 8
-  { minFlips: 16, duration: 12000, speed: 3 },   // Level 9
-  { minFlips: 20, duration: 15000, speed: 3.5 }  // Level 10
+  { minFlips: 5, duration: 1000, speed: 1 },     // Level 1
+  { minFlips: 6, duration: 1500, speed: 1.2 },   // Level 2
+  { minFlips: 7, duration: 2000, speed: 1.4 },   // Level 3
+  { minFlips: 8, duration: 2500, speed: 1.6 },   // Level 4
+  { minFlips: 9, duration: 3000, speed: 1.8 },   // Level 5
+  { minFlips: 10, duration: 3500, speed: 2 },    // Level 6
+  { minFlips: 12, duration: 4000, speed: 2.3 },  // Level 7
+  { minFlips: 14, duration: 5000, speed: 2.6 },  // Level 8
+  { minFlips: 16, duration: 6000, speed: 3 },    // Level 9
+  { minFlips: 20, duration: 7500, speed: 3.5 }   // Level 10
 ];
 
 const MobileOptimizedCoin = ({ 
@@ -216,7 +216,7 @@ const MobileOptimizedCoin = ({
   const landOnEdgeMobile = (targetRotation, isHeads) => {
     if (!coinRef.current) return
     
-    const landingDuration = 600; // Faster for mobile
+    const landingDuration = 300; // Faster for mobile (reduced by half)
     const startTime = Date.now();
     const coin = coinRef.current
     const startRotationX = coin.rotation.x;
@@ -285,8 +285,14 @@ const MobileOptimizedCoin = ({
     isAnimatingRef.current = true
     const coin = coinRef.current
     
-    // Ensure coin is visible during flip
+    // Force coin to be visible during flip
     coin.visible = true
+    
+    // Double-check visibility
+    if (!coin.visible) {
+      console.warn('⚠️ Mobile coin became invisible during flip - forcing visible')
+      coin.visible = true
+    }
     
     // Calculate power level from creator and joiner power (1-10)
     const totalPower = (creatorPower || 0) + (joinerPower || 0) || 5;
@@ -305,7 +311,7 @@ const MobileOptimizedCoin = ({
     
     const startTime = Date.now();
     const startRotation = coin.rotation.x;
-    const launchHeight = 4 + (powerLevel * 0.3);
+    const launchHeight = (4 + (powerLevel * 0.3)) / 2; // Reduced height by half
     
     const animateFlip = () => {
       if (!coinRef.current) {
@@ -419,8 +425,14 @@ const MobileOptimizedCoin = ({
       const coin = coinRef.current
       const time = Date.now() * 0.001
       
-      // Ensure coin stays visible
+      // Force coin to stay visible at all times
       coin.visible = true
+      
+      // Additional visibility enforcement
+      if (!coin.visible) {
+        console.warn('⚠️ Mobile coin visibility issue detected - forcing visible')
+        coin.visible = true
+      }
       
       if (!isAnimatingRef.current) {
         if (isCharging) {
@@ -459,7 +471,38 @@ const MobileOptimizedCoin = ({
       materials.forEach(mat => mat.dispose())
       renderer.dispose()
     }
-  }, [size, creatorChoice, joinerChoice])
+  }, [size]) // Removed creatorChoice, joinerChoice to prevent unnecessary scene recreation
+
+  // Update textures when choices change (without recreating scene)
+  useEffect(() => {
+    if (!coinRef.current) return
+    
+    console.log('🎨 Updating mobile coin textures:', { creatorChoice, joinerChoice })
+    
+    const coin = coinRef.current
+    
+    // Ensure coin stays visible during texture updates
+    coin.visible = true
+    
+    // Update materials if needed
+    try {
+      if (coin.material && coin.material[1]) { // Heads material
+        const newHeadsTexture = createMobileTexture('heads', customHeadsImage)
+        coin.material[1].map = newHeadsTexture
+        coin.material[1].needsUpdate = true
+      }
+      if (coin.material && coin.material[2]) { // Tails material  
+        const newTailsTexture = createMobileTexture('tails', customTailsImage)
+        coin.material[2].map = newTailsTexture
+        coin.material[2].needsUpdate = true
+      }
+    } catch (error) {
+      console.warn('Error updating mobile coin textures:', error)
+    }
+    
+    // Final visibility check
+    coin.visible = true
+  }, [creatorChoice, joinerChoice, customHeadsImage, customTailsImage])
 
   // Handle game flips
   useEffect(() => {
