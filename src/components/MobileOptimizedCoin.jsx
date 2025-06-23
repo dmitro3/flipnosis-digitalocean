@@ -1,18 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react'
 import * as THREE from 'three'
 
-// MODIFICATION 1: Add power configurations array for mobile (durations reduced by half)
+// MODIFICATION 1: Add power configurations array for mobile (original durations restored)
 const powerConfigs = [
-  { minFlips: 5, duration: 1000, speed: 1 },     // Level 1
-  { minFlips: 6, duration: 1500, speed: 1.2 },   // Level 2
-  { minFlips: 7, duration: 2000, speed: 1.4 },   // Level 3
-  { minFlips: 8, duration: 2500, speed: 1.6 },   // Level 4
-  { minFlips: 9, duration: 3000, speed: 1.8 },   // Level 5
-  { minFlips: 10, duration: 3500, speed: 2 },    // Level 6
-  { minFlips: 12, duration: 4000, speed: 2.3 },  // Level 7
-  { minFlips: 14, duration: 5000, speed: 2.6 },  // Level 8
-  { minFlips: 16, duration: 6000, speed: 3 },    // Level 9
-  { minFlips: 20, duration: 7500, speed: 3.5 }   // Level 10
+  { minFlips: 5, duration: 2000, speed: 1 },     // Level 1
+  { minFlips: 6, duration: 3000, speed: 1.2 },   // Level 2
+  { minFlips: 7, duration: 4000, speed: 1.4 },   // Level 3
+  { minFlips: 8, duration: 5000, speed: 1.6 },   // Level 4
+  { minFlips: 9, duration: 6000, speed: 1.8 },   // Level 5
+  { minFlips: 10, duration: 7000, speed: 2 },    // Level 6
+  { minFlips: 12, duration: 8000, speed: 2.3 },  // Level 7
+  { minFlips: 14, duration: 10000, speed: 2.6 }, // Level 8
+  { minFlips: 16, duration: 12000, speed: 3 },   // Level 9
+  { minFlips: 20, duration: 15000, speed: 3.5 }  // Level 10
 ];
 
 const MobileOptimizedCoin = ({ 
@@ -216,7 +216,7 @@ const MobileOptimizedCoin = ({
   const landOnEdgeMobile = (targetRotation, isHeads) => {
     if (!coinRef.current) return
     
-    const landingDuration = 300; // Faster for mobile (reduced by half)
+    const landingDuration = 150; // Ultra-fast mobile landing for quick winner announcement
     const startTime = Date.now();
     const coin = coinRef.current
     const startRotationX = coin.rotation.x;
@@ -246,6 +246,7 @@ const MobileOptimizedCoin = ({
         coin.rotation.z = 0;
         currentCoinSideRef.current = isHeads ? 'heads' : 'tails';
         isAnimatingRef.current = false;
+        console.log('🏁 Mobile coin animation fully complete - winner should be announced now');
       }
     };
     

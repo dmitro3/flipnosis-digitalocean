@@ -3074,8 +3074,9 @@ const FlipGame = () => {
               borderRadius: '2rem',
               border: `4px solid ${roundResult.actualWinner === address ? '#00FF41' : '#FF1493'}`,
               textAlign: 'center',
-              width: '90%',
-              maxWidth: '600px',
+              // Responsive sizing: Mobile 20% smaller, Desktop 40% larger
+              width: isMobileScreen ? '72%' : '126%', // 90% * 0.8 = 72% for mobile, 90% * 1.4 = 126% for desktop
+              maxWidth: isMobileScreen ? '480px' : '840px', // 600px * 0.8 = 480px for mobile, 600px * 1.4 = 840px for desktop
               pointerEvents: 'none',
               boxShadow: `0 0 50px ${roundResult.actualWinner === address ? 'rgba(0, 255, 65, 0.5)' : 'rgba(255, 20, 147, 0.5)'}`
             }}>
@@ -3162,13 +3163,52 @@ const FlipGame = () => {
                 fontSize: '1rem',
                 color: 'rgba(255, 255, 255, 0.7)',
                 pointerEvents: 'auto',
-                fontStyle: 'italic'
+                fontStyle: 'italic',
+                marginBottom: '2rem'
               }}>
                 {roundResult.result === roundResult.playerChoice 
                   ? `Your choice (${roundResult.playerChoice}) matched the result (${roundResult.result})!`
                   : `Your choice (${roundResult.playerChoice}) did not match the result (${roundResult.result}).`
                 }
               </div>
+
+              {/* Action Button */}
+              <button
+                onClick={() => navigate('/')}
+                style={{
+                  background: roundResult.actualWinner === address 
+                    ? 'linear-gradient(135deg, #00FF41, #39FF14)' 
+                    : 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                  color: roundResult.actualWinner === address ? '#000' : '#fff',
+                  border: 'none',
+                  padding: '1rem 2rem',
+                  borderRadius: '0.8rem',
+                  fontSize: '1.4rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                  minWidth: '150px',
+                  boxShadow: roundResult.actualWinner === address 
+                    ? '0 0 20px rgba(0, 255, 65, 0.4)' 
+                    : '0 0 20px rgba(255, 20, 147, 0.4)',
+                  transition: 'all 0.3s ease',
+                  textTransform: 'uppercase'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = roundResult.actualWinner === address 
+                    ? '0 0 30px rgba(0, 255, 65, 0.6)' 
+                    : '0 0 30px rgba(255, 20, 147, 0.6)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = roundResult.actualWinner === address 
+                    ? '0 0 20px rgba(0, 255, 65, 0.4)' 
+                    : '0 0 20px rgba(255, 20, 147, 0.4)';
+                }}
+              >
+                {roundResult.actualWinner === address ? '💰 COLLECT' : '🏠 HOME'}
+              </button>
             </div>
           )}
 
