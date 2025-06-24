@@ -693,6 +693,31 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
   }
 }
 
+/* Game Result Button Animations */
+@keyframes collectFlash {
+  0%, 100% {
+    background: linear-gradient(135deg, #00FF41, #39FF14);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  }
+  50% {
+    background: linear-gradient(135deg, #39FF14, #00FF00);
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes homeFlash {
+  0%, 100% {
+    background: linear-gradient(135deg, #FF1493, #FF69B4);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+  }
+  50% {
+    background: linear-gradient(135deg, #FF69B4, #FF1493);
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.8);
+    transform: scale(1.02);
+  }
+}
+
 /* Mobile-specific styles */
 @media (max-width: 768px) {
   html {

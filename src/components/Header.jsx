@@ -19,7 +19,6 @@ const HeaderContainer = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   z-index: 100;
   width: 100%;
@@ -85,7 +84,6 @@ const CreateButton = styled(Link)`
   position: relative;
   overflow: hidden;
   border: 2px solid #00FF41;
-  box-shadow: 0 0 5px #00FF41, 0 0 10px #00FF41, 0 0 20px #00FF41;
   
   &::before {
     content: '';
@@ -101,7 +99,6 @@ const CreateButton = styled(Link)`
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41, 0 0 40px #00FF41;
     
     &::before {
       transform: translateX(100%);

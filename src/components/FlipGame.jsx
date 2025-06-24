@@ -651,7 +651,9 @@ const FlipGame = () => {
               if (data.phase === 'round_active' && 
                   ((isCreator && data.joinerChoice) || (isJoiner && data.creatorChoice))) {
                 const opponentChoice = isCreator ? data.joinerChoice : data.creatorChoice
-                setChoiceAnimationText(opponentChoice.toUpperCase())
+                // Show the opposite of what the opponent chose (your side)
+                const mySide = opponentChoice === 'heads' ? 'tails' : 'heads'
+                setChoiceAnimationText(mySide.toUpperCase())
                 setChoiceAnimationColor('#FF1493') // Neon pink
                 setShowChoiceAnimation(true)
                 setTimeout(() => {

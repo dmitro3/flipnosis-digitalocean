@@ -10,19 +10,34 @@ const WinnerPopup = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   /* Responsive sizing: Mobile good as is, Desktop 20% smaller */
-  width: ${props => props.isMobile ? '256px' : '358px'}; /* 320px * 0.8 = 256px for mobile, 448px * 0.8 = 358px for desktop */
-  height: ${props => props.isMobile ? '416px' : '582px'}; /* 520px * 0.8 = 416px for mobile, 728px * 0.8 = 582px for desktop */
-  background: rgba(0, 0, 0, 0.3);
-  border: 3px solid #00FF41;
+  width: ${props => props.isMobile ? '320px' : '400px'};
+  background: rgba(0, 0, 0, 0.9);
   border-radius: 1.5rem;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  box-shadow: 0 0 30px rgba(0, 255, 65, 0.4), 0 0 60px rgba(0, 255, 65, 0.2);
-  animation: winnerGlow 2s ease-in-out infinite alternate;
+  gap: 1rem;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+`;
+
+const LoserPopup = styled(WinnerPopup)`
+  /* Same styling as WinnerPopup, color differences handled in JSX */
+`;
+
+const VideoContainer = styled.div`
+  position: relative;
+  width: ${props => props.isMobile ? '280px' : '360px'};
+  height: ${props => props.isMobile ? '280px' : '360px'};
+  border-radius: 1rem;
+  overflow: hidden;
+  border: ${props => props.isWinner ? '3px solid #00FF41' : '3px solid #FF1493'};
+  box-shadow: ${props => props.isWinner ? 
+    '0 0 30px rgba(0, 255, 65, 0.6), 0 0 60px rgba(0, 255, 65, 0.3)' : 
+    '0 0 30px rgba(255, 20, 147, 0.6), 0 0 60px rgba(255, 20, 147, 0.3)'};
+  animation: ${props => props.isWinner ? 'winnerGlow' : 'loserGlow'} 2s ease-in-out infinite alternate;
   
   @keyframes winnerGlow {
     0% {
@@ -32,12 +47,6 @@ const WinnerPopup = styled.div`
       box-shadow: 0 0 40px rgba(0, 255, 65, 0.6), 0 0 80px rgba(0, 255, 65, 0.3);
     }
   }
-`;
-
-const LoserPopup = styled(WinnerPopup)`
-  border: 3px solid #FF1493;
-  box-shadow: 0 0 30px rgba(255, 20, 147, 0.4), 0 0 60px rgba(255, 20, 147, 0.2);
-  animation: loserGlow 2s ease-in-out infinite alternate;
   
   @keyframes loserGlow {
     0% {
@@ -49,30 +58,29 @@ const LoserPopup = styled(WinnerPopup)`
   }
 `;
 
-const VideoContainer = styled.div`
-  position: relative;
-  /* Responsive sizing: Mobile good as is, Desktop 20% smaller */
-  width: ${props => props.isMobile ? '224px' : '314px'}; /* 280px * 0.8 = 224px for mobile, 392px * 0.8 = 314px for desktop */
-  height: ${props => props.isMobile ? '280px' : '400px'}; /* Reduced height to make room for buttons, 320px for mobile, 448px for desktop */
+const ButtonContainer = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.8);
   border-radius: 1rem;
-  overflow: visible; /* Changed to visible so buttons can appear below */
-  background: rgba(0, 0, 0, 0.5);
-`;
-
-const MessageBox = styled.div`
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  background: rgba(0, 0, 0, 0.95);
-  border: 2px solid ${props => props.isWinner ? '#00ff00' : '#ff1493'};
-  border-radius: 1rem;
-  padding: 15px;
-  text-align: center;
-  color: white;
-  box-shadow: 0 0 20px ${props => props.isWinner ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 20, 147, 0.5)'};
+  border: 2px solid ${props => props.isWinner ? '#00FF41' : '#FF1493'};
   backdrop-filter: blur(10px);
+  animation: buttonFlash 2s ease-in-out infinite;
+  
+  @keyframes buttonFlash {
+    0%, 100% {
+      border-color: ${props => props.isWinner ? 'rgba(0, 255, 65, 0.6)' : 'rgba(255, 20, 147, 0.6)'};
+      box-shadow: 0 0 20px ${props => props.isWinner ? 'rgba(0, 255, 65, 0.3)' : 'rgba(255, 20, 147, 0.3)'};
+    }
+    50% {
+      border-color: ${props => props.isWinner ? 'rgba(0, 255, 65, 1)' : 'rgba(255, 20, 147, 1)'};
+      box-shadow: 0 0 30px ${props => props.isWinner ? 'rgba(0, 255, 65, 0.6)' : 'rgba(255, 20, 147, 0.6)'};
+    }
+  }
 `;
 
 const WarningText = styled.p`
@@ -126,7 +134,8 @@ const GameResultPopup = ({
       {/* Winner Popup */}
       {isWinner && (
         <WinnerPopup isMobile={isMobileScreen}>
-          <VideoContainer isMobile={isMobileScreen}>
+          {/* Video Container with Border */}
+          <VideoContainer isMobile={isMobileScreen} isWinner={true}>
             <video
               key="win"
               autoPlay
@@ -134,13 +143,9 @@ const GameResultPopup = ({
               loop
               playsInline
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                borderRadius: '1rem'
+                objectFit: 'cover'
               }}
               src="/images/video/LoseWin/final lose win/endwin.webm"
               onError={(e) => {
@@ -160,96 +165,104 @@ const GameResultPopup = ({
                 e.target.play().catch(err => console.error('Play error:', err));
               }}
             />
-            <MessageBox isWinner={true}>
-              <h2 style={{ 
-                color: '#00FF41', 
-                textShadow: '0 0 10px #00FF41',
-                marginBottom: '0.3rem',
-                fontSize: '1.2rem'
-              }}>
-                🎉 You Won!
-              </h2>
-              <p style={{ fontSize: '0.9rem', marginBottom: '0.8rem' }}>Congratulations!</p>
-              
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                <button
-                  onClick={handleClaimWinnings}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(135deg, #00FF41, #39FF14)',
-                    color: '#000',
-                    border: 'none',
-                    padding: '0.7rem 0.5rem',
-                    borderRadius: '0.6rem',
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 0 15px rgba(0, 255, 65, 0.4)',
-                    transition: 'all 0.3s ease',
-                    textTransform: 'uppercase'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.6)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 65, 0.4)';
-                  }}
-                >
-                  💰 COLLECT
-                </button>
-                <button
-                  onClick={handleBackToHome}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '0.7rem 0.5rem',
-                    borderRadius: '0.6rem',
-                    fontSize: '1rem',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 0 15px rgba(255, 20, 147, 0.4)',
-                    transition: 'all 0.3s ease',
-                    textTransform: 'uppercase'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.6)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 20, 147, 0.4)';
-                  }}
-                >
-                  🏠 HOME
-                </button>
-              </div>
-            </MessageBox>
           </VideoContainer>
+          
+          {/* Button Container */}
+          <ButtonContainer isWinner={true}>
+            <h2 style={{ 
+              color: '#00FF41', 
+              textShadow: '0 0 10px #00FF41',
+              marginBottom: '0.5rem',
+              fontSize: '1.4rem',
+              textAlign: 'center'
+            }}>
+              🎉 You Won!
+            </h2>
+            <p style={{ 
+              fontSize: '1rem', 
+              marginBottom: '1rem', 
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              Congratulations!
+            </p>
+            
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+              <button
+                onClick={handleClaimWinnings}
+                style={{
+                  flex: 1,
+                  background: 'linear-gradient(135deg, #00FF41, #39FF14)',
+                  color: '#000',
+                  border: 'none',
+                  padding: '1rem 0.75rem',
+                  borderRadius: '0.75rem',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)',
+                  transition: 'all 0.3s ease',
+                  textTransform: 'uppercase',
+                  animation: 'collectFlash 1.5s ease-in-out infinite'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 65, 0.7)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.5)';
+                }}
+              >
+                💰 COLLECT
+              </button>
+              <button
+                onClick={handleBackToHome}
+                style={{
+                  flex: 1,
+                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '1rem 0.75rem',
+                  borderRadius: '0.75rem',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(255, 20, 147, 0.5)',
+                  transition: 'all 0.3s ease',
+                  textTransform: 'uppercase'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 25px rgba(255, 20, 147, 0.7)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.5)';
+                }}
+              >
+                🏠 HOME
+              </button>
+            </div>
+          </ButtonContainer>
         </WinnerPopup>
       )}
 
       {/* Loser Popup */}
       {!isWinner && (
         <LoserPopup isMobile={isMobileScreen}>
-          <VideoContainer isMobile={isMobileScreen}>
+          {/* Video Container with Border */}
+          <VideoContainer isMobile={isMobileScreen} isWinner={false}>
             <video
               key="lose"
               autoPlay
               muted
               playsInline
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                borderRadius: '1rem'
+                objectFit: 'cover'
               }}
               src="/images/video/LoseWin/final lose win/endlose.webm"
               onError={(e) => {
@@ -269,47 +282,58 @@ const GameResultPopup = ({
                 e.target.play().catch(err => console.error('Play error:', err));
               }}
             />
-            <MessageBox isWinner={false}>
-              <h2 style={{ 
-                color: '#FF1493', 
-                textShadow: '0 0 10px #FF1493',
-                marginBottom: '0.3rem',
-                fontSize: '1.2rem'
-              }}>
-                💔 You Lost
-              </h2>
-              <p style={{ fontSize: '0.9rem', marginBottom: '0.8rem' }}>Better luck next time!</p>
-              
-              {/* Action Button */}
-              <button
-                onClick={handleBackToHome}
-                style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '0.7rem',
-                  borderRadius: '0.6rem',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 15px rgba(255, 20, 147, 0.4)',
-                  transition: 'all 0.3s ease',
-                  textTransform: 'uppercase'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.6)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 20, 147, 0.4)';
-                }}
-              >
-                🏠 HOME
-              </button>
-            </MessageBox>
           </VideoContainer>
+          
+          {/* Button Container */}
+          <ButtonContainer isWinner={false}>
+            <h2 style={{ 
+              color: '#FF1493', 
+              textShadow: '0 0 10px #FF1493',
+              marginBottom: '0.5rem',
+              fontSize: '1.4rem',
+              textAlign: 'center'
+            }}>
+              💔 You Lost
+            </h2>
+            <p style={{ 
+              fontSize: '1rem', 
+              marginBottom: '1rem', 
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              Better luck next time!
+            </p>
+            
+            {/* Action Button */}
+            <button
+              onClick={handleBackToHome}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #FF1493, #FF69B4)',
+                color: '#fff',
+                border: 'none',
+                padding: '1rem',
+                borderRadius: '0.75rem',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 0 20px rgba(255, 20, 147, 0.5)',
+                transition: 'all 0.3s ease',
+                textTransform: 'uppercase',
+                animation: 'homeFlash 1.5s ease-in-out infinite'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.boxShadow = '0 0 25px rgba(255, 20, 147, 0.7)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.5)';
+              }}
+            >
+              🏠 HOME
+            </button>
+          </ButtonContainer>
         </LoserPopup>
       )}
     </div>
