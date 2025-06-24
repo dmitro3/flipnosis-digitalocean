@@ -1998,6 +1998,28 @@ const FlipGame = () => {
                 />
               </div>
 
+              {/* Choice Display - Mobile */}
+              {(gameState?.creatorChoice || gameState?.joinerChoice) && (
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '1rem',
+                  padding: '0.5rem',
+                  background: 'rgba(0, 255, 65, 0.1)',
+                  border: '2px solid rgba(0, 255, 65, 0.3)',
+                  borderRadius: '0.75rem',
+                  animation: 'pulse 2s ease-in-out infinite'
+                }}>
+                  <div style={{
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    color: '#00FF41',
+                    textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
+                  }}>
+                    You're {isCreator ? gameState?.creatorChoice?.toUpperCase() : gameState?.joinerChoice?.toUpperCase()}
+                  </div>
+                </div>
+              )}
+
               {/* Player 2 Box - Profile Image */}
               <MobilePlayerBox style={{
                 background: isJoiner ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
@@ -2600,7 +2622,27 @@ const FlipGame = () => {
                   />
                 </div>
 
-
+                {/* Choice Display - Desktop */}
+                {(gameState?.creatorChoice || gameState?.joinerChoice) && (
+                  <div style={{
+                    textAlign: 'center',
+                    marginBottom: '1.5rem',
+                    padding: '1rem',
+                    background: 'rgba(0, 255, 65, 0.1)',
+                    border: '2px solid rgba(0, 255, 65, 0.3)',
+                    borderRadius: '1rem',
+                    animation: 'pulse 2s ease-in-out infinite'
+                  }}>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold',
+                      color: '#00FF41',
+                      textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+                    }}>
+                      You're {isCreator ? gameState?.creatorChoice?.toUpperCase() : gameState?.joinerChoice?.toUpperCase()}
+                    </div>
+                  </div>
+                )}
 
                 {/* Power Display with Choice Buttons */}
                 <PowerDisplay
@@ -3226,19 +3268,6 @@ const FlipGame = () => {
                 animation: 'pulse 1s infinite'
               }}>
                 {roundResult.actualWinner === address ? '🎉 YOU WON!' : '💔 YOU LOST!'}
-              </div>
-              
-              {/* Explanation */}
-              <div style={{
-                fontSize: '1rem',
-                color: 'rgba(255, 255, 255, 0.7)',
-                pointerEvents: 'auto',
-                fontStyle: 'italic'
-              }}>
-                {roundResult.result === roundResult.playerChoice 
-                  ? `Your choice (${roundResult.playerChoice}) matched the result (${roundResult.result})!`
-                  : `Your choice (${roundResult.playerChoice}) did not match the result (${roundResult.result}).`
-                }
               </div>
             </div>
           )}
