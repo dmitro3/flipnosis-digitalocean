@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import CreateFlip from "./pages/CreateFlip";
 import FlipGame from "./components/FlipGame";
 import Layout from "./components/Layout";
+import AdminPanel from "./components/AdminPanel";
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ export const router = createBrowserRouter([
       {
         path: "game/:gameId",
         element: <FlipGame />,
+      },
+      {
+        path: "admin",
+        element: <AdminPanel />,
       },
     ],
   },

@@ -106,6 +106,39 @@ const CreateButton = styled(Link)`
   }
 `
 
+const AdminButton = styled(Link)`
+  background: linear-gradient(45deg, #FF6B35, #F7931E);
+  color: #000000;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  font-weight: 600;
+  transition: ${props => props.theme.transitions.default};
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #FF6B35;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: ${props => props.theme.transitions.default};
+  }
+  
+  &:hover {
+    transform: translateY(-2px);
+    
+    &::before {
+      transform: translateX(100%);
+    }
+  }
+`
+
 const WalletSection = styled.div`
   display: flex;
   align-items: center;
@@ -357,10 +390,14 @@ const ModalBody = styled.div`
 `;
 
 const Header = () => {
-  const { isConnected } = useWallet()
+  const { isConnected, address } = useWallet()
   const { showInfo } = useToast()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
+
+  // Admin wallet address
+  const ADMIN_WALLET = '0x93277281Fd256D0601Ce86Cdb1D5c00a97b59839'
+  const isAdmin = isConnected && address && address.toLowerCase() === ADMIN_WALLET.toLowerCase()
 
   const handleResize = () => {
     if (window.innerWidth > 768) {
@@ -382,6 +419,7 @@ const Header = () => {
 
         <DesktopNav>
           <CreateButton to="/create">Create Flip</CreateButton>
+          {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
           <ConnectButton 
             showBalance={{
               smallScreen: false,

@@ -116,7 +116,11 @@ const UserSection = styled.div`
 `;
 
 const PortalMenu = ({ isOpen, onClose }) => {
-  const { isConnected } = useWallet();
+  const { isConnected, address } = useWallet();
+
+  // Admin wallet address
+  const ADMIN_WALLET = '0x93277281Fd256D0601Ce86Cdb1D5c00a97b59839'
+  const isAdmin = isConnected && address && address.toLowerCase() === ADMIN_WALLET.toLowerCase()
 
   if (!isOpen) return null;
 
@@ -130,6 +134,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
         
         <MenuItem to="/" onClick={onClose}>Home</MenuItem>
         <MenuItem to="/create" onClick={onClose}>Create Flip</MenuItem>
+        {isAdmin && <MenuItem to="/admin" onClick={onClose}>Admin Panel</MenuItem>}
         
         <StyledConnectButton>
           <ConnectButton 

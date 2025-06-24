@@ -1,0 +1,18 @@
+# Copy this file to .env and fill in your values
+
+# Private Key (REQUIRED - Your wallet private key for deployment)
+PRIVATE_KEY=your_private_key_here
+
+# RPC URLs (Optional - for better performance)
+ETHEREUM_RPC_URL=your_ethereum_rpc_url_here
+SEPOLIA_RPC_URL=your_sepolia_rpc_url_here
+
+# API Keys for Contract Verification (Optional)
+BASESCAN_API_KEY=your_basescan_api_key_here
+ETHERSCAN_API_KEY=your_etherscan_api_key_here
+BSCSCAN_API_KEY=your_bscscan_api_key_here
+AVALANCHE_API_KEY=your_avalanche_api_key_here
+POLYGONSCAN_API_KEY=your_polygonscan_api_key_here
+
+# Gas Reporting (Optional)
+REPORT_GAS=true 

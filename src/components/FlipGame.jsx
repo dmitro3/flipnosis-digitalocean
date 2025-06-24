@@ -402,1210 +402,353 @@ const MobileChatPanel = styled.div`
   }
 `
 
-const FlipGame = () => {
-  const { gameId } = useParams()
+const FlipGame = ({ 
+  game, 
+  currentPlayer, 
+  onJoinGame, 
+  onFlipCoin, 
+  onWithdrawRewards,
+  isJoining,
+  isFlipping,
+  contractService 
+}) => {
   const navigate = useNavigate()
-  const { publicClient, isMobile } = useWallet()
+  const { isFullyConnected, connectionError, address } = useWalletConnection()
   const { showSuccess, showError, showInfo } = useToast()
-  const { isFullyConnected, connectionError, address, walletClient } = useWalletConnection()
+  
+  // Local state for UI interactions
+  const [isPowerCharging, setIsPowerCharging] = useState(false)
+  const [powerLevel, setPowerLevel] = useState(0)
+  const [showInstructions, setShowInstructions] = useState(false)
+  const [showNFTDetails, setShowNFTDetails] = useState(false)
+  const [showOfferReview, setShowOfferReview] = useState(false)
+  const [showNFTOffer, setShowNFTOffer] = useState(false)
+  const [showNFTVerification, setShowNFTVerification] = useState(false)
+  const [selectedNFTForOffer, setSelectedNFTForOffer] = useState(null)
+  const [pendingOffer, setPendingOffer] = useState(null)
+  const [gameResult, setGameResult] = useState(null)
+  const [choiceAnimation, setChoiceAnimation] = useState(null)
+  const [autoFlipAnimation, setAutoFlipAnimation] = useState(false)
+  
+  // Refs
+  const powerIntervalRef = useRef(null)
+  const videoRef = useRef(null)
+  const isMobile = window.innerWidth <= 768
 
-  // API URL
-  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-
-  // Local state - ONLY for non-game logic
-  const [gameData, setGameData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [joiningGame, setJoiningGame] = useState(false)
-
-  // NEW: Enhanced join state management
-  const [joinInProgress, setJoinInProgress] = useState(false)
-  const [joiningPlayer, setJoiningPlayer] = useState(null)
-
-  // WebSocket state - SINGLE SOURCE OF TRUTH for game
-  const [socket, setSocket] = useState(null)
-  const [connected, setConnected] = useState(false)
-  const [gameState, setGameState] = useState(null)
-  const [flipAnimation, setFlipAnimation] = useState(null)
-  const [roundResult, setRoundResult] = useState(null)
-  const [lastFlipResult, setLastFlipResult] = useState(null)
-
-  // Custom coin images
-  const [customHeadsImage, setCustomHeadsImage] = useState(null)
-  const [customTailsImage, setCustomTailsImage] = useState(null)
-  const [gameCoin, setGameCoin] = useState(null)
-
-  // Refs for user input
-  const isChargingRef = useRef(false)
-  const previousTurnTimeLeftRef = useRef(null)
-
-  // Player identification
-  const isCreator = gameData?.creator === address
-  const isJoiner = gameData?.joiner === address
-  const isPlayer = isCreator || isJoiner
-  const isMyTurn = gameState?.currentPlayer === address
-
-  // Add state for popup
-  const [showResultPopup, setShowResultPopup] = useState(false)
-  const [popupData, setPopupData] = useState(null)
-
-  // Add new state for enhanced NFT data
-  const [nftData, setNftData] = useState(null)
-  const [isLoadingNFT, setIsLoadingNFT] = useState(false)
-
-  // Add these state variables to your existing FlipGame component
-  const [offeredNFTs, setOfferedNFTs] = useState([])
-  const [acceptedOffer, setAcceptedOffer] = useState(null)
-  const [challengerPaid, setChallengerPaid] = useState(false)
-  const [isNFTGame, setIsNFTGame] = useState(false)
-
-  // Choice animation states
-  const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
-  const [choiceAnimationText, setChoiceAnimationText] = useState('')
-  const [choiceAnimationColor, setChoiceAnimationColor] = useState('#00FF41')
-
-  // Auto-flip animation state
-  const [showAutoFlipAnimation, setShowAutoFlipAnimation] = useState(false)
-
-  // NFT modal states (needed for NFT vs NFT games)
-  const [showNFTOfferModal, setShowNFTOfferModal] = useState(false)
-  const [showNFTVerificationModal, setShowNFTVerificationModal] = useState(false)
-  const [showNFTDetailsModal, setShowNFTDetailsModal] = useState(false)
-  const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
-  const [selectedNFT, setSelectedNFT] = useState(null)
-  const [nftOffer, setNftOffer] = useState(null)
-  const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
-
-  // NEW: Join button state calculation
-  const getJoinButtonState = () => {
-    if (!gameData) return { text: 'Loading...', disabled: true, color: 'gray' }
-    
-    // If there's a join in progress
-    if (joinInProgress || gameState?.joinInProgress) {
-      const playerJoining = joiningPlayer || gameState?.joiningPlayer
-      if (playerJoining === address) {
-        return { text: '⏳ Joining...', disabled: true, color: 'yellow' }
-      } else {
-        return { text: '👤 Player Joining...', disabled: true, color: 'blue' }
-      }
-    }
-    
-    // If game already has joiner
-    if (gameData.joiner || gameState?.joiner) {
-      return { text: 'Game Full', disabled: true, color: 'gray' }
-    }
-    
-    // If creator tries to join own game
-    if (gameData.creator === address) {
-      return { text: 'Your Game', disabled: true, color: 'gray' }
-    }
-    
-    // If game is not waiting
-    if (gameData.status !== 'waiting' && gameState?.phase !== 'waiting') {
-      return { text: 'In Progress', disabled: true, color: 'gray' }
-    }
-    
-    // If user is joining
-    if (joiningGame) {
-      return { text: '⏳ Processing...', disabled: true, color: 'yellow' }
-    }
-    
-    // If not connected
-    if (!isFullyConnected) {
-      return { text: 'Connect Wallet', disabled: true, color: 'red' }
-    }
-    
-    // Ready to join
-    return { text: 'Join Flip', disabled: false, color: 'green' }
-  }
-
-  const videoRef = useRef(null);
-  const [videoError, setVideoError] = useState(false);
-
+  // Screen size detection
+  const [isMobileScreen, setIsMobileScreen] = useState(window.innerWidth <= 768)
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+  const [videoError, setVideoError] = useState(false)
   const [isInfoOpen, setIsInfoOpen] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isPlayer, setIsPlayer] = useState(false)
+  const [showChoiceAnimation, setShowChoiceAnimation] = useState(false)
+  const [choiceAnimationColor, setChoiceAnimationColor] = useState('#FFD700')
+  const [choiceAnimationText, setChoiceAnimationText] = useState('HEADS')
+  const [showAutoFlipAnimation, setShowAutoFlipAnimation] = useState(false)
 
-  // Add screen size detection
-  const [isMobileScreen, setIsMobileScreen] = useState(false)
-
-  // Update coin images when game state changes (use creator's selected coin ONLY)
+  // Debug logging
   useEffect(() => {
-    console.log('🪙 Coin useEffect triggered - gameState?.coin:', gameState?.coin);
-    
-    if (gameState?.coin) {
-      console.log('🪙 Using game creator\'s selected coin:', gameState.coin);
-      setGameCoin(gameState.coin);
-      
-      // ALWAYS use the game's selected coin, regardless of type
-      setCustomHeadsImage(gameState.coin.headsImage);
-      setCustomTailsImage(gameState.coin.tailsImage);
-      
-      console.log('🪙 Set coin images to:', {
-        heads: gameState.coin.headsImage,
-        tails: gameState.coin.tailsImage,
-        type: gameState.coin.type
-      });
-    } else {
-      console.log('🪙 No game coin data - using default null (no fallback to profile)');
-      
-      // NO FALLBACK TO PERSONAL COINS - game must specify coin
-      setCustomHeadsImage(null);
-      setCustomTailsImage(null);
-    }
-  }, [gameState?.coin]);
+    console.log('🎮 FlipGame Component - Props:', {
+      game,
+      currentPlayer,
+      hasOnJoinGame: !!onJoinGame,
+      hasOnFlipCoin: !!onFlipCoin,
+      hasOnWithdrawRewards: !!onWithdrawRewards,
+      isJoining,
+      isFlipping,
+      hasContractService: !!contractService
+    })
+  }, [game, currentPlayer, onJoinGame, onFlipCoin, onWithdrawRewards, isJoining, isFlipping, contractService])
 
+  // Screen size effect
   useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      const playVideo = async () => {
-        try {
-          await video.play();
-        } catch (err) {
-          console.error('Video play error:', err);
-          setVideoError(true);
-        }
-      };
-      playVideo();
+    const handleResize = () => {
+      const newWidth = window.innerWidth
+      const newIsMobile = newWidth <= 768
+      setWindowWidth(newWidth)
+      setIsMobileScreen(newIsMobile)
     }
-  }, []);
 
-  // Add useEffect to detect screen size
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobileScreen(window.innerWidth <= 768)
-    }
-    
-    checkScreenSize()
-    window.addEventListener('resize', checkScreenSize)
-    
-    return () => window.removeEventListener('resize', checkScreenSize)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // WebSocket connection
+  // Check if current player is in the game
   useEffect(() => {
-    if (!gameId || !address) {
-      console.log('❌ Cannot connect - missing gameId or address:', { gameId, address })
-      return
+    if (game && currentPlayer) {
+      setIsPlayer(game.creator === currentPlayer || game.joiner === currentPlayer)
     }
+  }, [game, currentPlayer])
 
-    console.log('🎮 Setting up WebSocket connection:', { gameId, address })
-    let reconnectAttempts = 0
-    const maxReconnectAttempts = 5
-    let reconnectTimer
-
-    const connect = () => {
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'wss://cryptoflipz2-production.up.railway.app' 
-        : 'ws://localhost:3001'
-      
-      console.log('🔌 Connecting to WebSocket:', wsUrl)
-      const ws = new WebSocket(wsUrl)
-
-      ws.onopen = () => {
-        console.log('✅ WebSocket connected')
-        setConnected(true)
-        setSocket(ws)
-        reconnectAttempts = 0
-        
-        // Join game
-        const joinMessage = {
-          type: 'connect_to_game',
-          gameId,
-          address
-        }
-        console.log('🎮 Sending join message:', joinMessage)
-        ws.send(JSON.stringify(joinMessage))
-      }
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          console.log('📡 Received WebSocket message:', {
-            type: data.type,
-            phase: data.phase,
-            currentPlayer: data.currentPlayer,
-            creatorChoice: data.creatorChoice,
-            joinerChoice: data.joinerChoice,
-            creator: data.creator,
-            joiner: data.joiner
-          })
-          
-          switch (data.type) {
-            case 'game_state':
-              console.log('🔄 Game state update:', {
-                phase: data.phase,
-                currentRound: data.currentRound,
-                currentPlayer: data.currentPlayer,
-                creatorWins: data.creatorWins,
-                joinerWins: data.joinerWins,
-                isFlipInProgress: data.isFlipInProgress,
-                creatorChoice: data.creatorChoice,
-                joinerChoice: data.joinerChoice,
-                creator: data.creator,
-                joiner: data.joiner,
-                coin: data.coin // NEW: Log coin data
-              })
-              console.log('🪙 Coin data in game state:', data.coin);
-              setGameState(data)
-              
-              // Show opponent's choice animation if they just made a choice
-              if (data.phase === 'round_active' && 
-                  ((isCreator && data.joinerChoice) || (isJoiner && data.creatorChoice))) {
-                const opponentChoice = isCreator ? data.joinerChoice : data.creatorChoice
-                // Show the opposite of what the opponent chose (your side)
-                const mySide = opponentChoice === 'heads' ? 'tails' : 'heads'
-                setChoiceAnimationText(mySide.toUpperCase())
-                setChoiceAnimationColor('#FF1493') // Neon pink
-                setShowChoiceAnimation(true)
-                setTimeout(() => {
-                  setShowChoiceAnimation(false)
-                }, 1000)
-              }
-              break
-              
-            case 'flip_animation':
-              console.log('🎬 Flip animation received:', data)
-              console.log('🎬 Flip animation details:', {
-                result: data.result,
-                duration: data.duration,
-                playerChoice: data.playerChoice,
-                playerAddress: data.playerAddress,
-                power: data.power
-              })
-              setFlipAnimation(data)
-              setRoundResult(null)
-              break
-              
-            case 'round_result':
-              console.log('🏁 Round result received:', data)
-              console.log('🏁 Round result details:', {
-                result: data.result,
-                isWinner: data.isWinner,
-                playerAddress: data.playerAddress,
-                playerChoice: data.playerChoice,
-                actualWinner: data.actualWinner,
-                creatorWins: data.creatorWins,
-                joinerWins: data.joinerWins,
-                roundNumber: data.roundNumber,
-                myAddress: address,
-                isCreator,
-                isJoiner,
-                // Additional debug info
-                flipperWon: data.flipperWon,
-                creatorChoice: data.creatorChoice,
-                joinerChoice: data.joinerChoice
-              })
-              setRoundResult(data)
-              setLastFlipResult(data.result) // Save the last flip result
-              setFlipAnimation(null) // Clear the animation so coin uses roundResult
-              setTimeout(() => setRoundResult(null), 4000)
-              break
-              
-            case 'error':
-              console.log('❌ Error received:', data.error)
-              showError(data.error)
-              break
-          }
-        } catch (error) {
-          console.error('❌ Error parsing WebSocket message:', error)
-        }
-      }
-
-      ws.onclose = () => {
-        console.log('❌ WebSocket disconnected')
-        setConnected(false)
-        setSocket(null)
-        
-        // Attempt to reconnect
-        if (reconnectAttempts < maxReconnectAttempts) {
-          reconnectAttempts++
-          console.log(`🔄 Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`)
-          reconnectTimer = setTimeout(() => {
-            connect()
-          }, 2000 * reconnectAttempts)
-        } else {
-          showError('Lost connection to game server. Please refresh the page.')
-        }
-      }
-
-      ws.onerror = (error) => {
-        console.error('❌ WebSocket error:', error)
-      }
-
-      return ws
-    }
-
-    const ws = connect()
-
-    return () => {
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer)
-      }
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close()
-      }
-    }
-  }, [gameId, address])
-
-  // Auto-flip detection
-  useEffect(() => {
-    if (!gameState) return
-    
-    const currentTurnTimeLeft = gameState.turnTimeLeft
-    const previousTurnTimeLeft = previousTurnTimeLeftRef.current
-    
-    // Detect auto-flip: timer went from positive number to 0 or undefined
-    if (previousTurnTimeLeft !== null && 
-        previousTurnTimeLeft > 0 && 
-        (currentTurnTimeLeft === 0 || currentTurnTimeLeft === undefined) &&
-        gameState.phase === 'round_active') {
-      
-      console.log('⚡ Auto-flip detected! Showing animation...')
-      setShowAutoFlipAnimation(true)
-      
-      // Hide animation after 2 seconds
-      setTimeout(() => {
-        setShowAutoFlipAnimation(false)
-      }, 2000)
-    }
-    
-    // Update the ref with current value
-    previousTurnTimeLeftRef.current = currentTurnTimeLeft
-  }, [gameState?.turnTimeLeft, gameState?.phase])
-
-  // Load game data from database
-  useEffect(() => {
-    const loadGame = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`${API_URL}/api/games/${gameId}`)
-        
-        if (response.ok) {
-          const dbGame = await response.json()
-          
-          const gameData = {
-            id: dbGame.id,
-            creator: dbGame.creator,
-            joiner: dbGame.joiner,
-            nft: {
-              contractAddress: dbGame.nft_contract,
-              tokenId: dbGame.nft_token_id,
-              name: dbGame.nft_name,
-              image: dbGame.nft_image || 'https://picsum.photos/300/300?random=' + dbGame.id,
-              collection: dbGame.nft_collection,
-              chain: dbGame.nft_chain
-            },
-            price: dbGame.price_usd,
-            priceUSD: dbGame.price_usd,
-            rounds: dbGame.rounds,
-            status: dbGame.status,
-            coin: dbGame.coin ? (typeof dbGame.coin === 'string' ? JSON.parse(dbGame.coin) : dbGame.coin) : null // NEW: Load coin data
-          }
-          
-          console.log('🪙 Loaded game coin data:', gameData.coin);
-          
-          // NEW: Set coin data immediately if available
-          if (gameData.coin) {
-            console.log('🪙 Setting coin data from database:', gameData.coin);
-            setGameCoin(gameData.coin);
-            setCustomHeadsImage(gameData.coin.headsImage);
-            setCustomTailsImage(gameData.coin.tailsImage);
-          }
-          
-          setGameData(gameData)
-        } else {
-          throw new Error('Game not found')
-        }
-      } catch (error) {
-        console.error('❌ Error loading game:', error)
-        showError('Game not found')
-        navigate('/')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadGame()
-  }, [gameId])
-
-  // Update useEffect to fetch NFT data when game loads or when we have game data
-  useEffect(() => {
-    if (gameId && gameData) {
-      fetchNFTData(gameId)
-    }
-  }, [gameId, gameData])
-
-  // Add effect to set NFT data from gameData as fallback
-  useEffect(() => {
-    if (gameData && !nftData && !isLoadingNFT) {
-      console.log('🎨 Setting NFT data from gameData:', gameData.nft)
-      setNftData({
-        contractAddress: gameData.nft.contractAddress,
-        tokenId: gameData.nft.tokenId,
-        name: gameData.nft.name,
-        image: gameData.nft.image,
-        collection: gameData.nft.collection,
-        chain: gameData.nft.chain,
-        metadata: {
-          description: gameData.nft.description || '',
-          attributes: gameData.nft.attributes || []
-        }
-      })
-    }
-  }, [gameData, nftData, isLoadingNFT])
-
-  // User input handlers - ONLY send to server
+  // Handle power charging
   const handlePowerChargeStart = () => {
-    console.log('💥 handlePowerChargeStart called:', {
-      isMyTurn,
-      hasSocket: !!socket,
-      isCharging: isChargingRef.current,
-      gamePhase: gameState?.phase,
-      currentPlayer: gameState?.currentPlayer,
-      myAddress: address
-    })
+    setIsPowerCharging(true)
+    setPowerLevel(0)
     
-    // Only allow charging if player has made their choice and it's the charging phase
-    if (!isMyTurn || !socket || isChargingRef.current) {
-      console.log('❌ Cannot start charging:', {
-        isMyTurn,
-        hasSocket: !!socket,
-        isCharging: isChargingRef.current
+    powerIntervalRef.current = setInterval(() => {
+      setPowerLevel(prev => {
+        if (prev >= 100) {
+          clearInterval(powerIntervalRef.current)
+          setIsPowerCharging(false)
+          return 100
+        }
+        return prev + 2
       })
-      return
-    }
-    
-    // Allow charging in both 'round_active' and after choosing
-    if (gameState?.phase !== 'round_active' && gameState?.phase !== 'choosing') {
-      console.log('❌ Wrong phase for charging:', gameState?.phase)
-      return
-    }
-    
-    // Check if player has made their choice
-    const playerChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice
-    if (!playerChoice) {
-      showError('You must choose heads or tails first!')
-      return
-    }
-    
-    isChargingRef.current = true
-    
-    // Send start_charging immediately - no pre-calculation
-    socket.send(JSON.stringify({
-      type: 'start_charging',
-      gameId,
-      address
-    }))
+    }, 50)
   }
 
   const handlePowerChargeStop = () => {
-    if (!socket || !isChargingRef.current) return
-    
-    isChargingRef.current = false
-    socket.send(JSON.stringify({
-      type: 'stop_charging',
-      gameId,
-      address
-    }))
+    if (powerIntervalRef.current) {
+      clearInterval(powerIntervalRef.current)
+      setIsPowerCharging(false)
+    }
   }
 
-  const handlePlayerChoice = (choice) => {
-    console.log('🎯 handlePlayerChoice called:', {
+  // Handle player choice (heads/tails)
+  const handlePlayerChoice = async (choice) => {
+    if (!game || !currentPlayer) {
+      showError('Game or player data not available')
+      return
+    }
+
+    if (game.status !== 'active') {
+      showError('Game is not active')
+      return
+    }
+
+    // Show choice animation
+    setChoiceAnimation({
       choice,
-      hasSocket: !!socket,
-      hasGameState: !!gameState,
-      gamePhase: gameState?.phase,
-      isMyTurn: gameState?.currentPlayer === address,
-      currentPlayer: gameState?.currentPlayer,
-      myAddress: address,
-      isCreator,
-      isJoiner
+      color: choice === 'heads' ? '#FFD700' : '#C0C0C0'
     })
 
-    if (!socket || !gameState) {
-      console.log('❌ Cannot make choice - missing socket or gameState')
-      showError('Connection error - please refresh')
-      return
-    }
-    
-    if (gameState.phase !== 'choosing') {
-      console.log('❌ Cannot make choice - wrong phase:', gameState.phase)
-      showError('Not in choosing phase')
-      return
-    }
-    
-    const isMyTurn = gameState.currentPlayer === address
-    if (!isMyTurn) {
-      console.log('❌ Not my turn:', { 
-        currentPlayer: gameState.currentPlayer, 
-        myAddress: address,
-        isCreator,
-        isJoiner
-      })
-      showError('Not your turn')
-      return
-    }
-    
-    // Show animation for player's choice
-    setChoiceAnimationText(choice.toUpperCase())
-    setChoiceAnimationColor('#00FF41') // Neon green
-    setShowChoiceAnimation(true)
-    
-    // Hide animation after 1 second
+    // Clear animation after 1 second
     setTimeout(() => {
-      setShowChoiceAnimation(false)
+      setChoiceAnimation(null)
     }, 1000)
-    
-    console.log('🎯 Sending player choice to server:', choice)
-    
-    socket.send(JSON.stringify({
-      type: 'player_choice',
-      gameId,
-      address,
-      choice
-    }))
+
+    // Call parent's flip coin function
+    if (onFlipCoin) {
+      try {
+        await onFlipCoin()
+      } catch (error) {
+        console.error('❌ Error in flip coin:', error)
+        showError('Failed to flip coin: ' + error.message)
+      }
+    }
   }
 
-  const handleJoinGame = async () => {
-    console.log('🔍 Join game attempt:', {
-      hasGameData: !!gameData,
-      hasWalletClient: !!walletClient,
-      hasAddress: !!address,
-      isJoining: joiningGame,
-      isFullyConnected: isFullyConnected,
-      joinInProgress,
-      joiningPlayer
-    })
-
-    const buttonState = getJoinButtonState()
-    if (buttonState.disabled) {
-      console.log('❌ Cannot join game:', buttonState.text)
-      showError(buttonState.text)
+  // Handle join game
+  const handleJoinGameClick = async () => {
+    if (!game || !currentPlayer) {
+      showError('Game or player data not available')
       return
     }
 
-    try {
-      setJoiningGame(true)
-      
-      // Step 1: Start the join process (claim slot)
-      console.log('🎯 Step 1: Starting join process...')
-      const startJoinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/start-join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerAddress: address })
-      })
-      
-      if (!startJoinResponse.ok) {
-        const error = await startJoinResponse.json()
-        throw new Error(error.error || 'Failed to start join process')
-      }
-      
-      // Also notify via WebSocket for real-time updates
-      if (socket) {
-        socket.send(JSON.stringify({
-          type: 'start_join_process',
-          gameId,
-          address
-        }))
-      }
-      
-      console.log('✅ Join process started, now processing payment...')
-      showInfo('Processing payment...')
-      
-      // Step 2: Process payment
-      const paymentResult = await PaymentService.calculateETHAmount(gameData.priceUSD)
-      const feeRecipient = PaymentService.getFeeRecipient()
-      
-      const txResult = await PaymentService.sendTransaction(walletClient, feeRecipient, paymentResult.ethAmount.toString())
-      
-      if (!txResult.success) {
-        // Cancel join process if payment fails
-        if (socket) {
-          socket.send(JSON.stringify({
-            type: 'cancel_join_process',
-            gameId,
-            address
-          }))
-        }
-        throw new Error('Transaction failed: ' + txResult.error)
-      }
-      
-      showInfo('Confirming payment...')
-      
-      // Step 3: Wait for transaction confirmation
-      let receipt = null
-      let attempts = 0
-      while (!receipt && attempts < 30) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        try {
-          receipt = await publicClient.getTransactionReceipt({ hash: txResult.hash })
-          if (receipt) {
-            console.log('✅ Payment confirmed:', receipt.transactionHash)
-            break
-          }
-        } catch (e) {
-          // Transaction might not be mined yet
-        }
-        attempts++
-      }
-      
-      if (!receipt) {
-        // Cancel join process if payment confirmation fails
-        if (socket) {
-          socket.send(JSON.stringify({
-            type: 'cancel_join_process',
-            gameId,
-            address
-          }))
-        }
-        throw new Error('Transaction confirmation timeout')
-      }
-      
-      // Step 4: Complete the join process
-      console.log('🎯 Step 4: Completing join process...')
-      const joinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/simple-join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          joinerAddress: address,
-          paymentTxHash: receipt.transactionHash,
-          paymentAmount: gameData.priceUSD
-        })
-      })
-      
-      if (!joinResponse.ok) {
-        const error = await joinResponse.json()
-        throw new Error(error.error || 'Failed to complete join')
-      }
-      
-      // Step 5: Update local state and notify WebSocket
-      setGameData(prev => ({ ...prev, joiner: address, status: 'joined' }))
-      
-      if (socket) {
-        socket.send(JSON.stringify({
-          type: 'join_game',
-          gameId,
-          role: 'joiner',
-          address,
-          entryFeeHash: receipt.transactionHash
-        }))
-      }
-      
-      showSuccess('Successfully joined the game!')
-        
-    } catch (error) {
-      console.error('❌ Failed to join game:', error)
-      showError('Failed to join: ' + error.message)
-    } finally {
-      setJoiningGame(false)
+    if (game.status !== 'waiting') {
+      showError('Game is not waiting for players')
+      return
     }
-  }
 
-  // Add handleClaimWinnings function
-  const handleClaimWinnings = async () => {
-    try {
-      showInfo('Claiming winnings... (Contract integration coming soon)')
-      // TODO: Add contract integration here
-      // For now, just show success and navigate home
-      setTimeout(() => {
-        showSuccess('Winnings claimed successfully!')
-        setShowResultPopup(false)
-        navigate('/')
-      }, 2000)
-    } catch (error) {
-      showError('Failed to claim winnings: ' + error.message)
+    if (game.creator === currentPlayer) {
+      showError('You cannot join your own game')
+      return
     }
-  }
 
-  // Add effect to show popup when game is complete
-  useEffect(() => {
-    if (gameState?.phase === 'game_complete') {
-      const isWinner = gameState.winner === address
-      setPopupData({
-        isWinner,
-        flipResult: null, // No specific flip result for game end
-        playerChoice: null, // No specific choice for game end
-        gameData,
-        finalScore: {
-          creatorWins: gameState.creatorWins,
-          joinerWins: gameState.joinerWins
-        }
-      })
-      setShowResultPopup(true)
-    }
-  }, [gameState?.phase, gameState?.winner, address, gameData])
-
-  const handleShare = (platform) => {
-    const shareText = `Join my game of Crypto Flipz! Game ID: ${gameId}`;
-    const shareUrl = window.location.href;
-    
-    if (platform === 'x') {
-      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-      window.open(twitterUrl, '_blank');
-    } else if (platform === 'telegram') {
-      const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
-      window.open(telegramUrl, '_blank');
-    } else if (platform === 'copy') {
-      navigator.clipboard.writeText(shareUrl);
-      showInfo('Link copied to clipboard!');
-    }
-  };
-
-  // Add this useEffect to detect NFT vs NFT games
-  useEffect(() => {
-    if (gameData) {
-      setIsNFTGame(gameData.gameType === 'nft-vs-nft')
-    }
-  }, [gameData])
-
-  // Enhanced WebSocket message handler
-  useEffect(() => {
-    if (!socket) return
-
-    const handleMessage = (event) => {
+    // Call parent's join game function
+    if (onJoinGame) {
       try {
-        const data = JSON.parse(event.data)
-        console.log('📡 Received WebSocket message:', data)
-        
-        switch (data.type) {
-          case 'game_state':
-            setGameState(data)
-            // Update local join state from game state
-            if (data.joinInProgress !== undefined) {
-              setJoinInProgress(data.joinInProgress)
-              setJoiningPlayer(data.joiningPlayer)
-            }
-            break
-
-          case 'game_info':
-            // Basic game info for non-players
-            setJoinInProgress(data.joinInProgress || false)
-            setJoiningPlayer(data.joiningPlayer || null)
-            break
-
-          case 'join_state_update':
-            // Real-time join state updates
-            setJoinInProgress(data.joinInProgress || false)
-            setJoiningPlayer(data.joiningPlayer || null)
-            // Update gameData if joiner changed
-            if (data.joiner && data.joiner !== gameData?.joiner) {
-              setGameData(prev => ({ ...prev, joiner: data.joiner }))
-            }
-            break
-
-          case 'join_process_response':
-            if (data.success) {
-              showInfo('Join process started - processing payment...')
-            } else {
-              showError(data.error || 'Failed to start join process')
-              setJoiningGame(false)
-            }
-            break
-            
-          case 'flip_animation':
-            console.log('🎬 Flip animation received:', data)
-            setFlipAnimation(data)
-            setRoundResult(null)
-            break
-            
-          case 'round_result':
-            console.log('🏁 Round result received:', data)
-            setRoundResult(data)
-            setLastFlipResult(data.result)
-            setFlipAnimation(null)
-            setTimeout(() => setRoundResult(null), 4000)
-            break
-
-          // NFT offer handling
-          case 'nft_offer_received':
-            console.log('🎯 NFT offer received:', data.offer)
-            setOfferedNFTs(prev => [...prev, data.offer])
-            if (!isCreator) {
-              showInfo(`New NFT battle offer: ${data.offer.nft.name}`)
-            }
-            break
-
-          case 'nft_offer_accepted':
-            console.log('✅ NFT offer accepted:', data.acceptedOffer)
-            setAcceptedOffer(data.acceptedOffer)
-            
-            if (data.acceptedOffer.offererAddress === address) {
-              showInfo('Your NFT offer was accepted! Please pay to join the battle.')
-            }
-            break
-
-          case 'challenger_payment_confirmed':
-            console.log('💰 Challenger payment confirmed')
-            setChallengerPaid(true)
-            showSuccess('Payment confirmed! Game starting...')
-            break
-            
-          case 'error':
-            console.log('❌ Error received:', data.error)
-            showError(data.error)
-            setJoiningGame(false)
-            break
-
-          case 'chat_message':
-            // Only players receive chat messages now
-            console.log('💬 Chat message received:', data)
-            break
-        }
+        await onJoinGame()
       } catch (error) {
-        console.error('❌ Error parsing WebSocket message:', error)
+        console.error('❌ Error joining game:', error)
+        showError('Failed to join game: ' + error.message)
       }
-    }
-
-    socket.addEventListener('message', handleMessage)
-    return () => socket.removeEventListener('message', handleMessage)
-  }, [socket, address, gameData, isCreator, showError, showInfo, showSuccess])
-
-  // NEW: Handle payment for accepted NFT offer
-  const handlePaymentForAcceptedOffer = async (offer) => {
-    try {
-      showInfo('Your offer was accepted! Processing payment...')
-      
-      // Calculate 50¢ fee
-      const feeUSD = 0.50
-      const feeCalculation = await PaymentService.calculateETHFee(feeUSD)
-      
-      if (!feeCalculation.success) {
-        throw new Error('Failed to calculate fee: ' + feeCalculation.error)
-      }
-
-      const feeAmountETH = feeCalculation.ethAmount
-      const feeRecipient = PaymentService.getFeeRecipient()
-
-      // Send transaction using walletClient
-      const txResult = await PaymentService.sendTransaction(walletClient, feeRecipient, feeAmountETH.toString())
-      
-      if (!txResult.success) {
-        throw new Error('Transaction failed: ' + txResult.error)
-      }
-
-      showInfo('Confirming payment...')
-      
-      // Wait for transaction confirmation
-      let feeReceipt = null
-      let attempts = 0
-      while (!feeReceipt && attempts < 30) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        try {
-          feeReceipt = await publicClient.getTransactionReceipt({ hash: txResult.hash })
-          if (feeReceipt) {
-            showSuccess('Payment confirmed! Starting battle...')
-            break
-          }
-        } catch (e) {
-          // Transaction might not be mined yet
-        }
-        attempts++
-      }
-      
-      if (!feeReceipt) {
-        throw new Error('Transaction confirmation timeout')
-      }
-
-      // Update database with payment
-      const response = await fetch(`${API_URL}/api/games/${gameId}/nft-payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          challengerAddress: address,
-          paymentTxHash: feeReceipt.transactionHash,
-          paymentAmount: feeUSD,
-          acceptedOffer: offer
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to record payment')
-      }
-
-      // Notify via WebSocket that payment is complete
-      if (socket) {
-        socket.send(JSON.stringify({
-          type: 'nft_payment_complete',
-          gameId,
-          challengerAddress: address,
-          paymentTxHash: feeReceipt.transactionHash,
-          acceptedOffer: offer
-        }))
-      }
-
-    } catch (error) {
-      console.error('❌ Payment failed:', error)
-      showError('Payment failed: ' + error.message)
     }
   }
 
-  // NEW: Handle NFT offer submission
-  const handleOfferSubmitted = (offerData) => {
-    console.log('📤 NFT offer submitted:', offerData)
-    // The offer will be handled by WebSocket response
-  }
+  // Handle withdraw rewards
+  const handleWithdrawRewardsClick = async () => {
+    if (!currentPlayer) {
+      showError('Player data not available')
+      return
+    }
 
-  // NEW: Handle NFT offer acceptance
-  const handleOfferAccepted = async (offer) => {
-    try {
-      showInfo('Accepting NFT challenge...')
-      
-      // Update database to record the accepted offer
-      const response = await fetch(`${API_URL}/api/games/${gameId}/accept-nft-offer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creatorAddress: address,
-          acceptedOffer: offer
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to accept offer')
+    // Call parent's withdraw rewards function
+    if (onWithdrawRewards) {
+      try {
+        await onWithdrawRewards()
+      } catch (error) {
+        console.error('❌ Error withdrawing rewards:', error)
+        showError('Failed to withdraw rewards: ' + error.message)
       }
-
-      showSuccess(`Challenge accepted! Waiting for ${offer.offererAddress.slice(0, 6)}... to pay.`)
-      setAcceptedOffer(offer)
-      
-    } catch (error) {
-      console.error('❌ Error accepting offer:', error)
-      showError('Failed to accept offer: ' + error.message)
     }
   }
 
-  // Add new useEffect for NFT vs NFT game detection
-  useEffect(() => {
-    if (gameData?.gameType === 'nft-vs-nft') {
-      console.log('🎮 NFT vs NFT game detected')
-      // If player is not creator and no offer exists, show offer button
-      if (!isCreator && !offeredNFTs?.length) {
-        setShowNFTOfferModal(true)
-      }
-    }
-  }, [gameData, isCreator, offeredNFTs])
+  // Get join button state
+  const getJoinButtonState = () => {
+    if (!game || !currentPlayer) return 'disabled'
+    if (game.status !== 'waiting') return 'disabled'
+    if (game.creator === currentPlayer) return 'disabled'
+    if (isJoining) return 'loading'
+    return 'enabled'
+  }
 
-  // Add new handler for NFT offer submission
-  const handleNFTOffer = async (selectedNFT) => {
-    if (!connected || !selectedNFT) return
+  // Get flip button state
+  const getFlipButtonState = () => {
+    if (!game || !currentPlayer) return 'disabled'
+    if (game.status !== 'active') return 'disabled'
+    if (isFlipping) return 'loading'
+    return 'enabled'
+  }
+
+  // Check if current player can play
+  const canPlay = () => {
+    if (!game || !currentPlayer) return false
+    return game.creator === currentPlayer || game.joiner === currentPlayer
+  }
+
+  // Check if current player is creator
+  const isCreator = () => {
+    return game?.creator === currentPlayer
+  }
+
+  // Check if current player is joiner
+  const isJoiner = () => {
+    return game?.joiner === currentPlayer
+  }
+
+  // Get current player's score
+  const getCurrentPlayerScore = () => {
+    if (!game || !currentPlayer) return 0
+    if (isCreator()) return game.creator_score || 0
+    if (isJoiner()) return game.joiner_score || 0
+    return 0
+  }
+
+  // Get opponent's score
+  const getOpponentScore = () => {
+    if (!game || !currentPlayer) return 0
+    if (isCreator()) return game.joiner_score || 0
+    if (isJoiner()) return game.creator_score || 0
+    return 0
+  }
+
+  // Get current round
+  const getCurrentRound = () => {
+    return game?.current_round || 0
+  }
+
+  // Get max rounds
+  const getMaxRounds = () => {
+    return game?.max_rounds || 5
+  }
+
+  // Get game status text
+  const getGameStatusText = () => {
+    if (!game) return 'Loading...'
     
-    try {
-      const offerData = {
-        type: 'nft_offer',
-        gameId: gameId,
-        offererAddress: address,
-        nft: {
-          contractAddress: selectedNFT.contractAddress,
-          tokenId: selectedNFT.tokenId,
-          name: selectedNFT.name,
-          image: selectedNFT.image,
-          collection: selectedNFT.collection,
-          chain: selectedNFT.chain
-        }
-      }
-      
-      socket.send(JSON.stringify(offerData))
-      setShowNFTOfferModal(false)
-      setOfferStatus('pending')
-      
-      showInfo('NFT offer submitted successfully! Waiting for creator to review your offer...')
-    } catch (error) {
-      console.error('Error submitting NFT offer:', error)
-      showError('Failed to submit NFT offer. Please try again.')
+    switch (game.status) {
+      case 'waiting':
+        return 'Waiting for opponent...'
+      case 'active':
+        return `Round ${getCurrentRound() + 1} of ${getMaxRounds()}`
+      case 'completed':
+        return 'Game completed'
+      default:
+        return 'Unknown status'
     }
   }
 
-  // Add new handler for offer acceptance/rejection
-  const handleOfferResponse = async (accepted) => {
-    if (!isCreator || !pendingNFTOffer) return
+  // Get coin design from auth info
+  const getCoinDesign = () => {
+    if (!game?.auth_info?.coinDesign) {
+      return { name: 'Default Coin', heads: 'heads', tails: 'tails' }
+    }
+    return game.auth_info.coinDesign
+  }
+
+  // Render functions
+  const renderJoinButton = () => {
+    const state = getJoinButtonState()
     
-    try {
-      const responseData = {
-        type: accepted ? 'accept_nft_offer' : 'reject_nft_offer',
-        gameId: gameId,
-        creatorAddress: address,
-        offer: pendingNFTOffer
-      }
-      
-      socket.send(JSON.stringify(responseData))
-      setShowOfferReviewModal(false)
-      
-      if (accepted) {
-        showInfo('Offer accepted! Waiting for challenger to join the game...')
-      } else {
-        showInfo('Offer rejected. The NFT offer has been rejected.')
-      }
-    } catch (error) {
-      console.error('Error responding to offer:', error)
-      showError('Failed to process offer response. Please try again.')
+    if (state === 'disabled') {
+      return (
+        <Button disabled style={{ opacity: 0.5 }}>
+          Cannot Join
+        </Button>
+      )
     }
-  }
-
-  // NFT Modal Handlers
-  const handleNFTOfferAccepted = (offer) => {
-    console.log('NFT offer accepted:', offer)
-    setAcceptedOffer(offer)
-    setShowNFTOfferModal(false)
-    showSuccess('NFT offer accepted!')
-  }
-
-  const handleNFTOfferRejected = () => {
-    console.log('NFT offer rejected')
-    setShowNFTOfferModal(false)
-    showInfo('NFT offer rejected')
-  }
-
-  const handleNFTVerificationComplete = (nft) => {
-    console.log('NFT verification complete:', nft)
-    setSelectedNFT(nft)
-    setShowNFTVerificationModal(false)
-    showSuccess('NFT verified successfully!')
-  }
-
-  const renderNFTOfferModal = () => {
-    if (!showNFTOfferModal) return null
-
+    
+    if (state === 'loading') {
+      return (
+        <Button disabled>
+          <LoadingSpinner /> Joining...
+        </Button>
+      )
+    }
+    
     return (
-      <Modal>
-        <ModalContent>
-          <CloseButton onClick={() => setShowNFTOfferModal(false)}>×</CloseButton>
-          <ModalHeader>
-            <NeonText>NFT Offer</NeonText>
-          </ModalHeader>
-          <ModalBody>
-            <NFTOfferComponent
-              gameId={gameId}
-              onOfferAccepted={handleNFTOfferAccepted}
-              onOfferRejected={handleNFTOfferRejected}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <Button 
+        onClick={handleJoinGameClick}
+        style={{
+          background: 'linear-gradient(45deg, #00FF41, #39FF14)',
+          color: '#000',
+          fontWeight: 'bold'
+        }}
+      >
+        Join Game
+      </Button>
     )
   }
 
-  const renderNFTVerificationModal = () => {
-    if (!showNFTVerificationModal) return null
-
+  const renderFlipButton = () => {
+    const state = getFlipButtonState()
+    
+    if (state === 'disabled') {
+      return (
+        <Button disabled style={{ opacity: 0.5 }}>
+          Cannot Flip
+        </Button>
+      )
+    }
+    
+    if (state === 'loading') {
+      return (
+        <Button disabled>
+          <LoadingSpinner /> Flipping...
+        </Button>
+      )
+    }
+    
     return (
-      <Modal>
-        <ModalContent>
-          <CloseButton onClick={() => setShowNFTVerificationModal(false)}>×</CloseButton>
-          <ModalHeader>
-            <NeonText>NFT Verification</NeonText>
-          </ModalHeader>
-          <ModalBody>
-            <NFTVerificationDisplay
-              nft={selectedNFT}
-              onVerificationComplete={handleNFTVerificationComplete}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <Button 
+        onClick={() => setShowInstructions(true)}
+        style={{
+          background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+          color: '#000',
+          fontWeight: 'bold'
+        }}
+      >
+        Flip Coin
+      </Button>
     )
   }
 
-  const renderNFTDetailsModal = () => {
-    if (!showNFTDetailsModal || !selectedNFT) return null
-
+  const renderWithdrawButton = () => {
     return (
-      <Modal>
-        <ModalContent>
-          <CloseButton onClick={() => setShowNFTDetailsModal(false)}>×</CloseButton>
-          <ModalHeader>
-            <NeonText>NFT Details</NeonText>
-          </ModalHeader>
-          <ModalBody>
-            <NFTImage src={selectedNFT.image} alt={selectedNFT.name} />
-            <div>
-              <h3>{selectedNFT.name}</h3>
-              <p>Collection: {selectedNFT.collection}</p>
-              <p>Token ID: {selectedNFT.tokenId}</p>
-              <NFTLink href={selectedNFT.openseaUrl} target="_blank" rel="noopener noreferrer">
-                View on OpenSea
-              </NFTLink>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={() => setShowNFTDetailsModal(false)}>Close</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <Button 
+        onClick={handleWithdrawRewardsClick}
+        style={{
+          background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
+          color: '#fff',
+          fontWeight: 'bold'
+        }}
+      >
+        Withdraw Rewards
+      </Button>
     )
   }
-
-  const renderOfferReviewModal = () => {
-    if (!showOfferReviewModal || !nftOffer) return null
-
-    return (
-      <Modal>
-        <ModalContent>
-          <CloseButton onClick={() => setShowOfferReviewModal(false)}>×</CloseButton>
-          <ModalHeader>
-            <NeonText>Review NFT Offer</NeonText>
-          </ModalHeader>
-          <ModalBody>
-            <div>
-              <h3>NFT Details</h3>
-              <NFTImage src={nftOffer.image} alt={nftOffer.name} />
-              <p>Name: {nftOffer.name}</p>
-              <p>Collection: {nftOffer.collection}</p>
-              <p>Token ID: {nftOffer.tokenId}</p>
-              <NFTLink href={nftOffer.openseaUrl} target="_blank" rel="noopener noreferrer">
-                View on OpenSea
-              </NFTLink>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={() => {
-              handleNFTOfferAccepted(nftOffer)
-              setShowOfferReviewModal(false)
-            }}>
-              Accept Offer
-            </Button>
-            <Button onClick={() => {
-              handleNFTOfferRejected()
-              setShowOfferReviewModal(false)
-            }}>
-              Reject Offer
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    )
-  }
-
-  if (!isFullyConnected) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Container>
-          <ContentWrapper>
-            <GlassCard style={{ textAlign: 'center', padding: '3rem' }}>
-              <NeonText>Connect Your Wallet</NeonText>
-              {connectionError && (
-                <p style={{ color: '#FF6B6B', marginTop: '1rem' }}>{connectionError}</p>
-              )}
-              <Button onClick={() => navigate('/')} style={{ marginTop: '1rem' }}>Go Home</Button>
-            </GlassCard>
-          </ContentWrapper>
-        </Container>
-      </ThemeProvider>
-    )
-  }
-
-  if (loading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Container>
-          <ContentWrapper>
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-              <LoadingSpinner />
-            </div>
-          </ContentWrapper>
-        </Container>
-      </ThemeProvider>
-    )
-  }
-
-  // REMOVED: canJoin variable - now using getJoinButtonState() for enhanced logic
 
   return (
     <ThemeProvider theme={theme}>
@@ -1665,7 +808,7 @@ const FlipGame = () => {
                   return (
                     <MobileNavButton 
                       isJoinButton 
-                      onClick={handleJoinGame}
+                      onClick={handleJoinGameClick}
                       disabled={buttonState.disabled}
                       style={{
                         background: buttonState.disabled ? 
@@ -3005,7 +2148,7 @@ const FlipGame = () => {
                       
                       return (
                         <button
-                          onClick={handleJoinGame}
+                          onClick={handleJoinGameClick}
                           disabled={buttonState.disabled}
                           style={{
                             background: buttonState.disabled ? 
@@ -3479,7 +2622,7 @@ const FlipGame = () => {
             <Button
               colorScheme="green"
               size="lg"
-              onClick={handleJoinGame}
+              onClick={handleJoinGameClick}
               mb={4}
             >
               Join Battle

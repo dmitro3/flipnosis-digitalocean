@@ -1,82 +1,141 @@
-import { createPublicClient, createWalletClient, custom, parseEther } from 'viem'
-import { base } from 'viem/chains'
+import { ethers } from 'ethers'
+import { 
+  createPublicClient, 
+  createWalletClient, 
+  custom, 
+  parseEther,
+  parseUnits,
+  formatEther,
+  formatUnits
+} from 'viem'
+import { 
+  base, 
+  mainnet, 
+  bsc, 
+  avalanche, 
+  polygon,
+  arbitrum,
+  optimism 
+} from 'viem/chains'
 
-// Contract configuration
-const CONTRACT_CONFIG = {
-  // Contract address on Base network
-  address: "0xcc55c4599e3deb5ce07d972b7b298723efb93384",
-  
-  // Contract ABI (exact function signatures from contract)
-  abi: [
-    {
-      name: 'createGame',
-      type: 'function',
-      stateMutability: 'nonpayable',
-      inputs: [
-        {
-          name: 'params',
-          type: 'tuple',
-          components: [
-            { name: 'nftContract', type: 'address' },
-            { name: 'tokenId', type: 'uint256' },
-            { name: 'priceUSD', type: 'uint256' },
-            { name: 'acceptedToken', type: 'uint8' },
-            { name: 'maxRounds', type: 'uint8' },
-            { name: 'authInfo', type: 'string' }
-          ]
-        }
-      ],
-      outputs: [{ name: '', type: 'uint256' }]
-    },
-    {
-      name: 'GameCreated',
-      type: 'event',
-      anonymous: false,
-      inputs: [
-        { name: 'gameId', type: 'uint256', indexed: true },
-        { name: 'creator', type: 'address', indexed: true },
-        { name: 'nftContract', type: 'address', indexed: true },
+// Chain configurations
+export const SUPPORTED_CHAINS = {
+  base: {
+    chain: base,
+    contractAddress: '0xBFD8912ded5830e43E008CCCEA822A6B0174C480', // Base contract address
+    usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base USDC
+    ethPriceFeed: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70', // Base ETH/USD
+    usdcPriceFeed: '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B', // Base USDC/USD
+    blockExplorer: 'https://basescan.org'
+  },
+  ethereum: {
+    chain: mainnet,
+    contractAddress: '0x...',
+    usdcAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    ethPriceFeed: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419',
+    usdcPriceFeed: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6',
+    blockExplorer: 'https://etherscan.io'
+  },
+  bnb: {
+    chain: bsc,
+    contractAddress: '0x...',
+    usdcAddress: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+    ethPriceFeed: '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e',
+    usdcPriceFeed: '0x51597f405303C4377E36123cBc172b13269EA163',
+    blockExplorer: 'https://bscscan.com'
+  },
+  avalanche: {
+    chain: avalanche,
+    contractAddress: '0x...',
+    usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+    ethPriceFeed: '0x976B3D034E162d8bD72D6b9C989d545b839003b0',
+    usdcPriceFeed: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
+    blockExplorer: 'https://snowtrace.io'
+  },
+  polygon: {
+    chain: polygon,
+    contractAddress: '0x...',
+    usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+    ethPriceFeed: '0xF9680D99D6C9589e2a93a78A04A279e509205945',
+    usdcPriceFeed: '0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7',
+    blockExplorer: 'https://polygonscan.com'
+  }
+}
+
+// Contract ABI (simplified - include full ABI in production)
+export const CONTRACT_ABI = [
+  // Create Game
+  {
+    name: 'createGame',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [{
+      name: 'params',
+      type: 'tuple',
+      components: [
+        { name: 'nftContract', type: 'address' },
         { name: 'tokenId', type: 'uint256' },
         { name: 'priceUSD', type: 'uint256' },
         { name: 'acceptedToken', type: 'uint8' },
+        { name: 'maxRounds', type: 'uint8' },
+        { name: 'gameType', type: 'uint8' },
         { name: 'authInfo', type: 'string' }
       ]
-    },
-    "function joinGame(uint256 gameId, uint8 choice) external",
-    "function startCountdown(uint256 gameId) external",
-    "function flip(uint256 gameId, uint8 power) external",
-    "function cancelGame(uint256 gameId) external",
-    "function claimWinnings(uint256 gameId) external",
-    
-    // View functions
-    "function getUserGames(address user) external view returns (uint256[])",
-    "function getGameBasic(uint256 gameId) external view returns (uint256 gameId, address creator, address joiner, address nftContract, uint256 tokenId, uint256 priceUSD, uint8 acceptedToken, uint8 state, string memory authInfo)",
-    "function getGameProgress(uint256 gameId) external view returns (uint256 createdAt, uint256 expiresAt, uint8 maxRounds, uint8 currentRound, uint8 creatorWins, uint8 joinerWins, address winner, uint256 lastActionTime, uint256 countdownEndTime)",
-    "function getGameRound(uint256 gameId, uint8 round) external view returns (uint8 result, uint8 power, bool completed, address flipper)",
-    
-    // Emergency functions
-    "function emergencyWithdraw(address token, uint256 amount) external",
-    "function emergencyWithdrawNFT(address nftContract, uint256 tokenId) external",
-    
-    // Events
-    "event GameJoined(uint256 indexed gameId, address indexed joiner, uint8 choice)",
-    "event FlipResultEvent(uint256 indexed gameId, uint8 round, uint8 result, uint8 power, address flipper)",
-    "event GameCompleted(uint256 indexed gameId, address indexed winner, uint256 winnings, uint256 platformFee)",
-    "event TurnStarted(uint256 indexed gameId, uint8 round, address flipper)",
-    "event CountdownStarted(uint256 indexed gameId, uint8 round, uint256 endTime)",
-    "event GameCancelled(uint256 indexed gameId, address indexed creator)",
-    "event WinningsClaimed(uint256 indexed gameId, address indexed winner, uint256 winnings, uint256 platformFee)"
-  ]
-}
+    }],
+    outputs: []
+  },
+  // Join Game
+  {
+    name: 'joinGame',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [{
+      name: 'params',
+      type: 'tuple',
+      components: [
+        { name: 'gameId', type: 'uint256' },
+        { name: 'coinChoice', type: 'uint8' },
+        { name: 'roleChoice', type: 'uint8' },
+        { name: 'paymentToken', type: 'uint8' },
+        { name: 'challengerNFTContract', type: 'address' },
+        { name: 'challengerTokenId', type: 'uint256' }
+      ]
+    }],
+    outputs: []
+  },
+  // Other functions...
+  'function flipCoin(uint256 gameId, uint8 power)',
+  'function cancelGame(uint256 gameId)',
+  'function withdrawRewards()',
+  'function withdrawNFT(address nftContract, uint256 tokenId)',
+  'function withdrawAllNFTs()',
+  'function getGameDetails(uint256 gameId) view returns (tuple(uint256 gameId, address creator, address joiner, address nftContract, uint256 tokenId, uint8 state, uint8 gameType, uint8 creatorRole, uint8 joinerRole, uint8 joinerChoice), tuple(uint256 priceUSD, uint8 acceptedToken, uint256 totalPaid, uint8 paymentTokenUsed, uint256 listingFeePaid, uint256 platformFeeCollected), tuple(uint256 createdAt, uint256 expiresAt, uint8 maxRounds, uint8 currentRound, uint8 creatorWins, uint8 joinerWins, address winner, uint256 lastActionTime, uint256 countdownEndTime))',
+  'function getUserActiveGames(address user) view returns (uint256[])',
+  'function getUserUnclaimedNFTs(address user, address nftContract) view returns (uint256[])',
+  'function unclaimedETH(address user) view returns (uint256)',
+  'function unclaimedUSDC(address user) view returns (uint256)',
+  'function listingFeeUSD() view returns (uint256)',
+  'function platformFeePercent() view returns (uint256)',
+  'function getETHAmount(uint256 usdAmount) view returns (uint256)',
+  'function getRequiredPaymentAmount(uint256 gameId, uint8 token) view returns (uint256)'
+]
 
-// Payment token enum (matching contract)
-export const PaymentToken = {
-  ETH: 0,
-  USDC: 1,
-  NATIVE: 2
-}
+// NFT ABI for approvals
+const NFT_ABI = [
+  'function approve(address to, uint256 tokenId)',
+  'function setApprovalForAll(address operator, bool approved)',
+  'function getApproved(uint256 tokenId) view returns (address)',
+  'function isApprovedForAll(address owner, address operator) view returns (bool)'
+]
 
-// Game state enum (matching contract)
+// ERC20 ABI for USDC
+const ERC20_ABI = [
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function balanceOf(address account) view returns (uint256)'
+]
+
+// Enums matching contract
 export const GameState = {
   Created: 0,
   Joined: 1,
@@ -86,107 +145,129 @@ export const GameState = {
   Cancelled: 5
 }
 
-// Coin side enum (matching contract)
+export const GameType = {
+  NFTvsCrypto: 0,
+  NFTvsNFT: 1
+}
+
+export const PaymentToken = {
+  ETH: 0,
+  USDC: 1,
+  NATIVE: 2
+}
+
 export const CoinSide = {
   HEADS: 0,
   TAILS: 1
 }
 
-class ContractService {
+export const PlayerRole = {
+  FLIPPER: 0,
+  CHOOSER: 1
+}
+
+class MultiChainContractService {
   constructor() {
-    this.contract = null
-    this.publicClient = null
-    this.walletClient = null
+    this.contracts = {}
+    this.clients = {}
+    this.currentChain = null
   }
 
-  // Initialize contract with clients
-  async init(publicClient, walletClient) {
-    if (!publicClient || !walletClient) {
-      throw new Error('Both publicClient and walletClient are required')
+  // Initialize for a specific chain
+  async init(chainName, walletClient, publicClient) {
+    if (!SUPPORTED_CHAINS[chainName]) {
+      throw new Error(`Unsupported chain: ${chainName}`)
     }
+
+    const config = SUPPORTED_CHAINS[chainName]
     
-    this.publicClient = publicClient
-    this.walletClient = walletClient
-
-    // Verify we're on Base network
-    const chainId = await this.publicClient.getChainId()
-    if (chainId !== base.id) {
-      throw new Error(`Please connect to Base network. Current chain ID: ${chainId}`)
+    // Store clients
+    this.clients[chainName] = {
+      wallet: walletClient,
+      public: publicClient
     }
 
-    console.log('Connected to Base network')
+    // Initialize contract
+    this.contracts[chainName] = {
+      address: config.contractAddress,
+      config: config
+    }
 
-    // Check if contract is deployed
-    const code = await this.publicClient.getBytecode({ address: CONTRACT_CONFIG.address })
+    this.currentChain = chainName
+    
+    // Verify contract deployment
+    const code = await publicClient.getBytecode({ 
+      address: config.contractAddress 
+    })
+    
     if (!code || code === '0x') {
-      throw new Error(`No contract deployed at address ${CONTRACT_CONFIG.address}`)
+      throw new Error(`No contract deployed on ${chainName}`)
     }
 
-    console.log('Contract code found at address:', CONTRACT_CONFIG.address)
+    console.log(`✅ Connected to ${chainName} contract at ${config.contractAddress}`)
   }
 
-  // Create a new flip game
-  async createGame(nftContract, tokenId, priceUSD, totalRounds, acceptedPayment, authInfo = '') {
+  // Switch active chain
+  switchChain(chainName) {
+    if (!this.contracts[chainName]) {
+      throw new Error(`Chain ${chainName} not initialized`)
+    }
+    this.currentChain = chainName
+  }
+
+  // Get current contract config
+  getCurrentConfig() {
+    if (!this.currentChain) throw new Error('No chain selected')
+    return this.contracts[this.currentChain]
+  }
+
+  // Get current clients
+  getCurrentClients() {
+    if (!this.currentChain) throw new Error('No chain selected')
+    return this.clients[this.currentChain]
+  }
+
+  // Create a new game
+  async createGame(params) {
     try {
-      if (!this.walletClient) {
-        throw new Error('Contract not initialized with wallet client')
-      }
-
-      // First approve NFT transfer
-      const nftAbi = [
-        {
-          name: 'approve',
-          type: 'function',
-          stateMutability: 'nonpayable',
-          inputs: [
-            { name: 'to', type: 'address' },
-            { name: 'tokenId', type: 'uint256' }
-          ],
-          outputs: [{ type: 'bool' }]
-        }
-      ]
-
-      const approveTx = await this.walletClient.writeContract({
-        address: nftContract,
-        abi: nftAbi,
-        functionName: 'approve',
-        args: [CONTRACT_CONFIG.address, tokenId]
-      })
-
-      // Wait for approval transaction
-      await this.publicClient.waitForTransactionReceipt({ hash: approveTx })
-
-      // Convert price to USD with 6 decimals (e.g., $1.50 = 1500000)
-      const priceUSDFormatted = Math.floor(priceUSD * 1000000)
-
-      // Create the game using CreateGameParams struct
-      const hash = await this.walletClient.writeContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
-        functionName: 'createGame',
-        args: [{
-          nftContract,
-          tokenId,
-          priceUSD: priceUSDFormatted,
-          acceptedToken: acceptedPayment,
-          maxRounds: totalRounds,
-          authInfo
-        }]
-      })
-
-      // Wait for transaction
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const config = this.getCurrentConfig()
       
-      // Get the game ID from the event
-      const gameCreatedEvent = receipt.logs.find(log => 
-        log.topics[0] === '0x' + CONTRACT_CONFIG.abi.find(abi => abi.name === 'GameCreated')?.hash
-      )
-      const gameId = gameCreatedEvent?.topics[1]
-
+      // Prepare game parameters for contract
+      const createGameParams = {
+        nftContract: params.nftContract,
+        tokenId: params.tokenId,
+        priceUSD: Math.round(params.priceUSD * 1000000), // Convert to 6 decimals
+        acceptedToken: params.acceptedToken || 0, // 0 = ETH, 1 = USDC
+        maxRounds: params.maxRounds || 5,
+        gameType: params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
+        authInfo: params.authInfo || ""
+      }
+      
+      // Calculate listing fee in ETH
+      const listingFeeETH = await this.getETHAmount(config.listingFeeUSD)
+      
+      // Create transaction
+      const { request } = await publicClient.simulateContract({
+        address: config.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'createGame',
+        args: [createGameParams],
+        value: listingFeeETH,
+        account: await walletClient.account.address,
+      })
+      
+      const hash = await walletClient.writeContract(request)
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      
+      // Extract game ID from events
+      const gameId = this.extractGameIdFromReceipt(receipt)
+      
       return {
         success: true,
-        gameId: gameId?.toString(),
-        transactionHash: hash
+        gameId,
+        transactionHash: hash,
+        receipt
       }
     } catch (error) {
       console.error('Error creating game:', error)
@@ -197,21 +278,42 @@ class ContractService {
     }
   }
 
-  // Join a game
-  async joinGame(gameId, choice) {
+  // Join an existing game
+  async joinGame(params) {
     try {
-      const hash = await this.walletClient.writeContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const config = this.getCurrentConfig()
+      
+      // Get required payment amount
+      const requiredAmount = await this.getRequiredPaymentAmount(params.gameId, params.paymentToken)
+      
+      // Prepare join parameters
+      const joinParams = {
+        gameId: params.gameId,
+        coinChoice: params.coinChoice, // 0 = HEADS, 1 = TAILS
+        roleChoice: params.roleChoice, // 0 = FLIPPER, 1 = CHOOSER
+        paymentToken: params.paymentToken, // 0 = ETH, 1 = USDC
+        challengerNFTContract: params.challengerNFTContract || "0x0000000000000000000000000000000000000000",
+        challengerTokenId: params.challengerTokenId || 0
+      }
+      
+      // Create transaction
+      const { request } = await publicClient.simulateContract({
+        address: config.contractAddress,
+        abi: CONTRACT_ABI,
         functionName: 'joinGame',
-        args: [gameId, choice]
+        args: [joinParams],
+        value: requiredAmount,
+        account: await walletClient.account.address,
       })
-
-      await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      const hash = await walletClient.writeContract(request)
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
       
       return {
         success: true,
-        transactionHash: hash
+        transactionHash: hash,
+        receipt
       }
     } catch (error) {
       console.error('Error joining game:', error)
@@ -222,49 +324,31 @@ class ContractService {
     }
   }
 
-  // Start countdown for a flip
-  async startCountdown(gameId) {
+  // Flip the coin
+  async flipCoin(gameId, power) {
     try {
-      const hash = await this.walletClient.writeContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
-        functionName: 'startCountdown',
-        args: [gameId]
-      })
-
-      await this.publicClient.waitForTransactionReceipt({ hash })
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const config = this.getCurrentConfig()
       
-      return {
-        success: true,
-        transactionHash: hash
-      }
-    } catch (error) {
-      console.error('Error starting countdown:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  // Perform a flip
-  async flip(gameId, power) {
-    try {
-      const hash = await this.walletClient.writeContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
+      // Create transaction
+      const { request } = await publicClient.simulateContract({
+        address: config.contractAddress,
+        abi: CONTRACT_ABI,
         functionName: 'flip',
-        args: [gameId, power]
+        args: [gameId, power],
+        account: await walletClient.account.address,
       })
-
-      await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      const hash = await walletClient.writeContract(request)
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
       
       return {
         success: true,
-        transactionHash: hash
+        transactionHash: hash,
+        receipt
       }
     } catch (error) {
-      console.error('Error performing flip:', error)
+      console.error('Error flipping coin:', error)
       return {
         success: false,
         error: error.message
@@ -272,24 +356,30 @@ class ContractService {
     }
   }
 
-  // Claim winnings
-  async claimWinnings(gameId) {
+  // Withdraw rewards (ETH and USDC)
+  async withdrawRewards() {
     try {
-      const hash = await this.walletClient.writeContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
-        functionName: 'claimWinnings',
-        args: [gameId]
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const config = this.getCurrentConfig()
+      
+      // Create transaction
+      const { request } = await publicClient.simulateContract({
+        address: config.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'withdrawRewards',
+        account: await walletClient.account.address,
       })
-
-      await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      const hash = await walletClient.writeContract(request)
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
       
       return {
         success: true,
-        transactionHash: hash
+        transactionHash: hash,
+        receipt
       }
     } catch (error) {
-      console.error('Error claiming winnings:', error)
+      console.error('Error withdrawing rewards:', error)
       return {
         success: false,
         error: error.message
@@ -297,24 +387,31 @@ class ContractService {
     }
   }
 
-  // Cancel game
-  async cancelGame(gameId) {
+  // Withdraw specific NFT
+  async withdrawNFT(nftContract, tokenId) {
     try {
-      const hash = await this.walletClient.writeContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
-        functionName: 'cancelGame',
-        args: [gameId]
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const config = this.getCurrentConfig()
+      
+      // Create transaction
+      const { request } = await publicClient.simulateContract({
+        address: config.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'withdrawNFT',
+        args: [nftContract, tokenId],
+        account: await walletClient.account.address,
       })
-
-      await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      const hash = await walletClient.writeContract(request)
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
       
       return {
         success: true,
-        transactionHash: hash
+        transactionHash: hash,
+        receipt
       }
     } catch (error) {
-      console.error('Error cancelling game:', error)
+      console.error('Error withdrawing NFT:', error)
       return {
         success: false,
         error: error.message
@@ -322,86 +419,151 @@ class ContractService {
     }
   }
 
-  // Get user's games
-  async getUserGames(userAddress) {
+  // Get ETH amount for USD value
+  async getETHAmount(usdAmount) {
     try {
-      const games = await this.publicClient.readContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
-        functionName: 'getUserGames',
+      const { publicClient } = this.getCurrentClients()
+      const config = this.getCurrentConfig()
+      
+      const amount = await publicClient.readContract({
+        address: config.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'getETHAmount',
+        args: [Math.round(usdAmount * 1000000)], // Convert to 6 decimals
+      })
+      
+      return amount
+    } catch (error) {
+      console.error('Error getting ETH amount:', error)
+      throw error
+    }
+  }
+
+  // Get required payment amount for joining
+  async getRequiredPaymentAmount(gameId, token) {
+    try {
+      const { publicClient } = this.getCurrentClients()
+      const config = this.getCurrentConfig()
+      
+      const amount = await publicClient.readContract({
+        address: config.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'getRequiredPaymentAmount',
+        args: [gameId, token],
+      })
+      
+      return amount
+    } catch (error) {
+      console.error('Error getting required payment amount:', error)
+      throw error
+    }
+  }
+
+  // View functions
+  async getGameDetails(gameId) {
+    const { public: publicClient } = this.getCurrentClients()
+    const { address: contractAddress } = this.getCurrentConfig()
+
+    const details = await publicClient.readContract({
+      address: contractAddress,
+      abi: CONTRACT_ABI,
+      functionName: 'getGameDetails',
+      args: [gameId]
+    })
+
+    return {
+      core: details[0],
+      financials: details[1],
+      progress: details[2]
+    }
+  }
+
+  async getUserActiveGames(userAddress) {
+    const { public: publicClient } = this.getCurrentClients()
+    const { address: contractAddress } = this.getCurrentConfig()
+
+    return publicClient.readContract({
+      address: contractAddress,
+      abi: CONTRACT_ABI,
+      functionName: 'getUserActiveGames',
+      args: [userAddress]
+    })
+  }
+
+  async getUnclaimedRewards(userAddress) {
+    const { public: publicClient } = this.getCurrentClients()
+    const { address: contractAddress } = this.getCurrentConfig()
+
+    const [eth, usdc] = await Promise.all([
+      publicClient.readContract({
+        address: contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'unclaimedETH',
+        args: [userAddress]
+      }),
+      publicClient.readContract({
+        address: contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'unclaimedUSDC',
         args: [userAddress]
       })
-      
-      return {
-        success: true,
-        games: games.map(id => id.toString())
-      }
-    } catch (error) {
-      console.error('Error getting user games:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+    ])
+
+    return {
+      eth: formatEther(eth),
+      usdc: formatUnits(usdc, 6)
     }
   }
 
-  // Get game details
-  async getGame(gameId) {
-    try {
-      const [basic, progress] = await Promise.all([
-        this.publicClient.readContract({
-          address: CONTRACT_CONFIG.address,
-          abi: CONTRACT_CONFIG.abi,
-          functionName: 'getGameBasic',
-          args: [gameId]
-        }),
-        this.publicClient.readContract({
-          address: CONTRACT_CONFIG.address,
-          abi: CONTRACT_CONFIG.abi,
-          functionName: 'getGameProgress',
-          args: [gameId]
-        })
-      ])
+  async getUserUnclaimedNFTs(userAddress, nftContract) {
+    const { public: publicClient } = this.getCurrentClients()
+    const { address: contractAddress } = this.getCurrentConfig()
 
-      return {
-        success: true,
-        game: {
-          ...basic,
-          ...progress
-        }
-      }
-    } catch (error) {
-      console.error('Error getting game:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
+    return publicClient.readContract({
+      address: contractAddress,
+      abi: CONTRACT_ABI,
+      functionName: 'getUserUnclaimedNFTs',
+      args: [userAddress, nftContract]
+    })
   }
 
-  // Get game round details
-  async getGameRound(gameId, round) {
-    try {
-      const roundData = await this.publicClient.readContract({
-        address: CONTRACT_CONFIG.address,
-        abi: CONTRACT_CONFIG.abi,
-        functionName: 'getGameRound',
-        args: [gameId, round]
-      })
-      
-      return {
-        success: true,
-        round: roundData
-      }
-    } catch (error) {
-      console.error('Error getting game round:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+  // Helper to extract game ID from receipt
+  extractGameIdFromReceipt(receipt) {
+    // Find GameCreated event
+    const gameCreatedEvent = receipt.logs.find(log => {
+      // Match event signature for GameCreated
+      return log.topics[0] === ethers.utils.id('GameCreated(uint256,address,uint8)')
+    })
+
+    if (gameCreatedEvent) {
+      // Game ID is the first indexed parameter
+      return ethers.BigNumber.from(gameCreatedEvent.topics[1]).toString()
+    }
+
+    throw new Error('Game ID not found in receipt')
+  }
+
+  // Get block explorer link
+  getExplorerLink(hash, type = 'tx') {
+    const config = this.getCurrentConfig()
+    const baseUrl = config.config.blockExplorer
+    
+    switch (type) {
+      case 'tx':
+        return `${baseUrl}/tx/${hash}`
+      case 'address':
+        return `${baseUrl}/address/${hash}`
+      case 'token':
+        return `${baseUrl}/token/${hash}`
+      default:
+        return baseUrl
     }
   }
 }
 
-export const contractService = new ContractService()
-export default contractService 
+// Export singleton instance
+export const contractService = new MultiChainContractService()
+export default contractService
+
+// Export the class for direct instantiation
+export { MultiChainContractService } 

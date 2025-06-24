@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import NFTSelector from '../components/NFTSelector'
 import CoinSelector from '../components/CoinSelector'
-import PaymentService from '../services/PaymentService'
+import { MultiChainContractService } from '../services/ContractService'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
@@ -46,6 +46,9 @@ const CreateFlip = () => {
   const [selectedCoin, setSelectedCoin] = useState(null)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Contract service instance
+  const [contractService] = useState(() => new MultiChainContractService())
 
   // Debug logging for mobile
   useEffect(() => {
@@ -64,6 +67,21 @@ const CreateFlip = () => {
       setError(connectionError)
     }
   }, [connectionError])
+
+  // Initialize contract service when wallet is connected
+  useEffect(() => {
+    if (isFullyConnected && walletClient && publicClient && chain) {
+      const chainName = chain.name.toLowerCase()
+      contractService.init(chainName, walletClient, publicClient)
+        .then(() => {
+          console.log('✅ Contract service initialized for chain:', chainName)
+        })
+        .catch(error => {
+          console.error('❌ Failed to initialize contract service:', error)
+          setError('Failed to connect to smart contract')
+        })
+    }
+  }, [isFullyConnected, walletClient, publicClient, chain, contractService])
 
   if (!isFullyConnected || !address) {
     return (
@@ -86,45 +104,6 @@ const CreateFlip = () => {
         </Container>
       </ThemeProvider>
     )
-  }
-
-  const createGameWithDatabase = async (gameData) => {
-    try {
-      // Generate game ID
-      const gameId = Math.random().toString(36).substring(2, 15)
-      
-      // Add ID to game data
-      const gameWithId = {
-        ...gameData,
-        id: gameId
-      }
-      
-      console.log('🎮 Creating game with database:', gameWithId)
-      
-      // Use REST API
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      
-      const response = await fetch(`${API_URL}/api/games`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(gameWithId)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to create game')
-      }
-      
-      const result = await response.json()
-      console.log('✅ Game created successfully:', result)
-      
-      return { success: true, gameId }
-      
-    } catch (error) {
-      console.error('❌ Error creating game:', error)
-      return { success: false, error: error.message }
-    }
   }
 
   const handleCreateFlip = async (e) => {
@@ -156,107 +135,93 @@ const CreateFlip = () => {
         throw new Error('Wallet not connected properly. Please reconnect your wallet.')
       }
 
-      showInfo('Processing listing fee payment...')
+      showInfo('Preparing game creation...')
 
-      // Calculate listing fee (50¢ for NFT vs NFT, $0.10 for NFT vs Crypto)
-      const listingFeeUSD = gameType === 'nft-vs-nft' ? 0.50 : 0.10
-      console.log('Listing fee USD:', listingFeeUSD)
-
-      const feeCalculation = await PaymentService.calculateETHFee(listingFeeUSD)
-      console.log('Fee calculation result:', feeCalculation)
-
-      if (!feeCalculation.success) {
-        console.error('Fee calculation failed:', feeCalculation.error)
-        throw new Error('Failed to calculate listing fee: ' + feeCalculation.error)
-      }
-
-      const feeAmountETH = feeCalculation.ethAmount
-      console.log(`Listing fee: $${listingFeeUSD} = ${feeAmountETH} ETH`)
-
-      // Send listing fee payment using walletClient
-      const feeRecipient = PaymentService.getFeeRecipient()
-      
-      // Use the PaymentService.sendTransaction method which handles walletClient
-      const txResult = await PaymentService.sendTransaction(walletClient, feeRecipient, feeAmountETH.toString())
-      
-      if (!txResult.success) {
-        throw new Error('Transaction failed: ' + txResult.error)
-      }
-
-      showInfo('Confirming transaction...')
-      
-      // Wait for transaction confirmation
-      let receipt = null
-      let attempts = 0
-      const maxAttempts = 60 // 2 minutes max wait
-      
-      while (!receipt && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        try {
-          receipt = await publicClient.getTransactionReceipt({ hash: txResult.hash })
-          if (receipt && receipt.status === 'success') {
-            showSuccess('Listing fee paid successfully!')
-            break
-          } else if (receipt && receipt.status === 'reverted') {
-            throw new Error('Transaction reverted')
-          }
-        } catch (e) {
-          // Transaction might not be mined yet, continue waiting
-          console.log(`⏳ Waiting for confirmation... (${attempts + 1}/${maxAttempts})`)
-        }
-        attempts++
-      }
-      
-      if (!receipt) {
-        throw new Error('Transaction confirmation timeout. Please check your wallet.')
-      }
-
-      // Create game data
-      const gameData = {
-        creator: address,
-        joiner: null,
-        gameType: gameType, // NEW: Add game type
-        nft: {
-          contractAddress: selectedNFT.contractAddress,
-          tokenId: selectedNFT.tokenId,
-          name: selectedNFT.name,
-          image: selectedNFT.image,
-          collection: selectedNFT.collection,
-          chain: selectedNFT.chain
-        },
-        coin: selectedCoin, // NEW: Add selected coin data
-        price: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0, // No price for NFT vs NFT
+      // Prepare game parameters for smart contract
+      const gameParams = {
+        nftContract: selectedNFT.contract,
+        tokenId: selectedNFT.tokenId,
         priceUSD: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0,
-        currency: gameType === 'nft-vs-crypto' ? 'USD' : 'NFT',
-        rounds: 5, // Default to 5 rounds
-        status: 'waiting',
-        offeredNFTs: [], // NEW: Array to store NFT offers for NFT vs NFT games
-        listingFee: {
-          amountUSD: listingFeeUSD,
-          amountETH: feeAmountETH,
-          transactionHash: txResult.hash,
-          paidAt: new Date().toISOString()
-        }
+        acceptedToken: 0, // 0 = ETH, 1 = USDC
+        maxRounds: 5,
+        gameType: gameType === 'nft-vs-nft' ? 1 : 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
+        authInfo: JSON.stringify({
+          coinDesign: selectedCoin,
+          gameType: gameType,
+          creator: address
+        })
       }
 
-      // Create game (with database)
-      const result = await createGameWithDatabase(gameData)
+      console.log('🎮 Creating game with smart contract:', gameParams)
 
-      if (!result.success) {
-        throw new Error('Failed to create game')
-      }
-
-      showSuccess(`${gameType === 'nft-vs-nft' ? 'NFT vs NFT' : 'NFT vs Crypto'} game created! Game ID: ${result.gameId}`)
+      // Create game using smart contract
+      const result = await contractService.createGame(gameParams)
       
-      // Navigate to the game
-      navigate(`/game/${result.gameId}`)
+      if (!result.success) {
+        throw new Error('Failed to create game: ' + result.error)
+      }
 
-    } catch (err) {
-      console.error('Failed to create flip:', err)
-      setError(err.message)
-      showError(err.message)
+      showSuccess('Game created successfully!')
+      console.log('✅ Game created on blockchain:', result)
+
+      // Save game to database for UI purposes (with contract game ID)
+      const databaseResult = await createGameInDatabase({
+        id: result.gameId.toString(),
+        creator: address,
+        nft_contract: selectedNFT.contract,
+        token_id: selectedNFT.tokenId,
+        price_usd: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0,
+        game_type: gameType,
+        status: 'created',
+        contract_game_id: result.gameId.toString(),
+        transaction_hash: result.transactionHash
+      })
+
+      if (databaseResult.success) {
+        // Navigate to the game
+        navigate(`/game/${result.gameId}`)
+      } else {
+        console.warn('⚠️ Game created on blockchain but failed to save to database:', databaseResult.error)
+        // Still navigate to game since it exists on blockchain
+        navigate(`/game/${result.gameId}`)
+      }
+
+    } catch (error) {
+      console.error('❌ Error creating game:', error)
+      setError(error.message)
+      showError('Failed to create game: ' + error.message)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const createGameInDatabase = async (gameData) => {
+    try {
+      console.log('💾 Saving game to database:', gameData)
+      
+      // Use REST API
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      
+      const response = await fetch(`${API_URL}/api/games`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(gameData)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save game to database')
+      }
+      
+      const result = await response.json()
+      console.log('✅ Game saved to database:', result)
+      
+      return { success: true, gameId: result.id }
+      
+    } catch (error) {
+      console.error('❌ Error saving game to database:', error)
+      return { success: false, error: error.message }
     }
   }
 

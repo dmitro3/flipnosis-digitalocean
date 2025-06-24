@@ -185,7 +185,7 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         address _usdcUsdFeed,
         address _usdcToken,
         address _feeReceiver
-    ) Ownable(msg.sender) {
+    ) Ownable() {
         ethUsdFeed = AggregatorV3Interface(_ethUsdFeed);
         usdcUsdFeed = AggregatorV3Interface(_usdcUsdFeed);
         usdcToken = _usdcToken;
