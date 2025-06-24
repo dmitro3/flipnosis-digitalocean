@@ -1999,34 +1999,29 @@ const FlipGame = () => {
               </div>
 
               {/* Choice Display - Mobile */}
-              {(gameState?.creatorChoice || gameState?.joinerChoice) && (
-                <div style={{
-                  textAlign: 'center',
-                  marginBottom: '1rem',
-                  padding: '0.5rem',
-                  background: 'rgba(0, 255, 65, 0.1)',
-                  border: '2px solid rgba(0, 255, 65, 0.3)',
-                  borderRadius: '0.75rem',
-                  animation: 'pulse 2s ease-in-out infinite'
-                }}>
+              {(() => {
+                const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
+                return myChoice ? (
                   <div style={{
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    color: '#00FF41',
-                    textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
+                    textAlign: 'center',
+                    marginBottom: '1rem',
+                    padding: '0.5rem',
+                    background: 'rgba(0, 255, 65, 0.1)',
+                    border: '2px solid rgba(0, 255, 65, 0.3)',
+                    borderRadius: '0.75rem',
+                    animation: 'pulse 2s ease-in-out infinite'
                   }}>
-                    You're {(() => {
-                      // Determine the player's choice based on their role
-                      if (isCreator) {
-                        return gameState?.creatorChoice?.toUpperCase() || 'WAITING...'
-                      } else if (isJoiner) {
-                        return gameState?.joinerChoice?.toUpperCase() || 'WAITING...'
-                      }
-                      return 'WAITING...'
-                    })()}
+                    <div style={{
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      color: '#00FF41',
+                      textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
+                    }}>
+                      You're {myChoice.toUpperCase()}
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null;
+              })()}
 
               {/* Player 2 Box - Profile Image */}
               <MobilePlayerBox style={{
@@ -2631,34 +2626,29 @@ const FlipGame = () => {
                 </div>
 
                 {/* Choice Display - Desktop */}
-                {(gameState?.creatorChoice || gameState?.joinerChoice) && (
-                  <div style={{
-                    textAlign: 'center',
-                    marginBottom: '1.5rem',
-                    padding: '1rem',
-                    background: 'rgba(0, 255, 65, 0.1)',
-                    border: '2px solid rgba(0, 255, 65, 0.3)',
-                    borderRadius: '1rem',
-                    animation: 'pulse 2s ease-in-out infinite'
-                  }}>
+                {(() => {
+                  const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
+                  return myChoice ? (
                     <div style={{
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                      color: '#00FF41',
-                      textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+                      textAlign: 'center',
+                      marginBottom: '1.5rem',
+                      padding: '1rem',
+                      background: 'rgba(0, 255, 65, 0.1)',
+                      border: '2px solid rgba(0, 255, 65, 0.3)',
+                      borderRadius: '1rem',
+                      animation: 'pulse 2s ease-in-out infinite'
                     }}>
-                      You're {(() => {
-                        // Determine the player's choice based on their role
-                        if (isCreator) {
-                          return gameState?.creatorChoice?.toUpperCase() || 'WAITING...'
-                        } else if (isJoiner) {
-                          return gameState?.joinerChoice?.toUpperCase() || 'WAITING...'
-                        }
-                        return 'WAITING...'
-                      })()}
+                      <div style={{
+                        fontSize: '1.5rem',
+                        fontWeight: 'bold',
+                        color: '#00FF41',
+                        textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+                      }}>
+                        You're {myChoice.toUpperCase()}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : null;
+                })()}
 
                 {/* Power Display with Choice Buttons */}
                 <PowerDisplay
@@ -3211,8 +3201,10 @@ const FlipGame = () => {
               <div style={{
                 position: 'relative',
                 width: '100%',
-                paddingTop: '56.25%', // 16:9 aspect ratio
-                marginBottom: '1rem'
+                height: '200px',
+                marginBottom: '1rem',
+                borderRadius: '1rem',
+                overflow: 'hidden'
               }}>
                 <video
                   key={roundResult.actualWinner === address ? 'win' : 'lose'}
@@ -3220,13 +3212,10 @@ const FlipGame = () => {
                   muted
                   playsInline
                   style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
                     width: '100%',
                     height: '100%',
-                    borderRadius: '1rem',
-                    objectFit: 'cover'
+                    objectFit: 'cover',
+                    borderRadius: '1rem'
                   }}
                   src={roundResult.actualWinner === address ? 
                     'images/video/LoseWin/final lose win/win.webm' : 
@@ -3270,7 +3259,11 @@ const FlipGame = () => {
                 borderRadius: '0.5rem',
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
-                You chose: <strong>{(isCreator ? gameState?.creatorChoice : gameState?.joinerChoice)?.toUpperCase()}</strong>
+                You chose: <strong>{(() => {
+                  const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
+                  // Fallback to roundResult.playerChoice if gameState choice is not available
+                  return (myChoice || roundResult?.playerChoice)?.toUpperCase() || 'UNKNOWN';
+                })()}</strong>
               </div>
               
               {/* Win/Lose Status */}
