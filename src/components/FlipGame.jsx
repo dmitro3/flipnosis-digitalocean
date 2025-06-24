@@ -2015,7 +2015,15 @@ const FlipGame = () => {
                     color: '#00FF41',
                     textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
                   }}>
-                    You're {isCreator ? gameState?.creatorChoice?.toUpperCase() : gameState?.joinerChoice?.toUpperCase()}
+                    You're {(() => {
+                      // Determine the player's choice based on their role
+                      if (isCreator) {
+                        return gameState?.creatorChoice?.toUpperCase() || 'WAITING...'
+                      } else if (isJoiner) {
+                        return gameState?.joinerChoice?.toUpperCase() || 'WAITING...'
+                      }
+                      return 'WAITING...'
+                    })()}
                   </div>
                 </div>
               )}
@@ -2639,7 +2647,15 @@ const FlipGame = () => {
                       color: '#00FF41',
                       textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
                     }}>
-                      You're {isCreator ? gameState?.creatorChoice?.toUpperCase() : gameState?.joinerChoice?.toUpperCase()}
+                      You're {(() => {
+                        // Determine the player's choice based on their role
+                        if (isCreator) {
+                          return gameState?.creatorChoice?.toUpperCase() || 'WAITING...'
+                        } else if (isJoiner) {
+                          return gameState?.joinerChoice?.toUpperCase() || 'WAITING...'
+                        }
+                        return 'WAITING...'
+                      })()}
                     </div>
                   </div>
                 )}
@@ -3254,7 +3270,7 @@ const FlipGame = () => {
                 borderRadius: '0.5rem',
                 border: '1px solid rgba(255, 255, 255, 0.2)'
               }}>
-                You chose: <strong>{roundResult.playerChoice?.toUpperCase()}</strong>
+                You chose: <strong>{(isCreator ? gameState?.creatorChoice : gameState?.joinerChoice)?.toUpperCase()}</strong>
               </div>
               
               {/* Win/Lose Status */}
