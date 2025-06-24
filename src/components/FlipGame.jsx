@@ -2000,27 +2000,50 @@ const FlipGame = () => {
 
               {/* Choice Display - Mobile */}
               {(() => {
-                const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
-                return myChoice ? (
-                  <div style={{
-                    textAlign: 'center',
-                    marginBottom: '1rem',
-                    padding: '0.5rem',
-                    background: 'rgba(0, 255, 65, 0.1)',
-                    border: '2px solid rgba(0, 255, 65, 0.3)',
-                    borderRadius: '0.75rem',
-                    animation: 'pulse 2s ease-in-out infinite'
-                  }}>
+                // Show choice when either player has made their choice
+                const creatorChoice = gameState?.creatorChoice;
+                const joinerChoice = gameState?.joinerChoice;
+                
+                if (creatorChoice || joinerChoice) {
+                  // Determine what side this player is on
+                  let mySide;
+                  if (isCreator) {
+                    mySide = creatorChoice;
+                  } else if (isJoiner) {
+                    mySide = joinerChoice;
+                  }
+                  
+                  // If this player hasn't made their choice yet, show the opposite of the other player's choice
+                  if (!mySide) {
+                    if (isCreator && joinerChoice) {
+                      mySide = joinerChoice === 'heads' ? 'tails' : 'heads';
+                    } else if (isJoiner && creatorChoice) {
+                      mySide = creatorChoice === 'heads' ? 'tails' : 'heads';
+                    }
+                  }
+                  
+                  return mySide ? (
                     <div style={{
-                      fontSize: '1rem',
-                      fontWeight: 'bold',
-                      color: '#00FF41',
-                      textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
+                      textAlign: 'center',
+                      marginBottom: '1rem',
+                      padding: '0.5rem',
+                      background: 'rgba(0, 255, 65, 0.1)',
+                      border: '2px solid rgba(0, 255, 65, 0.3)',
+                      borderRadius: '0.75rem',
+                      animation: 'pulse 2s ease-in-out infinite'
                     }}>
-                      You're {myChoice.toUpperCase()}
+                      <div style={{
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        color: '#00FF41',
+                        textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
+                      }}>
+                        You're {mySide.toUpperCase()}
+                      </div>
                     </div>
-                  </div>
-                ) : null;
+                  ) : null;
+                }
+                return null;
               })()}
 
               {/* Player 2 Box - Profile Image */}
@@ -2627,27 +2650,50 @@ const FlipGame = () => {
 
                 {/* Choice Display - Desktop */}
                 {(() => {
-                  const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
-                  return myChoice ? (
-                    <div style={{
-                      textAlign: 'center',
-                      marginBottom: '1.5rem',
-                      padding: '1rem',
-                      background: 'rgba(0, 255, 65, 0.1)',
-                      border: '2px solid rgba(0, 255, 65, 0.3)',
-                      borderRadius: '1rem',
-                      animation: 'pulse 2s ease-in-out infinite'
-                    }}>
+                  // Show choice when either player has made their choice
+                  const creatorChoice = gameState?.creatorChoice;
+                  const joinerChoice = gameState?.joinerChoice;
+                  
+                  if (creatorChoice || joinerChoice) {
+                    // Determine what side this player is on
+                    let mySide;
+                    if (isCreator) {
+                      mySide = creatorChoice;
+                    } else if (isJoiner) {
+                      mySide = joinerChoice;
+                    }
+                    
+                    // If this player hasn't made their choice yet, show the opposite of the other player's choice
+                    if (!mySide) {
+                      if (isCreator && joinerChoice) {
+                        mySide = joinerChoice === 'heads' ? 'tails' : 'heads';
+                      } else if (isJoiner && creatorChoice) {
+                        mySide = creatorChoice === 'heads' ? 'tails' : 'heads';
+                      }
+                    }
+                    
+                    return mySide ? (
                       <div style={{
-                        fontSize: '1.5rem',
-                        fontWeight: 'bold',
-                        color: '#00FF41',
-                        textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+                        textAlign: 'center',
+                        marginBottom: '1.5rem',
+                        padding: '1rem',
+                        background: 'rgba(0, 255, 65, 0.1)',
+                        border: '2px solid rgba(0, 255, 65, 0.3)',
+                        borderRadius: '1rem',
+                        animation: 'pulse 2s ease-in-out infinite'
                       }}>
-                        You're {myChoice.toUpperCase()}
+                        <div style={{
+                          fontSize: '1.5rem',
+                          fontWeight: 'bold',
+                          color: '#00FF41',
+                          textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+                        }}>
+                          You're {mySide.toUpperCase()}
+                        </div>
                       </div>
-                    </div>
-                  ) : null;
+                    ) : null;
+                  }
+                  return null;
                 })()}
 
                 {/* Power Display with Choice Buttons */}
@@ -3269,14 +3315,27 @@ const FlipGame = () => {
               {/* Win/Lose Status */}
               <div style={{
                 fontSize: '1.8rem',
-                color: roundResult.actualWinner === address ? '#00FF41' : '#FF1493',
+                color: (() => {
+                  // Determine if current player won by checking if their choice matched the result
+                  const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
+                  const didIWin = myChoice === roundResult.result;
+                  return didIWin ? '#00FF41' : '#FF1493';
+                })(),
                 fontWeight: 'bold',
                 marginBottom: '1rem',
                 pointerEvents: 'auto',
-                textShadow: `0 0 15px ${roundResult.actualWinner === address ? 'rgba(0, 255, 65, 0.7)' : 'rgba(255, 20, 147, 0.7)'}`,
+                textShadow: (() => {
+                  const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
+                  const didIWin = myChoice === roundResult.result;
+                  return `0 0 15px ${didIWin ? 'rgba(0, 255, 65, 0.7)' : 'rgba(255, 20, 147, 0.7)'}`;
+                })(),
                 animation: 'pulse 1s infinite'
               }}>
-                {roundResult.actualWinner === address ? '🎉 YOU WON!' : '💔 YOU LOST!'}
+                {(() => {
+                  const myChoice = isCreator ? gameState?.creatorChoice : gameState?.joinerChoice;
+                  const didIWin = myChoice === roundResult.result;
+                  return didIWin ? '🎉 YOU WON!' : '💔 YOU LOST!';
+                })()}
               </div>
             </div>
           )}
