@@ -201,40 +201,7 @@ export const CONTRACT_ABI = [
       }
     ]
   },
-  {
-    name: 'getGameBasic',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'gameId', type: 'uint256' }],
-    outputs: [
-      { name: 'gameId', type: 'uint256' },
-      { name: 'creator', type: 'address' },
-      { name: 'joiner', type: 'address' },
-      { name: 'nftContract', type: 'address' },
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'priceUSD', type: 'uint256' },
-      { name: 'acceptedToken', type: 'uint8' },
-      { name: 'state', type: 'uint8' },
-      { name: 'authInfo', type: 'string' }
-    ]
-  },
-  {
-    name: 'getGameProgress',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'gameId', type: 'uint256' }],
-    outputs: [
-      { name: 'createdAt', type: 'uint256' },
-      { name: 'expiresAt', type: 'uint256' },
-      { name: 'maxRounds', type: 'uint8' },
-      { name: 'currentRound', type: 'uint8' },
-      { name: 'creatorWins', type: 'uint8' },
-      { name: 'joinerWins', type: 'uint8' },
-      { name: 'winner', type: 'address' },
-      { name: 'lastActionTime', type: 'uint256' },
-      { name: 'countdownEndTime', type: 'uint256' }
-    ]
-  },
+
   {
     name: 'getUserActiveGames',
     type: 'function',
@@ -253,6 +220,23 @@ export const CONTRACT_ABI = [
     outputs: [{ name: '', type: 'uint256[]' }]
   },
   {
+    name: 'getETHAmount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'usdAmount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'getRequiredPaymentAmount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'token', type: 'uint8' }
+    ],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
     name: 'unclaimedETH',
     type: 'function',
     stateMutability: 'view',
@@ -267,18 +251,14 @@ export const CONTRACT_ABI = [
     outputs: [{ name: '', type: 'uint256' }]
   },
   {
-    name: 'listingFeeUSD',
+    name: 'getUserUnclaimedNFTs',
     type: 'function',
     stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
-  },
-  {
-    name: 'platformFeePercent',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
+    inputs: [
+      { name: 'user', type: 'address' },
+      { name: 'nftContract', type: 'address' }
+    ],
+    outputs: [{ name: '', type: 'uint256[]' }]
   },
   {
     name: 'getETHAmount',
@@ -540,7 +520,7 @@ class MultiChainContractService {
       const { request } = await publicClient.simulateContract({
         address: config.address,
         abi: CONTRACT_ABI,
-        functionName: 'flip',
+        functionName: 'flipCoin',
         args: [gameId, power],
         account: await walletClient.account.address,
       })
@@ -657,7 +637,7 @@ class MultiChainContractService {
         address: config.address,
         abi: CONTRACT_ABI,
         functionName: 'getETHAmount',
-        args: [Math.round(usdAmount * 1000000)], // Convert to 6 decimals
+        args: [Math.round(usdAmount)], // USD amount should already be in 6 decimals
       })
       
       console.log('🔍 getETHAmount result:', amount)
@@ -804,48 +784,49 @@ class MultiChainContractService {
     }
   }
 
-  // Get game by ID (combines basic and progress data)
+  // Get game by ID (uses getGameDetails)
   async getGame(gameId) {
     try {
       const { publicClient } = this.getCurrentClients()
       const config = this.getCurrentConfig()
 
-      // Get basic game data
-      const basic = await publicClient.readContract({
+      // Get game details using the existing function
+      const details = await publicClient.readContract({
         address: config.address,
         abi: CONTRACT_ABI,
-        functionName: 'getGameBasic',
+        functionName: 'getGameDetails',
         args: [gameId]
       })
 
-      // Get progress data
-      const progress = await publicClient.readContract({
-        address: config.address,
-        abi: CONTRACT_ABI,
-        functionName: 'getGameProgress',
-        args: [gameId]
-      })
-
-      // Combine the data
+      // Combine the data from the three returned tuples
+      const [core, financials, progress] = details
+      
       const game = {
-        gameId: basic[0],
-        creator: basic[1],
-        joiner: basic[2],
-        nftContract: basic[3],
-        tokenId: basic[4],
-        priceUSD: basic[5],
-        acceptedToken: basic[6],
-        state: basic[7],
-        authInfo: basic[8],
-        createdAt: progress[0],
-        expiresAt: progress[1],
-        maxRounds: progress[2],
-        currentRound: progress[3],
-        creatorWins: progress[4],
-        joinerWins: progress[5],
-        winner: progress[6],
-        lastActionTime: progress[7],
-        countdownEndTime: progress[8]
+        gameId: core.gameId,
+        creator: core.creator,
+        joiner: core.joiner,
+        nftContract: core.nftContract,
+        tokenId: core.tokenId,
+        state: core.state,
+        gameType: core.gameType,
+        creatorRole: core.creatorRole,
+        joinerRole: core.joinerRole,
+        joinerChoice: core.joinerChoice,
+        priceUSD: financials.priceUSD,
+        acceptedToken: financials.acceptedToken,
+        totalPaid: financials.totalPaid,
+        paymentTokenUsed: financials.paymentTokenUsed,
+        listingFeePaid: financials.listingFeePaid,
+        platformFeeCollected: financials.platformFeeCollected,
+        createdAt: progress.createdAt,
+        expiresAt: progress.expiresAt,
+        maxRounds: progress.maxRounds,
+        currentRound: progress.currentRound,
+        creatorWins: progress.creatorWins,
+        joinerWins: progress.joinerWins,
+        winner: progress.winner,
+        lastActionTime: progress.lastActionTime,
+        countdownEndTime: progress.countdownEndTime
       }
 
       return {

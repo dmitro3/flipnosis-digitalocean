@@ -125,10 +125,13 @@ const CreateFlip = () => {
       }
 
       // Validate price for NFT vs Crypto
+      let validatedPriceUSD = 0
       if (gameType === 'nft-vs-crypto') {
-        if (!priceUSD || isNaN(priceUSD) || parseFloat(priceUSD) <= 0) {
+        const priceValue = parseFloat(priceUSD)
+        if (!priceUSD || isNaN(priceValue) || priceValue <= 0) {
           throw new Error('Please enter a valid price in USD')
         }
+        validatedPriceUSD = priceValue
       }
 
       if (!walletClient || !address) {
@@ -141,7 +144,7 @@ const CreateFlip = () => {
       const gameParams = {
         nftContract: selectedNFT.contract,
         tokenId: selectedNFT.tokenId,
-        priceUSD: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0,
+        priceUSD: validatedPriceUSD,
         acceptedToken: 0, // 0 = ETH, 1 = USDC
         maxRounds: 5,
         gameType: gameType === 'nft-vs-nft' ? 1 : 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
@@ -170,7 +173,7 @@ const CreateFlip = () => {
         creator: address,
         nft_contract: selectedNFT.contract,
         token_id: selectedNFT.tokenId,
-        price_usd: gameType === 'nft-vs-crypto' ? parseFloat(priceUSD) : 0,
+        price_usd: validatedPriceUSD,
         game_type: gameType,
         status: 'created',
         contract_game_id: result.gameId.toString(),
