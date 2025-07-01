@@ -451,7 +451,7 @@ class MultiChainContractService {
       }
       
       // Calculate listing fee in ETH
-      const listingFeeETH = await this.getETHAmount(config.config.listingFeeUSD)
+      const listingFeeETH = await this.getETHAmount(200000) // $0.20 in 6 decimals
       
       // Create transaction
       const { request } = await publicClient.simulateContract({
