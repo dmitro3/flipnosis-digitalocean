@@ -771,12 +771,14 @@ const Home = () => {
 
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(8, 1fr)',
+                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
                   gap: window.innerWidth <= 768 ? '0.25rem' : '0.75rem',
                   margin: '1rem 0',
                   width: '100%',
                   overflowX: 'hidden',
-                  padding: window.innerWidth <= 768 ? '0 0.25rem' : '0'
+                  padding: window.innerWidth <= 768 ? '0 0.25rem' : '0',
+                  gridAutoRows: 'minmax(auto, auto)',
+                  gridAutoFlow: 'row'
                 }}>
                   {filteredFlips.map(flip => (
                     <div
@@ -810,7 +812,8 @@ const Home = () => {
                         borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
                         overflow: 'hidden',
                         width: '100%',
-                        height: window.innerWidth <= 768 ? 'auto' : '135px'
+                        height: window.innerWidth <= 768 ? 'auto' : '135px',
+                        minHeight: window.innerWidth <= 768 ? '80px' : '135px'
                       }}>
                         <GameImage 
                           src={flip.nft.image} 
@@ -818,7 +821,8 @@ const Home = () => {
                           style={{
                             width: '100%',
                             height: '100%',
-                            objectFit: 'cover'
+                            objectFit: 'cover',
+                            objectPosition: 'center'
                           }}
                         />
                         <div style={{

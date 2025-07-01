@@ -441,6 +441,9 @@ const FlipGame = () => {
               isJoining={isJoining}
               isFlipping={isFlipping}
               contractService={contractService}
+              gameId={gameId}
+              socket={null}
+              connected={false}
             />
           </GameContainer>
         </ContentWrapper>

@@ -421,6 +421,36 @@ export const ErrorMessage = styled.div`
   }
 `
 
+export const ErrorContainer = styled.div`
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 1rem;
+  margin: 2rem 0;
+`
+
+export const ErrorTitle = styled.h2`
+  color: ${props => props.theme.colors.error || '#ff4444'};
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+`
+
+export const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+`
+
+export const GameContainer = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+`
+
 export const TwoBoxLayout = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
