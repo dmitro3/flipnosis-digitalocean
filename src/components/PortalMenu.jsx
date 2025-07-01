@@ -135,6 +135,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
         <MenuItem to="/" onClick={onClose}>Home</MenuItem>
         <MenuItem to="/create" onClick={onClose}>Create Flip</MenuItem>
         {isAdmin && <MenuItem to="/admin" onClick={onClose}>Admin Panel</MenuItem>}
+        <MenuItem to="/test" onClick={onClose}>Contract Test</MenuItem>
         
         <StyledConnectButton>
           <ConnectButton 

@@ -26,7 +26,8 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 const FlipGame = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { isFullyConnected, connectionError, address, walletClient, publicClient, chain } = useWalletConnection()
+  const { isFullyConnected, connectionError, address, walletClient, publicClient } = useWalletConnection()
+  const { chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   
   const [game, setGame] = useState(null)

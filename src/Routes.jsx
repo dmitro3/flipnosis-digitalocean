@@ -4,6 +4,7 @@ import CreateFlip from "./pages/CreateFlip";
 import FlipGame from "./pages/FlipGame";
 import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
+import ContractTest from "./components/ContractTest";
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +26,10 @@ export const router = createBrowserRouter([
       {
         path: "admin",
         element: <AdminPanel />,
+      },
+      {
+        path: "test",
+        element: <ContractTest />,
       },
     ],
   },

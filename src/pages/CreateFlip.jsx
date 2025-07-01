@@ -36,9 +36,9 @@ import {
 
 const CreateFlip = () => {
   const navigate = useNavigate()
-  const { nfts, loading: nftsLoading, publicClient, chain } = useWallet()
+  const { nfts, loading: nftsLoading, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
-  const { isFullyConnected, connectionError, address, walletClient } = useWalletConnection()
+  const { isFullyConnected, connectionError, address, walletClient, publicClient } = useWalletConnection()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [priceUSD, setPriceUSD] = useState('')
