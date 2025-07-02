@@ -364,13 +364,49 @@ function initializeDatabase() {
       coin TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       started_at DATETIME,
-      completed_at DATETIME
-      -- REMOVED: total_spectators (no longer tracking spectators)
+      completed_at DATETIME,
+      contract_game_id TEXT,
+      transaction_hash TEXT,
+      join_transaction_hash TEXT,
+      flip_transaction_hash TEXT
     )`, (err) => {
       if (err) {
         console.error('❌ Error creating games table:', err)
       } else {
         console.log('✅ Games table ready')
+        
+        // Add new columns to existing tables if they don't exist
+        db.run(`ALTER TABLE games ADD COLUMN contract_game_id TEXT`, (alterErr) => {
+          if (alterErr && !alterErr.message.includes('duplicate column')) {
+            console.error('❌ Error adding contract_game_id column:', alterErr)
+          } else if (!alterErr) {
+            console.log('✅ Added contract_game_id column to games table')
+          }
+        })
+        
+        db.run(`ALTER TABLE games ADD COLUMN transaction_hash TEXT`, (alterErr) => {
+          if (alterErr && !alterErr.message.includes('duplicate column')) {
+            console.error('❌ Error adding transaction_hash column:', alterErr)
+          } else if (!alterErr) {
+            console.log('✅ Added transaction_hash column to games table')
+          }
+        })
+        
+        db.run(`ALTER TABLE games ADD COLUMN join_transaction_hash TEXT`, (alterErr) => {
+          if (alterErr && !alterErr.message.includes('duplicate column')) {
+            console.error('❌ Error adding join_transaction_hash column:', alterErr)
+          } else if (!alterErr) {
+            console.log('✅ Added join_transaction_hash column to games table')
+          }
+        })
+        
+        db.run(`ALTER TABLE games ADD COLUMN flip_transaction_hash TEXT`, (alterErr) => {
+          if (alterErr && !alterErr.message.includes('duplicate column')) {
+            console.error('❌ Error adding flip_transaction_hash column:', alterErr)
+          } else if (!alterErr) {
+            console.log('✅ Added flip_transaction_hash column to games table')
+          }
+        })
         
         // Add coin column to existing tables if it doesn't exist
         db.run(`ALTER TABLE games ADD COLUMN coin TEXT`, (alterErr) => {
@@ -1753,16 +1789,90 @@ app.post('/api/games', async (req, res) => {
   try {
     console.log('🎮 Creating game via REST API:', req.body)
     
-    const gameData = req.body
-    await dbHelpers.createGame(gameData)
-    
-    console.log('✅ Game created successfully:', gameData.id)
-    res.json({ success: true, gameId: gameData.id })
+    const { 
+      id, 
+      creator, 
+      nft_contract, 
+      token_id, 
+      price_usd, 
+      game_type,
+      coin,
+      contract_game_id,
+      transaction_hash 
+    } = req.body
+
+    // Use contract_game_id as the primary ID if provided
+    const gameId = contract_game_id || id || uuidv4()
+
+    const query = `
+      INSERT INTO games (
+        id, creator, nft_contract, nft_token_id, price_usd, rounds, 
+        coin, status, created_at, contract_game_id, transaction_hash
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?)
+    `
+
+    db.run(query, [
+      gameId,
+      creator,
+      nft_contract,
+      token_id,
+      price_usd,
+      5, // default rounds
+      JSON.stringify(coin),
+      'waiting',
+      contract_game_id,
+      transaction_hash
+    ], function(err) {
+      if (err) {
+        console.error('Error creating game:', err)
+        res.status(500).json({ error: 'Failed to create game' })
+      } else {
+        res.json({ 
+          id: gameId, 
+          success: true,
+          contract_game_id: contract_game_id 
+        })
+      }
+    })
     
   } catch (error) {
     console.error('❌ Error creating game:', error)
     res.status(500).json({ error: 'Failed to create game', details: error.message })
   }
+})
+
+// Add PATCH endpoint for updating games
+app.patch('/api/games/:id', (req, res) => {
+  const gameId = req.params.id
+  const updates = req.body
+  
+  // Build dynamic update query
+  const updateFields = []
+  const values = []
+  
+  Object.keys(updates).forEach(key => {
+    if (key !== 'id') {
+      updateFields.push(`${key} = ?`)
+      values.push(updates[key])
+    }
+  })
+  
+  if (updateFields.length === 0) {
+    return res.status(400).json({ error: 'No fields to update' })
+  }
+  
+  values.push(gameId)
+  const query = `UPDATE games SET ${updateFields.join(', ')} WHERE id = ?`
+  
+  db.run(query, values, function(err) {
+    if (err) {
+      console.error('Error updating game:', err)
+      res.status(500).json({ error: 'Failed to update game' })
+    } else {
+      res.json({ success: true, changes: this.changes })
+    }
+  })
 })
 
 // Claim a player slot (prevents race conditions)

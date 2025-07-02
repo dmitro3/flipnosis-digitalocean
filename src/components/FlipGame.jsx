@@ -19,6 +19,7 @@ import SpriteBasedCoin from './SpriteBasedCoin'
 import MobileOptimizedCoin from './MobileOptimizedCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
+import contractService from '../services/ContractService'
 import ProfilePicture from './ProfilePicture'
 import baseEthLogo from '../../Images/baseeth.webp'
 import hazeVideo from '../../Images/Video/haze.webm'
@@ -773,10 +774,97 @@ const FlipGame = () => {
   }, [gameState?.turnTimeLeft, gameState?.phase])
 
   // Load game data from database
+  // Load game from contract
+  const loadGameFromContract = async () => {
+    try {
+      console.log('📋 Loading game from smart contract...')
+      
+      const result = await contractService.getGameDetails(gameId)
+      
+      if (!result.success) {
+        console.warn('Failed to load from contract:', result.error)
+        return null
+      }
+
+      // Transform contract data to match your UI format
+      const { game, payment, gameState } = result.data
+      
+      return {
+        id: gameId,
+        creator: game.creator,
+        joiner: game.joiner,
+        nft: {
+          contractAddress: game.nftContract,
+          tokenId: game.tokenId.toString(),
+          name: 'NFT', // Will be filled from database
+          image: 'https://picsum.photos/300/300?random=' + gameId,
+          collection: 'Collection',
+          chain: 'base'
+        },
+        price: Number(payment.priceUSD) / 1000000, // Convert from 6 decimals
+        priceUSD: Number(payment.priceUSD) / 1000000,
+        rounds: gameState.maxRounds,
+        status: getGameStatusFromContract(game, gameState),
+        current_round: gameState.currentRound,
+        max_rounds: gameState.maxRounds,
+        creator_wins: gameState.creatorWins,
+        joiner_wins: gameState.joinerWins,
+        winner: gameState.winner,
+        contract_game_id: gameId,
+        coin: null // Will be filled from database
+      }
+    } catch (error) {
+      console.error('Error loading from contract:', error)
+      return null
+    }
+  }
+
+  // Helper to determine game status
+  const getGameStatusFromContract = (game, gameState) => {
+    if (game.state === 0) return 'waiting' // CREATED state
+    if (game.state === 1) return 'active' // JOINED state
+    if (game.state === 2) return 'completed' // COMPLETED state
+    if (game.state === 3) return 'cancelled' // CANCELLED state
+    return 'waiting'
+  }
+
+  // Add helper function to update database
+  const updateGameInDatabase = async (updates) => {
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'https://cryptoflipz2-production.up.railway.app'
+      
+      const response = await fetch(`${API_URL}/api/games/${gameId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      })
+      
+      if (!response.ok) {
+        console.warn('Failed to update game in database')
+      }
+    } catch (error) {
+      console.error('Error updating database:', error)
+    }
+  }
+
   useEffect(() => {
     const loadGame = async () => {
       try {
         setLoading(true)
+        
+        // Try loading from contract first
+        if (contractService.currentChain) {
+          const contractGame = await loadGameFromContract()
+          if (contractGame) {
+            setGameData(contractGame)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Fallback to your existing database loading
         const response = await fetch(`${API_URL}/api/games/${gameId}`)
         
         if (response.ok) {
@@ -897,15 +985,83 @@ const FlipGame = () => {
     }))
   }
 
-  const handlePowerChargeStop = () => {
+  const handlePowerChargeStop = async () => {
     if (!socket || !isChargingRef.current) return
     
     isChargingRef.current = false
-    socket.send(JSON.stringify({
-      type: 'stop_charging',
-      gameId,
-      address
-    }))
+    
+    // If contract service is available, use smart contract for flipping
+    if (contractService.currentChain && gameData?.contract_game_id) {
+      try {
+        showInfo('Flipping coin on blockchain...')
+        
+        // Prepare flip parameters
+        const flipParams = {
+          gameId: gameData.contract_game_id,
+          power: chargedPower || 50 // Use your existing power value
+        }
+
+        console.log('🪙 Flipping coin with smart contract:', flipParams)
+
+        // Flip coin using smart contract
+        const result = await contractService.flipCoin(flipParams)
+        
+        if (!result.success) {
+          throw new Error('Failed to flip coin: ' + result.error)
+        }
+
+        console.log('✅ Coin flipped on blockchain:', result)
+
+        // Update game state with new data from contract
+        if (result.gameDetails) {
+          const { game: contractGame, gameState } = result.gameDetails
+          
+          setGameData(prev => ({
+            ...prev,
+            current_round: gameState.currentRound,
+            creator_wins: gameState.creatorWins,
+            joiner_wins: gameState.joinerWins,
+            winner: gameState.winner,
+            status: gameState.winner !== '0x0000000000000000000000000000000000000000' ? 'completed' : 'active'
+          }))
+
+          // Update database
+          await updateGameInDatabase({
+            current_round: gameState.currentRound,
+            creator_wins: gameState.creatorWins,
+            joiner_wins: gameState.joinerWins,
+            winner: gameState.winner,
+            status: gameState.winner !== '0x0000000000000000000000000000000000000000' ? 'completed' : 'active',
+            flip_transaction_hash: result.transactionHash
+          })
+
+          // Show flip result
+          const isWinner = gameState.winner === address
+          if (gameState.winner !== '0x0000000000000000000000000000000000000000') {
+            showSuccess(`Game completed! ${isWinner ? 'You won!' : 'You lost!'}`)
+          } else {
+            showSuccess(`Round ${gameState.currentRound} completed!`)
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error flipping coin:', error)
+        showError('Failed to flip coin: ' + error.message)
+        // Fallback to WebSocket if contract fails
+        socket.send(JSON.stringify({
+          type: 'stop_charging',
+          gameId,
+          address
+        }))
+      }
+    } else {
+      // Fallback to WebSocket if no contract
+      socket.send(JSON.stringify({
+        type: 'stop_charging',
+        gameId,
+        address
+      }))
+    }
   }
 
   const handlePlayerChoice = (choice) => {
@@ -966,135 +1122,60 @@ const FlipGame = () => {
   }
 
   const handleJoinGame = async () => {
-    console.log('🔍 Join game attempt:', {
-      hasGameData: !!gameData,
-      hasWalletClient: !!walletClient,
-      hasAddress: !!address,
-      isJoining: joiningGame,
-      isFullyConnected: isFullyConnected,
-      joinInProgress,
-      joiningPlayer
-    })
-
-    const buttonState = getJoinButtonState()
-    if (buttonState.disabled) {
-      console.log('❌ Cannot join game:', buttonState.text)
-      showError(buttonState.text)
+    if (!isFullyConnected || !address) {
+      showError('Please connect your wallet to join the game')
       return
     }
 
+    if (!gameData) {
+      showError('Game data not available')
+      return
+    }
+
+    setJoiningGame(true)
     try {
-      setJoiningGame(true)
-      
-      // Step 1: Start the join process (claim slot)
-      console.log('🎯 Step 1: Starting join process...')
-      const startJoinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/start-join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerAddress: address })
-      })
-      
-      if (!startJoinResponse.ok) {
-        const error = await startJoinResponse.json()
-        throw new Error(error.error || 'Failed to start join process')
+      showInfo('Joining game...')
+
+      // Prepare join parameters
+      const joinParams = {
+        gameId: gameData.contract_game_id || gameId,
+        coinChoice: playerChoice === 'heads' ? 0 : 1, // 0 = HEADS, 1 = TAILS
+        roleChoice: 1, // 1 = CHOOSER
+        paymentToken: 0, // 0 = ETH, 1 = USDC
+        // For NFT vs NFT games, add challenger NFT info
+        challengerNFTContract: null,
+        challengerTokenId: null
       }
+
+      console.log('🎮 Joining game with smart contract:', joinParams)
+
+      // Join game using smart contract
+      const result = await contractService.joinGame(joinParams)
       
-      // Also notify via WebSocket for real-time updates
-      if (socket) {
-        socket.send(JSON.stringify({
-          type: 'start_join_process',
-          gameId,
-          address
-        }))
+      if (!result.success) {
+        throw new Error('Failed to join game: ' + result.error)
       }
-      
-      console.log('✅ Join process started, now processing payment...')
-      showInfo('Processing payment...')
-      
-      // Step 2: Process payment
-      const paymentResult = await PaymentService.calculateETHAmount(gameData.priceUSD)
-      const feeRecipient = PaymentService.getFeeRecipient()
-      
-      const txResult = await PaymentService.sendTransaction(walletClient, feeRecipient, paymentResult.ethAmount.toString())
-      
-      if (!txResult.success) {
-        // Cancel join process if payment fails
-        if (socket) {
-          socket.send(JSON.stringify({
-            type: 'cancel_join_process',
-            gameId,
-            address
-          }))
-        }
-        throw new Error('Transaction failed: ' + txResult.error)
-      }
-      
-      showInfo('Confirming payment...')
-      
-      // Step 3: Wait for transaction confirmation
-      let receipt = null
-      let attempts = 0
-      while (!receipt && attempts < 30) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        try {
-          receipt = await publicClient.getTransactionReceipt({ hash: txResult.hash })
-          if (receipt) {
-            console.log('✅ Payment confirmed:', receipt.transactionHash)
-            break
-          }
-        } catch (e) {
-          // Transaction might not be mined yet
-        }
-        attempts++
-      }
-      
-      if (!receipt) {
-        // Cancel join process if payment confirmation fails
-        if (socket) {
-          socket.send(JSON.stringify({
-            type: 'cancel_join_process',
-            gameId,
-            address
-          }))
-        }
-        throw new Error('Transaction confirmation timeout')
-      }
-      
-      // Step 4: Complete the join process
-      console.log('🎯 Step 4: Completing join process...')
-      const joinResponse = await fetch(`${API_URL}/api/games/${gameData.id}/simple-join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          joinerAddress: address,
-          paymentTxHash: receipt.transactionHash,
-          paymentAmount: gameData.priceUSD
-        })
-      })
-      
-      if (!joinResponse.ok) {
-        const error = await joinResponse.json()
-        throw new Error(error.error || 'Failed to complete join')
-      }
-      
-      // Step 5: Update local state and notify WebSocket
-      setGameData(prev => ({ ...prev, joiner: address, status: 'joined' }))
-      
-      if (socket) {
-        socket.send(JSON.stringify({
-          type: 'join_game',
-          gameId,
-          role: 'joiner',
-          address,
-          entryFeeHash: receipt.transactionHash
-        }))
-      }
-      
+
       showSuccess('Successfully joined the game!')
-        
+      console.log('✅ Joined game on blockchain:', result)
+
+      // Update local game state
+      setGameData(prev => ({
+        ...prev,
+        joiner: address,
+        status: 'active'
+      }))
+
+      // Update database
+      await updateGameInDatabase({
+        joiner: address,
+        status: 'active',
+        join_transaction_hash: result.transactionHash
+      })
+
     } catch (error) {
-      console.error('❌ Failed to join game:', error)
-      showError('Failed to join: ' + error.message)
+      console.error('❌ Error joining game:', error)
+      showError('Failed to join game: ' + error.message)
     } finally {
       setJoiningGame(false)
     }
@@ -1102,17 +1183,38 @@ const FlipGame = () => {
 
   // Add handleClaimWinnings function
   const handleClaimWinnings = async () => {
+    if (!isFullyConnected || !address) {
+      showError('Please connect your wallet to withdraw')
+      return
+    }
+
     try {
-      showInfo('Claiming winnings... (Contract integration coming soon)')
-      // TODO: Add contract integration here
-      // For now, just show success and navigate home
-      setTimeout(() => {
-        showSuccess('Winnings claimed successfully!')
-        setShowResultPopup(false)
-        navigate('/')
-      }, 2000)
+      showInfo('Processing withdrawal...')
+      
+      const result = await contractService.withdrawRewards()
+      
+      if (!result.success) {
+        throw new Error('Failed to withdraw: ' + result.error)
+      }
+
+      showSuccess('Winnings withdrawn successfully! 🎉')
+      console.log('✅ Withdrawal successful:', result)
+
+      // Also withdraw NFT if this was the winner
+      if (gameData?.nft_contract && gameData?.token_id) {
+        const nftResult = await contractService.withdrawNFT(
+          gameData.nft_contract,
+          gameData.token_id
+        )
+        
+        if (nftResult.success) {
+          showSuccess('NFT returned to your wallet!')
+        }
+      }
+
     } catch (error) {
-      showError('Failed to claim winnings: ' + error.message)
+      console.error('❌ Error withdrawing:', error)
+      showError('Failed to withdraw: ' + error.message)
     }
   }
 
@@ -3484,6 +3586,40 @@ const FlipGame = () => {
             >
               Join Battle
             </Button>
+          )}
+
+          {/* Add withdrawal button for completed games where user won */}
+          {gameData?.status === 'completed' && gameData?.winner === address && (
+            <div style={{
+              marginTop: '2rem',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={handleClaimWinnings}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '1rem 2rem',
+                  borderRadius: '12px',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                Claim Your Winnings 🎉
+              </button>
+            </div>
           )}
         </ContentWrapper>
       </Container>

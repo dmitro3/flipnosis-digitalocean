@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
 import { useWalletConnection } from '../utils/useWalletConnection'
-import { MultiChainContractService } from '../services/ContractService'
+import contractService from '../services/ContractService'
 import FlipGameComponent from '../components/FlipGame'
 import GameResultPopup from '../components/GameResultPopup'
 import { ThemeProvider } from '@emotion/react'
@@ -37,8 +37,7 @@ const FlipGame = () => {
   const [isJoining, setIsJoining] = useState(false)
   const [isFlipping, setIsFlipping] = useState(false)
   
-  // Contract service instance
-  const [contractService] = useState(() => new MultiChainContractService())
+
   
   // Initialize contract service when wallet is connected
   useEffect(() => {

@@ -8,6 +8,7 @@ import styled from '@emotion/styled'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import hazeVideo from '../../Images/Video/haze.webm'
 import { PaymentService } from '../services/PaymentService'
+import ClaimRewards from '../components/ClaimRewards'
 import {
   Container,
   ContentWrapper,
@@ -405,6 +406,9 @@ const Home = () => {
       </BackgroundVideo>
       <Container>
         <ContentWrapper>
+          {/* Add ClaimRewards component */}
+          <ClaimRewards />
+          
           {/* Chain Filters */}
           <TransparentCard style={{ background: theme.colors.bgDark }}>
             <FilterContainer>

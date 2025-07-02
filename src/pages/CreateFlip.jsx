@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import NFTSelector from '../components/NFTSelector'
 import CoinSelector from '../components/CoinSelector'
-import { MultiChainContractService } from '../services/ContractService'
+import contractService from '../services/ContractService'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
@@ -47,8 +47,7 @@ const CreateFlip = () => {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  // Contract service instance
-  const [contractService] = useState(() => new MultiChainContractService())
+
 
   // Debug logging for mobile
   useEffect(() => {
@@ -81,7 +80,7 @@ const CreateFlip = () => {
           setError('Failed to connect to smart contract')
         })
     }
-  }, [isFullyConnected, walletClient, publicClient, chain, contractService])
+  }, [isFullyConnected, walletClient, publicClient, chain])
 
   if (!isFullyConnected || !address) {
     return (

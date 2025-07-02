@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import { useWallet } from '../contexts/WalletContext'
-import { MultiChainContractService, CONTRACT_ABI } from '../services/ContractService'
+import contractService, { CONTRACT_ABI } from '../services/ContractService'
 
 const ContractTest = () => {
   const { isFullyConnected, connectionError, address, walletClient, publicClient } = useWalletConnection()
   const { chain } = useWallet()
-  const [contractService] = useState(() => new MultiChainContractService())
+  // Using the singleton contract service
   const [testResults, setTestResults] = useState([])
   const [isTesting, setIsTesting] = useState(false)
 
