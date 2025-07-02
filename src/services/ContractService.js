@@ -99,7 +99,8 @@ const CONTRACT_ABI = [
           { name: 'gameType', type: 'uint8' },
           { name: 'creatorRole', type: 'uint8' },
           { name: 'joinerRole', type: 'uint8' },
-          { name: 'joinerChoice', type: 'uint8' }
+          { name: 'joinerChoice', type: 'uint8' },
+          { name: 'authInfo', type: 'string' }
         ]
       },
       {

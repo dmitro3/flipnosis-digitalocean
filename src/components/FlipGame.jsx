@@ -480,6 +480,21 @@ const FlipGame = () => {
   const getJoinButtonState = () => {
     if (!gameData) return { text: 'Loading...', disabled: true, color: 'gray' }
     
+    console.log('🔍 Join button state check:', {
+      gameData: {
+        joiner: gameData.joiner,
+        status: gameData.status,
+        creator: gameData.creator
+      },
+      gameState: {
+        joiner: gameState?.joiner,
+        phase: gameState?.phase
+      },
+      address,
+      joinInProgress,
+      joiningGame
+    })
+    
     // If there's a join in progress
     if (joinInProgress || gameState?.joinInProgress) {
       const playerJoining = joiningPlayer || gameState?.joiningPlayer
@@ -491,7 +506,12 @@ const FlipGame = () => {
     }
     
     // If game already has joiner
-    if (gameData.joiner || gameState?.joiner) {
+    if (gameData.joiner && gameData.joiner !== '0x0000000000000000000000000000000000000000') {
+      return { text: 'Game Full', disabled: true, color: 'gray' }
+    }
+    
+    // Check gameState joiner as well
+    if (gameState?.joiner && gameState.joiner !== '0x0000000000000000000000000000000000000000') {
       return { text: 'Game Full', disabled: true, color: 'gray' }
     }
     
@@ -789,6 +809,20 @@ const FlipGame = () => {
       // Transform contract data to match your UI format
       const { game, payment, gameState } = result.data
       
+      // Try to extract coin design from authInfo
+      let coinData = null
+      try {
+        if (game.authInfo) {
+          const authInfo = JSON.parse(game.authInfo)
+          if (authInfo.coinDesign) {
+            coinData = authInfo.coinDesign
+            console.log('🪙 Found coin design in authInfo:', coinData)
+          }
+        }
+      } catch (parseError) {
+        console.warn('⚠️ Could not parse authInfo for coin design:', parseError)
+      }
+      
       return {
         id: gameId,
         creator: game.creator,
@@ -811,7 +845,7 @@ const FlipGame = () => {
         joiner_wins: gameState.joinerWins,
         winner: gameState.winner,
         contract_game_id: gameId,
-        coin: null // Will be filled from database
+        coin: coinData // Use extracted coin data
       }
     } catch (error) {
       console.error('Error loading from contract:', error)
@@ -858,6 +892,18 @@ const FlipGame = () => {
         if (contractService.currentChain) {
           const contractGame = await loadGameFromContract()
           if (contractGame) {
+            // Fetch NFT data to get the actual image
+            try {
+              const nftResult = await fetchNFTData(gameId)
+              if (nftResult && nftResult.image) {
+                contractGame.nft.image = nftResult.image
+                contractGame.nft.name = nftResult.name || 'NFT'
+                contractGame.nft.collection = nftResult.collection || 'Collection'
+              }
+            } catch (nftError) {
+              console.warn('⚠️ Could not fetch NFT data:', nftError)
+            }
+            
             setGameData(contractGame)
             setLoading(false)
             return
@@ -940,6 +986,16 @@ const FlipGame = () => {
       })
     }
   }, [gameData, nftData, isLoadingNFT])
+
+  // Add effect to set coin data when loaded from contract
+  useEffect(() => {
+    if (gameData?.coin) {
+      console.log('🪙 Setting coin data from gameData:', gameData.coin)
+      setGameCoin(gameData.coin)
+      setCustomHeadsImage(gameData.coin.headsImage)
+      setCustomTailsImage(gameData.coin.tailsImage)
+    }
+  }, [gameData?.coin])
 
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
