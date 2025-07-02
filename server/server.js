@@ -1806,10 +1806,10 @@ app.post('/api/games', async (req, res) => {
 
     const query = `
       INSERT INTO games (
-        id, creator, nft_contract, nft_token_id, price_usd, rounds, 
-        coin, status, created_at, contract_game_id, transaction_hash
+        id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, nft_chain,
+        price_usd, rounds, coin, status, created_at, contract_game_id, transaction_hash
       ) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?)
     `
 
     db.run(query, [
@@ -1817,6 +1817,10 @@ app.post('/api/games', async (req, res) => {
       creator,
       nft_contract,
       token_id,
+      req.body.nft_name || 'NFT',
+      req.body.nft_image || '',
+      req.body.nft_collection || 'Collection',
+      req.body.nft_chain || 'base',
       price_usd,
       5, // default rounds
       JSON.stringify(coin),

@@ -1195,7 +1195,7 @@ const FlipGame = () => {
       // Prepare join parameters
       const joinParams = {
         gameId: gameData.contract_game_id || gameId,
-        coinChoice: playerChoice === 'heads' ? 0 : 1, // 0 = HEADS, 1 = TAILS
+        coinChoice: 0, // Default to HEADS (0 = HEADS, 1 = TAILS)
         roleChoice: 1, // 1 = CHOOSER
         paymentToken: 0, // 0 = ETH, 1 = USDC
         // For NFT vs NFT games, add challenger NFT info

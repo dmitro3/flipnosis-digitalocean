@@ -167,14 +167,19 @@ const CreateFlip = () => {
       showSuccess('Game created successfully!')
       console.log('✅ Game created on blockchain:', result)
 
-      // Save game to database for UI purposes (with contract game ID)
+      // Save game to database for UI purposes (with contract game ID, NFT metadata, and coin data)
       const databaseResult = await createGameInDatabase({
         id: result.gameId.toString(),
         creator: address,
         nft_contract: selectedNFT.contractAddress,
-        token_id: selectedNFT.tokenId,
+        nft_token_id: selectedNFT.tokenId,
+        nft_name: selectedNFT.name,
+        nft_image: selectedNFT.image,
+        nft_collection: selectedNFT.collection,
+        nft_chain: chain?.name?.toLowerCase() || 'base',
         price_usd: validatedPriceUSD,
         game_type: gameType,
+        coin: selectedCoin, // Save the coin design
         status: 'created',
         contract_game_id: result.gameId.toString(),
         transaction_hash: result.transactionHash
