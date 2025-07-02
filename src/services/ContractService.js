@@ -171,6 +171,13 @@ const CONTRACT_ABI = [
 // NFT Contract ABI for approvals
 const NFT_ABI = [
   {
+    name: 'ownerOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address' }]
+  },
+  {
     name: 'approve',
     type: 'function',
     stateMutability: 'nonpayable',
@@ -291,6 +298,22 @@ class ContractService {
       const account = walletClient.account.address
 
       console.log(`🔐 Checking NFT approval for contract: ${nftContract}, token: ${tokenId}`)
+      console.log(`🎮 Game contract address: ${this.contractAddress}`)
+
+      // First, let's check if the NFT contract is valid
+      try {
+        const contractCode = await publicClient.getBytecode({ address: nftContract })
+        if (!contractCode || contractCode === '0x') {
+          throw new Error('NFT contract does not exist or has no code')
+        }
+        console.log('✅ NFT contract exists and has code')
+      } catch (codeError) {
+        console.error('❌ NFT contract validation failed:', codeError.message)
+        return {
+          success: false,
+          error: `Invalid NFT contract: ${codeError.message}`
+        }
+      }
 
       // Try to check if already approved, but handle errors gracefully
       let alreadyApproved = false
@@ -760,6 +783,90 @@ class ContractService {
       }
     } catch (error) {
       console.error('Error checking unclaimed rewards:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Test NFT contract compatibility
+  async testNFTContract(nftContract, tokenId) {
+    try {
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const account = walletClient.account.address
+
+      console.log(`🧪 Testing NFT contract: ${nftContract}, token: ${tokenId}`)
+
+      const results = {
+        contractExists: false,
+        hasCode: false,
+        supportsERC721: false,
+        ownerCheck: false,
+        approvalCheck: false,
+        errors: []
+      }
+
+      // 1. Check if contract exists
+      try {
+        const code = await publicClient.getBytecode({ address: nftContract })
+        results.contractExists = true
+        results.hasCode = code && code !== '0x'
+        console.log(`✅ Contract exists: ${results.contractExists}, Has code: ${results.hasCode}`)
+      } catch (error) {
+        results.errors.push(`Contract check failed: ${error.message}`)
+      }
+
+      // 2. Test ERC721 functions
+      try {
+        // Try to get owner
+        const owner = await publicClient.readContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'ownerOf',
+          args: [BigInt(tokenId)]
+        })
+        results.ownerCheck = true
+        console.log(`✅ Owner check passed: ${owner}`)
+      } catch (error) {
+        results.errors.push(`Owner check failed: ${error.message}`)
+      }
+
+      // 3. Test approval functions
+      try {
+        const approved = await publicClient.readContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'getApproved',
+          args: [BigInt(tokenId)]
+        })
+        results.approvalCheck = true
+        console.log(`✅ Approval check passed: ${approved}`)
+      } catch (error) {
+        results.errors.push(`Approval check failed: ${error.message}`)
+      }
+
+      // 4. Test isApprovedForAll
+      try {
+        const approvedForAll = await publicClient.readContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'isApprovedForAll',
+          args: [account, this.contractAddress]
+        })
+        console.log(`✅ isApprovedForAll check passed: ${approvedForAll}`)
+      } catch (error) {
+        results.errors.push(`isApprovedForAll check failed: ${error.message}`)
+      }
+
+      results.supportsERC721 = results.ownerCheck && results.approvalCheck
+
+      return {
+        success: true,
+        results
+      }
+    } catch (error) {
+      console.error('Error testing NFT contract:', error)
       return {
         success: false,
         error: error.message
