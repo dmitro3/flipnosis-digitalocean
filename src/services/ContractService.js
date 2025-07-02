@@ -188,6 +188,16 @@ const NFT_ABI = [
     outputs: [{ name: '', type: 'address' }]
   },
   {
+    name: 'setApprovalForAll',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'operator', type: 'address' },
+      { name: 'approved', type: 'bool' }
+    ],
+    outputs: []
+  },
+  {
     name: 'isApprovedForAll',
     type: 'function',
     stateMutability: 'view',
@@ -280,41 +290,102 @@ class ContractService {
       const { walletClient, publicClient } = this.getCurrentClients()
       const account = walletClient.account.address
 
-      // Check if already approved
-      const approved = await publicClient.readContract({
-        address: nftContract,
-        abi: NFT_ABI,
-        functionName: 'getApproved',
-        args: [BigInt(tokenId)]
-      })
+      console.log(`🔐 Checking NFT approval for contract: ${nftContract}, token: ${tokenId}`)
 
-      if (approved.toLowerCase() === this.contractAddress.toLowerCase()) {
-        console.log('✅ NFT already approved')
-        return { success: true, alreadyApproved: true }
+      // Try to check if already approved, but handle errors gracefully
+      let alreadyApproved = false
+      try {
+        // First check if approved for all
+        const approvedForAll = await publicClient.readContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'isApprovedForAll',
+          args: [account, this.contractAddress]
+        })
+
+        if (approvedForAll) {
+          console.log('✅ NFT already approved for all')
+          return { success: true, alreadyApproved: true, method: 'setApprovalForAll' }
+        }
+
+        // Then check individual token approval
+        const approved = await publicClient.readContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'getApproved',
+          args: [BigInt(tokenId)]
+        })
+
+        if (approved.toLowerCase() === this.contractAddress.toLowerCase()) {
+          console.log('✅ NFT already approved')
+          return { success: true, alreadyApproved: true, method: 'approve' }
+        }
+      } catch (checkError) {
+        console.warn('⚠️ Could not check approval status, proceeding with approval:', checkError.message)
+        // Continue with approval even if we can't check current status
       }
 
-      // Approve NFT
-      const { request } = await publicClient.simulateContract({
-        address: nftContract,
-        abi: NFT_ABI,
-        functionName: 'approve',
-        args: [this.contractAddress, BigInt(tokenId)],
-        account
-      })
+      // Try to approve NFT
+      console.log('🔐 Approving NFT...')
+      
+      try {
+        // First try individual token approval
+        const { request } = await publicClient.simulateContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'approve',
+          args: [this.contractAddress, BigInt(tokenId)],
+          account
+        })
 
-      const hash = await walletClient.writeContract(request)
-      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+        const hash = await walletClient.writeContract(request)
+        const receipt = await publicClient.waitForTransactionReceipt({ hash })
 
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
+        console.log('✅ NFT approval successful (individual token)')
+        return {
+          success: true,
+          transactionHash: hash,
+          receipt
+        }
+      } catch (approvalError) {
+        console.warn('⚠️ Individual token approval failed, trying setApprovalForAll:', approvalError.message)
+        
+        // Try setApprovalForAll as fallback
+        const { request } = await publicClient.simulateContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'setApprovalForAll',
+          args: [this.contractAddress, true],
+          account
+        })
+
+        const hash = await walletClient.writeContract(request)
+        const receipt = await publicClient.waitForTransactionReceipt({ hash })
+
+        console.log('✅ NFT approval successful (setApprovalForAll)')
+        return {
+          success: true,
+          transactionHash: hash,
+          receipt,
+          method: 'setApprovalForAll'
+        }
       }
     } catch (error) {
-      console.error('Error approving NFT:', error)
+      console.error('❌ Error approving NFT:', error)
+      
+      // Provide more specific error messages
+      let errorMessage = error.message
+      if (error.message.includes('stack underflow')) {
+        errorMessage = 'NFT contract does not support standard ERC721 approval. This NFT may not be compatible with the game.'
+      } else if (error.message.includes('execution reverted')) {
+        errorMessage = 'NFT approval failed. You may not own this NFT or it may not be transferable.'
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = 'Insufficient funds to pay for NFT approval transaction.'
+      }
+      
       return {
         success: false,
-        error: error.message
+        error: errorMessage
       }
     }
   }
