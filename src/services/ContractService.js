@@ -941,6 +941,162 @@ class ContractService {
       }
     }
   }
+
+  // Emergency function to find your NFT
+  async findMyNFTs(nftContract, tokenId) {
+    try {
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const account = walletClient.account.address
+
+      console.log(`🔍 Looking for NFT: ${nftContract}, tokenId: ${tokenId}`)
+
+      // Check current owner
+      const currentOwner = await publicClient.readContract({
+        address: nftContract,
+        abi: NFT_ABI,
+        functionName: 'ownerOf',
+        args: [BigInt(tokenId)]
+      })
+
+      console.log(`📍 Current owner: ${currentOwner}`)
+      console.log(`📍 Your address: ${account}`)
+      console.log(`📍 Game contract: ${this.contractAddress}`)
+
+      if (currentOwner.toLowerCase() === account.toLowerCase()) {
+        return {
+          success: true,
+          location: 'your_wallet',
+          message: 'NFT is in your wallet'
+        }
+      } else if (currentOwner.toLowerCase() === this.contractAddress.toLowerCase()) {
+        return {
+          success: true,
+          location: 'game_contract',
+          message: 'NFT is in the game contract'
+        }
+      } else {
+        return {
+          success: true,
+          location: 'other',
+          message: `NFT is owned by: ${currentOwner}`
+        }
+      }
+    } catch (error) {
+      console.error('Error finding NFT:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Emergency function to get all games for an address
+  async getMyGames(address) {
+    try {
+      const { publicClient } = this.getCurrentClients()
+
+      console.log(`🎮 Looking for games for address: ${address}`)
+
+      // This would require the contract to have a function to get user games
+      // For now, let's try to get the next game ID to see how many games exist
+      const nextGameId = await publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'nextGameId'
+      })
+
+      console.log(`📊 Total games created: ${nextGameId}`)
+
+      // Try to get details for recent games
+      const recentGames = []
+      const maxGamesToCheck = 10
+
+      for (let i = 1; i < Math.min(Number(nextGameId), maxGamesToCheck + 1); i++) {
+        try {
+          const gameDetails = await this.getGameDetails(i.toString())
+          if (gameDetails.success) {
+            const { game } = gameDetails.data
+            if (game.creator.toLowerCase() === address.toLowerCase()) {
+              recentGames.push({
+                gameId: i,
+                creator: game.creator,
+                joiner: game.joiner,
+                nftContract: game.nftContract,
+                tokenId: game.tokenId.toString(),
+                state: game.state
+              })
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not get details for game ${i}:`, error.message)
+        }
+      }
+
+      return {
+        success: true,
+        totalGames: Number(nextGameId),
+        myGames: recentGames
+      }
+    } catch (error) {
+      console.error('Error getting my games:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Emergency function to cancel a game and recover NFT
+  async emergencyCancelGame(gameId) {
+    try {
+      const { walletClient, publicClient } = this.getCurrentClients()
+      const account = walletClient.account.address
+
+      console.log(`🚨 Emergency cancelling game: ${gameId}`)
+
+      // First check if you can cancel this game
+      const gameDetails = await this.getGameDetails(gameId)
+      if (!gameDetails.success) {
+        throw new Error('Could not get game details')
+      }
+
+      const { game } = gameDetails.data
+      if (game.creator.toLowerCase() !== account.toLowerCase()) {
+        throw new Error('Only the game creator can cancel the game')
+      }
+
+      if (game.state !== 0) { // 0 = Created state
+        throw new Error('Game is not in created state - cannot cancel')
+      }
+
+      // Cancel the game
+      const { request } = await publicClient.simulateContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'cancelGame',
+        args: [BigInt(gameId)],
+        account
+      })
+
+      const hash = await walletClient.writeContract(request)
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+
+      console.log(`✅ Game cancelled successfully: ${hash}`)
+
+      return {
+        success: true,
+        transactionHash: hash,
+        receipt,
+        message: 'Game cancelled and NFT should be returned to your wallet'
+      }
+    } catch (error) {
+      console.error('Error cancelling game:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
 }
 
 export default new ContractService()
