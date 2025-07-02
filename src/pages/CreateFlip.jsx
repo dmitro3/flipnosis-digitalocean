@@ -141,7 +141,7 @@ const CreateFlip = () => {
 
       // Prepare game parameters for smart contract
       const gameParams = {
-        nftContract: selectedNFT.contract,
+        nftContract: selectedNFT.contractAddress,
         tokenId: selectedNFT.tokenId,
         priceUSD: validatedPriceUSD,
         acceptedToken: 0, // 0 = ETH, 1 = USDC
@@ -155,6 +155,7 @@ const CreateFlip = () => {
       }
 
       console.log('🎮 Creating game with smart contract:', gameParams)
+      console.log('🔍 Selected NFT object:', selectedNFT)
 
       // Create game using smart contract
       const result = await contractService.createGame(gameParams)
@@ -170,7 +171,7 @@ const CreateFlip = () => {
       const databaseResult = await createGameInDatabase({
         id: result.gameId.toString(),
         creator: address,
-        nft_contract: selectedNFT.contract,
+        nft_contract: selectedNFT.contractAddress,
         token_id: selectedNFT.tokenId,
         price_usd: validatedPriceUSD,
         game_type: gameType,
