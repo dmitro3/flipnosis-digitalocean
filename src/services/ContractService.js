@@ -420,6 +420,33 @@ class ContractService {
       const { walletClient, publicClient } = this.getCurrentClients()
       const account = walletClient.account.address
 
+      console.log('🎮 Creating game with params:', {
+        nftContract: params.nftContract,
+        tokenId: params.tokenId,
+        priceUSD: params.priceUSD,
+        account: account
+      })
+
+      // Verify NFT ownership first
+      console.log('🔍 Verifying NFT ownership...')
+      try {
+        const owner = await publicClient.readContract({
+          address: params.nftContract,
+          abi: NFT_ABI,
+          functionName: 'ownerOf',
+          args: [BigInt(params.tokenId)]
+        })
+        
+        if (owner.toLowerCase() !== account.toLowerCase()) {
+          throw new Error(`You don't own this NFT. Owner: ${owner}, Your address: ${account}`)
+        }
+        
+        console.log('✅ NFT ownership verified')
+      } catch (ownershipError) {
+        console.error('❌ NFT ownership check failed:', ownershipError)
+        throw new Error('Failed to verify NFT ownership: ' + ownershipError.message)
+      }
+
       // First approve the NFT
       console.log('🔐 Approving NFT for transfer...')
       const approvalResult = await this.approveNFT(params.nftContract, params.tokenId)
@@ -427,19 +454,46 @@ class ContractService {
         throw new Error('Failed to approve NFT: ' + approvalResult.error)
       }
 
-      // Get listing fee amount in ETH
-      const listingFeeUSD = await publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'listingFeeUSD'
-      })
+      // Get listing fee amount in ETH with retry logic for rate limits
+      let listingFeeUSD, ethAmount
+      try {
+        listingFeeUSD = await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'listingFeeUSD'
+        })
 
-      const ethAmount = await publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'getETHAmount',
-        args: [listingFeeUSD]
-      })
+        // Add small delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        ethAmount = await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'getETHAmount',
+          args: [listingFeeUSD]
+        })
+      } catch (rateLimitError) {
+        if (rateLimitError.message.includes('rate limit')) {
+          console.log('⚠️ Rate limit hit, waiting 2 seconds...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          
+          // Retry once
+          listingFeeUSD = await publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'listingFeeUSD'
+          })
+
+          ethAmount = await publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'getETHAmount',
+            args: [listingFeeUSD]
+          })
+        } else {
+          throw rateLimitError
+        }
+      }
 
       console.log(`💰 Listing fee: ${ethAmount} ETH`)
 
@@ -453,6 +507,8 @@ class ContractService {
         gameType: params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
         authInfo: params.authInfo || ''
       }
+
+      console.log('🎮 Game parameters:', gameParams)
 
       // Create the game
       console.log('🎮 Creating game on blockchain...')
@@ -483,10 +539,21 @@ class ContractService {
         receipt
       }
     } catch (error) {
-      console.error('Error creating game:', error)
+      console.error('❌ Error creating game:', error)
+      
+      // Provide more specific error messages
+      let errorMessage = error.message
+      if (error.message.includes('WRONG_FROM')) {
+        errorMessage = 'NFT approval failed. The NFT contract may have restrictions or you may not own this NFT.'
+      } else if (error.message.includes('rate limit')) {
+        errorMessage = 'Network is busy. Please try again in a few seconds.'
+      } else if (error.message.includes('execution reverted')) {
+        errorMessage = 'Game creation failed. Please check your NFT ownership and try again.'
+      }
+      
       return {
         success: false,
-        error: error.message
+        error: errorMessage
       }
     }
   }
