@@ -5,6 +5,7 @@ const cors = require('cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const fs = require('fs')
+const { v4: uuidv4 } = require('uuid')
 
 console.log('🚀 Starting FLIPNOSIS server...')
 console.log('📁 Server directory:', __dirname)
@@ -1793,7 +1794,7 @@ app.post('/api/games', async (req, res) => {
       id, 
       creator, 
       nft_contract, 
-      token_id, 
+      nft_token_id, 
       price_usd, 
       game_type,
       coin,
@@ -1812,11 +1813,28 @@ app.post('/api/games', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?)
     `
 
+    console.log('🎮 Database insert parameters:', {
+      gameId,
+      creator,
+      nft_contract,
+      nft_token_id,
+      nft_name: req.body.nft_name || 'NFT',
+      nft_image: req.body.nft_image || '',
+      nft_collection: req.body.nft_collection || 'Collection',
+      nft_chain: req.body.nft_chain || 'base',
+      price_usd,
+      rounds: 5,
+      coin: JSON.stringify(coin),
+      status: 'waiting',
+      contract_game_id,
+      transaction_hash
+    })
+
     db.run(query, [
       gameId,
       creator,
       nft_contract,
-      token_id,
+      nft_token_id,
       req.body.nft_name || 'NFT',
       req.body.nft_image || '',
       req.body.nft_collection || 'Collection',
@@ -1829,9 +1847,12 @@ app.post('/api/games', async (req, res) => {
       transaction_hash
     ], function(err) {
       if (err) {
-        console.error('Error creating game:', err)
-        res.status(500).json({ error: 'Failed to create game' })
+        console.error('❌ Database error creating game:', err)
+        console.error('❌ SQL query:', query)
+        console.error('❌ Parameters:', [gameId, creator, nft_contract, nft_token_id, req.body.nft_name || 'NFT', req.body.nft_image || '', req.body.nft_collection || 'Collection', req.body.nft_chain || 'base', price_usd, 5, JSON.stringify(coin), 'waiting', contract_game_id, transaction_hash])
+        res.status(500).json({ error: 'Failed to create game', details: err.message })
       } else {
+        console.log('✅ Game created in database with ID:', gameId)
         res.json({ 
           id: gameId, 
           success: true,
@@ -2123,11 +2144,122 @@ server.listen(PORT, '0.0.0.0', () => {
 })
 
 // ==============================================
+// ADMIN API ROUTES
+// ==============================================
+
+// Admin API Routes (add authentication middleware in production)
+app.get('/api/admin/games', async (req, res) => {
+  try {
+    const games = await new Promise((resolve, reject) => {
+      db.all(`
+        SELECT * FROM games 
+        ORDER BY created_at DESC 
+        LIMIT 100
+      `, (err, rows) => {
+        if (err) reject(err)
+        else resolve(rows)
+      })
+    })
+    
+    // Calculate stats
+    const stats = {
+      totalGames: games.length,
+      activeGames: games.filter(g => g.status === 'active').length,
+      waitingGames: games.filter(g => g.status === 'waiting').length,
+      completedGames: games.filter(g => g.status === 'completed').length,
+      totalVolume: games.reduce((sum, g) => sum + (g.price_usd || 0), 0)
+    }
+    
+    res.json({ games, stats })
+  } catch (error) {
+    console.error('Admin API error:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Cancel game endpoint
+app.put('/api/admin/games/:gameId/cancel', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    
+    db.run(
+      `UPDATE games SET status = 'cancelled' WHERE id = ?`,
+      [gameId],
+      function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message })
+        } else {
+          res.json({ success: true, gameId })
+        }
+      }
+    )
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Update game status
+app.patch('/api/admin/games/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const updates = req.body
+    
+    const fields = []
+    const values = []
+    
+    if (updates.status) {
+      fields.push('status = ?')
+      values.push(updates.status)
+    }
+    
+    if (updates.winner) {
+      fields.push('winner = ?')
+      values.push(updates.winner)
+    }
+    
+    values.push(gameId)
+    
+    db.run(
+      `UPDATE games SET ${fields.join(', ')} WHERE id = ?`,
+      values,
+      function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message })
+        } else {
+          res.json({ success: true, changes: this.changes })
+        }
+      }
+    )
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Pause all games endpoint
+app.post('/api/admin/pause-all', async (req, res) => {
+  try {
+    db.run(
+      `UPDATE games SET status = 'paused' WHERE status = 'waiting'`,
+      [],
+      function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message })
+        } else {
+          res.json({ success: true, pausedCount: this.changes })
+        }
+      }
+    )
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// ==============================================
 // DATABASE ADMIN ENDPOINTS - Add to server.js
 // ==============================================
 
-// 1. VIEW ALL GAMES - See complete database
-app.get('/api/admin/games', async (req, res) => {
+// 1. VIEW ALL GAMES - See complete database (legacy endpoint)
+app.get('/api/admin/games-legacy', async (req, res) => {
   try {
     const games = await dbHelpers.getAllGames(100)
     res.json({

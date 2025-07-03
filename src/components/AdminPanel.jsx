@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { ethers } from 'ethers'
 import { Calendar, Activity, DollarSign, Users, Shield, Settings, Search, ChevronDown, ChevronUp, Wallet, TrendingUp, AlertCircle, CheckCircle, XCircle, RefreshCw, Send, Eye, User, Coins, Image, BarChart3, Gamepad2, Crown, Zap } from 'lucide-react'
 import styled from '@emotion/styled'
+import { useWalletConnection } from '../utils/useWalletConnection'
+import { useWallet } from '../contexts/WalletContext'
+import contractService from '../services/ContractService'
+import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit'
 
 // Contract ABI (simplified - you'll need to add the full ABI)
 const CONTRACT_ABI = [
@@ -242,6 +245,23 @@ const GameStatus = styled.span`
   color: ${props => props.status === 'active' || props.status === 'completed' ? '#000' : '#fff'};
 `
 
+const GameList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`
+
+const GameDetails = styled.div`
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  
+  p {
+    margin: 0.5rem 0;
+    color: #ccc;
+  }
+`
+
 const SettingsForm = styled.form`
   display: grid;
   gap: 1.5rem;
@@ -326,6 +346,10 @@ const Notification = styled.div`
 `
 
 export default function AdminPanel() {
+  // Wallet connection using RainbowKit/wagmi
+  const { isFullyConnected, address, walletClient, publicClient } = useWalletConnection()
+  const { chain } = useWallet()
+  
   // State
   const [isConnected, setIsConnected] = useState(false)
   const [walletAddress, setWalletAddress] = useState('')
@@ -334,11 +358,6 @@ export default function AdminPanel() {
   const [selectedChain, setSelectedChain] = useState('base')
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  
-  // Contract state
-  const [contract, setContract] = useState(null)
-  const [provider, setProvider] = useState(null)
-  const [signer, setSigner] = useState(null)
   
   // Data state
   const [stats, setStats] = useState({
@@ -366,45 +385,29 @@ export default function AdminPanel() {
   // API URL
   const API_URL = 'https://cryptoflipz2-production.up.railway.app'
   
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      if (!window.ethereum) {
-        alert('Please install MetaMask!')
-        return
-      }
-      
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const address = accounts[0]
-      
-      if (address.toLowerCase() !== ADMIN_WALLET.toLowerCase()) {
+  // Admin wallet connection effect
+  useEffect(() => {
+    if (isFullyConnected && address) {
+      if (address.toLowerCase() === ADMIN_WALLET.toLowerCase()) {
+        setIsAdmin(true)
+        setIsConnected(true)
+        setWalletAddress(address)
+        
+        // Initialize contract service
+        const chainName = chain?.name?.toLowerCase() || 'base'
+        contractService.init(chainName, walletClient, publicClient)
+          .then(() => {
+            console.log('✅ Admin contract service initialized')
+            loadData()
+          })
+          .catch(error => {
+            console.error('❌ Failed to initialize contract service:', error)
+          })
+      } else {
         alert('Unauthorized wallet. Admin access only.')
-        return
       }
-      
-      setWalletAddress(address)
-      setIsAdmin(true)
-      setIsConnected(true)
-      
-      // Setup provider and contract
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const signer = provider.getSigner()
-      const contractAddress = CONTRACT_ADDRESSES[selectedChain]
-      
-      if (contractAddress && contractAddress !== '0x...') {
-        const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, signer)
-        setProvider(provider)
-        setSigner(signer)
-        setContract(contract)
-      }
-      
-      // Load initial data
-      await loadData()
-    } catch (error) {
-      console.error('Connection error:', error)
-      alert('Failed to connect wallet')
     }
-  }
+  }, [isFullyConnected, address, walletClient, publicClient, chain])
   
   // Load data from database and blockchain
   const loadData = async () => {
@@ -412,31 +415,33 @@ export default function AdminPanel() {
     try {
       // Load games from database
       const gamesResponse = await fetch(`${API_URL}/api/admin/games`)
-      const gamesData = await gamesResponse.json()
-      setGames(gamesData.games || [])
+      if (!gamesResponse.ok) throw new Error('Failed to load games')
       
-      // Load blockchain data if contract is available
-      if (contract) {
-        const [platformFee, listingFee] = await Promise.all([
-          contract.platformFeePercent(),
-          contract.listingFeeUSD()
-        ])
-        
-        setSettings({
-          platformFeePercent: platformFee.toNumber() / 100,
-          listingFeeUSD: listingFee.toNumber() / 1000000
-        })
+      const data = await gamesResponse.json()
+      setGames(data.games || [])
+      
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        totalGames: data.stats?.totalGames || 0,
+        activeGames: data.stats?.activeGames || 0,
+        totalVolume: data.stats?.totalVolume || 0
+      }))
+      
+      // Load blockchain data if contract service is initialized
+      if (contractService.currentChain) {
+        try {
+          // Get contract balance (if method exists)
+          console.log('Contract service is initialized for:', contractService.currentChain)
+          
+          // You can add more blockchain queries here
+        } catch (error) {
+          console.error('Error loading blockchain data:', error)
+        }
       }
-      
-      // Calculate stats
-      calculateStats(gamesData.games || [])
-      
-      // Load player data
-      await loadPlayerData(gamesData.games || [])
-      
     } catch (error) {
       console.error('Error loading data:', error)
-      addNotification('error', 'Failed to load data')
+      addNotification('error', 'Failed to load data: ' + error.message)
     } finally {
       setLoading(false)
     }
@@ -516,15 +521,14 @@ export default function AdminPanel() {
   
   // Update platform fee
   const updatePlatformFee = async () => {
-    if (!contract) return
+    if (!contractService.currentChain) {
+      addNotification('error', 'Contract not initialized')
+      return
+    }
     
     try {
-      const newFee = Math.round(settings.platformFeePercent * 100) // Convert to basis points
-      const tx = await contract.setPlatformFeePercent(newFee)
-      await tx.wait()
-      
-      addNotification('success', 'Platform fee updated successfully!')
-      await loadData()
+      addNotification('info', 'Platform fee update not implemented yet - use contract directly')
+      // TODO: Implement platform fee update through contract service
     } catch (error) {
       console.error('Error updating platform fee:', error)
       addNotification('error', 'Failed to update platform fee')
@@ -533,50 +537,116 @@ export default function AdminPanel() {
   
   // Update listing fee
   const updateListingFee = async () => {
-    if (!contract) return
+    if (!contractService.currentChain) {
+      addNotification('error', 'Contract not initialized')
+      return
+    }
     
     try {
-      const newFee = Math.round(settings.listingFeeUSD * 1000000) // Convert to 6 decimals
-      const tx = await contract.setListingFee(newFee)
-      await tx.wait()
-      
-      addNotification('success', 'Listing fee updated successfully!')
-      await loadData()
+      addNotification('info', 'Listing fee update not implemented yet - use contract directly')
+      // TODO: Implement listing fee update through contract service
     } catch (error) {
       console.error('Error updating listing fee:', error)
       addNotification('error', 'Failed to update listing fee')
     }
   }
   
-  // Emergency withdraw NFT
-  const emergencyWithdrawNFT = async (nftContract, tokenId, toAddress) => {
-    if (!contract) return
+  // Emergency withdraw NFT from contract
+  const emergencyWithdrawNFT = async (gameId) => {
+    if (!confirm('Emergency withdraw NFT from this game?')) return
     
     try {
-      const tx = await contract.emergencyWithdrawNFT(nftContract, tokenId, toAddress)
-      await tx.wait()
+      const game = games.find(g => g.id === gameId)
+      if (!game) throw new Error('Game not found')
       
-      addNotification('success', 'NFT withdrawn successfully!')
-      await loadData()
+      // Use contract service to withdraw NFT
+      const result = await contractService.emergencyCancelGame(game.contract_game_id)
+      
+      if (result.success) {
+        addNotification('success', 'NFT withdrawn successfully!')
+        
+        // Update database
+        await fetch(`${API_URL}/api/admin/games/${gameId}/cancel`, {
+          method: 'PUT'
+        })
+        
+        await loadData()
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error('Error withdrawing NFT:', error)
-      addNotification('error', 'Failed to withdraw NFT')
+      addNotification('error', 'Failed to withdraw NFT: ' + error.message)
     }
   }
-  
-  // Emergency withdraw ETH
-  const emergencyWithdrawETH = async (amount, toAddress) => {
-    if (!contract) return
+
+  // Pause all games
+  const pauseAllGames = async () => {
+    if (!confirm('PAUSE ALL GAMES? This will prevent new games from being created or joined.')) return
     
     try {
-      const tx = await contract.emergencyWithdrawETH(toAddress, ethers.utils.parseEther(amount))
-      await tx.wait()
+      // Update all waiting games to paused
+      const response = await fetch(`${API_URL}/api/admin/pause-all`, {
+        method: 'POST'
+      })
       
-      addNotification('success', 'ETH withdrawn successfully!')
-      await loadData()
+      if (response.ok) {
+        addNotification('success', 'All games paused!')
+        await loadData()
+      } else if (response.status === 404) {
+        // Fallback: manually update games in database
+        addNotification('info', 'Server endpoint not available, using fallback method...')
+        
+        // Get all waiting games and update them one by one
+        const gamesResponse = await fetch(`${API_URL}/api/admin/games`)
+        if (gamesResponse.ok) {
+          const data = await gamesResponse.json()
+          const waitingGames = data.games.filter(g => g.status === 'waiting')
+          
+          let updatedCount = 0
+          for (const game of waitingGames) {
+            try {
+              await fetch(`${API_URL}/api/admin/games/${game.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'paused' })
+              })
+              updatedCount++
+            } catch (e) {
+              console.warn('Failed to update game:', game.id, e)
+            }
+          }
+          
+          addNotification('success', `Paused ${updatedCount} games using fallback method!`)
+          await loadData()
+        } else {
+          throw new Error('Failed to load games for fallback update')
+        }
+      } else {
+        throw new Error('Failed to pause games')
+      }
     } catch (error) {
-      console.error('Error withdrawing ETH:', error)
-      addNotification('error', 'Failed to withdraw ETH')
+      addNotification('error', 'Failed to pause games: ' + error.message)
+    }
+  }
+
+  // Withdraw platform fees
+  const withdrawPlatformFees = async () => {
+    if (!contractService.currentChain) {
+      addNotification('error', 'Contract not initialized')
+      return
+    }
+    
+    try {
+      const result = await contractService.withdrawRewards()
+      
+      if (result.success) {
+        addNotification('success', `Withdrew ${result.ethWithdrawn} ETH and ${result.usdcWithdrawn} USDC`)
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      addNotification('error', 'Failed to withdraw fees: ' + error.message)
     }
   }
   
@@ -659,13 +729,11 @@ export default function AdminPanel() {
       <Header>
         <Title>Admin Dashboard</Title>
         {!isConnected ? (
-          <ConnectButton onClick={connectWallet}>
-            Connect Admin Wallet
-          </ConnectButton>
+          <RainbowConnectButton />
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span>Connected: {formatAddress(walletAddress)}</span>
-            <ChainSelector />
+            <span>{chain?.name || 'Unknown Chain'}</span>
           </div>
         )}
       </Header>
@@ -794,39 +862,69 @@ export default function AdminPanel() {
             {activeTab === 'games' && (
               <div>
                 <SearchBar>
-                  <SearchInput
+                  <Search size={20} />
+                  <input
                     type="text"
-                    placeholder="Search games by ID, creator, or joiner..."
+                    placeholder="Search by game ID or address..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </SearchBar>
                 
-                {filteredGames.map(game => (
-                  <GameCard key={game.id}>
-                    <GameHeader>
-                      <div>
-                        <strong>Game #{game.id}</strong>
-                        <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-                          Creator: {formatAddress(game.creator)}
-                          {game.joiner && ` | Joiner: ${formatAddress(game.joiner)}`}
+                <GameList>
+                  {filteredGames.map(game => (
+                    <GameCard key={game.id}>
+                      <GameHeader onClick={() => setExpandedGame(expandedGame === game.id ? null : game.id)}>
+                        <div>
+                          <h4>Game #{game.id}</h4>
+                          <p>NFT: {game.nft_name}</p>
+                          <p>Status: <span style={{ color: getStatusColor(game.status) }}>{game.status}</span></p>
                         </div>
-                      </div>
-                      <GameStatus status={game.status}>
-                        {game.status}
-                      </GameStatus>
-                    </GameHeader>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div>
-                        <strong>Price:</strong> ${game.price_usd || 0}
-                      </div>
-                      <div>
-                        <strong>Created:</strong> {formatDate(game.created_at)}
-                      </div>
-                    </div>
-                  </GameCard>
-                ))}
+                        <ChevronDown style={{ transform: expandedGame === game.id ? 'rotate(180deg)' : 'none' }} />
+                      </GameHeader>
+                      
+                      {expandedGame === game.id && (
+                        <GameDetails>
+                          <p><strong>Creator:</strong> {formatAddress(game.creator)}</p>
+                          <p><strong>Joiner:</strong> {formatAddress(game.joiner)}</p>
+                          <p><strong>Price:</strong> ${game.price_usd} USD</p>
+                          <p><strong>Contract Game ID:</strong> {game.contract_game_id || 'N/A'}</p>
+                          <p><strong>Created:</strong> {formatDate(game.created_at)}</p>
+                          
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                            {game.status === 'waiting' && (
+                              <Button 
+                                onClick={() => cancelGameInDB(game.id)}
+                                style={{ background: '#ff4444' }}
+                              >
+                                Cancel Game
+                              </Button>
+                            )}
+                            
+                            {game.contract_game_id && game.status === 'waiting' && (
+                              <Button 
+                                onClick={() => emergencyWithdrawNFT(game.id)}
+                                style={{ background: '#ff8800' }}
+                              >
+                                Emergency Withdraw NFT
+                              </Button>
+                            )}
+                            
+                            <Button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/game/${game.id}`)
+                                addNotification('success', 'Game URL copied!')
+                              }}
+                              style={{ background: '#0088ff' }}
+                            >
+                              Copy Game URL
+                            </Button>
+                          </div>
+                        </GameDetails>
+                      )}
+                    </GameCard>
+                  ))}
+                </GameList>
               </div>
             )}
 
@@ -881,11 +979,11 @@ export default function AdminPanel() {
                     />
                   </FormGroup>
                   
-                  <Button onClick={updatePlatformFee} disabled={!contract}>
+                  <Button onClick={updatePlatformFee} disabled={!contractService.currentChain}>
                     Update Platform Fee
                   </Button>
                   
-                  <Button onClick={updateListingFee} disabled={!contract}>
+                  <Button onClick={updateListingFee} disabled={!contractService.currentChain}>
                     Update Listing Fee
                   </Button>
                 </SettingsForm>
@@ -894,26 +992,54 @@ export default function AdminPanel() {
 
             {activeTab === 'emergency' && (
               <div>
-                <h3>Emergency Functions</h3>
-                <p style={{ color: '#ccc', marginBottom: '2rem' }}>
-                  Use these functions only in emergency situations
-                </p>
+                <h3 style={{ color: '#ff4444', marginBottom: '2rem' }}>⚠️ Emergency Controls</h3>
                 
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div style={{ 
+                  background: 'rgba(255, 0, 0, 0.1)', 
+                  border: '2px solid #ff4444',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  marginBottom: '2rem'
+                }}>
+                  <h4>Pause All Games</h4>
+                  <p>This will prevent any new games from being created or joined.</p>
                   <Button 
-                    onClick={() => emergencyWithdrawETH('0.1', walletAddress)}
-                    disabled={!contract}
-                    style={{ background: 'linear-gradient(135deg, #FF4444 0%, #CC0000 100%)' }}
+                    onClick={pauseAllGames}
+                    style={{ background: '#ff4444', marginTop: '1rem' }}
                   >
-                    Emergency Withdraw ETH
+                    🛑 PAUSE ALL GAMES
                   </Button>
-                  
+                </div>
+                
+                <div style={{ 
+                  background: 'rgba(255, 215, 0, 0.1)', 
+                  border: '2px solid #FFD700',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  marginBottom: '2rem'
+                }}>
+                  <h4>Withdraw Platform Fees</h4>
+                  <p>Withdraw accumulated platform fees from the contract.</p>
                   <Button 
-                    onClick={() => alert('NFT withdrawal requires contract address and token ID')}
-                    disabled={!contract}
-                    style={{ background: 'linear-gradient(135deg, #FF4444 0%, #CC0000 100%)' }}
+                    onClick={withdrawPlatformFees}
+                    style={{ background: '#FFD700', color: '#000', marginTop: '1rem' }}
                   >
-                    Emergency Withdraw NFT
+                    💰 Withdraw Fees
+                  </Button>
+                </div>
+                
+                <div style={{ 
+                  background: 'rgba(0, 0, 0, 0.3)', 
+                  borderRadius: '12px',
+                  padding: '2rem'
+                }}>
+                  <h4>Database Admin</h4>
+                  <p>Direct database management (use with caution).</p>
+                  <Button 
+                    onClick={() => window.open('/database-admin', '_blank')}
+                    style={{ background: '#666', marginTop: '1rem' }}
+                  >
+                    🗄️ Open Database Admin
                   </Button>
                 </div>
               </div>
