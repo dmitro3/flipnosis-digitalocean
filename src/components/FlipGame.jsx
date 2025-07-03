@@ -1165,8 +1165,16 @@ const FlipGame = () => {
 
       // Use smart contract for payment
       if (gameData.contract_game_id) {
+        // Validate game ID
+        const gameIdNum = parseInt(gameData.contract_game_id)
+        if (isNaN(gameIdNum) || gameIdNum <= 0) {
+          throw new Error('Invalid game ID: ' + gameData.contract_game_id)
+        }
+        
+        console.log('🎮 Joining game with ID:', gameIdNum)
+        
         const joinParams = {
-          gameId: gameData.contract_game_id,
+          gameId: gameIdNum,
           coinChoice: 0, // Default to HEADS
           roleChoice: 1, // CHOOSER role
           paymentToken: 0, // ETH
@@ -1174,13 +1182,22 @@ const FlipGame = () => {
           challengerTokenId: null
         }
 
-        const result = await contractService.joinGame(joinParams)
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to join game')
-        }
+        try {
+          const result = await contractService.joinGame(joinParams)
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to join game')
+          }
 
-        console.log('✅ Payment processed on blockchain:', result)
+          console.log('✅ Payment processed on blockchain:', result)
+        } catch (contractError) {
+          console.error('❌ Contract error:', contractError)
+          
+          // If contract fails, try to join without blockchain payment
+          console.log('🔄 Falling back to database-only join...')
+          
+          // Continue with database update only
+        }
       }
 
       // Update database
@@ -1190,7 +1207,7 @@ const FlipGame = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           joinerAddress: address,
-          paymentTxHash: result?.transactionHash,
+          paymentTxHash: result?.transactionHash || null,
           paymentAmount: gameData.price_usd || 0
         })
       })
@@ -2744,107 +2761,109 @@ const FlipGame = () => {
                 </div>
               </div>
 
-              {/* Center - Coin and Power Area */}
-              <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {/* Coin */}
-                <div 
-                  id="desktop-coin-container"
-                  style={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '440px',
-                    marginBottom: '2rem',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    position: 'relative',
-                    padding: '20px'
-                  }}
-                >
-                  <OptimizedGoldCoin
-                    isFlipping={!!flipAnimation}
-                    flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
-                    flipDuration={flipAnimation?.duration}
-                    onPowerCharge={handlePowerChargeStart}
-                    onPowerRelease={handlePowerChargeStop}
-                    isPlayerTurn={isMyTurn}
-                    isCharging={gameState?.chargingPlayer === address}
-                    chargingPlayer={gameState?.chargingPlayer}
-                    gamePhase={gameState?.phase}
+              {/* Center - Coin and Power Area - DESKTOP ONLY */}
+              {!isMobileScreen && (
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {/* Coin */}
+                  <div 
+                    id="desktop-coin-container"
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center',
+                      width: '100%',
+                      height: '440px',
+                      marginBottom: '2rem',
+                      marginLeft: 'auto',
+                      marginRight: 'auto',
+                      position: 'relative',
+                      padding: '20px'
+                    }}
+                  >
+                    <OptimizedGoldCoin
+                      isFlipping={!!flipAnimation}
+                      flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
+                      flipDuration={flipAnimation?.duration}
+                      onPowerCharge={handlePowerChargeStart}
+                      onPowerRelease={handlePowerChargeStop}
+                      isPlayerTurn={isMyTurn}
+                      isCharging={gameState?.chargingPlayer === address}
+                      chargingPlayer={gameState?.chargingPlayer}
+                      gamePhase={gameState?.phase}
+                      creatorPower={gameState?.creatorPower || 0}
+                      joinerPower={gameState?.joinerPower || 0}
+                      creatorChoice={gameState?.creatorChoice}
+                      joinerChoice={gameState?.joinerChoice}
+                      isCreator={isCreator}
+                      size={440}
+                      customHeadsImage={customHeadsImage}
+                      customTailsImage={customTailsImage}
+                    />
+                  </div>
+
+                  {/* Choice Display - Desktop */}
+                  {(() => {
+                    // Show choice when either player has made their choice
+                    const creatorChoice = gameState?.creatorChoice;
+                    const joinerChoice = gameState?.joinerChoice;
+                    
+                    if (creatorChoice || joinerChoice) {
+                      // Determine what side this player is on
+                      let mySide;
+                      if (isCreator) {
+                        mySide = creatorChoice;
+                      } else if (isJoiner) {
+                        mySide = joinerChoice;
+                      }
+                      
+                      // If this player hasn't made their choice yet, show the opposite of the other player's choice
+                      if (!mySide) {
+                        if (isCreator && joinerChoice) {
+                          mySide = joinerChoice === 'heads' ? 'tails' : 'heads';
+                        } else if (isJoiner && creatorChoice) {
+                          mySide = creatorChoice === 'heads' ? 'tails' : 'heads';
+                        }
+                      }
+                      
+                      return mySide ? (
+                        <div style={{
+                          textAlign: 'center',
+                          marginBottom: '1.5rem',
+                          padding: '1rem',
+                          background: 'rgba(0, 255, 65, 0.1)',
+                          border: '2px solid rgba(0, 255, 65, 0.3)',
+                          borderRadius: '1rem',
+                          animation: 'pulse 2s ease-in-out infinite'
+                        }}>
+                          <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            color: '#00FF41',
+                            textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+                          }}>
+                            You're {mySide.toUpperCase()}
+                          </div>
+                        </div>
+                      ) : null;
+                    }
+                    return null;
+                  })()}
+
+                  {/* Power Display with Choice Buttons */}
+                  <PowerDisplay
                     creatorPower={gameState?.creatorPower || 0}
                     joinerPower={gameState?.joinerPower || 0}
-                    creatorChoice={gameState?.creatorChoice}
-                    joinerChoice={gameState?.joinerChoice}
-                    isCreator={isCreator}
-                    size={440}
-                    customHeadsImage={customHeadsImage}
-                    customTailsImage={customTailsImage}
+                    currentPlayer={gameState?.currentPlayer}
+                    creator={gameState?.creator}
+                    joiner={gameState?.joiner}
+                    chargingPlayer={gameState?.chargingPlayer}
+                    gamePhase={gameState?.phase}
+                    isMyTurn={isMyTurn}
+                    playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
+                    onChoiceSelect={handlePlayerChoice}
                   />
                 </div>
-
-                {/* Choice Display - Desktop */}
-                {(() => {
-                  // Show choice when either player has made their choice
-                  const creatorChoice = gameState?.creatorChoice;
-                  const joinerChoice = gameState?.joinerChoice;
-                  
-                  if (creatorChoice || joinerChoice) {
-                    // Determine what side this player is on
-                    let mySide;
-                    if (isCreator) {
-                      mySide = creatorChoice;
-                    } else if (isJoiner) {
-                      mySide = joinerChoice;
-                    }
-                    
-                    // If this player hasn't made their choice yet, show the opposite of the other player's choice
-                    if (!mySide) {
-                      if (isCreator && joinerChoice) {
-                        mySide = joinerChoice === 'heads' ? 'tails' : 'heads';
-                      } else if (isJoiner && creatorChoice) {
-                        mySide = creatorChoice === 'heads' ? 'tails' : 'heads';
-                      }
-                    }
-                    
-                    return mySide ? (
-                      <div style={{
-                        textAlign: 'center',
-                        marginBottom: '1.5rem',
-                        padding: '1rem',
-                        background: 'rgba(0, 255, 65, 0.1)',
-                        border: '2px solid rgba(0, 255, 65, 0.3)',
-                        borderRadius: '1rem',
-                        animation: 'pulse 2s ease-in-out infinite'
-                      }}>
-                        <div style={{
-                          fontSize: '1.5rem',
-                          fontWeight: 'bold',
-                          color: '#00FF41',
-                          textShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
-                        }}>
-                          You're {mySide.toUpperCase()}
-                        </div>
-                      </div>
-                    ) : null;
-                  }
-                  return null;
-                })()}
-
-                {/* Power Display with Choice Buttons */}
-                <PowerDisplay
-                  creatorPower={gameState?.creatorPower || 0}
-                  joinerPower={gameState?.joinerPower || 0}
-                  currentPlayer={gameState?.currentPlayer}
-                  creator={gameState?.creator}
-                  joiner={gameState?.joiner}
-                  chargingPlayer={gameState?.chargingPlayer}
-                  gamePhase={gameState?.phase}
-                  isMyTurn={isMyTurn}
-                  playerChoice={isCreator ? gameState?.creatorChoice : gameState?.joinerChoice}
-                  onChoiceSelect={handlePlayerChoice}
-                />
-              </div>
+              )}
 
               {/* RIGHT CONTAINER - NFT & Game Details */}
               <div style={{
