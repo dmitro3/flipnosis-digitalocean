@@ -220,7 +220,7 @@ const Home = () => {
         id: game.id,
         nft: {
           name: game.nft_name || 'Unknown NFT',
-          image: game.nft_image || 'https://picsum.photos/300/300?random=' + game.id,
+          image: game.nft_image || '/placeholder-nft.png', // Use a real placeholder image
           collection: game.nft_collection || 'Unknown Collection',
           contractAddress: game.nft_contract,
           tokenId: game.nft_token_id,

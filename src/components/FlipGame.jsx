@@ -416,6 +416,7 @@ const FlipGame = () => {
   // Local state - ONLY for non-game logic
   const [gameData, setGameData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [joiningGame, setJoiningGame] = useState(false)
 
   // NEW: Enhanced join state management
@@ -831,7 +832,7 @@ const FlipGame = () => {
           contractAddress: game.nftContract,
           tokenId: game.tokenId.toString(),
           name: 'NFT', // Will be filled from database
-          image: 'https://picsum.photos/300/300?random=' + gameId,
+          image: '/placeholder-nft.png', // Use a real placeholder image
           collection: 'Collection',
           chain: 'base'
         },
@@ -883,81 +884,51 @@ const FlipGame = () => {
     }
   }
 
-  useEffect(() => {
-    const loadGame = async () => {
-      try {
-        setLoading(true)
-        
-        // Try loading from contract first
-        if (contractService.currentChain) {
-          const contractGame = await loadGameFromContract()
-          if (contractGame) {
-            // Fetch NFT data to get the actual image
-            try {
-              const nftResult = await fetchNFTData(gameId)
-              if (nftResult && nftResult.image) {
-                contractGame.nft.image = nftResult.image
-                contractGame.nft.name = nftResult.name || 'NFT'
-                contractGame.nft.collection = nftResult.collection || 'Collection'
-              }
-            } catch (nftError) {
-              console.warn('⚠️ Could not fetch NFT data:', nftError)
-            }
-            
-            setGameData(contractGame)
-            setLoading(false)
-            return
-          }
-        }
-
-        // Fallback to your existing database loading
-        const response = await fetch(`${API_URL}/api/games/${gameId}`)
-        
-        if (response.ok) {
-          const dbGame = await response.json()
-          
-          const gameData = {
-            id: dbGame.id,
-            creator: dbGame.creator,
-            joiner: dbGame.joiner,
-            nft: {
-              contractAddress: dbGame.nft_contract,
-              tokenId: dbGame.nft_token_id,
-              name: dbGame.nft_name,
-              image: dbGame.nft_image || 'https://picsum.photos/300/300?random=' + dbGame.id,
-              collection: dbGame.nft_collection,
-              chain: dbGame.nft_chain
-            },
-            price: dbGame.price_usd,
-            priceUSD: dbGame.price_usd,
-            rounds: dbGame.rounds,
-            status: dbGame.status,
-            coin: dbGame.coin ? (typeof dbGame.coin === 'string' ? JSON.parse(dbGame.coin) : dbGame.coin) : null // NEW: Load coin data
-          }
-          
-          console.log('🪙 Loaded game coin data:', gameData.coin);
-          
-          // NEW: Set coin data immediately if available
-          if (gameData.coin) {
-            console.log('🪙 Setting coin data from database:', gameData.coin);
-            setGameCoin(gameData.coin);
-            setCustomHeadsImage(gameData.coin.headsImage);
-            setCustomTailsImage(gameData.coin.tailsImage);
-          }
-          
-          setGameData(gameData)
-        } else {
-          throw new Error('Game not found')
-        }
-      } catch (error) {
-        console.error('❌ Error loading game:', error)
-        showError('Game not found')
-        navigate('/')
-      } finally {
-        setLoading(false)
+  const loadGame = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      const response = await fetch(`${API_URL}/api/games/${gameId}`)
+      
+      if (!response.ok) {
+        throw new Error('Game not found')
       }
+      
+      const gameData = await response.json()
+      console.log('✅ Game loaded from database:', gameData)
+      
+      // Parse coin data if it's a string
+      if (gameData.coin && typeof gameData.coin === 'string') {
+        try {
+          gameData.coin = JSON.parse(gameData.coin)
+        } catch (e) {
+          console.warn('Could not parse coin data:', e)
+        }
+      }
+      
+      setGameData(gameData)
+      
+      // Set NFT data directly from database
+      setNftData({
+        contractAddress: gameData.nft_contract,
+        tokenId: gameData.nft_token_id,
+        name: gameData.nft_name,
+        image: gameData.nft_image,
+        collection: gameData.nft_collection,
+        chain: gameData.nft_chain
+      })
+      
+    } catch (err) {
+      console.error('❌ Error loading game:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadGame()
   }, [gameId])
 
@@ -1192,46 +1163,52 @@ const FlipGame = () => {
     try {
       showInfo('Joining game...')
 
-      // Prepare join parameters
-      const joinParams = {
-        gameId: gameData.contract_game_id || gameId,
-        coinChoice: 0, // Default to HEADS (0 = HEADS, 1 = TAILS)
-        roleChoice: 1, // 1 = CHOOSER
-        paymentToken: 0, // 0 = ETH, 1 = USDC
-        // For NFT vs NFT games, add challenger NFT info
-        challengerNFTContract: null,
-        challengerTokenId: null
+      // Use smart contract for payment
+      if (gameData.contract_game_id) {
+        const joinParams = {
+          gameId: gameData.contract_game_id,
+          coinChoice: 0, // Default to HEADS
+          roleChoice: 1, // CHOOSER role
+          paymentToken: 0, // ETH
+          challengerNFTContract: null,
+          challengerTokenId: null
+        }
+
+        const result = await contractService.joinGame(joinParams)
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to join game')
+        }
+
+        console.log('✅ Payment processed on blockchain:', result)
       }
 
-      console.log('🎮 Joining game with smart contract:', joinParams)
+      // Update database
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      const response = await fetch(`${API_URL}/api/games/${gameId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          joinerAddress: address,
+          paymentTxHash: result?.transactionHash,
+          paymentAmount: gameData.price_usd || 0
+        })
+      })
 
-      // Join game using smart contract
-      const result = await contractService.joinGame(joinParams)
-      
-      if (!result.success) {
-        throw new Error('Failed to join game: ' + result.error)
+      if (!response.ok) {
+        throw new Error('Failed to update game status')
       }
 
       showSuccess('Successfully joined the game!')
-      console.log('✅ Joined game on blockchain:', result)
-
-      // Update local game state
-      setGameData(prev => ({
-        ...prev,
-        joiner: address,
-        status: 'active'
-      }))
-
-      // Update database
-      await updateGameInDatabase({
-        joiner: address,
-        status: 'active',
-        join_transaction_hash: result.transactionHash
-      })
+      
+      // Reload game data
+      setTimeout(() => {
+        loadGame()
+      }, 1000)
 
     } catch (error) {
       console.error('❌ Error joining game:', error)
-      showError('Failed to join game: ' + error.message)
+      showError(`Failed to join game: ${error.message}`)
     } finally {
       setJoiningGame(false)
     }
