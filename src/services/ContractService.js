@@ -8,19 +8,14 @@ const CONTRACT_ABI = [
     name: 'createGame',
     type: 'function',
     stateMutability: 'payable',
-    inputs: [{
-      name: 'params',
-      type: 'tuple',
-      components: [
-        { name: 'nftContract', type: 'address' },
-        { name: 'tokenId', type: 'uint256' },
-        { name: 'priceUSD', type: 'uint256' },
-        { name: 'acceptedToken', type: 'uint8' },
-        { name: 'maxRounds', type: 'uint8' },
-        { name: 'gameType', type: 'uint8' },
-        { name: 'authInfo', type: 'string' }
-      ]
-    }],
+    inputs: [
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'priceUSD', type: 'uint256' },
+      { name: 'acceptedToken', type: 'uint8' },
+      { name: 'gameType', type: 'uint8' },
+      { name: 'authInfo', type: 'string' }
+    ],
     outputs: []
   },
   // Join Game
@@ -481,15 +476,14 @@ class ContractService {
       console.log(`💰 Listing fee: ${ethAmount} ETH`)
 
       // Create game parameters
-      const gameParams = {
-        nftContract: params.nftContract,
-        tokenId: BigInt(params.tokenId),
-        priceUSD: BigInt(Math.floor(params.priceUSD * 1000000)), // Convert to 6 decimals
-        acceptedToken: params.acceptedToken || 0, // 0 = ETH, 1 = USDC
-        maxRounds: params.maxRounds || 5,
-        gameType: params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
-        authInfo: params.authInfo || ''
-      }
+      const gameParams = [
+        params.nftContract,
+        BigInt(params.tokenId),
+        BigInt(Math.floor(params.priceUSD * 1000000)), // Convert to 6 decimals
+        params.acceptedToken || 0, // 0 = ETH, 1 = USDC
+        params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
+        params.authInfo || ''
+      ]
 
       console.log('🎮 Game parameters:', gameParams)
 
@@ -499,7 +493,7 @@ class ContractService {
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'createGame',
-        args: [gameParams],
+        args: gameParams,
         account,
         value: ethAmount
       })
