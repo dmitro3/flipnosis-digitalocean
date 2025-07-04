@@ -13,7 +13,7 @@ async function main() {
       usdcUsdFeed: "0x7e860098F58bBFC8648a4311b374B1D669a2bc6B", // Base USDC/USD
       usdcToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base USDC
       platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0x0000000000000000000000000000000000000000", // Add your admin wallet address
-      rpc: "https://mainnet.base.org"
+      rpc: "https://base.blockpi.network/v1/rpc/public"
     },
     ethereum: {
       ethUsdFeed: "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419", // Ethereum ETH/USD

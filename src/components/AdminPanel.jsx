@@ -24,7 +24,7 @@ const CONTRACT_ABI = [
 
 // Contract addresses for different chains
 const CONTRACT_ADDRESSES = {
-      'base': '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Base contract address
+      'base': '0xb2d09A3A6E502287D0acdAC31328B01AADe35941', // Base contract address
   'ethereum': '0x...',
   'bnb': '0x...',
   'avalanche': '0x...',

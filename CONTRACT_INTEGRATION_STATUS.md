@@ -3,7 +3,7 @@
 ## 🎯 **Current State**
 
 ### ✅ **What's Working**
-1. **Smart Contract**: Deployed and tested on Base mainnet (`0xBFD8912ded5830e43E008CCCEA822A6B0174C480`)
+1. **Smart Contract**: Deployed and tested on Base mainnet (`0xb2d09A3A6E502287D0acdAC31328B01AADe35941`)
 2. **Admin Panel**: Modern design with contract integration ready
 3. **Contract Functions**: All functions tested and working
 4. **ContractService**: Updated with proper contract interaction methods

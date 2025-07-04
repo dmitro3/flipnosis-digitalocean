@@ -204,7 +204,7 @@ const NFT_ABI = [
 const CHAIN_CONFIGS = {
   base: {
     chain: base,
-    contractAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Base contract address
+    contractAddress: '0xb2d09A3A6E502287D0acdAC31328B01AADe35941', // Base contract address
     rpcUrl: 'https://mainnet.base.org'
   },
   ethereum: {

@@ -11,7 +11,21 @@ export default defineConfig(({ mode }) => {
     envPrefix: 'VITE_'
   })
   
-  console.log('Loaded environment variables:', env)
+  // Only expose safe environment variables to frontend
+  const safeEnv = {
+    VITE_PLATFORM_FEE_RECEIVER: env.VITE_PLATFORM_FEE_RECEIVER,
+    VITE_ETHEREUM_RPC_URL: env.VITE_ETHEREUM_RPC_URL,
+    VITE_SEPOLIA_RPC_URL: env.VITE_SEPOLIA_RPC_URL,
+    VITE_BASESCAN_API_KEY: env.VITE_BASESCAN_API_KEY,
+    VITE_ETHERSCAN_API_KEY: env.VITE_ETHERSCAN_API_KEY,
+    VITE_BSCSCAN_API_KEY: env.VITE_BSCSCAN_API_KEY,
+    VITE_AVALANCHE_API_KEY: env.VITE_AVALANCHE_API_KEY,
+    VITE_POLYGONSCAN_API_KEY: env.VITE_POLYGONSCAN_API_KEY,
+    VITE_REPORT_GAS: env.VITE_REPORT_GAS,
+    NODE_ENV: env.NODE_ENV
+  }
+  
+  console.log('Loaded safe environment variables for frontend:', safeEnv)
   
   return {
     plugins: [
@@ -65,7 +79,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     define: {
-      'process.env': env,
+      'process.env': safeEnv,
       global: 'globalThis',
     },
   }
