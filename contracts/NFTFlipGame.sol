@@ -22,15 +22,13 @@ interface AggregatorV3Interface {
 contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     using SafeMath for uint256;
 
-    // Enums
-    enum GameState { Created, Joined, InProgress, Completed, Expired, Cancelled }
+    // Simplified enums
+    enum GameState { Created, Joined, Completed, Cancelled, Expired }
     enum GameType { NFTvsCrypto, NFTvsNFT }
-    enum PaymentToken { ETH, USDC, NATIVE }
-    enum CoinSide { HEADS, TAILS }
-    enum PlayerRole { FLIPPER, CHOOSER }
+    enum PaymentToken { ETH, USDC }
     
-    // Game Core Structure
-    struct GameCore {
+    // Simplified game structure - only essential data
+    struct Game {
         uint256 gameId;
         address creator;
         address joiner;
@@ -38,80 +36,26 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         uint256 tokenId;
         GameState state;
         GameType gameType;
-        PlayerRole creatorRole;
-        PlayerRole joinerRole;
-        CoinSide joinerChoice;
-    }
-    
-    // Financial Details
-    struct GameFinancials {
-        uint256 priceUSD; // Price in USD with 6 decimals
-        PaymentToken acceptedToken;
+        uint256 priceUSD;
+        PaymentToken paymentToken;
         uint256 totalPaid;
-        PaymentToken paymentTokenUsed;
-        uint256 listingFeePaid;
-        uint256 platformFeeCollected;
-    }
-    
-    // Game Progress
-    struct GameProgress {
+        address winner;
         uint256 createdAt;
         uint256 expiresAt;
-        uint8 maxRounds;
-        uint8 currentRound;
-        uint8 creatorWins;
-        uint8 joinerWins;
-        address winner;
-        uint256 lastActionTime;
-        uint256 countdownEndTime;
     }
     
-    // Round Details
-    struct GameRound {
-        CoinSide result;
-        uint8 power;
-        bool completed;
-        address flipper;
-    }
-    
-    // NFT vs NFT specific
+    // NFT vs NFT specific data
     struct NFTChallenge {
         address challengerNFTContract;
         uint256 challengerTokenId;
-        bool isNFTvsNFT;
-    }
-    
-    // Create Game Parameters
-    struct CreateGameParams {
-        address nftContract;
-        uint256 tokenId;
-        uint256 priceUSD;
-        PaymentToken acceptedToken;
-        uint8 maxRounds;
-        GameType gameType;
-        string authInfo;
-    }
-    
-    // Join Game Parameters  
-    struct JoinGameParams {
-        uint256 gameId;
-        CoinSide coinChoice;
-        PlayerRole roleChoice;
-        PaymentToken paymentToken;
-        address challengerNFTContract; // For NFT vs NFT
-        uint256 challengerTokenId; // For NFT vs NFT
     }
     
     // State Variables
-    mapping(uint256 => GameCore) public gameCores;
-    mapping(uint256 => GameFinancials) public gameFinancials;
-    mapping(uint256 => GameProgress) public gameProgress;
+    mapping(uint256 => Game) public games;
     mapping(uint256 => NFTChallenge) public nftChallenges;
-    mapping(uint256 => mapping(uint8 => GameRound)) public gameRounds;
     
     // Player mappings
     mapping(address => uint256[]) public userGames;
-    mapping(address => uint256[]) public userActiveGames;
     mapping(address => mapping(address => mapping(uint256 => bool))) public userNFTsInContract;
     
     // Unclaimed rewards tracking
@@ -126,6 +70,12 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     uint256 public constant MAX_FEE_PERCENT = 1000; // 10% max
     uint256 public constant BASIS_POINTS = 10000;
     
+    // Game statistics
+    uint256 public totalGamesCreated = 0;
+    uint256 public totalGamesCompleted = 0;
+    uint256 public totalVolumeUSD = 0;
+    uint256 public totalPlatformFees = 0;
+    
     // Price feeds
     AggregatorV3Interface public ethUsdFeed;
     AggregatorV3Interface public usdcUsdFeed;
@@ -135,8 +85,6 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     // Events
     event GameCreated(uint256 indexed gameId, address indexed creator, GameType gameType);
     event GameJoined(uint256 indexed gameId, address indexed joiner);
-    event GameStarted(uint256 indexed gameId);
-    event FlipResult(uint256 indexed gameId, uint8 round, CoinSide result, uint8 power);
     event GameCompleted(uint256 indexed gameId, address indexed winner);
     event GameCancelled(uint256 indexed gameId);
     event RewardsWithdrawn(address indexed player, uint256 ethAmount, uint256 usdcAmount);
@@ -159,82 +107,59 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     
     // Modifiers
     modifier gameExists(uint256 _gameId) {
-        require(gameCores[_gameId].gameId != 0, "Game does not exist");
+        require(games[_gameId].gameId != 0, "Game does not exist");
         _;
     }
     
     modifier onlyGameParticipant(uint256 _gameId) {
-        GameCore memory game = gameCores[_gameId];
+        Game memory game = games[_gameId];
         require(msg.sender == game.creator || msg.sender == game.joiner, "Not a participant");
         _;
     }
     
-    // Create Game Functions
-    function createGame(CreateGameParams calldata params) 
-        external 
-        payable 
-        nonReentrant 
-        whenNotPaused 
-    {
-        require(params.maxRounds == 5 || params.maxRounds == 7, "Invalid rounds");
-        require(params.nftContract != address(0), "Invalid NFT contract");
+    // Create Game Function
+    function createGame(
+        address nftContract,
+        uint256 tokenId,
+        uint256 priceUSD,
+        PaymentToken acceptedToken,
+        GameType gameType,
+        string calldata authInfo
+    ) external payable nonReentrant whenNotPaused {
+        require(nftContract != address(0), "Invalid NFT contract");
         
         // Calculate and collect listing fee
         uint256 listingFeeETH = getETHAmount(listingFeeUSD);
         require(msg.value >= listingFeeETH, "Insufficient listing fee");
         
         // Transfer NFT to contract
-        IERC721(params.nftContract).transferFrom(msg.sender, address(this), params.tokenId);
+        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
         
         // Initialize game
         uint256 gameId = nextGameId++;
         
-        gameCores[gameId] = GameCore({
+        games[gameId] = Game({
             gameId: gameId,
             creator: msg.sender,
             joiner: address(0),
-            nftContract: params.nftContract,
-            tokenId: params.tokenId,
+            nftContract: nftContract,
+            tokenId: tokenId,
             state: GameState.Created,
-            gameType: params.gameType,
-            creatorRole: PlayerRole.FLIPPER,
-            joinerRole: PlayerRole.CHOOSER,
-            joinerChoice: CoinSide.HEADS
-        });
-        
-        gameFinancials[gameId] = GameFinancials({
-            priceUSD: params.priceUSD,
-            acceptedToken: params.acceptedToken,
+            gameType: gameType,
+            priceUSD: priceUSD,
+            paymentToken: acceptedToken,
             totalPaid: 0,
-            paymentTokenUsed: PaymentToken.ETH,
-            listingFeePaid: listingFeeETH,
-            platformFeeCollected: 0
-        });
-        
-        gameProgress[gameId] = GameProgress({
-            createdAt: block.timestamp,
-            expiresAt: block.timestamp + 7 days,
-            maxRounds: params.maxRounds,
-            currentRound: 1,
-            creatorWins: 0,
-            joinerWins: 0,
             winner: address(0),
-            lastActionTime: block.timestamp,
-            countdownEndTime: 0
+            createdAt: block.timestamp,
+            expiresAt: block.timestamp + 7 days
         });
-        
-        if (params.gameType == GameType.NFTvsNFT) {
-            nftChallenges[gameId] = NFTChallenge({
-                challengerNFTContract: address(0),
-                challengerTokenId: 0,
-                isNFTvsNFT: true
-            });
-        }
         
         // Track user game
         userGames[msg.sender].push(gameId);
-        userActiveGames[msg.sender].push(gameId);
-        userNFTsInContract[msg.sender][params.nftContract][params.tokenId] = true;
+        userNFTsInContract[msg.sender][nftContract][tokenId] = true;
+        
+        // Update statistics
+        totalGamesCreated++;
         
         // Transfer listing fee to platform
         if (msg.value > listingFeeETH) {
@@ -242,209 +167,145 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         }
         payable(platformFeeReceiver).transfer(listingFeeETH);
         
-        emit GameCreated(gameId, msg.sender, params.gameType);
+        emit GameCreated(gameId, msg.sender, gameType);
     }
     
-    // Join Game Functions
-    function joinGame(JoinGameParams calldata params) 
-        external 
-        payable 
-        nonReentrant 
-        whenNotPaused 
-        gameExists(params.gameId)
-    {
-        GameCore storage game = gameCores[params.gameId];
-        GameFinancials storage financials = gameFinancials[params.gameId];
+    // Join Game Function
+    function joinGame(
+        uint256 gameId,
+        PaymentToken paymentToken,
+        address challengerNFTContract,
+        uint256 challengerTokenId
+    ) external payable nonReentrant whenNotPaused gameExists(gameId) {
+        Game storage game = games[gameId];
         
         require(game.state == GameState.Created, "Game not available");
         require(msg.sender != game.creator, "Cannot join own game");
         require(game.joiner == address(0), "Game already joined");
         
-        // Set player choices
-        game.joinerChoice = params.coinChoice;
-        game.creatorRole = params.roleChoice == PlayerRole.FLIPPER ? PlayerRole.CHOOSER : PlayerRole.FLIPPER;
-        game.joinerRole = params.roleChoice;
-        
         if (game.gameType == GameType.NFTvsCrypto) {
             // Handle crypto payment
-            uint256 requiredAmount = getRequiredPaymentAmount(params.gameId, params.paymentToken);
+            uint256 requiredAmount = getETHAmount(game.priceUSD);
             
-            if (params.paymentToken == PaymentToken.ETH) {
+            if (paymentToken == PaymentToken.ETH) {
                 require(msg.value >= requiredAmount, "Insufficient ETH");
-                financials.totalPaid = requiredAmount;
+                game.totalPaid = requiredAmount;
                 if (msg.value > requiredAmount) {
                     payable(msg.sender).transfer(msg.value - requiredAmount);
                 }
-            } else if (params.paymentToken == PaymentToken.USDC) {
+            } else if (paymentToken == PaymentToken.USDC) {
                 require(msg.value == 0, "ETH not needed for USDC payment");
                 IERC20(usdcToken).transferFrom(msg.sender, address(this), requiredAmount);
-                financials.totalPaid = requiredAmount;
+                game.totalPaid = requiredAmount;
             }
             
-            financials.paymentTokenUsed = params.paymentToken;
+            game.paymentToken = paymentToken;
         } else {
             // NFT vs NFT - transfer challenger NFT
-            require(params.challengerNFTContract != address(0), "Invalid challenger NFT");
-            IERC721(params.challengerNFTContract).transferFrom(
+            require(challengerNFTContract != address(0), "Invalid challenger NFT");
+            IERC721(challengerNFTContract).transferFrom(
                 msg.sender, 
                 address(this), 
-                params.challengerTokenId
+                challengerTokenId
             );
             
-            nftChallenges[params.gameId] = NFTChallenge({
-                challengerNFTContract: params.challengerNFTContract,
-                challengerTokenId: params.challengerTokenId,
-                isNFTvsNFT: true
+            nftChallenges[gameId] = NFTChallenge({
+                challengerNFTContract: challengerNFTContract,
+                challengerTokenId: challengerTokenId
             });
             
-            userNFTsInContract[msg.sender][params.challengerNFTContract][params.challengerTokenId] = true;
+            userNFTsInContract[msg.sender][challengerNFTContract][challengerTokenId] = true;
         }
         
         // Update game state
         game.joiner = msg.sender;
-        game.state = GameState.InProgress;
-        gameProgress[params.gameId].lastActionTime = block.timestamp;
+        game.state = GameState.Joined;
         
         // Track user game
-        userGames[msg.sender].push(params.gameId);
-        userActiveGames[msg.sender].push(params.gameId);
+        userGames[msg.sender].push(gameId);
         
-        emit GameJoined(params.gameId, msg.sender);
-        emit GameStarted(params.gameId);
+        emit GameJoined(gameId, msg.sender);
     }
     
-    // Flip Coin Function
-    function flipCoin(uint256 _gameId, uint8 _power) 
+    // Complete Game Function (called by frontend after determining winner)
+    function completeGame(uint256 gameId, address winner) 
         external 
         nonReentrant 
-        gameExists(_gameId)
-        onlyGameParticipant(_gameId)
+        gameExists(gameId)
+        onlyGameParticipant(gameId)
     {
-        GameCore storage game = gameCores[_gameId];
-        GameProgress storage progress = gameProgress[_gameId];
-        
-        require(game.state == GameState.InProgress, "Game not in progress");
-        require(progress.currentRound <= progress.maxRounds, "Game over");
-        
-        // Verify it's the flipper's turn
-        address currentFlipper = (progress.currentRound % 2 == 1) 
-            ? (game.creatorRole == PlayerRole.FLIPPER ? game.creator : game.joiner)
-            : (game.creatorRole == PlayerRole.FLIPPER ? game.joiner : game.creator);
-            
-        require(msg.sender == currentFlipper, "Not your turn to flip");
-        
-        // Simulate coin flip (simplified - use Chainlink VRF in production)
-        CoinSide result = (block.timestamp + block.difficulty + _power) % 2 == 0 
-            ? CoinSide.HEADS 
-            : CoinSide.TAILS;
-        
-        // Record round
-        gameRounds[_gameId][progress.currentRound] = GameRound({
-            result: result,
-            power: _power,
-            completed: true,
-            flipper: msg.sender
-        });
-        
-        // Update scores
-        if (result == game.joinerChoice) {
-            progress.joinerWins++;
-        } else {
-            progress.creatorWins++;
-        }
-        
-        emit FlipResult(_gameId, progress.currentRound, result, _power);
-        
-        // Check for winner
-        uint8 winsNeeded = (progress.maxRounds / 2) + 1;
-        if (progress.creatorWins >= winsNeeded || progress.joinerWins >= winsNeeded) {
-            _completeGame(_gameId);
-        } else {
-            progress.currentRound++;
-            progress.lastActionTime = block.timestamp;
-        }
-    }
-    
-    // Complete Game
-    function _completeGame(uint256 _gameId) internal {
-        GameCore storage game = gameCores[_gameId];
-        GameProgress storage progress = gameProgress[_gameId];
-        GameFinancials storage financials = gameFinancials[_gameId];
+        Game storage game = games[gameId];
+        require(game.state == GameState.Joined, "Game not ready to complete");
         
         game.state = GameState.Completed;
-        progress.winner = progress.creatorWins > progress.joinerWins ? game.creator : game.joiner;
+        game.winner = winner;
         
-        // Calculate platform fee
-        uint256 platformFee = 0;
-        uint256 winnerPayout = 0;
-        
-        if (game.gameType == GameType.NFTvsCrypto) {
-            platformFee = financials.totalPaid.mul(platformFeePercent).div(BASIS_POINTS);
-            winnerPayout = financials.totalPaid.sub(platformFee);
-            financials.platformFeeCollected = platformFee;
+        // Calculate platform fee and distribute rewards
+        if (game.gameType == GameType.NFTvsCrypto && game.totalPaid > 0) {
+            uint256 platformFee = game.totalPaid.mul(platformFeePercent).div(BASIS_POINTS);
+            uint256 winnerPayout = game.totalPaid.sub(platformFee);
+            
+            // Update statistics
+            totalGamesCompleted++;
+            totalVolumeUSD = totalVolumeUSD.add(game.priceUSD);
+            totalPlatformFees = totalPlatformFees.add(platformFee);
             
             // Add to unclaimed rewards
-            if (financials.paymentTokenUsed == PaymentToken.ETH) {
-                unclaimedETH[progress.winner] = unclaimedETH[progress.winner].add(winnerPayout);
+            if (game.paymentToken == PaymentToken.ETH) {
+                unclaimedETH[winner] = unclaimedETH[winner].add(winnerPayout);
                 unclaimedETH[platformFeeReceiver] = unclaimedETH[platformFeeReceiver].add(platformFee);
-            } else if (financials.paymentTokenUsed == PaymentToken.USDC) {
-                unclaimedUSDC[progress.winner] = unclaimedUSDC[progress.winner].add(winnerPayout);
+            } else if (game.paymentToken == PaymentToken.USDC) {
+                unclaimedUSDC[winner] = unclaimedUSDC[winner].add(winnerPayout);
                 unclaimedUSDC[platformFeeReceiver] = unclaimedUSDC[platformFeeReceiver].add(platformFee);
             }
+        } else {
+            // NFT vs NFT game completion
+            totalGamesCompleted++;
         }
         
         // Handle NFTs
-        if (progress.winner == game.creator) {
+        if (winner == game.creator) {
             // Creator wins - gets their NFT back
             unclaimedNFTs[game.creator][game.nftContract].push(game.tokenId);
             
+            // If NFT vs NFT, creator also gets challenger NFT
             if (game.gameType == GameType.NFTvsNFT) {
-                // Creator also wins challenger's NFT
-                NFTChallenge memory challenge = nftChallenges[_gameId];
+                NFTChallenge memory challenge = nftChallenges[gameId];
                 unclaimedNFTs[game.creator][challenge.challengerNFTContract].push(challenge.challengerTokenId);
             }
         } else {
             // Joiner wins - gets creator's NFT
             unclaimedNFTs[game.joiner][game.nftContract].push(game.tokenId);
-            userNFTsInContract[game.creator][game.nftContract][game.tokenId] = false;
             
+            // If NFT vs NFT, joiner also gets challenger NFT
             if (game.gameType == GameType.NFTvsNFT) {
-                // Joiner gets their NFT back
-                NFTChallenge memory challenge = nftChallenges[_gameId];
+                NFTChallenge memory challenge = nftChallenges[gameId];
                 unclaimedNFTs[game.joiner][challenge.challengerNFTContract].push(challenge.challengerTokenId);
             }
         }
         
-        // Remove from active games
-        _removeFromActiveGames(game.creator, _gameId);
-        _removeFromActiveGames(game.joiner, _gameId);
-        
-        emit GameCompleted(_gameId, progress.winner);
+        emit GameCompleted(gameId, winner);
     }
     
-    // Cancel Game
-    function cancelGame(uint256 _gameId) 
+    // Cancel Game Function
+    function cancelGame(uint256 gameId) 
         external 
         nonReentrant 
-        gameExists(_gameId)
+        gameExists(gameId)
     {
-        GameCore storage game = gameCores[_gameId];
+        Game storage game = games[gameId];
         require(msg.sender == game.creator, "Only creator can cancel");
-        require(game.state == GameState.Created, "Can only cancel waiting games");
+        require(game.state == GameState.Created, "Game cannot be cancelled");
         
         game.state = GameState.Cancelled;
         
         // Return NFT to creator
-        IERC721(game.nftContract).transferFrom(address(this), game.creator, game.tokenId);
-        userNFTsInContract[game.creator][game.nftContract][game.tokenId] = false;
+        unclaimedNFTs[game.creator][game.nftContract].push(game.tokenId);
         
-        // Remove from active games
-        _removeFromActiveGames(game.creator, _gameId);
-        
-        emit GameCancelled(_gameId);
+        emit GameCancelled(gameId);
     }
     
-    // Withdraw Functions
+    // Withdraw Rewards
     function withdrawRewards() external nonReentrant {
         uint256 ethAmount = unclaimedETH[msg.sender];
         uint256 usdcAmount = unclaimedUSDC[msg.sender];
@@ -464,54 +325,140 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         emit RewardsWithdrawn(msg.sender, ethAmount, usdcAmount);
     }
     
+    // Withdraw NFT
     function withdrawNFT(address nftContract, uint256 tokenId) external nonReentrant {
-        uint256[] storage nftIds = unclaimedNFTs[msg.sender][nftContract];
-        bool found = false;
-        uint256 index;
+        uint256[] storage userNFTs = unclaimedNFTs[msg.sender][nftContract];
         
-        for (uint256 i = 0; i < nftIds.length; i++) {
-            if (nftIds[i] == tokenId) {
-                found = true;
-                index = i;
-                break;
+        for (uint256 i = 0; i < userNFTs.length; i++) {
+            if (userNFTs[i] == tokenId) {
+                // Remove from array
+                userNFTs[i] = userNFTs[userNFTs.length - 1];
+                userNFTs.pop();
+                
+                // Transfer NFT
+                IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+                userNFTsInContract[msg.sender][nftContract][tokenId] = false;
+                
+                emit NFTWithdrawn(msg.sender, nftContract, tokenId);
+                return;
             }
         }
         
-        require(found, "NFT not found in unclaimed");
-        
-        // Remove from array
-        nftIds[index] = nftIds[nftIds.length - 1];
-        nftIds.pop();
-        
-        // Transfer NFT
-        IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
-        userNFTsInContract[msg.sender][nftContract][tokenId] = false;
-        
-        emit NFTWithdrawn(msg.sender, nftContract, tokenId);
+        revert("NFT not found in unclaimed list");
     }
     
-    function withdrawAllNFTs() external nonReentrant {
-        // This function would iterate through all unclaimed NFTs
-        // Implementation depends on gas optimization needs
+    // Withdraw expired game NFT (free for creator)
+    function withdrawExpiredGame(uint256 gameId) external nonReentrant {
+        Game storage game = games[gameId];
+        require(game.gameId != 0, "Game does not exist");
+        require(game.state == GameState.Created, "Game not in created state");
+        require(block.timestamp > game.expiresAt, "Game not expired yet");
+        require(msg.sender == game.creator, "Only creator can withdraw expired game");
+        
+        // Mark as expired
+        game.state = GameState.Expired;
+        
+        // Return NFT to creator
+        unclaimedNFTs[game.creator][game.nftContract].push(game.tokenId);
+        
+        emit GameCancelled(gameId);
+    }
+    
+    // Admin batch withdraw expired games
+    function adminBatchWithdrawExpired(uint256[] calldata gameIds) external onlyOwner {
+        for (uint256 i = 0; i < gameIds.length; i++) {
+            uint256 gameId = gameIds[i];
+            Game storage game = games[gameId];
+            
+            if (game.gameId != 0 && game.state == GameState.Created && block.timestamp > game.expiresAt) {
+                // Mark as expired
+                game.state = GameState.Expired;
+                
+                // Add to unclaimed for creator
+                unclaimedNFTs[game.creator][game.nftContract].push(game.tokenId);
+            }
+        }
+    }
+    
+    // Admin batch withdraw NFTs to specific addresses
+    function adminBatchWithdrawNFTs(
+        address[] calldata nftContracts,
+        uint256[] calldata tokenIds,
+        address[] calldata recipients
+    ) external onlyOwner {
+        require(
+            nftContracts.length == tokenIds.length && 
+            tokenIds.length == recipients.length,
+            "Array lengths must match"
+        );
+        
+        for (uint256 i = 0; i < nftContracts.length; i++) {
+            IERC721(nftContracts[i]).transferFrom(address(this), recipients[i], tokenIds[i]);
+            emit NFTWithdrawn(recipients[i], nftContracts[i], tokenIds[i]);
+        }
+    }
+    
+    // View Functions
+    function getGameDetails(uint256 gameId) external view returns (Game memory, NFTChallenge memory) {
+        return (games[gameId], nftChallenges[gameId]);
+    }
+    
+    // Check if game is expired
+    function isGameExpired(uint256 gameId) external view returns (bool) {
+        Game memory game = games[gameId];
+        return game.gameId != 0 && game.state == GameState.Created && block.timestamp > game.expiresAt;
+    }
+    
+    // Get expired games for admin
+    function getExpiredGames(uint256 startIndex, uint256 count) external view returns (uint256[] memory) {
+        uint256[] memory expiredGames = new uint256[](count);
+        uint256 found = 0;
+        
+        for (uint256 i = startIndex; i < nextGameId && found < count; i++) {
+            Game memory game = games[i];
+            if (game.gameId != 0 && game.state == GameState.Created && block.timestamp > game.expiresAt) {
+                expiredGames[found] = i;
+                found++;
+            }
+        }
+        
+        // Resize array to actual count
+        assembly {
+            mstore(expiredGames, found)
+        }
+        
+        return expiredGames;
+    }
+    
+    function getETHAmount(uint256 usdAmount) public view returns (uint256) {
+        (, int256 price,,,) = ethUsdFeed.latestRoundData();
+        require(price > 0, "Invalid price feed");
+        
+        // Convert USD amount to ETH (with 18 decimals)
+        return usdAmount.mul(10**18).div(uint256(price));
+    }
+    
+    function getUSDCAmount(uint256 usdAmount) public view returns (uint256) {
+        (, int256 price,,,) = usdcUsdFeed.latestRoundData();
+        require(price > 0, "Invalid price feed");
+        
+        // Convert USD amount to USDC (with 6 decimals)
+        return usdAmount.mul(10**6).div(uint256(price));
     }
     
     // Admin Functions
-    function setListingFee(uint256 _newFeeUSD) external onlyOwner {
-        require(_newFeeUSD <= 1000000, "Fee too high"); // Max $1
-        listingFeeUSD = _newFeeUSD;
-        emit ListingFeeUpdated(_newFeeUSD);
+    function setListingFee(uint256 newFee) external onlyOwner {
+        listingFeeUSD = newFee;
+        emit ListingFeeUpdated(newFee);
     }
     
-    function setPlatformFeePercent(uint256 _newPercent) external onlyOwner {
-        require(_newPercent <= MAX_FEE_PERCENT, "Fee too high");
-        platformFeePercent = _newPercent;
-        emit PlatformFeeUpdated(_newPercent);
+    function setPlatformFee(uint256 newPercent) external onlyOwner {
+        require(newPercent <= MAX_FEE_PERCENT, "Fee too high");
+        platformFeePercent = newPercent;
+        emit PlatformFeeUpdated(newPercent);
     }
     
-    function emergencyWithdrawNFT(address nftContract, uint256 tokenId, address to) 
-        external 
-        onlyOwner 
-    {
+    function emergencyWithdrawNFT(address nftContract, uint256 tokenId, address to) external onlyOwner {
         IERC721(nftContract).transferFrom(address(this), to, tokenId);
     }
     
@@ -519,70 +466,15 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         payable(to).transfer(amount);
     }
     
-    function emergencyWithdrawToken(address token, address to, uint256 amount) 
-        external 
-        onlyOwner 
-    {
+    function emergencyWithdrawToken(address token, address to, uint256 amount) external onlyOwner {
         IERC20(token).transfer(to, amount);
     }
     
-    // View Functions
-    function getETHAmount(uint256 usdAmount) public view returns (uint256) {
-        (, int256 price,,,) = ethUsdFeed.latestRoundData();
-        uint8 decimals = ethUsdFeed.decimals();
-        uint256 ethPrice = uint256(price) * 10**(18 - decimals);
-        return (usdAmount * 1e18) / ethPrice;
+    function pause() external onlyOwner {
+        _pause();
     }
     
-    function getRequiredPaymentAmount(uint256 gameId, PaymentToken token) 
-        public 
-        view 
-        returns (uint256) 
-    {
-        uint256 priceUSD = gameFinancials[gameId].priceUSD;
-        
-        if (token == PaymentToken.ETH) {
-            return getETHAmount(priceUSD);
-        } else if (token == PaymentToken.USDC) {
-            return priceUSD; // USDC has 6 decimals like our USD representation
-        }
-        
-        revert("Unsupported token");
-    }
-    
-    function getUserActiveGames(address user) external view returns (uint256[] memory) {
-        return userActiveGames[user];
-    }
-    
-    function getUserUnclaimedNFTs(address user, address nftContract) 
-        external 
-        view 
-        returns (uint256[] memory) 
-    {
-        return unclaimedNFTs[user][nftContract];
-    }
-    
-    function getGameDetails(uint256 gameId) 
-        external 
-        view 
-        returns (
-            GameCore memory core,
-            GameFinancials memory financials,
-            GameProgress memory progress
-        ) 
-    {
-        return (gameCores[gameId], gameFinancials[gameId], gameProgress[gameId]);
-    }
-    
-    // Internal Helpers
-    function _removeFromActiveGames(address user, uint256 gameId) internal {
-        uint256[] storage games = userActiveGames[user];
-        for (uint256 i = 0; i < games.length; i++) {
-            if (games[i] == gameId) {
-                games[i] = games[games.length - 1];
-                games.pop();
-                break;
-            }
-        }
+    function unpause() external onlyOwner {
+        _unpause();
     }
 } 

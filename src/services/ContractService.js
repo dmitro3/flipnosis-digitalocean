@@ -42,14 +42,14 @@ const CONTRACT_ABI = [
     }],
     outputs: []
   },
-  // Flip coin
+  // Complete game
   {
-    name: 'flipCoin',
+    name: 'completeGame',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'gameId', type: 'uint256' },
-      { name: 'power', type: 'uint8' }
+      { name: 'winner', type: 'address' }
     ],
     outputs: []
   },
@@ -97,37 +97,20 @@ const CONTRACT_ABI = [
           { name: 'tokenId', type: 'uint256' },
           { name: 'state', type: 'uint8' },
           { name: 'gameType', type: 'uint8' },
-          { name: 'creatorRole', type: 'uint8' },
-          { name: 'joinerRole', type: 'uint8' },
-          { name: 'joinerChoice', type: 'uint8' },
-          { name: 'authInfo', type: 'string' }
-        ]
-      },
-      {
-        name: 'payment',
-        type: 'tuple',
-        components: [
           { name: 'priceUSD', type: 'uint256' },
-          { name: 'acceptedToken', type: 'uint8' },
+          { name: 'paymentToken', type: 'uint8' },
           { name: 'totalPaid', type: 'uint256' },
-          { name: 'paymentTokenUsed', type: 'uint8' },
-          { name: 'listingFeePaid', type: 'uint256' },
-          { name: 'platformFeeCollected', type: 'uint256' }
+          { name: 'winner', type: 'address' },
+          { name: 'createdAt', type: 'uint256' },
+          { name: 'expiresAt', type: 'uint256' }
         ]
       },
       {
-        name: 'gameState',
+        name: 'nftChallenge',
         type: 'tuple',
         components: [
-          { name: 'createdAt', type: 'uint256' },
-          { name: 'expiresAt', type: 'uint256' },
-          { name: 'maxRounds', type: 'uint8' },
-          { name: 'currentRound', type: 'uint8' },
-          { name: 'creatorWins', type: 'uint8' },
-          { name: 'joinerWins', type: 'uint8' },
-          { name: 'winner', type: 'address' },
-          { name: 'lastActionTime', type: 'uint256' },
-          { name: 'countdownEndTime', type: 'uint256' }
+          { name: 'challengerNFTContract', type: 'address' },
+          { name: 'challengerTokenId', type: 'uint256' }
         ]
       }
     ]
@@ -221,7 +204,7 @@ const NFT_ABI = [
 const CHAIN_CONFIGS = {
   base: {
     chain: base,
-    contractAddress: '0xBFD8912ded5830e43E008CCCEA822A6B0174C480',
+    contractAddress: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Base contract address
     rpcUrl: 'https://mainnet.base.org'
   },
   ethereum: {
@@ -570,7 +553,7 @@ class ContractService {
         throw new Error('Failed to get game details')
       }
 
-      const { payment } = gameDetails.data
+      const { game } = gameDetails.data
       const paymentToken = params.paymentToken || 0 // Default to ETH
 
       // Calculate ETH amount if paying with ETH
@@ -581,7 +564,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'getETHAmount',
-          args: [payment.priceUSD]
+          args: [game.priceUSD]
         })
         console.log(`💰 Payment amount: ${value} ETH`)
       }
@@ -598,23 +581,18 @@ class ContractService {
         }
       }
 
-      // Join game parameters
-      const joinParams = {
-        gameId: BigInt(params.gameId),
-        coinChoice: params.coinChoice || 0, // 0 = HEADS, 1 = TAILS
-        roleChoice: params.roleChoice || 1, // 1 = CHOOSER
-        paymentToken: paymentToken,
-        challengerNFTContract: params.challengerNFTContract || '0x0000000000000000000000000000000000000000',
-        challengerTokenId: params.challengerTokenId ? BigInt(params.challengerTokenId) : 0n
-      }
-
-      // Join the game
+      // Join the game with simplified parameters
       console.log('🎮 Joining game on blockchain...')
       const { request } = await publicClient.simulateContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'joinGame',
-        args: [joinParams],
+        args: [
+          BigInt(params.gameId),
+          paymentToken,
+          params.challengerNFTContract || '0x0000000000000000000000000000000000000000',
+          params.challengerTokenId ? BigInt(params.challengerTokenId) : 0n
+        ],
         account,
         value
       })
@@ -636,38 +614,31 @@ class ContractService {
     }
   }
 
-  // Flip the coin
-  async flipCoin(params) {
+  // Complete the game (called by frontend after determining winner)
+  async completeGame(gameId, winner) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
       const account = walletClient.account.address
 
-      const gameId = BigInt(params.gameId)
-      const power = params.power || 50 // Default power
-
-      console.log('🪙 Flipping coin...')
+      console.log('🏁 Completing game...')
       const { request } = await publicClient.simulateContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
-        functionName: 'flipCoin',
-        args: [gameId, power],
+        functionName: 'completeGame',
+        args: [BigInt(gameId), winner],
         account
       })
 
       const hash = await walletClient.writeContract(request)
       const receipt = await publicClient.waitForTransactionReceipt({ hash })
 
-      // Get updated game details
-      const gameDetails = await this.getGameDetails(params.gameId)
-
       return {
         success: true,
         transactionHash: hash,
-        receipt,
-        gameDetails: gameDetails.data
+        receipt
       }
     } catch (error) {
-      console.error('Error flipping coin:', error)
+      console.error('Error completing game:', error)
       return {
         success: false,
         error: error.message
@@ -811,8 +782,7 @@ class ContractService {
         success: true,
         data: {
           game: result[0],
-          payment: result[1],
-          gameState: result[2]
+          nftChallenge: result[1]
         }
       }
     } catch (error) {
