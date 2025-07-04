@@ -15,7 +15,6 @@ import {
   LoadingSpinner
 } from '../styles/components'
 import OptimizedGoldCoin from './OptimizedGoldCoin'
-import SpriteBasedCoin from './SpriteBasedCoin'
 import MobileOptimizedCoin from './MobileOptimizedCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import PaymentService from '../services/PaymentService'
@@ -548,6 +547,7 @@ const FlipGame = () => {
 
   // Add screen size detection
   const [isMobileScreen, setIsMobileScreen] = useState(false)
+  const [screenSizeDetermined, setScreenSizeDetermined] = useState(false)
 
   // Update coin images when game state changes (use creator's selected coin ONLY)
   useEffect(() => {
@@ -593,14 +593,21 @@ const FlipGame = () => {
   // Add useEffect to detect screen size
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobileScreen(window.innerWidth <= 768)
+      const newIsMobile = window.innerWidth <= 768
+      console.log('📱 Screen size check:', { 
+        windowWidth: window.innerWidth, 
+        isMobile: newIsMobile,
+        previousIsMobile: isMobileScreen 
+      })
+      setIsMobileScreen(newIsMobile)
+      setScreenSizeDetermined(true)
     }
     
     checkScreenSize()
     window.addEventListener('resize', checkScreenSize)
     
     return () => window.removeEventListener('resize', checkScreenSize)
-  }, [])
+  }, [isMobileScreen])
 
   // WebSocket connection
   useEffect(() => {
@@ -1801,7 +1808,7 @@ const FlipGame = () => {
           {console.log('🔍 Screen size debug:', { isMobileScreen, windowWidth: window.innerWidth })}
           
           {/* Mobile Layout - Only shows on mobile */}
-          {isMobileScreen ? (
+          {screenSizeDetermined && isMobileScreen ? (
             <MobileOnlyLayout>
 
               {/* Mobile Bottom Navigation */}
@@ -2762,7 +2769,7 @@ const FlipGame = () => {
               </div>
 
               {/* Center - Coin and Power Area - DESKTOP ONLY */}
-              {!isMobileScreen && (
+              {screenSizeDetermined && !isMobileScreen && (
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   {/* Coin */}
                   <div 
@@ -2780,25 +2787,27 @@ const FlipGame = () => {
                       padding: '20px'
                     }}
                   >
-                    <OptimizedGoldCoin
-                      isFlipping={!!flipAnimation}
-                      flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
-                      flipDuration={flipAnimation?.duration}
-                      onPowerCharge={handlePowerChargeStart}
-                      onPowerRelease={handlePowerChargeStop}
-                      isPlayerTurn={isMyTurn}
-                      isCharging={gameState?.chargingPlayer === address}
-                      chargingPlayer={gameState?.chargingPlayer}
-                      gamePhase={gameState?.phase}
-                      creatorPower={gameState?.creatorPower || 0}
-                      joinerPower={gameState?.joinerPower || 0}
-                      creatorChoice={gameState?.creatorChoice}
-                      joinerChoice={gameState?.joinerChoice}
-                      isCreator={isCreator}
-                      size={440}
-                      customHeadsImage={customHeadsImage}
-                      customTailsImage={customTailsImage}
-                    />
+                    {customHeadsImage && customTailsImage && (
+                      <OptimizedGoldCoin
+                        isFlipping={!!flipAnimation}
+                        flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
+                        flipDuration={flipAnimation?.duration}
+                        onPowerCharge={handlePowerChargeStart}
+                        onPowerRelease={handlePowerChargeStop}
+                        isPlayerTurn={isMyTurn}
+                        isCharging={gameState?.chargingPlayer === address}
+                        chargingPlayer={gameState?.chargingPlayer}
+                        gamePhase={gameState?.phase}
+                        creatorPower={gameState?.creatorPower || 0}
+                        joinerPower={gameState?.joinerPower || 0}
+                        creatorChoice={gameState?.creatorChoice}
+                        joinerChoice={gameState?.joinerChoice}
+                        isCreator={isCreator}
+                        size={440}
+                        customHeadsImage={customHeadsImage}
+                        customTailsImage={customTailsImage}
+                      />
+                    )}
                   </div>
 
                   {/* Choice Display - Desktop */}

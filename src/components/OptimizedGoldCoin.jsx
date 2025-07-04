@@ -102,52 +102,19 @@ const OptimizedGoldCoin = ({
       return texture
     }
 
-    // Create simple procedural texture
     const size = performanceRef.current.level === 'low' ? 256 : 512
     const canvas = document.createElement('canvas')
     canvas.width = size
     canvas.height = size
     const ctx = canvas.getContext('2d')
 
-    if (type === 'heads' || type === 'tails') {
-      // White gradient background
-      const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
-      gradient.addColorStop(0, '#FFFFFF')
-      gradient.addColorStop(0.7, '#F0F0F0')
-      gradient.addColorStop(1, '#E0E0E0')
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, size, size)
-
-      // Simple text
-      ctx.fillStyle = '#333333'
-      ctx.font = `bold ${size * 0.3}px Arial`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(type.toUpperCase(), size/2, size/2)
-
-      // Player choice indicator (lightweight)
-      if ((type === 'heads' && creatorChoice === 'heads') || 
-          (type === 'tails' && creatorChoice === 'tails')) {
-        ctx.strokeStyle = '#FF1493'
-        ctx.lineWidth = size * 0.02
-        ctx.beginPath()
-        ctx.arc(size/2, size/2, size * 0.45, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-      if ((type === 'heads' && joinerChoice === 'heads') || 
-          (type === 'tails' && joinerChoice === 'tails')) {
-        ctx.strokeStyle = '#00CED1'
-        ctx.lineWidth = size * 0.02
-        ctx.beginPath()
-        ctx.arc(size/2, size/2, size * 0.4, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-    } else if (type === 'edge') {
-      // Clean white edge pattern - no ridges
+    if (type === 'edge') {
+      // Restore clean white edge pattern
       ctx.fillStyle = '#F5F5F5'
       ctx.fillRect(0, 0, size, size)
-      
-      // No ridges - just a clean edge
+    } else {
+      // For heads/tails, keep transparent if no custom image
+      ctx.clearRect(0, 0, size, size)
     }
 
     const texture = new THREE.CanvasTexture(canvas)

@@ -30,8 +30,7 @@ const SpriteBasedCoin = ({
   // Check if we're on mobile - show test interface in all environments
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768
   const isDevelopment = process.env.NODE_ENV === 'development'
-  const showTestInterface = isMobile // Available in all environments now
-  
+  const showTestInterface = false // Disable test interface  
   // Generate 120 frames for ultra-smooth animation (60fps for 2 seconds)
   const totalFrames = 120
   
@@ -229,9 +228,7 @@ const SpriteBasedCoin = ({
         <div className="coin-symbol">
           {side === 'heads' ? '♔' : '♦'}
         </div>
-        <div className="coin-text">
-          {side.toUpperCase()}
-        </div>
+        {/* Removed coin-text div to eliminate HEADS/TAILS text display */}
         {isSelected && <div className="selection-ring" />}
       </div>
     )

@@ -381,11 +381,13 @@ const GameChatBox = ({ gameId, socket, connected }) => {
             background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
             border: 'none',
             borderRadius: '0.5rem',
-            padding: '0.75rem 1.5rem',
+            padding: '0.75rem 1rem',
             color: '#fff',
             fontWeight: 'bold',
             cursor: 'pointer',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            minWidth: '60px',
+            whiteSpace: 'nowrap'
           }}
         >
           Send

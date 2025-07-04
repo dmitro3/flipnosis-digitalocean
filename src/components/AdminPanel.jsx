@@ -5,6 +5,7 @@ import { useWalletConnection } from '../utils/useWalletConnection'
 import { useWallet } from '../contexts/WalletContext'
 import contractService from '../services/ContractService'
 import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit'
+import EmergencyRecovery from './EmergencyRecovery'
 
 // Contract ABI (simplified - you'll need to add the full ABI)
 const CONTRACT_ABI = [
@@ -993,6 +994,19 @@ export default function AdminPanel() {
             {activeTab === 'emergency' && (
               <div>
                 <h3 style={{ color: '#ff4444', marginBottom: '2rem' }}>⚠️ Emergency Controls</h3>
+                
+                {/* User NFT Recovery Section */}
+                <div style={{ 
+                  background: 'rgba(255, 68, 68, 0.1)', 
+                  border: '2px solid #ff4444',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  marginBottom: '2rem'
+                }}>
+                  <h4 style={{ color: '#ff4444', marginBottom: '1rem' }}>🚨 User NFT Recovery</h4>
+                  <p style={{ marginBottom: '1rem' }}>Help users recover their NFTs if they're stuck in game contracts.</p>
+                  <EmergencyRecovery />
+                </div>
                 
                 <div style={{ 
                   background: 'rgba(255, 0, 0, 0.1)', 

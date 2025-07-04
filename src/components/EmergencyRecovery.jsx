@@ -82,17 +82,7 @@ const EmergencyRecovery = () => {
   }
 
   return (
-    <div style={{
-      padding: '2rem',
-      maxWidth: '800px',
-      margin: '0 auto',
-      background: 'rgba(0, 0, 0, 0.8)',
-      borderRadius: '1rem',
-      border: '1px solid rgba(255, 0, 0, 0.3)'
-    }}>
-      <h2 style={{ color: '#FF4444', textAlign: 'center', marginBottom: '2rem' }}>
-        🚨 Emergency NFT Recovery
-      </h2>
+    <div>
 
       <div style={{ marginBottom: '2rem' }}>
         <h3 style={{ color: '#FFD700', marginBottom: '1rem' }}>Find Your NFT</h3>
