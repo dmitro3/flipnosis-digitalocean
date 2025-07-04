@@ -2,7 +2,7 @@ import { parseEther, formatEther } from 'viem'
 
 export class PaymentService {
   static ETH_PRICE_USD = 2500 // Update periodically
-  static FEE_RECIPIENT = '0xE1E3dFa98C39Ba5b6C643348420420aBC3556416'
+  static FEE_RECIPIENT = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
   static LISTING_FEE_USD = 0.10
 
   static async calculateETHAmount(usdAmount, ethPriceUSD = this.ETH_PRICE_USD) {

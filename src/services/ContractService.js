@@ -200,7 +200,7 @@ const CHAIN_CONFIGS = {
   base: {
     chain: base,
     contractAddress: '0xb2d09A3A6E502287D0acdAC31328B01AADe35941', // Base contract address
-    rpcUrl: 'https://mainnet.base.org'
+    rpcUrl: 'https://base.blockpi.network/v1/rpc/public'
   },
   ethereum: {
     chain: mainnet,
@@ -434,33 +434,19 @@ class ContractService {
 
       // Get listing fee amount in ETH with retry logic for rate limits
       let listingFeeUSD, ethAmount
-      try {
-        listingFeeUSD = await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'listingFeeUSD'
-        })
-
-        // Add small delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 500))
-
-        ethAmount = await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'getETHAmount',
-          args: [listingFeeUSD]
-        })
-      } catch (rateLimitError) {
-        if (rateLimitError.message.includes('rate limit')) {
-          console.log('⚠️ Rate limit hit, waiting 2 seconds...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          
-          // Retry once
+      const maxRetries = 3
+      let retryCount = 0
+      
+      while (retryCount < maxRetries) {
+        try {
           listingFeeUSD = await publicClient.readContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'listingFeeUSD'
           })
+
+          // Add small delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 1000))
 
           ethAmount = await publicClient.readContract({
             address: this.contractAddress,
@@ -468,8 +454,20 @@ class ContractService {
             functionName: 'getETHAmount',
             args: [listingFeeUSD]
           })
-        } else {
-          throw rateLimitError
+          
+          break // Success, exit retry loop
+        } catch (rateLimitError) {
+          retryCount++
+          if (rateLimitError.message.includes('rate limit') || rateLimitError.message.includes('429')) {
+            console.log(`⚠️ Rate limit hit (attempt ${retryCount}/${maxRetries}), waiting ${retryCount * 2} seconds...`)
+            await new Promise(resolve => setTimeout(resolve, retryCount * 2000))
+            
+            if (retryCount >= maxRetries) {
+              throw new Error('Network is busy. Please try again in a few seconds.')
+            }
+          } else {
+            throw rateLimitError
+          }
         }
       }
 

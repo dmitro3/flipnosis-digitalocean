@@ -16,7 +16,7 @@ module.exports = {
   networks: {
     // Base Mainnet
     base: {
-      url: "https://mainnet.base.org",
+      url: "https://base.blockpi.network/v1/rpc/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 8453,
     },

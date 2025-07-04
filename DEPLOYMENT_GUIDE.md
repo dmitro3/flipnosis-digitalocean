@@ -45,7 +45,7 @@ DATABASE_URL=your_database_url
 API_URL=https://cryptoflipz2-production.up.railway.app
 
 # Chain RPC URLs (optional - for local development)
-BASE_RPC_URL=https://mainnet.base.org
+BASE_RPC_URL=https://base.blockpi.network/v1/rpc/public
 ETHEREUM_RPC_URL=https://eth.llamarpc.com
 BSC_RPC_URL=https://bsc-dataseed.binance.org/
 AVALANCHE_RPC_URL=https://api.avax.network/ext/bc/C/rpc

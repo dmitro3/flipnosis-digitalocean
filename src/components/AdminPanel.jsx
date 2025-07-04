@@ -33,7 +33,7 @@ const CONTRACT_ADDRESSES = {
 
 // Chain configurations
 const CHAIN_CONFIGS = {
-  'base': { id: 8453, name: 'Base', rpc: 'https://mainnet.base.org', symbol: 'ETH', color: '#0052FF' },
+  'base': { id: 8453, name: 'Base', rpc: 'https://base.blockpi.network/v1/rpc/public', symbol: 'ETH', color: '#0052FF' },
   'ethereum': { id: 1, name: 'Ethereum', rpc: 'https://eth.llamarpc.com', symbol: 'ETH', color: '#627EEA' },
   'bnb': { id: 56, name: 'BNB Chain', rpc: 'https://bsc-dataseed.binance.org/', symbol: 'BNB', color: '#F3BA2F' },
   'avalanche': { id: 43114, name: 'Avalanche', rpc: 'https://api.avax.network/ext/bc/C/rpc', symbol: 'AVAX', color: '#E84142' },
@@ -41,7 +41,7 @@ const CHAIN_CONFIGS = {
 }
 
 // Admin wallet address (update this)
-const ADMIN_WALLET = '0x93277281Fd256D0601Ce86Cdb1D5c00a97b59839' // Admin wallet address
+const ADMIN_WALLET = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28' // Admin wallet address
 
 // Styled Components
 const AdminContainer = styled.div`

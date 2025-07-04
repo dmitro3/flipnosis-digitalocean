@@ -7,7 +7,7 @@ async function main() {
   const contractAddress = "0xb2d09A3A6E502287D0acdAC31328B01AADe35941";
   
   // Admin wallet address (same as deployer)
-  const adminWallet = "0x93277281Fd256D0601Ce86Cdb1D5c00a97b59839";
+  const adminWallet = "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28";
 
   // Get the contract
   const NFTFlipGame = await ethers.getContractFactory("contracts/NFTFlipGame.sol:NFTFlipGame");

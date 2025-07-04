@@ -5,7 +5,7 @@ async function main() {
   const contractAddress = "0xb2d09A3A6E502287D0acdAC31328B01AADe35941";
   
   // Get the contract instance
-  const NFTFlipGame = await ethers.getContractFactory("NFTFlipGame");
+  const NFTFlipGame = await ethers.getContractFactory("contracts/NFTFlipGame.sol:NFTFlipGame");
   const contract = await NFTFlipGame.attach(contractAddress);
 
   // Get the signer (your wallet)

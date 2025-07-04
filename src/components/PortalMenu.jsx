@@ -119,7 +119,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
   const { isConnected, address } = useWallet();
 
   // Admin wallet address
-  const ADMIN_WALLET = '0x93277281Fd256D0601Ce86Cdb1D5c00a97b59839'
+  const ADMIN_WALLET = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
   const isAdmin = isConnected && address && address.toLowerCase() === ADMIN_WALLET.toLowerCase()
 
   if (!isOpen) return null;
