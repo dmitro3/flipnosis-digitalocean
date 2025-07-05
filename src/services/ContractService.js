@@ -195,8 +195,7 @@ const CHAIN_CONFIGS = {
     chain: base,
     contractAddress: '0xb2d09A3A6E502287D0acdAC31328B01AADe35941', // Base contract address
     rpcUrls: [
-      'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5R3', // Primary Alchemy endpoint
-      'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5R3', // Backup Alchemy endpoint
+      process.env.VITE_BASE_RPC_URL || 'https://base.blockpi.network/v1/rpc/public', // Primary endpoint
       'https://base.blockpi.network/v1/rpc/public', // Fallback public endpoint
       'https://mainnet.base.org' // Secondary fallback
     ],
@@ -336,6 +335,11 @@ class ContractService {
   async approveNFT(nftContract, tokenId) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log(`🔐 Checking NFT approval for contract: ${nftContract}, token: ${tokenId}`)
@@ -460,6 +464,11 @@ class ContractService {
       await this.waitForRateLimit()
       
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log('🎮 Creating game with params:', {
@@ -616,6 +625,11 @@ class ContractService {
   async joinGame(params) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       // Get game details to determine payment amount
@@ -689,6 +703,11 @@ class ContractService {
   async completeGame(gameId, winner) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log('🏁 Completing game...')
@@ -721,6 +740,11 @@ class ContractService {
   async cancelGame(gameId) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log('❌ Cancelling game...')
@@ -753,6 +777,11 @@ class ContractService {
   async withdrawRewards() {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       // Check if user has rewards to claim
@@ -809,6 +838,11 @@ class ContractService {
   async withdrawNFT(nftContract, tokenId) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log('🖼️ Withdrawing NFT...')
@@ -903,6 +937,11 @@ class ContractService {
   async testNFTContract(nftContract, tokenId) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log(`🧪 Testing NFT contract: ${nftContract}, token: ${tokenId}`)
@@ -987,6 +1026,11 @@ class ContractService {
   async findMyNFTs(nftContract, tokenId) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log(`🔍 Looking for NFT: ${nftContract}, tokenId: ${tokenId}`)
@@ -1167,6 +1211,11 @@ class ContractService {
   async emergencyCancelGame(gameId) {
     try {
       const { walletClient, publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
       const account = walletClient.account.address
 
       console.log(`🚨 Emergency cancelling game: ${gameId}`)

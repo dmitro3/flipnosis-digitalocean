@@ -62,7 +62,7 @@ export const WalletProvider = ({ children }) => {
       }
 
       // Hardcoded API key for now
-      const apiKey = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+              const apiKey = process.env.VITE_ALCHEMY_API_KEY
       console.log('Using Alchemy API key:', apiKey)
 
       // Initialize Alchemy
