@@ -156,16 +156,17 @@ export const GameCreateModal = ({ isOpen, onClose, selectedNFT, gameParams, onSu
     setCreating(true)
     setStatus({
       type: 'info',
-      message: 'Creating game...'
+      message: 'Approve the transaction in MetaMask...'
     })
 
     try {
-      // Ensure contract service is initialized
+      // Wait a bit for wallet client to be ready
       if (!contractService.chainId || contractService.chainId !== chainId) {
         await contractService.initializeClients(chainId, walletClient)
+        // Add small delay for MetaMask
+        await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      // Create the game
       const createParams = {
         nftContract: selectedNFT.contractAddress,
         tokenId: selectedNFT.tokenId,
@@ -187,12 +188,10 @@ export const GameCreateModal = ({ isOpen, onClose, selectedNFT, gameParams, onSu
         
         showSuccess('Game created successfully!')
         
-        // Call onSuccess callback
         if (onSuccess) {
           onSuccess(result)
         }
         
-        // Close modal after a short delay
         setTimeout(() => {
           onClose()
         }, 2000)
@@ -202,28 +201,18 @@ export const GameCreateModal = ({ isOpen, onClose, selectedNFT, gameParams, onSu
     } catch (error) {
       console.error('Error creating game:', error)
       
-      const readableError = PaymentService.getReadableError(error)
-      
-      // Check if it's a network busy error
-      if (readableError.includes('Network is busy') && retryCount < maxRetries) {
-        setRetryCount(prev => prev + 1)
-        setStatus({
-          type: 'error',
-          message: `${readableError} (Retry ${retryCount + 1}/${maxRetries})`
-        })
-        
-        // Auto-retry after a delay
-        setTimeout(() => {
-          handleCreateGame()
-        }, 2000 * (retryCount + 1))
-      } else {
-        setStatus({
-          type: 'error',
-          message: readableError
-        })
-        showError(readableError)
-        setCreating(false)
+      let errorMessage = error.message
+      if (errorMessage.includes('User denied') || errorMessage.includes('user rejected')) {
+        errorMessage = 'Transaction cancelled'
       }
+      
+      setStatus({
+        type: 'error',
+        message: errorMessage
+      })
+      showError(errorMessage)
+    } finally {
+      setCreating(false)
     }
   }
 

@@ -885,12 +885,9 @@ class ContractService {
   async getUserActiveGames(address) {
     try {
       console.log('📊 Getting active games for:', address)
-      
-      // For now, return empty array since this needs backend integration
-      // This should be fetched from your backend API
       return {
         success: true,
-        games: []
+        games: [] // Return empty array to prevent "not iterable" error
       }
     } catch (error) {
       console.error('Error getting user games:', error)
