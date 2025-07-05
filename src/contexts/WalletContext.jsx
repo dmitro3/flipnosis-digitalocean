@@ -61,9 +61,9 @@ export const WalletProvider = ({ children }) => {
         throw new Error('Unsupported network')
       }
 
-      // Get API key from environment
-      const apiKey = import.meta.env.VITE_ALCHEMY_API_KEY || 'nLSDR8CxwLCP7_7PVVDqIfsJuG7PLUJn'
-      console.log('Using Alchemy API key:', apiKey ? '✅ Set' : '❌ Missing')
+      // Use the working API key
+      const apiKey = 'nLSDR8CxwLCP7_7PVVDqIfsJuG7PLUJn'
+      console.log('Using Alchemy API key: ✅ Set')
 
       // Initialize Alchemy
       const alchemy = new Alchemy({
