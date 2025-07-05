@@ -23,18 +23,12 @@ const CONTRACT_ABI = [
     name: 'joinGame',
     type: 'function',
     stateMutability: 'payable',
-    inputs: [{
-      name: 'params',
-      type: 'tuple',
-      components: [
-        { name: 'gameId', type: 'uint256' },
-        { name: 'coinChoice', type: 'uint8' },
-        { name: 'roleChoice', type: 'uint8' },
-        { name: 'paymentToken', type: 'uint8' },
-        { name: 'challengerNFTContract', type: 'address' },
-        { name: 'challengerTokenId', type: 'uint256' }
-      ]
-    }],
+    inputs: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'paymentToken', type: 'uint8' },
+      { name: 'challengerNFTContract', type: 'address' },
+      { name: 'challengerTokenId', type: 'uint256' }
+    ],
     outputs: []
   },
   // Complete game
@@ -573,7 +567,7 @@ class ContractService {
         }
       }
 
-      // Join the game with simplified parameters
+      // Join the game with correct parameters
       console.log('🎮 Joining game on blockchain...')
       const { request } = await publicClient.simulateContract({
         address: this.contractAddress,
@@ -949,6 +943,51 @@ class ContractService {
         success: false,
         error: error.message
       }
+    }
+  }
+
+  // Get user's active games
+  async getUserActiveGames(address) {
+    try {
+      const { publicClient } = this.getCurrentClients()
+
+      console.log(`🎮 Looking for active games for address: ${address}`)
+
+      // Get the next game ID to see how many games exist
+      const nextGameId = await publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'nextGameId'
+      })
+
+      console.log(`📊 Total games created: ${nextGameId}`)
+
+      // Get active games for the user
+      const activeGames = []
+      const maxGamesToCheck = 50 // Check more games to find active ones
+
+      for (let i = 1; i < Math.min(Number(nextGameId), maxGamesToCheck + 1); i++) {
+        try {
+          const gameDetails = await this.getGameDetails(i.toString())
+          if (gameDetails.success) {
+            const { game } = gameDetails.data
+            // Check if user is creator or joiner and game is still active (state 0, 1, or 2)
+            if ((game.creator.toLowerCase() === address.toLowerCase() || 
+                 game.joiner.toLowerCase() === address.toLowerCase()) && 
+                game.state < 3) { // 0=Created, 1=Joined, 2=InProgress, 3=Completed, 4=Expired, 5=Cancelled
+              activeGames.push(i)
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not get details for game ${i}:`, error.message)
+        }
+      }
+
+      console.log(`🎯 Found ${activeGames.length} active games for ${address}`)
+      return activeGames
+    } catch (error) {
+      console.error('Error getting user active games:', error)
+      return []
     }
   }
 

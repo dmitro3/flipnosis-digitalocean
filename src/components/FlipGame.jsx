@@ -1188,33 +1188,36 @@ const FlipGame = () => {
           challengerNFTContract: null,
           challengerTokenId: null
         }
-
-        try {
-          const result = await contractService.joinGame(joinParams)
-          
-          if (!result.success) {
-            throw new Error(result.error || 'Failed to join game')
-          }
-
-          console.log('✅ Payment processed on blockchain:', result)
-        } catch (contractError) {
-          console.error('❌ Contract error:', contractError)
-          
-          // If contract fails, try to join without blockchain payment
-          console.log('🔄 Falling back to database-only join...')
-          
-          // Continue with database update only
-        }
       }
 
       // Update database
       const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      let paymentTxHash = null
+      
+      try {
+        const result = await contractService.joinGame(joinParams)
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to join game')
+        }
+
+        console.log('✅ Payment processed on blockchain:', result)
+        paymentTxHash = result.transactionHash
+      } catch (contractError) {
+        console.error('❌ Contract error:', contractError)
+        
+        // If contract fails, try to join without blockchain payment
+        console.log('🔄 Falling back to database-only join...')
+        
+        // Continue with database update only
+      }
+
       const response = await fetch(`${API_URL}/api/games/${gameId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           joinerAddress: address,
-          paymentTxHash: result?.transactionHash || null,
+          paymentTxHash: paymentTxHash,
           paymentAmount: gameData.price_usd || 0
         })
       })

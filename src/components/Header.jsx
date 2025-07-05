@@ -10,7 +10,7 @@ import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
 import MobileInfoImg from '../../Images/mobile.webp'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
-import UserProfileHeader from './UserProfileHeader'
+import ProfileWithNotifications from './ProfileWithNotifications'
 import PortalMenu from './PortalMenu'
 
 const HeaderContainer = styled.header`
@@ -392,7 +392,7 @@ const ModalBody = styled.div`
 `;
 
 const Header = () => {
-  const { isConnected, address } = useWallet()
+  const { isConnected, address, chainId, chain } = useWallet()
   const { showInfo } = useToast()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
@@ -429,7 +429,7 @@ const Header = () => {
               largeScreen: true,
             }}
           />
-          {isConnected && <UserProfileHeader isInHeader={true} />}
+          {isConnected && <ProfileWithNotifications address={address} isConnected={isConnected} currentChain={chain?.name?.toLowerCase() || 'base'} />}
         </DesktopNav>
 
         <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>

@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import { Link } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useWallet } from '../contexts/WalletContext';
-import UserProfileHeader from './UserProfileHeader';
+import ProfileWithNotifications from './ProfileWithNotifications';
 
 const MenuOverlay = styled.div`
   position: fixed;
@@ -116,7 +116,7 @@ const UserSection = styled.div`
 `;
 
 const PortalMenu = ({ isOpen, onClose }) => {
-  const { isConnected, address } = useWallet();
+  const { isConnected, address, chain } = useWallet();
 
   // Admin wallet address
   const ADMIN_WALLET = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
@@ -148,7 +148,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
 
         {isConnected && (
           <UserSection>
-            <UserProfileHeader isInHeader={true} />
+            <ProfileWithNotifications address={address} isConnected={isConnected} currentChain={chain?.name?.toLowerCase() || 'base'} />
           </UserSection>
         )}
       </MobileMenu>
