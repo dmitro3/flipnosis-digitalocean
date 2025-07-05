@@ -5,26 +5,28 @@ export class PaymentService {
   static FEE_RECIPIENT = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
   static LISTING_FEE_USD = 0.10
 
-  static async calculateETHAmount(usdAmount, ethPriceUSD = this.ETH_PRICE_USD) {
+  static async calculateETHAmount(priceUSD) {
     try {
-      const ethAmount = usdAmount / ethPriceUSD
-      const roundedEthAmount = Math.round(ethAmount * 100000000) / 100000000
-      const finalEthAmount = Math.max(roundedEthAmount, 0.000001)
+      // Hardcoded ETH price for now (you can fetch this from an API)
+      const ethPriceUSD = 2500 // $2500 per ETH
       
-      console.log(`💰 Payment calculation: $${usdAmount} USD = ${finalEthAmount} ETH (price: $${ethPriceUSD}/ETH)`)
+      // Calculate ETH amount
+      const ethAmount = priceUSD / ethPriceUSD
+      
+      // Ensure minimum amount for Base network
+      const minAmount = 0.000001 // Minimum viable amount
       
       return {
         success: true,
-        ethAmount: parseFloat(finalEthAmount.toFixed(8)),
-        weiAmount: parseEther(finalEthAmount.toFixed(18))
+        ethAmount: Math.max(ethAmount, minAmount),
+        ethPrice: ethPriceUSD
       }
     } catch (error) {
-      console.error('Payment calculation error:', error)
+      console.error('Error calculating ETH amount:', error)
       return {
         success: false,
         error: error.message,
-        ethAmount: 0,
-        weiAmount: 0n
+        ethAmount: 0.000001
       }
     }
   }
@@ -95,87 +97,197 @@ export class PaymentService {
     }
   }
 
-  // Send transaction using Wagmi
-  static async sendTransaction(walletClient, to, value) {
+  // Send transaction using Wagmi with retry logic
+  static async sendTransaction(walletClient, to, value, retries = 3) {
     if (!walletClient) {
       throw new Error('Wallet client not available')
     }
 
-    try {
-      console.log('📤 Sending transaction:', {
-        to,
-        value: value.toString(),
-        valueInWei: parseEther(value.toString()).toString(),
-        from: walletClient.account.address
-      })
-
-      // Get current gas prices from the network
-      let feeData
+    let lastError = null
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
       try {
-        feeData = await walletClient.estimateFeesPerGas()
-        console.log('📡 Raw fee estimation from network:', feeData)
-      } catch (error) {
-        console.warn('⚠️ Failed to estimate fees, using fallback:', error)
-        // Fallback gas prices for Base network
-        feeData = {
-          maxFeePerGas: parseEther('0.000000002'), // 2 gwei
-          maxPriorityFeePerGas: parseEther('0.000000001') // 1 gwei
+        console.log(`📤 Sending transaction (attempt ${attempt + 1}/${retries}):`, {
+          to,
+          value: value.toString(),
+          valueInWei: parseEther(value.toString()).toString(),
+          from: walletClient.account.address
+        })
+
+        // Get current gas prices with retry logic
+        let feeData
+        try {
+          feeData = await walletClient.estimateFeesPerGas()
+          console.log('📡 Fee estimation from network:', feeData)
+        } catch (error) {
+          console.warn('⚠️ Failed to estimate fees, using fallback:', error)
+          // Fallback gas prices for Base network
+          feeData = {
+            maxFeePerGas: 200000000n, // 0.2 gwei
+            maxPriorityFeePerGas: 100000000n // 0.1 gwei
+          }
         }
-      }
-      
-      // Set minimum acceptable fees for Base network (higher minimum)
-      const minBaseFee = parseEther('0.000000002') // 2 gwei minimum
-      const minPriorityFee = parseEther('0.000000001') // 1 gwei minimum
-      
-      const maxFeePerGas = feeData.maxFeePerGas && feeData.maxFeePerGas > minBaseFee 
-        ? feeData.maxFeePerGas 
-        : minBaseFee
+        
+        // Set minimum acceptable fees for Base network
+        const minBaseFee = 100000000n // 0.1 gwei minimum
+        const minPriorityFee = 100000000n // 0.1 gwei minimum
+        
+        const maxFeePerGas = feeData.maxFeePerGas && feeData.maxFeePerGas > minBaseFee 
+          ? feeData.maxFeePerGas 
+          : minBaseFee
 
-      const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > minPriorityFee
-        ? feeData.maxPriorityFeePerGas
-        : minPriorityFee
+        const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas && feeData.maxPriorityFeePerGas > minPriorityFee
+          ? feeData.maxPriorityFeePerGas
+          : minPriorityFee
 
-      console.log('💰 Final gas fees being used:', {
-        maxFeePerGas: maxFeePerGas.toString() + ' wei (' + (Number(maxFeePerGas) / 1e9).toFixed(2) + ' gwei)',
-        maxPriorityFeePerGas: maxPriorityFeePerGas.toString() + ' wei (' + (Number(maxPriorityFeePerGas) / 1e9).toFixed(2) + ' gwei)',
-        originalEstimation: feeData
-      })
+        console.log('💰 Gas fees being used:', {
+          maxFeePerGas: `${maxFeePerGas} wei (${Number(maxFeePerGas) / 1e9} gwei)`,
+          maxPriorityFeePerGas: `${maxPriorityFeePerGas} wei (${Number(maxPriorityFeePerGas) / 1e9} gwei)`
+        })
 
-      // Try direct transaction first (bypassing prepareTransactionRequest which might have gas issues)
-      let hash
-      try {
-        console.log('🎯 Attempting direct transaction...')
-        hash = await walletClient.sendTransaction({
+        // Try transaction with proper gas settings
+        const hash = await walletClient.sendTransaction({
           to,
           value: parseEther(value.toString()),
           gas: 21000n, // Standard ETH transfer gas
           maxFeePerGas,
           maxPriorityFeePerGas
         })
-        console.log('✅ Direct transaction succeeded!')
-      } catch (directError) {
-        console.warn('⚠️ Direct transaction failed, trying with prepareTransactionRequest:', directError.message)
         
-        // Fallback to prepareTransactionRequest
-        const request = await walletClient.prepareTransactionRequest({
-          to,
-          value: parseEther(value.toString()),
-          chain: walletClient.chain,
-          account: walletClient.account,
-          maxFeePerGas,
-          maxPriorityFeePerGas
-        })
+        console.log('✅ Transaction sent successfully!', hash)
+        return {
+          success: true,
+          hash,
+          attempt: attempt + 1
+        }
+        
+      } catch (error) {
+        lastError = error
+        console.error(`❌ Transaction attempt ${attempt + 1} failed:`, error)
+        
+        // Check if it's a rate limit or network busy error
+        if (error.message.includes('rate limit') || 
+            error.message.includes('429') || 
+            error.message.includes('network busy') ||
+            error.message.includes('replacement fee too low')) {
+          
+          // Wait with exponential backoff
+          const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000)
+          console.log(`⏳ Network busy, waiting ${waitTime}ms before retry...`)
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+          continue
+        }
+        
+        // For other errors, throw immediately
+        throw error
+      }
+    }
+    
+    // If we exhausted all retries
+    throw new Error(`Transaction failed after ${retries} attempts. ${lastError?.message || 'Unknown error'}`)
+  }
 
-        hash = await walletClient.sendTransaction(request)
+  // Wait for transaction with better error handling
+  static async waitForTransaction(publicClient, hash, confirmations = 2) {
+    try {
+      console.log(`⏳ Waiting for transaction ${hash} to be confirmed...`)
+      
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash,
+        confirmations,
+        timeout: 60000 // 60 second timeout
+      })
+      
+      if (receipt.status === 'reverted') {
+        throw new Error('Transaction reverted')
       }
       
-      console.log('✅ Transaction sent:', hash)
+      console.log(`✅ Transaction confirmed with ${confirmations} confirmations`)
+      return receipt
       
-      return { success: true, hash }
     } catch (error) {
-      console.error('Transaction failed:', error)
-      return { success: false, error: error.message }
+      console.error('Error waiting for transaction:', error)
+      
+      // Check if transaction was actually successful despite the error
+      try {
+        const receipt = await publicClient.getTransactionReceipt({ hash })
+        if (receipt && receipt.status === 'success') {
+          return receipt
+        }
+      } catch (e) {
+        // Ignore, original error will be thrown
+      }
+      
+      throw error
     }
+  }
+
+  // Format ETH amount for display
+  static formatETH(value) {
+    try {
+      return formatEther(value)
+    } catch (error) {
+      console.error('Error formatting ETH:', error)
+      return '0'
+    }
+  }
+
+  // Parse ETH amount from string
+  static parseETH(value) {
+    try {
+      return parseEther(value)
+    } catch (error) {
+      console.error('Error parsing ETH:', error)
+      return 0n
+    }
+  }
+
+  // Validate transaction parameters
+  static validateTransaction(to, value) {
+    if (!to || !/^0x[a-fA-F0-9]{40}$/.test(to)) {
+      throw new Error('Invalid recipient address')
+    }
+    
+    if (!value || parseFloat(value) <= 0) {
+      throw new Error('Invalid transaction value')
+    }
+    
+    if (parseFloat(value) < 0.000001) {
+      throw new Error('Transaction value too small (minimum 0.000001 ETH)')
+    }
+    
+    return true
+  }
+
+  // Get readable error message
+  static getReadableError(error) {
+    const errorMessage = error.message || error.toString()
+    
+    if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+      return 'Network is busy. Please try again in a few seconds.'
+    }
+    
+    if (errorMessage.includes('insufficient funds')) {
+      return 'Insufficient funds for transaction.'
+    }
+    
+    if (errorMessage.includes('user rejected') || errorMessage.includes('User denied')) {
+      return 'Transaction cancelled by user.'
+    }
+    
+    if (errorMessage.includes('network busy')) {
+      return 'Network is congested. Please try again.'
+    }
+    
+    if (errorMessage.includes('replacement fee too low')) {
+      return 'Network is busy. Please try again with higher gas fees.'
+    }
+    
+    if (errorMessage.includes('nonce too low')) {
+      return 'Transaction conflict detected. Please refresh and try again.'
+    }
+    
+    return errorMessage
   }
 }
 

@@ -685,4 +685,48 @@ export const FilterSelect = styled.select`
     background: ${props => props.theme.colors.bgDark};
     color: ${props => props.theme.colors.textPrimary};
   }
+`
+
+// Form components
+export const FormGroup = styled.div`
+  margin-bottom: 1.5rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`
+
+export const Label = styled.label`
+  display: block;
+  color: ${props => props.theme.colors.textPrimary};
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+`
+
+export const Select = styled.select`
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: ${props => props.theme.colors.textPrimary};
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.default};
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.neonBlue};
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.neonPink};
+    box-shadow: 0 0 0 2px rgba(255, 20, 147, 0.2);
+  }
+  
+  option {
+    background: rgba(0, 0, 0, 0.9);
+    color: ${props => props.theme.colors.textPrimary};
+  }
 ` 
