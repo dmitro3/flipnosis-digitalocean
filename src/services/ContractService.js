@@ -189,12 +189,18 @@ const NFT_ABI = [
   }
 ]
 
-// Chain configurations
+// Chain configurations with Alchemy endpoints for better reliability
 const CHAIN_CONFIGS = {
   base: {
     chain: base,
     contractAddress: '0xb2d09A3A6E502287D0acdAC31328B01AADe35941', // Base contract address
-    rpcUrl: 'https://base.blockpi.network/v1/rpc/public'
+    rpcUrls: [
+      'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5R3', // Primary Alchemy endpoint
+      'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5R3', // Backup Alchemy endpoint
+      'https://base.blockpi.network/v1/rpc/public', // Fallback public endpoint
+      'https://mainnet.base.org' // Secondary fallback
+    ],
+    currentRpcIndex: 0
   },
   ethereum: {
     chain: mainnet,
@@ -224,6 +230,10 @@ class ContractService {
     this.publicClient = null
     this.currentChain = null
     this.contractAddress = null
+    this.requestCount = 0
+    this.lastRequestTime = 0
+    this.rateLimitDelay = 200 // 200ms between requests (Alchemy has higher limits)
+    this.maxRetries = 3
   }
 
   // Initialize with wallet and chain
@@ -238,11 +248,60 @@ class ContractService {
     this.walletClient = walletClient
     this.publicClient = publicClient || createPublicClient({
       chain: config.chain,
-      transport: http(config.rpcUrl)
+      transport: http(config.rpcUrls ? config.rpcUrls[0] : config.rpcUrl)
     })
 
     console.log(`✅ Contract service initialized for ${chainName}`)
     console.log(`📍 Contract address: ${this.contractAddress}`)
+  }
+
+  // Rate limiting helper
+  async waitForRateLimit() {
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+    
+    if (timeSinceLastRequest < this.rateLimitDelay) {
+      const waitTime = this.rateLimitDelay - timeSinceLastRequest
+      console.log(`⏳ Rate limiting: waiting ${waitTime}ms`)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
+    
+    this.lastRequestTime = Date.now()
+    this.requestCount++
+  }
+
+  // Get current RPC URL with fallback
+  getCurrentRpcUrl() {
+    const config = CHAIN_CONFIGS[this.currentChain]
+    if (!config || !config.rpcUrls) {
+      return config?.rpcUrl || null
+    }
+    return config.rpcUrls[config.currentRpcIndex || 0]
+  }
+
+  // Switch to next RPC endpoint
+  switchToNextRpc() {
+    const config = CHAIN_CONFIGS[this.currentChain]
+    if (!config || !config.rpcUrls) {
+      return false
+    }
+    
+    const currentIndex = config.currentRpcIndex || 0
+    const nextIndex = (currentIndex + 1) % config.rpcUrls.length
+    config.currentRpcIndex = nextIndex
+    
+    console.log(`🔄 Switching RPC from ${config.rpcUrls[currentIndex]} to ${config.rpcUrls[nextIndex]}`)
+    
+    // Recreate the public client with the new RPC URL
+    if (this.publicClient) {
+      this.publicClient = createPublicClient({
+        chain: config.chain,
+        transport: http(config.rpcUrls[nextIndex])
+      })
+      console.log(`✅ Recreated public client with new RPC: ${config.rpcUrls[nextIndex]}`)
+    }
+    
+    return true
   }
 
   // Get current configuration
@@ -398,6 +457,8 @@ class ContractService {
   // Create a new game
   async createGame(params) {
     try {
+      await this.waitForRateLimit()
+      
       const { walletClient, publicClient } = this.getCurrentClients()
       const account = walletClient.account.address
 
@@ -408,25 +469,40 @@ class ContractService {
         account: account
       })
 
-      // Verify NFT ownership first
+      // Verify NFT ownership first with retry logic
       console.log('🔍 Verifying NFT ownership...')
-      try {
-        const owner = await publicClient.readContract({
-          address: params.nftContract,
-          abi: NFT_ABI,
-          functionName: 'ownerOf',
-          args: [BigInt(params.tokenId)]
-        })
-        
-        if (owner.toLowerCase() !== account.toLowerCase()) {
-          throw new Error(`You don't own this NFT. Owner: ${owner}, Your address: ${account}`)
+      let owner
+      let retryCount = 0
+      
+      while (retryCount < this.maxRetries) {
+        try {
+          owner = await publicClient.readContract({
+            address: params.nftContract,
+            abi: NFT_ABI,
+            functionName: 'ownerOf',
+            args: [BigInt(params.tokenId)]
+          })
+          break
+        } catch (error) {
+          retryCount++
+          console.warn(`⚠️ NFT ownership check error (attempt ${retryCount}/${this.maxRetries}):`, error.message)
+          
+          if (error.message.includes('429') || error.message.includes('rate limit')) {
+            this.switchToNextRpc()
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+          } else if (retryCount < this.maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 500 * retryCount))
+          } else {
+            throw new Error('Failed to verify NFT ownership: ' + error.message)
+          }
         }
-        
-        console.log('✅ NFT ownership verified')
-      } catch (ownershipError) {
-        console.error('❌ NFT ownership check failed:', ownershipError)
-        throw new Error('Failed to verify NFT ownership: ' + ownershipError.message)
       }
+      
+      if (owner.toLowerCase() !== account.toLowerCase()) {
+        throw new Error(`You don't own this NFT. Owner: ${owner}, Your address: ${account}`)
+      }
+      
+      console.log('✅ NFT ownership verified')
 
       // First approve the NFT
       console.log('🔐 Approving NFT for transfer...')
@@ -438,9 +514,9 @@ class ContractService {
       // Get listing fee amount in ETH with retry logic for rate limits
       let listingFeeUSD, ethAmount
       const maxRetries = 3
-      let retryCount = 0
+      let feeRetryCount = 0
       
-      while (retryCount < maxRetries) {
+      while (feeRetryCount < maxRetries) {
         try {
           listingFeeUSD = await publicClient.readContract({
             address: this.contractAddress,
@@ -460,12 +536,12 @@ class ContractService {
           
           break // Success, exit retry loop
         } catch (rateLimitError) {
-          retryCount++
+          feeRetryCount++
           if (rateLimitError.message.includes('rate limit') || rateLimitError.message.includes('429')) {
-            console.log(`⚠️ Rate limit hit (attempt ${retryCount}/${maxRetries}), waiting ${retryCount * 2} seconds...`)
-            await new Promise(resolve => setTimeout(resolve, retryCount * 2000))
+            console.log(`⚠️ Rate limit hit (attempt ${feeRetryCount}/${maxRetries}), waiting ${feeRetryCount} seconds...`)
+            await new Promise(resolve => setTimeout(resolve, feeRetryCount * 1000))
             
-            if (retryCount >= maxRetries) {
+            if (feeRetryCount >= maxRetries) {
               throw new Error('Network is busy. Please try again in a few seconds.')
             }
           } else {
@@ -955,28 +1031,57 @@ class ContractService {
     }
   }
 
-  // Get user's active games
+  // Get user's active games with rate limiting and retry logic
   async getUserActiveGames(address) {
     try {
+      await this.waitForRateLimit()
+      
       const { publicClient } = this.getCurrentClients()
-
       console.log(`🎮 Looking for active games for address: ${address}`)
 
-      // Get the next game ID to see how many games exist
-      const nextGameId = await publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'nextGameId'
-      })
+      // Get the next game ID with retry logic
+      let nextGameId
+      let retryCount = 0
+      
+      while (retryCount < this.maxRetries) {
+        try {
+          nextGameId = await publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'nextGameId'
+          })
+          break
+        } catch (error) {
+          retryCount++
+          console.warn(`⚠️ RPC error (attempt ${retryCount}/${this.maxRetries}):`, error.message)
+          
+          if (error.message.includes('429') || error.message.includes('rate limit')) {
+            // Switch RPC endpoint and wait longer
+            this.switchToNextRpc()
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+          } else if (retryCount < this.maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 500 * retryCount))
+          } else {
+            throw error
+          }
+        }
+      }
+
+      if (!nextGameId) {
+        console.warn('⚠️ Could not get nextGameId, returning empty array')
+        return []
+      }
 
       console.log(`📊 Total games created: ${nextGameId}`)
 
-      // Get active games for the user
+      // Get active games for the user with rate limiting
       const activeGames = []
-      const maxGamesToCheck = 50 // Check more games to find active ones
+      const maxGamesToCheck = Math.min(Number(nextGameId), 20) // Reduced to avoid rate limits
 
-      for (let i = 1; i < Math.min(Number(nextGameId), maxGamesToCheck + 1); i++) {
+      for (let i = 1; i <= maxGamesToCheck; i++) {
         try {
+          await this.waitForRateLimit() // Rate limit between each game check
+          
           const gameDetails = await this.getGameDetails(i.toString())
           if (gameDetails.success) {
             const { game } = gameDetails.data
@@ -989,6 +1094,7 @@ class ContractService {
           }
         } catch (error) {
           console.warn(`Could not get details for game ${i}:`, error.message)
+          // Continue with next game instead of breaking
         }
       }
 

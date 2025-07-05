@@ -810,10 +810,26 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
     }
   }
 
-  // Check for game join notifications
+  // Check for game join notifications with caching
   const checkGameJoinNotifications = async () => {
     if (!address || !isConnected) return
 
+    // Use cached active games if available to reduce API calls
+    if (activeGames.length > 0) {
+      let joinCount = 0
+      for (const game of activeGames) {
+        // Check if user is creator and game has been joined (state 1 or higher)
+        if (game.creator.toLowerCase() === address.toLowerCase() && 
+            game.core.state >= 1 && 
+            game.joiner !== '0x0000000000000000000000000000000000000000') {
+          joinCount++
+        }
+      }
+      setGameJoinNotifications(joinCount)
+      return
+    }
+
+    // Fallback to API call if no cached data
     try {
       const gameIds = await contractService.getUserActiveGames(address)
       let joinCount = 0
@@ -845,8 +861,8 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
   useEffect(() => {
     checkGameJoinNotifications()
     
-    // Check every 10 seconds for new joins
-    const interval = setInterval(checkGameJoinNotifications, 10000)
+    // Check every 60 seconds for new joins (reduced frequency to avoid rate limits)
+    const interval = setInterval(checkGameJoinNotifications, 60000)
     
     return () => clearInterval(interval)
   }, [address, isConnected])

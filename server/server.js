@@ -2117,34 +2117,77 @@ app.post('/api/games/:gameId/join', async (req, res) => {
       paymentAmount
     })
     
+    // Validate input
+    if (!joinerAddress || !paymentTxHash) {
+      return res.status(400).json({ error: 'Missing required fields: joinerAddress, paymentTxHash' })
+    }
+    
     // Get current game state
     const game = await dbHelpers.getGame(gameId)
     if (!game) {
+      console.error('❌ Game not found:', gameId)
       return res.status(404).json({ error: 'Game not found' })
     }
     
-    // Verify this player claimed the slot
-    if (game.joiner !== joinerAddress || game.status !== 'claiming') {
-      return res.status(400).json({ error: 'Player slot not properly claimed' })
-    }
+    console.log('🎮 Current game state:', {
+      status: game.status,
+      joiner: game.joiner,
+      creator: game.creator
+    })
     
-    // Complete the join with payment
-    const updates = {
-      status: 'joined', // Move from 'claiming' to 'joined'
-      entry_fee_hash: paymentTxHash
+    // Handle different game states
+    if (game.status === 'claiming' && game.joiner === joinerAddress) {
+      // Complete the join with payment (existing flow)
+      const updates = {
+        status: 'joined',
+        entry_fee_hash: paymentTxHash
+      }
+      
+      await dbHelpers.updateGame(gameId, updates)
+      console.log('✅ Join completed (claiming flow):', gameId)
+      
+    } else if (game.status === 'waiting' && !game.joiner) {
+      // Direct join (new flow)
+      if (game.creator === joinerAddress) {
+        return res.status(400).json({ error: 'Creator cannot join their own game' })
+      }
+      
+      const updates = {
+        joiner: joinerAddress,
+        status: 'joined',
+        entry_fee_hash: paymentTxHash
+      }
+      
+      await dbHelpers.updateGame(gameId, updates)
+      console.log('✅ Join completed (direct flow):', gameId)
+      
+    } else {
+      console.error('❌ Invalid join state:', {
+        status: game.status,
+        joiner: game.joiner,
+        joinerAddress,
+        creator: game.creator
+      })
+      return res.status(400).json({ error: 'Game is not available for joining' })
     }
-    
-    await dbHelpers.updateGame(gameId, updates)
     
     // Record the payment transaction
-    await dbHelpers.recordTransaction(
-      gameId,
-      joinerAddress,
-      'entry_fee',
-      paymentAmount,
-      paymentAmount / 2500, // Approximate ETH amount
-      paymentTxHash
-    )
+    if (paymentAmount) {
+      await dbHelpers.recordTransaction(
+        gameId,
+        joinerAddress,
+        'entry_fee',
+        paymentAmount,
+        paymentAmount / 2500, // Approximate ETH amount
+        paymentTxHash
+      )
+    }
+    
+    // Update session if exists
+    const session = activeSessions.get(gameId)
+    if (session) {
+      await session.completeJoinProcess(joinerAddress, paymentTxHash)
+    }
     
     console.log('✅ Join completed successfully:', gameId)
     res.json({ success: true, gameId })
