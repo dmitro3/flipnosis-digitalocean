@@ -975,6 +975,24 @@ const FlipGame = () => {
     }
   }, [gameData?.coin])
 
+  // Add the missing fetchNFTData function
+  const fetchNFTData = async (gameId) => {
+    try {
+      setIsLoadingNFT(true)
+      console.log('🎨 Fetching NFT data for game:', gameId)
+      const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
+      if (!response.ok) throw new Error('Failed to fetch NFT data')
+      const data = await response.json()
+      console.log('✅ NFT data received:', data)
+      setNftData(data)
+    } catch (error) {
+      console.error('❌ Error fetching NFT data:', error)
+      setNftData(null)
+    } finally {
+      setIsLoadingNFT(false)
+    }
+  }
+
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
     console.log('💥 handlePowerChargeStart called:', {
@@ -3751,6 +3769,24 @@ const getMarketplaceUrl = (chain) => {
     // Add more chains as needed
   }
   return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
+}
+
+// Add the missing fetchNFTData function
+const fetchNFTData = async (gameId) => {
+  try {
+    setIsLoadingNFT(true)
+    console.log('🎨 Fetching NFT data for game:', gameId)
+    const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
+    if (!response.ok) throw new Error('Failed to fetch NFT data')
+    const data = await response.json()
+    console.log('✅ NFT data received:', data)
+    setNftData(data)
+  } catch (error) {
+    console.error('❌ Error fetching NFT data:', error)
+    setNftData(null)
+  } finally {
+    setIsLoadingNFT(false)
+  }
 }
 
 export default FlipGame
