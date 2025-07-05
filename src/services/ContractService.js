@@ -255,9 +255,18 @@ class ContractService {
 
   // Get current clients
   getCurrentClients() {
-    if (!this.walletClient || !this.publicClient) {
-      throw new Error('Wallet not connected')
+    if (!this.publicClient) {
+      throw new Error('Public client not initialized')
     }
+    
+    // For read-only operations, we only need publicClient
+    if (!this.walletClient) {
+      return {
+        walletClient: null,
+        publicClient: this.publicClient
+      }
+    }
+    
     return {
       walletClient: this.walletClient,
       publicClient: this.publicClient
@@ -987,6 +996,7 @@ class ContractService {
       return activeGames
     } catch (error) {
       console.error('Error getting user active games:', error)
+      // Return empty array instead of throwing error
       return []
     }
   }

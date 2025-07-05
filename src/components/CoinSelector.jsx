@@ -51,8 +51,15 @@ const CoinSelector = ({
       if (!address) return
       
       try {
+        console.log('🪙 Loading custom coin for address:', address)
         const headsImage = await getCoinHeadsImage(address)
         const tailsImage = await getCoinTailsImage(address)
+        console.log('🪙 Custom coin loaded:', { 
+          hasHeads: !!headsImage, 
+          hasTails: !!tailsImage,
+          headsLength: headsImage?.length || 0,
+          tailsLength: tailsImage?.length || 0
+        })
         setCustomHeadsImage(headsImage)
         setCustomTailsImage(tailsImage)
       } catch (error) {
@@ -82,7 +89,16 @@ const CoinSelector = ({
     }
   }
 
-  const hasCustomCoin = customHeadsImage && customTailsImage
+  const hasCustomCoin = customHeadsImage || customTailsImage
+  
+  console.log('🪙 CoinSelector state:', {
+    address,
+    hasCustomCoin,
+    customHeadsImage: !!customHeadsImage,
+    customTailsImage: !!customTailsImage,
+    showCustomOption,
+    selectedCoinType
+  })
 
   return (
     <div style={{
@@ -223,8 +239,8 @@ const CoinSelector = ({
               id: 'custom',
               type: 'custom',
               name: 'Your Custom Coin',
-              headsImage: customHeadsImage,
-              tailsImage: customTailsImage,
+              headsImage: customHeadsImage || '/coins/plainh.png', // Fallback to default if missing
+              tailsImage: customTailsImage || '/coins/plaint.png', // Fallback to default if missing
               description: 'Your personal coin design'
             })}
             style={{
@@ -253,12 +269,25 @@ const CoinSelector = ({
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                backgroundImage: `url(${customHeadsImage})`,
+                backgroundImage: customHeadsImage ? `url(${customHeadsImage})` : 'none',
+                backgroundColor: customHeadsImage ? 'transparent' : 'rgba(255, 215, 0, 0.2)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 border: '4px solid #FFD700',
-                position: 'relative'
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
+                {!customHeadsImage && (
+                  <div style={{
+                    color: '#FFD700',
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    ?
+                  </div>
+                )}
                 <div style={{
                   position: 'absolute',
                   bottom: '-30px',
@@ -277,12 +306,25 @@ const CoinSelector = ({
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                backgroundImage: `url(${customTailsImage})`,
+                backgroundImage: customTailsImage ? `url(${customTailsImage})` : 'none',
+                backgroundColor: customTailsImage ? 'transparent' : 'rgba(255, 215, 0, 0.2)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 border: '4px solid #FFD700',
-                position: 'relative'
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
+                {!customTailsImage && (
+                  <div style={{
+                    color: '#FFD700',
+                    fontSize: '2rem',
+                    fontWeight: 'bold'
+                  }}>
+                    ?
+                  </div>
+                )}
                 <div style={{
                   position: 'absolute',
                   bottom: '-30px',

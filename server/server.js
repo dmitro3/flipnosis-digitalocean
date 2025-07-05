@@ -83,6 +83,102 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' })
 })
 
+// Profile API endpoints
+app.get('/api/profile/:address', async (req, res) => {
+  try {
+    const { address } = req.params
+    console.log('👤 Profile requested for address:', address)
+    
+    // Get profile from database
+    db.get('SELECT * FROM user_profiles WHERE address = ?', [address], (err, row) => {
+      if (err) {
+        console.error('❌ Database error getting profile:', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      if (row) {
+        console.log('✅ Profile found:', { address, name: row.name })
+        res.json({
+          address: row.address,
+          name: row.name || '',
+          avatar: row.avatar || '',
+          headsImage: row.heads_image || '',
+          tailsImage: row.tails_image || '',
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        })
+      } else {
+        console.log('📝 No profile found, returning empty profile')
+        res.json({
+          address: address,
+          name: '',
+          avatar: '',
+          headsImage: '',
+          tailsImage: '',
+          createdAt: null,
+          updatedAt: null
+        })
+      }
+    })
+  } catch (error) {
+    console.error('❌ Profile API Error:', error)
+    res.status(500).json({ error: 'Failed to get profile' })
+  }
+})
+
+app.put('/api/profile/:address', async (req, res) => {
+  try {
+    const { address } = req.params
+    const { name, avatar, headsImage, tailsImage } = req.body
+    
+    console.log('💾 Updating profile for address:', address, { name, hasAvatar: !!avatar, hasHeads: !!headsImage, hasTails: !!tailsImage })
+    
+    // Check if profile exists
+    db.get('SELECT address FROM user_profiles WHERE address = ?', [address], (err, existing) => {
+      if (err) {
+        console.error('❌ Database error checking profile:', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      if (existing) {
+        // Update existing profile
+        const sql = `UPDATE user_profiles 
+                     SET name = ?, avatar = ?, heads_image = ?, tails_image = ?, updated_at = CURRENT_TIMESTAMP 
+                     WHERE address = ?`
+        const values = [name || '', avatar || '', headsImage || '', tailsImage || '', address]
+        
+        db.run(sql, values, function(err) {
+          if (err) {
+            console.error('❌ Database error updating profile:', err)
+            return res.status(500).json({ error: 'Failed to update profile' })
+          }
+          
+          console.log('✅ Profile updated successfully')
+          res.json({ success: true, message: 'Profile updated' })
+        })
+      } else {
+        // Create new profile
+        const sql = `INSERT INTO user_profiles (address, name, avatar, heads_image, tails_image, created_at, updated_at) 
+                     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+        const values = [address, name || '', avatar || '', headsImage || '', tailsImage || '']
+        
+        db.run(sql, values, function(err) {
+          if (err) {
+            console.error('❌ Database error creating profile:', err)
+            return res.status(500).json({ error: 'Failed to create profile' })
+          }
+          
+          console.log('✅ Profile created successfully')
+          res.json({ success: true, message: 'Profile created' })
+        })
+      }
+    })
+  } catch (error) {
+    console.error('❌ Profile API Error:', error)
+    res.status(500).json({ error: 'Failed to update profile' })
+  }
+})
+
 // Serve static files from the built frontend
 if (process.env.NODE_ENV === 'production') {
   console.log('🌍 Production mode - setting up static file serving')
@@ -457,6 +553,23 @@ function initializeDatabase() {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(game_id) REFERENCES games(id)
     )`)
+
+    // User profiles table
+    db.run(`CREATE TABLE IF NOT EXISTS user_profiles (
+      address TEXT PRIMARY KEY,
+      name TEXT,
+      avatar TEXT,
+      heads_image TEXT,
+      tails_image TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('❌ Error creating user_profiles table:', err)
+      } else {
+        console.log('✅ User profiles table ready')
+      }
+    })
 
     console.log('✅ Database tables initialized')
   })
@@ -2533,10 +2646,27 @@ app.post('/api/games/:gameId/simple-join', async (req, res) => {
       paymentAmount
     })
     
+    // Validate input
+    if (!joinerAddress || !paymentTxHash) {
+      return res.status(400).json({ error: 'Missing required fields: joinerAddress, paymentTxHash' })
+    }
+    
     // Get current game state
     const game = await dbHelpers.getGame(gameId)
     if (!game) {
+      console.error('❌ Game not found:', gameId)
       return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Check if game is available for joining
+    if (game.status !== 'waiting') {
+      console.error('❌ Game not available for joining:', { gameId, status: game.status })
+      return res.status(400).json({ error: 'Game is not available for joining' })
+    }
+    
+    if (game.joiner) {
+      console.error('❌ Game already has a joiner:', { gameId, joiner: game.joiner })
+      return res.status(400).json({ error: 'Game already has a second player' })
     }
     
     // Update database first
@@ -2546,22 +2676,30 @@ app.post('/api/games/:gameId/simple-join', async (req, res) => {
       entry_fee_hash: paymentTxHash
     }
     
-    await dbHelpers.updateGame(gameId, updates)
+    console.log('💾 Updating database with:', updates)
+    const updateResult = await dbHelpers.updateGame(gameId, updates)
+    console.log('✅ Database update result:', updateResult)
     
     // Record the payment transaction
-    await dbHelpers.recordTransaction(
-      gameId,
-      joinerAddress,
-      'entry_fee',
-      paymentAmount,
-      paymentAmount / 2500, // Approximate ETH amount
-      paymentTxHash
-    )
+    if (paymentAmount) {
+      console.log('💰 Recording transaction:', { paymentAmount, paymentTxHash })
+      await dbHelpers.recordTransaction(
+        gameId,
+        joinerAddress,
+        'entry_fee',
+        paymentAmount,
+        paymentAmount / 2500, // Approximate ETH amount
+        paymentTxHash
+      )
+    }
     
     // Update session if exists
     const session = activeSessions.get(gameId)
     if (session) {
+      console.log('🔄 Updating active session')
       await session.completeJoinProcess(joinerAddress, paymentTxHash)
+    } else {
+      console.log('⚠️ No active session found for game:', gameId)
     }
     
     console.log('✅ Join completed successfully:', gameId)
