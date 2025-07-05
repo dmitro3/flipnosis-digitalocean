@@ -539,8 +539,11 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
 
     try {
       // Load user's created games from contract
-      const gameIds = await contractService.getUserActiveGames(address)
+      const gamesResponse = await contractService.getUserActiveGames(address)
       const games = []
+      
+      // Handle the response properly - it returns { success: true, games: [] }
+      const gameIds = gamesResponse.success ? gamesResponse.games : []
       
       for (const gameId of gameIds) {
         try {
@@ -831,8 +834,11 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
 
     // Fallback to API call if no cached data
     try {
-      const gameIds = await contractService.getUserActiveGames(address)
+      const gamesResponse = await contractService.getUserActiveGames(address)
       let joinCount = 0
+      
+      // Handle the response properly - it returns { success: true, games: [] }
+      const gameIds = gamesResponse.success ? gamesResponse.games : []
       
       for (const gameId of gameIds) {
         try {

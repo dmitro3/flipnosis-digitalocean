@@ -115,7 +115,7 @@ const RetryInfo = styled.div`
 `
 
 export const GameCreateModal = ({ isOpen, onClose, selectedNFT, gameParams, onSuccess }) => {
-  const { walletClient, publicClient, address, chainId } = useWallet()
+  const { walletClient, publicClient, address, chainId, isConnected } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const [creating, setCreating] = useState(false)
   const [status, setStatus] = useState(null)
@@ -128,6 +128,19 @@ export const GameCreateModal = ({ isOpen, onClose, selectedNFT, gameParams, onSu
       handleInitialize()
     }
   }, [isOpen, chainId])
+
+  // Debug wallet connection
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔍 GameCreateModal wallet state:', {
+        isConnected,
+        hasWalletClient: !!walletClient,
+        hasPublicClient: !!publicClient,
+        address,
+        chainId
+      })
+    }
+  }, [isOpen, isConnected, walletClient, publicClient, address, chainId])
 
   const handleInitialize = async () => {
     try {
@@ -145,6 +158,14 @@ export const GameCreateModal = ({ isOpen, onClose, selectedNFT, gameParams, onSu
   }
 
   const handleCreateGame = async () => {
+    if (!isConnected || !walletClient) {
+      setStatus({
+        type: 'error',
+        message: 'Please connect your wallet first'
+      })
+      return
+    }
+
     if (!selectedNFT || !gameParams) {
       setStatus({
         type: 'error',
