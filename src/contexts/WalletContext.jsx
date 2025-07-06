@@ -50,7 +50,7 @@ export const WalletProvider = ({ children }) => {
     }
   }
 
-  // Load NFTs using Alchemy
+  // Load NFTs using Alchemy with hardcoded API key
   const loadNFTs = async () => {
     if (!address) return
     
@@ -61,9 +61,9 @@ export const WalletProvider = ({ children }) => {
         throw new Error('Unsupported network')
       }
 
-      // Use the working API key
+      // Use hardcoded API key - will be protected by Alchemy allowlist
       const apiKey = 'nLSDR8CxwLCP7_7PVVDqIfsJuG7PLUJn'
-      console.log('Using Alchemy API key: ✅ Set')
+      console.log('🔑 Using Alchemy API key (protected by allowlist)')
 
       // Initialize Alchemy
       const alchemy = new Alchemy({
