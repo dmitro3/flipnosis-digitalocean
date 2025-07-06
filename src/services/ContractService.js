@@ -251,8 +251,12 @@ class ContractService {
     this.minRequestInterval = 500 // Minimum ms between requests
   }
 
-  // Initialize clients for a specific chain
-  async initializeClients(chainId, walletClient = null) {
+  // Initialize contract with clients (using the working pattern)
+  async initializeClients(chainId, walletClient) {
+    if (!walletClient) {
+      throw new Error('Wallet client is required')
+    }
+    
     const config = CHAIN_CONFIGS[this.getChainName(chainId)]
     if (!config) {
       throw new Error(`Unsupported chain: ${chainId}`)
@@ -261,29 +265,19 @@ class ContractService {
     this.chainId = chainId
     this.contractAddress = config.contractAddress
 
-    // Create public client with multiple RPC endpoints for fallback
+    // Create public client
     const publicClient = createPublicClient({
       chain: config.chain,
-      transport: http(config.rpcUrls[0], {
-        retryCount: 3,
-        retryDelay: 1000,
-        timeout: 30000,
-        batch: {
-          multicall: {
-            batchSize: 50,
-            wait: 100
-          }
-        }
-      })
+      transport: http(config.rpcUrls[0])
     })
 
-    // Store clients
+    // Store clients directly (like the working version)
     this.clients[chainId] = {
       public: publicClient,
       wallet: walletClient
     }
 
-    console.log(`✅ Initialized clients for chain ${chainId} with Alchemy RPC`)
+    console.log(`✅ Initialized clients for chain ${chainId}`)
     return this.clients[chainId]
   }
 
@@ -304,7 +298,13 @@ class ContractService {
     if (!this.chainId || !this.clients[this.chainId]) {
       throw new Error('Contract service not initialized. Please connect wallet.')
     }
-    return this.clients[this.chainId]
+    
+    const clients = this.clients[this.chainId]
+    if (!clients.wallet) {
+      throw new Error('Wallet client not available. Please connect your wallet.')
+    }
+    
+    return clients
   }
 
   // Rate limit protection with exponential backoff

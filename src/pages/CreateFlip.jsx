@@ -99,7 +99,7 @@ const CreateFlip = () => {
   // Initialize contract service when wallet is connected
   useEffect(() => {
     const initializeService = async () => {
-      if (isFullyConnected && chainId && walletClient) {
+      if (isFullyConnected && chainId && walletClient && publicClient) {
         try {
           console.log('Initializing contract service...')
           await contractService.initializeClients(chainId, walletClient)
@@ -112,7 +112,7 @@ const CreateFlip = () => {
     }
 
     initializeService()
-  }, [isFullyConnected, chainId, walletClient])
+  }, [isFullyConnected, chainId, walletClient, publicClient])
 
   // Load NFTs when component mounts
   useEffect(() => {
@@ -136,6 +136,14 @@ const CreateFlip = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    console.log('🔍 Submit attempt - Wallet state:', {
+      isFullyConnected,
+      hasWalletClient: !!walletClient,
+      hasPublicClient: !!publicClient,
+      chainId,
+      address: walletClient?.account?.address
+    })
+    
     if (!isFullyConnected) {
       showError('Please connect your wallet first')
       return
@@ -154,8 +162,9 @@ const CreateFlip = () => {
     setLoading(true)
 
     try {
-      // Wait a bit for wallet client to be ready
-      if (!contractService.chainId || contractService.chainId !== chainId) {
+      // Ensure contract service is initialized with current wallet
+      if (!contractService.chainId || contractService.chainId !== chainId || !contractService.clients[chainId]?.wallet) {
+        console.log('Re-initializing contract service...')
         await contractService.initializeClients(chainId, walletClient)
         // Add small delay for MetaMask
         await new Promise(resolve => setTimeout(resolve, 500))
