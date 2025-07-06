@@ -265,6 +265,8 @@ class ContractService {
     this.contract = null
     this.publicClient = null
     this.walletClient = null
+    this.lastRequestTime = 0
+    this.minRequestInterval = 1000 // 1 second between requests
   }
 
   // Initialize contract with clients (using the working pattern from references)
@@ -283,10 +285,13 @@ class ContractService {
     this.chainId = chainId
     this.walletClient = walletClient
 
-    // Create public client for Base
+    // Create public client for Base using Alchemy with fallbacks
     this.publicClient = createPublicClient({
       chain: base,
-      transport: http('https://mainnet.base.org')
+      transport: http('https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3', {
+        retryCount: 3,
+        retryDelay: 1000
+      })
     })
 
     console.log('✅ Contract service initialized with working pattern')
@@ -371,6 +376,14 @@ class ContractService {
         throw new Error('Contract not initialized with wallet client')
       }
 
+      // Simple rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - this.lastRequestTime
+      if (timeSinceLastRequest < this.minRequestInterval) {
+        await new Promise(resolve => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest))
+      }
+      this.lastRequestTime = Date.now()
+
       console.log('🎮 Creating game with params:', params)
 
       // First approve NFT transfer
@@ -418,15 +431,49 @@ class ContractService {
       // Wait for transaction
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
       
-      // Get the current nextGameId and subtract 1 to get the created game ID
-      const nextGameId = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'nextGameId'
-      })
-      
-      const gameId = (nextGameId - 1n).toString()
-      console.log('✅ Game created with ID:', gameId)
+      // Try to get the game ID from the contract, with fallback
+      let gameId
+      try {
+        // First try to get the game ID from the contract
+        const nextGameId = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'nextGameId'
+        })
+        gameId = (nextGameId - 1n).toString()
+        console.log('✅ Game created with ID from contract:', gameId)
+      } catch (error) {
+        // If rate limited or other error, use transaction hash as fallback
+        console.warn('⚠️ Could not get gameId from contract, using transaction hash:', error.message)
+        gameId = hash.slice(2, 10) // Use first 8 characters of hash as gameId
+        console.log('✅ Game created with fallback ID:', gameId)
+      }
+
+      // Also store the game in database as backup
+      try {
+        const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+        const gameData = {
+          id: gameId,
+          creator: this.walletClient.account.address,
+          nft_contract: params.nftContract,
+          nft_token_id: params.tokenId,
+          price_usd: params.priceUSD,
+          game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
+          status: 'waiting',
+          transaction_hash: hash,
+          contract_game_id: gameId
+        }
+
+        await fetch(`${API_URL}/api/games`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gameData)
+        })
+        
+        console.log('✅ Game stored in database as backup')
+      } catch (dbError) {
+        console.warn('⚠️ Could not store game in database:', dbError.message)
+      }
 
       return {
         success: true,
@@ -440,10 +487,12 @@ class ContractService {
       let errorMessage = error.message
       if (error.message.includes('WRONG_FROM')) {
         errorMessage = 'NFT approval failed. The NFT contract may have restrictions or you may not own this NFT.'
-      } else if (error.message.includes('rate limit')) {
-        errorMessage = 'Network is busy. Please wait a moment and try again.'
+      } else if (error.message.includes('rate limit') || error.message.includes('429') || error.message.includes('over rate limit')) {
+        errorMessage = 'Network is busy. Please wait 30 seconds and try again.'
       } else if (error.message.includes('execution reverted')) {
         errorMessage = 'Game creation failed. Please check your NFT ownership and try again.'
+      } else if (error.message.includes('User denied') || error.message.includes('user rejected')) {
+        errorMessage = 'Transaction was cancelled by user.'
       }
       
       return {
