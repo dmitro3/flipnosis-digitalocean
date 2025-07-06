@@ -26,6 +26,9 @@ VITE_BSCSCAN_API_KEY=your_bscscan_api_key_here
 VITE_AVALANCHE_API_KEY=your_avalanche_api_key_here
 VITE_POLYGONSCAN_API_KEY=your_polygonscan_api_key_here
 
+# Alchemy API Key (REQUIRED for NFT loading)
+VITE_ALCHEMY_API_KEY=your_alchemy_api_key_here
+
 # Platform Fee Receiver (for frontend display)
 VITE_PLATFORM_FEE_RECEIVER=your_admin_wallet_address_here
 

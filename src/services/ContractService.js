@@ -190,7 +190,7 @@ const NFT_ABI = [
 ]
 
 // Alchemy API key
-const ALCHEMY_API_KEY = process.env.VITE_ALCHEMY_API_KEY || 'nLSDR8CxwLCP7_7PVVDqIfsJuG7PLUJn'
+const ALCHEMY_API_KEY = process.env.VITE_ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
 // Chain configurations with Alchemy endpoints for better reliability
 const CHAIN_CONFIGS = {

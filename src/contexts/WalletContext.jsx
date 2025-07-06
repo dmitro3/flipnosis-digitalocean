@@ -61,8 +61,8 @@ export const WalletProvider = ({ children }) => {
         throw new Error('Unsupported network')
       }
 
-      // Use hardcoded API key - will be protected by Alchemy allowlist
-      const apiKey = 'nLSDR8CxwLCP7_7PVVDqIfsJuG7PLUJn'
+      // Use your actual Alchemy API key (protected by allowlist)
+      const apiKey = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
       console.log('🔑 Using Alchemy API key (protected by allowlist)')
 
       // Initialize Alchemy
