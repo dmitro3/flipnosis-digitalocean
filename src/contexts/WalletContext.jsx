@@ -52,24 +52,48 @@ export const WalletProvider = ({ children }) => {
 
   // Load NFTs using Alchemy with hardcoded API key
   const loadNFTs = async () => {
-    if (!address) return
+    console.log('🚀 loadNFTs called with address:', address)
+    
+    if (!address) {
+      console.log('❌ No address provided, skipping NFT load')
+      return
+    }
     
     setLoading(true)
     try {
       const currentChain = chains[chainId]
+      console.log('🔍 Current chain info:', {
+        chainId,
+        currentChain,
+        availableChains: Object.keys(chains)
+      })
+      
       if (!currentChain) {
+        console.error('❌ Unsupported network:', chainId)
         throw new Error('Unsupported network')
       }
 
       // Use your actual Alchemy API key (protected by allowlist)
       const apiKey = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
-      console.log('🔑 Using Alchemy API key (protected by allowlist)')
+      console.log('🔑 Using Alchemy API key (protected by allowlist):', apiKey)
 
       // Initialize Alchemy
-      const alchemy = new Alchemy({
-        apiKey,
+      console.log('🔧 Creating Alchemy instance with:', {
+        apiKey: apiKey.substring(0, 10) + '...',
         network: currentChain.network
       })
+      
+      let alchemy
+      try {
+        alchemy = new Alchemy({
+          apiKey,
+          network: currentChain.network
+        })
+        console.log('✅ Alchemy instance created successfully')
+      } catch (alchemyError) {
+        console.error('❌ Failed to create Alchemy instance:', alchemyError)
+        throw alchemyError
+      }
 
       console.log('🔍 Loading NFTs for:', {
         address,
@@ -77,11 +101,20 @@ export const WalletProvider = ({ children }) => {
         network: currentChain.network
       })
 
+      console.log('🔧 Alchemy configuration:', {
+        apiKey: apiKey.substring(0, 10) + '...',
+        network: currentChain.network
+      })
+
       // Get NFTs for the address with pagination
       let allNFTs = []
       let pageKey = null
       
+      console.log('🔍 Starting NFT fetch for address:', address)
+      
       do {
+        console.log('📦 Fetching NFTs page:', { pageKey })
+        
         const nftsForOwner = await alchemy.nft.getNftsForOwner(address, {
           omitMetadata: false,
           pageKey: pageKey
@@ -100,12 +133,42 @@ export const WalletProvider = ({ children }) => {
       console.log('🎨 Total NFTs found:', allNFTs.length)
 
       const formattedNFTs = await Promise.all(allNFTs.map(async (nft) => {
+        // Enhanced image URL handling
+        let imageUrl = ''
+        if (nft.media && nft.media.length > 0) {
+          imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
+        } else if (nft.image) {
+          imageUrl = nft.image.originalUrl || nft.image.cachedUrl || ''
+        }
+        
+        // Fallback to metadata image if available
+        if (!imageUrl && nft.metadata && nft.metadata.image) {
+          imageUrl = nft.metadata.image
+        }
+
+        // Fix IPFS URLs to use gateway
+        if (imageUrl && imageUrl.startsWith('ipfs://')) {
+          imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
+        }
+
+        // Ensure HTTPS for security
+        if (imageUrl && imageUrl.startsWith('http://')) {
+          imageUrl = imageUrl.replace('http://', 'https://')
+        }
+
+        console.log('🖼️ NFT Image URL:', {
+          name: nft.title || nft.name,
+          originalUrl: imageUrl,
+          media: nft.media?.[0]?.gateway,
+          metadata: nft.metadata?.image
+        })
+
         const formattedNft = {
           contractAddress: nft.contract.address,
           tokenId: nft.tokenId,
           name: nft.title || nft.name || `#${nft.tokenId}`,
           collection: nft.contract.name || 'Unknown Collection',
-          image: nft.media?.[0]?.gateway || nft.media?.[0]?.raw || nft.image?.originalUrl || nft.image?.cachedUrl || '',
+          image: imageUrl,
           chain: currentChain.name,
           description: nft.description || '',
           animationUrl: nft.media?.[0]?.format === 'mp4' ? nft.media[0].gateway : nft.animation_url || ''
@@ -116,12 +179,22 @@ export const WalletProvider = ({ children }) => {
 
       console.log('✅ Loaded NFTs:', {
         count: formattedNFTs.length,
-        nfts: formattedNFTs
+        nfts: formattedNFTs.map(nft => ({
+          name: nft.name,
+          image: nft.image,
+          contractAddress: nft.contractAddress,
+          tokenId: nft.tokenId
+        }))
       })
       
       setNfts(formattedNFTs)
     } catch (error) {
       console.error('❌ Error loading NFTs:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
       showError('Failed to load NFTs: ' + error.message)
     } finally {
       setLoading(false)
@@ -130,9 +203,18 @@ export const WalletProvider = ({ children }) => {
 
   // Load NFTs when address changes
   useEffect(() => {
+    console.log('🔄 useEffect triggered:', { address, chainId, isConnected })
+    console.log('🔍 loadNFTs function exists:', typeof loadNFTs)
+    
     if (address) {
-      loadNFTs()
+      console.log('📞 Calling loadNFTs for address:', address)
+      try {
+        loadNFTs()
+      } catch (error) {
+        console.error('❌ Error calling loadNFTs:', error)
+      }
     } else {
+      console.log('❌ No address, clearing NFTs')
       setNfts([])
     }
   }, [address, chainId])

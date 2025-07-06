@@ -2173,8 +2173,8 @@ const FlipGame = () => {
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
                   size={187} // Smaller for optimization (1/3 reduction)
-                  customHeadsImage={customHeadsImage}
-                  customTailsImage={customTailsImage}
+                  customHeadsImage={customHeadsImage || '/coins/trumpheads.webp'}
+                  customTailsImage={customTailsImage || '/coins/trumptails.webp'}
                 />
               </div>
 
@@ -2808,27 +2808,25 @@ const FlipGame = () => {
                       padding: '20px'
                     }}
                   >
-                    {customHeadsImage && customTailsImage && (
-                      <OptimizedGoldCoin
-                        isFlipping={!!flipAnimation}
-                        flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
-                        flipDuration={flipAnimation?.duration}
-                        onPowerCharge={handlePowerChargeStart}
-                        onPowerRelease={handlePowerChargeStop}
-                        isPlayerTurn={isMyTurn}
-                        isCharging={gameState?.chargingPlayer === address}
-                        chargingPlayer={gameState?.chargingPlayer}
-                        gamePhase={gameState?.phase}
-                        creatorPower={gameState?.creatorPower || 0}
-                        joinerPower={gameState?.joinerPower || 0}
-                        creatorChoice={gameState?.creatorChoice}
-                        joinerChoice={gameState?.joinerChoice}
-                        isCreator={isCreator}
-                        size={440}
-                        customHeadsImage={customHeadsImage}
-                        customTailsImage={customTailsImage}
-                      />
-                    )}
+                    <OptimizedGoldCoin
+                      isFlipping={!!flipAnimation}
+                      flipResult={flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult)}
+                      flipDuration={flipAnimation?.duration}
+                      onPowerCharge={handlePowerChargeStart}
+                      onPowerRelease={handlePowerChargeStop}
+                      isPlayerTurn={isMyTurn}
+                      isCharging={gameState?.chargingPlayer === address}
+                      chargingPlayer={gameState?.chargingPlayer}
+                      gamePhase={gameState?.phase}
+                      creatorPower={gameState?.creatorPower || 0}
+                      joinerPower={gameState?.joinerPower || 0}
+                      creatorChoice={gameState?.creatorChoice}
+                      joinerChoice={gameState?.joinerChoice}
+                      isCreator={isCreator}
+                      size={440}
+                      customHeadsImage={customHeadsImage || '/coins/trumpheads.webp'}
+                      customTailsImage={customTailsImage || '/coins/trumptails.webp'}
+                    />
                   </div>
 
                   {/* Choice Display - Desktop */}
@@ -2925,6 +2923,9 @@ const FlipGame = () => {
                         border: '4px solid rgba(0, 255, 65, 0.6)',
                         boxShadow: '0 0 30px rgba(0, 255, 65, 0.5), inset 0 0 30px rgba(0, 255, 65, 0.3)',
                         animation: 'nftBananaGlow 2s ease-in-out infinite'
+                      }}
+                      onError={(e) => {
+                        e.target.src = '/placeholder-nft.svg'
                       }}
                     />
                   </div>

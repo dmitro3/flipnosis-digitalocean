@@ -173,7 +173,9 @@ const Home = () => {
     address, 
     chain,
     walletClient,
-    publicClient
+    publicClient,
+    nfts,
+    loading: nftsLoading
   } = useWallet()
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -193,9 +195,11 @@ const Home = () => {
       address,
       chain,
       hasWalletClient: !!walletClient,
-      hasPublicClient: !!publicClient
+      hasPublicClient: !!publicClient,
+      nftsCount: nfts?.length || 0,
+      nftsLoading
     })
-  }, [isConnected, address, chain, walletClient, publicClient])
+  }, [isConnected, address, chain, walletClient, publicClient, nfts, nftsLoading])
 
   // Fetch games from database
   const fetchGames = async () => {
@@ -210,17 +214,31 @@ const Home = () => {
 
       const gamesData = await response.json()
       console.log('📊 Fetched games from database:', gamesData)
+      
+      // Debug the first game's NFT data
+      if (gamesData.length > 0) {
+        const firstGame = gamesData[0]
+        console.log('🔍 First game NFT data:', {
+          nft_name: firstGame.nft_name,
+          nft_image: firstGame.nft_image,
+          nft_contract: firstGame.nft_contract,
+          nft_token_id: firstGame.nft_token_id,
+          nft_collection: firstGame.nft_collection,
+          nft_chain: firstGame.nft_chain
+        })
+      }
 
       // Transform database games to frontend format
       const processedFlips = gamesData.map(game => ({
         id: game.id,
         nft: {
           name: game.nft_name || 'Unknown NFT',
-          image: game.nft_image || '/placeholder-nft.png', // Use a real placeholder image
+          image: game.nft_image || '/placeholder-nft.svg', // Use a real placeholder image
           collection: game.nft_collection || 'Unknown Collection',
           contractAddress: game.nft_contract,
           tokenId: game.nft_token_id,
-          chain: game.nft_chain || 'base'
+          chain: game.nft_chain || 'base',
+          needsMetadataUpdate: !game.nft_image || game.nft_image === '' // Flag for missing metadata
         },
         gameType: game.game_type || 'nft-vs-crypto',
         price: game.price_usd,
@@ -249,6 +267,20 @@ const Home = () => {
       }))
 
       console.log('✅ Processed flips:', processedFlips)
+      
+      // Debug the first processed flip's NFT data
+      if (processedFlips.length > 0) {
+        const firstFlip = processedFlips[0]
+        console.log('🖼️ First processed flip NFT data:', {
+          name: firstFlip.nft.name,
+          image: firstFlip.nft.image,
+          collection: firstFlip.nft.collection,
+          contractAddress: firstFlip.nft.contractAddress,
+          tokenId: firstFlip.nft.tokenId,
+          chain: firstFlip.nft.chain
+        })
+      }
+      
       setFlips(processedFlips)
       
       if (processedFlips.length > 0) {
@@ -259,6 +291,31 @@ const Home = () => {
       setError('Failed to load games. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Function to update NFT metadata for a game
+  const updateNFTMetadata = async (gameId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/games/${gameId}/update-nft-metadata`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update NFT metadata')
+      }
+      
+      const result = await response.json()
+      console.log('✅ NFT metadata updated:', result)
+      
+      // Refresh the games list to show updated data
+      await fetchGames()
+      
+      showSuccess('NFT metadata updated successfully!')
+    } catch (error) {
+      console.error('❌ Error updating NFT metadata:', error)
+      showError('Failed to update NFT metadata')
     }
   }
 
@@ -501,6 +558,9 @@ const Home = () => {
                         <GameImage 
                           src={selectedFlip.nft.image} 
                           alt={selectedFlip.nft.name}
+                          onError={(e) => {
+                            e.target.src = '/placeholder-nft.svg'
+                          }}
                         />
                         <div style={{
                           position: 'absolute',
@@ -745,7 +805,7 @@ const Home = () => {
                 )}
               </div>
 
-              {/* Middle Box - Available Flips */}
+              {/* Middle Box - Available Flips or NFTs */}
               <div style={{
                 background: 'rgba(0, 0, 20, 0.95)',
                 borderRadius: '1rem',
@@ -764,7 +824,12 @@ const Home = () => {
                   borderBottom: `1px solid ${theme.colors.neonBlue}`,
                   textShadow: '0 0 10px rgba(0, 150, 255, 0.5)'
                 }}>
-                  Available Flips ({filteredFlips.filter(flip => flip.status === 'waiting').length})
+                  {filteredFlips.length > 0 ? 
+                    `Available Flips (${filteredFlips.filter(flip => flip.status === 'waiting').length})` :
+                    isConnected && nfts && nfts.length > 0 ? 
+                      `Your NFTs (${nfts.length})` : 
+                      'No Games Available'
+                  }
                 </div>
 
                 {/* Search Input */}
@@ -788,7 +853,8 @@ const Home = () => {
                   gridAutoRows: 'minmax(auto, auto)',
                   gridAutoFlow: 'row'
                 }}>
-                  {filteredFlips.map(flip => (
+                  {filteredFlips.length > 0 ? (
+                    filteredFlips.map(flip => (
                     <div
                       key={flip.id}
                       onClick={() => setSelectedFlip(flip)}
@@ -832,6 +898,9 @@ const Home = () => {
                             objectFit: 'cover',
                             objectPosition: 'center'
                           }}
+                          onError={(e) => {
+                            e.target.src = '/placeholder-nft.svg'
+                          }}
                         />
                         <div style={{
                           position: 'absolute',
@@ -848,6 +917,36 @@ const Home = () => {
                         }}>
                           {flip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
                         </div>
+                        {flip.nft.needsMetadataUpdate && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateNFTMetadata(flip.id);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: '0.25rem',
+                              right: '0.25rem',
+                              background: 'rgba(255, 193, 7, 0.9)',
+                              color: '#000',
+                              border: 'none',
+                              padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
+                              borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
+                              fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(255, 193, 7, 1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(255, 193, 7, 0.9)';
+                            }}
+                          >
+                            🔄 Update
+                          </button>
+                        )}
                       </div>
                       <div style={{
                         display: 'flex',
@@ -884,7 +983,93 @@ const Home = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))) : isConnected && nfts && nfts.length > 0 ? (
+                    nfts.map(nft => (
+                      <div
+                        key={`${nft.contractAddress}-${nft.tokenId}`}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
+                          padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
+                          height: window.innerWidth <= 768 ? 'auto' : '210px',
+                          width: '100%'
+                        }}
+                      >
+                        <div style={{ 
+                          position: 'relative',
+                          aspectRatio: '1',
+                          borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
+                          overflow: 'hidden',
+                          width: '100%',
+                          height: window.innerWidth <= 768 ? 'auto' : '135px',
+                          minHeight: window.innerWidth <= 768 ? '80px' : '135px'
+                        }}>
+                          <GameImage 
+                            src={nft.image} 
+                            alt={nft.name}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              objectPosition: 'center'
+                            }}
+                            onError={(e) => {
+                              e.target.src = '/placeholder-nft.svg'
+                            }}
+                          />
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
+                          padding: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
+                          height: window.innerWidth <= 768 ? 'auto' : '60px',
+                          justifyContent: 'space-between'
+                        }}>
+                          <div style={{ 
+                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {nft.name}
+                          </div>
+                          <div style={{ 
+                            fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
+                            color: theme.colors.textSecondary,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {nft.collection}
+                          </div>
+                          <div style={{ 
+                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
+                            fontWeight: 'bold',
+                            color: theme.colors.neonBlue
+                          }}>
+                            {nft.chain}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{
+                      gridColumn: '1 / -1',
+                      textAlign: 'center',
+                      padding: '2rem',
+                      color: theme.colors.textSecondary
+                    }}>
+                      {nftsLoading ? 'Loading your NFTs...' : 'No games or NFTs available'}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

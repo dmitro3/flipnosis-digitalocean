@@ -1,5 +1,6 @@
 import { createPublicClient, createWalletClient, custom, http } from 'viem'
 import { base, mainnet, bsc, avalanche, polygon } from 'viem/chains'
+import { Alchemy } from 'alchemy-sdk'
 
 // Contract ABI - Essential functions only
 const CONTRACT_ABI = [
@@ -209,7 +210,7 @@ const NFT_ABI = [
 ]
 
 // Alchemy API key
-const ALCHEMY_API_KEY = process.env.VITE_ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+const ALCHEMY_API_KEY = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
 // Chain configurations with Alchemy endpoints for better reliability
 const CHAIN_CONFIGS = {
@@ -452,11 +453,53 @@ class ContractService {
       // Also store the game in database as backup
       try {
         const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+        
+        // Fetch NFT metadata to include in database
+        let nftMetadata = {
+          name: 'NFT',
+          image: '',
+          collection: 'Collection',
+          chain: 'base'
+        }
+        
+        try {
+          // Try to get NFT metadata from Alchemy
+          const alchemyKey = import.meta.env.VITE_ALCHEMY_API_KEY
+          if (alchemyKey) {
+            const alchemy = new Alchemy({
+              apiKey: alchemyKey,
+              network: 'base-mainnet'
+            })
+            
+            const nfts = await alchemy.nft.getNftsForOwner(params.nftContract, {
+              contractAddresses: [params.nftContract],
+              tokenIds: [params.tokenId]
+            })
+            
+            if (nfts.ownedNfts.length > 0) {
+              const nft = nfts.ownedNfts[0]
+              nftMetadata = {
+                name: nft.title || 'NFT',
+                image: nft.media?.[0]?.gateway || nft.media?.[0]?.raw || '',
+                collection: nft.contract.name || 'Collection',
+                chain: 'base'
+              }
+              console.log('✅ Fetched NFT metadata:', nftMetadata)
+            }
+          }
+        } catch (metadataError) {
+          console.warn('⚠️ Could not fetch NFT metadata:', metadataError.message)
+        }
+        
         const gameData = {
           id: gameId,
           creator: this.walletClient.account.address,
           nft_contract: params.nftContract,
           nft_token_id: params.tokenId,
+          nft_name: nftMetadata.name,
+          nft_image: nftMetadata.image,
+          nft_collection: nftMetadata.collection,
+          nft_chain: nftMetadata.chain,
           price_usd: params.priceUSD,
           game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
           status: 'waiting',
@@ -470,7 +513,7 @@ class ContractService {
           body: JSON.stringify(gameData)
         })
         
-        console.log('✅ Game stored in database as backup')
+        console.log('✅ Game stored in database with NFT metadata')
       } catch (dbError) {
         console.warn('⚠️ Could not store game in database:', dbError.message)
       }

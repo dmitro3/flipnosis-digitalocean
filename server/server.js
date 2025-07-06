@@ -2610,6 +2610,90 @@ app.get('/api/games/:gameId/nft', async (req, res) => {
   }
 })
 
+// Update game with NFT metadata
+app.post('/api/games/:gameId/update-nft-metadata', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    console.log('🔄 Updating NFT metadata for game:', gameId)
+    
+    const game = await dbHelpers.getGame(gameId)
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Check if NFT metadata is already complete
+    if (game.nft_image && game.nft_name && game.nft_collection) {
+      console.log('ℹ️ Game already has complete NFT metadata')
+      return res.json({ 
+        success: true, 
+        message: 'Game already has complete NFT metadata',
+        nft: {
+          name: game.nft_name,
+          image: game.nft_image,
+          collection: game.nft_collection
+        }
+      })
+    }
+    
+    // Try to fetch NFT metadata from Alchemy
+    let nftMetadata = {
+      name: game.nft_name || 'NFT',
+      image: game.nft_image || '',
+      collection: game.nft_collection || 'Collection'
+    }
+    
+    try {
+      // You would need to add Alchemy SDK to the server dependencies
+      // For now, we'll use a simple fetch to Alchemy's API
+      const alchemyKey = process.env.VITE_ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+      const alchemyUrl = `https://base-mainnet.g.alchemy.com/v2/${alchemyKey}/getNFTMetadata?contractAddress=${game.nft_contract}&tokenId=${game.nft_token_id}`
+      
+      const response = await fetch(alchemyUrl)
+      if (response.ok) {
+        const nftData = await response.json()
+        nftMetadata = {
+          name: nftData.title || game.nft_name || 'NFT',
+          image: nftData.media?.[0]?.gateway || nftData.media?.[0]?.raw || game.nft_image || '',
+          collection: nftData.contract?.name || game.nft_collection || 'Collection'
+        }
+        console.log('✅ Fetched NFT metadata from Alchemy:', nftMetadata)
+      }
+    } catch (metadataError) {
+      console.warn('⚠️ Could not fetch NFT metadata:', metadataError.message)
+    }
+    
+    // Update the game with new metadata
+    const updateQuery = `
+      UPDATE games 
+      SET nft_name = ?, nft_image = ?, nft_collection = ?
+      WHERE id = ?
+    `
+    
+    db.run(updateQuery, [
+      nftMetadata.name,
+      nftMetadata.image,
+      nftMetadata.collection,
+      gameId
+    ], function(err) {
+      if (err) {
+        console.error('❌ Error updating NFT metadata:', err)
+        res.status(500).json({ error: 'Failed to update NFT metadata' })
+      } else {
+        console.log('✅ Updated NFT metadata for game:', gameId)
+        res.json({ 
+          success: true, 
+          message: 'NFT metadata updated successfully',
+          nft: nftMetadata
+        })
+      }
+    })
+    
+  } catch (error) {
+    console.error('❌ Error updating NFT metadata:', error)
+    res.status(500).json({ error: 'Failed to update NFT metadata' })
+  }
+})
+
 // Add NFT validation endpoint for enhanced security
 app.post('/api/nft/validate', async (req, res) => {
   try {
