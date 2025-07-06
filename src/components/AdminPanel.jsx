@@ -396,7 +396,7 @@ export default function AdminPanel() {
         
         // Initialize contract service
         const chainName = chain?.name?.toLowerCase() || 'base'
-        contractService.init(chainName, walletClient, publicClient)
+        contractService.initializeClients(chain?.id || 8453, walletClient)
           .then(() => {
             console.log('✅ Admin contract service initialized')
             loadData()

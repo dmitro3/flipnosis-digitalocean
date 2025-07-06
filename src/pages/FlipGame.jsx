@@ -43,7 +43,7 @@ const FlipGame = () => {
   useEffect(() => {
     if (isFullyConnected && walletClient && publicClient && chain) {
       const chainName = chain.name.toLowerCase()
-      contractService.init(chainName, walletClient, publicClient)
+      contractService.initializeClients(chain.id, walletClient)
         .then(() => {
           console.log('✅ Contract service initialized for chain:', chainName)
         })

@@ -31,20 +31,18 @@ const CONTRACT_ABI = [
     stateMutability: 'payable',
     inputs: [
       { name: 'gameId', type: 'uint256' },
-      { name: 'paymentToken', type: 'uint8' },
-      { name: 'challengerNFTContract', type: 'address' },
-      { name: 'challengerTokenId', type: 'uint256' }
+      { name: 'choice', type: 'uint8' }
     ],
     outputs: []
   },
-  // Complete game
+  // Flip coin
   {
-    name: 'completeGame',
+    name: 'flip',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [
       { name: 'gameId', type: 'uint256' },
-      { name: 'winner', type: 'address' }
+      { name: 'power', type: 'uint8' }
     ],
     outputs: []
   },
@@ -301,6 +299,16 @@ class ContractService {
       wallet: this.walletClient,
       public: this.publicClient
     }
+  }
+
+  // Check if service is initialized
+  isInitialized() {
+    return !!this.walletClient && !!this.publicClient
+  }
+
+  // Get current chain
+  get currentChain() {
+    return this.chainId
   }
 
   // Rate limit protection with exponential backoff
@@ -840,6 +848,178 @@ class ContractService {
         success: false,
         error: error.message,
         games: []
+      }
+    }
+  }
+
+  // Get game (for FlipGame)
+  async getGame(gameId) {
+    try {
+      const result = await this.getGameDetails(gameId)
+      return {
+        success: result.success,
+        game: result.data?.game
+      }
+    } catch (error) {
+      console.error('Error getting game:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Join a game (using working pattern from references)
+  async joinGame(params) {
+    try {
+      if (!this.walletClient) {
+        throw new Error('Contract not initialized with wallet client')
+      }
+
+      console.log('🎮 Joining game with params:', params)
+
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'joinGame',
+        args: [BigInt(params.gameId), params.choice || 0]
+      })
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('Error joining game:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Flip coin (using working pattern from references)
+  async flipCoin(params) {
+    try {
+      if (!this.walletClient) {
+        throw new Error('Contract not initialized with wallet client')
+      }
+
+      console.log('🪙 Flipping coin with params:', params)
+
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'flip',
+        args: [BigInt(params.gameId), params.power || 0]
+      })
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('Error flipping coin:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Cancel game (using working pattern from references)
+  async cancelGame(gameId) {
+    try {
+      if (!this.walletClient) {
+        throw new Error('Contract not initialized with wallet client')
+      }
+
+      console.log('❌ Cancelling game:', gameId)
+
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'cancelGame',
+        args: [BigInt(gameId)]
+      })
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('Error cancelling game:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Withdraw NFT (using working pattern from references)
+  async withdrawNFT(nftContract, tokenId) {
+    try {
+      if (!this.walletClient) {
+        throw new Error('Contract not initialized with wallet client')
+      }
+
+      console.log('🏆 Withdrawing NFT:', { nftContract, tokenId })
+
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'withdrawNFT',
+        args: [nftContract, BigInt(tokenId)]
+      })
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('Error withdrawing NFT:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Emergency cancel game (using working pattern from references)
+  async emergencyCancelGame(gameId) {
+    try {
+      if (!this.walletClient) {
+        throw new Error('Contract not initialized with wallet client')
+      }
+
+      console.log('🚨 Emergency cancelling game:', gameId)
+
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'cancelGame',
+        args: [BigInt(gameId)]
+      })
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('Error emergency cancelling game:', error)
+      return {
+        success: false,
+        error: error.message
       }
     }
   }
