@@ -1045,7 +1045,7 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
                           <Upload style={{ width: '1.5rem', height: '1.5rem', color: '#fff' }} />
                         </div>
                       </div>
-                      <style jsx>{`
+                      <style>{`
                         div[style*="cursor: pointer"]:hover .upload-overlay {
                           opacity: 1 !important;
                         }
