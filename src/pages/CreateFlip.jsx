@@ -6,7 +6,6 @@ import { useWalletConnection } from '../utils/useWalletConnection'
 import contractService from '../services/ContractService'
 import NFTSelector from '../components/NFTSelector'
 import CoinSelector from '../components/CoinSelector'
-import { GameCreateModal } from '../components/GameCreateModal'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
@@ -96,7 +95,6 @@ const CreateFlip = () => {
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [nftsLoading, setNftsLoading] = useState(false)
   const [selectedCoin, setSelectedCoin] = useState('default')
-  const [showCreateModal, setShowCreateModal] = useState(false)
 
   // Initialize contract service when wallet is connected
   useEffect(() => {
@@ -153,13 +151,47 @@ const CreateFlip = () => {
       return
     }
 
-    // Show the create modal
-    setShowCreateModal(true)
-  }
+    setLoading(true)
 
-  const handleCreateSuccess = (result) => {
-    showSuccess('Game created successfully!')
-    navigate(`/game/${result.gameId}`)
+    try {
+      // Wait a bit for wallet client to be ready
+      if (!contractService.chainId || contractService.chainId !== chainId) {
+        await contractService.initializeClients(chainId, walletClient)
+        // Add small delay for MetaMask
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+
+      const createParams = {
+        nftContract: selectedNFT.contractAddress,
+        tokenId: selectedNFT.tokenId,
+        priceUSD: parseFloat(price),
+        acceptedToken: 0, // ETH
+        gameType: gameType === 'nft-vs-nft' ? 1 : 0,
+        authInfo: ''
+      }
+
+      console.log('🎮 Creating game with params:', createParams)
+      
+      const result = await contractService.createGame(createParams)
+
+      if (result.success) {
+        showSuccess('Game created successfully!')
+        navigate(`/game/${result.gameId}`)
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error('Error creating game:', error)
+      
+      let errorMessage = error.message
+      if (errorMessage.includes('User denied') || errorMessage.includes('user rejected')) {
+        errorMessage = 'Transaction cancelled'
+      }
+      
+      showError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -242,17 +274,6 @@ const CreateFlip = () => {
           nfts={nfts || []}
           loading={nftsLoading}
           selectedNFT={selectedNFT}
-        />
-
-        <GameCreateModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          selectedNFT={selectedNFT}
-          gameParams={{
-            priceUSD: price,
-            gameType: gameType
-          }}
-          onSuccess={handleCreateSuccess}
         />
       </Container>
     </ThemeProvider>
