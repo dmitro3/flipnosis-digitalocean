@@ -3,20 +3,26 @@ import { base, mainnet, bsc, avalanche, polygon } from 'viem/chains'
 
 // Contract ABI - Essential functions only
 const CONTRACT_ABI = [
-  // Create game
+  // Create game (using struct like working reference)
   {
     name: 'createGame',
     type: 'function',
-    stateMutability: 'payable',
+    stateMutability: 'nonpayable',
     inputs: [
-      { name: 'nftContract', type: 'address' },
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'priceUSD', type: 'uint256' },
-      { name: 'acceptedToken', type: 'uint8' },
-      { name: 'gameType', type: 'uint8' },
-      { name: 'authInfo', type: 'string' }
+      {
+        name: 'params',
+        type: 'tuple',
+        components: [
+          { name: 'nftContract', type: 'address' },
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'priceUSD', type: 'uint256' },
+          { name: 'acceptedToken', type: 'uint8' },
+          { name: 'maxRounds', type: 'uint8' },
+          { name: 'authInfo', type: 'string' }
+        ]
+      }
     ],
-    outputs: []
+    outputs: [{ name: '', type: 'uint256' }]
   },
   // Join Game
   {
@@ -378,8 +384,8 @@ class ContractService {
         functionName: 'createGame',
         args: [{
           nftContract: params.nftContract,
-          tokenId: params.tokenId,
-          priceUSD: priceUSDFormatted,
+          tokenId: BigInt(params.tokenId),
+          priceUSD: BigInt(priceUSDFormatted),
           acceptedToken: params.acceptedToken || 0,
           maxRounds: 5, // Default to 5 rounds
           authInfo: params.authInfo || ''
