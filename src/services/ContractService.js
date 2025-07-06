@@ -243,42 +243,34 @@ const CHAIN_CONFIGS = {
 
 class ContractService {
   constructor() {
-    this.contractAddress = null
-    this.chainId = null
-    this.clients = {}
-    this.rateLimitRetries = {}
-    this.lastRequestTime = {}
-    this.minRequestInterval = 500 // Minimum ms between requests
+    this.contract = null
+    this.publicClient = null
+    this.walletClient = null
   }
 
-  // Initialize contract with clients (using the working pattern)
+  // Initialize contract with clients (using the working pattern from references)
   async initializeClients(chainId, walletClient) {
     if (!walletClient) {
       throw new Error('Wallet client is required')
     }
     
-    const config = CHAIN_CONFIGS[this.getChainName(chainId)]
-    if (!config) {
+    // For Base network, use the working contract address
+    if (chainId === 8453) {
+      this.contractAddress = "0xb2d09A3A6E502287D0acdAC31328B01AADe35941"
+    } else {
       throw new Error(`Unsupported chain: ${chainId}`)
     }
 
     this.chainId = chainId
-    this.contractAddress = config.contractAddress
+    this.walletClient = walletClient
 
-    // Create public client
-    const publicClient = createPublicClient({
-      chain: config.chain,
-      transport: http(config.rpcUrls[0])
+    // Create public client for Base
+    this.publicClient = createPublicClient({
+      chain: base,
+      transport: http('https://mainnet.base.org')
     })
 
-    // Store clients directly (like the working version)
-    this.clients[chainId] = {
-      public: publicClient,
-      wallet: walletClient
-    }
-
-    console.log(`✅ Initialized clients for chain ${chainId}`)
-    return this.clients[chainId]
+    console.log('✅ Contract service initialized with working pattern')
   }
 
   // Get chain name from ID
@@ -293,18 +285,16 @@ class ContractService {
     return chainMap[chainId] || 'unknown'
   }
 
-  // Get current clients
+  // Get current clients (using simple pattern)
   getCurrentClients() {
-    if (!this.chainId || !this.clients[this.chainId]) {
-      throw new Error('Contract service not initialized. Please connect wallet.')
-    }
-    
-    const clients = this.clients[this.chainId]
-    if (!clients.wallet) {
+    if (!this.walletClient) {
       throw new Error('Wallet client not available. Please connect your wallet.')
     }
     
-    return clients
+    return {
+      wallet: this.walletClient,
+      public: this.publicClient
+    }
   }
 
   // Rate limit protection with exponential backoff
@@ -345,121 +335,70 @@ class ContractService {
     throw lastError
   }
 
-  // Create a new game
+  // Create a new game (using working pattern from references)
   async createGame(params) {
     try {
-      await this.rateLimit('createGame')
-      
-      const { walletClient, public: publicClient } = this.getCurrentClients()
-      
-      if (!walletClient) {
-        throw new Error('Wallet client not available. Please connect your wallet.')
+      if (!this.walletClient) {
+        throw new Error('Contract not initialized with wallet client')
       }
-      
-      const account = walletClient.account.address
 
       console.log('🎮 Creating game with params:', params)
 
-      // First approve the NFT
-      console.log('🔐 Approving NFT for transfer...')
-      const approvalResult = await this.approveNFT(params.nftContract, params.tokenId)
-      if (!approvalResult.success && !approvalResult.alreadyApproved) {
-        throw new Error('Failed to approve NFT: ' + approvalResult.error)
-      }
-
-      // Get listing fee with retry logic
-      const { listingFeeUSD, ethAmount } = await this.retryWithBackoff(async () => {
-        await this.rateLimit('getListingFee')
-        
-        const listingFeeUSD = await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'listingFeeUSD'
-        })
-
-        await this.rateLimit('getETHAmount')
-        
-        const ethAmount = await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'getETHAmount',
-          args: [listingFeeUSD]
-        })
-        
-        return { listingFeeUSD, ethAmount }
-      })
-
-      console.log(`💰 Listing fee: ${ethAmount} ETH`)
-
-      // Create game parameters
-      const gameParams = [
-        params.nftContract,
-        BigInt(params.tokenId),
-        BigInt(Math.floor(params.priceUSD * 1000000)), // Convert to 6 decimals
-        params.acceptedToken || 0, // 0 = ETH, 1 = USDC
-        params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
-        params.authInfo || ''
+      // First approve NFT transfer
+      const nftAbi = [
+        {
+          name: 'approve',
+          type: 'function',
+          stateMutability: 'nonpayable',
+          inputs: [
+            { name: 'to', type: 'address' },
+            { name: 'tokenId', type: 'uint256' }
+          ],
+          outputs: [{ type: 'bool' }]
+        }
       ]
 
-      console.log('🎮 Game parameters:', gameParams)
-
-      // Estimate gas with proper gas prices for Base
-      const gasEstimate = await this.retryWithBackoff(async () => {
-        await this.rateLimit('estimateGas')
-        
-        return await publicClient.estimateContractGas({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'createGame',
-          args: gameParams,
-          account,
-          value: ethAmount
-        })
+      const approveTx = await this.walletClient.writeContract({
+        address: params.nftContract,
+        abi: nftAbi,
+        functionName: 'approve',
+        args: [this.contractAddress, params.tokenId]
       })
 
-      // Add 20% buffer to gas estimate
-      const gasLimit = gasEstimate * 120n / 100n
+      // Wait for approval transaction
+      await this.publicClient.waitForTransactionReceipt({ hash: approveTx })
 
-      // Get current gas prices with Base-specific values
-      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+      // Convert price to USD with 6 decimals (e.g., $1.50 = 1500000)
+      const priceUSDFormatted = Math.floor(params.priceUSD * 1000000)
 
-      // Create the game with proper gas settings
-      console.log('🎮 Creating game on blockchain...')
-      const hash = await this.retryWithBackoff(async () => {
-        await this.rateLimit('createGameTx')
-        
-        return await walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'createGame',
-          args: gameParams,
-          account,
-          value: ethAmount,
-          gas: gasLimit,
-          maxFeePerGas,
-          maxPriorityFeePerGas
-        })
-      })
-
-      const receipt = await publicClient.waitForTransactionReceipt({ 
-        hash,
-        confirmations: 2 // Wait for 2 confirmations for safety
-      })
-
-      // Get the game ID from the receipt
-      await this.rateLimit('getNextGameId')
-      const nextGameId = await publicClient.readContract({
+      // Create the game using CreateGameParams struct
+      const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
-        functionName: 'nextGameId'
+        functionName: 'createGame',
+        args: [{
+          nftContract: params.nftContract,
+          tokenId: params.tokenId,
+          priceUSD: priceUSDFormatted,
+          acceptedToken: params.acceptedToken || 0,
+          maxRounds: 5, // Default to 5 rounds
+          authInfo: params.authInfo || ''
+        }]
       })
-      const gameId = Number(nextGameId) - 1
+
+      // Wait for transaction
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      // Get the game ID from the event
+      const gameCreatedEvent = receipt.logs.find(log => 
+        log.topics[0] === '0x' + CONTRACT_ABI.find(abi => abi.name === 'GameCreated')?.hash
+      )
+      const gameId = gameCreatedEvent?.topics[1]
 
       return {
         success: true,
-        gameId: gameId.toString(),
-        transactionHash: hash,
-        receipt
+        gameId: gameId?.toString(),
+        transactionHash: hash
       }
     } catch (error) {
       console.error('❌ Error creating game:', error)

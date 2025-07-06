@@ -163,7 +163,7 @@ const CreateFlip = () => {
 
     try {
       // Ensure contract service is initialized with current wallet
-      if (!contractService.chainId || contractService.chainId !== chainId || !contractService.clients[chainId]?.wallet) {
+      if (!contractService.walletClient || contractService.chainId !== chainId) {
         console.log('Re-initializing contract service...')
         await contractService.initializeClients(chainId, walletClient)
         // Add small delay for MetaMask
