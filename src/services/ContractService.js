@@ -24,6 +24,21 @@ const CONTRACT_ABI = [
     ],
     outputs: [{ name: '', type: 'uint256' }]
   },
+  // GameCreated event
+  {
+    name: 'GameCreated',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'gameId', type: 'uint256', indexed: true },
+      { name: 'creator', type: 'address', indexed: true },
+      { name: 'nftContract', type: 'address', indexed: true },
+      { name: 'tokenId', type: 'uint256', indexed: false },
+      { name: 'priceUSD', type: 'uint256', indexed: false },
+      { name: 'acceptedToken', type: 'uint8', indexed: false },
+      { name: 'authInfo', type: 'string', indexed: false }
+    ]
+  },
   // Join Game
   {
     name: 'joinGame',
@@ -403,15 +418,19 @@ class ContractService {
       // Wait for transaction
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
       
-      // Get the game ID from the event
-      const gameCreatedEvent = receipt.logs.find(log => 
-        log.topics[0] === '0x' + CONTRACT_ABI.find(abi => abi.name === 'GameCreated')?.hash
-      )
-      const gameId = gameCreatedEvent?.topics[1]
+      // Get the current nextGameId and subtract 1 to get the created game ID
+      const nextGameId = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'nextGameId'
+      })
+      
+      const gameId = (nextGameId - 1n).toString()
+      console.log('✅ Game created with ID:', gameId)
 
       return {
         success: true,
-        gameId: gameId?.toString(),
+        gameId: gameId,
         transactionHash: hash
       }
     } catch (error) {

@@ -197,7 +197,7 @@ export const WalletProvider = ({ children }) => {
     
     // Chain info
     chainId,
-    chain: chains[chainId] || { name: 'Unknown', symbol: 'ETH' },
+    chain: chains[chainId] ? { ...chains[chainId], id: chainId } : { name: 'Unknown', symbol: 'ETH', id: chainId },
     chains,
     
     // Functions
