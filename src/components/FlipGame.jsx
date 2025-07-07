@@ -602,12 +602,25 @@ const FlipGame = () => {
       setIsMobileScreen(newIsMobile)
       setScreenSizeDetermined(true)
     }
-    
+
     checkScreenSize()
     window.addEventListener('resize', checkScreenSize)
-    
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [isMobileScreen])
+
+  // Initialize contract service when wallet is connected
+  useEffect(() => {
+    if (isFullyConnected && walletClient) {
+      const chainId = 8453 // Base network
+      contractService.initializeClients(chainId, walletClient)
+        .then(() => {
+          console.log('✅ Contract service initialized for chain: base')
+        })
+        .catch(error => {
+          console.error('❌ Failed to initialize contract service:', error)
+        })
+    }
+  }, [isFullyConnected, walletClient])
 
   // WebSocket connection
   useEffect(() => {
@@ -1188,6 +1201,11 @@ const FlipGame = () => {
     try {
       showInfo('Joining game...')
 
+      // Update database
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      let paymentTxHash = null
+      let joinParams = null
+      
       // Use smart contract for payment
       if (gameData.contract_game_id) {
         // Validate game ID
@@ -1198,7 +1216,7 @@ const FlipGame = () => {
         
         console.log('🎮 Joining game with ID:', gameIdNum)
         
-        const joinParams = {
+        joinParams = {
           gameId: gameIdNum,
           coinChoice: 0, // Default to HEADS
           roleChoice: 1, // CHOOSER role
@@ -1206,28 +1224,24 @@ const FlipGame = () => {
           challengerNFTContract: null,
           challengerTokenId: null
         }
-      }
-
-      // Update database
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      let paymentTxHash = null
-      
-      try {
-        const result = await contractService.joinGame(joinParams)
         
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to join game')
+        try {
+          const result = await contractService.joinGame(joinParams)
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to join game')
+          }
+
+          console.log('✅ Payment processed on blockchain:', result)
+          paymentTxHash = result.transactionHash
+        } catch (contractError) {
+          console.error('❌ Contract error:', contractError)
+          
+          // If contract fails, try to join without blockchain payment
+          console.log('🔄 Falling back to database-only join...')
+          
+          // Continue with database update only
         }
-
-        console.log('✅ Payment processed on blockchain:', result)
-        paymentTxHash = result.transactionHash
-      } catch (contractError) {
-        console.error('❌ Contract error:', contractError)
-        
-        // If contract fails, try to join without blockchain payment
-        console.log('🔄 Falling back to database-only join...')
-        
-        // Continue with database update only
       }
 
       const response = await fetch(`${API_URL}/api/games/${gameId}/join`, {
@@ -3770,24 +3784,6 @@ const getMarketplaceUrl = (chain) => {
     // Add more chains as needed
   }
   return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
-}
-
-// Add the missing fetchNFTData function
-const fetchNFTData = async (gameId) => {
-  try {
-    setIsLoadingNFT(true)
-    console.log('🎨 Fetching NFT data for game:', gameId)
-    const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
-    if (!response.ok) throw new Error('Failed to fetch NFT data')
-    const data = await response.json()
-    console.log('✅ NFT data received:', data)
-    setNftData(data)
-  } catch (error) {
-    console.error('❌ Error fetching NFT data:', error)
-    setNftData(null)
-  } finally {
-    setIsLoadingNFT(false)
-  }
 }
 
 export default FlipGame

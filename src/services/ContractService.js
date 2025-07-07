@@ -158,6 +158,16 @@ const CONTRACT_ABI = [
     stateMutability: 'view',
     inputs: [{ name: 'user', type: 'address' }],
     outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'completeGame',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'winner', type: 'address' }
+    ],
+    outputs: []
   }
 ]
 
@@ -716,6 +726,26 @@ class ContractService {
     }
   }
 
+  // Get ETH amount for USD value (matches contract function)
+  async getETHAmount(usdAmount) {
+    try {
+      const { public: publicClient } = this.getCurrentClients()
+      
+      const result = await publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'getETHAmount',
+        args: [BigInt(usdAmount)]
+      })
+      
+      return result
+    } catch (error) {
+      console.error('Error getting ETH amount:', error)
+      // Fallback calculation (rough estimate)
+      return BigInt(usdAmount) * 1000000000000000000n / 2000000000000000000000n // Assuming $2000 ETH
+    }
+  }
+
   // Approve NFT for transfer
   async approveNFT(nftContract, tokenId) {
     try {
@@ -989,11 +1019,50 @@ class ContractService {
 
       console.log('🎮 Joining game with params:', params)
 
+      // Get game details to determine payment requirements
+      const gameDetails = await this.getGameDetails(params.gameId)
+      if (!gameDetails.success) {
+        throw new Error('Failed to get game details: ' + gameDetails.error)
+      }
+
+      const game = gameDetails.data.game
+      
+      // Determine payment parameters based on game type
+      let paymentToken = 0 // ETH by default
+      let challengerNFTContract = '0x0000000000000000000000000000000000000000'
+      let challengerTokenId = 0n
+      let value = 0n
+
+      if (game.gameType === 1) { // NFT vs NFT
+        // For NFT vs NFT, we need the challenger NFT
+        if (!params.challengerNFTContract || !params.challengerTokenId) {
+          throw new Error('NFT vs NFT games require challenger NFT contract and token ID')
+        }
+        challengerNFTContract = params.challengerNFTContract
+        challengerTokenId = BigInt(params.challengerTokenId)
+        
+        // Approve the challenger NFT
+        const approvalResult = await this.approveNFT(challengerNFTContract, params.challengerTokenId)
+        if (!approvalResult.success && !approvalResult.alreadyApproved) {
+          throw new Error('Failed to approve challenger NFT: ' + approvalResult.error)
+        }
+      } else { // NFT vs Crypto
+        // For NFT vs Crypto, we need to pay the entry fee
+        paymentToken = params.paymentToken || 0 // 0 = ETH, 1 = USDC
+        value = await this.getETHAmount(game.priceUSD)
+      }
+
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'joinGame',
-        args: [BigInt(params.gameId), params.choice || 0]
+        args: [
+          BigInt(params.gameId), 
+          paymentToken,
+          challengerNFTContract,
+          challengerTokenId
+        ],
+        value: value
       })
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -1003,7 +1072,7 @@ class ContractService {
         transactionHash: hash
       }
     } catch (error) {
-      console.error('Error joining game:', error)
+      console.error('❌ Contract error:', error)
       return {
         success: false,
         error: error.message
@@ -1011,20 +1080,20 @@ class ContractService {
     }
   }
 
-  // Flip coin (using working pattern from references)
-  async flipCoin(params) {
+  // Complete game (called by frontend after determining winner)
+  async completeGame(gameId, winner) {
     try {
       if (!this.walletClient) {
         throw new Error('Contract not initialized with wallet client')
       }
 
-      console.log('🪙 Flipping coin with params:', params)
+      console.log('🏆 Completing game:', { gameId, winner })
 
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
-        functionName: 'flip',
-        args: [BigInt(params.gameId), params.power || 0]
+        functionName: 'completeGame',
+        args: [BigInt(gameId), winner]
       })
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -1034,7 +1103,7 @@ class ContractService {
         transactionHash: hash
       }
     } catch (error) {
-      console.error('Error flipping coin:', error)
+      console.error('Error completing game:', error)
       return {
         success: false,
         error: error.message
