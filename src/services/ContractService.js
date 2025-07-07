@@ -497,6 +497,19 @@ class ContractService {
       // Convert price to USD with 6 decimals (e.g., $1.50 = 1500000)
       const priceUSDFormatted = Math.floor(params.priceUSD * 1000000)
 
+      // Get listing fee in ETH
+      const listingFeeETH = await this.retryWithBackoff(async () => {
+        await this.rateLimit('getListingFee')
+        return await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'getETHAmount',
+          args: [BigInt(200000)] // $0.20 listing fee in 6 decimals
+        })
+      })
+
+      console.log('💰 Listing fee in ETH:', listingFeeETH.toString())
+
       // Estimate gas
       const gasEstimate = await this.retryWithBackoff(async () => {
         await this.rateLimit('estimateCreateGas')
@@ -512,7 +525,8 @@ class ContractService {
             maxRounds: 5,
             authInfo: params.authInfo || ''
           }],
-          account
+          account,
+          value: listingFeeETH
         })
       })
 
@@ -520,7 +534,7 @@ class ContractService {
       const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
 
       // Create the game
-      console.log('📝 Creating game on blockchain...')
+      console.log('📝 Creating game on blockchain with listing fee...')
       const hash = await this.retryWithBackoff(async () => {
         await this.rateLimit('createGameTx')
         return await walletClient.writeContract({
@@ -536,6 +550,7 @@ class ContractService {
             authInfo: params.authInfo || ''
           }],
           account,
+          value: listingFeeETH,
           gas: gasLimit,
           maxFeePerGas,
           maxPriorityFeePerGas
