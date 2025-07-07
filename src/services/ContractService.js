@@ -597,11 +597,11 @@ class ContractService {
         const nftMetadata = await this.getNFTMetadata(params.nftContract, params.tokenId)
         
         const gameData = {
-          creator_address: account,
-          creator_nft_contract: params.nftContract,
-          creator_nft_id: params.tokenId.toString(),
-          creator_nft_name: nftMetadata?.name || 'Unknown NFT',
-          creator_nft_image: nftMetadata?.image || '',
+          creator: account,
+          nft_contract: params.nftContract,
+          nft_token_id: params.tokenId.toString(),
+          nft_name: nftMetadata?.name || 'Unknown NFT',
+          nft_image: nftMetadata?.image || '',
           price_usd: params.priceUSD,
           game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
           status: 'waiting',
