@@ -1274,12 +1274,16 @@ const FlipGame = () => {
           },
           body: JSON.stringify({
             joinerAddress: address,
-            transactionHash: result.transactionHash
+            paymentTxHash: result.transactionHash,
+            paymentAmount: gameData.price_usd
           })
         })
 
         if (!response.ok) {
-          console.warn('Failed to update database after join:', await response.text())
+          const errorText = await response.text()
+          console.warn('Failed to update database after join:', errorText)
+        } else {
+          console.log('✅ Database updated successfully after join')
         }
       } catch (dbError) {
         console.warn('Database update failed, but blockchain join succeeded:', dbError)
