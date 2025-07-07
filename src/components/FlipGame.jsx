@@ -981,9 +981,17 @@ const FlipGame = () => {
   useEffect(() => {
     if (gameData?.coin) {
       console.log('🪙 Setting coin data from gameData:', gameData.coin)
+      console.log('🪙 Coin details:', {
+        id: gameData.coin.id,
+        name: gameData.coin.name,
+        headsImage: gameData.coin.headsImage,
+        tailsImage: gameData.coin.tailsImage
+      })
       setGameCoin(gameData.coin)
       setCustomHeadsImage(gameData.coin.headsImage)
       setCustomTailsImage(gameData.coin.tailsImage)
+    } else {
+      console.log('🪙 No coin data found in gameData')
     }
   }, [gameData?.coin])
 
@@ -1291,6 +1299,24 @@ const FlipGame = () => {
 
       showSuccess('Successfully joined the game!')
       
+      // Send WebSocket message to notify server that join is complete
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        const joinMessage = {
+          type: 'join_game',
+          gameId,
+          role: 'joiner',
+          address,
+          entryFeeHash: result.transactionHash
+        }
+        console.log('🎮 Sending join completion message to server:', joinMessage)
+        socket.send(JSON.stringify(joinMessage))
+      } else {
+        console.warn('⚠️ Cannot send join completion message - socket not ready:', {
+          hasSocket: !!socket,
+          readyState: socket?.readyState
+        })
+      }
+      
       // Reload game data to get updated state
       setTimeout(() => {
         loadGame()
@@ -1358,6 +1384,23 @@ const FlipGame = () => {
       setShowResultPopup(true)
     }
   }, [gameState?.phase, gameState?.winner, address, gameData])
+
+  // Debug effect to monitor game state changes
+  useEffect(() => {
+    if (gameState) {
+      console.log('🎮 Game state updated:', {
+        phase: gameState.phase,
+        currentPlayer: gameState.currentPlayer,
+        creator: gameState.creator,
+        joiner: gameState.joiner,
+        currentRound: gameState.currentRound,
+        creatorWins: gameState.creatorWins,
+        joinerWins: gameState.joinerWins,
+        isFlipInProgress: gameState.isFlipInProgress,
+        turnTimeLeft: gameState.turnTimeLeft
+      })
+    }
+  }, [gameState])
 
   const handleShare = (platform) => {
     const shareText = `Join my game of Crypto Flipz! Game ID: ${gameId}`;
@@ -2869,8 +2912,8 @@ const FlipGame = () => {
                       joinerChoice={gameState?.joinerChoice}
                       isCreator={isCreator}
                       size={440}
-                      customHeadsImage={customHeadsImage || '/coins/plainh.png'}
-                      customTailsImage={customTailsImage || '/coins/plaint.png'}
+                      customHeadsImage={customHeadsImage || gameCoin?.headsImage || '/coins/plainh.png'}
+                      customTailsImage={customTailsImage || gameCoin?.tailsImage || '/coins/plaint.png'}
                     />
                   </div>
 

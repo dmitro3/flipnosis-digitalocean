@@ -34,6 +34,7 @@ const OptimizedGoldCoin = ({
   customTailsImage = null,
 }) => {
   console.log('🪙 OptimizedGoldCoin rendering with size:', size, 'props:', { isFlipping, flipResult, isPlayerTurn })
+  console.log('🪙 Coin images:', { customHeadsImage, customTailsImage })
   console.log('🪙 Component timestamp:', Date.now()) // Cache buster
   
   const mountRef = useRef(null)

@@ -613,8 +613,12 @@ class ContractService {
           game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
           status: 'waiting',
           transaction_hash: hash,
-          contract_game_id: gameId
+          contract_game_id: gameId,
+          coin: params.coin ? JSON.stringify(params.coin) : null // Store coin data as JSON string
         }
+
+        console.log('🪙 Storing coin data in database:', params.coin)
+        console.log('🪙 Coin data as JSON string:', JSON.stringify(params.coin))
 
         await fetch(`${API_URL}/api/games`, {
           method: 'POST',

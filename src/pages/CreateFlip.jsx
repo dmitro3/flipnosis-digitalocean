@@ -94,7 +94,13 @@ const CreateFlip = () => {
   const [loading, setLoading] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [nftsLoading, setNftsLoading] = useState(false)
-  const [selectedCoin, setSelectedCoin] = useState('default')
+  const [selectedCoin, setSelectedCoin] = useState({
+    id: 'plain',
+    type: 'default',
+    name: 'Classic',
+    headsImage: '/coins/plainh.png',
+    tailsImage: '/coins/plaint.png'
+  })
 
   // Initialize contract service when wallet is connected
   useEffect(() => {
@@ -176,10 +182,12 @@ const CreateFlip = () => {
         priceUSD: parseFloat(price),
         acceptedToken: 0, // ETH
         gameType: gameType === 'nft-vs-nft' ? 1 : 0,
-        authInfo: ''
+        authInfo: '',
+        coin: selectedCoin // Include the selected coin data
       }
 
       console.log('🎮 Creating game with params:', createParams)
+      console.log('🪙 Coin data being sent:', selectedCoin)
       
       const result = await contractService.createGame(createParams)
 
@@ -258,7 +266,10 @@ const CreateFlip = () => {
                 <Label>Select Your Coin</Label>
                 <CoinSelector
                   selectedCoin={selectedCoin}
-                  onCoinSelect={setSelectedCoin}
+                  onCoinSelect={(coin) => {
+                    console.log('🪙 Coin selected in CreateFlip:', coin)
+                    setSelectedCoin(coin)
+                  }}
                 />
               </FormGroup>
 

@@ -959,10 +959,29 @@ class GameSession {
 
   // NEW: Complete join process
   async completeJoinProcess(address, entryFeeHash) {
-    if (!this.joinInProgress || this.joiningPlayer !== address) {
+    // Check if this is a valid join process OR if the player has already joined via smart contract
+    if ((!this.joinInProgress || this.joiningPlayer !== address) && this.joiner !== address) {
       return { success: false, error: 'No valid join process for this player' }
     }
     
+    // If player has already joined via smart contract, just complete the process
+    if (this.joiner === address && this.phase === 'ready') {
+      console.log('✅ Player already joined via smart contract, completing process for:', address)
+      this.joinInProgress = false
+      this.joiningPlayer = null
+      
+      // Auto-start the choosing phase after 2 seconds
+      setTimeout(() => {
+        if (this.phase === 'ready' && this.creator && this.joiner) {
+          console.log('🚀 AUTO-STARTING game - entering choosing phase WITH TIMER')
+          this.startGameWithTimer()
+        }
+      }, 2000)
+      
+      return { success: true }
+    }
+    
+    // Normal join process completion
     this.joiner = address
     this.phase = 'ready'
     this.joinInProgress = false
@@ -1729,15 +1748,23 @@ async function handleMessage(ws, data) {
         role: data.role,
         address: data.address,
         entryFeeHash: data.entryFeeHash,
-        currentPhase: session.phase
+        currentPhase: session.phase,
+        sessionJoiner: session.joiner,
+        sessionCreator: session.creator
       })
       
       if (data.role === 'joiner' && data.entryFeeHash) {
         console.log('🎯 Completing join process')
         const joinResult = await session.completeJoinProcess(data.address, data.entryFeeHash)
+        console.log('🎯 Join process result:', joinResult)
         if (joinResult.success) {
           // Now add them as a player client
           session.addClient(ws, data.address)
+          console.log('✅ Joiner added as client, broadcasting game state')
+          session.broadcastGameState()
+        } else {
+          console.log('❌ Join process failed:', joinResult.error)
+          ws.send(JSON.stringify({ type: 'error', error: joinResult.error }))
         }
       } else if (data.role === 'creator') {
         console.log('🎯 Creator connecting to game')

@@ -11,7 +11,7 @@ const CoinSelector = ({
   const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
   const [customHeadsImage, setCustomHeadsImage] = useState(null)
   const [customTailsImage, setCustomTailsImage] = useState(null)
-  const [selectedCoinType, setSelectedCoinType] = useState(selectedCoin?.type || null)
+  const [selectedCoinType, setSelectedCoinType] = useState(selectedCoin?.id || 'plain')
 
   // Default coin options
   const defaultCoins = [
@@ -45,6 +45,13 @@ const CoinSelector = ({
     }
   ]
 
+  // Update selected coin type when selectedCoin prop changes
+  useEffect(() => {
+    if (selectedCoin?.id) {
+      setSelectedCoinType(selectedCoin.id)
+    }
+  }, [selectedCoin?.id])
+
   // Load user's custom coin images
   useEffect(() => {
     const loadCustomCoin = async () => {
@@ -71,6 +78,7 @@ const CoinSelector = ({
   }, [address, getCoinHeadsImage, getCoinTailsImage])
 
   const handleCoinSelect = (coin) => {
+    console.log('🪙 Coin selected:', coin)
     setSelectedCoinType(coin.id)
     
     // For default coins, only send the essential data (not large image data)
@@ -82,9 +90,11 @@ const CoinSelector = ({
         headsImage: coin.headsImage, // These are just paths, not large data
         tailsImage: coin.tailsImage
       }
+      console.log('🪙 Sending optimized coin to parent:', optimizedCoin)
       onCoinSelect(optimizedCoin)
     } else {
       // For custom coins, send the full data (which includes base64 images)
+      console.log('🪙 Sending custom coin to parent:', coin)
       onCoinSelect(coin)
     }
   }
