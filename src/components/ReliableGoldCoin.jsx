@@ -719,7 +719,7 @@ const ReliableGoldCoin = ({
       <canvas style={{ width: '100%', height: '100%' }} />
       
       {/* Debug overlay - only show in development */}
-      {process.env.NODE_ENV === 'development' && (
+              {false && ( // Disabled development mode
         <div style={{
           position: 'absolute',
           top: '-100px',

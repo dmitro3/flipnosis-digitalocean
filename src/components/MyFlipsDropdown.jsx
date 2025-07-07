@@ -137,7 +137,7 @@ const MyFlipsDropdown = () => {
     
     try {
       setLoading(true)
-      const API_URL = import.meta.env.VITE_API_URL || 'https://cryptoflipz2-production.up.railway.app'
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
       const response = await fetch(`${API_URL}/api/games?creator=${address}`)
       
       if (!response.ok) {
@@ -162,7 +162,7 @@ const MyFlipsDropdown = () => {
 
   const handleCancelFlip = async (gameId) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'https://cryptoflipz2-production.up.railway.app'
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
       const response = await fetch(`${API_URL}/api/games/${gameId}/delist`, {
         method: 'POST',
         headers: {

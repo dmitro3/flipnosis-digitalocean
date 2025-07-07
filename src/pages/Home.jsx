@@ -186,7 +186,7 @@ const Home = () => {
 
 
   // API URL - will be Railway URL in production
-  const API_URL = import.meta.env.VITE_API_URL || 'https://cryptoflipz2-production.up.railway.app'
+  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
   // Debug logging
   useEffect(() => {

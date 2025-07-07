@@ -635,9 +635,8 @@ const FlipGame = () => {
     let reconnectTimer
 
     const connect = () => {
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? 'wss://cryptoflipz2-production.up.railway.app' 
-        : 'ws://localhost:3001'
+      // Always use production WebSocket server since local development server doesn't exist
+      const wsUrl = 'wss://cryptoflipz2-production.up.railway.app'
       
       console.log('🔌 Connecting to WebSocket:', wsUrl)
       const ws = new WebSocket(wsUrl)
@@ -886,7 +885,7 @@ const FlipGame = () => {
   // Add helper function to update database
   const updateGameInDatabase = async (updates) => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'https://cryptoflipz2-production.up.railway.app'
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
       
       const response = await fetch(`${API_URL}/api/games/${gameId}`, {
         method: 'PATCH',
@@ -1201,73 +1200,101 @@ const FlipGame = () => {
     try {
       showInfo('Joining game...')
 
-      // Update database
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      let paymentTxHash = null
-      let joinParams = null
-      
-      // Use smart contract for payment
-      if (gameData.contract_game_id) {
-        // Validate game ID
-        const gameIdNum = parseInt(gameData.contract_game_id)
-        if (isNaN(gameIdNum) || gameIdNum <= 0) {
-          throw new Error('Invalid game ID: ' + gameData.contract_game_id)
-        }
+      // First, ensure contract service is initialized
+      if (!contractService.isInitialized() && walletClient) {
+        console.log('🔄 Reinitializing contract service...')
+        const chainId = 8453 // Base network
+        await contractService.initializeClients(chainId, walletClient)
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Longer delay for initialization
         
-        console.log('🎮 Joining game with ID:', gameIdNum)
-        
-        joinParams = {
-          gameId: gameIdNum,
-          coinChoice: 0, // Default to HEADS
-          roleChoice: 1, // CHOOSER role
-          paymentToken: 0, // ETH
-          challengerNFTContract: null,
-          challengerTokenId: null
-        }
-        
-        try {
-          const result = await contractService.joinGame(joinParams)
-          
-          if (!result.success) {
-            throw new Error(result.error || 'Failed to join game')
-          }
-
-          console.log('✅ Payment processed on blockchain:', result)
-          paymentTxHash = result.transactionHash
-        } catch (contractError) {
-          console.error('❌ Contract error:', contractError)
-          
-          // If contract fails, try to join without blockchain payment
-          console.log('🔄 Falling back to database-only join...')
-          
-          // Continue with database update only
+        // Double-check initialization
+        if (!contractService.isInitialized()) {
+          throw new Error('Failed to initialize contract service. Please reconnect your wallet.')
         }
       }
 
-      const response = await fetch(`${API_URL}/api/games/${gameId}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          joinerAddress: address,
-          paymentTxHash: paymentTxHash,
-          paymentAmount: gameData.price_usd || 0
-        })
-      })
+      // Prepare join parameters
+      const joinParams = {
+        gameId: gameId,
+        paymentToken: 0, // 0 = ETH
+        challengerNFTContract: null,
+        challengerTokenId: null
+      }
 
-      if (!response.ok) {
-        throw new Error('Failed to update game status')
+      console.log('🎮 Joining game with smart contract:', joinParams)
+
+      // Try to join game using smart contract with retry logic
+      let result
+      let retryCount = 0
+      const maxRetries = 2
+      
+      while (retryCount < maxRetries) {
+        try {
+          result = await contractService.joinGame(joinParams)
+          break // Success, exit retry loop
+        } catch (error) {
+          retryCount++
+          console.log(`🔄 Join game attempt ${retryCount}/${maxRetries} failed:`, error.message)
+          
+          if (error.message.includes('reinitialized') && retryCount < maxRetries) {
+            // Try to reinitialize and retry
+            console.log('🔄 Attempting to reinitialize contract service...')
+            const chainId = 8453
+            await contractService.initializeClients(chainId, walletClient)
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            continue
+          }
+          
+          if (error.message.includes('validation failed') && retryCount < maxRetries) {
+            // Try to refresh wallet client and retry
+            console.log('🔄 Attempting to refresh wallet client...')
+            await contractService.refreshWalletClient(walletClient)
+            await new Promise(resolve => setTimeout(resolve, 500))
+            continue
+          }
+          
+          if (retryCount >= maxRetries) {
+            throw error
+          }
+        }
+      }
+      
+      if (!result.success) {
+        // If contract join fails, don't automatically fall back to database
+        // This prevents issues with incorrect game state
+        throw new Error(result.error || 'Failed to join game')
+      }
+
+      // Update database after successful blockchain join
+      try {
+        const response = await fetch(`${API_URL}/api/games/${gameId}/join`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            joinerAddress: address,
+            transactionHash: result.transactionHash
+          })
+        })
+
+        if (!response.ok) {
+          console.warn('Failed to update database after join:', await response.text())
+        }
+      } catch (dbError) {
+        console.warn('Database update failed, but blockchain join succeeded:', dbError)
       }
 
       showSuccess('Successfully joined the game!')
       
-      // Reload game data
+      // Reload game data to get updated state
       setTimeout(() => {
         loadGame()
-      }, 1000)
+      }, 2000)
 
     } catch (error) {
       console.error('❌ Error joining game:', error)
-      showError(`Failed to join game: ${error.message}`)
+      showError(error.message || 'Failed to join game')
     } finally {
       setJoiningGame(false)
     }
