@@ -54,19 +54,15 @@ const CONTRACT_ABI = [
   {
     name: 'createGame',
     type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{
-      name: 'params',
-      type: 'tuple',
-      components: [
-        { name: 'nftContract', type: 'address' },
-        { name: 'tokenId', type: 'uint256' },
-        { name: 'priceUSD', type: 'uint256' },
-        { name: 'acceptedToken', type: 'uint8' },
-        { name: 'maxRounds', type: 'uint8' },
-        { name: 'authInfo', type: 'string' }
-      ]
-    }],
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'priceUSD', type: 'uint256' },
+      { name: 'acceptedToken', type: 'uint8' },
+      { name: 'gameType', type: 'uint8' },
+      { name: 'authInfo', type: 'string' }
+    ],
     outputs: [{ name: 'gameId', type: 'uint256' }]
   },
   {
@@ -517,14 +513,14 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'createGame',
-          args: [{
-            nftContract: params.nftContract,
-            tokenId: BigInt(params.tokenId),
-            priceUSD: BigInt(priceUSDFormatted),
-            acceptedToken: params.acceptedToken || 0,
-            maxRounds: 5,
-            authInfo: params.authInfo || ''
-          }],
+          args: [
+            params.nftContract,
+            BigInt(params.tokenId),
+            BigInt(priceUSDFormatted),
+            params.acceptedToken || 0,
+            params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
+            params.authInfo || ''
+          ],
           account,
           value: listingFeeETH
         })
@@ -541,14 +537,14 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'createGame',
-          args: [{
-            nftContract: params.nftContract,
-            tokenId: BigInt(params.tokenId),
-            priceUSD: BigInt(priceUSDFormatted),
-            acceptedToken: params.acceptedToken || 0,
-            maxRounds: 5,
-            authInfo: params.authInfo || ''
-          }],
+          args: [
+            params.nftContract,
+            BigInt(params.tokenId),
+            BigInt(priceUSDFormatted),
+            params.acceptedToken || 0,
+            params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
+            params.authInfo || ''
+          ],
           account,
           value: listingFeeETH,
           gas: gasLimit,
