@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar, Activity, DollarSign, Users, Shield, Settings, Search, ChevronDown, ChevronUp, Wallet, TrendingUp, AlertCircle, CheckCircle, XCircle, RefreshCw, Send, Eye, User, Coins, Image, BarChart3, Gamepad2, Crown, Zap } from 'lucide-react'
+import { Calendar, Activity, DollarSign, Users, Shield, Settings, Search, ChevronDown, ChevronUp, Wallet, TrendingUp, AlertCircle, CheckCircle, XCircle, RefreshCw, Send, Eye, User, Coins, Image, BarChart3, Gamepad2, Crown, Zap, Download, Package } from 'lucide-react'
 import styled from '@emotion/styled'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import { useWallet } from '../contexts/WalletContext'
@@ -7,19 +7,189 @@ import contractService from '../services/ContractService'
 import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit'
 import EmergencyRecovery from './EmergencyRecovery'
 
-// Contract ABI (simplified - you'll need to add the full ABI)
+// Contract ABI - Full ABI matching the NFTFlipGame contract
 const CONTRACT_ABI = [
-  "function setPlatformFeePercent(uint256 _newPercent)",
-  "function setListingFee(uint256 _newFeeUSD)",
-  "function emergencyWithdrawNFT(address nftContract, uint256 tokenId, address to)",
-  "function emergencyWithdrawETH(address to, uint256 amount)",
-  "function emergencyWithdrawToken(address token, address to, uint256 amount)",
-  "function platformFeePercent() view returns (uint256)",
-  "function listingFeeUSD() view returns (uint256)",
-  "function getGameDetails(uint256 gameId) view returns (tuple(uint256 gameId, address creator, address joiner, address nftContract, uint256 tokenId, uint8 state, uint8 gameType, uint8 creatorRole, uint8 joinerRole, uint8 joinerChoice), tuple(uint256 priceUSD, uint8 acceptedToken, uint256 totalPaid, uint8 paymentTokenUsed, uint256 listingFeePaid, uint256 platformFeeCollected), tuple(uint256 createdAt, uint256 expiresAt, uint8 maxRounds, uint8 currentRound, uint8 creatorWins, uint8 joinerWins, address winner, uint256 lastActionTime, uint256 countdownEndTime))",
-  "function unclaimedETH(address) view returns (uint256)",
-  "function unclaimedUSDC(address) view returns (uint256)",
-  "function getUserUnclaimedNFTs(address user, address nftContract) view returns (uint256[])"
+  // Events
+  {
+    name: 'GameCreated',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'gameId', type: 'uint256' },
+      { indexed: true, name: 'creator', type: 'address' },
+      { indexed: true, name: 'gameType', type: 'uint8' }
+    ]
+  },
+  {
+    name: 'GameJoined',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'gameId', type: 'uint256' },
+      { indexed: true, name: 'joiner', type: 'address' }
+    ]
+  },
+  {
+    name: 'GameCompleted',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'gameId', type: 'uint256' },
+      { indexed: true, name: 'winner', type: 'address' }
+    ]
+  },
+  {
+    name: 'GameCancelled',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'gameId', type: 'uint256' }
+    ]
+  },
+  {
+    name: 'RewardsWithdrawn',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'player', type: 'address' },
+      { indexed: false, name: 'ethAmount', type: 'uint256' },
+      { indexed: false, name: 'usdcAmount', type: 'uint256' }
+    ]
+  },
+  {
+    name: 'NFTWithdrawn',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'player', type: 'address' },
+      { indexed: true, name: 'nftContract', type: 'address' },
+      { indexed: false, name: 'tokenId', type: 'uint256' }
+    ]
+  },
+  // Functions
+  {
+    name: 'nextGameId',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'games',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'gameId', type: 'uint256' }],
+    outputs: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'creator', type: 'address' },
+      { name: 'joiner', type: 'address' },
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'state', type: 'uint8' },
+      { name: 'gameType', type: 'uint8' },
+      { name: 'priceUSD', type: 'uint256' },
+      { name: 'paymentToken', type: 'uint8' },
+      { name: 'totalPaid', type: 'uint256' },
+      { name: 'winner', type: 'address' },
+      { name: 'createdAt', type: 'uint256' },
+      { name: 'expiresAt', type: 'uint256' }
+    ]
+  },
+  {
+    name: 'getGameDetails',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'gameId', type: 'uint256' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'gameId', type: 'uint256' },
+          { name: 'creator', type: 'address' },
+          { name: 'joiner', type: 'address' },
+          { name: 'nftContract', type: 'address' },
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'state', type: 'uint8' },
+          { name: 'gameType', type: 'uint8' },
+          { name: 'priceUSD', type: 'uint256' },
+          { name: 'paymentToken', type: 'uint8' },
+          { name: 'totalPaid', type: 'uint256' },
+          { name: 'winner', type: 'address' },
+          { name: 'createdAt', type: 'uint256' },
+          { name: 'expiresAt', type: 'uint256' }
+        ]
+      },
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'challengerNFTContract', type: 'address' },
+          { name: 'challengerTokenId', type: 'uint256' }
+        ]
+      }
+    ]
+  },
+  {
+    name: 'emergencyWithdrawNFT',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'to', type: 'address' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'adminBatchWithdrawNFTs',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'nftContracts', type: 'address[]' },
+      { name: 'tokenIds', type: 'uint256[]' },
+      { name: 'recipients', type: 'address[]' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'getExpiredGames',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'startIndex', type: 'uint256' },
+      { name: 'count', type: 'uint256' }
+    ],
+    outputs: [{ name: '', type: 'uint256[]' }]
+  },
+  {
+    name: 'listingFeeUSD',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'platformFeePercent',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'setListingFee',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'newFee', type: 'uint256' }],
+    outputs: []
+  },
+  {
+    name: 'setPlatformFee',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'newPercent', type: 'uint256' }],
+    outputs: []
+  }
 ]
 
 // Contract addresses for different chains
@@ -382,6 +552,12 @@ export default function AdminPanel() {
   
   const [expandedGame, setExpandedGame] = useState(null)
   const [notifications, setNotifications] = useState([])
+
+  // NFT Management state
+  const [contractNFTs, setContractNFTs] = useState([])
+  const [isLoadingNFTs, setIsLoadingNFTs] = useState(false)
+  const [selectedNFTsForWithdrawal, setSelectedNFTsForWithdrawal] = useState([])
+  const [withdrawalAddress, setWithdrawalAddress] = useState('')
   
   // API URL
   const API_URL = 'https://cryptoflipz2-production.up.railway.app'
@@ -670,6 +846,229 @@ export default function AdminPanel() {
       addNotification('error', 'Failed to cancel game')
     }
   }
+
+  // NFT Management Functions
+  const loadContractNFTs = async () => {
+    if (!contractService.isInitialized()) {
+      addNotification('error', 'Contract service not initialized')
+      return
+    }
+
+    try {
+      setIsLoadingNFTs(true)
+      addNotification('info', 'Loading NFTs from contract...')
+      
+      console.log('🔄 Loading NFTs from contract...')
+      
+      const nfts = []
+
+      // Known NFTs in the contract from BaseScan data
+      const knownNFTs = [
+        {
+          contract: '0x56b43C8D57a941B90c7e746Ad0dbF5dE9a231Bb9',
+          tokenId: 3610,
+          name: 'Based Bored Ape #3610'
+        },
+        {
+          contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
+          tokenId: 0,
+          name: 'BA2025 #0'
+        },
+        {
+          contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
+          tokenId: 1,
+          name: 'BA2025 #1'
+        },
+        {
+          contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
+          tokenId: 2,
+          name: 'BA2025 #2'
+        }
+      ]
+
+      console.log('🔍 Fetching known NFTs from contract...')
+      
+      const { public: publicClient } = contractService.getCurrentClients()
+      
+      // Also check if NFTs are in contract mappings (unclaimedNFTs, games, etc.)
+      console.log('🔍 Contract address being checked:', contractService.contractAddress)
+      
+      for (const nft of knownNFTs) {
+        try {
+          console.log(`📥 Fetching ${nft.name}...`)
+          const metadata = await contractService.getNFTMetadata(nft.contract, nft.tokenId)
+          console.log(`✅ Got metadata for ${nft.name}:`, metadata)
+          
+          nfts.push({
+            nftContract: nft.contract,
+            tokenId: nft.tokenId,
+            name: nft.name,
+            metadata: metadata,
+            uniqueKey: `${nft.contract}-${nft.tokenId}`,
+            source: 'contract'
+          })
+        } catch (error) {
+          console.warn(`❌ Failed to get metadata for ${nft.name}:`, error)
+          
+          // Still add the NFT even if metadata fails
+          nfts.push({
+            nftContract: nft.contract,
+            tokenId: nft.tokenId,
+            name: nft.name,
+            metadata: null,
+            uniqueKey: `${nft.contract}-${nft.tokenId}`,
+            source: 'contract'
+          })
+        }
+      }
+      
+      console.log('✅ Loaded NFTs from contract:', nfts.length)
+      console.log('📊 Final NFT data:', nfts)
+      setContractNFTs(nfts)
+      
+      addNotification('success', `Loaded ${nfts.length} NFTs from contract`)
+      
+    } catch (error) {
+      console.error('❌ Error loading contract NFTs:', error)
+      addNotification('error', 'Failed to load NFTs: ' + error.message)
+    } finally {
+      setIsLoadingNFTs(false)
+    }
+  }
+
+  const withdrawSelectedNFTs = async () => {
+    if (!contractService.isInitialized()) {
+      addNotification('error', 'Contract service not initialized')
+      return
+    }
+
+    if (selectedNFTsForWithdrawal.length === 0) {
+      addNotification('error', 'No NFTs selected for withdrawal')
+      return
+    }
+
+    const targetAddress = withdrawalAddress || walletAddress
+    if (!targetAddress || targetAddress === '') {
+      addNotification('error', 'Please enter withdrawal address or connect wallet')
+      return
+    }
+
+    try {
+      addNotification('info', 'Processing NFT withdrawal...')
+      
+      const { walletClient, public: publicClient } = contractService.getCurrentClients()
+      
+      // For each selected NFT, withdraw it individually using adminBatchWithdrawNFTs
+      const nftContracts = []
+      const tokenIds = []
+      const recipients = []
+      
+      for (const nft of selectedNFTsForWithdrawal) {
+        if (nft.nftContract !== '0x0000000000000000000000000000000000000000') {
+          nftContracts.push(nft.nftContract)
+          tokenIds.push(nft.tokenId)
+          recipients.push(targetAddress)
+        }
+      }
+      
+      if (nftContracts.length === 0) {
+        addNotification('error', 'No valid NFTs selected for withdrawal')
+        return
+      }
+      
+      // Check if NFTs are still in the contract before withdrawing
+      console.log('🔍 Checking if NFTs are still in contract before withdrawal...')
+      
+      for (let i = 0; i < nftContracts.length; i++) {
+        try {
+          const owner = await publicClient.readContract({
+            address: nftContracts[i],
+            abi: [
+              {
+                inputs: [{ name: 'tokenId', type: 'uint256' }],
+                name: 'ownerOf',
+                outputs: [{ name: '', type: 'address' }],
+                stateMutability: 'view',
+                type: 'function'
+              }
+            ],
+            functionName: 'ownerOf',
+            args: [tokenIds[i]]
+          })
+          
+          if (owner.toLowerCase() !== contractService.contractAddress.toLowerCase()) {
+            console.log(`⚠️ NFT ${nftContracts[i]}:${tokenIds[i]} is no longer in contract (owner: ${owner})`)
+            nftContracts.splice(i, 1)
+            tokenIds.splice(i, 1)
+            recipients.splice(i, 1)
+            i-- // Adjust index after removal
+          }
+        } catch (error) {
+          console.warn(`Failed to check owner of ${nftContracts[i]}:${tokenIds[i]}:`, error)
+        }
+      }
+      
+      if (nftContracts.length === 0) {
+        addNotification('info', 'All selected NFTs have already been withdrawn')
+        setSelectedNFTsForWithdrawal([])
+        setWithdrawalAddress('')
+        loadContractNFTs() // Reload NFTs
+        return
+      }
+      
+      const { request } = await publicClient.simulateContract({
+        address: contractService.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'adminBatchWithdrawNFTs',
+        args: [nftContracts, tokenIds, recipients],
+        account: walletClient.account.address
+      })
+      
+      const hash = await walletClient.writeContract(request)
+      console.log(`✅ Batch withdrew ${nftContracts.length} NFTs to ${targetAddress}. Hash: ${hash}`)
+      
+      // Wait for confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status !== 'success') {
+        throw new Error('Transaction failed')
+      }
+      
+      addNotification('success', `Successfully withdrew ${nftContracts.length} NFTs`)
+      setSelectedNFTsForWithdrawal([])
+      setWithdrawalAddress('')
+      
+      // Wait a bit before reloading to let blockchain state update
+      setTimeout(() => {
+        loadContractNFTs() // Reload NFTs
+      }, 2000)
+      
+    } catch (error) {
+      console.error('❌ Error withdrawing NFTs:', error)
+      addNotification('error', 'Failed to withdraw NFTs: ' + error.message)
+    }
+  }
+
+  const selectAllNFTs = () => {
+    setSelectedNFTsForWithdrawal(contractNFTs.filter(nft => nft.nftContract !== '0x0000000000000000000000000000000000000000'))
+  }
+
+  const deselectAllNFTs = () => {
+    setSelectedNFTsForWithdrawal([])
+  }
+
+  const toggleNFTSelection = (nft) => {
+    setSelectedNFTsForWithdrawal(prev => {
+      const isSelected = prev.some(selected => 
+        selected.uniqueKey === nft.uniqueKey
+      )
+      
+      if (isSelected) {
+        return prev.filter(selected => selected.uniqueKey !== nft.uniqueKey)
+      } else {
+        return [...prev, nft]
+      }
+    })
+  }
   
   // Add notification
   const addNotification = (type, message) => {
@@ -682,6 +1081,9 @@ export default function AdminPanel() {
   
   // Format address
   const formatAddress = (addr) => {
+    if (!addr || addr === '0x0000000000000000000000000000000000000000') {
+      return 'N/A'
+    }
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
   
@@ -783,6 +1185,13 @@ export default function AdminPanel() {
             >
               <Shield size={20} />
               Emergency
+            </Tab>
+            <Tab 
+              active={activeTab === 'nftManagement'} 
+              onClick={() => setActiveTab('nftManagement')}
+            >
+              <Download size={20} />
+              NFT Management
             </Tab>
           </TabContainer>
 
@@ -1056,6 +1465,206 @@ export default function AdminPanel() {
                     🗄️ Open Database Admin
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'nftManagement' && (
+              <div>
+                <h3 style={{ color: '#00FF41', marginBottom: '2rem' }}>🪙 Contract NFT Management</h3>
+                
+                {/* Load NFTs Section */}
+                <div style={{ 
+                  background: 'rgba(0, 255, 65, 0.1)', 
+                  border: '2px solid #00FF41',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  marginBottom: '2rem'
+                }}>
+                  <h4 style={{ color: '#00FF41', marginBottom: '1rem' }}>📊 Load Contract NFTs</h4>
+                  <p style={{ marginBottom: '1rem' }}>Load all NFTs currently held in the game contract.</p>
+                  <Button 
+                    onClick={loadContractNFTs}
+                    disabled={isLoadingNFTs}
+                    style={{ background: '#00FF41', color: '#000', marginTop: '1rem' }}
+                  >
+                    {isLoadingNFTs ? '🔄 Loading...' : '📥 Load NFTs'}
+                  </Button>
+                  {contractNFTs.length > 0 && (
+                    <div style={{ marginTop: '1rem', color: '#00FF41' }}>
+                      Loaded {contractNFTs.length} NFTs from contract
+                    </div>
+                  )}
+                </div>
+
+                {/* Withdrawal Section */}
+                {contractNFTs.length > 0 && (
+                  <div style={{ 
+                    background: 'rgba(255, 215, 0, 0.1)', 
+                    border: '2px solid #FFD700',
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    marginBottom: '2rem'
+                  }}>
+                    <h4 style={{ color: '#FFD700', marginBottom: '1rem' }}>💰 Withdraw NFTs</h4>
+                    <p style={{ marginBottom: '1rem' }}>Select NFTs to withdraw to your wallet.</p>
+                    
+                    <div style={{ marginBottom: '1rem' }}>
+                      <input
+                        type="text"
+                        placeholder={`Enter withdrawal address (default: ${walletAddress})`}
+                        value={withdrawalAddress}
+                        onChange={(e) => setWithdrawalAddress(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255, 215, 0, 0.3)',
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          color: '#fff',
+                          marginBottom: '1rem'
+                        }}
+                      />
+                      <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem' }}>
+                        Leave empty to withdraw to your connected wallet: {formatAddress(walletAddress)}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                      <Button 
+                        onClick={selectAllNFTs}
+                        style={{ background: '#FFD700', color: '#000' }}
+                      >
+                        Select All NFTs ({contractNFTs.filter(nft => nft.nftContract !== '0x0000000000000000000000000000000000000000').length})
+                      </Button>
+                      <Button 
+                        onClick={deselectAllNFTs}
+                        style={{ background: '#666' }}
+                      >
+                        Deselect All
+                      </Button>
+                      <Button 
+                        onClick={withdrawSelectedNFTs}
+                        disabled={selectedNFTsForWithdrawal.length === 0}
+                        style={{ 
+                          background: selectedNFTsForWithdrawal.length > 0 ? '#ff4444' : '#666',
+                          color: '#fff'
+                        }}
+                      >
+                        Withdraw Selected ({selectedNFTsForWithdrawal.length})
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* NFT List */}
+                {contractNFTs.length > 0 && (
+                  <div style={{ 
+                    background: 'rgba(255, 255, 255, 0.05)', 
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    padding: '2rem'
+                  }}>
+                    <h4 style={{ marginBottom: '1rem' }}>📋 Contract NFTs ({contractNFTs.length})</h4>
+                    
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                      gap: '1rem' 
+                    }}>
+                      {contractNFTs.map((nft, index) => {
+                        const isSelected = selectedNFTsForWithdrawal.some(selected => 
+                          selected.uniqueKey === nft.uniqueKey
+                        )
+                        
+                        return (
+                          <div
+                            key={`${nft.nftContract}-${nft.tokenId}-${index}`}
+                            style={{
+                              background: isSelected ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                              border: isSelected ? '2px solid #FFD700' : '1px solid rgba(255, 255, 255, 0.1)',
+                              borderRadius: '12px',
+                              padding: '1rem',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                              position: 'relative'
+                            }}
+                            onClick={() => toggleNFTSelection(nft)}
+                          >
+                            {/* NFT Image */}
+                            {nft.metadata?.image && nft.metadata.image !== '' ? (
+                              <div style={{ 
+                                width: '100%', 
+                                height: '200px', 
+                                backgroundImage: `url(${nft.metadata.image})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                borderRadius: '8px',
+                                marginBottom: '1rem'
+                              }} />
+                            ) : (
+                              <div style={{ 
+                                width: '100%', 
+                                height: '200px', 
+                                background: 'linear-gradient(45deg, #333, #666)',
+                                borderRadius: '8px',
+                                marginBottom: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#888',
+                                fontSize: '0.9rem'
+                              }}>
+                                {nft.nftContract === '0x0000000000000000000000000000000000000000' ? 'No NFT' : 'No Image'}
+                              </div>
+                            )}
+                            
+                            {/* NFT Info */}
+                            <div style={{ marginBottom: '0.5rem' }}>
+                              <strong>{nft.name || `NFT #${nft.tokenId}`}</strong>
+                            </div>
+                            <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
+                              {nft.metadata?.name || `NFT #${nft.tokenId}`}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.5rem' }}>
+                              Contract: {formatAddress(nft.nftContract)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.5rem' }}>
+                              Token ID: {nft.tokenId || 'N/A'}
+                            </div>
+                            <div style={{ 
+                              fontSize: '0.8rem', 
+                              color: '#00FF41',
+                              fontWeight: 'bold'
+                            }}>
+                              ✅ In Contract
+                            </div>
+                            
+                            {/* Selection indicator */}
+                            {isSelected && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '0.5rem',
+                                right: '0.5rem',
+                                background: '#FFD700',
+                                color: '#000',
+                                borderRadius: '50%',
+                                width: '24px',
+                                height: '24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '12px',
+                                fontWeight: 'bold'
+                              }}>
+                                ✓
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </ContentArea>

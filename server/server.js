@@ -837,9 +837,11 @@ class GameSession {
         gameId: this.gameId,
         playerAddress,
         isCreator: playerAddress === this.creator,
-        isJoiner: playerAddress === this.joiner
+        isJoiner: playerAddress === this.joiner,
+        currentClients: this.clients.size
       })
       this.clients.add(ws)
+      console.log('✅ Player client added. Total clients:', this.clients.size)
     } else {
       console.log('❌ Rejected non-player client:', {
         gameId: this.gameId,
@@ -899,7 +901,10 @@ class GameSession {
       phase: this.phase,
       currentPlayer: this.currentPlayer,
       clients: this.clients.size,
-      joinInProgress: this.joinInProgress
+      joinInProgress: this.joinInProgress,
+      creator: this.creator,
+      joiner: this.joiner,
+      coin: this.coin ? 'present' : 'null'
     })
 
     // Safely broadcast to all clients (only players now)
@@ -964,7 +969,18 @@ class GameSession {
     this.joiningPlayer = null
     
     console.log('✅ Join process completed for:', address)
+    console.log('📊 Current session state after join:', {
+      gameId: this.gameId,
+      phase: this.phase,
+      currentPlayer: this.currentPlayer,
+      creator: this.creator,
+      joiner: this.joiner,
+      clients: this.clients.size
+    })
     this.broadcastToAll()
+    
+    // Also broadcast current game state to all players
+    this.broadcastGameState()
     
     // Auto-start the choosing phase after 2 seconds
     setTimeout(() => {
@@ -1578,6 +1594,8 @@ class GameSession {
           this.currentPlayer = this.creator // Default to creator's turn
         } else if (this.joiner && gameData.status === 'joined') {
           this.phase = 'ready'
+          // Set current player for ready phase
+          this.currentPlayer = this.creator
         } else {
           this.phase = 'waiting'
         }

@@ -311,6 +311,7 @@ class ContractService {
     this.minRequestInterval = 1000 // 1 second between requests
     this.contractAddress = CONTRACT_ADDRESS
     this.chainId = null
+    this.alchemy = null
   }
 
   // Initialize contract with clients
@@ -358,6 +359,12 @@ class ContractService {
       contractAddress: this.contractAddress,
       chainId: this.chainId,
       walletAddress: this.walletClient.account.address
+    })
+
+    // Initialize Alchemy
+    this.alchemy = new Alchemy({ 
+      apiKey: import.meta.env.VITE_ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3',
+      network: 'base-mainnet'
     })
   }
 
@@ -983,15 +990,103 @@ class ContractService {
   // Get NFT metadata (helper function)
   async getNFTMetadata(nftContract, tokenId) {
     try {
-      // This is a placeholder - implement your NFT metadata fetching logic
-      // You might want to use APIs like OpenSea, Alchemy, or direct contract calls
+      console.log(`🔍 Fetching metadata for ${nftContract}:${tokenId}`)
+      
+      // Try to get metadata from Alchemy first
+      if (this.alchemy) {
+        try {
+          const nft = await this.alchemy.nft.getNftMetadata(nftContract, tokenId.toString())
+          console.log(`✅ Alchemy metadata for ${nftContract}:${tokenId}:`, nft)
+          console.log(`🔍 Alchemy media array:`, nft.media)
+          console.log(`🔍 Alchemy raw metadata:`, nft.rawMetadata)
+          
+          // Try multiple image sources from Alchemy response
+          let imageUrl = ''
+          if (nft.media && nft.media.length > 0) {
+            imageUrl = nft.media[0].gateway || nft.media[0].raw || nft.media[0].thumbnail || ''
+          }
+          
+          // Fallback to raw metadata if media is empty
+          if (!imageUrl && nft.rawMetadata) {
+            imageUrl = nft.rawMetadata.image || nft.rawMetadata.image_url || nft.rawMetadata.imageUrl || ''
+          }
+          
+          return {
+            name: nft.title || nft.name || `NFT #${tokenId}`,
+            image: imageUrl,
+            description: nft.description || '',
+            attributes: nft.rawMetadata?.attributes || []
+          }
+        } catch (alchemyError) {
+          console.warn(`Alchemy failed for ${nftContract}:${tokenId}:`, alchemyError)
+        }
+      }
+      
+      // Fallback: Try direct contract calls
+      const { public: publicClient } = this.getCurrentClients()
+      
+      try {
+        // Try to get tokenURI
+        const tokenURI = await publicClient.readContract({
+          address: nftContract,
+          abi: [
+            {
+              inputs: [{ name: 'tokenId', type: 'uint256' }],
+              name: 'tokenURI',
+              outputs: [{ name: '', type: 'string' }],
+              stateMutability: 'view',
+              type: 'function'
+            }
+          ],
+          functionName: 'tokenURI',
+          args: [BigInt(tokenId)]
+        })
+        
+        console.log(`📋 TokenURI for ${nftContract}:${tokenId}:`, tokenURI)
+        
+        if (tokenURI && tokenURI !== '') {
+          // Fetch metadata from URI
+          const response = await fetch(tokenURI)
+          const metadata = await response.json()
+          
+          console.log(`📊 Raw metadata for ${nftContract}:${tokenId}:`, metadata)
+          
+          // Handle different image field formats and IPFS URLs
+          let imageUrl = metadata.image || metadata.image_url || metadata.imageUrl || ''
+          
+          // Convert IPFS URLs to gateway URLs if needed
+          if (imageUrl.startsWith('ipfs://')) {
+            imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
+          }
+          
+          return {
+            name: metadata.name || metadata.title || `NFT #${tokenId}`,
+            image: imageUrl,
+            description: metadata.description || '',
+            attributes: metadata.attributes || []
+          }
+        }
+      } catch (contractError) {
+        console.warn(`Contract call failed for ${nftContract}:${tokenId}:`, contractError)
+      }
+      
+      // Final fallback
+      console.log(`⚠️ Using fallback metadata for ${nftContract}:${tokenId}`)
       return {
         name: `NFT #${tokenId}`,
-        image: ''
+        image: '',
+        description: 'Metadata not available',
+        attributes: []
       }
+      
     } catch (error) {
-      console.error('Error fetching NFT metadata:', error)
-      return null
+      console.error(`❌ Error fetching NFT metadata for ${nftContract}:${tokenId}:`, error)
+      return {
+        name: `NFT #${tokenId}`,
+        image: '',
+        description: 'Error loading metadata',
+        attributes: []
+      }
     }
   }
 

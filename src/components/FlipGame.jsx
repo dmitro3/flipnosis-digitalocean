@@ -2218,8 +2218,8 @@ const FlipGame = () => {
                   joinerChoice={gameState?.joinerChoice}
                   isCreator={isCreator}
                   size={187} // Smaller for optimization (1/3 reduction)
-                  customHeadsImage={customHeadsImage || '/coins/trumpheads.webp'}
-                  customTailsImage={customTailsImage || '/coins/trumptails.webp'}
+                  customHeadsImage={customHeadsImage || '/coins/plainh.png'}
+                  customTailsImage={customTailsImage || '/coins/plaint.png'}
                 />
               </div>
 
@@ -2869,8 +2869,8 @@ const FlipGame = () => {
                       joinerChoice={gameState?.joinerChoice}
                       isCreator={isCreator}
                       size={440}
-                      customHeadsImage={customHeadsImage || '/coins/trumpheads.webp'}
-                      customTailsImage={customTailsImage || '/coins/trumptails.webp'}
+                      customHeadsImage={customHeadsImage || '/coins/plainh.png'}
+                      customTailsImage={customTailsImage || '/coins/plaint.png'}
                     />
                   </div>
 
