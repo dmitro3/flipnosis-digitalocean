@@ -857,77 +857,68 @@ export default function AdminPanel() {
     try {
       setIsLoadingNFTs(true)
       addNotification('info', 'Loading NFTs from contract...')
-      
-      console.log('🔄 Loading NFTs from contract...')
-      
-      const nfts = []
+      console.log('🔄 Loading NFTs from contract (Alchemy dynamic fetch)...')
 
-      // Known NFTs in the contract from BaseScan data
-      const knownNFTs = [
-        {
-          contract: '0x56b43C8D57a941B90c7e746Ad0dbF5dE9a231Bb9',
-          tokenId: 3610,
-          name: 'Based Bored Ape #3610'
-        },
-        {
-          contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-          tokenId: 0,
-          name: 'BA2025 #0'
-        },
-        {
-          contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-          tokenId: 1,
-          name: 'BA2025 #1'
-        },
-        {
-          contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-          tokenId: 2,
-          name: 'BA2025 #2'
-        }
-      ]
-
-      console.log('🔍 Fetching known NFTs from contract...')
-      
       const { public: publicClient } = contractService.getCurrentClients()
-      
-      // Also check if NFTs are in contract mappings (unclaimedNFTs, games, etc.)
-      console.log('🔍 Contract address being checked:', contractService.contractAddress)
-      
-      for (const nft of knownNFTs) {
-        try {
-          console.log(`📥 Fetching ${nft.name}...`)
-          const metadata = await contractService.getNFTMetadata(nft.contract, nft.tokenId)
-          console.log(`✅ Got metadata for ${nft.name}:`, metadata)
-          
-          nfts.push({
-            nftContract: nft.contract,
-            tokenId: nft.tokenId,
-            name: nft.name,
-            metadata: metadata,
-            uniqueKey: `${nft.contract}-${nft.tokenId}`,
-            source: 'contract'
-          })
-        } catch (error) {
-          console.warn(`❌ Failed to get metadata for ${nft.name}:`, error)
-          
-          // Still add the NFT even if metadata fails
-          nfts.push({
-            nftContract: nft.contract,
-            tokenId: nft.tokenId,
-            name: nft.name,
-            metadata: null,
-            uniqueKey: `${nft.contract}-${nft.tokenId}`,
-            source: 'contract'
-          })
-        }
+      const alchemy = contractService.alchemy
+      const contractAddress = contractService.contractAddress
+
+      if (!alchemy) {
+        addNotification('error', 'Alchemy not initialized')
+        setIsLoadingNFTs(false)
+        return
       }
-      
-      console.log('✅ Loaded NFTs from contract:', nfts.length)
-      console.log('📊 Final NFT data:', nfts)
+
+      let allNFTs = []
+      let pageKey = null
+      let totalCount = 0
+      do {
+        const nftsForOwner = await alchemy.nft.getNftsForOwner(contractAddress, {
+          omitMetadata: false,
+          pageKey: pageKey
+        })
+        if (nftsForOwner.ownedNfts && nftsForOwner.ownedNfts.length > 0) {
+          allNFTs = [...allNFTs, ...nftsForOwner.ownedNfts]
+        }
+        pageKey = nftsForOwner.pageKey
+        totalCount = nftsForOwner.totalCount
+      } while (pageKey)
+
+      console.log('📦 All NFTs owned by contract:', allNFTs)
+
+      // Format for display
+      const nfts = allNFTs.map((nft, idx) => {
+        // Enhanced image URL handling
+        let imageUrl = ''
+        if (nft.media && nft.media.length > 0) {
+          imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
+        } else if (nft.image) {
+          imageUrl = nft.image.originalUrl || nft.image.cachedUrl || ''
+        }
+        if (!imageUrl && nft.metadata && nft.metadata.image) {
+          imageUrl = nft.metadata.image
+        }
+        if (imageUrl && imageUrl.startsWith('ipfs://')) {
+          imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
+        }
+        if (imageUrl && imageUrl.startsWith('http://')) {
+          imageUrl = imageUrl.replace('http://', 'https://')
+        }
+        return {
+          nftContract: nft.contract.address,
+          tokenId: nft.tokenId,
+          name: nft.title || nft.name || `NFT #${nft.tokenId}`,
+          metadata: {
+            ...nft.metadata,
+            image: imageUrl
+          },
+          uniqueKey: `${nft.contract.address}-${nft.tokenId}`,
+          source: 'alchemy',
+        }
+      })
+
       setContractNFTs(nfts)
-      
-      addNotification('success', `Loaded ${nfts.length} NFTs from contract`)
-      
+      addNotification('success', `Loaded ${nfts.length} NFTs from contract (Alchemy)`)
     } catch (error) {
       console.error('❌ Error loading contract NFTs:', error)
       addNotification('error', 'Failed to load NFTs: ' + error.message)
