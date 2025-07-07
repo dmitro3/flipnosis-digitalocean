@@ -393,7 +393,7 @@ class ContractService {
     }
     
     return {
-      wallet: this.walletClient,
+      walletClient: this.walletClient,
       public: this.publicClient
     }
   }
@@ -772,7 +772,7 @@ class ContractService {
       let walletClient, publicClient
       try {
         const clients = this.getCurrentClients()
-        walletClient = clients.wallet
+        walletClient = clients.walletClient
         publicClient = clients.public
       } catch (clientError) {
         console.error('❌ Failed to get current clients:', clientError.message)
