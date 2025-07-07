@@ -921,10 +921,16 @@ const FlipGame = () => {
       // Parse coin data if it's a string
       if (gameData.coin && typeof gameData.coin === 'string') {
         try {
+          console.log('🪙 Parsing coin data from string:', gameData.coin)
           gameData.coin = JSON.parse(gameData.coin)
+          console.log('🪙 Parsed coin data:', gameData.coin)
         } catch (e) {
           console.warn('Could not parse coin data:', e)
         }
+      } else if (gameData.coin) {
+        console.log('🪙 Coin data is already an object:', gameData.coin)
+      } else {
+        console.log('🪙 No coin data in gameData')
       }
       
       setGameData(gameData)
@@ -979,6 +985,12 @@ const FlipGame = () => {
 
   // Add effect to set coin data when loaded from contract
   useEffect(() => {
+    console.log('🪙 Coin data effect triggered:', {
+      hasGameData: !!gameData,
+      hasCoinData: !!gameData?.coin,
+      coinData: gameData?.coin
+    })
+    
     if (gameData?.coin) {
       console.log('🪙 Setting coin data from gameData:', gameData.coin)
       console.log('🪙 Coin details:', {
@@ -992,6 +1004,7 @@ const FlipGame = () => {
       setCustomTailsImage(gameData.coin.tailsImage)
     } else {
       console.log('🪙 No coin data found in gameData')
+      console.log('🪙 Full gameData:', gameData)
     }
   }, [gameData?.coin])
 

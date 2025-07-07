@@ -641,6 +641,17 @@ const dbHelpers = {
             console.error('Error parsing NFT attributes:', parseError)
             row.nft_attributes = []
           }
+          
+          // Parse the coin data back to object
+          if (row.coin) {
+            try {
+              row.coin = JSON.parse(row.coin)
+            } catch (parseError) {
+              console.error('Error parsing coin data:', parseError)
+              row.coin = null
+            }
+          }
+          
           resolve(row)
         } else {
           resolve(null)
@@ -959,26 +970,9 @@ class GameSession {
 
   // NEW: Complete join process
   async completeJoinProcess(address, entryFeeHash) {
-    // Check if this is a valid join process OR if the player has already joined via smart contract
-    if ((!this.joinInProgress || this.joiningPlayer !== address) && this.joiner !== address) {
+    // Check if this is a valid join process
+    if (!this.joinInProgress || this.joiningPlayer !== address) {
       return { success: false, error: 'No valid join process for this player' }
-    }
-    
-    // If player has already joined via smart contract, just complete the process
-    if (this.joiner === address && this.phase === 'ready') {
-      console.log('✅ Player already joined via smart contract, completing process for:', address)
-      this.joinInProgress = false
-      this.joiningPlayer = null
-      
-      // Auto-start the choosing phase after 2 seconds
-      setTimeout(() => {
-        if (this.phase === 'ready' && this.creator && this.joiner) {
-          console.log('🚀 AUTO-STARTING game - entering choosing phase WITH TIMER')
-          this.startGameWithTimer()
-        }
-      }, 2000)
-      
-      return { success: true }
     }
     
     // Normal join process completion
@@ -1754,17 +1748,32 @@ async function handleMessage(ws, data) {
       })
       
       if (data.role === 'joiner' && data.entryFeeHash) {
-        console.log('🎯 Completing join process')
-        const joinResult = await session.completeJoinProcess(data.address, data.entryFeeHash)
-        console.log('🎯 Join process result:', joinResult)
-        if (joinResult.success) {
-          // Now add them as a player client
+        // Check if player has already joined via smart contract
+        if (session.joiner === data.address && session.phase === 'ready') {
+          console.log('✅ Player already joined via smart contract, adding as client')
           session.addClient(ws, data.address)
-          console.log('✅ Joiner added as client, broadcasting game state')
           session.broadcastGameState()
+          
+          // Auto-start the game after a short delay
+          setTimeout(() => {
+            if (session.phase === 'ready' && session.creator && session.joiner) {
+              console.log('🚀 AUTO-STARTING game - entering choosing phase WITH TIMER')
+              session.startGameWithTimer()
+            }
+          }, 2000)
         } else {
-          console.log('❌ Join process failed:', joinResult.error)
-          ws.send(JSON.stringify({ type: 'error', error: joinResult.error }))
+          console.log('🎯 Completing join process')
+          const joinResult = await session.completeJoinProcess(data.address, data.entryFeeHash)
+          console.log('🎯 Join process result:', joinResult)
+          if (joinResult.success) {
+            // Now add them as a player client
+            session.addClient(ws, data.address)
+            console.log('✅ Joiner added as client, broadcasting game state')
+            session.broadcastGameState()
+          } else {
+            console.log('❌ Join process failed:', joinResult.error)
+            ws.send(JSON.stringify({ type: 'error', error: joinResult.error }))
+          }
         }
       } else if (data.role === 'creator') {
         console.log('🎯 Creator connecting to game')
@@ -1923,8 +1932,29 @@ app.get('/api/games', async (req, res) => {
 
 app.get('/api/games/:gameId', async (req, res) => {
   try {
-    const game = await dbHelpers.getGame(req.params.gameId)
+    const gameId = req.params.gameId
+    console.log('📊 Fetching game:', gameId)
+    
+    const game = await dbHelpers.getGame(gameId)
     if (game) {
+      console.log('📊 Game found:', {
+        id: game.id,
+        creator: game.creator,
+        joiner: game.joiner,
+        status: game.status,
+        coin: game.coin ? 'present' : 'missing'
+      })
+      
+      if (game.coin) {
+        console.log('🪙 Coin data in database:', game.coin)
+        try {
+          const parsedCoin = JSON.parse(game.coin)
+          console.log('🪙 Parsed coin data:', parsedCoin)
+        } catch (e) {
+          console.warn('⚠️ Could not parse coin data:', e)
+        }
+      }
+      
       res.json(game)
     } else {
       res.status(404).json({ error: 'Game not found' })
