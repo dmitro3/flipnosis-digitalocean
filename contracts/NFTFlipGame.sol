@@ -184,19 +184,28 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         require(game.joiner == address(0), "Game already joined");
         
         if (game.gameType == GameType.NFTvsCrypto) {
-            // Handle crypto payment
+            // Handle crypto payment with immediate platform fee collection
             uint256 requiredAmount = getETHAmount(game.priceUSD);
+            uint256 platformFee = requiredAmount.mul(platformFeePercent).div(BASIS_POINTS);
+            uint256 gameAmount = requiredAmount.sub(platformFee);
             
             if (paymentToken == PaymentToken.ETH) {
                 require(msg.value >= requiredAmount, "Insufficient ETH");
-                game.totalPaid = requiredAmount;
+                game.totalPaid = gameAmount; // Store amount minus platform fee
+                
+                // Send platform fee immediately to platform fee receiver
+                payable(platformFeeReceiver).transfer(platformFee);
+                
                 if (msg.value > requiredAmount) {
                     payable(msg.sender).transfer(msg.value - requiredAmount);
                 }
             } else if (paymentToken == PaymentToken.USDC) {
                 require(msg.value == 0, "ETH not needed for USDC payment");
                 IERC20(usdcToken).transferFrom(msg.sender, address(this), requiredAmount);
-                game.totalPaid = requiredAmount;
+                game.totalPaid = gameAmount; // Store amount minus platform fee
+                
+                // Send platform fee immediately to platform fee receiver
+                IERC20(usdcToken).transfer(platformFeeReceiver, platformFee);
             }
             
             game.paymentToken = paymentToken;
@@ -240,23 +249,20 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         game.state = GameState.Completed;
         game.winner = winner;
         
-        // Calculate platform fee and distribute rewards
+        // Distribute rewards (platform fee already collected when joining)
         if (game.gameType == GameType.NFTvsCrypto && game.totalPaid > 0) {
-            uint256 platformFee = game.totalPaid.mul(platformFeePercent).div(BASIS_POINTS);
-            uint256 winnerPayout = game.totalPaid.sub(platformFee);
+            // Winner gets the full amount (platform fee already deducted)
+            uint256 winnerPayout = game.totalPaid;
             
             // Update statistics
             totalGamesCompleted++;
             totalVolumeUSD = totalVolumeUSD.add(game.priceUSD);
-            totalPlatformFees = totalPlatformFees.add(platformFee);
             
             // Add to unclaimed rewards
             if (game.paymentToken == PaymentToken.ETH) {
                 unclaimedETH[winner] = unclaimedETH[winner].add(winnerPayout);
-                unclaimedETH[platformFeeReceiver] = unclaimedETH[platformFeeReceiver].add(platformFee);
             } else if (game.paymentToken == PaymentToken.USDC) {
                 unclaimedUSDC[winner] = unclaimedUSDC[winner].add(winnerPayout);
-                unclaimedUSDC[platformFeeReceiver] = unclaimedUSDC[platformFeeReceiver].add(platformFee);
             }
         } else {
             // NFT vs NFT game completion
@@ -444,6 +450,11 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         
         // Convert USD amount to USDC (with 6 decimals)
         return usdAmount.mul(10**6).div(uint256(price));
+    }
+    
+    // Get platform fee receiver address
+    function getPlatformFeeReceiver() external view returns (address) {
+        return platformFeeReceiver;
     }
     
     // Admin Functions

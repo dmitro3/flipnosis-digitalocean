@@ -1,8 +1,8 @@
 {
   "chain": "base",
-  "contractAddress": "0xb2d09A3A6E502287D0acdAC31328B01AADe35941",
+  "contractAddress": "0xDA139B0285535dF163B8F59a98810af0F7655a61",
   "deployer": "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28",
-  "deploymentTime": "2025-07-04T13:07:57.477Z",
+  "deploymentTime": "2025-07-08T17:16:17.363Z",
   "constructorArgs": {
     "ethUsdFeed": "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
     "usdcUsdFeed": "0x7e860098F58bBFC8648a4311b374B1D669a2bc6B",

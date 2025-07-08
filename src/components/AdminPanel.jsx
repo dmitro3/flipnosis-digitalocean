@@ -611,6 +611,9 @@ export default function AdminPanel() {
           // Get contract balance (if method exists)
           console.log('Contract service is initialized for:', contractService.currentChain)
           
+          // Load contract settings
+          await loadContractSettings()
+          
           // You can add more blockchain queries here
         } catch (error) {
           console.error('Error loading blockchain data:', error)
@@ -695,6 +698,36 @@ export default function AdminPanel() {
     
     setPlayers(Array.from(playerMap.values()))
   }
+
+  // Load contract settings from blockchain
+  const loadContractSettings = async () => {
+    if (!contractService.currentChain) {
+      return
+    }
+    
+    try {
+      console.log('📋 Loading contract settings...')
+      
+      // Get listing fee
+      const listingFee = await contractService.getListingFee()
+      const listingFeeUSD = Number(listingFee) / 1000000 // Convert from 6 decimals
+      
+      // Get platform fee
+      const platformFee = await contractService.getPlatformFee()
+      const platformFeePercent = Number(platformFee) / 100 // Convert from basis points
+      
+      setSettings(prev => ({
+        ...prev,
+        listingFeeUSD: listingFeeUSD,
+        platformFeePercent: platformFeePercent
+      }))
+      
+      console.log('✅ Contract settings loaded:', { listingFeeUSD, platformFeePercent })
+    } catch (error) {
+      console.error('❌ Error loading contract settings:', error)
+      addNotification('error', 'Failed to load contract settings: ' + error.message)
+    }
+  }
   
   // Update platform fee
   const updatePlatformFee = async () => {
@@ -704,11 +737,22 @@ export default function AdminPanel() {
     }
     
     try {
-      addNotification('info', 'Platform fee update not implemented yet - use contract directly')
-      // TODO: Implement platform fee update through contract service
+      setLoading(true)
+      const newFeePercent = settings.platformFeePercent * 100 // Convert to basis points
+      const result = await contractService.updatePlatformFee(newFeePercent)
+      
+      if (result.success) {
+        addNotification('success', `Platform fee updated to ${settings.platformFeePercent}%! Transaction: ${result.transactionHash}`)
+        // Refresh settings from contract
+        await loadContractSettings()
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error('Error updating platform fee:', error)
-      addNotification('error', 'Failed to update platform fee')
+      addNotification('error', 'Failed to update platform fee: ' + error.message)
+    } finally {
+      setLoading(false)
     }
   }
   
@@ -720,11 +764,22 @@ export default function AdminPanel() {
     }
     
     try {
-      addNotification('info', 'Listing fee update not implemented yet - use contract directly')
-      // TODO: Implement listing fee update through contract service
+      setLoading(true)
+      const newFeeUSD = settings.listingFeeUSD * 1000000 // Convert to 6 decimals
+      const result = await contractService.updateListingFee(newFeeUSD)
+      
+      if (result.success) {
+        addNotification('success', `Listing fee updated to $${settings.listingFeeUSD}! Transaction: ${result.transactionHash}`)
+        // Refresh settings from contract
+        await loadContractSettings()
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error('Error updating listing fee:', error)
-      addNotification('error', 'Failed to update listing fee')
+      addNotification('error', 'Failed to update listing fee: ' + error.message)
+    } finally {
+      setLoading(false)
     }
   }
   
@@ -815,15 +870,15 @@ export default function AdminPanel() {
     }
     
     try {
-      const result = await contractService.withdrawRewards()
+      const result = await contractService.withdrawPlatformFees()
       
       if (result.success) {
-        addNotification('success', `Withdrew ${result.ethWithdrawn} ETH and ${result.usdcWithdrawn} USDC`)
+        addNotification('success', `Platform fees withdrawn successfully! Transaction: ${result.transactionHash}`)
       } else {
         throw new Error(result.error)
       }
     } catch (error) {
-      addNotification('error', 'Failed to withdraw fees: ' + error.message)
+      addNotification('error', 'Failed to withdraw platform fees: ' + error.message)
     }
   }
   

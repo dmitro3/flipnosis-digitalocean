@@ -4,7 +4,7 @@ async function main() {
   console.log("🧪 Testing NFTFlipGame contract functions...");
 
   // Contract address on Base
-  const contractAddress = "0xb2d09A3A6E502287D0acdAC31328B01AADe35941";
+  const contractAddress = "0xDA139B0285535dF163B8F59a98810af0F7655a61";
   
   // Get the contract
   const NFTFlipGame = await ethers.getContractFactory("contracts/NFTFlipGame.sol:NFTFlipGame");

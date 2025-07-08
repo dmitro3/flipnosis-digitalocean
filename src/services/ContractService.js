@@ -138,6 +138,20 @@ const CONTRACT_ABI = [
     outputs: [{ name: '', type: 'uint256' }]
   },
   {
+    name: 'platformFeeReceiver',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }]
+  },
+  {
+    name: 'getPlatformFeeReceiver',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }]
+  },
+  {
     name: 'getETHAmount',
     type: 'function',
     stateMutability: 'view',
@@ -500,14 +514,23 @@ class ContractService {
       // Convert price to USD with 6 decimals (e.g., $1.50 = 1500000)
       const priceUSDFormatted = Math.floor(params.priceUSD * 1000000)
 
-      // Get listing fee in ETH
+      // Get listing fee from contract and convert to ETH
+      const listingFeeUSD = await this.retryWithBackoff(async () => {
+        await this.rateLimit('getListingFeeUSD')
+        return await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'listingFeeUSD'
+        })
+      })
+
       const listingFeeETH = await this.retryWithBackoff(async () => {
         await this.rateLimit('getListingFee')
         return await publicClient.readContract({
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'getETHAmount',
-          args: [BigInt(200000)] // $0.20 listing fee in 6 decimals
+          args: [listingFeeUSD]
         })
       })
 
@@ -1332,6 +1355,81 @@ class ContractService {
     }
   }
 
+  // Withdraw platform fees (for platform fee receiver only)
+  async withdrawPlatformFees() {
+    try {
+      await this.rateLimit('withdrawPlatformFees')
+      
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+      
+      const account = walletClient.account.address
+
+      // Check if caller is platform fee receiver
+      const feeReceiver = await this.retryWithBackoff(async () => {
+        await this.rateLimit('getPlatformFeeReceiver')
+        return await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'platformFeeReceiver'
+        })
+      })
+      
+      if (account.toLowerCase() !== feeReceiver.toLowerCase()) {
+        throw new Error('Only platform fee receiver can withdraw fees')
+      }
+
+      console.log('💰 Withdrawing platform fees...')
+      
+      // Call withdrawRewards to get accumulated fees
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateWithdrawPlatformFeesGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'withdrawRewards',
+          account
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('withdrawPlatformFeesTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'withdrawRewards',
+          account,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
+
+      return {
+        success: true,
+        transactionHash: hash,
+        receipt
+      }
+    } catch (error) {
+      console.error('Error withdrawing platform fees:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
   // Get user's active games
   async getUserActiveGames(address) {
     try {
@@ -1347,6 +1445,172 @@ class ContractService {
         error: error.message,
         games: []
       }
+    }
+  }
+
+  // Update platform fee
+  async updatePlatformFee(newFeePercent) {
+    try {
+      await this.rateLimit('updatePlatformFee')
+      
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      console.log('💰 Updating platform fee to:', newFeePercent, 'basis points')
+
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateUpdatePlatformFeeGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'setPlatformFee',
+          args: [BigInt(newFeePercent)],
+          account: walletClient.account.address
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('updatePlatformFeeTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'setPlatformFee',
+          args: [BigInt(newFeePercent)],
+          account: walletClient.account.address,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
+
+      return {
+        success: true,
+        transactionHash: hash,
+        receipt
+      }
+    } catch (error) {
+      console.error('Error updating platform fee:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Update listing fee
+  async updateListingFee(newFeeUSD) {
+    try {
+      await this.rateLimit('updateListingFee')
+      
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      console.log('💰 Updating listing fee to:', newFeeUSD, 'USD (6 decimals)')
+
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateUpdateListingFeeGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'setListingFee',
+          args: [BigInt(newFeeUSD)],
+          account: walletClient.account.address
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('updateListingFeeTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'setListingFee',
+          args: [BigInt(newFeeUSD)],
+          account: walletClient.account.address,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
+
+      return {
+        success: true,
+        transactionHash: hash,
+        receipt
+      }
+    } catch (error) {
+      console.error('Error updating listing fee:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Get listing fee from contract
+  async getListingFee() {
+    try {
+      await this.rateLimit('getListingFee')
+      
+      const { public: publicClient } = this.getCurrentClients()
+      
+      const listingFee = await this.retryWithBackoff(async () => {
+        await this.rateLimit('readListingFee')
+        return await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'listingFeeUSD'
+        })
+      })
+
+      return listingFee
+    } catch (error) {
+      console.error('Error getting listing fee:', error)
+      throw error
+    }
+  }
+
+  // Get platform fee from contract
+  async getPlatformFee() {
+    try {
+      await this.rateLimit('getPlatformFee')
+      
+      const { public: publicClient } = this.getCurrentClients()
+      
+      const platformFee = await this.retryWithBackoff(async () => {
+        await this.rateLimit('readPlatformFee')
+        return await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'platformFeePercent'
+        })
+      })
+
+      return platformFee
+    } catch (error) {
+      console.error('Error getting platform fee:', error)
+      throw error
     }
   }
 
