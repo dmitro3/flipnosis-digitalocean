@@ -40,7 +40,7 @@ import {
   StatusBadge,
   PriceBadge
 } from '../styles/components'
-import { Alchemy } from 'alchemy-sdk'
+
 
 // Helper functions for chain URLs
 const getExplorerUrl = (chain) => {
@@ -166,9 +166,6 @@ const SearchInput = styled.input`
   }
 `
 
-const ALCHEMY_API_KEY = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3' // Hardcoded for Base
-const ALCHEMY_NETWORK = 'base-mainnet'
-
 const Home = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
@@ -187,71 +184,10 @@ const Home = () => {
   const [loading, setLoading] = useState(false)
   const [selectedFlip, setSelectedFlip] = useState(null)
   const [error, setError] = useState('')
-  const [alchemyCache, setAlchemyCache] = useState({}) // { 'contract-tokenId': { image, name } }
 
-  // Alchemy instance (Base only)
-  const alchemy = React.useMemo(() => new Alchemy({ apiKey: ALCHEMY_API_KEY, network: ALCHEMY_NETWORK }), [])
 
-  // Helper to fetch NFT metadata from Alchemy and cache it
-  const fetchNFTFromAlchemy = async (contract, tokenId) => {
-    const cacheKey = `${contract}-${tokenId}`
-    if (alchemyCache[cacheKey]) {
-      return alchemyCache[cacheKey]
-    }
-    try {
-      const nft = await alchemy.nft.getNftMetadata(contract, tokenId.toString())
-      let imageUrl = ''
-      if (nft.media && nft.media.length > 0) {
-        imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
-      }
-      if (!imageUrl && nft.rawMetadata) {
-        imageUrl = nft.rawMetadata.image || nft.rawMetadata.image_url || nft.rawMetadata.imageUrl || ''
-      }
-      if (imageUrl && imageUrl.startsWith('ipfs://')) {
-        imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
-      }
-      if (imageUrl && imageUrl.startsWith('http://')) {
-        imageUrl = imageUrl.replace('http://', 'https://')
-      }
-      const meta = {
-        image: imageUrl,
-        name: nft.title || nft.name || `NFT #${tokenId}`
-      }
-      setAlchemyCache(prev => ({ ...prev, [cacheKey]: meta }))
-      return meta
-    } catch (err) {
-      setAlchemyCache(prev => ({ ...prev, [cacheKey]: { image: '', name: '' } }))
-      return { image: '', name: '' }
-    }
-  }
 
-  // Enhance flips with Alchemy metadata if needed
-  const [enhancedFlips, setEnhancedFlips] = useState([])
-  useEffect(() => {
-    let isMounted = true
-    const enhance = async () => {
-      const newFlips = await Promise.all(flips.map(async flip => {
-        if (
-          (!flip.nft.image || flip.nft.image === '' || flip.nft.image === '/placeholder-nft.svg') &&
-          flip.nft.contractAddress && flip.nft.tokenId
-        ) {
-          const meta = await fetchNFTFromAlchemy(flip.nft.contractAddress, flip.nft.tokenId)
-          return {
-            ...flip,
-            nft: {
-              ...flip.nft,
-              image: meta.image || flip.nft.image,
-              name: meta.name || flip.nft.name
-            }
-          }
-        }
-        return flip
-      }))
-      if (isMounted) setEnhancedFlips(newFlips)
-    }
-    enhance()
-    return () => { isMounted = false }
-  }, [flips])
+
 
   // API URL - will be Railway URL in production
   const API_URL = 'https://cryptoflipz2-production.up.railway.app'
@@ -281,32 +217,19 @@ const Home = () => {
       }
 
       const gamesData = await response.json()
-      console.log('📊 Fetched games from database:', gamesData)
+      console.log('📊 Fetched games from database:', gamesData.length, 'games')
       
-      // Debug the first game's NFT data
-      if (gamesData.length > 0) {
-        const firstGame = gamesData[0]
-        console.log('🔍 First game NFT data:', {
-          nft_name: firstGame.nft_name,
-          nft_image: firstGame.nft_image,
-          nft_contract: firstGame.nft_contract,
-          nft_token_id: firstGame.nft_token_id,
-          nft_collection: firstGame.nft_collection,
-          nft_chain: firstGame.nft_chain
-        })
-      }
-
       // Transform database games to frontend format
       const processedFlips = gamesData.map(game => ({
         id: game.id,
         nft: {
           name: game.nft_name || 'Unknown NFT',
-          image: game.nft_image || '/placeholder-nft.svg', // Use a real placeholder image
+          image: game.nft_image || '/placeholder-nft.svg',
           collection: game.nft_collection || 'Unknown Collection',
           contractAddress: game.nft_contract,
           tokenId: game.nft_token_id,
           chain: game.nft_chain || 'base',
-          needsMetadataUpdate: !game.nft_image || game.nft_image === '' // Flag for missing metadata
+          needsMetadataUpdate: !game.nft_image || game.nft_image === '' || game.nft_image === '/placeholder-nft.svg'
         },
         gameType: game.game_type || 'nft-vs-crypto',
         price: game.price_usd,
@@ -321,7 +244,6 @@ const Home = () => {
         winner: game.winner,
         creatorWins: game.creator_wins || 0,
         joinerWins: game.joiner_wins || 0,
-        // REMOVED: spectators count (no longer tracking spectators)
         challengerNFT: game.challenger_nft_name ? {
           name: game.challenger_nft_name,
           image: game.challenger_nft_image,
@@ -333,21 +255,6 @@ const Home = () => {
           `NFT Battle: ${game.nft_name} vs ${game.challenger_nft_name || 'Waiting for challenger'}` :
           `${game.nft_name} from ${game.nft_collection} - Ready for battle!`
       }))
-
-      console.log('✅ Processed flips:', processedFlips)
-      
-      // Debug the first processed flip's NFT data
-      if (processedFlips.length > 0) {
-        const firstFlip = processedFlips[0]
-        console.log('🖼️ First processed flip NFT data:', {
-          name: firstFlip.nft.name,
-          image: firstFlip.nft.image,
-          collection: firstFlip.nft.collection,
-          contractAddress: firstFlip.nft.contractAddress,
-          tokenId: firstFlip.nft.tokenId,
-          chain: firstFlip.nft.chain
-        })
-      }
       
       setFlips(processedFlips)
       
@@ -396,14 +303,12 @@ const Home = () => {
     return () => clearInterval(interval)
   }, [])
 
-  const enhancedFilteredFlips = enhancedFlips.filter(flip => {
-    // First apply the chain/game type filter
+  const filteredFlips = flips.filter(flip => {
     const matchesFilter = activeFilter === 'all' || 
       (activeFilter === 'nft-vs-crypto' || activeFilter === 'nft-vs-nft' ? 
         flip.gameType === activeFilter : 
         flip.chain === activeFilter);
 
-    // Then apply the search filter
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = !searchQuery || 
       flip.nft.name.toLowerCase().includes(searchLower) ||
@@ -566,7 +471,7 @@ const Home = () => {
             </FilterContainer>
           </TransparentCard>
 
-          {enhancedFilteredFlips.length === 0 ? (
+          {filteredFlips.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: '3rem', border: `2px solid ${theme.colors.neonPink}` }}>
               <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Active Flips</NeonText>
               <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
@@ -890,8 +795,8 @@ const Home = () => {
                   borderBottom: `1px solid ${theme.colors.neonBlue}`,
                   textShadow: '0 0 10px rgba(0, 150, 255, 0.5)'
                 }}>
-                  {enhancedFilteredFlips.length > 0 ? 
-                    `Available Flips (${enhancedFilteredFlips.filter(flip => flip.status === 'waiting').length})` :
+                              {filteredFlips.length > 0 ?
+              `Available Flips (${filteredFlips.filter(flip => flip.status === 'waiting').length})` :
                     isConnected && nfts && nfts.length > 0 ? 
                       `Your NFTs (${nfts.length})` : 
                       'No Games Available'
@@ -919,8 +824,8 @@ const Home = () => {
                   gridAutoRows: 'minmax(auto, auto)',
                   gridAutoFlow: 'row'
                 }}>
-                  {enhancedFilteredFlips.length > 0 ? (
-                    enhancedFilteredFlips.map(flip => (
+                              {filteredFlips.length > 0 ? (
+              filteredFlips.map(flip => (
                     <div
                       key={flip.id}
                       onClick={() => setSelectedFlip(flip)}

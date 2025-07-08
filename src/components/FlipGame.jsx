@@ -1002,11 +1002,6 @@ const FlipGame = () => {
     }
 
     setNftData(nftInfo)
-    
-    // Fetch additional NFT data if needed
-    if (gameId && !isLoadingNFT) {
-      fetchNFTData(gameId)
-    }
   }, [gameData, gameId])
 
   // Single coin data manager
@@ -1018,21 +1013,7 @@ const FlipGame = () => {
     }
   }, [gameData?.coin])
 
-  // Add the missing fetchNFTData function
-  const fetchNFTData = async (gameId) => {
-    try {
-      setIsLoadingNFT(true)
-      const response = await fetch(`${API_URL}/api/games/${gameId}/nft`)
-      if (!response.ok) throw new Error('Failed to fetch NFT data')
-      const data = await response.json()
-      setNftData(data)
-    } catch (error) {
-      console.error('❌ Error fetching NFT data:', error)
-      setNftData(null)
-    } finally {
-      setIsLoadingNFT(false)
-    }
-  }
+
 
   // User input handlers - ONLY send to server
   const handlePowerChargeStart = () => {
