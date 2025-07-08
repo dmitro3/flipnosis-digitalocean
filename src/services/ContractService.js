@@ -3,7 +3,7 @@ import { base, mainnet, bsc, avalanche, polygon } from 'viem/chains'
 import { Alchemy } from 'alchemy-sdk'
 
 // Constants
-const CONTRACT_ADDRESS = "0xb2d09A3A6E502287D0acdAC31328B01AADe35941"
+const CONTRACT_ADDRESS = "0xDA139B0285535dF163B8F59a98810af0F7655a61"
 const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
 // Contract ABI (keeping your existing ABI)
@@ -271,7 +271,7 @@ const ALCHEMY_API_KEY = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 const CHAIN_CONFIGS = {
   base: {
     chain: base,
-    contractAddress: '0xb2d09A3A6E502287D0acdAC31328B01AADe35941',
+    contractAddress: '0xDA139B0285535dF163B8F59a98810af0F7655a61',
     rpcUrls: [
       `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`, // Primary Alchemy endpoint
       'https://mainnet.base.org', // Secondary public endpoint
