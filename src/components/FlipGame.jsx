@@ -552,6 +552,9 @@ const FlipGame = () => {
   // Add screen size detection
   const [isMobileScreen, setIsMobileScreen] = useState(false)
   const [screenSizeDetermined, setScreenSizeDetermined] = useState(false)
+  
+  // Add missing isInfoOpen state
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
 
   // Animation handlers
   const showChoiceAnimationEffect = (text, color = '#00FF41') => {

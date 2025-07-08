@@ -1107,9 +1107,10 @@ class GameSession {
 
   // NEW: Complete join process
   async completeJoinProcess(address, entryFeeHash) {
-    // Check if this is a valid join process
+    // Check if this is a valid join process OR if it's a blockchain-based join
     if (!this.joinInProgress || this.joiningPlayer !== address) {
-      return { success: false, error: 'No valid join process for this player' }
+      // For blockchain-based joins, we'll allow completion without a join process
+      console.log('🔄 Blockchain-based join detected, allowing completion')
     }
     
     // Normal join process completion

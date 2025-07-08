@@ -858,10 +858,11 @@ class ContractService {
         throw new Error('Cannot join your own game')
       }
 
-      // Calculate payment amount
+      // Calculate payment amount (including platform fee)
       let paymentAmount = 0n
       if (params.paymentToken === 0) { // ETH payment
-        paymentAmount = await this.retryWithBackoff(async () => {
+        // Get base ETH amount for the game price
+        const baseAmount = await this.retryWithBackoff(async () => {
           await this.rateLimit('getETHAmountJoin')
           return await publicClient.readContract({
             address: this.contractAddress,
@@ -869,6 +870,30 @@ class ContractService {
             functionName: 'getETHAmount',
             args: [game.priceUSD]
           })
+        })
+        
+        // Get platform fee percentage
+        const platformFeePercent = await this.retryWithBackoff(async () => {
+          await this.rateLimit('getPlatformFeePercent')
+          return await publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'platformFeePercent'
+          })
+        })
+        
+        // Calculate platform fee amount
+        const platformFee = (baseAmount * platformFeePercent) / 10000n // basis points
+        
+        // Total amount = base amount + platform fee
+        paymentAmount = baseAmount + platformFee
+        
+        console.log('💰 Payment calculation:', {
+          gamePriceUSD: game.priceUSD.toString(),
+          baseAmount: baseAmount.toString(),
+          platformFeePercent: platformFeePercent.toString(),
+          platformFee: platformFee.toString(),
+          totalAmount: paymentAmount.toString()
         })
       }
 
