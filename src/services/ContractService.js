@@ -6,8 +6,49 @@ import { Alchemy } from 'alchemy-sdk'
 const CONTRACT_ADDRESS = "0xDA139B0285535dF163B8F59a98810af0F7655a61"
 const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
+// Common error definitions for better error handling
+const COMMON_ERRORS = [
+  {
+    name: 'InsufficientListingFee',
+    type: 'error',
+    inputs: []
+  },
+  {
+    name: 'InvalidNFTContract',
+    type: 'error',
+    inputs: []
+  },
+  {
+    name: 'InvalidPriceFeed',
+    type: 'error',
+    inputs: []
+  },
+  {
+    name: 'GameNotAvailable',
+    type: 'error',
+    inputs: []
+  },
+  {
+    name: 'CannotJoinOwnGame',
+    type: 'error',
+    inputs: []
+  },
+  {
+    name: 'GameAlreadyJoined',
+    type: 'error',
+    inputs: []
+  },
+  {
+    name: 'InsufficientETH',
+    type: 'error',
+    inputs: []
+  }
+]
+
 // Contract ABI (keeping your existing ABI)
 const CONTRACT_ABI = [
+  // Error definitions
+  ...COMMON_ERRORS,
   // Events
   {
     name: 'GameCreated',
@@ -16,9 +57,7 @@ const CONTRACT_ABI = [
     inputs: [
       { indexed: true, name: 'gameId', type: 'uint256' },
       { indexed: true, name: 'creator', type: 'address' },
-      { indexed: true, name: 'nftContract', type: 'address' },
-      { indexed: false, name: 'tokenId', type: 'uint256' },
-      { indexed: false, name: 'priceUSD', type: 'uint256' }
+      { indexed: false, name: 'gameType', type: 'uint8' }
     ]
   },
   {
@@ -27,8 +66,7 @@ const CONTRACT_ABI = [
     anonymous: false,
     inputs: [
       { indexed: true, name: 'gameId', type: 'uint256' },
-      { indexed: true, name: 'joiner', type: 'address' },
-      { indexed: false, name: 'paymentToken', type: 'uint8' }
+      { indexed: true, name: 'joiner', type: 'address' }
     ]
   },
   {
@@ -63,7 +101,7 @@ const CONTRACT_ABI = [
       { name: 'gameType', type: 'uint8' },
       { name: 'authInfo', type: 'string' }
     ],
-    outputs: [{ name: 'gameId', type: 'uint256' }]
+    outputs: []
   },
   {
     name: 'joinGame',
@@ -190,15 +228,19 @@ const CONTRACT_ABI = [
           { name: 'state', type: 'uint8' },
           { name: 'gameType', type: 'uint8' },
           { name: 'priceUSD', type: 'uint256' },
-          { name: 'paymentToken', type: 'uint8' }
+          { name: 'paymentToken', type: 'uint8' },
+          { name: 'totalPaid', type: 'uint256' },
+          { name: 'winner', type: 'address' },
+          { name: 'createdAt', type: 'uint256' },
+          { name: 'expiresAt', type: 'uint256' }
         ]
       },
       {
         name: 'nftChallenge',
         type: 'tuple',
         components: [
-          { name: 'nftContract', type: 'address' },
-          { name: 'tokenId', type: 'uint256' }
+          { name: 'challengerNFTContract', type: 'address' },
+          { name: 'challengerTokenId', type: 'uint256' }
         ]
       }
     ]
@@ -217,7 +259,11 @@ const CONTRACT_ABI = [
       { name: 'state', type: 'uint8' },
       { name: 'gameType', type: 'uint8' },
       { name: 'priceUSD', type: 'uint256' },
-      { name: 'paymentToken', type: 'uint8' }
+      { name: 'paymentToken', type: 'uint8' },
+      { name: 'totalPaid', type: 'uint256' },
+      { name: 'winner', type: 'address' },
+      { name: 'createdAt', type: 'uint256' },
+      { name: 'expiresAt', type: 'uint256' }
     ]
   },
   {
@@ -226,8 +272,8 @@ const CONTRACT_ABI = [
     stateMutability: 'view',
     inputs: [{ name: 'gameId', type: 'uint256' }],
     outputs: [
-      { name: 'nftContract', type: 'address' },
-      { name: 'tokenId', type: 'uint256' }
+      { name: 'challengerNFTContract', type: 'address' },
+      { name: 'challengerTokenId', type: 'uint256' }
     ]
   },
   {
@@ -514,6 +560,15 @@ class ContractService {
         throw new Error('Contract service not initialized. Please connect your wallet.')
       }
 
+      // Get the next game ID before creating the game
+      const nextGameId = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'nextGameId'
+      })
+      
+      console.log('📊 Next game ID:', nextGameId.toString())
+
       // Get the listing fee in USD from contract (it's stored as 200000 for $0.20)
       const listingFeeUSD = await this.publicClient.readContract({
         address: this.contractAddress,
@@ -524,16 +579,58 @@ class ContractService {
       console.log('📊 Listing fee USD from contract:', listingFeeUSD)
       
       // Convert USD to ETH using the contract's getETHAmount function
-      const listingFeeETH = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: this.contractABI,
-        functionName: 'getETHAmount',
-        args: [listingFeeUSD]
+      let listingFeeETH
+      try {
+        listingFeeETH = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'getETHAmount',
+          args: [listingFeeUSD]
+        })
+        console.log('💵 Listing fee in ETH:', formatEther(listingFeeETH))
+      } catch (ethError) {
+        console.error('❌ Error getting ETH amount from price feed:', ethError)
+        
+        // Check if we're on localhost or if price feed is unavailable
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        
+        if (isLocalhost) {
+          // For localhost testing, use a very small amount
+          listingFeeETH = parseEther('0.0001') // 0.0001 ETH for testing
+          console.log('💵 Using localhost fallback listing fee in ETH:', formatEther(listingFeeETH))
+        } else {
+          // For production, use a reasonable fallback
+          listingFeeETH = parseEther('0.001')
+          console.log('💵 Using production fallback listing fee in ETH:', formatEther(listingFeeETH))
+        }
+      }
+
+      // Check user's ETH balance
+      const balance = await this.publicClient.getBalance({
+        address: this.walletClient.account.address
       })
       
-      console.log('💵 Listing fee in ETH:', formatEther(listingFeeETH))
+      console.log('💰 User ETH balance:', formatEther(balance))
+      console.log('💵 Required listing fee:', formatEther(listingFeeETH))
+      
+      if (balance < listingFeeETH) {
+        throw new Error(`Insufficient ETH balance. You have ${formatEther(balance)} ETH but need ${formatEther(listingFeeETH)} ETH for the listing fee.`)
+      }
 
-      // Rest of the method remains the same...
+      // Check NFT approval before creating game
+      console.log('🔍 Checking NFT approval...')
+      const currentApproval = await this.publicClient.readContract({
+        address: params.nftContract,
+        abi: NFT_ABI,
+        functionName: 'getApproved',
+        args: [BigInt(params.tokenId)]
+      })
+
+      if (currentApproval?.toLowerCase() !== this.contractAddress.toLowerCase()) {
+        throw new Error('NFT is not approved for the contract. Please approve the NFT first.')
+      }
+
+      // Prepare game creation parameters
       const gameParams = {
         nftContract: params.nftContract,
         tokenId: BigInt(params.tokenId),
@@ -547,6 +644,9 @@ class ContractService {
         })
       }
 
+      console.log('📝 Formatted game params:', gameParams)
+
+      // Simulate the transaction first
       const { request } = await this.publicClient.simulateContract({
         address: this.contractAddress,
         abi: this.contractABI,
@@ -563,30 +663,23 @@ class ContractService {
         value: listingFeeETH
       })
 
+      // Execute the transaction
       const hash = await this.walletClient.writeContract(request)
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash, confirmations: 1 })
+      
+      console.log('🎯 Game creation transaction sent:', hash)
 
-      // Parse the GameCreated event to get the game ID
-      const gameCreatedEvent = receipt.logs.find(log => {
-        try {
-          const decoded = decodeEventLog({
-            abi: this.contractABI,
-            data: log.data,
-            topics: log.topics
-          })
-          return decoded.eventName === 'GameCreated'
-        } catch {
-          return false
-        }
+      // Wait for confirmation
+      const receipt = await this.publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 1 
       })
 
-      const decodedEvent = decodeEventLog({
-        abi: this.contractABI,
-        data: gameCreatedEvent.data,
-        topics: gameCreatedEvent.topics
-      })
+      console.log('✅ Game creation confirmed:', receipt)
 
-      const gameId = decodedEvent.args.gameId.toString()
+      // The game ID is the nextGameId we read before creating the game
+      const gameId = nextGameId.toString()
+      
+      console.log('🎮 Game created with ID:', gameId)
 
       // Save to database
       const API_URL = 'https://cryptoflipz2-production.up.railway.app'
@@ -612,6 +705,8 @@ class ContractService {
 
       if (!response.ok) {
         console.warn('Failed to save game to database:', await response.text())
+      } else {
+        console.log('✅ Game saved to database')
       }
 
       return {
@@ -623,9 +718,28 @@ class ContractService {
 
   } catch (error) {
     console.error('❌ Error creating game:', error)
+    
+    // Try to decode the error if it's a contract revert
+    let errorMessage = error.message || 'Failed to create game'
+    
+    if (error.message.includes('0x59c896be')) {
+      // This is likely "Insufficient listing fee" error
+      errorMessage = 'Insufficient listing fee. The transaction failed because the ETH sent is less than the required listing fee. This often happens when the price feed is unavailable on localhost. Try using a testnet instead.'
+    } else if (error.message.includes('Invalid NFT contract')) {
+      errorMessage = 'Invalid NFT contract address provided.'
+    } else if (error.message.includes('Invalid price feed')) {
+      errorMessage = 'Price feed is not available. Please try again later.'
+    } else if (error.message.includes('execution reverted')) {
+      errorMessage = 'Transaction failed. This could be due to insufficient funds, NFT approval, or network issues.'
+    } else if (error.message.includes('NFT is not approved')) {
+      errorMessage = 'NFT approval required. Please approve the NFT for the contract before creating a game.'
+    } else if (error.message.includes('Insufficient ETH balance')) {
+      errorMessage = error.message // Use the specific balance error message
+    }
+    
     return {
       success: false,
-      error: error.message || 'Failed to create game'
+      error: errorMessage
     }
   }
   }
@@ -1483,21 +1597,45 @@ class ContractService {
     try {
       await this.rateLimit('getListingFee')
       
-      const { public: publicClient } = this.getCurrentClients()
-      
-      const listingFee = await this.retryWithBackoff(async () => {
-        await this.rateLimit('readListingFee')
-        return await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'listingFeeUSD'
-        })
+      if (!this.isInitialized()) {
+        throw new Error('Contract service not initialized. Please connect your wallet.')
+      }
+
+      const listingFeeUSD = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'listingFeeUSD'
       })
 
-      return listingFee
+      // Try to get the ETH equivalent
+      let listingFeeETH = null
+      let ethError = null
+      
+      try {
+        listingFeeETH = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'getETHAmount',
+          args: [listingFeeUSD]
+        })
+      } catch (error) {
+        ethError = error.message
+        console.warn('⚠️ Could not get ETH equivalent:', error.message)
+      }
+
+      return {
+        success: true,
+        listingFeeUSD: listingFeeUSD.toString(),
+        listingFeeUSDDecimal: Number(listingFeeUSD) / 1000000,
+        listingFeeETH: listingFeeETH ? formatEther(listingFeeETH) : null,
+        ethError
+      }
     } catch (error) {
-      console.error('Error getting listing fee:', error)
-      throw error
+      console.error('❌ Error getting listing fee:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to get listing fee'
+      }
     }
   }
 
@@ -1586,6 +1724,82 @@ class ContractService {
       }
     } catch (error) {
       console.error('Error setting flip result:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Debug method to test contract connectivity
+  async debugContract() {
+    try {
+      if (!this.isInitialized()) {
+        return {
+          success: false,
+          error: 'Contract service not initialized'
+        }
+      }
+
+      const results = {}
+
+      // Test 1: Get listing fee USD
+      try {
+        const listingFeeUSD = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'listingFeeUSD'
+        })
+        results.listingFeeUSD = listingFeeUSD.toString()
+        results.listingFeeUSDDecimal = Number(listingFeeUSD) / 1000000
+      } catch (error) {
+        results.listingFeeUSDError = error.message
+      }
+
+      // Test 2: Get ETH amount (price feed)
+      try {
+        const testUSD = 200000n // $0.20
+        const ethAmount = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'getETHAmount',
+          args: [testUSD]
+        })
+        results.ethAmount = formatEther(ethAmount)
+        results.priceFeedWorking = true
+      } catch (error) {
+        results.priceFeedError = error.message
+        results.priceFeedWorking = false
+      }
+
+      // Test 3: Get user balance
+      try {
+        const balance = await this.publicClient.getBalance({
+          address: this.walletClient.account.address
+        })
+        results.userBalance = formatEther(balance)
+      } catch (error) {
+        results.balanceError = error.message
+      }
+
+      // Test 4: Get next game ID
+      try {
+        const nextGameId = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'nextGameId'
+        })
+        results.nextGameId = nextGameId.toString()
+      } catch (error) {
+        results.nextGameIdError = error.message
+      }
+
+      return {
+        success: true,
+        results,
+        isLocalhost: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      }
+    } catch (error) {
       return {
         success: false,
         error: error.message
