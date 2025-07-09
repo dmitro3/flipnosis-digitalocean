@@ -652,7 +652,26 @@ const FlipGame = () => {
     }
   }
 
-  const handleGameCompleted = (data) => {
+  const handleGameCompleted = async (data) => {
+    console.log('🏆 Game completed! Winner:', data.winner)
+    
+    // Only complete on blockchain if we have a contract game ID
+    if (gameData?.contract_game_id && data.winner) {
+      try {
+        const result = await contractService.completeGame(
+          gameData.contract_game_id,
+          data.winner
+        )
+        
+        if (result.success) {
+          showSuccess('Game completed on blockchain! Winner can now withdraw rewards.')
+        }
+      } catch (error) {
+        console.error('Failed to complete game on blockchain:', error)
+        showError('Game finished but failed to record on blockchain. Contact support.')
+      }
+    }
+    
     setGameData(prev => ({
       ...prev,
       status: 'completed',
@@ -798,7 +817,7 @@ const FlipGame = () => {
     }
 
     // Extract message handler to separate function
-    const handleWebSocketMessage = (event) => {
+    const handleWebSocketMessage = async (event) => {
       try {
         const data = JSON.parse(event.data)
         console.log('📡 Received:', data.type)
@@ -819,7 +838,7 @@ const FlipGame = () => {
             handlePlayerJoined(data)
             break
           case 'game_completed':
-            handleGameCompleted(data)
+            await handleGameCompleted(data)
             break
           case 'opponent_choice':
             handleOpponentChoice(data)

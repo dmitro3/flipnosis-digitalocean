@@ -247,23 +247,22 @@ async function updateEthPrice() {
   }
 }
 
-// ETH price endpoint
+// ETH price endpoint - now returns static response since contract uses Chainlink
 app.get('/api/eth-price', async (req, res) => {
   try {
-    await updateEthPrice()
     res.json({ 
-      price: cachedEthPrice,
+      price: 3000, // Static fallback price
       listingFeeUSD: listingFeeUSD,
-      lastUpdated: new Date(lastEthPriceUpdate).toISOString(),
-      cacheDuration: ETH_PRICE_CACHE_DURATION / 1000
+      lastUpdated: new Date().toISOString(),
+      note: 'Contract now uses Chainlink price feeds'
     })
   } catch (error) {
     console.error('❌ Error in ETH price endpoint:', error)
     res.json({ 
-      price: cachedEthPrice,
+      price: 3000,
       listingFeeUSD: listingFeeUSD,
-      error: 'Using cached price',
-      lastUpdated: new Date(lastEthPriceUpdate).toISOString()
+      error: 'Static fallback price',
+      lastUpdated: new Date().toISOString()
     })
   }
 })
@@ -1747,6 +1746,11 @@ class GameSession {
     this.phase = 'game_complete'
     this.winner = this.creatorWins > this.joinerWins ? this.creator : this.joiner
     
+    console.log('🏆 Game completed, winner:', this.winner)
+    
+    // Store the winner in the session
+    this.winner = this.winner
+    
     try {
       await dbHelpers.updateGame(this.gameId, { 
         status: 'completed',
@@ -1757,7 +1761,17 @@ class GameSession {
       console.error('Error updating game completion:', error)
     }
     
-    this.broadcastGameState()
+    // Notify all clients
+    this.broadcastToAll({
+      type: 'game_completed',
+      winner: this.winner,
+      finalScores: {
+        creator: this.creatorWins,
+        joiner: this.joinerWins
+      }
+    })
+    
+    // The frontend should now call contractService.completeGame()
   }
 
   prepareNextRound() {
@@ -2614,24 +2628,24 @@ process.on('SIGINT', () => {
   })
 })
 
-// Start background ETH price updates
-setInterval(async () => {
-  try {
-    await updateEthPrice()
-  } catch (error) {
-    console.error('❌ Background ETH price update failed:', error)
-  }
-}, ETH_PRICE_CACHE_DURATION)
+// ETH price updates removed - contract now uses Chainlink price feeds
+// setInterval(async () => {
+//   try {
+//     await updateEthPrice()
+//   } catch (error) {
+//     console.error('❌ Background ETH price update failed:', error)
+//   }
+// }, ETH_PRICE_CACHE_DURATION)
 
 // Update ETH price on startup
-setTimeout(async () => {
-  try {
-    await updateEthPrice()
-    console.log('💰 Initial ETH price fetched:', cachedEthPrice)
-  } catch (error) {
-    console.error('❌ Initial ETH price fetch failed:', error)
-  }
-}, 5000)
+// setTimeout(async () => {
+//   try {
+//     await updateEthPrice()
+//     console.log('💰 Initial ETH price fetched:', cachedEthPrice)
+//   } catch (error) {
+//     console.error('❌ Initial ETH price fetch failed:', error)
+//   }
+// }, 5000)
 
 const PORT = process.env.PORT || 3001
 server.listen(PORT, '0.0.0.0', () => {

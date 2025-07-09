@@ -568,14 +568,22 @@ class ContractService {
       
       console.log('📊 Next game ID:', nextGameId.toString())
 
-      // Get current ETH price and listing fee from server
-      const ethPriceResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
-      const ethPriceData = await ethPriceResponse.json()
-      const currentEthPrice = ethPriceData.price || 3000 // fallback to $3000
-      const listingFeeUSD = ethPriceData.listingFeeUSD || 0.20 // fallback to 20 cents
+      // Get listing fee from contract instead of server
+      const listingFeeResult = await this.getListingFee()
+      if (!listingFeeResult.success) {
+        throw new Error('Failed to get listing fee: ' + listingFeeResult.error)
+      }
       
-      const listingFeeETH = parseEther((listingFeeUSD / currentEthPrice).toString())
-      console.log('💵 Listing fee:', listingFeeUSD, 'USD =', formatEther(listingFeeETH), 'ETH (at $' + currentEthPrice + '/ETH)')
+      let listingFeeETH = listingFeeResult.listingFeeETH
+      
+      if (!listingFeeETH) {
+        // Fallback for local testing
+        const listingFeeUSD = 0.20
+        const ethResult = await this.getETHAmount(listingFeeUSD)
+        listingFeeETH = ethResult.ethAmountWei
+      }
+      
+      console.log('💵 Listing fee from contract:', formatEther(listingFeeETH), 'ETH')
 
       // Check user's ETH balance
       const balance = await this.publicClient.getBalance({
@@ -836,7 +844,7 @@ class ContractService {
           nftChallenge: result[1],
           payment: {
             priceUSD: actualPriceUSD,
-            priceETH: formatEther(ethAmount)
+            priceETH: ethAmount.ethAmount
           }
         }
       }
@@ -1015,10 +1023,40 @@ class ContractService {
   // Get ETH amount for USD price
   async getETHAmount(priceUSD) {
     try {
-      const ethAmount = await this.convertUSDToETH(priceUSD)
-      return parseEther(ethAmount.toString())
+      if (!this.publicClient || !this.contractAddress) {
+        throw new Error('Contract service not initialized')
+      }
+
+      // Convert USD to 6 decimals as expected by contract
+      const usdAmount = BigInt(Math.floor(priceUSD * 1000000))
+      
+      const ethAmount = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'getETHAmount',
+        args: [usdAmount]
+      })
+      
+      return {
+        success: true,
+        ethAmount: formatEther(ethAmount),
+        ethAmountWei: ethAmount
+      }
     } catch (error) {
-      console.error('Error converting USD to ETH:', error)
+      console.error('Error getting ETH amount from contract:', error)
+      
+      // Fallback to server price if contract fails (for local testing)
+      if (window.location.hostname === 'localhost') {
+        const ethPrice = await this.getCurrentEthPrice()
+        const ethAmount = priceUSD / ethPrice
+        return {
+          success: true,
+          ethAmount: ethAmount.toString(),
+          ethAmountWei: parseEther(ethAmount.toString()),
+          fallback: true
+        }
+      }
+      
       throw error
     }
   }
@@ -1295,8 +1333,9 @@ class ContractService {
 
       return {
         success: true,
-        eth: unclaimedETH,
-        usdc: unclaimedUSDC
+        eth: formatEther(unclaimedETH),
+        usdc: Number(unclaimedUSDC) / 1000000, // Convert from 6 decimals
+        hasRewards: unclaimedETH > 0n || unclaimedUSDC > 0n
       }
     } catch (error) {
       console.error('Error checking unclaimed rewards:', error)
