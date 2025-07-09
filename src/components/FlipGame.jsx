@@ -1156,6 +1156,8 @@ const FlipGame = () => {
     }))
   }
 
+
+
   const handleJoinGame = async () => {
     if (!isFullyConnected || !address) {
       showError('Please connect your wallet to join the game')
@@ -1180,7 +1182,7 @@ const FlipGame = () => {
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
 
-      // Prepare join parameters
+      // Prepare join parameters for NFTFlipGame contract
       const joinParams = {
         gameId: gameId,
         paymentToken: 0, // 0 = ETH

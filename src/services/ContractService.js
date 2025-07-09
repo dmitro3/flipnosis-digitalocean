@@ -134,6 +134,16 @@ const CONTRACT_ABI = [
     outputs: []
   },
   {
+    name: 'completeGame',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'winner', type: 'address' }
+    ],
+    outputs: []
+  },
+  {
     name: 'withdrawRewards',
     type: 'function',
     stateMutability: 'nonpayable',
@@ -812,8 +822,12 @@ class ContractService {
         })
       })
 
+      // Convert price from 6 decimals (e.g., 400000 = $0.40)
+      const priceUSDInDecimals = Number(result[0].priceUSD)
+      const actualPriceUSD = priceUSDInDecimals / 1000000 // Convert from 6 decimals
+      
       // Get the ETH amount for the game price
-      const ethAmount = await this.getETHAmount(Number(result[0].priceUSD))
+      const ethAmount = await this.getETHAmount(actualPriceUSD)
       
       return {
         success: true,
@@ -821,7 +835,7 @@ class ContractService {
           game: result[0],
           nftChallenge: result[1],
           payment: {
-            priceUSD: Number(result[0].priceUSD),
+            priceUSD: actualPriceUSD,
             priceETH: formatEther(ethAmount)
           }
         }
@@ -850,8 +864,11 @@ class ContractService {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
 
+      console.log('💰 Game price from contract:', gameDetails.data.payment.priceUSD, 'USD')
+      console.log('💰 Price in ETH (from contract):', gameDetails.data.payment.priceETH, 'ETH')
+
       // Get current ETH price from server and convert user's game price
-      const priceUSD = Number(gameDetails.data.game.priceUSD)
+      const priceUSD = gameDetails.data.payment.priceUSD
       
       // For localhost testing, use a reasonable ETH price
       let currentEthPrice = 3000 // Default fallback
@@ -869,6 +886,7 @@ class ContractService {
         }
       }
       
+      // Calculate ETH amount needed
       const priceInETH = priceUSD / currentEthPrice
       const priceInWei = parseEther(priceInETH.toString())
       
@@ -878,63 +896,58 @@ class ContractService {
       console.log('💰 Price in Wei:', priceInWei.toString())
       console.log('💰 Price in ETH (formatted):', formatEther(priceInWei), 'ETH')
 
-      // For NFT vs Crypto games, joiner pays with ETH
-      if (params.paymentToken === 0) { // ETH payment
-        // Simulate the transaction
-        const { request } = await this.publicClient.simulateContract({
-          address: this.contractAddress,
-          abi: this.contractABI,
-          functionName: 'joinGame',
-          args: [
-            BigInt(params.gameId),
-            params.paymentToken || 0,
-            params.challengerNFTContract || '0x0000000000000000000000000000000000000000',
-            params.challengerTokenId || BigInt(0)
-          ],
-          account: this.walletClient.account,
-          value: priceInWei
-        })
+      // Simulate the transaction with payment
+      const { request } = await this.publicClient.simulateContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'joinGame',
+        args: [
+          BigInt(params.gameId),
+          0, // paymentToken (0 = ETH)
+          '0x0000000000000000000000000000000000000000', // challengerNFTContract (none)
+          0 // challengerTokenId (none)
+        ],
+        value: priceInWei,
+        account: this.walletClient.account
+      })
 
-        // Execute the transaction
-        const hash = await this.walletClient.writeContract(request)
-        
-        console.log('🎯 Join game transaction sent:', hash)
+      // Execute the transaction
+      const hash = await this.walletClient.writeContract(request)
+      
+      console.log('🎯 Join game transaction sent:', hash)
 
-        // Wait for confirmation
-        const receipt = await this.publicClient.waitForTransactionReceipt({ 
-          hash,
-          confirmations: 1 
-        })
+      // Wait for confirmation
+      const receipt = await this.publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 1 
+      })
 
-        console.log('✅ Join game confirmed:', receipt)
+      console.log('✅ Join game confirmed:', receipt)
 
-        // Update database
-        try {
-          const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-          const response = await fetch(`${API_URL}/api/games/${params.gameId}/join`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              joinerAddress: this.walletClient.account.address,
-              paymentTxHash: hash,
-              paymentAmount: priceUSD
-            })
+      // Update database
+      try {
+        const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+        const response = await fetch(`${API_URL}/api/games/${params.gameId}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            joinerAddress: this.walletClient.account.address,
+            paymentTxHash: hash,
+            paymentAmount: gameDetails.data.payment.priceUSD
           })
+        })
 
-          if (!response.ok) {
-            console.warn('Failed to update database after join:', await response.text())
-          }
-        } catch (dbError) {
-          console.error('Database update error:', dbError)
+        if (!response.ok) {
+          console.warn('Failed to update database after join:', await response.text())
         }
+      } catch (dbError) {
+        console.error('Database update error:', dbError)
+      }
 
-        return {
-          success: true,
-          transactionHash: hash,
-          receipt
-        }
-      } else {
-        throw new Error('Unsupported payment token')
+      return {
+        success: true,
+        transactionHash: hash,
+        receipt
       }
 
   } catch (error) {
