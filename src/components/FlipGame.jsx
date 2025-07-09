@@ -105,13 +105,16 @@ const BackgroundVideo = styled.video`
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   object-fit: cover;
   z-index: -1;
   opacity: 0.7;
   pointer-events: none;
   background: #000;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 `
 
 const ChoiceAnimation = styled.div`
@@ -674,6 +677,10 @@ const FlipGame = () => {
       playsInline
       preload="auto"
       onError={() => setVideoError(true)}
+      style={{
+        willChange: 'auto',
+        contain: 'layout style paint'
+      }}
     >
       <source src={isMobileScreen ? mobileVideo : hazeVideo} type="video/webm" />
     </BackgroundVideo>

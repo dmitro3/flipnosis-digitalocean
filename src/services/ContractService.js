@@ -606,7 +606,7 @@ class ContractService {
       const gameParams = {
         nftContract: params.nftContract,
         tokenId: BigInt(params.tokenId),
-        priceUSD: BigInt(Math.floor(params.priceUSD * 1000000)), // Convert to 6 decimals like contract expects
+        priceUSD: BigInt(Math.floor(params.priceUSD * 1000000)), // Use the price the player entered
         acceptedToken: params.acceptedToken || 0,
         gameType: params.gameType || 0,
         authInfo: JSON.stringify({
@@ -661,7 +661,7 @@ class ContractService {
         creator: this.walletClient.account.address,
         nft_contract: params.nftContract,
         nft_token_id: params.tokenId.toString(),
-        price_usd: params.priceUSD,
+        price_usd: params.priceUSD, // Use the price the player entered
         game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
         coin: params.coin,
         transaction_hash: hash,
@@ -864,37 +864,12 @@ class ContractService {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
 
+      // Use the actual price from the game details
+      const priceInWei = parseEther(gameDetails.data.payment.priceETH)
+      
       console.log('💰 Game price from contract:', gameDetails.data.payment.priceUSD, 'USD')
-      console.log('💰 Price in ETH (from contract):', gameDetails.data.payment.priceETH, 'ETH')
-
-      // Get current ETH price from server and convert user's game price
-      const priceUSD = gameDetails.data.payment.priceUSD
-      
-      // For localhost testing, use a reasonable ETH price
-      let currentEthPrice = 3000 // Default fallback
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        currentEthPrice = 3000 // Use $3000 for localhost testing
-        console.log('🏠 Localhost detected, using ETH price: $' + currentEthPrice)
-      } else {
-        try {
-          const ethPriceResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
-          const ethPriceData = await ethPriceResponse.json()
-          currentEthPrice = ethPriceData.price || 3000
-        } catch (error) {
-          console.warn('Failed to fetch ETH price, using fallback:', error)
-          currentEthPrice = 3000
-        }
-      }
-      
-      // Calculate ETH amount needed
-      const priceInETH = priceUSD / currentEthPrice
-      const priceInWei = parseEther(priceInETH.toString())
-      
-      console.log('💰 Game price:', priceUSD, 'USD')
-      console.log('💰 Current ETH price: $' + currentEthPrice)
-      console.log('💰 Price in ETH:', priceInETH)
+      console.log('💰 Price in ETH:', gameDetails.data.payment.priceETH, 'ETH')
       console.log('💰 Price in Wei:', priceInWei.toString())
-      console.log('💰 Price in ETH (formatted):', formatEther(priceInWei), 'ETH')
 
       // Simulate the transaction with payment
       const { request } = await this.publicClient.simulateContract({
