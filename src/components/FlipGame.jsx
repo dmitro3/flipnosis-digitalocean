@@ -1060,10 +1060,13 @@ const FlipGame = () => {
       try {
         showInfo('Flipping coin on blockchain...')
         
+        // Get current power from gameState
+        const currentPower = isCreator ? gameState?.creatorPower : gameState?.joinerPower
+        
         // Prepare flip parameters
         const flipParams = {
           gameId: gameData.contract_game_id,
-          power: chargedPower || 50 // Use your existing power value
+          power: currentPower || 50 // Use current power from gameState
         }
 
         // Flip coin using smart contract
@@ -1228,6 +1231,23 @@ const FlipGame = () => {
     }
 
     try {
+      showInfo('Checking for unclaimed rewards...')
+      
+      // First check if there are any unclaimed rewards
+      const unclaimedResult = await contractService.getUnclaimedRewards(address)
+      
+      if (!unclaimedResult.success) {
+        throw new Error('Failed to check rewards: ' + unclaimedResult.error)
+      }
+      
+      const { eth, usdc } = unclaimedResult
+      const hasRewards = eth > 0 || usdc > 0
+      
+      if (!hasRewards) {
+        showError('No rewards to claim. Make sure the game is completed and you are the winner.')
+        return
+      }
+      
       showInfo('Processing withdrawal...')
       
       const result = await contractService.withdrawRewards()
@@ -1238,7 +1258,7 @@ const FlipGame = () => {
 
       showSuccess('Winnings withdrawn successfully! 🎉')
 
-      // Also withdraw NFT if this was the winner
+            // Also withdraw NFT if this was the winner
       if (gameData?.nft_contract && gameData?.token_id) {
         const nftResult = await contractService.withdrawNFT(
           gameData.nft_contract,
@@ -1249,10 +1269,44 @@ const FlipGame = () => {
           showSuccess('NFT returned to your wallet!')
         }
       }
-
     } catch (error) {
       console.error('❌ Error withdrawing:', error)
       showError('Failed to withdraw: ' + error.message)
+    }
+  }
+
+  // Add handleCompleteGame function
+  const handleCompleteGame = async () => {
+    if (!isFullyConnected || !address) {
+      showError('Please connect your wallet to complete the game')
+      return
+    }
+
+    // Check if we have a winner from the server
+    if (!gameState?.winner) {
+      showError('No winner determined yet. Please wait for the game to complete.')
+      return
+    }
+
+    try {
+      showInfo('Completing game on blockchain...')
+      
+      const result = await contractService.completeGame(gameData.contract_game_id, gameState.winner)
+      
+      if (!result.success) {
+        throw new Error('Failed to complete game: ' + result.error)
+      }
+
+      showSuccess('Game completed successfully! You can now withdraw your winnings.')
+      
+      // Reload game data
+      setTimeout(() => {
+        loadGame()
+      }, 2000)
+      
+    } catch (error) {
+      console.error('❌ Error completing game:', error)
+      showError('Failed to complete game: ' + error.message)
     }
   }
 

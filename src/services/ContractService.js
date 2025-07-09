@@ -125,18 +125,7 @@ const CONTRACT_ABI = [
     ],
     outputs: []
   },
-  {
-    name: 'setFlipResult',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'gameId', type: 'uint256' },
-      { name: 'flippedA', type: 'bool' },
-      { name: 'flippedB', type: 'bool' },
-      { name: 'power', type: 'uint8' }
-    ],
-    outputs: []
-  },
+
   {
     name: 'cancelGame',
     type: 'function',
@@ -569,41 +558,14 @@ class ContractService {
       
       console.log('📊 Next game ID:', nextGameId.toString())
 
-      // Get the listing fee in USD from contract (it's stored as 200000 for $0.20)
-      const listingFeeUSD = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: this.contractABI,
-        functionName: 'listingFeeUSD'
-      })
+      // Get current ETH price and listing fee from server
+      const ethPriceResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
+      const ethPriceData = await ethPriceResponse.json()
+      const currentEthPrice = ethPriceData.price || 3000 // fallback to $3000
+      const listingFeeUSD = ethPriceData.listingFeeUSD || 0.20 // fallback to 20 cents
       
-      console.log('📊 Listing fee USD from contract:', listingFeeUSD)
-      
-      // Convert USD to ETH using the contract's getETHAmount function
-      let listingFeeETH
-      try {
-        listingFeeETH = await this.publicClient.readContract({
-          address: this.contractAddress,
-          abi: this.contractABI,
-          functionName: 'getETHAmount',
-          args: [listingFeeUSD]
-        })
-        console.log('💵 Listing fee in ETH:', formatEther(listingFeeETH))
-      } catch (ethError) {
-        console.error('❌ Error getting ETH amount from price feed:', ethError)
-        
-        // Check if we're on localhost or if price feed is unavailable
-        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        
-        if (isLocalhost) {
-          // For localhost testing, use a very small amount
-          listingFeeETH = parseEther('0.0001') // 0.0001 ETH for testing
-          console.log('💵 Using localhost fallback listing fee in ETH:', formatEther(listingFeeETH))
-        } else {
-          // For production, use a reasonable fallback
-          listingFeeETH = parseEther('0.001')
-          console.log('💵 Using production fallback listing fee in ETH:', formatEther(listingFeeETH))
-        }
-      }
+      const listingFeeETH = parseEther((listingFeeUSD / currentEthPrice).toString())
+      console.log('💵 Listing fee:', listingFeeUSD, 'USD =', formatEther(listingFeeETH), 'ETH (at $' + currentEthPrice + '/ETH)')
 
       // Check user's ETH balance
       const balance = await this.publicClient.getBalance({
@@ -888,11 +850,18 @@ class ContractService {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
 
-      const { payment } = gameDetails.data
-      const priceInWei = parseEther(payment.priceETH.toString())
+      // Get current ETH price from server and convert user's game price
+      const priceUSD = gameDetails.data.game.priceUSD
+      const ethPriceResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
+      const ethPriceData = await ethPriceResponse.json()
+      const currentEthPrice = ethPriceData.price || 3000 // fallback to $3000
       
-      console.log('💰 Game price:', payment.priceUSD, 'USD')
-      console.log('💰 Price in ETH:', payment.priceETH)
+      const priceInETH = priceUSD / currentEthPrice
+      const priceInWei = parseEther(priceInETH.toString())
+      
+      console.log('💰 Game price:', priceUSD, 'USD')
+      console.log('💰 Current ETH price: $' + currentEthPrice)
+      console.log('💰 Price in ETH:', priceInETH)
       console.log('💰 Price in Wei:', priceInWei.toString())
 
       // For NFT vs Crypto games, joiner pays with ETH
@@ -934,7 +903,7 @@ class ContractService {
             body: JSON.stringify({
               joinerAddress: this.walletClient.account.address,
               paymentTxHash: hash,
-              paymentAmount: payment.priceUSD
+              paymentAmount: priceUSD
             })
           })
 
@@ -1017,24 +986,89 @@ class ContractService {
     }
   }
 
+  // Get current ETH price from server
+  async getCurrentEthPrice() {
+    try {
+      const response = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
+      const data = await response.json()
+      return data.price || 3000 // fallback to $3000
+    } catch (error) {
+      console.error('Error getting ETH price:', error)
+      return 3000 // fallback
+    }
+  }
+
+  // Convert USD to ETH using current price
+  async convertUSDToETH(priceUSD) {
+    const ethPrice = await this.getCurrentEthPrice()
+    return priceUSD / ethPrice
+  }
+
   // Get ETH amount for USD price
   async getETHAmount(priceUSD) {
     try {
-      await this.rateLimit('getETHAmount')
-      
-      const { public: publicClient } = this.getCurrentClients()
-      
-      return await this.retryWithBackoff(async () => {
-        return await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'getETHAmount',
-          args: [priceUSD]
-        })
-      })
+      const ethAmount = await this.convertUSDToETH(priceUSD)
+      return parseEther(ethAmount.toString())
     } catch (error) {
-      console.error('Error getting ETH amount:', error)
+      console.error('Error converting USD to ETH:', error)
       throw error
+    }
+  }
+
+  // Flip coin using smart contract
+  async flipCoin(params) {
+    try {
+      console.log('🎲 Flipping coin with params:', params)
+      
+      if (!this.isInitialized()) {
+        throw new Error('Contract service not initialized. Please connect your wallet.')
+      }
+
+      const { walletClient } = this.getCurrentClients()
+      
+      // Simulate the transaction first
+      const { request } = await this.publicClient.simulateContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'completeGame',
+        args: [
+          BigInt(params.gameId),
+          Math.random() > 0.5, // flippedA - random
+          Math.random() > 0.5, // flippedB - random
+          params.power || 50 // power level
+        ],
+        account: this.walletClient.account
+      })
+
+      // Execute the transaction
+      const hash = await this.walletClient.writeContract(request)
+      
+      console.log('🎯 Flip coin transaction sent:', hash)
+
+      // Wait for confirmation
+      const receipt = await this.publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 1 
+      })
+
+      console.log('✅ Flip coin confirmed:', receipt)
+
+      // Get updated game details
+      const gameDetails = await this.getGameDetails(params.gameId)
+
+      return {
+        success: true,
+        transactionHash: hash,
+        receipt,
+        gameDetails
+      }
+
+    } catch (error) {
+      console.error('❌ Error flipping coin:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to flip coin'
+      }
     }
   }
 
@@ -1217,6 +1251,8 @@ class ContractService {
       }
     }
   }
+
+
 
   // Cancel game
   async cancelGame(gameId) {
@@ -1671,65 +1707,7 @@ class ContractService {
     }
   }
 
-  // Set flip result
-  async setFlipResult(gameId, flippedA, flippedB, power) {
-    try {
-      await this.rateLimit('setFlipResult')
-      
-      const { walletClient, public: publicClient } = this.getCurrentClients()
-      
-      if (!walletClient) {
-        throw new Error('Wallet client not available. Please connect your wallet.')
-      }
 
-      console.log('🎲 Setting flip result:', { gameId, flippedA, flippedB, power })
-
-      const gasEstimate = await this.retryWithBackoff(async () => {
-        await this.rateLimit('estimateFlipGas')
-        return await publicClient.estimateContractGas({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'setFlipResult',
-          args: [BigInt(gameId), flippedA, flippedB, power],
-          account: walletClient.account.address
-        })
-      })
-
-      const gasLimit = gasEstimate * 120n / 100n
-      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
-
-      const hash = await this.retryWithBackoff(async () => {
-        await this.rateLimit('setFlipTx')
-        return await walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'setFlipResult',
-          args: [BigInt(gameId), flippedA, flippedB, power],
-          account: walletClient.account.address,
-          gas: gasLimit,
-          maxFeePerGas,
-          maxPriorityFeePerGas
-        })
-      })
-
-      const receipt = await publicClient.waitForTransactionReceipt({ 
-        hash,
-        confirmations: 2
-      })
-
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
-      }
-    } catch (error) {
-      console.error('Error setting flip result:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
 
   // Debug method to test contract connectivity
   async debugContract() {

@@ -192,6 +192,105 @@ app.get('/health', (req, res) => {
   })
 })
 
+// ETH price caching
+let cachedEthPrice = 3000 // Default fallback
+let lastEthPriceUpdate = 0
+const ETH_PRICE_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Listing fee configuration (in USD)
+let listingFeeUSD = 0.20 // 20 cents - configurable
+
+// Function to fetch current ETH price
+async function fetchCurrentEthPrice() {
+  try {
+    console.log('💰 Fetching current ETH price...')
+    
+    // Try CoinGecko first (free, no API key needed)
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
+    const data = await response.json()
+    
+    if (data.ethereum && data.ethereum.usd) {
+      const price = data.ethereum.usd
+      console.log('✅ ETH price from CoinGecko:', price)
+      return price
+    }
+    
+    // Fallback to alternative API
+    const fallbackResponse = await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot')
+    const fallbackData = await fallbackResponse.json()
+    
+    if (fallbackData.data && fallbackData.data.amount) {
+      const price = parseFloat(fallbackData.data.amount)
+      console.log('✅ ETH price from Coinbase:', price)
+      return price
+    }
+    
+    throw new Error('No price data available')
+    
+  } catch (error) {
+    console.error('❌ Error fetching ETH price:', error)
+    return cachedEthPrice // Return cached price on error
+  }
+}
+
+// Update ETH price every 5 minutes
+async function updateEthPrice() {
+  const now = Date.now()
+  
+  if (now - lastEthPriceUpdate > ETH_PRICE_CACHE_DURATION) {
+    const newPrice = await fetchCurrentEthPrice()
+    if (newPrice && newPrice > 0) {
+      cachedEthPrice = newPrice
+      lastEthPriceUpdate = now
+      console.log('💰 ETH price updated to:', cachedEthPrice)
+    }
+  }
+}
+
+// ETH price endpoint
+app.get('/api/eth-price', async (req, res) => {
+  try {
+    await updateEthPrice()
+    res.json({ 
+      price: cachedEthPrice,
+      listingFeeUSD: listingFeeUSD,
+      lastUpdated: new Date(lastEthPriceUpdate).toISOString(),
+      cacheDuration: ETH_PRICE_CACHE_DURATION / 1000
+    })
+  } catch (error) {
+    console.error('❌ Error in ETH price endpoint:', error)
+    res.json({ 
+      price: cachedEthPrice,
+      listingFeeUSD: listingFeeUSD,
+      error: 'Using cached price',
+      lastUpdated: new Date(lastEthPriceUpdate).toISOString()
+    })
+  }
+})
+
+// Admin endpoint to update listing fee
+app.post('/api/admin/listing-fee', (req, res) => {
+  try {
+    const { feeUSD } = req.body
+    
+    if (typeof feeUSD !== 'number' || feeUSD < 0) {
+      return res.status(400).json({ error: 'Invalid fee amount' })
+    }
+    
+    listingFeeUSD = feeUSD
+    console.log('💰 Listing fee updated to:', listingFeeUSD, 'USD')
+    
+    res.json({ 
+      success: true, 
+      listingFeeUSD,
+      message: `Listing fee updated to $${listingFeeUSD}`
+    })
+  } catch (error) {
+    console.error('❌ Error updating listing fee:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // API routes (before static files)
 app.get('/api/test', (req, res) => {
   console.log('🔧 API test route hit!')
@@ -2515,14 +2614,35 @@ process.on('SIGINT', () => {
   })
 })
 
+// Start background ETH price updates
+setInterval(async () => {
+  try {
+    await updateEthPrice()
+  } catch (error) {
+    console.error('❌ Background ETH price update failed:', error)
+  }
+}, ETH_PRICE_CACHE_DURATION)
+
+// Update ETH price on startup
+setTimeout(async () => {
+  try {
+    await updateEthPrice()
+    console.log('💰 Initial ETH price fetched:', cachedEthPrice)
+  } catch (error) {
+    console.error('❌ Initial ETH price fetch failed:', error)
+  }
+}, 5000)
+
 const PORT = process.env.PORT || 3001
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 WebSocket server with SQLite running on port ${PORT}`)
   console.log(`📊 Health check: http://localhost:${PORT}/health`)
   console.log(`🧪 Test endpoint: http://localhost:${PORT}/test`)
   console.log(`🎮 Games API: http://localhost:${PORT}/api/games`)
+  console.log(`💰 ETH price API: http://localhost:${PORT}/api/eth-price`)
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`)
   console.log(`🔗 Server listening on 0.0.0.0:${PORT}`)
+  console.log(`💰 ETH price updates every ${ETH_PRICE_CACHE_DURATION / 1000} seconds`)
   
   if (process.env.NODE_ENV === 'production') {
     console.log(`🚀 Production server ready at https://cryptoflipz2-production.up.railway.app`)
