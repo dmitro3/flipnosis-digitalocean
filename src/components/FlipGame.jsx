@@ -1208,18 +1208,19 @@ const FlipGame = () => {
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
 
-      // Prepare join parameters for NFTFlipGame contract
-      const joinParams = {
-        gameId: gameId,
-        paymentToken: 0, // 0 = ETH
-        challengerNFTContract: null,
-        challengerTokenId: null
+      // Get exact Wei amount from server
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      const priceResponse = await fetch(`${API_URL}/api/games/${gameId}/join-price`)
+      
+      if (!priceResponse.ok) {
+        throw new Error('Failed to get join price from server')
       }
+      
+      const { weiAmount } = await priceResponse.json()
+      console.log('💰 Join price from server:', { weiAmount })
 
-      console.log('🎮 Joining game with smart contract:', joinParams)
-
-      // Join game using smart contract
-      const result = await contractService.joinGame(joinParams)
+      // Join game with exact Wei amount
+      const result = await contractService.joinGameWithExactAmount(gameId, weiAmount)
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to join game')

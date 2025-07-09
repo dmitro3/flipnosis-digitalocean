@@ -137,61 +137,53 @@ const FlipGame = () => {
   }
 
   const handleJoinGame = async () => {
-    if (!isFullyConnected || !address) {
-      showError('Please connect your wallet to join the game')
-      return
-    }
-
-    if (!game) {
-      showError('Game data not available')
-      return
-    }
-
-    setIsJoining(true)
     try {
+      if (!isFullyConnected || !address) {
+        showError('Please connect your wallet')
+        return
+      }
+
+      setIsJoining(true)
       showInfo('Joining game...')
 
-      // Prepare join parameters
-      const joinParams = {
-        gameId: gameId,
-        joiner: address,
-        acceptedToken: 0, // 0 = ETH, 1 = USDC
-        authInfo: JSON.stringify({
-          joiner: address,
-          joinedAt: new Date().toISOString()
-        })
-      }
-
-      console.log('🎮 Joining game with smart contract:', joinParams)
-
-      // Join game using smart contract
-      const result = await contractService.joinGame(joinParams)
+      const result = await contractService.joinGame(gameId)
       
-      if (!result.success) {
-        throw new Error('Failed to join game: ' + result.error)
+      if (result.success) {
+        showSuccess('Successfully joined the game!')
+        // Notify server via WebSocket
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'join_game',
+            gameId,
+            role: 'joiner',
+            address,
+            transactionHash: result.hash
+          }))
+        }
+      } else {
+        throw new Error(result.error)
       }
-
-      showSuccess('Successfully joined the game!')
-      console.log('✅ Joined game on blockchain:', result)
-
-      // Update local game state
-      setGame(prev => ({
-        ...prev,
-        joiner: address,
-        status: 'active'
-      }))
-
-      // Update database
-      await updateGameInDatabase({
-        joiner: address,
-        status: 'active'
-      })
-
     } catch (error) {
-      console.error('❌ Error joining game:', error)
-      showError('Failed to join game: ' + error.message)
+      showError(error.message)
     } finally {
       setIsJoining(false)
+    }
+  }
+
+  // When game completes:
+  const handleGameComplete = async (winner) => {
+    try {
+      showInfo('Completing game on blockchain...')
+      
+      const result = await contractService.completeGame(gameId, winner)
+      
+      if (result.success) {
+        showSuccess('Game completed! Winner received NFT and ETH!')
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      showError('Failed to complete game: ' + error.message)
     }
   }
 

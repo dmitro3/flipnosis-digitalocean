@@ -1,51 +1,6 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "D:\\Crypto Flipz Final 2\\contracts\\flipnosis.sol": {
-      "lastModificationDate": 1750782132917,
-      "contentHash": "db9b103f1bcf3473e5bb82cc1412bd8e",
-      "sourceName": "contracts/flipnosis.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/security/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/security/Pausable.sol",
-        "@openzeppelin/contracts/utils/math/SafeMath.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "AggregatorV3Interface",
-        "NFTFlipGame"
-      ]
-    },
     "D:\\Crypto Flipz Final 2\\node_modules\\@openzeppelin\\contracts\\security\\ReentrancyGuard.sol": {
       "lastModificationDate": 1750782079368,
       "contentHash": "1535f8c0c68463f8c1b5239f7584e71f",
@@ -349,8 +304,8 @@
       ]
     },
     "D:\\Crypto Flipz Final 2\\contracts\\NFTFlipGame.sol": {
-      "lastModificationDate": 1751992807758,
-      "contentHash": "3414807779f461b5be48d6643020fb46",
+      "lastModificationDate": 1752100320213,
+      "contentHash": "ab3265411ac6d8b405efeb52f6a4d4bf",
       "sourceName": "contracts/NFTFlipGame.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -379,17 +334,13 @@
       },
       "imports": [
         "@openzeppelin/contracts/token/ERC721/IERC721.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "@openzeppelin/contracts/security/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/security/Pausable.sol",
-        "@openzeppelin/contracts/utils/math/SafeMath.sol"
+        "@openzeppelin/contracts/access/Ownable.sol"
       ],
       "versionPragmas": [
         "^0.8.19"
       ],
       "artifacts": [
-        "AggregatorV3Interface",
         "NFTFlipGame"
       ]
     }

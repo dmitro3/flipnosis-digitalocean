@@ -199,6 +199,49 @@ let listingFeeUSD = 0.20 // 20 cents - configurable
 
 // ETH price endpoint removed - contract now uses Chainlink price feeds exclusively
 
+// Immediate fix endpoint for game join price calculation
+app.get('/api/games/:gameId/join-price', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    
+    // Get game from database
+    const game = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
+        if (err) reject(err)
+        else resolve(row)
+      })
+    })
+    
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    // Calculate ETH amount
+    const ethPrice = 2777 // Current ETH price
+    const priceUSD = game.price_usd
+    const ethAmount = priceUSD / ethPrice
+    const weiAmount = Math.floor(ethAmount * 1e18)
+    
+    console.log('💰 Join price calculation:', {
+      gameId,
+      priceUSD,
+      ethPrice,
+      ethAmount,
+      weiAmount: weiAmount.toString()
+    })
+    
+    res.json({
+      priceUSD,
+      ethAmount,
+      weiAmount: weiAmount.toString(),
+      ethPrice
+    })
+  } catch (error) {
+    console.error('❌ Error calculating join price:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Admin endpoint to update listing fee
 app.post('/api/admin/listing-fee', (req, res) => {
   try {
@@ -3201,3 +3244,84 @@ app.get('/api/games/:gameId/join-status', async (req, res) => {
     res.status(500).json({ error: 'Failed to get join status' })
   }
 })
+
+// Add at the top of server.js (after imports)
+let cachedEthPrice = null;
+let lastEthPriceUpdate = 0;
+const ETH_PRICE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Function to fetch ETH price
+async function fetchEthPrice() {
+  try {
+    // Try multiple sources for reliability
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+    const data = await response.json();
+    
+    if (data.ethereum && data.ethereum.usd) {
+      return data.ethereum.usd;
+    }
+    
+    // Fallback to Coinbase
+    const coinbaseResponse = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=ETH');
+    const coinbaseData = await coinbaseResponse.json();
+    
+    if (coinbaseData.data && coinbaseData.data.rates && coinbaseData.data.rates.USD) {
+      return parseFloat(coinbaseData.data.rates.USD);
+    }
+    
+    throw new Error('Could not fetch price from any source');
+  } catch (error) {
+    console.error('Error fetching ETH price:', error);
+    return cachedEthPrice || 2777; // Fallback to last known or default
+  }
+}
+
+// Update ETH price periodically
+async function updateEthPrice() {
+  const now = Date.now();
+  if (!cachedEthPrice || now - lastEthPriceUpdate > ETH_PRICE_CACHE_DURATION) {
+    cachedEthPrice = await fetchEthPrice();
+    lastEthPriceUpdate = now;
+    console.log('💰 ETH price updated:', cachedEthPrice);
+  }
+  return cachedEthPrice;
+}
+
+// Run price update on startup and every 5 minutes
+updateEthPrice();
+setInterval(updateEthPrice, ETH_PRICE_CACHE_DURATION);
+
+// API endpoint for price conversion
+app.get('/api/eth-conversion', async (req, res) => {
+  try {
+    const ethPrice = await updateEthPrice();
+    res.json({
+      ethPrice,
+      lastUpdated: new Date(lastEthPriceUpdate).toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get ETH price' });
+  }
+});
+
+// API endpoint to calculate game price in Wei
+app.post('/api/calculate-wei-price', async (req, res) => {
+  try {
+    const { priceUSD } = req.body;
+    const ethPrice = await updateEthPrice();
+    
+    // Calculate ETH amount
+    const ethAmount = priceUSD / ethPrice;
+    // Convert to Wei (18 decimals)
+    const weiAmount = Math.floor(ethAmount * 1e18).toString();
+    
+    res.json({
+      priceUSD,
+      ethPrice,
+      ethAmount,
+      weiAmount
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to calculate price' });
+  }
+});
