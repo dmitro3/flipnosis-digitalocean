@@ -172,34 +172,58 @@ const CreateFlip = () => {
       if (!contractService.walletClient || contractService.chainId !== chainId) {
         console.log('Re-initializing contract service...')
         await contractService.initializeClients(chainId, walletClient)
+        // Add small delay for MetaMask
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      // Approve NFT first
-      const approvalResult = await contractService.approveNFT(
-        selectedNFT.contractAddress,
-        selectedNFT.tokenId
-      )
-      if (!approvalResult.success) {
-        throw new Error('Failed to approve NFT')
-      }
-
-      // Create game (new contract flow)
-      const result = await contractService.createGame({
+      const createParams = {
         nftContract: selectedNFT.contractAddress,
         tokenId: selectedNFT.tokenId,
         priceUSD: parseFloat(price),
-        coin: selectedCoin
-      })
+        acceptedToken: 0, // ETH
+        gameType: gameType === 'nft-vs-nft' ? 1 : 0,
+        authInfo: '',
+        coin: selectedCoin // Include the selected coin data
+      }
+
+      console.log('🎮 Creating game with params:', createParams)
+      console.log('🪙 Coin data being sent:', selectedCoin)
+      
+      // First, approve the NFT for the contract
+      console.log('🔐 Approving NFT for contract...')
+      const approvalResult = await contractService.approveNFT(
+        selectedNFT.contractAddress, 
+        selectedNFT.tokenId
+      )
+      
+      if (!approvalResult.success) {
+        throw new Error(`NFT approval failed: ${approvalResult.error}`)
+      }
+      
+      if (approvalResult.alreadyApproved) {
+        console.log('✅ NFT already approved')
+      } else {
+        console.log('✅ NFT approved successfully')
+      }
+      
+      // Now create the game
+      const result = await contractService.createGame(createParams)
 
       if (result.success) {
         showSuccess('Game created successfully!')
-        navigate(`/flip/${result.gameId}`)
+        navigate(`/game/${result.gameId}`)
       } else {
         throw new Error(result.error)
       }
     } catch (error) {
-      showError(error.message)
+      console.error('Error creating game:', error)
+      
+      let errorMessage = error.message
+      if (errorMessage.includes('User denied') || errorMessage.includes('user rejected')) {
+        errorMessage = 'Transaction cancelled'
+      }
+      
+      showError(errorMessage)
     } finally {
       setLoading(false)
     }
