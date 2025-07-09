@@ -159,6 +159,13 @@ const CONTRACT_ABI = [
     outputs: [{ name: '', type: 'uint256' }]
   },
   {
+    name: 'listingFeeUSD',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
     name: 'platformFeePercent',
     type: 'function',
     stateMutability: 'view',
@@ -507,21 +514,30 @@ class ContractService {
         throw new Error('Contract service not initialized. Please connect your wallet.')
       }
 
-      // Get the current listing fee from the contract
-      const listingFee = await this.publicClient.readContract({
+      // Get the listing fee in USD from contract (it's stored as 200000 for $0.20)
+      const listingFeeUSD = await this.publicClient.readContract({
         address: this.contractAddress,
         abi: this.contractABI,
-        functionName: 'listingFee'
+        functionName: 'listingFeeUSD'
       })
       
-      console.log('📊 Listing fee from contract:', listingFee, 'wei')
-      console.log('💵 Listing fee in ETH:', formatEther(listingFee))
+      console.log('📊 Listing fee USD from contract:', listingFeeUSD)
+      
+      // Convert USD to ETH using the contract's getETHAmount function
+      const listingFeeETH = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'getETHAmount',
+        args: [listingFeeUSD]
+      })
+      
+      console.log('💵 Listing fee in ETH:', formatEther(listingFeeETH))
 
-      // Prepare game creation parameters
+      // Rest of the method remains the same...
       const gameParams = {
         nftContract: params.nftContract,
         tokenId: BigInt(params.tokenId),
-        priceUSD: BigInt(Math.floor(params.priceUSD * 100)), // Convert to cents
+        priceUSD: BigInt(Math.floor(params.priceUSD * 1000000)), // Convert to 6 decimals like contract expects
         acceptedToken: params.acceptedToken || 0,
         gameType: params.gameType || 0,
         authInfo: JSON.stringify({
@@ -531,9 +547,6 @@ class ContractService {
         })
       }
 
-      console.log('📝 Formatted game params:', gameParams)
-
-      // Simulate the transaction first
       const { request } = await this.publicClient.simulateContract({
         address: this.contractAddress,
         abi: this.contractABI,
@@ -547,23 +560,13 @@ class ContractService {
           gameParams.authInfo
         ],
         account: this.walletClient.account,
-        value: listingFee // Use the actual listing fee from contract
+        value: listingFeeETH
       })
 
-      // Execute the transaction
       const hash = await this.walletClient.writeContract(request)
-      
-      console.log('🎯 Game creation transaction sent:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash, confirmations: 1 })
 
-      // Wait for confirmation
-      const receipt = await this.publicClient.waitForTransactionReceipt({ 
-        hash,
-        confirmations: 1 
-      })
-
-      console.log('✅ Game creation confirmed:', receipt)
-
-      // Get the game ID from events
+      // Parse the GameCreated event to get the game ID
       const gameCreatedEvent = receipt.logs.find(log => {
         try {
           const decoded = decodeEventLog({
@@ -577,10 +580,6 @@ class ContractService {
         }
       })
 
-      if (!gameCreatedEvent) {
-        throw new Error('Game created but could not find game ID in events')
-      }
-
       const decodedEvent = decodeEventLog({
         abi: this.contractABI,
         data: gameCreatedEvent.data,
@@ -588,38 +587,31 @@ class ContractService {
       })
 
       const gameId = decodedEvent.args.gameId.toString()
-      
-      console.log('🎮 Game created with ID:', gameId)
 
-      // Save to database with contract game ID
-      try {
-        const dbParams = {
-          id: gameId,
-          contract_game_id: gameId,
-          creator: this.walletClient.account.address,
-          nft_contract: params.nftContract,
-          nft_token_id: params.tokenId.toString(),
-          price_usd: params.priceUSD,
-          game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
-          coin: params.coin,
-          transaction_hash: hash,
-          nft_chain: this.currentChain || 'base'
-        }
+      // Save to database
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      const dbParams = {
+        id: gameId,
+        contract_game_id: gameId,
+        creator: this.walletClient.account.address,
+        nft_contract: params.nftContract,
+        nft_token_id: params.tokenId.toString(),
+        price_usd: params.priceUSD,
+        game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
+        coin: params.coin,
+        transaction_hash: hash,
+        nft_chain: this.currentChain || 'base',
+        listing_fee_usd: Number(listingFeeUSD) / 1000000 // Store in database as decimal
+      }
 
-        const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-        const response = await fetch(`${API_URL}/api/games`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dbParams)
-        })
+      const response = await fetch(`${API_URL}/api/games`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dbParams)
+      })
 
-        if (!response.ok) {
-          console.warn('Failed to save game to database:', await response.text())
-        } else {
-          console.log('✅ Game saved to database')
-        }
-      } catch (dbError) {
-        console.error('Database save error:', dbError)
+      if (!response.ok) {
+        console.warn('Failed to save game to database:', await response.text())
       }
 
       return {
