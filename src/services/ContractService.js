@@ -813,7 +813,7 @@ class ContractService {
       })
 
       // Get the ETH amount for the game price
-      const ethAmount = await this.getETHAmount(result[0].priceUSD)
+      const ethAmount = await this.getETHAmount(Number(result[0].priceUSD))
       
       return {
         success: true,
@@ -821,7 +821,7 @@ class ContractService {
           game: result[0],
           nftChallenge: result[1],
           payment: {
-            priceUSD: result[0].priceUSD,
+            priceUSD: Number(result[0].priceUSD),
             priceETH: formatEther(ethAmount)
           }
         }
@@ -851,10 +851,23 @@ class ContractService {
       }
 
       // Get current ETH price from server and convert user's game price
-      const priceUSD = gameDetails.data.game.priceUSD
-      const ethPriceResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
-      const ethPriceData = await ethPriceResponse.json()
-      const currentEthPrice = ethPriceData.price || 3000 // fallback to $3000
+      const priceUSD = Number(gameDetails.data.game.priceUSD)
+      
+      // For localhost testing, use a reasonable ETH price
+      let currentEthPrice = 3000 // Default fallback
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        currentEthPrice = 3000 // Use $3000 for localhost testing
+        console.log('🏠 Localhost detected, using ETH price: $' + currentEthPrice)
+      } else {
+        try {
+          const ethPriceResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
+          const ethPriceData = await ethPriceResponse.json()
+          currentEthPrice = ethPriceData.price || 3000
+        } catch (error) {
+          console.warn('Failed to fetch ETH price, using fallback:', error)
+          currentEthPrice = 3000
+        }
+      }
       
       const priceInETH = priceUSD / currentEthPrice
       const priceInWei = parseEther(priceInETH.toString())
@@ -863,6 +876,7 @@ class ContractService {
       console.log('💰 Current ETH price: $' + currentEthPrice)
       console.log('💰 Price in ETH:', priceInETH)
       console.log('💰 Price in Wei:', priceInWei.toString())
+      console.log('💰 Price in ETH (formatted):', formatEther(priceInWei), 'ETH')
 
       // For NFT vs Crypto games, joiner pays with ETH
       if (params.paymentToken === 0) { // ETH payment
@@ -988,6 +1002,12 @@ class ContractService {
 
   // Get current ETH price from server
   async getCurrentEthPrice() {
+    // For localhost testing, use a reasonable ETH price
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      console.log('🏠 Localhost detected, using ETH price: $3000')
+      return 3000
+    }
+    
     try {
       const response = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
       const data = await response.json()
@@ -1015,62 +1035,7 @@ class ContractService {
     }
   }
 
-  // Flip coin using smart contract
-  async flipCoin(params) {
-    try {
-      console.log('🎲 Flipping coin with params:', params)
-      
-      if (!this.isInitialized()) {
-        throw new Error('Contract service not initialized. Please connect your wallet.')
-      }
 
-      const { walletClient } = this.getCurrentClients()
-      
-      // Simulate the transaction first
-      const { request } = await this.publicClient.simulateContract({
-        address: this.contractAddress,
-        abi: this.contractABI,
-        functionName: 'completeGame',
-        args: [
-          BigInt(params.gameId),
-          Math.random() > 0.5, // flippedA - random
-          Math.random() > 0.5, // flippedB - random
-          params.power || 50 // power level
-        ],
-        account: this.walletClient.account
-      })
-
-      // Execute the transaction
-      const hash = await this.walletClient.writeContract(request)
-      
-      console.log('🎯 Flip coin transaction sent:', hash)
-
-      // Wait for confirmation
-      const receipt = await this.publicClient.waitForTransactionReceipt({ 
-        hash,
-        confirmations: 1 
-      })
-
-      console.log('✅ Flip coin confirmed:', receipt)
-
-      // Get updated game details
-      const gameDetails = await this.getGameDetails(params.gameId)
-
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt,
-        gameDetails
-      }
-
-    } catch (error) {
-      console.error('❌ Error flipping coin:', error)
-      return {
-        success: false,
-        error: error.message || 'Failed to flip coin'
-      }
-    }
-  }
 
   // Get NFT metadata (helper function)
   async getNFTMetadata(nftContract, tokenId) {
