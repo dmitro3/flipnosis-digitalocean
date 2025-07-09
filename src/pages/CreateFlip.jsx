@@ -189,6 +189,24 @@ const CreateFlip = () => {
       console.log('🎮 Creating game with params:', createParams)
       console.log('🪙 Coin data being sent:', selectedCoin)
       
+      // First, approve the NFT for the contract
+      console.log('🔐 Approving NFT for contract...')
+      const approvalResult = await contractService.approveNFT(
+        selectedNFT.contractAddress, 
+        selectedNFT.tokenId
+      )
+      
+      if (!approvalResult.success) {
+        throw new Error(`NFT approval failed: ${approvalResult.error}`)
+      }
+      
+      if (approvalResult.alreadyApproved) {
+        console.log('✅ NFT already approved')
+      } else {
+        console.log('✅ NFT approved successfully')
+      }
+      
+      // Now create the game
       const result = await contractService.createGame(createParams)
 
       if (result.success) {
