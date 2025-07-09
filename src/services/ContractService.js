@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, custom, http, decodeEventLog } from 'viem'
+import { createPublicClient, createWalletClient, custom, http, decodeEventLog, formatEther, parseEther } from 'viem'
 import { base, mainnet, bsc, avalanche, polygon } from 'viem/chains'
 import { Alchemy } from 'alchemy-sdk'
 
@@ -156,6 +156,13 @@ const CONTRACT_ABI = [
     type: 'function',
     stateMutability: 'view',
     inputs: [{ name: 'usdAmount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'platformFeePercent',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
     outputs: [{ name: '', type: 'uint256' }]
   },
   {
@@ -324,6 +331,7 @@ class ContractService {
     this.lastRequestTime = {} // FIX: Changed from number to object
     this.minRequestInterval = 1000 // 1 second between requests
     this.contractAddress = CONTRACT_ADDRESS
+    this.contractABI = CONTRACT_ABI
     this.chainId = null
     this.alchemy = null
   }
@@ -493,107 +501,73 @@ class ContractService {
   // Create a new game
   async createGame(params) {
     try {
-      await this.rateLimit('createGame')
-      
-      const { walletClient, public: publicClient } = this.getCurrentClients()
-      
-      if (!walletClient) {
-        throw new Error('Wallet client not available. Please connect your wallet.')
-      }
-      
-      const account = walletClient.account.address
-
       console.log('🎮 Creating game with params:', params)
-
-      // First approve NFT transfer
-      const approvalResult = await this.approveNFT(params.nftContract, params.tokenId)
-      if (!approvalResult.success && !approvalResult.alreadyApproved) {
-        throw new Error('Failed to approve NFT: ' + approvalResult.error)
+      
+      if (!this.isInitialized()) {
+        throw new Error('Contract service not initialized. Please connect your wallet.')
       }
 
-      // Convert price to USD with 6 decimals (e.g., $1.50 = 1500000)
-      const priceUSDFormatted = Math.floor(params.priceUSD * 1000000)
+      // Get the current listing fee from the contract
+      const listingFee = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'listingFee'
+      })
+      
+      console.log('📊 Listing fee from contract:', listingFee, 'wei')
+      console.log('💵 Listing fee in ETH:', formatEther(listingFee))
 
-      // Get listing fee from contract and convert to ETH
-      const listingFeeUSD = await this.retryWithBackoff(async () => {
-        await this.rateLimit('getListingFeeUSD')
-        return await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'listingFeeUSD'
+      // Prepare game creation parameters
+      const gameParams = {
+        nftContract: params.nftContract,
+        tokenId: BigInt(params.tokenId),
+        priceUSD: BigInt(Math.floor(params.priceUSD * 100)), // Convert to cents
+        acceptedToken: params.acceptedToken || 0,
+        gameType: params.gameType || 0,
+        authInfo: JSON.stringify({
+          creator: this.walletClient.account.address,
+          coinDesign: params.coin || null,
+          timestamp: new Date().toISOString()
         })
+      }
+
+      console.log('📝 Formatted game params:', gameParams)
+
+      // Simulate the transaction first
+      const { request } = await this.publicClient.simulateContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'createGame',
+        args: [
+          gameParams.nftContract,
+          gameParams.tokenId,
+          gameParams.priceUSD,
+          gameParams.acceptedToken,
+          gameParams.gameType,
+          gameParams.authInfo
+        ],
+        account: this.walletClient.account,
+        value: listingFee // Use the actual listing fee from contract
       })
 
-      const listingFeeETH = await this.retryWithBackoff(async () => {
-        await this.rateLimit('getListingFee')
-        return await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'getETHAmount',
-          args: [listingFeeUSD]
-        })
-      })
+      // Execute the transaction
+      const hash = await this.walletClient.writeContract(request)
+      
+      console.log('🎯 Game creation transaction sent:', hash)
 
-      console.log('💰 Listing fee in ETH:', listingFeeETH.toString())
-
-      // Estimate gas
-      const gasEstimate = await this.retryWithBackoff(async () => {
-        await this.rateLimit('estimateCreateGas')
-        return await publicClient.estimateContractGas({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'createGame',
-          args: [
-            params.nftContract,
-            BigInt(params.tokenId),
-            BigInt(priceUSDFormatted),
-            params.acceptedToken || 0,
-            params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
-            params.authInfo || ''
-          ],
-          account,
-          value: listingFeeETH
-        })
-      })
-
-      const gasLimit = gasEstimate * 120n / 100n
-      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
-
-      // Create the game
-      console.log('📝 Creating game on blockchain with listing fee...')
-      const hash = await this.retryWithBackoff(async () => {
-        await this.rateLimit('createGameTx')
-        return await walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'createGame',
-          args: [
-            params.nftContract,
-            BigInt(params.tokenId),
-            BigInt(priceUSDFormatted),
-            params.acceptedToken || 0,
-            params.gameType || 0, // 0 = NFTvsCrypto, 1 = NFTvsNFT
-            params.authInfo || ''
-          ],
-          account,
-          value: listingFeeETH,
-          gas: gasLimit,
-          maxFeePerGas,
-          maxPriorityFeePerGas
-        })
-      })
-
-      const receipt = await publicClient.waitForTransactionReceipt({ 
+      // Wait for confirmation
+      const receipt = await this.publicClient.waitForTransactionReceipt({ 
         hash,
-        confirmations: 2
+        confirmations: 1 
       })
 
-      // Extract game ID from event logs
-      let gameId
-      const event = receipt.logs.find(log => {
+      console.log('✅ Game creation confirmed:', receipt)
+
+      // Get the game ID from events
+      const gameCreatedEvent = receipt.logs.find(log => {
         try {
           const decoded = decodeEventLog({
-            abi: CONTRACT_ABI,
+            abi: this.contractABI,
             data: log.data,
             topics: log.topics
           })
@@ -603,81 +577,65 @@ class ContractService {
         }
       })
 
-      if (event) {
-        const decoded = decodeEventLog({
-          abi: CONTRACT_ABI,
-          data: event.data,
-          topics: event.topics
-        })
-        gameId = decoded.args.gameId.toString()
-      } else {
-        // Fallback: get next game ID and subtract 1
-        const nextId = await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'nextGameId'
-        })
-        gameId = (nextId - 1n).toString()
+      if (!gameCreatedEvent) {
+        throw new Error('Game created but could not find game ID in events')
       }
 
-      console.log('✅ Game created with ID:', gameId)
+      const decodedEvent = decodeEventLog({
+        abi: this.contractABI,
+        data: gameCreatedEvent.data,
+        topics: gameCreatedEvent.topics
+      })
 
-      // Store in database
+      const gameId = decodedEvent.args.gameId.toString()
+      
+      console.log('🎮 Game created with ID:', gameId)
+
+      // Save to database with contract game ID
       try {
-        const nftMetadata = await this.getNFTMetadata(params.nftContract, params.tokenId)
-        
-        const gameData = {
-          creator: account,
+        const dbParams = {
+          id: gameId,
+          contract_game_id: gameId,
+          creator: this.walletClient.account.address,
           nft_contract: params.nftContract,
           nft_token_id: params.tokenId.toString(),
-          nft_name: nftMetadata?.name || 'Unknown NFT',
-          nft_image: nftMetadata?.image || '',
           price_usd: params.priceUSD,
           game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
-          status: 'waiting',
+          coin: params.coin,
           transaction_hash: hash,
-          contract_game_id: gameId,
-          coin: params.coin ? JSON.stringify(params.coin) : null // Store coin data as JSON string
+          nft_chain: this.currentChain || 'base'
         }
 
-        console.log('🪙 Storing coin data in database:', params.coin)
-        console.log('🪙 Coin data as JSON string:', JSON.stringify(params.coin))
-
-        await fetch(`${API_URL}/api/games`, {
+        const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+        const response = await fetch(`${API_URL}/api/games`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(gameData)
+          body: JSON.stringify(dbParams)
         })
-        
-        console.log('✅ Game stored in database with NFT metadata')
+
+        if (!response.ok) {
+          console.warn('Failed to save game to database:', await response.text())
+        } else {
+          console.log('✅ Game saved to database')
+        }
       } catch (dbError) {
-        console.warn('⚠️ Could not store game in database:', dbError.message)
+        console.error('Database save error:', dbError)
       }
 
       return {
         success: true,
-        gameId: gameId,
-        transactionHash: hash
+        gameId,
+        transactionHash: hash,
+        receipt
       }
-    } catch (error) {
-      console.error('❌ Error creating game:', error)
-      
-      let errorMessage = error.message
-      if (error.message.includes('WRONG_FROM')) {
-        errorMessage = 'NFT approval failed. The NFT contract may have restrictions or you may not own this NFT.'
-      } else if (error.message.includes('rate limit') || error.message.includes('429')) {
-        errorMessage = 'Network is busy. Please wait 30 seconds and try again.'
-      } else if (error.message.includes('execution reverted')) {
-        errorMessage = 'Game creation failed. Please check your NFT ownership and try again.'
-      } else if (error.message.includes('User denied') || error.message.includes('user rejected')) {
-        errorMessage = 'Transaction was cancelled by user.'
-      }
-      
-      return {
-        success: false,
-        error: errorMessage
-      }
+
+  } catch (error) {
+    console.error('❌ Error creating game:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to create game'
     }
+  }
   }
 
   // Approve NFT
@@ -786,11 +744,18 @@ class ContractService {
         })
       })
 
+      // Get the ETH amount for the game price
+      const ethAmount = await this.getETHAmount(result[0].priceUSD)
+      
       return {
         success: true,
         data: {
           game: result[0],
-          nftChallenge: result[1]
+          nftChallenge: result[1],
+          payment: {
+            priceUSD: result[0].priceUSD,
+            priceETH: formatEther(ethAmount)
+          }
         }
       }
     } catch (error) {
@@ -805,175 +770,103 @@ class ContractService {
   // Join game
   async joinGame(params) {
     try {
-      await this.rateLimit('joinGame')
-      
-      // Check if service is properly initialized before proceeding
-      if (!this.isInitialized()) {
-        console.warn('⚠️ Contract service not properly initialized, attempting to reinitialize...')
-        throw new Error('Contract service needs to be reinitialized. Please try again.')
-      }
-      
-      // Try to get clients, with detailed error logging
-      let walletClient, publicClient
-      try {
-        const clients = this.getCurrentClients()
-        walletClient = clients.walletClient
-        publicClient = clients.public
-      } catch (clientError) {
-        console.error('❌ Failed to get current clients:', clientError.message)
-        throw new Error('Wallet client validation failed. Please reconnect your wallet.')
-      }
-      
-      if (!walletClient) {
-        throw new Error('Wallet client not available. Please connect your wallet.')
-      }
-      
-      const account = walletClient.account.address
-      console.log('🎮 Join game - wallet client validated:', {
-        account,
-        hasAccount: !!walletClient.account,
-        accountAddress: walletClient.account?.address
-      })
-
       console.log('🎮 Joining game with params:', params)
+      
+      if (!this.isInitialized()) {
+        throw new Error('Contract service not initialized. Please connect your wallet.')
+      }
 
-      // Get game details first with retry
-      const gameDetails = await this.retryWithBackoff(async () => {
-        // NOTE: Don't call rateLimit inside getGameDetails as it already does
-        return await this.getGameDetails(params.gameId)
-      })
-
+      // Get game details first
+      const gameDetails = await this.getGameDetails(params.gameId)
       if (!gameDetails.success) {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
 
-      const game = gameDetails.data.game
+      const { payment } = gameDetails.data
+      const priceInWei = parseEther(payment.priceETH.toString())
+      
+      console.log('💰 Game price:', payment.priceUSD, 'USD')
+      console.log('💰 Price in ETH:', payment.priceETH)
+      console.log('💰 Price in Wei:', priceInWei.toString())
 
-      // Validate game state
-      if (game.state !== 0) { // 0 = Created
-        throw new Error('Game is not available for joining')
-      }
-
-      if (game.creator.toLowerCase() === account.toLowerCase()) {
-        throw new Error('Cannot join your own game')
-      }
-
-      // Calculate payment amount (including platform fee)
-      let paymentAmount = 0n
+      // For NFT vs Crypto games, joiner pays with ETH
       if (params.paymentToken === 0) { // ETH payment
-        // Get base ETH amount for the game price
-        const baseAmount = await this.retryWithBackoff(async () => {
-          await this.rateLimit('getETHAmountJoin')
-          return await publicClient.readContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'getETHAmount',
-            args: [game.priceUSD]
-          })
+        // Simulate the transaction
+        const { request } = await this.publicClient.simulateContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'joinGame',
+          args: [
+            BigInt(params.gameId),
+            params.paymentToken || 0,
+            params.challengerNFTContract || '0x0000000000000000000000000000000000000000',
+            params.challengerTokenId || BigInt(0)
+          ],
+          account: this.walletClient.account,
+          value: priceInWei
         })
-        
-        // Get platform fee percentage
-        const platformFeePercent = await this.retryWithBackoff(async () => {
-          await this.rateLimit('getPlatformFeePercent')
-          return await publicClient.readContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'platformFeePercent'
-          })
-        })
-        
-        // Calculate platform fee amount
-        const platformFee = (baseAmount * platformFeePercent) / 10000n // basis points
-        
-        // Total amount = base amount + platform fee
-        paymentAmount = baseAmount + platformFee
-        
-        console.log('💰 Payment calculation:', {
-          gamePriceUSD: game.priceUSD.toString(),
-          baseAmount: baseAmount.toString(),
-          platformFeePercent: platformFeePercent.toString(),
-          platformFee: platformFee.toString(),
-          totalAmount: paymentAmount.toString()
-        })
-      }
 
-      // Prepare join parameters
-      const joinParams = [
-        BigInt(params.gameId),
-        params.paymentToken || 0,
-        params.challengerNFTContract || '0x0000000000000000000000000000000000000000',
-        BigInt(params.challengerTokenId || 0)
-      ]
+        // Execute the transaction
+        const hash = await this.walletClient.writeContract(request)
+        
+        console.log('🎯 Join game transaction sent:', hash)
 
-      // If NFT vs NFT, approve the challenger NFT
-      if (game.gameType === 1 && params.challengerNFTContract) {
-        const approvalResult = await this.approveNFT(
-          params.challengerNFTContract,
-          params.challengerTokenId
-        )
-        if (!approvalResult.success && !approvalResult.alreadyApproved) {
-          throw new Error('Failed to approve challenger NFT: ' + approvalResult.error)
+        // Wait for confirmation
+        const receipt = await this.publicClient.waitForTransactionReceipt({ 
+          hash,
+          confirmations: 1 
+        })
+
+        console.log('✅ Join game confirmed:', receipt)
+
+        // Update database
+        try {
+          const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+          const response = await fetch(`${API_URL}/api/games/${params.gameId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              joinerAddress: this.walletClient.account.address,
+              paymentTxHash: hash,
+              paymentAmount: payment.priceUSD
+            })
+          })
+
+          if (!response.ok) {
+            console.warn('Failed to update database after join:', await response.text())
+          }
+        } catch (dbError) {
+          console.error('Database update error:', dbError)
         }
+
+        return {
+          success: true,
+          transactionHash: hash,
+          receipt
+        }
+      } else {
+        throw new Error('Unsupported payment token')
       }
 
-      // Estimate gas
-      const gasEstimate = await this.retryWithBackoff(async () => {
-        await this.rateLimit('estimateGasJoin')
-        return await publicClient.estimateContractGas({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'joinGame',
-          args: joinParams,
-          account,
-          value: paymentAmount
-        })
-      })
-
-      const gasLimit = gasEstimate * 120n / 100n
-      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
-
-      // Join the game
-      console.log('🎮 Joining game on blockchain...')
-      const hash = await this.retryWithBackoff(async () => {
-        await this.rateLimit('joinGameTx')
-        return await walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'joinGame',
-          args: joinParams,
-          account,
-          value: paymentAmount,
-          gas: gasLimit,
-          maxFeePerGas,
-          maxPriorityFeePerGas
-        })
-      })
-
-      const receipt = await publicClient.waitForTransactionReceipt({ 
-        hash,
-        confirmations: 2
-      })
-
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
-      }
-    } catch (error) {
-      console.error('❌ Error joining game:', error)
-      
-      let errorMessage = error.message
-      if (error.message.includes('rate limit')) {
-        errorMessage = 'Network is busy. Please wait a moment and try again.'
-      } else if (error.message.includes('execution reverted')) {
-        errorMessage = 'Failed to join game. The game may no longer be available.'
-      }
-      
-      return {
-        success: false,
-        error: errorMessage
-      }
+  } catch (error) {
+    console.error('❌ Error joining game:', error)
+    
+    // Better error handling
+    let errorMessage = error.message || 'Failed to join game'
+    
+    if (error.message.includes('insufficient funds')) {
+      errorMessage = 'Insufficient funds to join game'
+    } else if (error.message.includes('user rejected')) {
+      errorMessage = 'Transaction cancelled'
+    } else if (error.message.includes('already joined')) {
+      errorMessage = 'This game already has a second player'
     }
+    
+    return {
+      success: false,
+      error: errorMessage
+    }
+  }
   }
 
   // Get optimized gas prices for Base
@@ -1619,23 +1512,32 @@ class ContractService {
   // Get platform fee from contract
   async getPlatformFee() {
     try {
-      await this.rateLimit('getPlatformFee')
-      
-      const { public: publicClient } = this.getCurrentClients()
-      
-      const platformFee = await this.retryWithBackoff(async () => {
-        await this.rateLimit('readPlatformFee')
-        return await publicClient.readContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'platformFeePercent'
-        })
+      if (!this.publicClient || !this.contractAddress) {
+        throw new Error('Contract service not initialized')
+      }
+
+      const feePercent = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'platformFeePercent'
       })
 
-      return platformFee
+      // Convert from basis points (e.g., 350 = 3.5%)
+      const feePercentage = Number(feePercent) / 100
+      
+      return {
+        success: true,
+        feePercent: Number(feePercent),
+        feePercentage
+      }
     } catch (error) {
-      console.error('Error getting platform fee:', error)
-      throw error
+      console.error('❌ Error getting platform fee:', error)
+      return {
+        success: false,
+        error: error.message,
+        feePercent: 350, // Default to 3.5%
+        feePercentage: 3.5
+      }
     }
   }
 

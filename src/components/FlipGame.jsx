@@ -555,6 +555,9 @@ const FlipGame = () => {
   
   // Add missing isInfoOpen state
   const [isInfoOpen, setIsInfoOpen] = useState(false)
+  
+  // Add missing isChatOpen state
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Animation handlers
   const showChoiceAnimationEffect = (text, color = '#00FF41') => {
@@ -1163,20 +1166,15 @@ const FlipGame = () => {
 
     setJoiningGame(true)
     
-    await handleAsyncAction(async () => {
+    try {
       showInfo('Joining game...')
 
-      // First, ensure contract service is initialized
+      // Ensure contract service is initialized
       if (!contractService.isInitialized() && walletClient) {
-        console.log('🔄 Reinitializing contract service...')
+        console.log('🔄 Initializing contract service...')
         const chainId = 8453 // Base network
         await contractService.initializeClients(chainId, walletClient)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Longer delay for initialization
-        
-        // Double-check initialization
-        if (!contractService.isInitialized()) {
-          throw new Error('Failed to initialize contract service. Please reconnect your wallet.')
-        }
+        await new Promise(resolve => setTimeout(resolve, 1000))
       }
 
       // Prepare join parameters
@@ -1189,99 +1187,37 @@ const FlipGame = () => {
 
       console.log('🎮 Joining game with smart contract:', joinParams)
 
-      // Try to join game using smart contract with retry logic
-      let result
-      let retryCount = 0
-      const maxRetries = 2
-      
-      while (retryCount < maxRetries) {
-        try {
-          result = await contractService.joinGame(joinParams)
-          break // Success, exit retry loop
-        } catch (error) {
-          retryCount++
-          console.log(`🔄 Join game attempt ${retryCount}/${maxRetries} failed:`, error.message)
-          
-          if (error.message.includes('reinitialized') && retryCount < maxRetries) {
-            // Try to reinitialize and retry
-            console.log('🔄 Attempting to reinitialize contract service...')
-            const chainId = 8453
-            await contractService.initializeClients(chainId, walletClient)
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            continue
-          }
-          
-          if (error.message.includes('validation failed') && retryCount < maxRetries) {
-            // Try to refresh wallet client and retry
-            console.log('🔄 Attempting to refresh wallet client...')
-            await contractService.refreshWalletClient(walletClient)
-            await new Promise(resolve => setTimeout(resolve, 500))
-            continue
-          }
-          
-          if (retryCount >= maxRetries) {
-            throw error
-          }
-        }
-      }
+      // Join game using smart contract
+      const result = await contractService.joinGame(joinParams)
       
       if (!result.success) {
-        // If contract join fails, don't automatically fall back to database
-        // This prevents issues with incorrect game state
         throw new Error(result.error || 'Failed to join game')
-      }
-
-      // Update database after successful blockchain join
-      try {
-        const response = await fetch(`${API_URL}/api/games/${gameId}/join`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            joinerAddress: address,
-            paymentTxHash: result.transactionHash,
-            paymentAmount: gameData.price_usd
-          })
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.warn('Failed to update database after join:', errorText)
-        } else {
-          console.log('✅ Database updated successfully after join')
-        }
-      } catch (dbError) {
-        console.warn('Database update failed, but blockchain join succeeded:', dbError)
       }
 
       showSuccess('Successfully joined the game!')
       
-      // Send WebSocket message to notify server that join is complete
+      // Send WebSocket message to notify server
       if (socket && socket.readyState === WebSocket.OPEN) {
-        const joinMessage = {
+        socket.send(JSON.stringify({
           type: 'join_game',
           gameId,
           role: 'joiner',
           address,
           entryFeeHash: result.transactionHash
-        }
-        console.log('🎮 Sending join completion message to server:', joinMessage)
-        socket.send(JSON.stringify(joinMessage))
-      } else {
-        console.warn('⚠️ Cannot send join completion message - socket not ready:', {
-          hasSocket: !!socket,
-          readyState: socket?.readyState
-        })
+        }))
       }
       
-      // Reload game data to get updated state
+      // Reload game data
       setTimeout(() => {
         loadGame()
       }, 2000)
-    }, 'Failed to join game')
-    
-    setJoiningGame(false)
+      
+    } catch (error) {
+      console.error('❌ Error joining game:', error)
+      showError('Failed to join game: ' + error.message)
+    } finally {
+      setJoiningGame(false)
+    }
   }
 
   // Add handleClaimWinnings function
