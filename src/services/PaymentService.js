@@ -7,14 +7,24 @@ export class PaymentService {
 
   static async calculateETHAmount(priceUSD) {
     try {
-      // Hardcoded ETH price for now (you can fetch this from an API)
-      const ethPriceUSD = 2500 // $2500 per ETH
+      // Import contract service
+      const contractService = (await import('./ContractService')).default
       
-      // Calculate ETH amount
+      if (contractService.isInitialized()) {
+        const result = await contractService.getETHAmount(priceUSD)
+        if (result.success) {
+          return {
+            success: true,
+            ethAmount: parseFloat(result.ethAmount),
+            ethPrice: 3000 // Approximate for display
+          }
+        }
+      }
+      
+      // Fallback to hardcoded price
+      const ethPriceUSD = 3000
       const ethAmount = priceUSD / ethPriceUSD
-      
-      // Ensure minimum amount for Base network
-      const minAmount = 0.000001 // Minimum viable amount
+      const minAmount = 0.000001
       
       return {
         success: true,

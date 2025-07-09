@@ -192,80 +192,12 @@ app.get('/health', (req, res) => {
   })
 })
 
-// ETH price caching
-let cachedEthPrice = 3000 // Default fallback
-let lastEthPriceUpdate = 0
-const ETH_PRICE_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
-
-// Listing fee configuration (in USD)
+// Listing fee configuration (in USD) - ETH price now handled by contract
 let listingFeeUSD = 0.20 // 20 cents - configurable
 
-// Function to fetch current ETH price
-async function fetchCurrentEthPrice() {
-  try {
-    console.log('💰 Fetching current ETH price...')
-    
-    // Try CoinGecko first (free, no API key needed)
-    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
-    const data = await response.json()
-    
-    if (data.ethereum && data.ethereum.usd) {
-      const price = data.ethereum.usd
-      console.log('✅ ETH price from CoinGecko:', price)
-      return price
-    }
-    
-    // Fallback to alternative API
-    const fallbackResponse = await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot')
-    const fallbackData = await fallbackResponse.json()
-    
-    if (fallbackData.data && fallbackData.data.amount) {
-      const price = parseFloat(fallbackData.data.amount)
-      console.log('✅ ETH price from Coinbase:', price)
-      return price
-    }
-    
-    throw new Error('No price data available')
-    
-  } catch (error) {
-    console.error('❌ Error fetching ETH price:', error)
-    return cachedEthPrice // Return cached price on error
-  }
-}
+// ETH price functions removed - contract now uses Chainlink price feeds
 
-// Update ETH price every 5 minutes
-async function updateEthPrice() {
-  const now = Date.now()
-  
-  if (now - lastEthPriceUpdate > ETH_PRICE_CACHE_DURATION) {
-    const newPrice = await fetchCurrentEthPrice()
-    if (newPrice && newPrice > 0) {
-      cachedEthPrice = newPrice
-      lastEthPriceUpdate = now
-      console.log('💰 ETH price updated to:', cachedEthPrice)
-    }
-  }
-}
-
-// ETH price endpoint - now returns static response since contract uses Chainlink
-app.get('/api/eth-price', async (req, res) => {
-  try {
-    res.json({ 
-      price: 3000, // Static fallback price
-      listingFeeUSD: listingFeeUSD,
-      lastUpdated: new Date().toISOString(),
-      note: 'Contract now uses Chainlink price feeds'
-    })
-  } catch (error) {
-    console.error('❌ Error in ETH price endpoint:', error)
-    res.json({ 
-      price: 3000,
-      listingFeeUSD: listingFeeUSD,
-      error: 'Static fallback price',
-      lastUpdated: new Date().toISOString()
-    })
-  }
-})
+// ETH price endpoint removed - contract now uses Chainlink price feeds exclusively
 
 // Admin endpoint to update listing fee
 app.post('/api/admin/listing-fee', (req, res) => {

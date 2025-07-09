@@ -568,22 +568,35 @@ class ContractService {
       
       console.log('📊 Next game ID:', nextGameId.toString())
 
-      // Get listing fee from contract instead of server
-      const listingFeeResult = await this.getListingFee()
-      if (!listingFeeResult.success) {
-        throw new Error('Failed to get listing fee: ' + listingFeeResult.error)
+      // Get listing fee from contract
+      const listingFeeUSD = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'listingFeeUSD'
+      })
+
+      console.log('💵 Listing fee from contract:', listingFeeUSD.toString(), '(in 6 decimals)')
+
+      // Get ETH amount for listing fee from contract
+      let listingFeeETH
+      try {
+        listingFeeETH = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'getETHAmount',
+          args: [listingFeeUSD]
+        })
+        console.log('💵 Listing fee in ETH from contract:', formatEther(listingFeeETH))
+      } catch (error) {
+        console.warn('⚠️ Contract getETHAmount failed, using fallback calculation:', error)
+        // Fallback for local testing - use a fixed ETH price
+        const ethPrice = 3000 // $3000 per ETH
+        const listingFeeUSDDecimal = Number(listingFeeUSD) / 1000000 // Convert from 6 decimals
+        const listingFeeInEth = listingFeeUSDDecimal / ethPrice
+        // Convert to Wei ensuring no decimals by using parseEther
+        listingFeeETH = parseEther(listingFeeInEth.toFixed(18))
+        console.log('💵 Fallback listing fee:', formatEther(listingFeeETH), 'ETH')
       }
-      
-      let listingFeeETH = listingFeeResult.listingFeeETH
-      
-      if (!listingFeeETH) {
-        // Fallback for local testing
-        const listingFeeUSD = 0.20
-        const ethResult = await this.getETHAmount(listingFeeUSD)
-        listingFeeETH = ethResult.ethAmountWei
-      }
-      
-      console.log('💵 Listing fee from contract:', formatEther(listingFeeETH), 'ETH')
 
       // Check user's ETH balance
       const balance = await this.publicClient.getBalance({
@@ -614,7 +627,7 @@ class ContractService {
       const gameParams = {
         nftContract: params.nftContract,
         tokenId: BigInt(params.tokenId),
-        priceUSD: BigInt(Math.floor(params.priceUSD * 1000000)), // Use the price the player entered
+        priceUSD: BigInt(Math.floor(params.priceUSD * 1000000)), // Convert to 6 decimals
         acceptedToken: params.acceptedToken || 0,
         gameType: params.gameType || 0,
         authInfo: JSON.stringify({
@@ -625,6 +638,7 @@ class ContractService {
       }
 
       console.log('📝 Formatted game params:', gameParams)
+      console.log('💰 Sending ETH value:', formatEther(listingFeeETH))
 
       // Simulate the transaction first
       const { request } = await this.publicClient.simulateContract({
@@ -640,7 +654,7 @@ class ContractService {
           gameParams.authInfo
         ],
         account: this.walletClient.account,
-        value: listingFeeETH
+        value: listingFeeETH // This is now guaranteed to be a BigInt
       })
 
       // Execute the transaction
@@ -669,12 +683,12 @@ class ContractService {
         creator: this.walletClient.account.address,
         nft_contract: params.nftContract,
         nft_token_id: params.tokenId.toString(),
-        price_usd: params.priceUSD, // Use the price the player entered
+        price_usd: params.priceUSD,
         game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
         coin: params.coin,
         transaction_hash: hash,
         nft_chain: this.currentChain || 'base',
-        listing_fee_usd: Number(listingFeeUSD) / 1000000 // Store in database as decimal
+        listing_fee_usd: Number(listingFeeUSD) / 1000000
       }
 
       const response = await fetch(`${API_URL}/api/games`, {
@@ -696,32 +710,23 @@ class ContractService {
         receipt
       }
 
-  } catch (error) {
-    console.error('❌ Error creating game:', error)
-    
-    // Try to decode the error if it's a contract revert
-    let errorMessage = error.message || 'Failed to create game'
-    
-    if (error.message.includes('0x59c896be')) {
-      // This is likely "Insufficient listing fee" error
-      errorMessage = 'Insufficient listing fee. The transaction failed because the ETH sent is less than the required listing fee. This often happens when the price feed is unavailable on localhost. Try using a testnet instead.'
-    } else if (error.message.includes('Invalid NFT contract')) {
-      errorMessage = 'Invalid NFT contract address provided.'
-    } else if (error.message.includes('Invalid price feed')) {
-      errorMessage = 'Price feed is not available. Please try again later.'
-    } else if (error.message.includes('execution reverted')) {
-      errorMessage = 'Transaction failed. This could be due to insufficient funds, NFT approval, or network issues.'
-    } else if (error.message.includes('NFT is not approved')) {
-      errorMessage = 'NFT approval required. Please approve the NFT for the contract before creating a game.'
-    } else if (error.message.includes('Insufficient ETH balance')) {
-      errorMessage = error.message // Use the specific balance error message
+    } catch (error) {
+      console.error('❌ Error creating game:', error)
+      
+      // Better error messages
+      let errorMessage = error.message || 'Failed to create game'
+      
+      if (error.message.includes('Invalid price feed')) {
+        errorMessage = 'The price feed is not available. This often happens on localhost. Please try on a testnet or mainnet.'
+      } else if (error.message.includes('Insufficient listing fee')) {
+        errorMessage = 'Insufficient ETH sent for listing fee. This usually means the price feed is not working correctly.'
+      }
+      
+      return {
+        success: false,
+        error: errorMessage
+      }
     }
-    
-    return {
-      success: false,
-      error: errorMessage
-    }
-  }
   }
 
   // Approve NFT
@@ -1030,33 +1035,37 @@ class ContractService {
       // Convert USD to 6 decimals as expected by contract
       const usdAmount = BigInt(Math.floor(priceUSD * 1000000))
       
-      const ethAmount = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: this.contractABI,
-        functionName: 'getETHAmount',
-        args: [usdAmount]
-      })
-      
-      return {
-        success: true,
-        ethAmount: formatEther(ethAmount),
-        ethAmountWei: ethAmount
-      }
-    } catch (error) {
-      console.error('Error getting ETH amount from contract:', error)
-      
-      // Fallback to server price if contract fails (for local testing)
-      if (window.location.hostname === 'localhost') {
-        const ethPrice = await this.getCurrentEthPrice()
-        const ethAmount = priceUSD / ethPrice
+      try {
+        // Try to get from contract first
+        const ethAmount = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: this.contractABI,
+          functionName: 'getETHAmount',
+          args: [usdAmount]
+        })
+        
         return {
           success: true,
-          ethAmount: ethAmount.toString(),
-          ethAmountWei: parseEther(ethAmount.toString()),
+          ethAmount: formatEther(ethAmount),
+          ethAmountWei: ethAmount
+        }
+      } catch (contractError) {
+        console.warn('⚠️ Contract getETHAmount failed:', contractError)
+        
+        // Fallback calculation for local testing
+        const ethPrice = 3000 // Fixed price for testing
+        const ethAmount = priceUSD / ethPrice
+        const ethAmountWei = parseEther(ethAmount.toFixed(18))
+        
+        return {
+          success: true,
+          ethAmount: formatEther(ethAmountWei),
+          ethAmountWei: ethAmountWei,
           fallback: true
         }
       }
-      
+    } catch (error) {
+      console.error('Error getting ETH amount:', error)
       throw error
     }
   }
@@ -1623,8 +1632,6 @@ class ContractService {
   // Get listing fee from contract
   async getListingFee() {
     try {
-      await this.rateLimit('getListingFee')
-      
       if (!this.isInitialized()) {
         throw new Error('Contract service not initialized. Please connect your wallet.')
       }
@@ -1648,14 +1655,21 @@ class ContractService {
         })
       } catch (error) {
         ethError = error.message
-        console.warn('⚠️ Could not get ETH equivalent:', error.message)
+        console.warn('⚠️ Could not get ETH equivalent, using fallback:', error.message)
+        
+        // Fallback calculation
+        const ethPrice = 3000
+        const listingFeeUSDDecimal = Number(listingFeeUSD) / 1000000
+        const listingFeeInEth = listingFeeUSDDecimal / ethPrice
+        listingFeeETH = parseEther(listingFeeInEth.toFixed(18))
       }
 
       return {
         success: true,
         listingFeeUSD: listingFeeUSD.toString(),
         listingFeeUSDDecimal: Number(listingFeeUSD) / 1000000,
-        listingFeeETH: listingFeeETH ? formatEther(listingFeeETH) : null,
+        listingFeeETH: listingFeeETH,
+        listingFeeETHFormatted: formatEther(listingFeeETH),
         ethError
       }
     } catch (error) {
