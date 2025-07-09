@@ -2585,10 +2585,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`📊 Health check: http://localhost:${PORT}/health`)
   console.log(`🧪 Test endpoint: http://localhost:${PORT}/test`)
   console.log(`🎮 Games API: http://localhost:${PORT}/api/games`)
-  console.log(`💰 ETH price API: http://localhost:${PORT}/api/eth-price`)
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`)
   console.log(`🔗 Server listening on 0.0.0.0:${PORT}`)
-  console.log(`💰 ETH price updates every ${ETH_PRICE_CACHE_DURATION / 1000} seconds`)
+  console.log(`💰 ETH price now handled by smart contract Chainlink feeds`)
   
   if (process.env.NODE_ENV === 'production') {
     console.log(`🚀 Production server ready at https://cryptoflipz2-production.up.railway.app`)
