@@ -8,7 +8,7 @@
     "preview": "vite preview",
     "start": "node dist/server/server.js",
     "build:production": "vite build && npm run copy-server && npm run install-server-deps",
-    "copy-server": "mkdir -p dist/server && cp server/server.js dist/server/ && cp server/package.json dist/server/",
+    "copy-server": "node -e \"const fs=require('fs');const path=require('path');if(!fs.existsSync('dist/server'))fs.mkdirSync('dist/server',{recursive:true});fs.copyFileSync('server/server.js','dist/server/server.js');if(fs.existsSync('server/package.json'))fs.copyFileSync('server/package.json','dist/server/package.json');\"",
     "install-server-deps": "cd dist/server && npm install --production",
     "postinstall": "echo 'Frontend install complete'",
     "deploy:base": "npx hardhat run contracts/deploy-nftflip.js --network base",

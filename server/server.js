@@ -28,6 +28,22 @@ app.use(cors())
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
+// Serve static files from the dist directory (built frontend)
+const distPath = path.join(__dirname, '..', 'dist')
+if (fs.existsSync(distPath)) {
+  console.log('📁 Serving static files from:', distPath)
+  app.use(express.static(distPath))
+} else {
+  console.log('⚠️ Dist directory not found, skipping static file serving')
+}
+
+// Serve static files from the public directory
+const publicPath = path.join(__dirname, '..', 'public')
+if (fs.existsSync(publicPath)) {
+  console.log('📁 Serving public files from:', publicPath)
+  app.use('/public', express.static(publicPath))
+}
+
 // Database setup
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'games.db')
 console.log('🗄️ Database path:', dbPath)
@@ -271,6 +287,8 @@ wss.on('connection', (socket) => {
   })
 })
 
+// ===== API ENDPOINTS =====
+
 // Get all available games
 app.get('/api/games', async (req, res) => {
   try {
@@ -320,8 +338,8 @@ app.get('/api/games', async (req, res) => {
       })
       
       res.json(gamesWithParsedCoin)
-      })
-    } catch (error) {
+    })
+  } catch (error) {
     console.error('❌ Error fetching games:', error)
     res.status(500).json({ error: error.message })
   }
@@ -334,9 +352,9 @@ app.get('/api/games/:gameId', async (req, res) => {
     
     db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
       if (err || !game) {
-      return res.status(404).json({ error: 'Game not found' })
-    }
-    
+        return res.status(404).json({ error: 'Game not found' })
+      }
+      
       // Parse coin data if it's a string
       if (game.coin && typeof game.coin === 'string') {
         try {
@@ -397,7 +415,7 @@ app.post('/api/games/:gameId', async (req, res) => {
           return res.status(500).json({ error: err.message })
         }
         
-          res.json({ success: true, changes: this.changes })
+        res.json({ success: true, changes: this.changes })
       }
     )
   } catch (error) {
@@ -474,7 +492,7 @@ app.get('/api/games/:gameId/join-price', async (req, res) => {
       const ethPrice = 3000 // $3000 per ETH (you should use a real price feed)
       const weiAmount = Math.floor((priceUSD / ethPrice) * 1e18)
       
-        res.json({ 
+      res.json({ 
         weiAmount: weiAmount.toString(),
         priceUSD: priceUSD,
         ethPrice: ethPrice
@@ -773,6 +791,25 @@ app.post('/api/admin/sync-cancelled-games', async (req, res) => {
   } catch (error) {
     console.error('❌ Error syncing cancelled games:', error)
     res.status(500).json({ error: error.message })
+  }
+})
+
+// Catch-all route to serve React app
+app.get('*', (req, res) => {
+  // Don't serve React app for API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' })
+  }
+  
+  // Serve the React app's index.html for all other routes
+  const indexPath = path.join(__dirname, '..', 'index.html')
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath)
+  } else {
+    res.status(404).json({ 
+      error: 'Frontend not built. Please run npm run build first.',
+      path: req.path 
+    })
   }
 })
 

@@ -1007,6 +1007,50 @@ export default function AdminPanel() {
     }
   }
 
+  // Clear all games from database
+  const clearAllGames = async () => {
+    if (!confirm('🗑️ DELETE ALL GAMES? This will permanently remove all games from the database and cannot be undone!')) {
+      return
+    }
+
+    try {
+      addNotification('info', 'Clearing all games from database...')
+      
+      // First, get all games to see what we're deleting
+      const gamesResponse = await fetch(`${API_URL}/api/admin/games`)
+      if (!gamesResponse.ok) {
+        throw new Error('Failed to fetch games')
+      }
+      
+      const data = await gamesResponse.json()
+      const games = data.games || []
+      
+      if (games.length === 0) {
+        addNotification('info', 'Database is already empty')
+        return
+      }
+      
+      addNotification('info', `Found ${games.length} games to delete...`)
+      
+      // Delete all games using the existing DELETE endpoint
+      const deleteResponse = await fetch(`${API_URL}/api/admin/games`, {
+        method: 'DELETE'
+      })
+      
+      if (deleteResponse.ok) {
+        const result = await deleteResponse.json()
+        addNotification('success', `✅ Successfully deleted ${result.changes || games.length} games from database!`)
+        await loadData() // Refresh the games list
+      } else {
+        const errorText = await deleteResponse.text()
+        throw new Error(`Failed to delete games: ${errorText}`)
+      }
+    } catch (error) {
+      console.error('Error clearing database:', error)
+      addNotification('error', 'Failed to clear database: ' + error.message)
+    }
+  }
+
   // NFT Management Functions
   const loadContractNFTs = async () => {
     if (!contractService.isInitialized()) {
@@ -1536,6 +1580,12 @@ export default function AdminPanel() {
                     style={{ background: '#00cc00', whiteSpace: 'nowrap' }}
                   >
                     🔄 Sync Cancelled Games
+                  </Button>
+                  <Button 
+                    onClick={clearAllGames}
+                    style={{ background: '#ff4444', whiteSpace: 'nowrap' }}
+                  >
+                    🗑️ Clear All Games
                   </Button>
                 </div>
                 
