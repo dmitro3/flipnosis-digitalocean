@@ -29,16 +29,29 @@ app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // Serve static files from the dist directory (built frontend)
-const distPath = path.join(__dirname, '..', 'dist')
+const distPath = path.join(__dirname, '..')
 if (fs.existsSync(distPath)) {
   console.log('📁 Serving static files from:', distPath)
-  app.use(express.static(distPath))
+  app.use(express.static(distPath, {
+    setHeaders: (res, filePath) => {
+      // Set correct MIME types for JavaScript files
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript')
+      } else if (filePath.endsWith('.mjs')) {
+        res.setHeader('Content-Type', 'application/javascript')
+      } else if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css')
+      } else if (filePath.endsWith('.html')) {
+        res.setHeader('Content-Type', 'text/html')
+      }
+    }
+  }))
 } else {
   console.log('⚠️ Dist directory not found, skipping static file serving')
 }
 
 // Serve static files from the public directory
-const publicPath = path.join(__dirname, '..', 'public')
+const publicPath = path.join(__dirname, '..', '..', 'public')
 if (fs.existsSync(publicPath)) {
   console.log('📁 Serving public files from:', publicPath)
   app.use('/public', express.static(publicPath))
@@ -799,6 +812,11 @@ app.get('*', (req, res) => {
   // Don't serve React app for API routes
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API endpoint not found' })
+  }
+  
+  // Don't serve React app for static assets (they should be handled by express.static)
+  if (req.path.includes('.') && !req.path.endsWith('/')) {
+    return res.status(404).json({ error: 'Static asset not found' })
   }
   
   // Serve the React app's index.html for all other routes
