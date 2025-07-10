@@ -211,13 +211,21 @@ const Home = () => {
       setLoading(true)
       setError(null)
 
+      console.log('🔍 Fetching games from:', `${API_URL}/api/games`)
       const response = await fetch(`${API_URL}/api/games`)
+      
+      console.log('📊 Response status:', response.status)
+      console.log('📊 Response headers:', response.headers)
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch games')
+        const errorText = await response.text()
+        console.error('❌ Failed to fetch games:', errorText)
+        throw new Error(`Failed to fetch games: ${response.status} ${errorText}`)
       }
 
       const gamesData = await response.json()
       console.log('📊 Fetched games from database:', gamesData.length, 'games')
+      console.log('📊 Raw games data:', gamesData)
       
       // Transform database games to frontend format
       const processedFlips = gamesData.map(game => ({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
@@ -490,6 +490,7 @@ const FlipGame = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [joiningGame, setJoiningGame] = useState(false)
+  const [isFlipping, setIsFlipping] = useState(false)
 
   // NEW: Enhanced join state management
   const [joinInProgress, setJoinInProgress] = useState(false)
@@ -606,7 +607,7 @@ const FlipGame = () => {
     // Game state checks
     const hasJoiner = gameData.joiner && gameData.joiner !== '0x0000000000000000000000000000000000000000'
     const isCreatorGame = gameData.creator === address
-    const isWaitingPhase = gameData.status === 'waiting' || gameState?.phase === 'waiting'
+    const isWaitingPhase = gameData.status === 'waiting' || gameData.status === 'joined' || gameState?.phase === 'waiting'
     
     if (hasJoiner || (gameState?.joiner && gameState.joiner !== '0x0000000000000000000000000000000000000000')) {
       return { text: 'Game Full', disabled: true, color: 'gray' }
@@ -638,7 +639,17 @@ const FlipGame = () => {
 
   const handlePlayerJoined = (data) => {
     showSuccess(`${data.joinerName || 'Player'} joined the game!`)
-    loadGame() // Refresh game data
+    
+    // Immediately update game data to show joined status
+    setGameData(prev => ({
+      ...prev,
+      status: 'joined',
+      joiner: data.joiner || data.address,
+      joiner_address: data.joiner || data.address
+    }))
+    
+    // Also refresh from contract to get latest data
+    loadGame()
   }
 
   const handleFlipResult = (data) => {
@@ -696,6 +707,15 @@ const FlipGame = () => {
       playsInline
       preload="auto"
       onError={() => setVideoError(true)}
+      onLoadedMetadata={(e) => {
+        const duration = e.target.duration;
+        // Video duration detected, could be used for refresh timing
+        if (duration > 0) {
+          // Convert seconds to milliseconds and add a small buffer
+          const refreshInterval = Math.floor(duration * 1000) + 1000;
+          // Could set reconnection timer to match video duration
+        }
+      }}
       style={{
         willChange: 'auto',
         contain: 'layout style paint'
@@ -803,7 +823,9 @@ const FlipGame = () => {
         if (reconnectAttempts < maxReconnectAttempts) {
           reconnectAttempts++
           console.log(`🔄 Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`)
-          reconnectTimer = setTimeout(createWebSocket, 2000)
+          // Use exponential backoff: 10s, 20s, 30s, 40s, 50s (increased delays)
+          const backoffDelay = 10000 + (reconnectAttempts - 1) * 10000;
+          reconnectTimer = setTimeout(createWebSocket, backoffDelay)
         } else {
           setError('Connection lost. Please refresh the page.')
         }
@@ -820,12 +842,37 @@ const FlipGame = () => {
     const handleWebSocketMessage = async (event) => {
       try {
         const data = JSON.parse(event.data)
-        console.log('📡 Received:', data.type)
+        
+        // Only log important messages to reduce spam
+        if (data.type !== 'game_state' && data.type !== 'error') {
+          console.log('📡 Received:', data.type)
+        }
         
         switch (data.type) {
           case 'game_state':
             setGameState(data)
-            handleGameStateUpdate(data)
+            debouncedGameStateUpdate(data)
+            break
+          case 'game_info':
+            // Handle game info updates
+            console.log('📊 Game info update:', data)
+            if (data.game) {
+              setGameData(data.game)
+            }
+            break
+          case 'join_state_update':
+            // Handle join state updates
+            console.log('👥 Join state update:', data)
+            if (data.game) {
+              setGameData(data.game)
+              // Only trigger background poll for status changes, not for active games
+              if (data.game.status === 'active' || data.game.status === 'joined') {
+                // Only poll if we don't have game data yet or status changed
+                if (!gameData || gameData.status !== data.game.status) {
+                  pollGameData(false) // Background poll without page refresh
+                }
+              }
+            }
             break
           case 'flip_animation':
             setFlipAnimation(data)
@@ -862,7 +909,12 @@ const FlipGame = () => {
     }
   }, [gameId, address])
 
-  // Auto-flip detection
+  // Add debounce for game state updates to prevent spam
+  const [lastGameStateUpdate, setLastGameStateUpdate] = useState(0)
+  const GAME_STATE_DEBOUNCE_MS = 2000 // Increased to 2 seconds debounce
+  const [lastGameStateHash, setLastGameStateHash] = useState('')
+
+  // Auto-flip detection with debounced game state updates
   useEffect(() => {
     if (!gameState) return
     
@@ -882,6 +934,32 @@ const FlipGame = () => {
     previousTurnTimeLeftRef.current = currentTurnTimeLeft
   }, [gameState?.turnTimeLeft, gameState?.phase])
 
+  // Debounced game state update handler with content comparison
+  const debouncedGameStateUpdate = useCallback((data) => {
+    const now = Date.now()
+    
+    // Create a simple hash of the game state to detect actual changes
+    const stateHash = JSON.stringify({
+      phase: data.phase,
+      currentPlayer: data.currentPlayer,
+      creatorChoice: data.creatorChoice,
+      joinerChoice: data.joinerChoice,
+      creatorPower: data.creatorPower,
+      joinerPower: data.joinerPower,
+      turnTimeLeft: data.turnTimeLeft,
+      chargingPlayer: data.chargingPlayer
+    })
+    
+    // Skip if too soon OR if the state hasn't actually changed
+    if (now - lastGameStateUpdate < GAME_STATE_DEBOUNCE_MS || stateHash === lastGameStateHash) {
+      return
+    }
+    
+    setLastGameStateUpdate(now)
+    setLastGameStateHash(stateHash)
+    handleGameStateUpdate(data)
+  }, [lastGameStateUpdate, lastGameStateHash])
+
   // Load game data from database
   // Load game from contract
   const loadGameFromContract = async () => {
@@ -894,19 +972,17 @@ const FlipGame = () => {
       }
 
       // Transform contract data to match your UI format
-      const { game, payment, gameState } = result.data
+      const { game, payment } = result.data
       
-      // Try to extract coin design from authInfo
+      // Extract coin info from the new contract structure
       let coinData = null
-      try {
-        if (game.authInfo) {
-          const authInfo = JSON.parse(game.authInfo)
-          if (authInfo.coinDesign) {
-            coinData = authInfo.coinDesign
-          }
+      if (game.coinInfo) {
+        coinData = {
+          type: game.coinInfo.coinType || 'default',
+          headsImage: game.coinInfo.headsImage || '/coins/plainh.png',
+          tailsImage: game.coinInfo.tailsImage || '/coins/plaint.png',
+          isCustom: game.coinInfo.isCustom || false
         }
-      } catch (parseError) {
-        console.warn('⚠️ Could not parse authInfo for coin design:', parseError)
       }
       
       return {
@@ -923,13 +999,13 @@ const FlipGame = () => {
         },
         price: Number(payment.priceUSD) / 1000000, // Convert from 6 decimals
         priceUSD: Number(payment.priceUSD) / 1000000,
-        rounds: gameState.maxRounds,
-        status: getGameStatusFromContract(game, gameState),
-        current_round: gameState.currentRound,
-        max_rounds: gameState.maxRounds,
-        creator_wins: gameState.creatorWins,
-        joiner_wins: gameState.joinerWins,
-        winner: gameState.winner,
+        rounds: 5, // Best of 5 rounds
+        status: getGameStatusFromContract(game),
+        current_round: game.currentRound,
+        max_rounds: 5,
+        creator_wins: game.creatorWins,
+        joiner_wins: game.joinerWins,
+        winner: game.winner,
         contract_game_id: gameId,
         coin: coinData // Use extracted coin data
       }
@@ -940,11 +1016,12 @@ const FlipGame = () => {
   }
 
   // Helper to determine game status
-  const getGameStatusFromContract = (game, gameState) => {
+  const getGameStatusFromContract = (game) => {
     if (game.state === 0) return 'waiting' // CREATED state
-    if (game.state === 1) return 'active' // JOINED state
-    if (game.state === 2) return 'completed' // COMPLETED state
-    if (game.state === 3) return 'cancelled' // CANCELLED state
+    if (game.state === 1) return 'joined' // JOINED state - joiner has joined but game hasn't started
+    if (game.state === 2) return 'active' // ACTIVE state - game is being played
+    if (game.state === 3) return 'completed' // COMPLETED state
+    if (game.state === 4) return 'cancelled' // CANCELLED state
     return 'waiting'
   }
 
@@ -969,11 +1046,26 @@ const FlipGame = () => {
     }
   }
 
-  const loadGame = async () => {
+  // Background polling function that updates data without page refresh
+  const pollGameData = async (showLoading = false) => {
     try {
-      setLoading(true)
-      setError('')
+      if (showLoading) {
+        setLoading(true)
+        setError('')
+      }
       
+      // First, try to load from contract to get the latest state
+      let contractGameData = null
+      try {
+        contractGameData = await loadGameFromContract()
+        if (!showLoading) {
+          console.log('📋 Contract game data (background):', contractGameData)
+        }
+      } catch (contractError) {
+        console.warn('Could not load from contract:', contractError)
+      }
+      
+      // Then load from database
       const API_URL = 'https://cryptoflipz2-production.up.railway.app'
       const response = await fetch(`${API_URL}/api/games/${gameId}`)
       
@@ -981,40 +1073,191 @@ const FlipGame = () => {
         throw new Error('Game not found')
       }
       
-      const gameData = await response.json()
+      const dbGameData = await response.json()
       
       // Parse coin data if it's a string
-      if (gameData.coin && typeof gameData.coin === 'string') {
+      if (dbGameData.coin && typeof dbGameData.coin === 'string') {
         try {
-          gameData.coin = JSON.parse(gameData.coin)
+          dbGameData.coin = JSON.parse(dbGameData.coin)
         } catch (e) {
           console.warn('Could not parse coin data:', e)
         }
       }
       
-      setGameData(gameData)
+      // Merge contract data with database data
+      let finalGameData = { ...dbGameData }
+      
+      if (contractGameData) {
+        // Update with contract state
+        finalGameData.status = contractGameData.status
+        finalGameData.creator = contractGameData.creator
+        finalGameData.joiner = contractGameData.joiner
+        finalGameData.current_round = contractGameData.current_round
+        finalGameData.creator_wins = contractGameData.creator_wins
+        finalGameData.joiner_wins = contractGameData.joiner_wins
+        finalGameData.winner = contractGameData.winner
+        finalGameData.contract_game_id = contractGameData.contract_game_id
+        
+        // Use contract coin data if available
+        if (contractGameData.coin) {
+          finalGameData.coin = contractGameData.coin
+        }
+        
+        if (!showLoading) {
+          console.log('🔄 Background sync:', {
+            status: finalGameData.status,
+            joiner: finalGameData.joiner,
+            current_round: finalGameData.current_round
+          })
+        }
+      }
+      
+      setGameData(finalGameData)
       
       // Set NFT data directly from database
       setNftData({
-        contractAddress: gameData.nft_contract,
-        tokenId: gameData.nft_token_id,
-        name: gameData.nft_name,
-        image: gameData.nft_image,
-        collection: gameData.nft_collection,
-        chain: gameData.nft_chain
+        contractAddress: finalGameData.nft_contract,
+        tokenId: finalGameData.nft_token_id,
+        name: finalGameData.nft_name,
+        image: finalGameData.nft_image,
+        collection: finalGameData.nft_collection,
+        chain: finalGameData.nft_chain
       })
       
     } catch (err) {
-      console.error('❌ Error loading game:', err)
-      setError(err.message)
+      console.error('❌ Error polling game data:', err)
+      if (showLoading) {
+        setError(err.message)
+      }
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
+  }
+
+  // Initial load function (with loading state)
+  const loadGame = async () => {
+    console.log('🔄 Initial loadGame called at:', new Date().toLocaleTimeString())
+    await pollGameData(true) // Show loading state for initial load
   }
 
   useEffect(() => {
     loadGame()
+    
+    // Set up background polling to keep game state in sync (no page refresh)
+    const refreshInterval = setInterval(() => {
+      if (gameData && (gameData.status === 'waiting' || gameData.status === 'joined')) {
+        // Background poll without page refresh
+        pollGameData(false)
+      }
+    }, 15000) // Poll every 15 seconds for waiting/joined games
+    
+    return () => {
+      clearInterval(refreshInterval)
+    }
   }, [gameId])
+
+  // Auto-start game when it's in 'joined' status (only for game creator)
+  const [hasAutoStarted, setHasAutoStarted] = useState(false)
+  
+  // Reset auto-start flag when game status changes from 'joined'
+  useEffect(() => {
+    if (gameData?.status !== 'joined') {
+      setHasAutoStarted(false)
+    }
+  }, [gameData?.status])
+  
+  // Polling mechanism to keep game state synchronized (especially for creator)
+  useEffect(() => {
+    if (!gameData?.contract_game_id || !contractService.isInitialized()) return
+    
+    // Background contract polling (no page refresh)
+    const pollInterval = setInterval(async () => {
+      try {
+        const contractGameData = await loadGameFromContract()
+        if (contractGameData) {
+          // Update only the contract-specific fields without triggering full refresh
+          setGameData(prev => ({
+            ...prev,
+            status: contractGameData.status,
+            joiner: contractGameData.joiner,
+            current_round: contractGameData.current_round,
+            creator_wins: contractGameData.creator_wins,
+            joiner_wins: contractGameData.joiner_wins,
+            winner: contractGameData.winner
+          }))
+          console.log('📊 Background contract update:', contractGameData.status)
+        }
+      } catch (error) {
+        console.warn('Contract polling error:', error)
+      }
+    }, 10000) // Poll every 10 seconds
+    
+    return () => clearInterval(pollInterval)
+  }, [gameData?.contract_game_id, contractService.isInitialized])
+  
+  useEffect(() => {
+    if (gameData?.status === 'joined' && 
+        gameData?.contract_game_id && 
+        contractService.isInitialized() &&
+        gameData?.creator === address && 
+        !hasAutoStarted) { // Only creator can auto-start and only once
+      console.log('🚀 Auto-starting game in joined status (creator only)...')
+      setHasAutoStarted(true)
+      
+      // Update status to active and let WebSocket handle the first round setup
+      const startGame = async () => {
+        try {
+          // Just update status to active, don't call playRound yet
+          await updateGameInDatabase({ status: 'active' })
+          console.log('✅ Game status updated to active')
+          
+          // Let WebSocket handle the first round setup
+          if (socket) {
+            socket.send(JSON.stringify({
+              type: 'start_game',
+              gameId
+            }))
+          }
+          
+          // Background poll to show new state (only if needed)
+          if (gameData?.status !== 'active') {
+            pollGameData(false) // Background poll without page refresh
+          }
+        } catch (error) {
+          console.error('❌ Error starting game:', error)
+          setHasAutoStarted(false) // Reset flag if failed
+        }
+      }
+      
+      // Small delay to ensure everything is loaded
+      setTimeout(startGame, 2000)
+    }
+  }, [gameData?.status, gameData?.contract_game_id, gameData?.creator, address, hasAutoStarted])
+
+  // Initialize WebSocket game state when contract state is 'active' but no WebSocket state exists
+  useEffect(() => {
+    if (gameData?.status === 'active' && !gameState && socket) {
+      console.log('🎮 Initializing WebSocket game state for active game...')
+      
+      // Create a basic game state to enable UI interactions
+      const initialGameState = {
+        phase: 'choosing',
+        currentPlayer: address,
+        isMyTurn: true,
+        creatorChoice: null,
+        joinerChoice: null,
+        creatorPower: 0,
+        joinerPower: 0,
+        turnTimeLeft: 30,
+        coin: gameData.coin
+      }
+      
+      setGameState(initialGameState)
+      console.log('✅ WebSocket game state initialized:', initialGameState)
+    }
+  }, [gameData?.status, gameState, socket, address, gameData?.coin])
 
   // Single NFT data manager
   useEffect(() => {
@@ -1040,15 +1283,41 @@ const FlipGame = () => {
   useEffect(() => {
     if (gameData?.coin) {
       setGameCoin(gameData.coin)
-      setCustomHeadsImage(gameData.coin.headsImage)
-      setCustomTailsImage(gameData.coin.tailsImage)
+      
+      // Handle both preset and custom coin images
+      let headsImage = gameData.coin.headsImage
+      let tailsImage = gameData.coin.tailsImage
+      
+      // For custom coins, use the actual image data if available
+      if (gameData.coin.isCustom) {
+        if (gameData.coin.actualHeadsImage) {
+          headsImage = gameData.coin.actualHeadsImage
+        }
+        if (gameData.coin.actualTailsImage) {
+          tailsImage = gameData.coin.actualTailsImage
+        }
+      }
+      
+      // If it's a custom coin (base64 data URL), use it directly
+      // If it's a preset coin (file path), use it as is
+      setCustomHeadsImage(headsImage)
+      setCustomTailsImage(tailsImage)
+      
+      console.log('🪙 Coin data loaded:', {
+        type: gameData.coin.type,
+        isCustom: gameData.coin.isCustom,
+        headsImage: headsImage?.substring(0, 50) + '...',
+        tailsImage: tailsImage?.substring(0, 50) + '...',
+        hasActualHeads: !!gameData.coin.actualHeadsImage,
+        hasActualTails: !!gameData.coin.actualTailsImage
+      })
     }
   }, [gameData?.coin])
 
 
 
   // User input handlers - ONLY send to server
-  const handlePowerChargeStart = () => {
+  const handlePowerChargeStart = useCallback(() => {
     // Only allow charging if player has made their choice and it's the charging phase
     if (!isMyTurn || !socket || isChargingRef.current) {
       return
@@ -1074,63 +1343,36 @@ const FlipGame = () => {
       gameId,
       address
     }))
-  }
+  }, [isMyTurn, socket, gameState?.phase, gameState?.creatorChoice, gameState?.joinerChoice, isCreator, gameId, address, showError])
 
-  const handlePowerChargeStop = async () => {
+  const handlePowerChargeStop = useCallback(async () => {
     if (!socket || !isChargingRef.current) return
     
     isChargingRef.current = false
     
-    // If contract service is available, use smart contract for flipping
-    if (contractService.currentChain && gameData?.contract_game_id) {
+    // Only use contract if game is in the right phase and we have the right data
+    if (contractService.isInitialized() && 
+        gameData?.contract_game_id && 
+        gameState?.phase === 'round_active' &&
+        gameData?.status === 'active') {
       try {
         showInfo('Flipping coin on blockchain...')
         
-        // Get current power from gameState
-        const currentPower = isCreator ? gameState?.creatorPower : gameState?.joinerPower
-        
-        // Prepare flip parameters
-        const flipParams = {
-          gameId: gameData.contract_game_id,
-          power: currentPower || 50 // Use current power from gameState
-        }
-
-        // Flip coin using smart contract
-        const result = await contractService.flipCoin(flipParams)
+        // Play round using smart contract
+        const result = await contractService.playRound(gameData.contract_game_id)
         
         if (!result.success) {
           throw new Error('Failed to flip coin: ' + result.error)
         }
 
         // Update game state with new data from contract
-        if (result.gameDetails) {
-          const { game: contractGame, gameState } = result.gameDetails
+        if (result.success) {
+          // Reload game data to get updated state
+          await loadGame()
           
-          setGameData(prev => ({
-            ...prev,
-            current_round: gameState.currentRound,
-            creator_wins: gameState.creatorWins,
-            joiner_wins: gameState.joinerWins,
-            winner: gameState.winner,
-            status: gameState.winner !== '0x0000000000000000000000000000000000000000' ? 'completed' : 'active'
-          }))
-
-          // Update database
-          await updateGameInDatabase({
-            current_round: gameState.currentRound,
-            creator_wins: gameState.creatorWins,
-            joiner_wins: gameState.joinerWins,
-            winner: gameState.winner,
-            status: gameState.winner !== '0x0000000000000000000000000000000000000000' ? 'completed' : 'active',
-            flip_transaction_hash: result.transactionHash
-          })
-
-          // Show flip result
-          const isWinner = gameState.winner === address
-          if (gameState.winner !== '0x0000000000000000000000000000000000000000') {
-            showSuccess(`Game completed! ${isWinner ? 'You won!' : 'You lost!'}`)
-          } else {
-            showSuccess(`Round ${gameState.currentRound} completed!`)
+          // Show round result
+          if (result.round) {
+            showSuccess(`Round ${result.round} completed!`)
           }
         }
         
@@ -1145,34 +1387,64 @@ const FlipGame = () => {
         }))
       }
     } else {
-      // Fallback to WebSocket if no contract
+      // Use WebSocket for real-time gameplay
       socket.send(JSON.stringify({
         type: 'stop_charging',
         gameId,
         address
       }))
     }
-  }
+  }, [socket, gameData?.contract_game_id, gameState?.phase, gameData?.status, gameId, address, showInfo, showSuccess, showError, loadGame])
 
+  // Handle player choice (heads/tails selection)
   const handlePlayerChoice = (choice) => {
+    console.log('🎯 handlePlayerChoice called:', {
+      choice,
+      hasSocket: !!socket,
+      hasGameState: !!gameState,
+      gamePhase: gameState?.phase,
+      isMyTurn: gameState?.currentPlayer === address,
+      currentPlayer: gameState?.currentPlayer,
+      myAddress: address,
+      isCreator,
+      isJoiner
+    })
+
     if (!socket || !gameState) {
+      console.log('❌ Cannot make choice - missing socket or gameState')
       showError('Connection error - please refresh')
       return
     }
     
     if (gameState.phase !== 'choosing') {
+      console.log('❌ Cannot make choice - wrong phase:', gameState.phase)
       showError('Not in choosing phase')
       return
     }
     
     const isMyTurn = gameState.currentPlayer === address
     if (!isMyTurn) {
+      console.log('❌ Not my turn:', { 
+        currentPlayer: gameState.currentPlayer, 
+        myAddress: address,
+        isCreator,
+        isJoiner
+      })
       showError('Not your turn')
       return
     }
     
     // Show animation for player's choice
-    showChoiceAnimationEffect(choice.toUpperCase())
+    setChoiceAnimationText(choice.toUpperCase())
+    setChoiceAnimationColor('#00FF41') // Neon green
+    setShowChoiceAnimation(true)
+    
+    // Hide animation after 1 second
+    setTimeout(() => {
+      setShowChoiceAnimation(false)
+    }, 1000)
+    
+    console.log('🎯 Sending player choice to server:', choice)
     
     socket.send(JSON.stringify({
       type: 'player_choice',
@@ -1181,6 +1453,44 @@ const FlipGame = () => {
       choice
     }))
   }
+
+  const handleFlip = async () => {
+    if (!canFlip) return
+    
+    try {
+      setIsFlipping(true)
+      
+      // Call contract to play round
+      const result = await contractService.playRound(gameId)
+      
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      
+      // Show flip animation
+      setFlipAnimation({
+        id: Date.now(),
+        result: result.result === 0 ? 'heads' : 'tails'
+      })
+      
+      // Reload game state
+      setTimeout(async () => {
+        await loadGame()
+        setIsFlipping(false)
+      }, 3000)
+      
+    } catch (error) {
+      console.error('Failed to flip:', error)
+      showError('Failed to play round')
+      setIsFlipping(false)
+    }
+  }
+
+  // Update the canFlip logic
+  const canFlip = gameData && 
+    (gameData.state === 'Joined' || gameData.state === 'Active') &&
+    (address === gameData.creator || address === gameData.joiner) &&
+    !isFlipping
 
 
 
@@ -1664,9 +1974,26 @@ const FlipGame = () => {
   }
 
   // Single coin render function to prevent duplicates
-  const renderCoin = () => {
+  const renderCoin = useMemo(() => {
     if (!screenSizeDetermined) return null;
     
+    // Generate unique render ID for debugging
+    const renderId = Date.now() + Math.random();
+    console.log('🪙 renderCoin called - ID:', renderId, 'isMobileScreen:', isMobileScreen, 'screenSizeDetermined:', screenSizeDetermined);
+    
+    // Allow coin to render even without gameState, but with default values
+    const defaultGameState = {
+      phase: 'waiting',
+      currentPlayer: null,
+      creatorChoice: null,
+      joinerChoice: null,
+      creatorPower: 0,
+      joinerPower: 0,
+      chargingPlayer: null
+    };
+    
+    const effectiveGameState = gameState || defaultGameState;
+
     const coinProps = {
       isFlipping: !!flipAnimation,
       flipResult: flipAnimation ? flipAnimation.result : (roundResult?.result || lastFlipResult),
@@ -1674,25 +2001,24 @@ const FlipGame = () => {
       onPowerCharge: handlePowerChargeStart,
       onPowerRelease: handlePowerChargeStop,
       isPlayerTurn: isMyTurn,
-      isCharging: gameState?.chargingPlayer === address,
-      chargingPlayer: gameState?.chargingPlayer,
-      creatorPower: gameState?.creatorPower || 0,
-      joinerPower: gameState?.joinerPower || 0,
-      creatorChoice: gameState?.creatorChoice,
-      joinerChoice: gameState?.joinerChoice,
+      isCharging: effectiveGameState.chargingPlayer === address,
+      chargingPlayer: effectiveGameState.chargingPlayer,
+      creatorPower: effectiveGameState.creatorPower || 0,
+      joinerPower: effectiveGameState.joinerPower || 0,
+      creatorChoice: effectiveGameState.creatorChoice,
+      joinerChoice: effectiveGameState.joinerChoice,
       isCreator: isCreator,
       customHeadsImage: customHeadsImage || gameCoin?.headsImage || '/coins/plainh.png',
       customTailsImage: customTailsImage || gameCoin?.tailsImage || '/coins/plaint.png'
     };
 
-    // DEBUG: Add unique key and logging to identify duplicate renders
-    const renderId = Date.now() + Math.random();
-    console.log('🪙 renderCoin called - ID:', renderId, 'isMobileScreen:', isMobileScreen, 'screenSizeDetermined:', screenSizeDetermined);
+    // Use stable keys to prevent constant re-rendering
+    const coinKey = `coin-${isMobileScreen ? 'mobile' : 'desktop'}-${gameId}-${renderId}`;
 
     if (isMobileScreen) {
       return (
         <MobileOptimizedCoin
-          key={`mobile-coin-${renderId}`}
+          key={coinKey}
           {...coinProps}
           size={187}
         />
@@ -1700,14 +2026,32 @@ const FlipGame = () => {
     } else {
       return (
         <OptimizedGoldCoin
-          key={`desktop-coin-${renderId}`}
+          key={coinKey}
           {...coinProps}
-          gamePhase={gameState?.phase}
+          gamePhase={effectiveGameState.phase}
           size={440}
         />
       );
     }
-  };
+  }, [
+    screenSizeDetermined,
+    isMobileScreen,
+    gameId,
+    // Only re-render when these critical props actually change
+    flipAnimation?.id, // Use ID instead of full object
+    flipAnimation?.result,
+    roundResult?.result,
+    lastFlipResult,
+    // Simplified game state dependencies - only re-render on major changes
+    gameState?.phase,
+    gameState?.currentPlayer,
+    isCreator,
+    // Only re-render when coin images actually change
+    customHeadsImage,
+    customTailsImage,
+    gameCoin?.headsImage,
+    gameCoin?.tailsImage
+  ]);
 
   const renderOfferReviewModal = () => {
     if (!showOfferReviewModal || !nftOffer) return null
@@ -2142,7 +2486,7 @@ const FlipGame = () => {
                 width: '100%',
                 textAlign: 'center'
               }}>
-                {renderCoin()}
+                {isMobileScreen && renderCoin}
               </div>
 
               {/* Choice Display - Mobile */}
@@ -2770,7 +3114,7 @@ const FlipGame = () => {
               {screenSizeDetermined && !isMobileScreen && (
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   {/* Coin */}
-                  <div 
+                                    <div 
                     id="desktop-coin-container"
                     style={{ 
                       display: 'flex', 
@@ -2785,7 +3129,7 @@ const FlipGame = () => {
                       padding: '20px'
                     }}
                   >
-                    {renderCoin()}
+                    {!isMobileScreen && renderCoin}
                   </div>
 
                   {/* Choice Display - Desktop */}
@@ -3286,6 +3630,72 @@ const FlipGame = () => {
           )}
 
           {/* Game Status */}
+          {/* Show joined status for creator */}
+          {gameData?.status === 'joined' && isCreator && (
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{
+                padding: '1rem',
+                background: 'rgba(0, 255, 65, 0.1)',
+                border: '1px solid rgba(0, 255, 65, 0.3)',
+                borderRadius: '1rem'
+              }}>
+                <div style={{ color: '#00FF41', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                  🎉 Player Joined!
+                </div>
+                <div style={{ color: 'white', marginTop: '0.5rem' }}>
+                  {gameData.joiner ? 
+                    `Player ${gameData.joiner.slice(0, 6)}...${gameData.joiner.slice(-4)} has joined your game!` :
+                    'A player has joined your game!'
+                  }
+                </div>
+                <div style={{ color: '#FFD700', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                  Game will start automatically in a few seconds...
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Show waiting status for joiner */}
+          {gameData?.status === 'joined' && !isCreator && (
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{
+                padding: '1rem',
+                background: 'rgba(255, 165, 0, 0.1)',
+                border: '1px solid rgba(255, 165, 0, 0.3)',
+                borderRadius: '1rem'
+              }}>
+                <div style={{ color: '#FFA500', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                  ⏳ Waiting for Game to Start
+                </div>
+                <div style={{ color: 'white', marginTop: '0.5rem' }}>
+                  You've joined the game! Waiting for the creator to start...
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Show waiting status for creator */}
+          {gameData?.status === 'waiting' && isCreator && (
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{
+                padding: '1rem',
+                background: 'rgba(0, 191, 255, 0.1)',
+                border: '1px solid rgba(0, 191, 255, 0.3)',
+                borderRadius: '1rem'
+              }}>
+                <div style={{ color: '#00BFFF', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                  🔍 Waiting for Player to Join
+                </div>
+                <div style={{ color: 'white', marginTop: '0.5rem' }}>
+                  Share this game link with someone to start playing!
+                </div>
+                <div style={{ color: '#FFD700', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                  Game ID: {gameId}
+                </div>
+              </div>
+            </div>
+          )}
+
           {gameState?.phase === 'choosing' && (
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               {isMyTurn ? (

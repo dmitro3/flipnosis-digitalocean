@@ -222,14 +222,14 @@ const FlipGame = () => {
 
       console.log('🎮 Flipping coin with smart contract:', flipParams)
 
-      // Flip coin using smart contract
-      const result = await contractService.flipCoin(flipParams)
+      // Play round using smart contract
+      const result = await contractService.playRound(gameId)
       
       if (!result.success) {
         throw new Error('Failed to flip coin: ' + result.error)
       }
 
-      console.log('✅ Coin flipped on blockchain:', result)
+      console.log('✅ Round played on blockchain:', result)
 
       // Update local game state with new round data
       const updatedGame = await loadGameFromContract()
@@ -238,17 +238,8 @@ const FlipGame = () => {
       }
 
       // Show result
-      setGameResult({
-        winner: result.winner,
-        round: result.round,
-        isFinal: result.isFinal,
-        transactionHash: result.transactionHash
-      })
-
-      if (result.isFinal) {
-        showSuccess(`Game completed! ${result.winner === address ? 'You won!' : 'You lost!'}`)
-      } else {
-        showSuccess(`Round ${result.round} completed! ${result.winner === address ? 'You won this round!' : 'Opponent won this round!'}`)
+      if (result.round) {
+        showSuccess(`Round ${result.round} completed!`)
       }
 
     } catch (error) {

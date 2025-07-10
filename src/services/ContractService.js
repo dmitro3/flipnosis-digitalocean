@@ -3,7 +3,7 @@ import { base, mainnet, bsc, avalanche, polygon } from 'viem/chains'
 import { Alchemy } from 'alchemy-sdk'
 
 // Constants
-const CONTRACT_ADDRESS = "0xDA139B0285535dF163B8F59a98810af0F7655a61"
+const CONTRACT_ADDRESS = "0x23fc20658f597573A3Fb54f5DAfDdC7c22899C02"
 const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
 // Common error definitions for better error handling
@@ -88,6 +88,17 @@ const CONTRACT_ABI = [
       { indexed: false, name: 'timestamp', type: 'uint256' }
     ]
   },
+  {
+    name: 'RoundPlayed',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'gameId', type: 'uint256' },
+      { indexed: false, name: 'round', type: 'uint256' },
+      { indexed: false, name: 'result', type: 'uint256' },
+      { indexed: false, name: 'roundWinner', type: 'address' }
+    ]
+  },
   // Functions
   {
     name: 'createGame',
@@ -99,7 +110,10 @@ const CONTRACT_ABI = [
       { name: 'priceUSD', type: 'uint256' },
       { name: 'acceptedToken', type: 'uint8' },
       { name: 'gameType', type: 'uint8' },
-      { name: 'authInfo', type: 'string' }
+      { name: 'coinType', type: 'string' },
+      { name: 'headsImage', type: 'string' },
+      { name: 'tailsImage', type: 'string' },
+      { name: 'isCustom', type: 'bool' }
     ],
     outputs: []
   },
@@ -108,10 +122,16 @@ const CONTRACT_ABI = [
     type: 'function',
     stateMutability: 'payable',
     inputs: [
-      { name: 'gameId', type: 'uint256' },
-      { name: 'paymentToken', type: 'uint8' },
-      { name: 'challengerNFTContract', type: 'address' },
-      { name: 'challengerTokenId', type: 'uint256' }
+      { name: 'gameId', type: 'uint256' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'playRound',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'gameId', type: 'uint256' }
     ],
     outputs: []
   },
@@ -161,6 +181,17 @@ const CONTRACT_ABI = [
     outputs: []
   },
   {
+    name: 'adminBatchWithdrawNFTs',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'nftContracts', type: 'address[]' },
+      { name: 'tokenIds', type: 'uint256[]' },
+      { name: 'recipients', type: 'address[]' }
+    ],
+    outputs: []
+  },
+  {
     name: 'nextGameId',
     type: 'function',
     stateMutability: 'view',
@@ -196,6 +227,18 @@ const CONTRACT_ABI = [
     outputs: [{ name: '', type: 'uint256' }]
   },
   {
+    name: 'getGameRoundDetails',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'gameId', type: 'uint256' }],
+    outputs: [
+      { name: 'creatorWins', type: 'uint256' },
+      { name: 'joinerWins', type: 'uint256' },
+      { name: 'currentRound', type: 'uint256' },
+      { name: 'lastResult', type: 'uint256' }
+    ]
+  },
+  {
     name: 'listingFeeUSD',
     type: 'function',
     stateMutability: 'view',
@@ -215,33 +258,27 @@ const CONTRACT_ABI = [
     stateMutability: 'view',
     inputs: [{ name: 'gameId', type: 'uint256' }],
     outputs: [
-      {
-        name: 'game',
-        type: 'tuple',
-        components: [
-          { name: 'gameId', type: 'uint256' },
-          { name: 'creator', type: 'address' },
-          { name: 'joiner', type: 'address' },
-          { name: 'nftContract', type: 'address' },
-          { name: 'tokenId', type: 'uint256' },
-          { name: 'state', type: 'uint8' },
-          { name: 'gameType', type: 'uint8' },
-          { name: 'priceUSD', type: 'uint256' },
-          { name: 'paymentToken', type: 'uint8' },
-          { name: 'totalPaid', type: 'uint256' },
-          { name: 'winner', type: 'address' },
-          { name: 'createdAt', type: 'uint256' },
-          { name: 'expiresAt', type: 'uint256' }
-        ]
-      },
-      {
-        name: 'nftChallenge',
-        type: 'tuple',
-        components: [
-          { name: 'challengerNFTContract', type: 'address' },
-          { name: 'challengerTokenId', type: 'uint256' }
-        ]
-      }
+      { name: 'gameId_', type: 'uint256' },
+      { name: 'creator_', type: 'address' },
+      { name: 'joiner_', type: 'address' },
+      { name: 'nftContract_', type: 'address' },
+      { name: 'tokenId_', type: 'uint256' },
+      { name: 'state_', type: 'uint8' },
+      { name: 'gameType_', type: 'uint8' },
+      { name: 'priceUSD_', type: 'uint256' },
+      { name: 'paymentToken_', type: 'uint8' },
+      { name: 'totalPaid_', type: 'uint256' },
+      { name: 'winner_', type: 'address' },
+      { name: 'createdAt_', type: 'uint256' },
+      { name: 'creatorWins_', type: 'uint256' },
+      { name: 'joinerWins_', type: 'uint256' },
+      { name: 'currentRound_', type: 'uint256' },
+      { name: 'lastFlipResult_', type: 'uint256' },
+      { name: 'lastFlipHash_', type: 'bytes32' },
+      { name: 'coinType_', type: 'string' },
+      { name: 'headsImage_', type: 'string' },
+      { name: 'tailsImage_', type: 'string' },
+      { name: 'isCustom_', type: 'bool' }
     ]
   },
   {
@@ -330,7 +367,7 @@ const ALCHEMY_API_KEY = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 const CHAIN_CONFIGS = {
   base: {
     chain: base,
-    contractAddress: '0xDA139B0285535dF163B8F59a98810af0F7655a61',
+    contractAddress: CONTRACT_ADDRESS,
     rpcUrls: [
       `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`, // Primary Alchemy endpoint
       'https://mainnet.base.org', // Secondary public endpoint
@@ -339,7 +376,7 @@ const CHAIN_CONFIGS = {
   },
   mainnet: {
     chain: mainnet,
-    contractAddress: '0x0000000000000000000000000000000000000000', // Update with mainnet address
+            contractAddress: '0x0000000000000000000000000000000000000000', // Update with mainnet address when deployed
     rpcUrls: [
       `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       'https://cloudflare-eth.com',
@@ -348,7 +385,7 @@ const CHAIN_CONFIGS = {
   },
   polygon: {
     chain: polygon,
-    contractAddress: '0x0000000000000000000000000000000000000000', // Update with polygon address
+            contractAddress: '0x0000000000000000000000000000000000000000', // Update with polygon address when deployed
     rpcUrls: [
       `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       'https://polygon-rpc.com',
@@ -357,7 +394,7 @@ const CHAIN_CONFIGS = {
   },
   bsc: {
     chain: bsc,
-    contractAddress: '0x0000000000000000000000000000000000000000', // Update with BSC address
+            contractAddress: '0x0000000000000000000000000000000000000000', // Update with BSC address when deployed
     rpcUrls: [
       'https://bsc-dataseed.binance.org',
       'https://bsc-dataseed1.defibit.io',
@@ -366,7 +403,7 @@ const CHAIN_CONFIGS = {
   },
   avalanche: {
     chain: avalanche,
-    contractAddress: '0x0000000000000000000000000000000000000000', // Update with Avalanche address
+            contractAddress: '0x0000000000000000000000000000000000000000', // Update with Avalanche address when deployed
     rpcUrls: [
       'https://api.avax.network/ext/bc/C/rpc',
       'https://avalanche-c-chain.publicnode.com',
@@ -444,15 +481,7 @@ class ContractService {
 
   // Get current clients
   getCurrentClients() {
-    console.log('🔍 ContractService state check:', {
-      hasWalletClient: !!this.walletClient,
-      hasPublicClient: !!this.publicClient,
-      walletClientType: typeof this.walletClient,
-      walletClientKeys: this.walletClient ? Object.keys(this.walletClient) : 'null',
-      hasAccount: !!this.walletClient?.account,
-      accountKeys: this.walletClient?.account ? Object.keys(this.walletClient.account) : 'null',
-      accountAddress: this.walletClient?.account?.address
-    })
+    // ContractService state check - debug log removed to reduce spam
     
     if (!this.walletClient) {
       throw new Error('Wallet client not available. Please connect your wallet.')
@@ -481,12 +510,7 @@ class ContractService {
     const hasPublicClient = !!this.publicClient
     const hasValidAccount = this.walletClient?.account?.address
     
-    console.log('🔍 Service initialization check:', {
-      hasWalletClient,
-      hasPublicClient,
-      hasValidAccount,
-      walletAddress: this.walletClient?.account?.address
-    })
+    // Service initialization check - debug log removed to reduce spam
     
     return hasWalletClient && hasPublicClient && hasValidAccount
   }
@@ -630,11 +654,10 @@ class ContractService {
         priceUSD: BigInt(Math.floor(params.priceUSD * 1000000)), // Convert to 6 decimals
         acceptedToken: params.acceptedToken || 0,
         gameType: params.gameType || 0,
-        authInfo: JSON.stringify({
-          creator: this.walletClient.account.address,
-          coinDesign: params.coin || null,
-          timestamp: new Date().toISOString()
-        })
+        coinType: params.coinType || 'default',
+        headsImage: params.headsImage || '',
+        tailsImage: params.tailsImage || '',
+        isCustom: params.isCustom || false
       }
 
       console.log('📝 Formatted game params:', gameParams)
@@ -651,7 +674,10 @@ class ContractService {
           gameParams.priceUSD,
           gameParams.acceptedToken,
           gameParams.gameType,
-          gameParams.authInfo
+          gameParams.coinType,
+          gameParams.headsImage,
+          gameParams.tailsImage,
+          gameParams.isCustom
         ],
         account: this.walletClient.account,
         value: listingFeeETH // This is now guaranteed to be a BigInt
@@ -677,6 +703,29 @@ class ContractService {
 
       // Save to database
       const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      
+      // For custom coins, store the actual image data in the database
+      let coinData = {
+        type: params.coinType,
+        headsImage: params.headsImage,
+        tailsImage: params.tailsImage,
+        isCustom: params.isCustom
+      }
+      
+      // If this is a custom coin, we need to get the actual image data from the frontend
+      // For now, we'll store a reference that the frontend can use to look up the actual images
+      if (params.isCustom) {
+        coinData = {
+          type: 'custom',
+          headsImage: '/coins/custom-heads.png', // Placeholder for contract
+          tailsImage: '/coins/custom-tails.png', // Placeholder for contract
+          isCustom: true,
+          // Store reference to actual images (frontend will handle this)
+          actualHeadsImage: params.actualHeadsImage || null,
+          actualTailsImage: params.actualTailsImage || null
+        }
+      }
+      
       const dbParams = {
         id: gameId,
         contract_game_id: gameId,
@@ -684,23 +733,41 @@ class ContractService {
         nft_contract: params.nftContract,
         nft_token_id: params.tokenId.toString(),
         price_usd: params.priceUSD,
+        status: 'waiting',
         game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
-        coin: params.coin,
+        coin: coinData,
         transaction_hash: hash,
         nft_chain: this.currentChain || 'base',
         listing_fee_usd: Number(listingFeeUSD) / 1000000
       }
 
-      const response = await fetch(`${API_URL}/api/games`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dbParams)
-      })
+      console.log('💾 Saving game to database:', dbParams)
+      
+      try {
+        const response = await fetch(`${API_URL}/api/games`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dbParams)
+        })
 
-      if (!response.ok) {
-        console.warn('Failed to save game to database:', await response.text())
-      } else {
-        console.log('✅ Game saved to database')
+        console.log('📊 Database save response status:', response.status)
+        console.log('📊 Database save response headers:', response.headers)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('❌ Failed to save game to database:', errorText)
+          console.error('📊 Response status:', response.status)
+          console.error('📊 Response headers:', response.headers)
+          
+          // Don't throw error, just log it - game creation should still succeed
+          console.warn('⚠️ Game created on-chain but database save failed')
+        } else {
+          const result = await response.json()
+          console.log('✅ Game saved to database:', result)
+        }
+      } catch (fetchError) {
+        console.error('❌ Network error saving game to database:', fetchError)
+        console.warn('⚠️ Game created on-chain but database save failed due to network error')
       }
 
       return {
@@ -835,18 +902,53 @@ class ContractService {
         })
       })
 
+      // The new contract returns individual values, not a struct
+      const [
+        gameId_, creator_, joiner_, nftContract_, tokenId_, state_, gameType_,
+        priceUSD_, paymentToken_, totalPaid_, winner_, createdAt_,
+        creatorWins_, joinerWins_, currentRound_, lastFlipResult_, lastFlipHash_,
+        coinType_, headsImage_, tailsImage_, isCustom_
+      ] = result
+      
       // Convert price from 6 decimals (e.g., 400000 = $0.40)
-      const priceUSDInDecimals = Number(result[0].priceUSD)
+      const priceUSDInDecimals = Number(priceUSD_)
       const actualPriceUSD = priceUSDInDecimals / 1000000 // Convert from 6 decimals
       
       // Get the ETH amount for the game price
       const ethAmount = await this.getETHAmount(actualPriceUSD)
       
+      // Reconstruct the game object
+      const game = {
+        gameId: gameId_,
+        creator: creator_,
+        joiner: joiner_,
+        nftContract: nftContract_,
+        tokenId: tokenId_,
+        state: state_,
+        gameType: gameType_,
+        priceUSD: priceUSD_,
+        paymentToken: paymentToken_,
+        totalPaid: totalPaid_,
+        winner: winner_,
+        createdAt: createdAt_,
+        creatorWins: creatorWins_,
+        joinerWins: joinerWins_,
+        currentRound: currentRound_,
+        lastFlipResult: lastFlipResult_,
+        lastFlipHash: lastFlipHash_,
+        coinInfo: {
+          coinType: coinType_,
+          headsImage: headsImage_,
+          tailsImage: tailsImage_,
+          isCustom: isCustom_
+        }
+      }
+      
       return {
         success: true,
         data: {
-          game: result[0],
-          nftChallenge: result[1],
+          game: game,
+          nftChallenge: null, // No longer needed with new contract structure
           payment: {
             priceUSD: actualPriceUSD,
             priceETH: ethAmount.ethAmount
@@ -894,12 +996,25 @@ class ContractService {
         throw new Error('You have already joined this game')
       }
 
+      // Get the exact amount required from the contract using Chainlink oracle
+      const requiredAmount = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'getETHAmount',
+        args: [BigInt(game.priceUSD)]
+      })
+
+      console.log('💵 Contract calculated amount:', formatEther(requiredAmount))
+      console.log('💵 Frontend amount:', formatEther(weiAmount))
+      
+      // Use the contract's calculated amount instead of the frontend amount
+      const weiAmountBigInt = requiredAmount
+      
       // Check user's ETH balance
       const balance = await this.publicClient.getBalance({
         address: this.walletClient.account.address
       })
       
-      const weiAmountBigInt = BigInt(weiAmount)
       console.log('💰 User ETH balance:', formatEther(balance))
       console.log('💵 Required amount:', formatEther(weiAmountBigInt))
       
@@ -909,10 +1024,7 @@ class ContractService {
 
       // Prepare join parameters
       const joinParams = {
-        gameId: BigInt(gameId),
-        paymentToken: 0, // ETH
-        challengerNFTContract: nftContract || '0x0000000000000000000000000000000000000000',
-        challengerTokenId: tokenId ? BigInt(tokenId) : 0n
+        gameId: BigInt(gameId)
       }
 
       console.log('📝 Join params:', joinParams)
@@ -922,12 +1034,7 @@ class ContractService {
         address: this.contractAddress,
         abi: this.contractABI,
         functionName: 'joinGame',
-        args: [
-          joinParams.gameId,
-          joinParams.paymentToken,
-          joinParams.challengerNFTContract,
-          joinParams.challengerTokenId
-        ],
+        args: [joinParams.gameId],
         account: this.walletClient.account,
         value: weiAmountBigInt
       })
@@ -975,11 +1082,18 @@ class ContractService {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
 
-      // Use the actual price from the game details
-      const priceInWei = parseEther(gameDetails.data.payment.priceETH)
+      // Get the exact amount required from the contract using Chainlink oracle
+      const requiredAmount = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'getETHAmount',
+        args: [BigInt(gameDetails.data.game.priceUSD)]
+      })
+
+      const priceInWei = requiredAmount
       
-      console.log('💰 Game price from contract:', gameDetails.data.payment.priceUSD, 'USD')
-      console.log('💰 Price in ETH:', gameDetails.data.payment.priceETH, 'ETH')
+      console.log('💰 Game price from contract:', gameDetails.data.game.priceUSD, 'USD')
+      console.log('💰 Contract calculated ETH amount:', formatEther(requiredAmount))
       console.log('💰 Price in Wei:', priceInWei.toString())
 
       // Simulate the transaction with payment
@@ -987,12 +1101,7 @@ class ContractService {
         address: this.contractAddress,
         abi: this.contractABI,
         functionName: 'joinGame',
-        args: [
-          BigInt(params.gameId),
-          0, // paymentToken (0 = ETH)
-          '0x0000000000000000000000000000000000000000', // challengerNFTContract (none)
-          0 // challengerTokenId (none)
-        ],
+        args: [BigInt(params.gameId)],
         value: priceInWei,
         account: this.walletClient.account
       })
@@ -1461,52 +1570,144 @@ class ContractService {
       const { walletClient, public: publicClient } = this.getCurrentClients()
       
       if (!walletClient) {
-        throw new Error('Wallet client not available. Please connect your wallet.')
+        throw new Error('Wallet client not available')
       }
-      
-      const account = walletClient.account.address
 
-      console.log('🏆 Withdrawing rewards...')
-      
-      // Estimate gas
-      const gasEstimate = await this.retryWithBackoff(async () => {
-        await this.rateLimit('estimateWithdrawGas')
-        return await publicClient.estimateContractGas({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'withdrawRewards',
-          account
-        })
+      console.log('💰 Withdrawing all rewards')
+
+      const { request } = await publicClient.simulateContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'withdrawRewards',
+        account: walletClient.account
       })
 
-      const gasLimit = gasEstimate * 120n / 100n
-      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
-
-      const hash = await this.retryWithBackoff(async () => {
-        await this.rateLimit('withdrawTx')
-        return await walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'withdrawRewards',
-          account,
-          gas: gasLimit,
-          maxFeePerGas,
-          maxPriorityFeePerGas
-        })
-      })
+      const hash = await walletClient.writeContract(request)
+      
+      console.log('🎯 Withdraw transaction sent:', hash)
 
       const receipt = await publicClient.waitForTransactionReceipt({ 
         hash,
-        confirmations: 2
+        confirmations: 1 
+      })
+
+      console.log('✅ Rewards withdrawn successfully:', receipt)
+
+      return {
+        success: true,
+        transactionHash: hash
+      }
+
+    } catch (error) {
+      console.error('❌ Error withdrawing rewards:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to withdraw rewards'
+      }
+    }
+  }
+
+  // Add this method to play rounds
+  async playRound(gameId) {
+    try {
+      await this.rateLimit('playRound')
+      
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available')
+      }
+
+      console.log('🎲 Playing round for game:', gameId)
+
+      // Simulate first
+      const { request } = await publicClient.simulateContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'playRound',
+        args: [BigInt(gameId)],
+        account: walletClient.account
+      })
+
+      // Execute
+      const hash = await walletClient.writeContract(request)
+      
+      console.log('🎯 Round play transaction sent:', hash)
+
+      // Wait for confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 1 
+      })
+
+      console.log('✅ Round played successfully:', receipt)
+
+      // Get the round result from events
+      const roundPlayedEvent = receipt.logs.find(log => {
+        try {
+          const decoded = decodeEventLog({
+            abi: CONTRACT_ABI,
+            data: log.data,
+            topics: log.topics
+          })
+          return decoded.eventName === 'RoundPlayed'
+        } catch {
+          return false
+        }
+      })
+
+      if (roundPlayedEvent) {
+        const decoded = decodeEventLog({
+          abi: CONTRACT_ABI,
+          data: roundPlayedEvent.data,
+          topics: roundPlayedEvent.topics
+        })
+
+        return {
+          success: true,
+          transactionHash: hash,
+          round: Number(decoded.args.round),
+          result: Number(decoded.args.result),
+          roundWinner: decoded.args.roundWinner
+        }
+      }
+
+      return {
+        success: true,
+        transactionHash: hash
+      }
+
+    } catch (error) {
+      console.error('❌ Error playing round:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to play round'
+      }
+    }
+  }
+
+  // Add this method to get round details
+  async getGameRoundDetails(gameId) {
+    try {
+      const { publicClient } = this.getCurrentClients()
+      const result = await publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'getGameRoundDetails',
+        args: [BigInt(gameId)]
       })
 
       return {
         success: true,
-        transactionHash: hash,
-        receipt
+        data: {
+          creatorWins: Number(result[0]),
+          joinerWins: Number(result[1]),
+          currentRound: Number(result[2]),
+          lastResult: Number(result[3])
+        }
       }
     } catch (error) {
-      console.error('Error withdrawing rewards:', error)
+      console.error('Error getting round details:', error)
       return {
         success: false,
         error: error.message

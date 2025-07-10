@@ -3,7 +3,7 @@
 ## 🎯 **Current State**
 
 ### ✅ **What's Working**
-1. **Smart Contract**: Deployed and tested on Base mainnet (`0xb2d09A3A6E502287D0acdAC31328B01AADe35941`)
+1. **Smart Contract**: Deployed and tested on Base mainnet (`0x23fc20658f597573A3Fb54f5DAfDdC7c22899C02`)
 2. **Admin Panel**: Modern design with contract integration ready
 3. **Contract Functions**: All functions tested and working
 4. **ContractService**: Updated with proper contract interaction methods
@@ -82,7 +82,7 @@
 - [ ] Update game state from blockchain
 
 ### Phase 3: Game Play Integration
-- [ ] Update coin flipping to use ContractService.flipCoin()
+- [x] Update coin flipping to use ContractService.playRound()
 - [ ] Read game results from blockchain events
 - [ ] Handle game completion and winner determination
 - [ ] Add automatic platform fee collection

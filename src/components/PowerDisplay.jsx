@@ -21,16 +21,7 @@ const PowerDisplay = ({
   // Show choice buttons if it's choosing phase AND player's turn AND no choice made yet
   const showChoiceButtons = gamePhase === 'choosing' && isMyTurn && !playerChoice && onChoiceSelect
   
-  console.log('🎯 PowerDisplay Debug:', {
-    gamePhase,
-    isMyTurn,
-    playerChoice,
-    currentPlayer,
-    creator,
-    joiner,
-    showChoiceButtons,
-    hasOnChoiceSelect: !!onChoiceSelect
-  })
+  // Debug log removed to reduce console spam
   
   // Show power bar if choice is made or in active phase
   const showPowerBar = gamePhase === 'round_active' || playerChoice

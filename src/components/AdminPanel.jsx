@@ -194,7 +194,7 @@ const CONTRACT_ABI = [
 
 // Contract addresses for different chains
 const CONTRACT_ADDRESSES = {
-      'base': '0xDA139B0285535dF163B8F59a98810af0F7655a61', // Base contract address
+      'base': '0x23fc20658f597573A3Fb54f5DAfDdC7c22899C02', // Base contract address
   'ethereum': '0x...',
   'bnb': '0x...',
   'avalanche': '0x...',
@@ -885,9 +885,10 @@ export default function AdminPanel() {
   // Cancel game in database
   const cancelGameInDB = async (gameId) => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/games/${gameId}/cancel`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
+      const response = await fetch(`${API_URL}/api/admin/games/${gameId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
       })
       
       if (response.ok) {
@@ -899,6 +900,110 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error cancelling game:', error)
       addNotification('error', 'Failed to cancel game')
+    }
+  }
+
+  // Sync cancelled games from contract to database
+  const syncCancelledGames = async () => {
+    try {
+      addNotification('info', 'Syncing cancelled games...')
+      
+      // Temporary workaround: Use the existing PATCH endpoint to update games
+      // Get all games first
+      const gamesResponse = await fetch(`${API_URL}/api/admin/games`)
+      if (!gamesResponse.ok) {
+        throw new Error('Failed to fetch games')
+      }
+      
+      const data = await gamesResponse.json()
+      const games = data.games || []
+      
+      // Find games that should be cancelled (waiting games older than 24 hours)
+      const now = new Date()
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      
+      const gamesToCancel = games.filter(game => 
+        game.status === 'waiting' && 
+        new Date(game.created_at) < twentyFourHoursAgo
+      )
+      
+      if (gamesToCancel.length === 0) {
+        addNotification('info', 'No games need to be cancelled')
+        return
+      }
+      
+      // Cancel each game using the existing PATCH endpoint
+      let cancelledCount = 0
+      for (const game of gamesToCancel) {
+        try {
+          const response = await fetch(`${API_URL}/api/admin/games/${game.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'cancelled' })
+          })
+          
+          if (response.ok) {
+            cancelledCount++
+          }
+        } catch (error) {
+          console.warn(`Failed to cancel game ${game.id}:`, error)
+        }
+      }
+      
+      addNotification('success', `Cancelled ${cancelledCount} expired games!`)
+      await loadData()
+    } catch (error) {
+      console.error('Error syncing cancelled games:', error)
+      addNotification('error', 'Failed to sync cancelled games: ' + error.message)
+    }
+  }
+
+  // Sync individual game status from contract
+  const syncGameStatus = async (gameId) => {
+    try {
+      if (!contractService.isInitialized()) {
+        addNotification('error', 'Contract service not initialized')
+        return
+      }
+
+      addNotification('info', `Syncing game ${gameId} status from contract...`)
+      
+      // Get game status from contract
+      const result = await contractService.getGameDetails(gameId)
+      if (!result.success) {
+        addNotification('error', 'Failed to get game from contract')
+        return
+      }
+
+      const contractState = result.data.game.state
+      
+      // Map contract state to database status
+      let dbStatus = 'waiting'
+      switch (Number(contractState)) {
+        case 0: dbStatus = 'waiting'; break
+        case 1: dbStatus = 'joined'; break
+        case 2: dbStatus = 'active'; break
+        case 3: dbStatus = 'completed'; break
+        case 4: dbStatus = 'cancelled'; break
+        default: dbStatus = 'waiting'
+      }
+      
+      // Use the existing PATCH endpoint
+      const response = await fetch(`${API_URL}/api/admin/games/${gameId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: dbStatus })
+      })
+      
+      if (response.ok) {
+        addNotification('success', `Game ${gameId} status synced to ${dbStatus}!`)
+        await loadData()
+      } else {
+        addNotification('error', 'Failed to sync game status')
+      }
+    } catch (error) {
+      console.error('Error syncing game status:', error)
+      addNotification('error', 'Failed to sync game status: ' + error.message)
     }
   }
 
@@ -1042,12 +1147,18 @@ export default function AdminPanel() {
             args: [tokenIds[i]]
           })
           
+          console.log(`🔍 NFT ${nftContracts[i]}:${tokenIds[i]} owner: ${owner}`)
+          console.log(`🔍 Contract address: ${contractService.contractAddress}`)
+          console.log(`🔍 Match: ${owner.toLowerCase() === contractService.contractAddress.toLowerCase()}`)
+          
           if (owner.toLowerCase() !== contractService.contractAddress.toLowerCase()) {
             console.log(`⚠️ NFT ${nftContracts[i]}:${tokenIds[i]} is no longer in contract (owner: ${owner})`)
             nftContracts.splice(i, 1)
             tokenIds.splice(i, 1)
             recipients.splice(i, 1)
             i-- // Adjust index after removal
+          } else {
+            console.log(`✅ NFT ${nftContracts[i]}:${tokenIds[i]} is owned by contract`)
           }
         } catch (error) {
           console.warn(`Failed to check owner of ${nftContracts[i]}:${tokenIds[i]}:`, error)
@@ -1062,6 +1173,57 @@ export default function AdminPanel() {
         return
       }
       
+      // First, let's check if the caller is the contract owner
+      console.log('🔍 Checking contract owner...')
+      try {
+        const owner = await publicClient.readContract({
+          address: contractService.contractAddress,
+          abi: [
+            {
+              inputs: [],
+              name: 'owner',
+              outputs: [{ name: '', type: 'address' }],
+              stateMutability: 'view',
+              type: 'function'
+            }
+          ],
+          functionName: 'owner'
+        })
+        console.log('Contract owner:', owner)
+        console.log('Caller address:', walletClient.account.address)
+        
+        if (owner.toLowerCase() !== walletClient.account.address.toLowerCase()) {
+          addNotification('error', 'Only contract owner can withdraw NFTs')
+          return
+        }
+      } catch (error) {
+        console.warn('Could not check contract owner:', error)
+      }
+      
+      console.log('📝 Attempting batch withdrawal with:', {
+        nftContracts,
+        tokenIds,
+        recipients,
+        contractAddress: contractService.contractAddress
+      })
+      
+      // First, let's try withdrawing just one NFT to test
+      if (nftContracts.length > 0) {
+        console.log('🧪 Testing with single NFT first...')
+        try {
+          const { request: singleRequest } = await publicClient.simulateContract({
+            address: contractService.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'adminBatchWithdrawNFTs',
+            args: [[nftContracts[0]], [tokenIds[0]], [recipients[0]]],
+            account: walletClient.account.address
+          })
+          console.log('✅ Single NFT simulation successful')
+        } catch (singleError) {
+          console.error('❌ Single NFT simulation failed:', singleError)
+        }
+      }
+      
       const { request } = await publicClient.simulateContract({
         address: contractService.contractAddress,
         abi: CONTRACT_ABI,
@@ -1070,23 +1232,64 @@ export default function AdminPanel() {
         account: walletClient.account.address
       })
       
-      const hash = await walletClient.writeContract(request)
-      console.log(`✅ Batch withdrew ${nftContracts.length} NFTs to ${targetAddress}. Hash: ${hash}`)
-      
-      // Wait for confirmation
-      const receipt = await publicClient.waitForTransactionReceipt({ hash })
-      if (receipt.status !== 'success') {
-        throw new Error('Transaction failed')
+      try {
+        const hash = await walletClient.writeContract(request)
+        console.log(`✅ Batch withdrew ${nftContracts.length} NFTs to ${targetAddress}. Hash: ${hash}`)
+        
+        // Wait for confirmation
+        const receipt = await publicClient.waitForTransactionReceipt({ hash })
+        if (receipt.status !== 'success') {
+          throw new Error('Transaction failed')
+        }
+        
+        addNotification('success', `Successfully withdrew ${nftContracts.length} NFTs`)
+        setSelectedNFTsForWithdrawal([])
+        setWithdrawalAddress('')
+        
+        // Wait a bit before reloading to let blockchain state update
+        setTimeout(() => {
+          loadContractNFTs() // Reload NFTs
+        }, 2000)
+        
+      } catch (batchError) {
+        console.warn('Batch withdrawal failed, trying individual withdrawals:', batchError)
+        
+        // Fallback to individual withdrawals
+        let successCount = 0
+        for (let i = 0; i < nftContracts.length; i++) {
+          try {
+            const { request: individualRequest } = await publicClient.simulateContract({
+              address: contractService.contractAddress,
+              abi: CONTRACT_ABI,
+              functionName: 'emergencyWithdrawNFT',
+              args: [nftContracts[i], tokenIds[i], recipients[i]],
+              account: walletClient.account.address
+            })
+            
+            const hash = await walletClient.writeContract(individualRequest)
+            const receipt = await publicClient.waitForTransactionReceipt({ hash })
+            
+            if (receipt.status === 'success') {
+              successCount++
+              console.log(`✅ Withdrew NFT ${nftContracts[i]}:${tokenIds[i]} to ${recipients[i]}`)
+            }
+          } catch (individualError) {
+            console.error(`Failed to withdraw NFT ${nftContracts[i]}:${tokenIds[i]}:`, individualError)
+          }
+        }
+        
+        if (successCount > 0) {
+          addNotification('success', `Successfully withdrew ${successCount} out of ${nftContracts.length} NFTs`)
+        } else {
+          throw new Error('All withdrawal attempts failed')
+        }
+        
+        setSelectedNFTsForWithdrawal([])
+        setWithdrawalAddress('')
+        setTimeout(() => {
+          loadContractNFTs() // Reload NFTs
+        }, 2000)
       }
-      
-      addNotification('success', `Successfully withdrew ${nftContracts.length} NFTs`)
-      setSelectedNFTsForWithdrawal([])
-      setWithdrawalAddress('')
-      
-      // Wait a bit before reloading to let blockchain state update
-      setTimeout(() => {
-        loadContractNFTs() // Reload NFTs
-      }, 2000)
       
     } catch (error) {
       console.error('❌ Error withdrawing NFTs:', error)
@@ -1317,15 +1520,24 @@ export default function AdminPanel() {
 
             {activeTab === 'games' && (
               <div>
-                <SearchBar>
-                  <Search size={20} />
-                  <input
-                    type="text"
-                    placeholder="Search by game ID or address..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </SearchBar>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  <SearchBar>
+                    <Search size={20} />
+                    <input
+                      type="text"
+                      placeholder="Search by game ID or address..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </SearchBar>
+                  
+                  <Button 
+                    onClick={syncCancelledGames}
+                    style={{ background: '#00cc00', whiteSpace: 'nowrap' }}
+                  >
+                    🔄 Sync Cancelled Games
+                  </Button>
+                </div>
                 
                 <GameList>
                   {filteredGames.map(game => (
@@ -1375,6 +1587,15 @@ export default function AdminPanel() {
                             >
                               Copy Game URL
                             </Button>
+                            
+                            {game.contract_game_id && (
+                              <Button 
+                                onClick={() => syncGameStatus(game.id)}
+                                style={{ background: '#00cc00' }}
+                              >
+                                🔄 Sync Status
+                              </Button>
+                            )}
                           </div>
                         </GameDetails>
                       )}

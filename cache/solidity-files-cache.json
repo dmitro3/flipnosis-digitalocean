@@ -304,8 +304,8 @@
       ]
     },
     "D:\\Crypto Flipz Final 2\\contracts\\NFTFlipGame.sol": {
-      "lastModificationDate": 1752100320213,
-      "contentHash": "ab3265411ac6d8b405efeb52f6a4d4bf",
+      "lastModificationDate": 1752150989268,
+      "contentHash": "447e82b913f4dd54a06c1edaf29e56db",
       "sourceName": "contracts/NFTFlipGame.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -334,13 +334,16 @@
       },
       "imports": [
         "@openzeppelin/contracts/token/ERC721/IERC721.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "@openzeppelin/contracts/security/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol"
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/security/Pausable.sol"
       ],
       "versionPragmas": [
         "^0.8.19"
       ],
       "artifacts": [
+        "AggregatorV3Interface",
         "NFTFlipGame"
       ]
     }

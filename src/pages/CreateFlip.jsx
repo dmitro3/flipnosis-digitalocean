@@ -142,14 +142,6 @@ const CreateFlip = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    console.log('🔍 Submit attempt - Wallet state:', {
-      isFullyConnected,
-      hasWalletClient: !!walletClient,
-      hasPublicClient: !!publicClient,
-      chainId,
-      address: walletClient?.account?.address
-    })
-    
     if (!isFullyConnected) {
       showError('Please connect your wallet first')
       return
@@ -168,29 +160,8 @@ const CreateFlip = () => {
     setLoading(true)
 
     try {
-      // Ensure contract service is initialized with current wallet
-      if (!contractService.walletClient || contractService.chainId !== chainId) {
-        console.log('Re-initializing contract service...')
-        await contractService.initializeClients(chainId, walletClient)
-        // Add small delay for MetaMask
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-
-      const createParams = {
-        nftContract: selectedNFT.contractAddress,
-        tokenId: selectedNFT.tokenId,
-        priceUSD: parseFloat(price),
-        acceptedToken: 0, // ETH
-        gameType: gameType === 'nft-vs-nft' ? 1 : 0,
-        authInfo: '',
-        coin: selectedCoin // Include the selected coin data
-      }
-
-      console.log('🎮 Creating game with params:', createParams)
-      console.log('🪙 Coin data being sent:', selectedCoin)
-      
-      // First, approve the NFT for the contract
-      console.log('🔐 Approving NFT for contract...')
+      // First, check and approve NFT if needed
+      showInfo('Checking NFT approval...')
       const approvalResult = await contractService.approveNFT(
         selectedNFT.contractAddress, 
         selectedNFT.tokenId
@@ -203,11 +174,43 @@ const CreateFlip = () => {
       if (approvalResult.alreadyApproved) {
         console.log('✅ NFT already approved')
       } else {
-        console.log('✅ NFT approved successfully')
+        showSuccess('NFT approved successfully!')
       }
       
       // Now create the game
-      const result = await contractService.createGame(createParams)
+      showInfo('Creating game...')
+      
+      // Handle coin image data
+      let headsImage = selectedCoin.headsImage
+      let tailsImage = selectedCoin.tailsImage
+      let isCustom = selectedCoin.type === 'custom'
+      
+      // For custom coins, we need to handle base64 data
+      if (isCustom) {
+        // If it's a base64 data URL, we need to convert it to a shorter format
+        // For now, we'll use a placeholder and store the actual data in the database
+        headsImage = '/coins/custom-heads.png'
+        tailsImage = '/coins/custom-tails.png'
+        console.log('🪙 Custom coin detected, using placeholder images for contract')
+      }
+      
+      // Prepare the actual image data for custom coins
+      const actualHeadsImage = isCustom ? selectedCoin.headsImage : null
+      const actualTailsImage = isCustom ? selectedCoin.tailsImage : null
+      
+      const result = await contractService.createGame({
+        nftContract: selectedNFT.contractAddress,
+        tokenId: selectedNFT.tokenId,
+        priceUSD: parseFloat(price),
+        acceptedToken: 0, // ETH
+        gameType: gameType === 'nft-vs-nft' ? 1 : 0,
+        coinType: selectedCoin.type,
+        headsImage: headsImage,
+        tailsImage: tailsImage,
+        isCustom: isCustom,
+        actualHeadsImage: actualHeadsImage,
+        actualTailsImage: actualTailsImage
+      })
 
       if (result.success) {
         showSuccess('Game created successfully!')
@@ -215,15 +218,10 @@ const CreateFlip = () => {
       } else {
         throw new Error(result.error)
       }
+      
     } catch (error) {
-      console.error('Error creating game:', error)
-      
-      let errorMessage = error.message
-      if (errorMessage.includes('User denied') || errorMessage.includes('user rejected')) {
-        errorMessage = 'Transaction cancelled'
-      }
-      
-      showError(errorMessage)
+      console.error('Failed to create game:', error)
+      showError(error.message)
     } finally {
       setLoading(false)
     }

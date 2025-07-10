@@ -290,7 +290,7 @@ await contract.createGame(params);
 await contract.joinGame(params);
 
 // Test coin flipping
-await contract.flipCoin(gameId, power);
+await contract.playRound(gameId);
 
 // Test reward withdrawal
 await contract.withdrawRewards();

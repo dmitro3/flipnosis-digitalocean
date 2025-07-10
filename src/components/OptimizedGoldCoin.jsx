@@ -33,9 +33,7 @@ const OptimizedGoldCoin = ({
   customHeadsImage = null,
   customTailsImage = null,
 }) => {
-  console.log('🪙 OptimizedGoldCoin rendering with size:', size, 'props:', { isFlipping, flipResult, isPlayerTurn })
-  console.log('🪙 Coin images:', { customHeadsImage, customTailsImage })
-  console.log('🪙 Component timestamp:', Date.now()) // Cache buster
+  // Debug logs removed to reduce console spam
   
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
@@ -128,7 +126,7 @@ const OptimizedGoldCoin = ({
   useEffect(() => {
     if (!mountRef.current || sceneRef.current) return
 
-    console.log('🪙 Creating new Three.js scene for OptimizedGoldCoin with size:', size)
+    // Creating new Three.js scene for OptimizedGoldCoin
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000)
@@ -164,8 +162,7 @@ const OptimizedGoldCoin = ({
     directionalLight.position.set(5, 5, 5)
     scene.add(directionalLight)
 
-    // Create materials with white color and better reflectivity - CACHE BUSTER
-    console.log('🎨 Creating materials at:', Date.now())
+    // Create materials with white color and better reflectivity
     const materials = [
       new THREE.MeshPhongMaterial({ 
         map: createOptimizedTexture('edge'),
@@ -270,7 +267,7 @@ const OptimizedGoldCoin = ({
         cancelAnimationFrame(animationIdRef.current)
       }
       
-      console.log('🪙 Cleaning up OptimizedGoldCoin Three.js scene')
+      // Cleaning up OptimizedGoldCoin Three.js scene
       
       // Cleanup
       materials.forEach(mat => {
@@ -323,7 +320,7 @@ const OptimizedGoldCoin = ({
       coin.material[0].map = createOptimizedTexture('edge')
       coin.material[0].needsUpdate = true
     }
-  }, [customHeadsImage, customTailsImage, creatorChoice, joinerChoice])
+  }, [customHeadsImage, customTailsImage])
 
   // MODIFICATION 3: New landing function to make coin stand on edge
   const landOnEdge = (targetRotation, isHeads) => {
