@@ -517,6 +517,98 @@ app.get('/api/games/:gameId/join-price', async (req, res) => {
   }
 })
 
+// Join game (update database when someone joins)
+app.post('/api/games/:gameId/join', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { joiner, transactionHash } = req.body
+    
+    if (!joiner) {
+      return res.status(400).json({ error: 'Joiner address is required' })
+    }
+    
+    db.run(
+      `UPDATE games SET 
+       joiner = ?, 
+       status = 'joined', 
+       updated_at = CURRENT_TIMESTAMP,
+       transaction_hash = COALESCE(?, transaction_hash)
+       WHERE id = ? AND status = 'waiting'`,
+      [joiner, transactionHash, gameId],
+      function(err) {
+        if (err) {
+          console.error('❌ Error joining game:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Game not found or already joined' })
+        }
+        
+        console.log(`✅ Player ${joiner} joined game ${gameId}`)
+        
+        // Notify all clients in the game room
+        wss.clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'game_joined',
+              gameId: gameId,
+              joiner: joiner
+            }))
+          }
+        })
+        
+        res.json({ success: true, changes: this.changes })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error joining game:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Start game (change status from joined to active)
+app.post('/api/games/:gameId/start', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    
+    db.run(
+      `UPDATE games SET 
+       status = 'active', 
+       updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND status = 'joined'`,
+      [gameId],
+      function(err) {
+        if (err) {
+          console.error('❌ Error starting game:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Game not found or not ready to start' })
+        }
+        
+        console.log(`🎮 Game ${gameId} started`)
+        
+        // Notify all clients in the game room
+        wss.clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'game_started',
+              gameId: gameId
+            }))
+          }
+        })
+        
+        res.json({ success: true, changes: this.changes })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error starting game:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Sync games from blockchain to database
 app.post('/api/sync-games', async (req, res) => {
   try {
@@ -803,6 +895,109 @@ app.post('/api/admin/sync-cancelled-games', async (req, res) => {
     )
   } catch (error) {
     console.error('❌ Error syncing cancelled games:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get user profile by address
+app.get('/api/profile/:address', async (req, res) => {
+  try {
+    const { address } = req.params
+    
+    if (!address || address === '0x0000000000000000000000000000000000000000') {
+      return res.json({
+        address: address || '0x0000000000000000000000000000000000000000',
+        games_created: 0,
+        games_joined: 0,
+        games_won: 0,
+        total_volume: 0,
+        nfts_owned: []
+      })
+    }
+    
+    // Get user's games
+    db.all(
+      `SELECT * FROM games WHERE creator = ? OR joiner = ?`,
+      [address, address],
+      (err, games) => {
+        if (err) {
+          console.error('❌ Error fetching user profile:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        const gamesCreated = games.filter(g => g.creator === address).length
+        const gamesJoined = games.filter(g => g.joiner === address).length
+        const gamesWon = games.filter(g => g.winner === address).length
+        
+        // Calculate total volume (simplified - just count games)
+        const totalVolume = games.length
+        
+        // For now, return basic profile data
+        // In a real app, you'd want to track NFTs owned, etc.
+        res.json({
+          address,
+          games_created: gamesCreated,
+          games_joined: gamesJoined,
+          games_won: gamesWon,
+          total_volume: totalVolume,
+          nfts_owned: [] // Would need to track this separately
+        })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error fetching user profile:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Update game status (for frontend)
+app.patch('/api/games/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const updates = req.body
+    
+    // Only allow certain fields to be updated
+    const allowedFields = ['status', 'winner', 'creator_wins', 'joiner_wins', 'current_round']
+    const filteredUpdates = {}
+    
+    Object.keys(updates).forEach(key => {
+      if (allowedFields.includes(key)) {
+        filteredUpdates[key] = updates[key]
+      }
+    })
+    
+    if (Object.keys(filteredUpdates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' })
+    }
+    
+    const setClause = Object.keys(filteredUpdates)
+      .map(key => `${key} = ?`)
+      .join(', ')
+    
+    const values = Object.keys(filteredUpdates)
+      .map(key => filteredUpdates[key])
+    
+    values.push(gameId)
+    
+    db.run(
+      `UPDATE games SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      values,
+      function(err) {
+        if (err) {
+          console.error('❌ Error updating game:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Game not found' })
+        }
+        
+        console.log(`✅ Game ${gameId} updated:`, filteredUpdates)
+        res.json({ success: true, changes: this.changes })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error updating game:', error)
     res.status(500).json({ error: error.message })
   }
 })
