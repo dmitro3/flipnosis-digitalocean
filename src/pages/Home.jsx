@@ -697,7 +697,7 @@ const Home = () => {
                           }}
                         >
                           <img 
-                            src="images/opensea.png" 
+                            src="/images/opensea.png" 
                             alt="OpenSea" 
                             style={{ 
                               width: '16px', 
