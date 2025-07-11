@@ -445,6 +445,42 @@ app.post('/api/games', async (req, res) => {
     // Convert coin data to JSON string if it's an object
     const coinData = gameData.coin ? JSON.stringify(gameData.coin) : null
     
+    // Fetch NFT metadata if not provided
+    let nftName = gameData.nft_name
+    let nftImage = gameData.nft_image
+    let nftCollection = gameData.nft_collection
+    
+    if (!nftName || !nftImage || !nftCollection) {
+      console.log('🔍 Fetching NFT metadata for game creation:', {
+        contract: gameData.nft_contract,
+        tokenId: gameData.nft_token_id,
+        chain: gameData.nft_chain || 'base'
+      })
+      
+      try {
+        const metadata = await getNFTMetadataWithCache(
+          gameData.nft_contract, 
+          gameData.nft_token_id, 
+          gameData.nft_chain || 'base'
+        )
+        
+        if (metadata) {
+          nftName = nftName || metadata.name
+          nftImage = nftImage || metadata.image_url
+          nftCollection = nftCollection || metadata.collection_name
+          
+          console.log('✅ NFT metadata fetched for game creation:', {
+            name: nftName,
+            image: nftImage?.substring(0, 50) + '...',
+            collection: nftCollection
+          })
+        }
+      } catch (metadataError) {
+        console.warn('⚠️ Failed to fetch NFT metadata for game creation:', metadataError)
+        // Continue with default values
+      }
+    }
+    
     db.run(
       `INSERT INTO games (
         id, contract_game_id, creator, joiner, nft_contract, nft_token_id,
@@ -459,9 +495,9 @@ app.post('/api/games', async (req, res) => {
         gameData.joiner || null,
         gameData.nft_contract,
         gameData.nft_token_id,
-        gameData.nft_name || null,
-        gameData.nft_image || null,
-        gameData.nft_collection || null,
+        nftName || `NFT #${gameData.nft_token_id}`,
+        nftImage || '/placeholder-nft.svg',
+        nftCollection || 'Unknown Collection',
         gameData.price_usd,
         gameData.status || 'waiting',
         gameData.winner || null,
@@ -479,6 +515,13 @@ app.post('/api/games', async (req, res) => {
           console.error('❌ Error creating game:', err)
           return res.status(500).json({ error: err.message })
         }
+        
+        console.log('✅ Game created successfully with NFT metadata:', {
+          id: this.lastID,
+          nftName,
+          nftImage: nftImage?.substring(0, 50) + '...',
+          nftCollection
+        })
         
         res.json({ success: true, id: this.lastID })
       }
@@ -899,6 +942,111 @@ app.post('/api/admin/sync-cancelled-games', async (req, res) => {
   }
 })
 
+// Update NFT metadata for all games that are missing it
+app.post('/api/admin/update-all-nft-metadata', async (req, res) => {
+  try {
+    console.log('🔄 Starting bulk NFT metadata update...')
+    
+    // Get all games that are missing NFT metadata
+    db.all(
+      `SELECT id, nft_contract, nft_token_id, nft_chain 
+       FROM games 
+       WHERE (nft_name IS NULL OR nft_name = '' OR nft_image IS NULL OR nft_image = '' OR nft_collection IS NULL OR nft_collection = '')
+       AND nft_contract IS NOT NULL AND nft_token_id IS NOT NULL`,
+      [],
+      async (err, games) => {
+        if (err) {
+          console.error('❌ Error fetching games for metadata update:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        console.log(`🔍 Found ${games.length} games missing NFT metadata`)
+        
+        let updatedCount = 0
+        let errorCount = 0
+        
+        // Process each game
+        for (const game of games) {
+          try {
+            console.log(`🔍 Updating metadata for game ${game.id}:`, {
+              contract: game.nft_contract,
+              tokenId: game.nft_token_id,
+              chain: game.nft_chain || 'base'
+            })
+            
+            const metadata = await getNFTMetadataWithCache(
+              game.nft_contract,
+              game.nft_token_id,
+              game.nft_chain || 'base'
+            )
+            
+            if (metadata) {
+              // Update the game with the fetched metadata
+              await new Promise((resolve, reject) => {
+                db.run(
+                  `UPDATE games SET 
+                   nft_name = ?, 
+                   nft_image = ?, 
+                   nft_collection = ?,
+                   updated_at = CURRENT_TIMESTAMP 
+                   WHERE id = ?`,
+                  [
+                    metadata.name,
+                    metadata.image_url,
+                    metadata.collection_name,
+                    game.id
+                  ],
+                  function(err) {
+                    if (err) {
+                      console.error(`❌ Error updating metadata for game ${game.id}:`, err)
+                      errorCount++
+                      reject(err)
+                    } else {
+                      console.log(`✅ Updated metadata for game ${game.id}:`, {
+                        name: metadata.name,
+                        image: metadata.image_url?.substring(0, 50) + '...',
+                        collection: metadata.collection_name
+                      })
+                      updatedCount++
+                      resolve()
+                    }
+                  }
+                )
+              })
+            } else {
+              console.warn(`⚠️ No metadata found for game ${game.id}`)
+              errorCount++
+            }
+            
+            // Small delay to avoid overwhelming the API
+            await new Promise(resolve => setTimeout(resolve, 100))
+            
+          } catch (gameError) {
+            console.error(`❌ Error processing game ${game.id}:`, gameError)
+            errorCount++
+          }
+        }
+        
+        console.log(`✅ Bulk NFT metadata update completed:`, {
+          total: games.length,
+          updated: updatedCount,
+          errors: errorCount
+        })
+        
+        res.json({ 
+          success: true, 
+          total: games.length,
+          updated: updatedCount,
+          errors: errorCount
+        })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error in bulk NFT metadata update:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Get user profile by address
 app.get('/api/profile/:address', async (req, res) => {
   try {
@@ -998,6 +1146,87 @@ app.patch('/api/games/:gameId', async (req, res) => {
     )
   } catch (error) {
     console.error('❌ Error updating game:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Update NFT metadata for a game
+app.post('/api/games/:gameId/update-nft-metadata', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    
+    // First get the game to find the NFT details
+    db.get('SELECT nft_contract, nft_token_id, nft_chain FROM games WHERE id = ?', [gameId], async (err, game) => {
+      if (err) {
+        console.error('❌ Error fetching game for metadata update:', err)
+        return res.status(500).json({ error: err.message })
+      }
+      
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' })
+      }
+      
+      try {
+        console.log('🔍 Updating NFT metadata for game:', gameId, {
+          contract: game.nft_contract,
+          tokenId: game.nft_token_id,
+          chain: game.nft_chain || 'base'
+        })
+        
+        const metadata = await getNFTMetadataWithCache(
+          game.nft_contract,
+          game.nft_token_id,
+          game.nft_chain || 'base'
+        )
+        
+        if (!metadata) {
+          return res.status(404).json({ error: 'NFT metadata not found' })
+        }
+        
+        // Update the game with the fetched metadata
+        db.run(
+          `UPDATE games SET 
+           nft_name = ?, 
+           nft_image = ?, 
+           nft_collection = ?,
+           updated_at = CURRENT_TIMESTAMP 
+           WHERE id = ?`,
+          [
+            metadata.name,
+            metadata.image_url,
+            metadata.collection_name,
+            gameId
+          ],
+          function(err) {
+            if (err) {
+              console.error('❌ Error updating game metadata:', err)
+              return res.status(500).json({ error: err.message })
+            }
+            
+            console.log('✅ NFT metadata updated for game:', gameId, {
+              name: metadata.name,
+              image: metadata.image_url?.substring(0, 50) + '...',
+              collection: metadata.collection_name
+            })
+            
+            res.json({ 
+              success: true, 
+              changes: this.changes,
+              metadata: {
+                name: metadata.name,
+                image: metadata.image_url,
+                collection: metadata.collection_name
+              }
+            })
+          }
+        )
+      } catch (metadataError) {
+        console.error('❌ Error fetching NFT metadata:', metadataError)
+        res.status(500).json({ error: 'Failed to fetch NFT metadata' })
+      }
+    })
+  } catch (error) {
+    console.error('❌ Error updating NFT metadata:', error)
     res.status(500).json({ error: error.message })
   }
 })

@@ -1051,6 +1051,35 @@ export default function AdminPanel() {
     }
   }
 
+  // Update NFT metadata for all games
+  const updateAllNFTMetadata = async () => {
+    try {
+      setIsLoading(true)
+      addNotification('info', 'Updating NFT metadata for all games...')
+      
+      const response = await fetch(`${API_URL}/api/admin/update-all-nft-metadata`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update NFT metadata')
+      }
+      
+      const result = await response.json()
+      addNotification('success', `Updated NFT metadata for ${result.updated} games (${result.errors} errors)`)
+      
+      // Reload data
+      await loadData()
+      
+    } catch (error) {
+      console.error('Error updating NFT metadata:', error)
+      addNotification('error', 'Failed to update NFT metadata: ' + error.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // NFT Management Functions
   const loadContractNFTs = async () => {
     if (!contractService.isInitialized()) {
@@ -1582,6 +1611,12 @@ export default function AdminPanel() {
                     🔄 Sync Cancelled Games
                   </Button>
                   <Button 
+                    onClick={updateAllNFTMetadata}
+                    style={{ background: '#0088ff', whiteSpace: 'nowrap' }}
+                  >
+                    🖼️ Update NFT Metadata
+                  </Button>
+                  <Button 
                     onClick={clearAllGames}
                     style={{ background: '#ff4444', whiteSpace: 'nowrap' }}
                   >
@@ -1646,6 +1681,32 @@ export default function AdminPanel() {
                                 🔄 Sync Status
                               </Button>
                             )}
+                            
+                            <Button 
+                              onClick={async () => {
+                                try {
+                                  addNotification('info', `Updating NFT metadata for game ${game.id}...`)
+                                  const response = await fetch(`${API_URL}/api/games/${game.id}/update-nft-metadata`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                  })
+                                  
+                                  if (response.ok) {
+                                    const result = await response.json()
+                                    addNotification('success', `NFT metadata updated for game ${game.id}!`)
+                                    await loadData()
+                                  } else {
+                                    addNotification('error', 'Failed to update NFT metadata')
+                                  }
+                                } catch (error) {
+                                  console.error('Error updating NFT metadata:', error)
+                                  addNotification('error', 'Failed to update NFT metadata')
+                                }
+                              }}
+                              style={{ background: '#0088ff' }}
+                            >
+                              🖼️ Update NFT
+                            </Button>
                           </div>
                         </GameDetails>
                       )}
