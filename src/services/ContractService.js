@@ -737,7 +737,7 @@ class ContractService {
         game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
         coin: coinData,
         transaction_hash: hash,
-        nft_chain: this.currentChain || 'base',
+        nft_chain: params.nftChain || this.currentChain || 'base',
         listing_fee_usd: Number(listingFeeUSD) / 1000000
       }
 

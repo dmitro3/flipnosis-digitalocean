@@ -42,34 +42,66 @@ import {
 } from '../styles/components'
 
 
-// Helper functions for chain URLs
-const getExplorerUrl = (chain) => {
-  if (!chain) return 'https://etherscan.io' // Default to Ethereum explorer
-  
-  const explorers = {
-    ethereum: 'https://etherscan.io',
-    polygon: 'https://polygonscan.com',
-    base: 'https://basescan.org',
-    arbitrum: 'https://arbiscan.io',
-    optimism: 'https://optimistic.etherscan.io',
-    // Add more chains as needed
+  // Helper functions for chain URLs
+  const getExplorerUrl = (chain) => {
+    if (!chain) return 'https://etherscan.io' // Default to Ethereum explorer
+    
+    const explorers = {
+      ethereum: 'https://etherscan.io',
+      polygon: 'https://polygonscan.com',
+      base: 'https://basescan.org',
+      arbitrum: 'https://arbiscan.io',
+      optimism: 'https://optimistic.etherscan.io',
+      // Add more chains as needed
+    }
+    return explorers[chain.toLowerCase()] || 'https://etherscan.io'
   }
-  return explorers[chain.toLowerCase()] || 'https://etherscan.io'
-}
 
-const getMarketplaceUrl = (chain) => {
-  if (!chain) return 'https://opensea.io/assets/ethereum' // Default to Ethereum marketplace
-  
-  const marketplaces = {
-    ethereum: 'https://opensea.io/assets/ethereum',
-    polygon: 'https://opensea.io/assets/matic',
-    base: 'https://opensea.io/assets/base',
-    arbitrum: 'https://opensea.io/assets/arbitrum',
-    optimism: 'https://opensea.io/assets/optimism',
-    // Add more chains as needed
+  const getMarketplaceUrl = (chain) => {
+    if (!chain) return 'https://opensea.io/assets/ethereum' // Default to Ethereum marketplace
+    
+    const marketplaces = {
+      ethereum: 'https://opensea.io/assets/ethereum',
+      polygon: 'https://opensea.io/assets/matic',
+      base: 'https://opensea.io/assets/base',
+      arbitrum: 'https://opensea.io/assets/arbitrum',
+      optimism: 'https://opensea.io/assets/optimism',
+      // Add more chains as needed
+    }
+    return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
   }
-  return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
-}
+
+  // Helper function to get chain icon
+  const getChainIcon = (chain) => {
+    if (!chain) return '🌐'
+    
+    const icons = {
+      ethereum: '💎',
+      polygon: '🟣',
+      base: '🔵',
+      arbitrum: '🔷',
+      optimism: '🔶',
+      bsc: '🟡',
+      avalanche: '🔴'
+    }
+    return icons[chain.toLowerCase()] || '🌐'
+  }
+
+  // Helper function to get chain name
+  const getChainName = (chain) => {
+    if (!chain) return 'Unknown'
+    
+    const names = {
+      ethereum: 'ETH',
+      polygon: 'POLY',
+      base: 'BASE',
+      arbitrum: 'ARB',
+      optimism: 'OPT',
+      bsc: 'BNB',
+      avalanche: 'AVAX'
+    }
+    return names[chain.toLowerCase()] || chain.toUpperCase()
+  }
 
 const BackgroundVideo = styled.video`
   position: fixed;
@@ -599,10 +631,29 @@ const Home = () => {
                       gap: '1rem'
                     }}>
                       <div>
-                        <GameTitle style={{
-                          fontSize: '1.2rem',
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
                           marginBottom: '0.5rem'
-                        }}>{selectedFlip.nft.name}</GameTitle>
+                        }}>
+                          <GameTitle style={{
+                            fontSize: '1.2rem'
+                          }}>{selectedFlip.nft.name}</GameTitle>
+                          <div style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.7rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.2rem'
+                          }}>
+                            <span>{getChainIcon(selectedFlip.nft.chain)}</span>
+                            <span>{getChainName(selectedFlip.nft.chain)}</span>
+                          </div>
+                        </div>
                         <GameCollection style={{
                           fontSize: '0.9rem'
                         }}>{selectedFlip.nft.collection}</GameCollection>
@@ -953,12 +1004,31 @@ const Home = () => {
                         }}>
                           {flip.nft.collection}
                         </div>
-                        <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
-                          fontWeight: 'bold',
-                          color: theme.colors.neonBlue
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem'
                         }}>
-                          ${flip.priceUSD.toFixed(2)}
+                          <div style={{ 
+                            fontWeight: 'bold',
+                            color: theme.colors.neonBlue
+                          }}>
+                            ${flip.priceUSD.toFixed(2)}
+                          </div>
+                          <div style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            padding: '0.1rem 0.3rem',
+                            borderRadius: '0.2rem',
+                            fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.1rem'
+                          }}>
+                            <span>{getChainIcon(flip.nft.chain)}</span>
+                            <span>{getChainName(flip.nft.chain)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1029,12 +1099,31 @@ const Home = () => {
                           }}>
                             {nft.collection}
                           </div>
-                          <div style={{ 
-                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
-                            fontWeight: 'bold',
-                            color: theme.colors.neonBlue
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem'
                           }}>
-                            {nft.chain}
+                            <div style={{ 
+                              fontWeight: 'bold',
+                              color: theme.colors.neonBlue
+                            }}>
+                              {getChainName(nft.chain)}
+                            </div>
+                            <div style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              padding: '0.1rem 0.3rem',
+                              borderRadius: '0.2rem',
+                              fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.1rem'
+                            }}>
+                              <span>{getChainIcon(nft.chain)}</span>
+                              <span>{getChainName(nft.chain)}</span>
+                            </div>
                           </div>
                         </div>
                       </div>

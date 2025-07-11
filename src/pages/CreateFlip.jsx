@@ -209,7 +209,8 @@ const CreateFlip = () => {
         tailsImage: tailsImage,
         isCustom: isCustom,
         actualHeadsImage: actualHeadsImage,
-        actualTailsImage: actualTailsImage
+        actualTailsImage: actualTailsImage,
+        nftChain: selectedNFT.chain // Pass the chain from the NFT data
       })
 
       if (result.success) {
