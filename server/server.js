@@ -2375,8 +2375,21 @@ app.post('/api/listings/:listingId/offers', async (req, res) => {
             JSON.stringify({ offerId, listingId })
           )
           
-          // Broadcast via WebSocket
+          // Broadcast via WebSocket to listing creator
           broadcastToUser(listing.creator, {
+            type: 'new_offer',
+            listingId,
+            offer: {
+              id: offerId,
+              offerer_address,
+              offerer_name,
+              offer_price,
+              message
+            }
+          })
+          
+          // Broadcast to all users viewing this listing
+          broadcastToListing(listingId, {
             type: 'new_offer',
             listingId,
             offer: {
@@ -2518,19 +2531,39 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       gameId,
                       listingId: result.listing_id
                     })
+                    
+                    // Broadcast to all users viewing this listing
+                    broadcastToListing(result.listing_id, {
+                      type: 'offer_accepted',
+                      gameId,
+                      listingId: result.listing_id
+                    })
+                    
                     // Notify both users they need to deposit assets
                     broadcastToUser(result.creator, {
                       type: 'game_created_pending_deposit',
                       gameId,
                       role: 'creator',
-                      requiredAction: 'deposit_nft'
+                      requiredAction: 'deposit_nft',
+                      listingId: result.listing_id,
+                      nft_contract: result.nft_contract,
+                      nft_token_id: result.nft_token_id,
+                      nft_name: result.nft_name,
+                      nft_image: result.nft_image,
+                      coin: result.coin
                     })
                     broadcastToUser(result.offerer_address, {
                       type: 'game_created_pending_deposit',
                       gameId,
                       role: 'joiner',
                       requiredAction: 'deposit_crypto',
-                      amount: result.offer_price
+                      amount: result.offer_price,
+                      listingId: result.listing_id,
+                      nft_contract: result.nft_contract,
+                      nft_token_id: result.nft_token_id,
+                      nft_name: result.nft_name,
+                      nft_image: result.nft_image,
+                      coin: result.coin
                     })
                   }
                 )

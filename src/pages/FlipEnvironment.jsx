@@ -592,7 +592,7 @@ const FlipEnvironment = () => {
   const [offerPrice, setOfferPrice] = useState('')
   const [offerMessage, setOfferMessage] = useState('')
   const [submittingOffer, setSubmittingOffer] = useState(false)
-  const [creatingGame, setCreatingGame] = useState(false)
+  // Removed creatingGame state since game creation is now automatic
   const [activeViewers, setActiveViewers] = useState([])
   const [viewerCount, setViewerCount] = useState(0)
   const [wsConnected, setWsConnected] = useState(false)
@@ -724,7 +724,7 @@ const FlipEnvironment = () => {
         setViewerCount(prev => Math.max(0, prev - 1))
       }
       // Handle real-time offer updates
-      if (data.type === 'offer_created' && data.listingId === listingId) {
+      if (data.type === 'new_offer' && data.listingId === listingId) {
         console.log('🆕 New offer received:', data.offer)
         showSuccess('New offer received!')
         fetchListingData() // Refresh offers
@@ -743,6 +743,20 @@ const FlipEnvironment = () => {
       if (data.type === 'game_created_pending_deposit') {
         console.log('🎮 Game created, pending deposits:', data)
         showSuccess(`Game created! Please deposit your ${data.requiredAction === 'deposit_nft' ? 'NFT' : 'payment'}.`)
+        
+        // Show asset loading modal for both players
+        setAssetModalData({
+          gameId: data.gameId,
+          creator: data.role === 'creator' ? address : listing.creator,
+          joiner: data.role === 'joiner' ? address : listing.creator,
+          nftContract: data.nft_contract || listing.nft_contract,
+          tokenId: data.nft_token_id || listing.nft_token_id,
+          nftName: data.nft_name || listing.nft_name,
+          nftImage: data.nft_image || listing.nft_image,
+          priceUSD: data.amount || listing.asking_price,
+          coin: data.coin || listing.coin
+        })
+        setShowAssetModal(true)
       }
       // Handle viewer updates (legacy)
       if (data.type === 'viewers_update' && data.listingId === listingId) {
@@ -903,19 +917,7 @@ const FlipEnvironment = () => {
       const result = await response.json()
       showSuccess('Offer accepted! Preparing game...')
       
-      // Show asset loading modal
-      setAssetModalData({
-        gameId: result.gameId,
-        creator: listing.creator,
-        joiner: offer.offerer_address,
-        nftContract: listing.nft_contract,
-        tokenId: listing.nft_token_id,
-        nftName: listing.nft_name,
-        nftImage: listing.nft_image,
-        priceUSD: offer.offer_price,
-        coin: listing.coin
-      })
-      setShowAssetModal(true)
+      // The modal will be shown via WebSocket broadcast to both players
       
     } catch (error) {
       console.error('Error accepting offer:', error)
@@ -947,49 +949,7 @@ const FlipEnvironment = () => {
     }
   }
   
-  const handleCreateGame = async () => {
-    setCreatingGame(true)
-    
-    try {
-      const baseUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001' 
-        : 'https://cryptoflipz2-production.up.railway.app'
-      
-      const response = await fetch(`${baseUrl}/api/games`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          player1_address: listing.creator,
-          player2_address: address,
-          nft_contract_address: listing.nft_contract,
-          nft_token_id: listing.nft_token_id,
-          nft_name: listing.nft_name,
-          nft_image: listing.nft_image,
-          nft_collection: listing.nft_collection,
-          game_type: 'nft_flip',
-          entry_fee: listing.asking_price,
-          status: 'pending'
-        })
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create game')
-      }
-      
-      const gameData = await response.json()
-      showSuccess('Game created successfully!')
-      navigate(`/game/${gameData.id}`)
-      
-    } catch (error) {
-      console.error('Error creating game:', error)
-      showError(error.message)
-    } finally {
-      setCreatingGame(false)
-    }
-  }
+  // Game creation is now handled automatically when offer is accepted
   
   // Contract deposit handlers
   const handleDepositNFT = async (gameId, nftContract, tokenId) => {
@@ -1498,19 +1458,7 @@ const FlipEnvironment = () => {
               </div>
             </div>
             
-            {/* Game Creation Section */}
-            {hasAcceptedOffer && (
-              <GameCreationSection>
-                <h3>Ready to Play!</h3>
-                <p>An offer has been accepted. You can now create the game.</p>
-                <CreateGameButton 
-                  onClick={handleCreateGame}
-                  disabled={creatingGame}
-                >
-                  {creatingGame ? 'Creating Game...' : 'Create Game'}
-                </CreateGameButton>
-              </GameCreationSection>
-            )}
+            {/* Game Creation Section - Removed since game is created automatically when offer is accepted */}
           </EnvironmentContainer>
         </ContentWrapper>
       </Container>
