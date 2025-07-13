@@ -222,7 +222,10 @@ const Home = () => {
 
 
   // API URL - will be Railway URL in production
-  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const API_URL = isLocal 
+        ? 'http://localhost:3001' 
+        : 'https://cryptoflipz2-production.up.railway.app'
 
   // Debug logging
   useEffect(() => {
@@ -243,7 +246,10 @@ const Home = () => {
       setLoading(true)
       setError(null)
 
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const API_URL = isLocal 
+        ? 'http://localhost:3001' 
+        : 'https://cryptoflipz2-production.up.railway.app'
 
       console.log('🔍 Fetching games and listings from:', API_URL)
       

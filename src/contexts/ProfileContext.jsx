@@ -17,7 +17,9 @@ export const ProfileProvider = ({ children }) => {
   const [loading, setLoading] = useState({})
 
   // API base URL
-  const API_BASE = process.env.NODE_ENV === 'development' 
+  // Check if we're running locally by checking the current hostname
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+const API_BASE = isLocal 
   ? 'http://localhost:3001' 
   : 'https://cryptoflipz2-production.up.railway.app'
   

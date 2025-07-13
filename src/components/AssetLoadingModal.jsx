@@ -203,6 +203,46 @@ const CryptoCurrency = styled.div`
   color: ${props => props.theme.colors.textSecondary};
 `
 
+const CoinImageContainer = styled.div`
+  width: 60px;
+  height: 60px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 0, 0.5);
+    box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+    z-index: 10;
+    animation: coinGlow 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes coinGlow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(255, 255, 0, 0.6);
+    }
+  }
+`
+
+const CoinImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: all 0.3s ease;
+  
+  ${CoinImageContainer}:hover & {
+    transform: scale(1.2);
+    filter: brightness(1.1) contrast(1.1);
+  }
+`
+
 const AssetLoadingModal = ({ 
   isOpen, 
   onClose, 
@@ -527,39 +567,25 @@ const AssetLoadingModal = ({
               color: '#666',
               marginBottom: '0.5rem'
             }}>
-              Game Coin
+              Game Coin (Hover to zoom)
             </div>
             <div style={{
               display: 'flex',
               gap: '1rem',
               justifyContent: 'center'
             }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '0.5rem',
-                overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
-              }}>
-                <img 
+              <CoinImageContainer>
+                <CoinImage 
                   src={gameData.coin.headsImage} 
                   alt="Heads" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
-              </div>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '0.5rem',
-                overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
-              }}>
-                <img 
+              </CoinImageContainer>
+              <CoinImageContainer>
+                <CoinImage 
                   src={gameData.coin.tailsImage} 
                   alt="Tails" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
-              </div>
+              </CoinImageContainer>
             </div>
           </div>
         )}

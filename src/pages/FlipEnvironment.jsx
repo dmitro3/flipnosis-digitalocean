@@ -638,9 +638,18 @@ const FlipEnvironment = () => {
   
   const fetchListingData = async () => {
     try {
-      const baseUrl = process.env.NODE_ENV === 'development' 
+      // Check if we're running locally by checking the current hostname
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const baseUrl = isLocal 
         ? 'http://localhost:3001' 
         : 'https://cryptoflipz2-production.up.railway.app'
+      
+      console.log('🌐 Environment detection:', { 
+        hostname: window.location.hostname, 
+        isLocal, 
+        baseUrl,
+        nodeEnv: process.env.NODE_ENV 
+      })
       
       // Fetch listing details
       console.log('🔍 Fetching listing with ID:', listingId)
@@ -830,7 +839,8 @@ const FlipEnvironment = () => {
     setSubmittingOffer(true)
     
     try {
-      const baseUrl = process.env.NODE_ENV === 'development' 
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const baseUrl = isLocal 
         ? 'http://localhost:3001' 
         : 'https://cryptoflipz2-production.up.railway.app'
       
@@ -895,7 +905,8 @@ const FlipEnvironment = () => {
         throw new Error(`Listing is no longer active (status: ${listing.status})`)
       }
       
-      const baseUrl = process.env.NODE_ENV === 'development' 
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const baseUrl = isLocal 
         ? 'http://localhost:3001' 
         : 'https://cryptoflipz2-production.up.railway.app'
       
@@ -927,7 +938,8 @@ const FlipEnvironment = () => {
   
   const handleRejectOffer = async (offerId) => {
     try {
-      const baseUrl = process.env.NODE_ENV === 'development' 
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const baseUrl = isLocal 
         ? 'http://localhost:3001' 
         : 'https://cryptoflipz2-production.up.railway.app'
       

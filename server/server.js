@@ -50,7 +50,13 @@ app.get('/health', (req, res) => {
   })
 })
 
-app.use(cors())
+// CORS configuration for development
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}))
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
@@ -206,7 +212,18 @@ app.get('/test', (req, res) => {
   console.log('🧪 Test route hit!')
   res.json({ 
     message: 'Server is working!',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors: 'enabled'
+  })
+})
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  console.log('❤️ Health check at', new Date().toISOString())
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    cors: 'enabled'
   })
 })
 
