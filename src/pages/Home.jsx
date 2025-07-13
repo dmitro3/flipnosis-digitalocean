@@ -457,10 +457,17 @@ const Home = () => {
 
       const offerData = {
         listing_id: flip.listingId,
-        offerer: address,
+        offerer_address: address,
         offer_price: flip.priceUSD,
         message: `I want to play with ${flip.nft.name}!`
       }
+
+      console.log('🔍 Making offer with data:', {
+        address,
+        isConnected,
+        offerData,
+        flip
+      })
 
       const response = await fetch(`${baseUrl}/api/listings/${flip.listingId}/offers`, {
         method: 'POST',
@@ -478,8 +485,8 @@ const Home = () => {
       const result = await response.json()
       showSuccess('Offer made successfully! The creator will be notified.')
       
-      // Refresh the listings
-      await fetchListings()
+      // Refresh the listings and games
+      await fetchListingsAndGames()
     } catch (error) {
       console.error('❌ Error making offer:', error)
       showError(error.message || 'Failed to make offer')
