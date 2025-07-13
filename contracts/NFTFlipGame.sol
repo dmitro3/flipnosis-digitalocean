@@ -192,6 +192,82 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         
         emit GameJoined(gameId, msg.sender);
     }
+
+// Add this function after the existing joinGame function
+
+// Create and start game instantly when both parties are ready
+function createAndStartGame(
+    address opponent,
+    address nftContract,
+    uint256 tokenId,
+    uint256 priceUSD,
+    PaymentToken paymentToken,
+    string memory coinType,
+    string memory headsImage,
+    string memory tailsImage,
+    bool isCustom
+) external payable nonReentrant whenNotPaused {
+    require(opponent != address(0) && opponent != msg.sender, "Invalid opponent");
+    require(nftContract != address(0), "Invalid NFT contract");
+    
+    // Calculate total required (listing fee + game amount)
+    uint256 listingFeeETH = getETHAmount(listingFeeUSD);
+    uint256 gameAmountETH = getETHAmount(priceUSD);
+    uint256 platformFee = (gameAmountETH * platformFeePercent) / BASIS_POINTS;
+    uint256 totalRequired = listingFeeETH + gameAmountETH;
+    
+    require(msg.value >= totalRequired, "Insufficient payment");
+    
+    // Transfer NFT from creator
+    IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+    
+    // Create coin info
+    CoinInfo memory coinInfo = CoinInfo({
+        coinType: coinType,
+        headsImage: headsImage,
+        tailsImage: tailsImage,
+        isCustom: isCustom
+    });
+    
+    // Create game in joined state
+    uint256 gameId = nextGameId++;
+    games[gameId] = Game({
+        gameId: gameId,
+        creator: msg.sender,
+        joiner: opponent,
+        nftContract: nftContract,
+        tokenId: tokenId,
+        state: GameState.Joined,
+        gameType: GameType.NFTvsCrypto,
+        priceUSD: priceUSD,
+        paymentToken: paymentToken,
+        totalPaid: gameAmountETH - platformFee,
+        winner: address(0),
+        createdAt: block.timestamp,
+        creatorWins: 0,
+        joinerWins: 0,
+        currentRound: 0,
+        lastFlipResult: 0,
+        lastFlipHash: 0,
+        coinInfo: coinInfo
+    });
+    
+    userGames[msg.sender].push(gameId);
+    userGames[opponent].push(gameId);
+    
+    // Send fees
+    (bool feeSuccess,) = platformFeeReceiver.call{value: listingFeeETH + platformFee}("");
+    require(feeSuccess, "Fee transfer failed");
+    
+    // Refund excess
+    if (msg.value > totalRequired) {
+        (bool refundSuccess,) = msg.sender.call{value: msg.value - totalRequired}("");
+        require(refundSuccess, "Refund failed");
+    }
+    
+    emit GameCreated(gameId, msg.sender);
+    emit GameJoined(gameId, opponent);
+}
     
     // Play a round
     function playRound(uint256 gameId) external nonReentrant {

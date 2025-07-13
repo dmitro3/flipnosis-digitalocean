@@ -118,6 +118,23 @@ const CONTRACT_ABI = [
     outputs: []
   },
   {
+    name: 'createAndStartGame',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'opponent', type: 'address' },
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'priceUSD', type: 'uint256' },
+      { name: 'paymentToken', type: 'uint8' },
+      { name: 'coinType', type: 'string' },
+      { name: 'headsImage', type: 'string' },
+      { name: 'tailsImage', type: 'string' },
+      { name: 'isCustom', type: 'bool' }
+    ],
+    outputs: []
+  },
+  {
     name: 'joinGame',
     type: 'function',
     stateMutability: 'payable',
@@ -1459,7 +1476,45 @@ class ContractService {
     }
   }
 
+  // 3. Complete game with proof (NEW)
+  async completeGameWithProof(gameId, gameData) {
+    try {
+      if (!this.isInitialized()) {
+        throw new Error('Contract service not initialized')
+      }
 
+      console.log('🏆 Completing game on blockchain:', gameId)
+
+      const { winner, creatorWins, joinerWins, rounds } = gameData
+
+      // Create proof data
+      const proofData = {
+        creatorWins,
+        joinerWins,
+        rounds: rounds.map(r => ({
+          result: r.result,
+          winner: r.winner,
+          seed: r.seed
+        }))
+      }
+
+      // For now, we'll use the existing completeGame function
+      // In production, you'd modify the contract to accept proof
+      const result = await this.completeGame(gameId, winner)
+      
+      if (result.success) {
+        console.log('✅ Game completed on blockchain')
+      }
+      
+      return result
+    } catch (error) {
+      console.error('❌ Error completing game:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
 
   // Cancel game
   async cancelGame(gameId) {
@@ -2086,6 +2141,114 @@ class ContractService {
       return {
         success: false,
         error: error.message
+      }
+    }
+  }
+
+  // Create and start game instantly when both parties are ready
+  async createAndStartGame(params) {
+    try {
+      const {
+        opponent,
+        nftContract,
+        tokenId,
+        priceUSD,
+        paymentToken,
+        coinType,
+        headsImage,
+        tailsImage,
+        isCustom
+      } = params
+
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      console.log('🎮 Creating and starting game:', params)
+
+      // Calculate required ETH amount
+      const priceInCents = Math.floor(priceUSD * 100)
+      const ethAmount = await this.getETHAmount(priceInCents * 10000) // Convert to 6 decimals
+      
+      // Add listing fee
+      const listingFee = await this.getListingFee()
+      if (!listingFee.success) {
+        throw new Error('Failed to get listing fee')
+      }
+      const totalETH = ethAmount.add(listingFee.listingFeeETH)
+
+      // Call contract
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateCreateAndStartGameGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'createAndStartGame',
+          args: [
+            opponent,
+            nftContract,
+            BigInt(tokenId),
+            BigInt(priceInCents * 10000), // Convert cents to 6 decimals
+            paymentToken || 0, // 0 = ETH
+            coinType || 'default',
+            headsImage || '',
+            tailsImage || '',
+            isCustom || false
+          ],
+          account: walletClient.account.address,
+          value: totalETH
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('createAndStartGameTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'createAndStartGame',
+          args: [
+            opponent,
+            nftContract,
+            BigInt(tokenId),
+            BigInt(priceInCents * 10000), // Convert cents to 6 decimals
+            paymentToken || 0, // 0 = ETH
+            coinType || 'default',
+            headsImage || '',
+            tailsImage || '',
+            isCustom || false
+          ],
+          account: walletClient.account.address,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          value: totalETH
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
+      
+      // Extract game ID from events
+      const event = receipt.events?.find(e => e.event === 'GameCreated')
+      const gameId = event?.args?.gameId?.toString()
+
+      return {
+        success: true,
+        gameId,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('❌ createAndStartGame error:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to create and start game'
       }
     }
   }

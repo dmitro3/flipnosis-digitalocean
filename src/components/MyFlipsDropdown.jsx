@@ -1,229 +1,236 @@
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import styled from '@emotion/styled'
 import { useWallet } from '../contexts/WalletContext'
-import { useToast } from '../contexts/ToastContext'
 
 const DropdownContainer = styled.div`
   position: relative;
-  display: inline-block;
 `
 
 const DropdownButton = styled.button`
-  background: linear-gradient(45deg, #00FF41, #39FF14);
-  color: #000000;
-  padding: 0.5rem 1.5rem;
-  border-radius: 0.75rem;
-  border: 2px solid #00FF41;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid ${props => props.hasNotifications ? '#FF1493' : 'rgba(255, 255, 255, 0.2)'};
+  color: ${props => props.theme?.colors?.textPrimary || '#ffffff'};
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
   font-weight: 600;
   cursor: pointer;
-  transition: ${props => props.theme.transitions.default};
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 5px #00FF41, 0 0 10px #00FF41, 0 0 20px #00FF41;
-  min-width: 120px;
-  text-align: center;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: translateX(-100%);
-    transition: ${props => props.theme.transitions.default};
-  }
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41, 0 0 40px #00FF41;
-    
-    &::before {
-      transform: translateX(100%);
-    }
+    background: rgba(255, 255, 255, 0.1);
+    border-color: ${props => props.theme?.colors?.neonGreen || '#00FF41'};
   }
 `
 
-const DropdownContent = styled.div`
+const NotificationBadge = styled.div`
   position: absolute;
-  top: 100%;
+  top: -5px;
+  right: -5px;
+  background: ${props => props.theme?.colors?.neonPink || '#FF1493'};
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  box-shadow: 0 0 10px ${props => props.theme?.colors?.neonPink || '#FF1493'};
+`
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 0.5rem);
   right: 0;
-  margin-top: 0.5rem;
-  background: ${props => props.theme.colors.bgDark};
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  min-width: 300px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  min-width: 250px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 2100;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  opacity: ${props => props.isOpen ? 1 : 0};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transform: translateY(${props => props.isOpen ? 0 : '-10px'});
+  transition: all 0.3s ease;
   
-  @media (max-width: 768px) {
-    min-width: 280px;
-    max-width: 90vw;
-    right: 0;
-    left: auto;
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 65, 0.3);
+    border-radius: 3px;
   }
 `
 
-const FlipItem = styled.div`
+const MenuItem = styled(Link)`
+  display: block;
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  color: ${props => props.theme?.colors?.textPrimary || '#ffffff'};
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  
+  &:hover {
+    background: rgba(0, 255, 65, 0.1);
+    color: ${props => props.theme?.colors?.neonGreen || '#00FF41'};
+  }
   
   &:last-child {
     border-bottom: none;
   }
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
 `
 
-const FlipInfo = styled.div`
-  flex: 1;
+const GameItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `
 
-const FlipTitle = styled.div`
-  color: ${props => props.theme.colors.neonPink};
+const GameInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`
+
+const GameTitle = styled.div`
   font-weight: 600;
-  margin-bottom: 0.25rem;
 `
 
-const FlipStatus = styled.div`
-  color: ${props => props.theme.colors.textSecondary};
-  font-size: 0.875rem;
+const GameStatus = styled.div`
+  font-size: 0.75rem;
+  color: ${props => props.theme?.colors?.textSecondary || 'rgba(255, 255, 255, 0.7)'};
 `
 
-const CancelButton = styled.button`
-  background: rgba(255, 20, 147, 0.1);
-  color: ${props => props.theme.colors.neonPink};
-  border: 1px solid ${props => props.theme.colors.neonPink};
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.default};
+const OfferBadge = styled.div`
+  background: ${props => props.theme?.colors?.neonPink || '#FF1493'};
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+`
+
+const ViewAllButton = styled(MenuItem)`
+  text-align: center;
+  font-weight: 600;
+  background: rgba(0, 255, 65, 0.1);
   
   &:hover {
-    background: rgba(255, 20, 147, 0.2);
+    background: rgba(0, 255, 65, 0.2);
   }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`
-
-const EmptyState = styled.div`
-  padding: 2rem;
-  text-align: center;
-  color: ${props => props.theme.colors.textSecondary};
 `
 
 const MyFlipsDropdown = () => {
+  const navigate = useNavigate()
   const { address, isConnected } = useWallet()
-  const { showSuccess, showError } = useToast()
   const [isOpen, setIsOpen] = useState(false)
-  const [myFlips, setMyFlips] = useState([])
-  const [loading, setLoading] = useState(false)
-
-  const fetchMyFlips = async () => {
-    if (!address) return
-    
-    try {
-      setLoading(true)
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      const response = await fetch(`${API_URL}/api/games?creator=${address}`)
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch flips')
-      }
-      
-      const data = await response.json()
-      setMyFlips(data)
-    } catch (error) {
-      console.error('Error fetching my flips:', error)
-      showError('Failed to load your flips')
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  const [listings, setListings] = useState([])
+  const [notifications, setNotifications] = useState([])
+  const dropdownRef = useRef(null)
+  
   useEffect(() => {
-    if (isOpen && isConnected) {
-      fetchMyFlips()
-    }
-  }, [isOpen, isConnected, address])
-
-  const handleCancelFlip = async (gameId) => {
-    try {
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      const response = await fetch(`${API_URL}/api/games/${gameId}/delist`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ creatorAddress: address })
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to cancel flip')
+    if (!isConnected || !address) return
+    
+    // Fetch user's active listings
+    const fetchData = async () => {
+      try {
+        const API_URL = process.env.NODE_ENV === 'production' 
+          ? 'https://cryptoflipz2-production.up.railway.app'
+          : 'https://cryptoflipz2-production.up.railway.app'
+          
+        const response = await fetch(`${API_URL}/api/dashboard/${address}`)
+        const data = await response.json()
+        
+        setListings(data.listings.filter(l => l.status === 'active').slice(0, 5))
+        
+        // Count pending offers as notifications
+        const pendingOffers = data.incomingOffers.filter(o => o.status === 'pending').length
+        setNotifications(pendingOffers)
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
       }
-      
-      showSuccess('Flip cancelled successfully')
-      fetchMyFlips() // Refresh the list
-    } catch (error) {
-      console.error('Error cancelling flip:', error)
-      showError('Failed to cancel flip')
     }
-  }
-
+    
+    fetchData()
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000)
+    return () => clearInterval(interval)
+  }, [address, isConnected])
+  
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+  
   if (!isConnected) return null
-
+  
   return (
-    <DropdownContainer>
-      <DropdownButton onClick={() => setIsOpen(!isOpen)}>
+    <DropdownContainer ref={dropdownRef}>
+      <DropdownButton 
+        onClick={() => setIsOpen(!isOpen)}
+        hasNotifications={notifications > 0}
+      >
         My Flips
+        {notifications > 0 && <NotificationBadge>{notifications}</NotificationBadge>}
       </DropdownButton>
-      {isOpen && (
-        <DropdownContent>
-          {loading ? (
-            <EmptyState>Loading...</EmptyState>
-          ) : myFlips.length === 0 ? (
-            <EmptyState>No active flips found</EmptyState>
-          ) : (
-            myFlips.map(flip => (
-              <FlipItem key={flip.id}>
-                <FlipInfo>
-                  <FlipTitle>{flip.nft_name || 'Unknown NFT'}</FlipTitle>
-                  <FlipStatus>
-                    Status: {flip.status}
-                    {flip.joiner && ` • Joined by ${flip.joiner.slice(0, 6)}...${flip.joiner.slice(-4)}`}
-                  </FlipStatus>
-                </FlipInfo>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <Link to={`/game/${flip.id}`} style={{ textDecoration: 'none' }}>
-                    <CancelButton>View</CancelButton>
-                  </Link>
-                  {flip.status === 'waiting' && (
-                    <CancelButton 
-                      onClick={() => handleCancelFlip(flip.id)}
-                      disabled={loading}
-                    >
-                      Cancel
-                    </CancelButton>
-                  )}
-                </div>
-              </FlipItem>
-            ))
-          )}
-        </DropdownContent>
-      )}
+      
+      <DropdownMenu isOpen={isOpen}>
+        {listings.length > 0 ? (
+          <>
+            {listings.map(listing => {
+              const offerCount = notifications // Simplified for now
+              
+              return (
+                <MenuItem 
+                  key={listing.id} 
+                  to="/dashboard"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <GameItem>
+                    <GameInfo>
+                      <GameTitle>{listing.nft_name}</GameTitle>
+                      <GameStatus>${listing.asking_price}</GameStatus>
+                    </GameInfo>
+                    {offerCount > 0 && (
+                      <OfferBadge>{offerCount} offers</OfferBadge>
+                    )}
+                  </GameItem>
+                </MenuItem>
+              )
+            })}
+            <ViewAllButton to="/dashboard" onClick={() => setIsOpen(false)}>
+              View All Flips →
+            </ViewAllButton>
+          </>
+        ) : (
+          <MenuItem to="/create" onClick={() => setIsOpen(false)}>
+            <GameInfo>
+              <GameTitle>No active flips</GameTitle>
+              <GameStatus>Create your first flip!</GameStatus>
+            </GameInfo>
+          </MenuItem>
+        )}
+      </DropdownMenu>
     </DropdownContainer>
   )
 }

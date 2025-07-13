@@ -134,30 +134,28 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Listen for chat messages from WebSocket
+  // Listen for chat messages
   useEffect(() => {
     if (!socket) return
-
+    
     const handleMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'chat_message') {
-          setMessages(prev => [...prev, {
-            id: data.id,
-            address: data.address,
-            name: data.name,
-            message: data.message,
-            timestamp: data.timestamp,
-            isSystem: data.isSystem || false
-          }])
-        }
-      } catch (error) {
-        console.error('Error parsing chat message:', error)
+      const data = JSON.parse(event.data)
+      
+      if (data.type === 'chat_message') {
+        setMessages(prev => [...prev, {
+          address: data.address,
+          isCreator: data.isCreator,
+          message: data.message,
+          timestamp: data.timestamp
+        }])
       }
     }
-
+    
     socket.addEventListener('message', handleMessage)
-    return () => socket.removeEventListener('message', handleMessage)
+    
+    return () => {
+      socket.removeEventListener('message', handleMessage)
+    }
   }, [socket])
 
   // Validate and sanitize message input
@@ -190,6 +188,18 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     if (name.includes('data:')) return false
     
     return true
+  }
+
+  const sendMessage = () => {
+    if (!currentMessage.trim() || !socket || !connected) return
+    
+    // No signature needed - already authenticated!
+    socket.send(JSON.stringify({
+      type: 'chat_message',
+      message: currentMessage.trim()
+    }))
+    
+    setCurrentMessage('')
   }
 
   const handleSendMessage = async (e) => {
@@ -355,7 +365,10 @@ const GameChatBox = ({ gameId, socket, connected }) => {
       </MessagesContainer>
 
       {/* Message Input */}
-      <InputContainer onSubmit={handleSendMessage}>
+      <InputContainer onSubmit={(e) => {
+        e.preventDefault()
+        sendMessage()
+      }}>
         <Input
           ref={inputRef}
           type="text"

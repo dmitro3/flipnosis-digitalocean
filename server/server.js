@@ -6,12 +6,38 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const fs = require('fs')
 const fetch = require('node-fetch')
+const crypto = require('crypto')
+const { verifyMessage } = require('viem')
 
 console.log('🚀 Starting FLIPNOSIS server...')
 
 const app = express()
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
+
+// Session management
+const activeSessions = new Map()
+const gameRooms = new Map() // gameId -> Set of socket IDs
+
+// Helper to generate session ID
+function generateSessionId() {
+  return crypto.randomBytes(32).toString('hex')
+}
+
+// Helper to verify signatures
+async function verifySignature(address, message, signature) {
+  try {
+    const recovered = await verifyMessage({
+      address,
+      message,
+      signature,
+    })
+    return recovered.toLowerCase() === address.toLowerCase()
+  } catch (error) {
+    console.error('Signature verification failed:', error)
+    return false
+  }
+}
 
 // Railway health check endpoint
 app.get('/health', (req, res) => {
@@ -254,6 +280,93 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.log('✅ NFT metadata cache table ready')
       }
     })
+
+// Add after the existing table creation code (around line 200)
+
+// Game listings table (games not yet on blockchain)
+db.run(`
+  CREATE TABLE IF NOT EXISTS game_listings (
+    id TEXT PRIMARY KEY,
+    creator TEXT NOT NULL,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    nft_chain TEXT DEFAULT 'base',
+    asking_price REAL NOT NULL,
+    accepts_offers BOOLEAN DEFAULT true,
+    min_offer_price REAL,
+    coin TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`, (err) => {
+  if (err) {
+    console.error('❌ Error creating game_listings table:', err)
+  } else {
+    console.log('✅ Game listings table ready')
+  }
+})
+
+// Offers table
+db.run(`
+  CREATE TABLE IF NOT EXISTS offers (
+    id TEXT PRIMARY KEY,
+    listing_id TEXT NOT NULL,
+    offerer_address TEXT NOT NULL,
+    offerer_name TEXT,
+    offer_price REAL NOT NULL,
+    message TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (listing_id) REFERENCES game_listings(id)
+  )
+`, (err) => {
+  if (err) {
+    console.error('❌ Error creating offers table:', err)
+  } else {
+    console.log('✅ Offers table ready')
+  }
+})
+
+// Notifications table
+db.run(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    user_address TEXT NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    data TEXT,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`, (err) => {
+  if (err) {
+    console.error('❌ Error creating notifications table:', err)
+  } else {
+    console.log('✅ Notifications table ready')
+  }
+})
+
+// User presence table for online status
+db.run(`
+  CREATE TABLE IF NOT EXISTS user_presence (
+    address TEXT PRIMARY KEY,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_online BOOLEAN DEFAULT true,
+    socket_id TEXT
+  )
+`, (err) => {
+  if (err) {
+    console.error('❌ Error creating user_presence table:', err)
+  } else {
+    console.log('✅ User presence table ready')
+  }
+})
       })
       
       resolve(db)
@@ -281,24 +394,739 @@ initializeDatabase()
     process.exit(1)
   })
 
-// WebSocket connection handling - simplified
+// Update the existing WebSocket connection handler
 wss.on('connection', (socket) => {
-  console.log('Client connected:', socket.id)
+  socket.id = generateSessionId()
+  console.log('🔌 New connection:', socket.id)
   
-  socket.on('join-game', (gameId) => {
-    socket.join(`game-${gameId}`)
-    console.log(`Socket ${socket.id} joined game ${gameId}`)
+  // Initialize socket properties
+  socket.authenticated = false
+  socket.gameId = null
+  socket.address = null
+  socket.sessionId = null
+  
+  socket.on('message', async (message) => {
+    try {
+      const data = JSON.parse(message)
+      console.log('📡 Received:', data.type, 'from', socket.authenticated ? socket.address : 'unauthenticated')
+      
+      // Handle authentication first
+      if (data.type === 'authenticate_session') {
+        await handleSessionAuth(socket, data)
+        return
+      }
+      
+      // Add presence update
+      if (data.type === 'update_presence' && socket.authenticated) {
+        db.run(
+          `INSERT OR REPLACE INTO user_presence (address, last_seen, is_online, socket_id) 
+           VALUES (?, CURRENT_TIMESTAMP, true, ?)`,
+          [socket.address, socket.id]
+        )
+        return
+      }
+      
+      // Handle dashboard-specific messages
+      if (data.type === 'subscribe_dashboard' && socket.authenticated) {
+        socket.isDashboard = true
+        socket.dashboardAddress = data.address
+        return
+      }
+      
+      // All other messages require authentication
+      if (!socket.authenticated) {
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'Not authenticated. Please sign in first.'
+        }))
+        return
+      }
+      
+      // Route authenticated messages
+      switch (data.type) {
+        case 'player_choice':
+          handlePlayerChoice(socket, data)
+          break
+          
+        case 'start_charging':
+          handleStartCharging(socket, data)
+          break
+          
+        case 'stop_charging':
+          handleStopCharging(socket, data)
+          break
+          
+        case 'chat_message':
+          handleChatMessage(socket, data)
+          break
+          
+        case 'dashboard_chat':
+          handleDashboardChat(socket, data)
+          break
+          
+        case 'request_game_state':
+          sendGameState(socket)
+          break
+          
+        default:
+          console.log('❓ Unknown message type:', data.type)
+      }
+    } catch (error) {
+      console.error('❌ Error processing message:', error)
+      socket.send(JSON.stringify({
+        type: 'error',
+        message: 'Invalid message format'
+      }))
+    }
   })
   
-  socket.on('game-event', (data) => {
-    // Just relay events, no game logic
-    io.to(`game-${data.gameId}`).emit('game-update', data)
+  socket.on('close', () => {
+    console.log('🔌 Disconnected:', socket.address || 'unknown')
+    
+    // Update user presence if authenticated
+    if (socket.authenticated && socket.address) {
+      db.run(
+        'UPDATE user_presence SET is_online = false WHERE address = ?',
+        [socket.address]
+      )
+    }
+    
+    handleDisconnect(socket)
   })
   
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id)
+  socket.on('error', (error) => {
+    console.error('❌ Socket error:', error)
   })
 })
+
+// Add new dashboard chat handler
+function handleDashboardChat(socket, data) {
+  const { listingId, message } = data
+  
+  // Store message in database if needed
+  
+  // Broadcast to all users watching this listing
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && 
+        client.isDashboard && 
+        client.dashboardListingId === listingId) {
+      client.send(JSON.stringify({
+        type: 'dashboard_chat_message',
+        listingId,
+        address: socket.address,
+        message,
+        timestamp: Date.now()
+      }))
+    }
+  })
+}
+
+// Game state storage (in-memory for now, could be moved to database)
+const gameStates = new Map()
+
+// New authentication handler
+async function handleSessionAuth(socket, data) {
+  const { gameId, address, signature, timestamp } = data
+  
+  // Verify timestamp is recent (within 5 minutes)
+  const now = Date.now()
+  if (Math.abs(now - timestamp) > 5 * 60 * 1000) {
+    socket.send(JSON.stringify({
+      type: 'auth_failed',
+      error: 'Signature expired'
+    }))
+    return
+  }
+  
+  // Verify signature
+  const message = `Join Flip Game #${gameId} at ${timestamp}`
+  const isValid = await verifySignature(address, message, signature)
+  
+  if (!isValid) {
+    socket.send(JSON.stringify({
+      type: 'auth_failed',
+      error: 'Invalid signature'
+    }))
+    return
+  }
+  
+  // Check if player belongs to this game
+  db.get('SELECT * FROM games WHERE id = ? AND (creator = ? OR joiner = ?)', 
+    [gameId, address, address], 
+    (err, game) => {
+      if (err || !game) {
+        socket.send(JSON.stringify({
+          type: 'auth_failed',
+          error: 'Not a participant in this game'
+        }))
+        return
+      }
+      
+      // Create session
+      socket.authenticated = true
+      socket.gameId = gameId
+      socket.address = address
+      socket.sessionId = generateSessionId()
+      socket.isCreator = game.creator === address
+      
+      // Add to game room
+      if (!gameRooms.has(gameId)) {
+        gameRooms.set(gameId, new Set())
+      }
+      gameRooms.get(gameId).add(socket.id)
+      
+      // Store session
+      activeSessions.set(socket.sessionId, {
+        socketId: socket.id,
+        address,
+        gameId,
+        isCreator: socket.isCreator,
+        connectedAt: now
+      })
+      
+      console.log(`✅ Authenticated ${address} for game ${gameId}`)
+      
+      // Send success response with game state
+      socket.send(JSON.stringify({
+        type: 'session_established',
+        sessionId: socket.sessionId,
+        gameId,
+        address,
+        isCreator: socket.isCreator
+      }))
+      
+      // Send current game state
+      sendGameState(socket)
+      
+      // Notify other player
+      broadcastToGame(gameId, {
+        type: 'player_connected',
+        address,
+        isCreator: socket.isCreator
+      }, socket.id)
+    }
+  )
+}
+
+// Handle disconnect
+function handleDisconnect(socket) {
+  if (socket.sessionId) {
+    activeSessions.delete(socket.sessionId)
+  }
+  
+  if (socket.gameId && gameRooms.has(socket.gameId)) {
+    gameRooms.get(socket.gameId).delete(socket.id)
+    
+    // Notify other player
+    broadcastToGame(socket.gameId, {
+      type: 'player_disconnected',
+      address: socket.address,
+      isCreator: socket.isCreator
+    }, socket.id)
+  }
+}
+
+// Updated broadcast function
+function broadcastToGame(gameId, message, excludeSocketId = null) {
+  const room = gameRooms.get(gameId)
+  if (!room) return
+  
+  let sentCount = 0
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && 
+        room.has(client.id) && 
+        client.id !== excludeSocketId) {
+      client.send(JSON.stringify(message))
+      sentCount++
+    }
+  })
+  
+  console.log(`📡 Broadcasted ${message.type} to ${sentCount} clients in game ${gameId}`)
+}
+
+// Send game state to specific socket
+function sendGameState(socket) {
+  const gameState = gameStates.get(socket.gameId)
+  if (!gameState) {
+    // Initialize if not exists
+    initializeGameState(socket.gameId)
+    return
+  }
+  
+  socket.send(JSON.stringify({
+    type: 'game_state',
+    ...gameState,
+    yourAddress: socket.address,
+    isYourTurn: gameState.currentPlayer === socket.address
+  }))
+}
+
+// Add chat message handler
+function handleChatMessage(socket, data) {
+  const { message } = data
+  
+  broadcastToGame(socket.gameId, {
+    type: 'chat_message',
+    address: socket.address,
+    isCreator: socket.isCreator,
+    message: message,
+    timestamp: Date.now()
+  })
+}
+
+// WebSocket message handlers
+function handlePlayerConnect(socket, data) {
+  const { gameId, address } = data
+  
+  if (!gameId || !address) {
+    console.error('❌ connect_to_game: Missing gameId or address')
+    return
+  }
+  
+  console.log(`🎮 Player ${address} connecting to game ${gameId}`)
+  
+  // Check if this player can join the game
+  db.get('SELECT creator, joiner, status FROM games WHERE id = ?', [gameId], (err, game) => {
+    if (err) {
+      console.error('❌ Error checking game for join:', err)
+      return
+    }
+    
+    if (!game) {
+      console.error(`❌ Game ${gameId} not found`)
+      return
+    }
+    
+    console.log(`📊 Game ${gameId} status: ${game.status}, creator: ${game.creator}, joiner: ${game.joiner}`)
+    
+    // If game is waiting and this is not the creator, they can join
+    if (game.status === 'waiting' && game.creator !== address && !game.joiner) {
+      console.log(`✅ Player ${address} joining game ${gameId}`)
+      
+      // Update game with joiner
+      db.run(
+        `UPDATE games SET joiner = ?, status = 'joined', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'waiting'`,
+        [address, gameId],
+        function(err) {
+          if (err) {
+            console.error('❌ Error updating game with joiner:', err)
+            return
+          }
+          
+          if (this.changes === 0) {
+            console.warn(`⚠️ Game ${gameId} not found or already has a joiner`)
+            return
+          }
+          
+          console.log(`✅ Player ${address} joined game ${gameId} successfully`)
+          
+          // Broadcast player joined to all clients in the game
+          broadcastToGame(gameId, {
+            type: 'player_joined',
+            gameId: gameId,
+            joiner: address,
+            timestamp: Date.now()
+          })
+          
+          // Initialize server-side game state for real-time coordination
+          const gameState = {
+            phase: 'choosing',
+            currentPlayer: game.creator,
+            creatorChoice: null,
+            joinerChoice: null,
+            creatorPower: 0,
+            joinerPower: 0,
+            turnTimeLeft: 30,
+            round: 1,
+            creatorWins: 0,
+            joinerWins: 0
+          }
+          gameStates.set(gameId, gameState)
+          
+          // Broadcast initial game state to all players
+          broadcastToGame(gameId, {
+            type: 'game_state',
+            gameId: gameId,
+            phase: 'choosing',
+            currentPlayer: game.creator,
+            creatorChoice: null,
+            joinerChoice: null,
+            turnTimeLeft: 30,
+            round: 1
+          })
+          
+          console.log('✅ Player joined - game state initialized for real-time coordination')
+        }
+      )
+    } else if (game.creator === address || game.joiner === address) {
+      // This is one of the players, just acknowledge connection
+      console.log(`✅ Player ${address} reconnected to game ${gameId}`)
+      
+      // Send current game state
+      broadcastToGame(gameId, {
+        type: 'player_reconnected',
+        gameId: gameId,
+        player: address,
+        timestamp: Date.now()
+      })
+    } else {
+      console.log(`⚠️ Player ${address} cannot join game ${gameId} (status: ${game.status})`)
+    }
+  })
+}
+
+function handleStartGame(socket, data) {
+  const { gameId } = data
+  
+  if (!gameId) {
+    console.error('❌ start_game: Missing gameId')
+    return
+  }
+  
+  console.log(`🎮 Starting game ${gameId} via WebSocket`)
+  
+  // First check current game status
+  db.get('SELECT status FROM games WHERE id = ?', [gameId], (err, game) => {
+    if (err) {
+      console.error('❌ Error checking game status:', err)
+      return
+    }
+    
+    if (!game) {
+      console.error(`❌ Game ${gameId} not found`)
+      return
+    }
+    
+    console.log(`📊 Current game status: ${game.status}`)
+    
+    if (game.status !== 'joined') {
+      console.warn(`⚠️ Game ${gameId} is not in 'joined' status (current: ${game.status})`)
+      return
+    }
+    
+    // Update game status in database
+    db.run(
+      `UPDATE games SET status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'joined'`,
+      [gameId],
+      function(err) {
+        if (err) {
+          console.error('❌ Error starting game in database:', err)
+          return
+        }
+        
+        if (this.changes === 0) {
+          console.warn(`⚠️ Game ${gameId} not found or not ready to start`)
+          return
+        }
+        
+        console.log(`✅ Game ${gameId} started successfully (${this.changes} rows updated)`)
+        
+        // Broadcast game started to all clients in the game
+        broadcastToGame(gameId, {
+          type: 'game_started',
+          gameId: gameId,
+          timestamp: Date.now()
+        })
+        
+        // Initialize game state for the first round
+        setTimeout(() => {
+          initializeGameState(gameId)
+        }, 1000)
+      }
+    )
+  })
+}
+
+function handleStartCharging(socket, data) {
+  const { gameId, address } = data
+  
+  if (!gameId || !address) {
+    console.error('❌ start_charging: Missing gameId or address')
+    return
+  }
+  
+  console.log(`⚡ Player ${address} started charging in game ${gameId}`)
+  
+  // Broadcast charging start to all players in the game
+  broadcastToGame(gameId, {
+    type: 'charging_started',
+    gameId: gameId,
+    player: address,
+    timestamp: Date.now()
+  })
+}
+
+function handleStopCharging(socket, data) {
+  const { gameId, address } = data
+  
+  if (!gameId || !address) {
+    console.error('❌ stop_charging: Missing gameId or address')
+    return
+  }
+  
+  console.log(`🪙 Player ${address} stopped charging in game ${gameId}`)
+  
+  // Broadcast charging stop to all players in the game
+  broadcastToGame(gameId, {
+    type: 'charging_stopped',
+    gameId: gameId,
+    player: address,
+    timestamp: Date.now()
+  })
+}
+
+// Updated player choice handler - no signature needed!
+function handlePlayerChoice(socket, data) {
+  const { choice } = data
+  const gameId = socket.gameId
+  const address = socket.address
+  
+  console.log(`🎯 Player ${address} chose ${choice} in game ${gameId}`)
+  
+  // Get or create game state
+  let gameState = gameStates.get(gameId)
+  if (!gameState) {
+    console.error('❌ No game state found')
+    return
+  }
+  
+  // Update choice based on player
+  if (socket.isCreator) {
+    gameState.creatorChoice = choice
+  } else {
+    gameState.joinerChoice = choice
+  }
+  
+  // Broadcast the choice immediately
+  broadcastToGame(gameId, {
+    type: 'player_choice_made',
+    player: address,
+    isCreator: socket.isCreator,
+    choice: choice
+  })
+  
+  // Check if both players have chosen
+  if (gameState.creatorChoice && gameState.joinerChoice) {
+    console.log('🎮 Both players have chosen - ready to flip!')
+    
+    gameState.phase = 'round_active'
+    gameState.bothChosen = true
+    
+    broadcastToGame(gameId, {
+      type: 'both_players_ready',
+      creatorChoice: gameState.creatorChoice,
+      joinerChoice: gameState.joinerChoice,
+      phase: 'round_active'
+    })
+  }
+}
+
+function processPlayerChoice(gameId, address, choice, gameState, gameData) {
+  // Determine if this is creator or joiner
+  let isCreator = false
+  if (gameData) {
+    isCreator = address === gameData.creator
+  } else {
+    // Get from database if not provided
+    db.get('SELECT creator FROM games WHERE id = ?', [gameId], (err, game) => {
+      if (err || !game) {
+        console.error('❌ Error getting game data:', err)
+        return
+      }
+      isCreator = address === game.creator
+      processPlayerChoice(gameId, address, choice, gameState, game)
+    })
+    return
+  }
+  
+  // Update the appropriate choice
+  if (isCreator) {
+    gameState.creatorChoice = choice
+  } else {
+    gameState.joinerChoice = choice
+  }
+  
+  console.log(`📊 Game state after choice:`, {
+    creatorChoice: gameState.creatorChoice,
+    joinerChoice: gameState.joinerChoice,
+    phase: gameState.phase
+  })
+  
+  // Broadcast the choice to all players
+  broadcastToGame(gameId, {
+    type: 'player_choice',
+    gameId: gameId,
+    player: address,
+    choice: choice,
+    isCreator: isCreator,
+    timestamp: Date.now()
+  })
+  
+  // Check if both players have made their choices
+  if (gameState.creatorChoice && gameState.joinerChoice) {
+    console.log('🎮 Both players have chosen - starting round!')
+    
+    // Transition to round_active phase
+    gameState.phase = 'round_active'
+    gameState.turnTimeLeft = 30
+    gameState.currentPlayer = gameData.creator // Creator goes first
+    
+    // Broadcast updated game state
+    broadcastToGame(gameId, {
+      type: 'game_state',
+      gameId: gameId,
+      phase: 'round_active',
+      currentPlayer: gameState.currentPlayer,
+      creatorChoice: gameState.creatorChoice,
+      joinerChoice: gameState.joinerChoice,
+      turnTimeLeft: gameState.turnTimeLeft,
+      round: gameState.round
+    })
+    
+    // Start the timer
+    startGameTimer(gameId, gameState)
+  }
+}
+
+// Initialize game state when both players connected
+function initializeGameState(gameId) {
+  db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+    if (err || !game) return
+    
+    const gameState = {
+      gameId,
+      phase: 'choosing',
+      currentRound: 1,
+      creatorChoice: null,
+      joinerChoice: null,
+      creatorPower: 0,
+      joinerPower: 0,
+      creatorWins: game.creator_wins || 0,
+      joinerWins: game.joiner_wins || 0,
+      rounds: [],
+      creator: game.creator,
+      joiner: game.joiner,
+      coin: game.coin ? JSON.parse(game.coin) : null,
+      bothChosen: false
+    }
+    
+    gameStates.set(gameId, gameState)
+    
+    // Send initial state to all connected players
+    broadcastToGame(gameId, {
+      type: 'game_state',
+      ...gameState
+    })
+  })
+}
+
+function startGameTimer(gameId, gameState) {
+  console.log(`⏰ Starting timer for game ${gameId}`)
+  
+  const timer = setInterval(() => {
+    gameState.turnTimeLeft--
+    
+    // Broadcast timer update
+    broadcastToGame(gameId, {
+      type: 'timer_update',
+      gameId: gameId,
+      turnTimeLeft: gameState.turnTimeLeft
+    })
+    
+    // Auto-flip when timer reaches 0
+    if (gameState.turnTimeLeft <= 0) {
+      clearInterval(timer)
+      console.log(`⏰ Timer expired for game ${gameId} - auto-flipping`)
+      
+      // Auto-flip with 0 power
+      handleAutoFlip(gameId, gameState)
+    }
+  }, 1000)
+  
+  // Store timer reference for cleanup
+  gameState.timer = timer
+}
+
+function handleAutoFlip(gameId, gameState) {
+  console.log(`🎲 Auto-flipping for game ${gameId}`)
+  
+  // Generate random result (0 = heads, 1 = tails)
+  const result = Math.floor(Math.random() * 2)
+  const winner = result === 0 ? 'heads' : 'tails'
+  
+  // Determine round winner
+  let roundWinner = null
+  if (gameState.creatorChoice === winner) {
+    roundWinner = 'creator'
+    gameState.creatorWins++
+  } else {
+    roundWinner = 'joiner'
+    gameState.joinerWins++
+  }
+  
+  // Broadcast round result
+  broadcastToGame(gameId, {
+    type: 'round_result',
+    gameId: gameId,
+    result: result,
+    winner: winner,
+    roundWinner: roundWinner,
+    creatorWins: gameState.creatorWins,
+    joinerWins: gameState.joinerWins,
+    round: gameState.round
+  })
+  
+  // Check if game is complete (best of 5)
+  if (gameState.creatorWins >= 3 || gameState.joinerWins >= 3) {
+    const gameWinner = gameState.creatorWins >= 3 ? 'creator' : 'joiner'
+    console.log(`🏆 Game ${gameId} completed! Winner: ${gameWinner}`)
+    
+    // Broadcast game completion
+    broadcastToGame(gameId, {
+      type: 'game_completed',
+      gameId: gameId,
+      winner: gameWinner,
+      creatorWins: gameState.creatorWins,
+      joinerWins: gameState.joinerWins
+    })
+    
+    // Clean up game state
+    gameStates.delete(gameId)
+  } else {
+    // Start next round
+    gameState.round++
+    gameState.phase = 'choosing'
+    gameState.creatorChoice = null
+    gameState.joinerChoice = null
+    gameState.turnTimeLeft = 30
+    gameState.currentPlayer = gameState.currentPlayer === 'creator' ? 'joiner' : 'creator'
+    
+    // Broadcast next round state
+    broadcastToGame(gameId, {
+      type: 'game_state',
+      gameId: gameId,
+      phase: 'choosing',
+      currentPlayer: gameState.currentPlayer,
+      creatorChoice: null,
+      joinerChoice: null,
+      turnTimeLeft: 30,
+      round: gameState.round,
+      creatorWins: gameState.creatorWins,
+      joinerWins: gameState.joinerWins
+    })
+  }
+}
+
+function broadcastToGame(gameId, message) {
+  let sentCount = 0
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && client.gameId === gameId) {
+      client.send(JSON.stringify(message))
+      sentCount++
+    }
+  })
+  console.log(`📡 Broadcasted ${message.type} to ${sentCount} clients in game ${gameId}`)
+}
 
 // ===== API ENDPOINTS =====
 
@@ -325,9 +1153,10 @@ app.get('/api/games', async (req, res) => {
       params.push(game_type)
     }
     
-    // Only show waiting games by default
+    // Show all games by default (waiting, joined, active, completed)
+    // Only hide cancelled games by default
     if (!status) {
-      query += ' AND status = "waiting"'
+      query += ' AND status != "cancelled"'
     }
     
     query += ' ORDER BY created_at DESC'
@@ -1230,6 +2059,744 @@ app.post('/api/games/:gameId/update-nft-metadata', async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 })
+
+// ===== GAME LISTINGS ENDPOINTS =====
+
+// Create a new game listing (no blockchain interaction)
+app.post('/api/listings', async (req, res) => {
+  try {
+    const {
+      creator,
+      nft_contract,
+      nft_token_id,
+      nft_name,
+      nft_image,
+      nft_collection,
+      nft_chain,
+      asking_price,
+      accepts_offers,
+      min_offer_price,
+      coin
+    } = req.body
+
+    const listingId = `listing_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    
+    // Fetch NFT metadata if not provided
+    let finalNftName = nft_name
+    let finalNftImage = nft_image
+    let finalNftCollection = nft_collection
+    
+    if (!finalNftName || !finalNftImage || !finalNftCollection) {
+      const metadata = await getNFTMetadataWithCache(nft_contract, nft_token_id, nft_chain || 'base')
+      if (metadata) {
+        finalNftName = finalNftName || metadata.name
+        finalNftImage = finalNftImage || metadata.image_url
+        finalNftCollection = finalNftCollection || metadata.collection_name
+      }
+    }
+    
+    const coinData = coin ? JSON.stringify(coin) : null
+    
+    db.run(
+      `INSERT INTO game_listings (
+        id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
+        nft_collection, nft_chain, asking_price, accepts_offers, 
+        min_offer_price, coin, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        listingId, creator, nft_contract, nft_token_id, finalNftName, finalNftImage,
+        finalNftCollection, nft_chain || 'base', asking_price, accepts_offers ? 1 : 0,
+        min_offer_price || asking_price * 0.8, coinData, 'active'
+      ],
+      function(err) {
+        if (err) {
+          console.error('❌ Error creating listing:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        console.log('✅ Game listing created:', listingId)
+        
+        // Create notification for creator
+        createNotification(creator, 'listing_created', 'Listing Created', 
+          `Your ${finalNftName} listing is now active!`, 
+          JSON.stringify({ listingId }))
+        
+        res.json({ success: true, listingId })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error creating listing:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get all active listings
+app.get('/api/listings', async (req, res) => {
+  try {
+    const { creator, status, chain } = req.query
+    
+    let query = 'SELECT * FROM game_listings WHERE 1=1'
+    const params = []
+    
+    if (creator) {
+      query += ' AND creator = ?'
+      params.push(creator)
+    }
+    
+    if (status) {
+      query += ' AND status = ?'
+      params.push(status)
+    } else {
+      // Default to active listings
+      query += ' AND status = "active"'
+    }
+    
+    if (chain) {
+      query += ' AND nft_chain = ?'
+      params.push(chain)
+    }
+    
+    query += ' ORDER BY created_at DESC'
+    
+    db.all(query, params, (err, listings) => {
+      if (err) {
+        console.error('❌ Error fetching listings:', err)
+        return res.status(500).json({ error: err.message })
+      }
+      
+      // Parse coin data for each listing
+      const listingsWithParsedCoin = listings.map(listing => {
+        if (listing.coin && typeof listing.coin === 'string') {
+          try {
+            listing.coin = JSON.parse(listing.coin)
+          } catch (e) {
+            console.warn('Could not parse coin data for listing:', listing.id)
+          }
+        }
+        return listing
+      })
+      
+      res.json(listingsWithParsedCoin)
+    })
+  } catch (error) {
+    console.error('❌ Error fetching listings:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get specific listing with offers
+app.get('/api/listings/:listingId', async (req, res) => {
+  try {
+    const { listingId } = req.params
+    
+    db.get('SELECT * FROM game_listings WHERE id = ?', [listingId], (err, listing) => {
+      if (err || !listing) {
+        return res.status(404).json({ error: 'Listing not found' })
+      }
+      
+      // Parse coin data
+      if (listing.coin && typeof listing.coin === 'string') {
+        try {
+          listing.coin = JSON.parse(listing.coin)
+        } catch (e) {
+          console.warn('Could not parse coin data')
+        }
+      }
+      
+      // Get offers for this listing
+      db.all(
+        'SELECT * FROM offers WHERE listing_id = ? ORDER BY created_at DESC',
+        [listingId],
+        (err, offers) => {
+          if (err) {
+            console.error('❌ Error fetching offers:', err)
+            return res.status(500).json({ error: err.message })
+          }
+          
+          // Check if creator is online
+          db.get(
+            'SELECT is_online, last_seen FROM user_presence WHERE address = ?',
+            [listing.creator],
+            (err, presence) => {
+              listing.creator_online = presence?.is_online || false
+              listing.creator_last_seen = presence?.last_seen
+              
+              res.json({ listing, offers })
+            }
+          )
+        }
+      )
+    })
+  } catch (error) {
+    console.error('❌ Error fetching listing:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Create an offer
+app.post('/api/listings/:listingId/offers', async (req, res) => {
+  try {
+    const { listingId } = req.params
+    const { offerer_address, offerer_name, offer_price, message } = req.body
+    
+    // Check if listing exists and is active
+    db.get('SELECT * FROM game_listings WHERE id = ? AND status = "active"', [listingId], (err, listing) => {
+      if (err || !listing) {
+        return res.status(404).json({ error: 'Listing not found or not active' })
+      }
+      
+      // Check if offer meets minimum
+      if (listing.accepts_offers && offer_price < listing.min_offer_price) {
+        return res.status(400).json({ error: `Minimum offer is $${listing.min_offer_price}` })
+      }
+      
+      const offerId = `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      db.run(
+        `INSERT INTO offers (
+          id, listing_id, offerer_address, offerer_name, offer_price, message, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [offerId, listingId, offerer_address, offerer_name, offer_price, message, 'pending'],
+        function(err) {
+          if (err) {
+            console.error('❌ Error creating offer:', err)
+            return res.status(500).json({ error: err.message })
+          }
+          
+          console.log('✅ Offer created:', offerId)
+          
+          // Create notification for listing creator
+          createNotification(
+            listing.creator, 
+            'new_offer', 
+            'New Offer!',
+            `${offerer_name || offerer_address.slice(0, 6) + '...'} offered $${offer_price} for ${listing.nft_name}`,
+            JSON.stringify({ offerId, listingId })
+          )
+          
+          // Broadcast via WebSocket
+          broadcastToUser(listing.creator, {
+            type: 'new_offer',
+            listingId,
+            offer: {
+              id: offerId,
+              offerer_address,
+              offerer_name,
+              offer_price,
+              message
+            }
+          })
+          
+          res.json({ success: true, offerId })
+        }
+      )
+    })
+  } catch (error) {
+    console.error('❌ Error creating offer:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Accept an offer
+app.post('/api/offers/:offerId/accept', async (req, res) => {
+  try {
+    const { offerId } = req.params
+    const { acceptor_address } = req.body
+    
+    db.get(
+      `SELECT o.*, l.* FROM offers o 
+       JOIN game_listings l ON o.listing_id = l.id 
+       WHERE o.id = ? AND o.status = "pending"`,
+      [offerId],
+      async (err, result) => {
+        if (err || !result) {
+          return res.status(404).json({ error: 'Offer not found or not pending' })
+        }
+        
+        // Verify the acceptor is the listing creator
+        if (result.creator !== acceptor_address) {
+          return res.status(403).json({ error: 'Only listing creator can accept offers' })
+        }
+        
+        // Update offer status
+        db.run(
+          'UPDATE offers SET status = "accepted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [offerId],
+          async (err) => {
+            if (err) {
+              return res.status(500).json({ error: err.message })
+            }
+            
+            // Update listing status
+            db.run(
+              'UPDATE game_listings SET status = "accepted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+              [result.listing_id],
+              async (err) => {
+                if (err) {
+                  return res.status(500).json({ error: err.message })
+                }
+                
+                // Reject all other pending offers
+                db.run(
+                  'UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"',
+                  [result.listing_id, offerId]
+                )
+                
+                // Create notification for offerer
+                createNotification(
+                  result.offerer_address,
+                  'offer_accepted',
+                  'Offer Accepted!',
+                  `Your offer for ${result.nft_name} has been accepted!`,
+                  JSON.stringify({ offerId, listingId: result.listing_id })
+                )
+                
+                // Create game in pending state
+                const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                
+                db.run(
+                  `INSERT INTO games (
+                    id, creator, joiner, nft_contract, nft_token_id,
+                    nft_name, nft_image, nft_collection, price_usd,
+                    status, game_type, coin, nft_chain
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    gameId,
+                    result.creator,
+                    result.offerer_address,
+                    result.nft_contract,
+                    result.nft_token_id,
+                    result.nft_name,
+                    result.nft_image,
+                    result.nft_collection,
+                    result.offer_price,
+                    'pending', // New status for games waiting for both assets
+                    'nft-vs-crypto',
+                    result.coin,
+                    result.nft_chain
+                  ],
+                  (err) => {
+                    if (err) {
+                      console.error('❌ Error creating game:', err)
+                      return res.status(500).json({ error: err.message })
+                    }
+                    
+                    console.log('✅ Game created from accepted offer:', gameId)
+                    
+                    // Broadcast to both users
+                    broadcastToUser(result.creator, {
+                      type: 'offer_accepted',
+                      gameId,
+                      listingId: result.listing_id
+                    })
+                    
+                    broadcastToUser(result.offerer_address, {
+                      type: 'offer_accepted',
+                      gameId,
+                      listingId: result.listing_id
+                    })
+                    
+                    res.json({ success: true, gameId })
+                  }
+                )
+              }
+            )
+          }
+        )
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error accepting offer:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Reject an offer
+app.post('/api/offers/:offerId/reject', async (req, res) => {
+  try {
+    const { offerId } = req.params
+    
+    db.run(
+      'UPDATE offers SET status = "rejected", updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = "pending"',
+      [offerId],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message })
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Offer not found or not pending' })
+        }
+        
+        res.json({ success: true })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error rejecting offer:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Cancel a listing
+app.post('/api/listings/:listingId/cancel', async (req, res) => {
+  try {
+    const { listingId } = req.params
+    const { creator_address } = req.body
+    
+    db.run(
+      'UPDATE game_listings SET status = "cancelled" WHERE id = ? AND creator = ? AND status = "active"',
+      [listingId, creator_address],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message })
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Listing not found or not active' })
+        }
+        
+        // Reject all pending offers
+        db.run(
+          'UPDATE offers SET status = "cancelled" WHERE listing_id = ? AND status = "pending"',
+          [listingId]
+        )
+        
+        res.json({ success: true })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error cancelling listing:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get user dashboard data
+app.get('/api/dashboard/:address', async (req, res) => {
+  try {
+    const { address } = req.params
+    
+    // Get user's listings
+    db.all(
+      'SELECT * FROM game_listings WHERE creator = ? ORDER BY created_at DESC',
+      [address],
+      (err, listings) => {
+        if (err) {
+          return res.status(500).json({ error: err.message })
+        }
+        
+        // Get offers made by user
+        db.all(
+          `SELECT o.*, l.nft_name, l.nft_image, l.creator 
+           FROM offers o 
+           JOIN game_listings l ON o.listing_id = l.id 
+           WHERE o.offerer_address = ? 
+           ORDER BY o.created_at DESC`,
+          [address],
+          (err, outgoingOffers) => {
+            if (err) {
+              return res.status(500).json({ error: err.message })
+            }
+            
+            // Get offers on user's listings
+            db.all(
+              `SELECT o.*, l.nft_name 
+               FROM offers o 
+               JOIN game_listings l ON o.listing_id = l.id 
+               WHERE l.creator = ? 
+               ORDER BY o.created_at DESC`,
+              [address],
+              (err, incomingOffers) => {
+                if (err) {
+                  return res.status(500).json({ error: err.message })
+                }
+                
+                // Parse coin data for listings
+                const parsedListings = listings.map(listing => {
+                  if (listing.coin && typeof listing.coin === 'string') {
+                    try {
+                      listing.coin = JSON.parse(listing.coin)
+                    } catch (e) {}
+                  }
+                  return listing
+                })
+                
+                res.json({
+                  listings: parsedListings,
+                  outgoingOffers,
+                  incomingOffers,
+                  stats: {
+                    activeListings: listings.filter(l => l.status === 'active').length,
+                    pendingOffers: incomingOffers.filter(o => o.status === 'pending').length,
+                    totalListings: listings.length
+                  }
+                })
+              }
+            )
+          }
+        )
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error fetching dashboard:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Update user presence
+app.post('/api/presence/update', async (req, res) => {
+  try {
+    const { address, socket_id } = req.body
+    
+    db.run(
+      `INSERT OR REPLACE INTO user_presence (address, last_seen, is_online, socket_id) 
+       VALUES (?, CURRENT_TIMESTAMP, true, ?)`,
+      [address, socket_id],
+      (err) => {
+        if (err) {
+          return res.status(500).json({ error: err.message })
+        }
+        res.json({ success: true })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error updating presence:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get notifications
+app.get('/api/notifications/:address', async (req, res) => {
+  try {
+    const { address } = req.params
+    const { unread_only } = req.query
+    
+    let query = 'SELECT * FROM notifications WHERE user_address = ?'
+    if (unread_only === 'true') {
+      query += ' AND read = false'
+    }
+    query += ' ORDER BY created_at DESC LIMIT 50'
+    
+    db.all(query, [address], (err, notifications) => {
+      if (err) {
+        return res.status(500).json({ error: err.message })
+      }
+      
+      res.json(notifications)
+    })
+  } catch (error) {
+    console.error('❌ Error fetching notifications:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Mark notification as read
+app.post('/api/notifications/:notificationId/read', async (req, res) => {
+  try {
+    const { notificationId } = req.params
+    
+    db.run(
+      'UPDATE notifications SET read = true WHERE id = ?',
+      [notificationId],
+      (err) => {
+        if (err) {
+          return res.status(500).json({ error: err.message })
+        }
+        res.json({ success: true })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error marking notification as read:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Helper function to create notifications
+function createNotification(userAddress, type, title, message, data = null) {
+  const notificationId = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
+  db.run(
+    `INSERT INTO notifications (id, user_address, type, title, message, data) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [notificationId, userAddress, type, title, message, data],
+    (err) => {
+      if (err) {
+        console.error('❌ Error creating notification:', err)
+      } else {
+        console.log('✅ Notification created:', notificationId)
+        
+        // Broadcast to user if online
+        broadcastToUser(userAddress, {
+          type: 'new_notification',
+          notification: {
+            id: notificationId,
+            type,
+            title,
+            message,
+            data
+          }
+        })
+      }
+    }
+  )
+}
+
+// Helper function to broadcast to specific user
+function broadcastToUser(address, message) {
+  db.get(
+    'SELECT socket_id FROM user_presence WHERE address = ? AND is_online = true',
+    [address],
+    (err, presence) => {
+      if (!err && presence && presence.socket_id) {
+        wss.clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN && client.id === presence.socket_id) {
+            client.send(JSON.stringify(message))
+          }
+        })
+      }
+    }
+  )
+}
+
+// Add after existing endpoints
+app.post('/api/games/:gameId/complete', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { winner, creatorWins, joinerWins, rounds } = req.body
+    
+    // Verify game exists and is active
+    db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+      if (err || !game) {
+        return res.status(404).json({ error: 'Game not found' })
+      }
+      
+      if (game.status !== 'active') {
+        return res.status(400).json({ error: 'Game not active' })
+      }
+      
+      // Verify winner is valid
+      const validWinner = (creatorWins >= 3 && winner === game.creator) ||
+                         (joinerWins >= 3 && winner === game.joiner)
+      
+      if (!validWinner) {
+        return res.status(400).json({ error: 'Invalid winner' })
+      }
+      
+      // Update database
+      db.run(
+        `UPDATE games SET 
+         status = 'completed',
+         winner = ?,
+         creator_wins = ?,
+         joiner_wins = ?,
+         current_round = ?,
+         updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [winner, creatorWins, joinerWins, rounds.length, gameId],
+        function(err) {
+          if (err) {
+            console.error('❌ Error completing game:', err)
+            return res.status(500).json({ error: err.message })
+          }
+          
+          console.log(`🏆 Game ${gameId} completed. Winner: ${winner}`)
+          
+          // Clean up game state
+          gameStates.delete(gameId)
+          
+          // Notify all clients
+          broadcastToGame(gameId, {
+            type: 'game_completed',
+            gameId,
+            winner,
+            creatorWins,
+            joinerWins
+          })
+          
+          res.json({ success: true })
+        }
+      )
+    })
+  } catch (error) {
+    console.error('❌ Error completing game:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Update the round simulation for server-side games
+function simulateRound(gameId) {
+  const gameState = gameStates.get(gameId)
+  if (!gameState) return
+  
+  // Simple randomness for demo - in production use better randomness
+  const seed = Date.now().toString()
+  const hash = crypto.createHash('sha256').update(seed).digest('hex')
+  const result = parseInt(hash.slice(-1), 16) % 2 // 0 = heads, 1 = tails
+  
+  const flipResult = result === 0 ? 'heads' : 'tails'
+  
+  // Determine round winner
+  let roundWinner
+  if (gameState.creatorChoice === flipResult) {
+    roundWinner = 'creator'
+    gameState.creatorWins++
+  } else {
+    roundWinner = 'joiner'
+    gameState.joinerWins++
+  }
+  
+  // Add to rounds history
+  gameState.rounds.push({
+    round: gameState.currentRound,
+    result: flipResult,
+    winner: roundWinner,
+    creatorChoice: gameState.creatorChoice,
+    joinerChoice: gameState.joinerChoice,
+    seed: seed
+  })
+  
+  // Broadcast result
+  broadcastToGame(gameId, {
+    type: 'round_result',
+    round: gameState.currentRound,
+    result: flipResult,
+    winner: roundWinner,
+    creatorWins: gameState.creatorWins,
+    joinerWins: gameState.joinerWins
+  })
+  
+  // Check if game complete
+  if (gameState.creatorWins >= 3 || gameState.joinerWins >= 3) {
+    const gameWinner = gameState.creatorWins >= 3 ? gameState.creator : gameState.joiner
+    
+    // For games with smart contract, notify frontend to complete on-chain
+    db.get('SELECT contract_game_id FROM games WHERE id = ?', [gameId], (err, game) => {
+      if (!err && game && game.contract_game_id) {
+        broadcastToGame(gameId, {
+          type: 'ready_for_blockchain',
+          winner: gameWinner,
+          creatorWins: gameState.creatorWins,
+          joinerWins: gameState.joinerWins,
+          rounds: gameState.rounds
+        })
+      } else {
+        // No contract, complete in database
+        completeGameInDatabase(gameId, gameWinner, gameState)
+      }
+    })
+  } else {
+    // Next round
+    gameState.currentRound++
+    gameState.creatorChoice = null
+    gameState.joinerChoice = null
+    gameState.bothChosen = false
+    gameState.phase = 'choosing'
+    
+    broadcastToGame(gameId, {
+      type: 'next_round',
+      round: gameState.currentRound
+    })
+  }
+}
 
 // Catch-all route to serve React app
 app.get('*', (req, res) => {

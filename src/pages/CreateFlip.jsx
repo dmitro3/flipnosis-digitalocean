@@ -85,7 +85,7 @@ const SubmitButton = styled(Button)`
 const CreateFlip = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { isConnected, nfts, loadNFTs, chainId, walletClient, publicClient } = useWallet()
+  const { isConnected, address, nfts, loadNFTs, chainId, walletClient, publicClient } = useWallet()
   const { isFullyConnected, connectionError } = useWalletConnection()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
@@ -101,6 +101,7 @@ const CreateFlip = () => {
     headsImage: '/coins/plainh.png',
     tailsImage: '/coins/plaint.png'
   })
+  const [acceptsOffers, setAcceptsOffers] = useState(true)
 
   // Initialize contract service when wallet is connected
   useEffect(() => {
@@ -142,8 +143,21 @@ const CreateFlip = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    console.log('🔄 Submit triggered with data:', {
+      isFullyConnected,
+      address,
+      selectedNFT,
+      price,
+      selectedCoin
+    })
+    
     if (!isFullyConnected) {
       showError('Please connect your wallet first')
+      return
+    }
+
+    if (!address) {
+      showError('Wallet address not found. Please reconnect your wallet.')
       return
     }
 
@@ -160,68 +174,67 @@ const CreateFlip = () => {
     setLoading(true)
 
     try {
-      // First, check and approve NFT if needed
-      showInfo('Checking NFT approval...')
-      const approvalResult = await contractService.approveNFT(
-        selectedNFT.contractAddress, 
-        selectedNFT.tokenId
-      )
+      // Create a listing instead of a game (no blockchain interaction yet)
+      showInfo('Creating listing...')
       
-      if (!approvalResult.success) {
-        throw new Error(`NFT approval failed: ${approvalResult.error}`)
-      }
-      
-      if (approvalResult.alreadyApproved) {
-        console.log('✅ NFT already approved')
-      } else {
-        showSuccess('NFT approved successfully!')
-      }
-      
-      // Now create the game
-      showInfo('Creating game...')
-      
-      // Handle coin image data
-      let headsImage = selectedCoin.headsImage
-      let tailsImage = selectedCoin.tailsImage
-      let isCustom = selectedCoin.type === 'custom'
-      
-      // For custom coins, we need to handle base64 data
-      if (isCustom) {
-        // If it's a base64 data URL, we need to convert it to a shorter format
-        // For now, we'll use a placeholder and store the actual data in the database
-        headsImage = '/coins/custom-heads.png'
-        tailsImage = '/coins/custom-tails.png'
-        console.log('🪙 Custom coin detected, using placeholder images for contract')
-      }
-      
-      // Prepare the actual image data for custom coins
-      const actualHeadsImage = isCustom ? selectedCoin.headsImage : null
-      const actualTailsImage = isCustom ? selectedCoin.tailsImage : null
-      
-      const result = await contractService.createGame({
-        nftContract: selectedNFT.contractAddress,
-        tokenId: selectedNFT.tokenId,
-        priceUSD: parseFloat(price),
-        acceptedToken: 0, // ETH
-        gameType: gameType === 'nft-vs-nft' ? 1 : 0,
+      // Prepare coin data
+      const coinData = {
         coinType: selectedCoin.type,
-        headsImage: headsImage,
-        tailsImage: tailsImage,
-        isCustom: isCustom,
-        actualHeadsImage: actualHeadsImage,
-        actualTailsImage: actualTailsImage,
-        nftChain: selectedNFT.chain // Pass the chain from the NFT data
+        headsImage: selectedCoin.headsImage,
+        tailsImage: selectedCoin.tailsImage,
+        isCustom: selectedCoin.type === 'custom'
+      }
+      
+      // Create listing via API - use same base URL as ProfileContext
+      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      
+      const listingData = {
+        creator: address,
+        nft_contract: selectedNFT.contractAddress,
+        nft_token_id: selectedNFT.tokenId,
+        nft_name: selectedNFT.name,
+        nft_image: selectedNFT.image,
+        nft_collection: selectedNFT.collection,
+        nft_chain: selectedNFT.chain || 'base',
+        asking_price: parseFloat(price),
+        accepts_offers: acceptsOffers,
+        min_offer_price: acceptsOffers ? parseFloat(price) * 0.8 : parseFloat(price),
+        coin: coinData
+      }
+      
+      console.log('📤 Sending listing data:', listingData)
+      console.log('🌐 API URL:', `${baseUrl}/api/listings`)
+      
+      const response = await fetch(`${baseUrl}/api/listings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(listingData)
       })
 
-      if (result.success) {
-        showSuccess('Game created successfully!')
-        navigate(`/game/${result.gameId}`)
-      } else {
-        throw new Error(result.error)
+      console.log('📥 Response status:', response.status)
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()))
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+        }
+        throw new Error(errorMessage)
       }
+
+      const result = await response.json()
+      console.log('✅ Listing created successfully:', result)
+      
+      showSuccess('Listing created successfully! You can manage it from your dashboard.')
+      navigate('/dashboard')
       
     } catch (error) {
-      console.error('Failed to create game:', error)
+      console.error('❌ Failed to create listing:', error)
       showError(error.message)
     } finally {
       setLoading(false)
@@ -278,6 +291,34 @@ const CreateFlip = () => {
                 />
               </FormGroup>
 
+              {/* Accepts Offers Toggle */}
+              <FormGroup>
+                <Label>Accept Offers</Label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <input
+                    type="checkbox"
+                    id="acceptsOffers"
+                    checked={acceptsOffers}
+                    onChange={(e) => setAcceptsOffers(e.target.checked)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <label 
+                    htmlFor="acceptsOffers" 
+                    style={{ 
+                      cursor: 'pointer',
+                      color: theme.colors.textSecondary,
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Allow players to make offers below asking price
+                  </label>
+                </div>
+              </FormGroup>
+
               {/* Coin Selection */}
               <FormGroup>
                 <Label>Select Your Coin</Label>
@@ -294,10 +335,10 @@ const CreateFlip = () => {
               <SubmitButton type="submit" disabled={loading || !isFullyConnected}>
                 {loading ? (
                   <>
-                    <LoadingSpinner /> Creating...
+                    <LoadingSpinner /> Creating Listing...
                   </>
                 ) : (
-                  `Create ${gameType === 'nft-vs-nft' ? 'NFT Battle' : 'Flip'}`
+                  'Create Listing'
                 )}
               </SubmitButton>
             </form>
@@ -307,7 +348,10 @@ const CreateFlip = () => {
         <NFTSelector
           isOpen={isNFTSelectorOpen}
           onClose={() => setIsNFTSelectorOpen(false)}
-          onSelect={setSelectedNFT}
+          onSelect={(nft) => {
+            console.log('🎨 NFT selected:', nft)
+            setSelectedNFT(nft)
+          }}
           nfts={nfts || []}
           loading={nftsLoading}
           selectedNFT={selectedNFT}

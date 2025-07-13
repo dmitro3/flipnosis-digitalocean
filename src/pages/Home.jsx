@@ -237,31 +237,32 @@ const Home = () => {
     })
   }, [isConnected, address, chain, walletClient, publicClient, nfts, nftsLoading])
 
-  // Fetch games from database
-  const fetchGames = async () => {
+  // Fetch games from database (listings endpoint not yet deployed)
+  const fetchListingsAndGames = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      console.log('🔍 Fetching games from:', `${API_URL}/api/games`)
-      const response = await fetch(`${API_URL}/api/games`)
+      // Use production URL for now since local server isn't running
+      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+
+      console.log('🔍 Fetching games from:', API_URL)
       
-      console.log('📊 Response status:', response.status)
-      console.log('📊 Response headers:', response.headers)
+      // Fetch active games only (listings endpoint not yet available)
+      const gamesResponse = await fetch(`${API_URL}/api/games`)
       
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ Failed to fetch games:', errorText)
-        throw new Error(`Failed to fetch games: ${response.status} ${errorText}`)
+      if (!gamesResponse.ok) {
+        throw new Error('Failed to fetch data')
       }
 
-      const gamesData = await response.json()
-      console.log('📊 Fetched games from database:', gamesData.length, 'games')
-      console.log('📊 Raw games data:', gamesData)
+      const gamesData = await gamesResponse.json()
       
-      // Transform database games to frontend format
-      const processedFlips = gamesData.map(game => ({
+      console.log('📊 Fetched games:', gamesData.length, 'games')
+      
+      // Convert games to flips format
+      const combinedFlips = gamesData.filter(g => g.status !== 'pending').map(game => ({
         id: game.id,
+        type: 'game',
         nft: {
           name: game.nft_name || 'Unknown NFT',
           image: game.nft_image || '/placeholder-nft.svg',
@@ -274,7 +275,7 @@ const Home = () => {
         gameType: game.game_type || 'nft-vs-crypto',
         price: game.price_usd,
         priceUSD: game.price_usd,
-        currency: game.game_type === 'nft-vs-nft' ? 'NFT' : 'USD',
+        currency: 'USD',
         chain: game.nft_chain || 'base',
         creator: game.creator,
         joiner: game.joiner,
@@ -282,27 +283,16 @@ const Home = () => {
         status: game.status,
         createdAt: game.created_at,
         winner: game.winner,
-        creatorWins: game.creator_wins || 0,
-        joinerWins: game.joiner_wins || 0,
-        challengerNFT: game.challenger_nft_name ? {
-          name: game.challenger_nft_name,
-          image: game.challenger_nft_image,
-          collection: game.challenger_nft_collection,
-          contractAddress: game.challenger_nft_contract,
-          tokenId: game.challenger_nft_token_id
-        } : null,
-        description: game.game_type === 'nft-vs-nft' ? 
-          `NFT Battle: ${game.nft_name} vs ${game.challenger_nft_name || 'Waiting for challenger'}` :
-          `${game.nft_name} from ${game.nft_collection} - Ready for battle!`
+        description: `${game.nft_name} - ${game.status === 'waiting' ? 'Waiting for player' : 'In progress'}`
       }))
       
-      setFlips(processedFlips)
+      setFlips(combinedFlips)
       
-      if (processedFlips.length > 0) {
-        setSelectedFlip(processedFlips[0])
+      if (combinedFlips.length > 0) {
+        setSelectedFlip(combinedFlips[0])
       }
     } catch (error) {
-      console.error('❌ Error fetching games:', error)
+      console.error('❌ Error fetching data:', error)
       setError('Failed to load games. Please try again.')
     } finally {
       setLoading(false)
@@ -312,7 +302,7 @@ const Home = () => {
   // Function to update NFT metadata for a game
   const updateNFTMetadata = async (gameId) => {
     try {
-      const response = await fetch(`${API_URL}/api/games/${gameId}/update-nft-metadata`, {
+      const response = await fetch(`https://cryptoflipz2-production.up.railway.app/api/games/${gameId}/update-nft-metadata`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
@@ -325,7 +315,7 @@ const Home = () => {
       console.log('✅ NFT metadata updated:', result)
       
       // Refresh the games list to show updated data
-      await fetchGames()
+      await fetchListingsAndGames()
       
       showSuccess('NFT metadata updated successfully!')
     } catch (error) {
@@ -336,10 +326,10 @@ const Home = () => {
 
   // Load games on component mount
   useEffect(() => {
-    fetchGames()
+    fetchListingsAndGames()
     
     // Refresh every 10 seconds
-    const interval = setInterval(fetchGames, 10000)
+    const interval = setInterval(fetchListingsAndGames, 10000)
     return () => clearInterval(interval)
   }, [])
 
@@ -356,7 +346,7 @@ const Home = () => {
       flip.description.toLowerCase().includes(searchLower);
 
     return matchesFilter && matchesSearch;
-  })
+  }).slice(0, 100) // Limit to 100 games for performance
 
   const chainFilters = [
     { key: 'all', name: 'ALL', icon: '🌐' },
@@ -378,11 +368,86 @@ const Home = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'waiting': return '⏳'
-      case 'joined': return '🔄'
-      case 'active': return '🎮'
-      case 'completed': return '🏆'
+      case 'waiting': return '🟢'
+      case 'joined': return '🟠'
+      case 'active': return '🟠'
+      case 'completed': return '🔴'
       default: return '❓'
+    }
+  }
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'waiting': return 'LIVE'
+      case 'joined': return 'IN PROGRESS'
+      case 'active': return 'IN PROGRESS'
+      case 'completed': return 'COMPLETE'
+      default: return 'UNKNOWN'
+    }
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'waiting': return '#00FF41' // Green
+      case 'joined': return '#FFA500' // Orange
+      case 'active': return '#FFA500' // Orange
+      case 'completed': return '#FF4444' // Red
+      default: return '#808080' // Gray
+    }
+  }
+
+  const isGameJoinable = (status) => {
+    return status === 'waiting'
+  }
+
+  const handleMakeOffer = async (flip) => {
+    if (!isConnected) {
+      showError('Please connect your wallet first')
+      return
+    }
+
+    if (flip.creator === address) {
+      showError('You cannot make an offer on your own listing')
+      return
+    }
+
+    try {
+      setLoading(true)
+      showInfo('Making offer...')
+
+      // Use production API URL
+      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+
+      const offerData = {
+        listing_id: flip.listingId,
+        offerer: address,
+        offer_price: flip.priceUSD,
+        message: `I want to play with ${flip.nft.name}!`
+      }
+
+      const response = await fetch(`${baseUrl}/api/listings/${flip.listingId}/offers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(offerData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to make offer')
+      }
+
+      const result = await response.json()
+      showSuccess('Offer made successfully! The creator will be notified.')
+      
+      // Refresh the listings
+      await fetchListings()
+    } catch (error) {
+      console.error('❌ Error making offer:', error)
+      showError(error.message || 'Failed to make offer')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -461,7 +526,7 @@ const Home = () => {
                 Error Loading Games
               </NeonText>
               <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>{error}</p>
-              <Button onClick={fetchGames} style={{ background: theme.colors.neonPink }}>
+              <Button onClick={fetchListingsAndGames} style={{ background: theme.colors.neonPink }}>
                 Retry
               </Button>
             </GlassCard>
@@ -513,7 +578,7 @@ const Home = () => {
 
           {filteredFlips.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: '3rem', border: `2px solid ${theme.colors.neonPink}` }}>
-              <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Active Flips</NeonText>
+              <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Games Available</NeonText>
               <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
                 Be the first to create a flip game!
               </p>
@@ -657,6 +722,41 @@ const Home = () => {
                         <GameCollection style={{
                           fontSize: '0.9rem'
                         }}>{selectedFlip.nft.collection}</GameCollection>
+                        
+                        {/* Game Status Display */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          marginTop: '0.5rem',
+                          padding: '0.5rem',
+                          background: `rgba(${getStatusColor(selectedFlip.status).replace('#', '')}, 0.1)`,
+                          border: `1px solid rgba(${getStatusColor(selectedFlip.status).replace('#', '')}, 0.3)`,
+                          borderRadius: '0.5rem'
+                        }}>
+                          <span style={{
+                            fontSize: '1.2rem'
+                          }}>{getStatusIcon(selectedFlip.status)}</span>
+                          <div>
+                            <div style={{
+                              fontSize: '0.9rem',
+                              fontWeight: 'bold',
+                              color: getStatusColor(selectedFlip.status)
+                            }}>
+                              {getStatusText(selectedFlip.status)}
+                            </div>
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: theme.colors.textSecondary
+                            }}>
+                              {selectedFlip.status === 'waiting' ? '' :
+                               selectedFlip.status === 'joined' ? 'Game will start automatically in a few seconds' :
+                               selectedFlip.status === 'active' ? 'Players are currently flipping coins' :
+                               selectedFlip.status === 'completed' ? `Winner: ${selectedFlip.winner ? selectedFlip.winner.slice(0, 6) + '...' + selectedFlip.winner.slice(-4) : 'Unknown'}` :
+                               'Status unknown'}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                       
                       {window.innerWidth > 768 && (
@@ -766,10 +866,22 @@ const Home = () => {
                         marginTop: '1rem'
                       }}>
                         <Button 
-                          onClick={() => navigate(`/game/${selectedFlip.id}`)}
+                          onClick={() => {
+                            if (selectedFlip.isListing) {
+                              handleMakeOffer(selectedFlip)
+                            } else {
+                              navigate(`/game/${selectedFlip.id}`)
+                            }
+                          }}
                           style={{
                             flex: 2,
-                            background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
+                            background: selectedFlip.isListing ? 
+                              'linear-gradient(45deg, #FF1493, #FF69B4)' :
+                              selectedFlip.status === 'completed' ? 
+                              'linear-gradient(45deg, #FF4444, #CC0000)' :
+                              selectedFlip.status === 'active' || selectedFlip.status === 'joined' ?
+                              'linear-gradient(45deg, #FFA500, #FF8C00)' :
+                              'linear-gradient(45deg, #00FF41, #39FF14)',
                             color: '#fff',
                             border: 'none',
                             padding: '0.75rem 1.5rem',
@@ -794,7 +906,11 @@ const Home = () => {
                             e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
                           }}
                         >
-                          View Flip
+                          {selectedFlip.isListing ? '🎮 Join Flip' :
+                           selectedFlip.status === 'completed' ? '🏆 View Results' :
+                           selectedFlip.status === 'active' ? '🎮 Watch Game' :
+                           selectedFlip.status === 'joined' ? '⏳ Game Starting...' :
+                           'Join Game'}
                         </Button>
                         {selectedFlip.gameType === 'nft-vs-nft' && !selectedFlip.challengerNFT && (
                           <Button 
@@ -854,8 +970,8 @@ const Home = () => {
                   borderBottom: `1px solid ${theme.colors.neonBlue}`,
                   textShadow: '0 0 10px rgba(0, 150, 255, 0.5)'
                 }}>
-                              {filteredFlips.length > 0 ?
-              `Available Flips (${filteredFlips.filter(flip => flip.status === 'waiting').length})` :
+                  {filteredFlips.length > 0 ?
+                    `All Flips (${filteredFlips.length})` :
                     isConnected && nfts && nfts.length > 0 ? 
                       `Your NFTs (${nfts.length})` : 
                       'No Games Available'
@@ -887,23 +1003,32 @@ const Home = () => {
               filteredFlips.map(flip => (
                     <div
                       key={flip.id}
-                      onClick={() => setSelectedFlip(flip)}
+                      onClick={() => {
+                        setSelectedFlip(flip)
+                        // If it's a listing, go to dashboard, if it's a game, go to game
+                        if (flip.type === 'listing') {
+                          navigate('/dashboard')
+                        }
+                      }}
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
                         borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
                         padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                        cursor: 'pointer',
+                        cursor: isGameJoinable(flip.status) ? 'pointer' : 'default',
                         transition: 'all 0.2s ease',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        border: `1px solid ${isGameJoinable(flip.status) ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'}`,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
                         height: window.innerWidth <= 768 ? 'auto' : '210px',
-                        width: '100%'
+                        width: '100%',
+                        opacity: isGameJoinable(flip.status) ? 1 : 0.7
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        if (isGameJoinable(flip.status)) {
+                          e.currentTarget.style.transform = 'scale(1.02)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        }
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
@@ -946,6 +1071,25 @@ const Home = () => {
                           fontWeight: 'bold'
                         }}>
                           {flip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                        </div>
+                        
+                        {/* Status indicator */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '0.25rem',
+                          left: '0.25rem',
+                          background: `rgba(${getStatusColor(flip.status).replace('#', '')}, 0.9)`,
+                          color: '#fff',
+                          padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
+                          borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
+                          fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.1rem'
+                        }}>
+                          <span>{getStatusIcon(flip.status)}</span>
+                          <span>{getStatusText(flip.status)}</span>
                         </div>
                         {flip.nft.needsMetadataUpdate && (
                           <button
