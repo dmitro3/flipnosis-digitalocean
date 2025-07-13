@@ -263,8 +263,45 @@ const Home = () => {
       console.log('📊 Fetched games:', gamesData.length, 'games')
       console.log('📊 Fetched listings:', listingsData.length, 'listings')
       
+      // Debug: Log game statuses
+      const statusCounts = gamesData.reduce((acc, game) => {
+        acc[game.status] = (acc[game.status] || 0) + 1
+        return acc
+      }, {})
+      console.log('📊 Game status counts:', statusCounts)
+      
+      // Debug: Log pending games data
+      const pendingGames = gamesData.filter(g => g.status === 'pending')
+      if (pendingGames.length > 0) {
+        console.log('📊 Pending games data:', pendingGames.map(g => ({
+          id: g.id,
+          price_usd: g.price_usd,
+          nft_name: g.nft_name,
+          creator: g.creator,
+          joiner: g.joiner
+        })))
+      }
+      
+      // Debug: Log games with null/invalid IDs
+      const invalidGames = gamesData.filter(g => !g.id || g.id === 'null')
+      if (invalidGames.length > 0) {
+        console.log('⚠️ Games with invalid IDs:', invalidGames.map(g => ({
+          id: g.id,
+          status: g.status,
+          nft_name: g.nft_name,
+          creator: g.creator
+        })))
+      }
+      
+      // Debug: Log listing statuses
+      const listingStatusCounts = listingsData.reduce((acc, listing) => {
+        acc[listing.status] = (acc[listing.status] || 0) + 1
+        return acc
+      }, {})
+      console.log('📊 Listing status counts:', listingStatusCounts)
+      
       // Convert games to flips format
-      const gameFlips = gamesData.filter(g => g.status !== 'pending').map(game => ({
+      const gameFlips = gamesData.filter(g => g.status !== 'cancelled' && g.id && g.id !== 'null').map(game => ({
         id: game.id,
         type: 'game',
         nft: {
@@ -277,8 +314,8 @@ const Home = () => {
           needsMetadataUpdate: !game.nft_image || game.nft_image === '' || game.nft_image === '/placeholder-nft.svg'
         },
         gameType: game.game_type || 'nft-vs-crypto',
-        price: game.price_usd,
-        priceUSD: game.price_usd,
+        price: game.price_usd || 0,
+        priceUSD: game.price_usd || 0,
         currency: 'USD',
         chain: game.nft_chain || 'base',
         creator: game.creator,
@@ -326,7 +363,13 @@ const Home = () => {
       setFlips(combinedFlips)
       
       if (combinedFlips.length > 0) {
-        setSelectedFlip(combinedFlips[0])
+        // Find the first valid flip
+        const validFlip = combinedFlips.find(flip => flip.id && flip.id !== 'null')
+        if (validFlip) {
+          setSelectedFlip(validFlip)
+        } else {
+          console.error('⚠️ No valid flips found in combined data')
+        }
       }
     } catch (error) {
       console.error('❌ Error fetching data:', error)
@@ -399,6 +442,11 @@ const Home = () => {
   ]
 
   const handleSelectFlip = (flip) => {
+    // Safety check for valid flip
+    if (!flip || !flip.id || flip.id === 'null') {
+      console.error('⚠️ Cannot select flip: Invalid flip data:', flip)
+      return
+    }
     setSelectedFlip(flip)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -408,6 +456,7 @@ const Home = () => {
       case 'waiting': return '🟢'
       case 'joined': return '🟠'
       case 'active': return '🟠'
+      case 'pending': return '🟡'
       case 'completed': return '🔴'
       default: return '❓'
     }
@@ -418,6 +467,7 @@ const Home = () => {
       case 'waiting': return 'LIVE'
       case 'joined': return 'IN PROGRESS'
       case 'active': return 'IN PROGRESS'
+      case 'pending': return 'PENDING DEPOSITS'
       case 'completed': return 'COMPLETE'
       default: return 'UNKNOWN'
     }
@@ -428,13 +478,14 @@ const Home = () => {
       case 'waiting': return '#00FF41' // Green
       case 'joined': return '#FFA500' // Orange
       case 'active': return '#FFA500' // Orange
+      case 'pending': return '#FFD700' // Gold
       case 'completed': return '#FF4444' // Red
       default: return '#808080' // Gray
     }
   }
 
   const isGameJoinable = (status) => {
-    return status === 'waiting'
+    return status === 'waiting' || status === 'pending'
   }
 
   const handleMakeOffer = async (flip) => {
@@ -713,7 +764,7 @@ const Home = () => {
                             border: '1px solid rgba(255, 255, 255, 0.2)'
                           }}>
                             <div style={{ fontSize: '0.7rem', color: theme.colors.textSecondary }}>Price</div>
-                            <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>${selectedFlip.priceUSD.toFixed(2)}</div>
+                            <div style={{ fontSize: '1rem', fontWeight: 'bold' }}>${(selectedFlip.priceUSD || 0).toFixed(2)}</div>
                           </div>
                           <div style={{
                             background: 'rgba(255, 255, 255, 0.1)',
@@ -832,7 +883,7 @@ const Home = () => {
                             <>
                               <GameStat>
                                 <span>Price</span>
-                                <div>${selectedFlip.priceUSD.toFixed(2)}</div>
+                                <div>${(selectedFlip.priceUSD || 0).toFixed(2)}</div>
                               </GameStat>
                               <GameStat>
                                 <span>Type</span>
@@ -911,6 +962,13 @@ const Home = () => {
                       }}>
                         <Button 
                           onClick={() => {
+                            // Safety check for valid ID
+                            if (!selectedFlip.id || selectedFlip.id === 'null') {
+                              console.error('⚠️ Cannot navigate: Invalid flip ID:', selectedFlip.id)
+                              showError('Invalid game ID. Please refresh the page.')
+                              return
+                            }
+                            
                             if (selectedFlip.type === 'listing') {
                               navigate(`/flip/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'completed') {
@@ -922,9 +980,12 @@ const Home = () => {
                             } else if (selectedFlip.status === 'joined') {
                               // Handle joined game view
                               navigate(`/game/${selectedFlip.id}`)
+                            } else if (selectedFlip.status === 'pending') {
+                              // Handle pending game (waiting for deposits)
+                              navigate(`/game/${selectedFlip.id}`)
                             } else {
-                              // Handle join game
-                              navigate(`/flip/${selectedFlip.id}/join`)
+                              // Handle waiting games
+                              navigate(`/game/${selectedFlip.id}`)
                             }
                           }}
                           style={{
@@ -968,7 +1029,15 @@ const Home = () => {
                         </Button>
                         {selectedFlip.gameType === 'nft-vs-nft' && !selectedFlip.challengerNFT && (
                           <Button 
-                            onClick={() => navigate(`/flip/${selectedFlip.id}/join`)}
+                            onClick={() => {
+                              // Safety check for valid ID
+                              if (!selectedFlip.id || selectedFlip.id === 'null') {
+                                console.error('⚠️ Cannot navigate: Invalid flip ID:', selectedFlip.id)
+                                showError('Invalid game ID. Please refresh the page.')
+                                return
+                              }
+                              navigate(`/game/${selectedFlip.id}`)
+                            }}
                             style={{
                               flex: 1,
                               background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
@@ -1058,7 +1127,7 @@ const Home = () => {
                     <div
                       key={flip.id}
                       onClick={() => {
-                        setSelectedFlip(flip)
+                        handleSelectFlip(flip)
                       }}
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
@@ -1208,7 +1277,7 @@ const Home = () => {
                             fontWeight: 'bold',
                             color: theme.colors.neonBlue
                           }}>
-                            ${flip.priceUSD.toFixed(2)}
+                            ${(flip.priceUSD || 0).toFixed(2)}
                           </div>
                           <div style={{
                             background: 'rgba(255, 255, 255, 0.1)',

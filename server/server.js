@@ -2282,8 +2282,11 @@ app.get('/api/listings/:listingId', async (req, res) => {
   try {
     const { listingId } = req.params
     
+    console.log('🔍 Fetching listing:', listingId)
+    
     db.get('SELECT * FROM game_listings WHERE id = ?', [listingId], (err, listing) => {
       if (err || !listing) {
+        console.log('❌ Listing not found:', listingId)
         return res.status(404).json({ error: 'Listing not found' })
       }
       
@@ -2305,6 +2308,11 @@ app.get('/api/listings/:listingId', async (req, res) => {
             console.error('❌ Error fetching offers:', err)
             return res.status(500).json({ error: err.message })
           }
+          
+          console.log('📦 Found offers for listing:', offers.length, 'offers')
+          offers.forEach(offer => {
+            console.log('  - Offer:', offer.id, 'Status:', offer.status)
+          })
           
           // Check if creator is online
           db.get(
@@ -2396,13 +2404,33 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
     const { offerId } = req.params
     const { acceptor_address } = req.body
     
+    console.log('🎯 Accept offer request:', { offerId, acceptor_address })
+    
     db.get(
       `SELECT o.*, l.* FROM offers o 
        JOIN game_listings l ON o.listing_id = l.id 
        WHERE o.id = ? AND o.status = "pending"`,
       [offerId],
       async (err, result) => {
-        if (err || !result) {
+        if (err) {
+          console.error('❌ Database error:', err)
+          return res.status(500).json({ error: 'Database error' })
+        }
+        
+        if (!result) {
+          console.log('❌ Offer not found or not pending:', offerId)
+          
+          // Let's check what the actual offer status is
+          db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, offerCheck) => {
+            if (err) {
+              console.error('❌ Error checking offer:', err)
+            } else if (offerCheck) {
+              console.log('📋 Offer exists but status is:', offerCheck.status)
+            } else {
+              console.log('❌ Offer does not exist in database')
+            }
+          })
+          
           return res.status(404).json({ error: 'Offer not found or not pending' })
         }
         
@@ -2475,6 +2503,9 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                     }
                     
                     console.log('✅ Game created from accepted offer:', gameId)
+                    
+                    // Send response to client
+                    res.json({ success: true, gameId })
                     
                     // Broadcast to both users
                     broadcastToUser(result.creator, {

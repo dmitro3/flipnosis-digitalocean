@@ -17,7 +17,9 @@ export const ProfileProvider = ({ children }) => {
   const [loading, setLoading] = useState({})
 
   // API base URL
-  const API_BASE = 'https://cryptoflipz2-production.up.railway.app'
+  const API_BASE = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:3001' 
+  : 'https://cryptoflipz2-production.up.railway.app'
   
       console.log('🌐 ProfileContext API_BASE:', API_BASE, 'NODE_ENV: production')
 

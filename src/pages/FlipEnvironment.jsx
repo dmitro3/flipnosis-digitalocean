@@ -638,7 +638,9 @@ const FlipEnvironment = () => {
   
   const fetchListingData = async () => {
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001' 
+        : 'https://cryptoflipz2-production.up.railway.app'
       
       // Fetch listing details
       console.log('🔍 Fetching listing with ID:', listingId)
@@ -654,14 +656,20 @@ const FlipEnvironment = () => {
       
       // Handle offers data (might be included in the response or need separate fetch)
       if (responseData.offers) {
+        console.log('📦 Offers included in response:', responseData.offers)
         setOffers(responseData.offers)
       } else {
+        console.log('⚠️ No offers in response, trying separate fetch')
         // Try to fetch offers separately
         try {
           const offersResponse = await fetch(`${baseUrl}/api/listings/${listingId}/offers`)
           if (offersResponse.ok) {
             const offersData = await offersResponse.json()
+            console.log('📦 Offers from separate fetch:', offersData)
             setOffers(offersData)
+          } else {
+            console.log('⚠️ Separate offers fetch failed:', offersResponse.status)
+            setOffers([])
           }
         } catch (error) {
           console.log('⚠️ Offers endpoint not available, using empty array')
@@ -808,7 +816,9 @@ const FlipEnvironment = () => {
     setSubmittingOffer(true)
     
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001' 
+        : 'https://cryptoflipz2-production.up.railway.app'
       
       const response = await fetch(`${baseUrl}/api/listings/${listingId}/offers`, {
         method: 'POST',
@@ -843,7 +853,37 @@ const FlipEnvironment = () => {
   
   const handleAcceptOffer = async (offer) => {
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      console.log('🎯 Attempting to accept offer:', offer)
+      console.log('👤 Current user address:', address)
+      console.log('📋 Listing creator:', listing.creator)
+      
+      // Refresh data first to ensure we have the latest offer status
+      await fetchListingData()
+      
+      // Check if the offer is still pending
+      const currentOffers = offers.filter(o => o.id === offer.id)
+      console.log('🔍 Current offers after refresh:', currentOffers)
+      console.log('🎯 Looking for offer ID:', offer.id)
+      
+      if (currentOffers.length === 0) {
+        throw new Error('Offer no longer exists')
+      }
+      
+      const currentOffer = currentOffers[0]
+      console.log('📋 Current offer status:', currentOffer.status)
+      
+      if (currentOffer.status !== 'pending') {
+        throw new Error(`Offer is no longer pending (status: ${currentOffer.status})`)
+      }
+      
+      // Check if listing is still active
+      if (listing.status !== 'active') {
+        throw new Error(`Listing is no longer active (status: ${listing.status})`)
+      }
+      
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001' 
+        : 'https://cryptoflipz2-production.up.railway.app'
       
       const response = await fetch(`${baseUrl}/api/offers/${offer.id}/accept`, {
         method: 'POST',
@@ -851,7 +891,7 @@ const FlipEnvironment = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          lister_address: listing.creator
+          acceptor_address: address
         })
       })
       
@@ -885,16 +925,12 @@ const FlipEnvironment = () => {
   
   const handleRejectOffer = async (offerId) => {
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001' 
+        : 'https://cryptoflipz2-production.up.railway.app'
       
       const response = await fetch(`${baseUrl}/api/offers/${offerId}/reject`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          lister_address: listing.creator
-        })
+        method: 'POST'
       })
       
       if (!response.ok) {
@@ -915,7 +951,9 @@ const FlipEnvironment = () => {
     setCreatingGame(true)
     
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001' 
+        : 'https://cryptoflipz2-production.up.railway.app'
       
       const response = await fetch(`${baseUrl}/api/games`, {
         method: 'POST',

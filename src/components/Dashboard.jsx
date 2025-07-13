@@ -391,7 +391,10 @@ const Dashboard = () => {
         body: JSON.stringify({ acceptor_address: address })
       })
       
-      if (!response.ok) throw new Error('Failed to accept offer')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to accept offer')
+      }
       
       const result = await response.json()
       showSuccess('Offer accepted! Loading game...')
@@ -418,7 +421,10 @@ const Dashboard = () => {
         method: 'POST'
       })
       
-      if (!response.ok) throw new Error('Failed to reject offer')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to reject offer')
+      }
       
       showInfo('Offer rejected')
       fetchDashboardData()

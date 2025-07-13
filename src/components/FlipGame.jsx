@@ -3230,6 +3230,56 @@ const FlipGame = () => {
             </div>
           )}
 
+          {/* Show pending status for both players */}
+          {gameData?.status === 'pending' && (
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{
+                padding: '1rem',
+                background: 'rgba(255, 215, 0, 0.1)',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                borderRadius: '1rem'
+              }}>
+                <div style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                  💰 Pending Deposits
+                </div>
+                <div style={{ color: 'white', marginTop: '0.5rem' }}>
+                  {isCreator ? 
+                    'Add your NFT to the game to start playing!' :
+                    'Add your crypto deposit to join the game!'
+                  }
+                </div>
+                <div style={{ color: '#FFD700', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                  Both players need to deposit their assets before the game can begin
+                </div>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      showInfo('Please add your deposit to start the game!')
+                      // TODO: Add deposit logic here
+                    } catch (error) {
+                      console.error('❌ Deposit failed:', error)
+                      showError('Failed to add deposit: ' + error.message)
+                    }
+                  }}
+                  style={{
+                    marginTop: '1rem',
+                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                    color: '#000',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  💰 Add Deposit
+                </Button>
+              </div>
+            </div>
+          )}
+
           {gameState?.phase === 'choosing' && (
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               {isMyTurn ? (
