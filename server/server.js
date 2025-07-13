@@ -50,6 +50,13 @@ app.get('/health', (req, res) => {
   })
 })
 
+// CORS configuration for production
+app.use(cors({
+  origin: true, // Allow all origins in production
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}))
 
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
@@ -482,6 +489,21 @@ wss.on('connection', (socket) => {
         case 'join_listing': {
           socket.listingId = data.listingId
           socket.listingAddress = data.address
+          // Track viewers
+          if (!listingViewers.has(data.listingId)) {
+            listingViewers.set(data.listingId, new Set())
+          }
+          listingViewers.get(data.listingId).add(socket.id)
+          // Broadcast viewer count
+          broadcastToListing(data.listingId, {
+            type: 'viewer_joined',
+            viewerCount: listingViewers.get(data.listingId).size
+          })
+          break
+        }
+        case 'subscribe_listing_chat': {
+          socket.listingId = data.listingId
+          socket.listingAddress = data.address || 'anonymous'
           // Track viewers
           if (!listingViewers.has(data.listingId)) {
             listingViewers.set(data.listingId, new Set())
