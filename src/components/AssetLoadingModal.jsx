@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext'
 import contractService from '../services/ContractService'
 import { Button, LoadingSpinner } from '../styles/components'
 import { ethers } from 'ethers'
+import { API_CONFIG } from '../config/api'
 
 const Modal = styled.div`
   position: fixed;
@@ -264,7 +265,7 @@ const AssetLoadingModal = ({
   useEffect(() => {
     if (!isOpen || !gameData) return
     
-    const ws = new WebSocket('wss://cryptoflipz2-production.up.railway.app')
+    const ws = new WebSocket(API_CONFIG.WS_URL)
     
     ws.onopen = () => {
       ws.send(JSON.stringify({

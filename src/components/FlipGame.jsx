@@ -7,6 +7,7 @@ import { useWalletConnection } from '../utils/useWalletConnection'
 import { useSignMessage } from 'wagmi'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import { API_CONFIG } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -748,7 +749,7 @@ const FlipGame = () => {
     const maxReconnectAttempts = 5
 
     const createWebSocket = async () => {
-      const wsUrl = 'wss://cryptoflipz2-production.up.railway.app'
+      const wsUrl = API_CONFIG.WS_URL
       console.log('🔌 Connecting to WebSocket:', wsUrl)
       
       const websocket = new WebSocket(wsUrl)

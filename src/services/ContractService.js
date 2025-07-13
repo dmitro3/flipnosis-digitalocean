@@ -1227,12 +1227,6 @@ class ContractService {
 
   // Get current ETH price from server
   async getCurrentEthPrice() {
-    // For localhost testing, use a reasonable ETH price
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log('🏠 Localhost detected, using ETH price: $3000')
-      return 3000
-    }
-    
     try {
       const response = await fetch('https://cryptoflipz2-production.up.railway.app/api/eth-price')
       const data = await response.json()
@@ -2134,8 +2128,7 @@ class ContractService {
 
       return {
         success: true,
-        results,
-        isLocalhost: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        results
       }
     } catch (error) {
       return {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useWallet } from './WalletContext'
+import { API_CONFIG } from '../config/api'
 
 const ProfileContext = createContext()
 
@@ -17,13 +18,7 @@ export const ProfileProvider = ({ children }) => {
   const [loading, setLoading] = useState({})
 
   // API base URL
-  // Check if we're running locally by checking the current hostname
-const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-const API_BASE = isLocal 
-  ? 'http://localhost:3001' 
-  : 'https://cryptoflipz2-production.up.railway.app'
-  
-      console.log('🌐 ProfileContext API_BASE:', API_BASE, 'NODE_ENV: production')
+  const API_BASE = API_CONFIG.BASE_URL
 
   const getPlayerName = async (playerAddress) => {
     try {

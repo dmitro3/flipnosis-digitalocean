@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import { API_CONFIG } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -638,11 +639,7 @@ const FlipEnvironment = () => {
   
   const fetchListingData = async () => {
     try {
-      // Check if we're running locally by checking the current hostname
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      const baseUrl = isLocal 
-        ? 'http://localhost:3001' 
-        : 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = API_CONFIG.BASE_URL
       
       console.log('🌐 Environment detection:', { 
         hostname: window.location.hostname, 
@@ -695,7 +692,7 @@ const FlipEnvironment = () => {
   }
   
   const setupWebSocket = () => {
-    const ws = new WebSocket('wss://cryptoflipz2-production.up.railway.app')
+    const ws = new WebSocket(API_CONFIG.WS_URL)
     
     ws.onopen = () => {
       console.log('WebSocket connected')
@@ -839,10 +836,7 @@ const FlipEnvironment = () => {
     setSubmittingOffer(true)
     
     try {
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      const baseUrl = isLocal 
-        ? 'http://localhost:3001' 
-        : 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = API_CONFIG.BASE_URL
       
       const response = await fetch(`${baseUrl}/api/listings/${listingId}/offers`, {
         method: 'POST',
@@ -905,10 +899,7 @@ const FlipEnvironment = () => {
         throw new Error(`Listing is no longer active (status: ${listing.status})`)
       }
       
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      const baseUrl = isLocal 
-        ? 'http://localhost:3001' 
-        : 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = API_CONFIG.BASE_URL
       
       const response = await fetch(`${baseUrl}/api/offers/${offer.id}/accept`, {
         method: 'POST',
@@ -938,10 +929,7 @@ const FlipEnvironment = () => {
   
   const handleRejectOffer = async (offerId) => {
     try {
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      const baseUrl = isLocal 
-        ? 'http://localhost:3001' 
-        : 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = API_CONFIG.BASE_URL
       
       const response = await fetch(`${baseUrl}/api/offers/${offerId}/reject`, {
         method: 'POST'

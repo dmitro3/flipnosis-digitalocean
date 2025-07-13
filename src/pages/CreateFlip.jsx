@@ -9,6 +9,7 @@ import CoinSelector from '../components/CoinSelector'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
+import { API_CONFIG } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -185,8 +186,8 @@ const CreateFlip = () => {
         isCustom: selectedCoin.type === 'custom'
       }
       
-      // Create listing via API - use same base URL as ProfileContext
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      // Create listing via API
+      const baseUrl = API_CONFIG.BASE_URL
       
       const listingData = {
         creator: address,

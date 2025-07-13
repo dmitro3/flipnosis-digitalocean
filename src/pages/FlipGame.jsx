@@ -8,6 +8,7 @@ import FlipGameComponent from '../components/FlipGame'
 import GameResultPopup from '../components/GameResultPopup'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
+import { API_CONFIG } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -85,7 +86,7 @@ const FlipGame = () => {
       }
 
       // Fallback to database
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      const API_URL = API_CONFIG.BASE_URL
       const response = await fetch(`${API_URL}/api/games/${gameId}`)
       
       if (!response.ok) {
@@ -264,7 +265,7 @@ const FlipGame = () => {
 
   const updateGameInDatabase = async (updates) => {
     try {
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+      const API_URL = API_CONFIG.BASE_URL
       const response = await fetch(`${API_URL}/api/games/${gameId}`, {
         method: 'PATCH',
         headers: {

@@ -10,6 +10,7 @@ import hazeVideo from '../../Images/Video/haze.webm'
 import { PaymentService } from '../services/PaymentService'
 import ClaimRewards from '../components/ClaimRewards'
 import contractService from '../services/ContractService'
+import { API_CONFIG } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -221,11 +222,8 @@ const Home = () => {
 
 
 
-  // API URL - will be Railway URL in production
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      const API_URL = isLocal 
-        ? 'http://localhost:3001' 
-        : 'https://cryptoflipz2-production.up.railway.app'
+  // API URL
+  const API_URL = API_CONFIG.BASE_URL
 
   // Debug logging
   useEffect(() => {
@@ -246,10 +244,7 @@ const Home = () => {
       setLoading(true)
       setError(null)
 
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      const API_URL = isLocal 
-        ? 'http://localhost:3001' 
-        : 'https://cryptoflipz2-production.up.railway.app'
+      const API_URL = API_CONFIG.BASE_URL
 
       console.log('🔍 Fetching games and listings from:', API_URL)
       
