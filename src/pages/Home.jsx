@@ -904,15 +904,25 @@ const Home = () => {
                       }}>
                         <Button 
                           onClick={() => {
-                            if (selectedFlip.isListing) {
+                            if (selectedFlip.type === 'listing') {
                               handleMakeOffer(selectedFlip)
-                            } else {
+                            } else if (selectedFlip.status === 'completed') {
+                              // Handle completed game view
                               navigate(`/game/${selectedFlip.id}`)
+                            } else if (selectedFlip.status === 'active') {
+                              // Handle active game view
+                              navigate(`/game/${selectedFlip.id}`)
+                            } else if (selectedFlip.status === 'joined') {
+                              // Handle joined game view
+                              navigate(`/game/${selectedFlip.id}`)
+                            } else {
+                              // Handle join game
+                              navigate(`/flip/${selectedFlip.id}/join`)
                             }
                           }}
                           style={{
                             flex: 2,
-                            background: selectedFlip.isListing ? 
+                            background: selectedFlip.type === 'listing' ? 
                               'linear-gradient(45deg, #FF1493, #FF69B4)' :
                               selectedFlip.status === 'completed' ? 
                               'linear-gradient(45deg, #FF4444, #CC0000)' :
@@ -943,11 +953,11 @@ const Home = () => {
                             e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
                           }}
                         >
-                          {selectedFlip.isListing ? '🎮 Join Flip' :
-                           selectedFlip.status === 'completed' ? '🏆 View Results' :
-                           selectedFlip.status === 'active' ? '🎮 Watch Game' :
-                           selectedFlip.status === 'joined' ? '⏳ Game Starting...' :
-                           'Join Game'}
+                                                  {selectedFlip.type === 'listing' ? '💰 Make Offer' :
+                         selectedFlip.status === 'completed' ? '🏆 View Results' :
+                         selectedFlip.status === 'active' ? '🎮 Watch Game' :
+                         selectedFlip.status === 'joined' ? '⏳ Game Starting...' :
+                         'Join Game'}
                         </Button>
                         {selectedFlip.gameType === 'nft-vs-nft' && !selectedFlip.challengerNFT && (
                           <Button 
@@ -1042,10 +1052,6 @@ const Home = () => {
                       key={flip.id}
                       onClick={() => {
                         setSelectedFlip(flip)
-                        // If it's a listing, go to dashboard, if it's a game, go to game
-                        if (flip.type === 'listing') {
-                          navigate('/dashboard')
-                        }
                       }}
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
