@@ -868,11 +868,17 @@ const FlipEnvironment = () => {
     }
   }
   
+  const [acceptingOfferId, setAcceptingOfferId] = useState(null)
+  const [rejectingOfferId, setRejectingOfferId] = useState(null)
+  
   const handleAcceptOffer = async (offer) => {
     try {
       console.log('🎯 Attempting to accept offer:', offer)
       console.log('👤 Current user address:', address)
       console.log('📋 Listing creator:', listing.creator)
+      
+      // Prevent multiple clicks
+      setAcceptingOfferId(offer.id)
       
       // Refresh data first to ensure we have the latest offer status
       await fetchListingData()
@@ -918,16 +924,24 @@ const FlipEnvironment = () => {
       const result = await response.json()
       showSuccess('Offer accepted! Preparing game...')
       
+      // Refresh data to update offer status
+      await fetchListingData()
+      
       // The modal will be shown via WebSocket broadcast to both players
       
     } catch (error) {
       console.error('Error accepting offer:', error)
       showError(error.message)
+    } finally {
+      setAcceptingOfferId(null)
     }
   }
   
   const handleRejectOffer = async (offerId) => {
     try {
+      // Prevent multiple clicks
+      setRejectingOfferId(offerId)
+      
       const baseUrl = API_CONFIG.BASE_URL
       
       const response = await fetch(`${baseUrl}/api/offers/${offerId}/reject`, {
@@ -940,11 +954,13 @@ const FlipEnvironment = () => {
       }
       
       showSuccess('Offer rejected')
-      fetchListingData() // Refresh offers
+      await fetchListingData() // Refresh offers
       
     } catch (error) {
       console.error('Error rejecting offer:', error)
       showError(error.message)
+    } finally {
+      setRejectingOfferId(null)
     }
   }
   
@@ -1419,14 +1435,24 @@ const FlipEnvironment = () => {
                               <ActionButton 
                                 className="accept"
                                 onClick={() => handleAcceptOffer(offer)}
+                                disabled={acceptingOfferId === offer.id}
+                                style={{
+                                  opacity: acceptingOfferId === offer.id ? 0.5 : 1,
+                                  cursor: acceptingOfferId === offer.id ? 'not-allowed' : 'pointer'
+                                }}
                               >
-                                Accept
+                                {acceptingOfferId === offer.id ? 'Accepting...' : 'Accept'}
                               </ActionButton>
                               <ActionButton 
                                 className="reject"
                                 onClick={() => handleRejectOffer(offer.id)}
+                                disabled={acceptingOfferId === offer.id || rejectingOfferId === offer.id}
+                                style={{
+                                  opacity: (acceptingOfferId === offer.id || rejectingOfferId === offer.id) ? 0.5 : 1,
+                                  cursor: (acceptingOfferId === offer.id || rejectingOfferId === offer.id) ? 'not-allowed' : 'pointer'
+                                }}
                               >
-                                Reject
+                                {rejectingOfferId === offer.id ? 'Rejecting...' : 'Reject'}
                               </ActionButton>
                             </div>
                           )}
