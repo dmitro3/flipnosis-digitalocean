@@ -643,7 +643,6 @@ const FlipEnvironment = () => {
       
       console.log('🌐 Environment detection:', { 
         hostname: window.location.hostname, 
-        isLocal, 
         baseUrl,
         nodeEnv: process.env.NODE_ENV 
       })
