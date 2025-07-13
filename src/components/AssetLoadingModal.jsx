@@ -3,6 +3,8 @@ import styled from '@emotion/styled'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
 import contractService from '../services/ContractService'
+import { Button, LoadingSpinner } from '../styles/components'
+import { ethers } from 'ethers'
 
 const Modal = styled.div`
   position: fixed;
@@ -10,378 +12,555 @@ const Modal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
+  z-index: 10000;
+  backdrop-filter: blur(10px);
 `
 
 const ModalContent = styled.div`
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.95));
-  border: 1px solid rgba(0, 255, 65, 0.3);
-  border-radius: 1rem;
-  padding: 2rem;
-  max-width: 600px;
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid ${props => props.theme.colors.neonPink};
+  border-radius: 1.5rem;
   width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+  max-width: 800px;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
 `
 
-const NeonText = styled.h2`
-  color: #00FF41;
-  text-shadow: 0 0 10px #00FF41;
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+const Header = styled.div`
+  text-align: center;
+  margin-bottom: 2rem;
+  
+  h2 {
+    color: ${props => props.theme.colors.neonYellow};
+    font-size: 2rem;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 0 0 20px rgba(255, 255, 0, 0.5);
+  }
+  
+  p {
+    color: ${props => props.theme.colors.textSecondary};
+    font-size: 1rem;
+  }
 `
 
-const AssetContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
+const ContentGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 2px 1fr;
   gap: 2rem;
-  margin: 2rem 0;
+  align-items: stretch;
+  margin-bottom: 2rem;
   
   @media (max-width: 768px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
 `
 
-const AssetBox = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid ${props => props.loaded ? '#00FF41' : 'rgba(255, 255, 255, 0.2)'};
-  border-radius: 1rem;
-  padding: 1.5rem;
-  text-align: center;
-  min-width: 150px;
-  transition: all 0.3s ease;
+const Divider = styled.div`
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, ${props => props.theme.colors.neonPink}, transparent);
   
-  ${props => props.loaded && `
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
-  `}
+  @media (max-width: 768px) {
+    display: none;
+  }
 `
 
-const AssetImage = styled.img`
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  margin-bottom: 1rem;
-  opacity: ${props => props.loaded ? 1 : 0.5};
+const AssetSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+`
+
+const NFTImageContainer = styled.div`
+  width: 200px;
+  height: 200px;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 2px solid ${props => props.isLoaded ? props.theme.colors.neonGreen : props.theme.colors.neonBlue};
+  position: relative;
+  box-shadow: 0 0 20px ${props => props.isLoaded ? 'rgba(0, 255, 65, 0.3)' : 'rgba(0, 191, 255, 0.3)'};
   transition: all 0.3s ease;
+`
+
+const NFTImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`
+
+const CryptoContainer = styled.div`
+  width: 200px;
+  height: 200px;
+  border-radius: 1rem;
+  border: 2px solid ${props => props.isLoaded ? props.theme.colors.neonGreen : props.theme.colors.neonBlue};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  box-shadow: 0 0 20px ${props => props.isLoaded ? 'rgba(0, 255, 65, 0.3)' : 'rgba(0, 191, 255, 0.3)'};
+  transition: all 0.3s ease;
+`
+
+const LoadingOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
 `
 
 const StatusText = styled.div`
-  color: ${props => props.success ? '#00FF41' : 'rgba(255, 255, 255, 0.7)'};
+  font-size: 1.1rem;
   font-weight: 600;
-  margin: 0.5rem 0;
+  color: ${props => props.isLoaded ? props.theme.colors.neonGreen : props.theme.colors.textPrimary};
+  text-align: center;
 `
 
-const VSText = styled.div`
-  color: #FF1493;
-  font-size: 1.5rem;
+const PlayerInfo = styled.div`
+  text-align: center;
+  
+  h3 {
+    color: ${props => props.theme.colors.neonBlue};
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+  }
+  
+  p {
+    color: ${props => props.theme.colors.textSecondary};
+    font-size: 0.9rem;
+    margin: 0;
+  }
+`
+
+const ActionButton = styled(Button)`
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
   font-weight: bold;
-  text-shadow: 0 0 10px #FF1493;
-`
-
-const LoadButton = styled.button`
-  background: linear-gradient(135deg, #00FF41, #00CC33);
-  border: none;
-  color: black;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
   
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 255, 65, 0.3);
+  &.load {
+    background: linear-gradient(45deg, #00FF41, #39FF14);
+    color: #000;
   }
   
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &.cancel {
+    background: transparent;
+    border: 1px solid ${props => props.theme.colors.statusError};
+    color: ${props => props.theme.colors.statusError};
+    
+    &:hover {
+      background: rgba(255, 68, 68, 0.1);
+    }
   }
 `
 
-const LoadingSpinner = styled.div`
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid #00FF41;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto;
+const SuccessAnimation = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 4rem;
+  animation: successPulse 0.6s ease-out;
   
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  @keyframes successPulse {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.2);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
   }
 `
 
-const CoinDisplay = styled.div`
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 1rem;
+const CryptoAmount = styled.div`
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: ${props => props.theme.colors.neonGreen};
+  margin-bottom: 0.5rem;
 `
 
-const CoinImage = styled.img`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+const CryptoCurrency = styled.div`
+  font-size: 1.2rem;
+  color: ${props => props.theme.colors.textSecondary};
 `
 
-const AssetLoadingModal = ({ gameData, onGameReady, onClose }) => {
-  const { address, walletClient } = useWallet()
+const AssetLoadingModal = ({ 
+  isOpen, 
+  onClose, 
+  gameData, 
+  onGameReady,
+  isCreator 
+}) => {
+  const { address, signer } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   
   const [nftLoaded, setNftLoaded] = useState(false)
   const [cryptoLoaded, setCryptoLoaded] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [gameStarted, setGameStarted] = useState(false)
+  const [isLoadingNFT, setIsLoadingNFT] = useState(false)
+  const [isLoadingCrypto, setIsLoadingCrypto] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
+  const [socket, setSocket] = useState(null)
   
-  const isCreator = gameData.listing?.creator === address
-  const isJoiner = gameData.offer?.offerer_address === address
-  
-  // Load NFT (creator)
-  const handleLoadNFT = async () => {
-    if (!isCreator || nftLoaded) return
-    
-    try {
-      setLoading(true)
-      showInfo('Approving NFT for game...')
-      
-      const approvalResult = await contractService.approveNFT(
-        gameData.listing.nft_contract,
-        gameData.listing.nft_token_id
-      )
-      
-      if (!approvalResult.success) {
-        throw new Error(approvalResult.error)
-      }
-      
-      setNftLoaded(true)
-      showSuccess('NFT ready!')
-      
-      // Check if both assets are ready
-      checkGameReady()
-    } catch (error) {
-      showError('Failed to approve NFT: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  // Load Crypto (joiner)
-  const handleLoadCrypto = async () => {
-    if (!isJoiner || cryptoLoaded) return
-    
-    try {
-      setLoading(true)
-      showInfo('Preparing payment...')
-      
-      // Just mark as ready - actual payment will happen when game starts
-      setCryptoLoaded(true)
-      showSuccess('Payment ready!')
-      
-      // Check if both assets are ready
-      checkGameReady()
-    } catch (error) {
-      showError('Failed to prepare payment: ' + error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  // Check if both assets are ready and start game
-  const checkGameReady = async () => {
-    // Need to check the state after React updates
-    setTimeout(async () => {
-      const nftReady = isCreator ? nftLoaded : true
-      const cryptoReady = isJoiner ? cryptoLoaded : true
-      
-      if (nftReady && cryptoReady && !gameStarted) {
-        setGameStarted(true)
-        await startGame()
-      }
-    }, 100)
-  }
-  
-  // Start the actual game
-  const startGame = async () => {
-    try {
-      showInfo('Starting game on blockchain...')
-      
-      if (isCreator) {
-        // Creator calls createAndStartGame
-        const result = await contractService.createAndStartGame({
-          opponent: gameData.offer.offerer_address,
-          nftContract: gameData.listing.nft_contract,
-          tokenId: gameData.listing.nft_token_id,
-          priceUSD: gameData.offer.offer_price,
-          paymentToken: 0, // ETH
-          coinType: gameData.listing.coin?.type || 'default',
-          headsImage: gameData.listing.coin?.headsImage || '/coins/plainh.png',
-          tailsImage: gameData.listing.coin?.tailsImage || '/coins/plaint.png',
-          isCustom: gameData.listing.coin?.isCustom || false
-        })
-        
-        if (result.success) {
-          showSuccess('Game started! Redirecting...')
-          
-          // Update database with contract game ID
-          const API_URL = process.env.NODE_ENV === 'production' 
-            ? 'https://cryptoflipz2-production.up.railway.app'
-            : 'https://cryptoflipz2-production.up.railway.app'
-            
-          await fetch(`${API_URL}/api/games/${gameData.gameId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contract_game_id: result.gameId,
-              status: 'active'
-            })
-          })
-          
-          setTimeout(() => {
-            onGameReady(gameData.gameId)
-          }, 1500)
-        } else {
-          throw new Error(result.error)
-        }
-      }
-    } catch (error) {
-      showError('Failed to start game: ' + error.message)
-      setGameStarted(false)
-    }
-  }
-  
-  // Auto-load for opponent when creator loads
+  // WebSocket connection for real-time updates
   useEffect(() => {
-    if (!window.socket) return
+    if (!isOpen || !gameData) return
     
-    const handleMessage = (event) => {
+    const ws = new WebSocket('wss://cryptoflipz2-production.up.railway.app')
+    
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: 'join_asset_loading',
+        gameId: gameData.gameId,
+        address
+      }))
+    }
+    
+    ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
       
-      if (data.type === 'asset_loaded' && data.gameId === gameData.gameId) {
-        if (data.assetType === 'nft' && !isCreator) {
+      switch (data.type) {
+        case 'nft_loaded':
           setNftLoaded(true)
-        } else if (data.assetType === 'crypto' && !isJoiner) {
+          showInfo('NFT loaded by Player 1!')
+          checkIfReady()
+          break
+          
+        case 'crypto_loaded':
           setCryptoLoaded(true)
-        }
-        checkGameReady()
+          showInfo('Crypto loaded by Player 2!')
+          checkIfReady()
+          break
+          
+        case 'game_cancelled':
+          showError('Game cancelled by other player')
+          handleWithdraw()
+          break
       }
     }
     
-    window.socket.addEventListener('message', handleMessage)
+    setSocket(ws)
     
     return () => {
-      window.socket.removeEventListener('message', handleMessage)
+      ws.close()
     }
-  }, [gameData.gameId])
+  }, [isOpen, gameData])
   
-  // Notify other player when asset is loaded
-  useEffect(() => {
-    if (window.socket && nftLoaded && isCreator) {
-      window.socket.send(JSON.stringify({
-        type: 'asset_loaded',
-        gameId: gameData.gameId,
-        assetType: 'nft'
-      }))
+  // Check if both assets are loaded
+  const checkIfReady = () => {
+    if (nftLoaded && cryptoLoaded) {
+      showSuccess('Both assets loaded! Starting game...')
+      setTimeout(() => {
+        onGameReady(gameData.gameId)
+      }, 1500)
     }
-  }, [nftLoaded])
+  }
   
-  useEffect(() => {
-    if (window.socket && cryptoLoaded && isJoiner) {
-      window.socket.send(JSON.stringify({
-        type: 'asset_loaded',
-        gameId: gameData.gameId,
-        assetType: 'crypto'
-      }))
+  // Load NFT (Creator only)
+  const handleLoadNFT = async () => {
+    if (!isCreator) return
+    
+    setIsLoadingNFT(true)
+    try {
+      // Approve NFT transfer to game contract
+      const nftContract = new ethers.Contract(
+        gameData.nftContract,
+        ['function approve(address to, uint256 tokenId)'],
+        signer
+      )
+      
+      showInfo('Approving NFT transfer...')
+      const approveTx = await nftContract.approve(
+        contractService.gameContractAddress,
+        gameData.tokenId
+      )
+      await approveTx.wait()
+      
+      showInfo('Depositing NFT into game...')
+      const result = await contractService.depositNFTForGame(
+        gameData.gameId,
+        gameData.nftContract,
+        gameData.tokenId
+      )
+      
+      if (result.success) {
+        setNftLoaded(true)
+        showSuccess('NFT successfully loaded!')
+        
+        // Notify other player
+        socket?.send(JSON.stringify({
+          type: 'asset_loaded',
+          gameId: gameData.gameId,
+          assetType: 'nft'
+        }))
+        
+        checkIfReady()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error('Failed to load NFT:', error)
+      showError('Failed to load NFT: ' + error.message)
+    } finally {
+      setIsLoadingNFT(false)
     }
-  }, [cryptoLoaded])
+  }
+  
+  // Load Crypto (Joiner only)
+  const handleLoadCrypto = async () => {
+    if (isCreator) return
+    
+    setIsLoadingCrypto(true)
+    try {
+      showInfo('Sending payment...')
+      
+      // Calculate amount in ETH
+      const priceInETH = await contractService.getETHAmount(gameData.priceUSD)
+      
+      const result = await contractService.depositCryptoForGame(
+        gameData.gameId,
+        { value: priceInETH }
+      )
+      
+      if (result.success) {
+        setCryptoLoaded(true)
+        showSuccess('Payment successfully loaded!')
+        
+        // Notify other player
+        socket?.send(JSON.stringify({
+          type: 'asset_loaded',
+          gameId: gameData.gameId,
+          assetType: 'crypto'
+        }))
+        
+        checkIfReady()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error('Failed to load crypto:', error)
+      showError('Failed to load payment: ' + error.message)
+    } finally {
+      setIsLoadingCrypto(false)
+    }
+  }
+  
+  // Cancel game and withdraw assets
+  const handleCancel = async () => {
+    setIsCancelling(true)
+    try {
+      const result = await contractService.cancelGameWithRefund(gameData.gameId, address)
+      
+      if (result.success) {
+        showSuccess('Game cancelled. Assets will be returned.')
+        
+        // Notify other player
+        socket?.send(JSON.stringify({
+          type: 'game_cancelled',
+          gameId: gameData.gameId,
+          cancelledBy: address
+        }))
+        
+        onClose()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error('Failed to cancel game:', error)
+      showError('Failed to cancel game: ' + error.message)
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+  
+  // Withdraw assets if game was cancelled
+  const handleWithdraw = async () => {
+    try {
+      if (nftLoaded && isCreator) {
+        showInfo('Withdrawing NFT...')
+        await contractService.withdrawNFT(gameData.nftContract, gameData.tokenId)
+      }
+      
+      if (cryptoLoaded && !isCreator) {
+        showInfo('Withdrawing payment...')
+        await contractService.withdrawETH()
+      }
+      
+      showSuccess('Assets withdrawn successfully')
+      onClose()
+    } catch (error) {
+      console.error('Failed to withdraw:', error)
+      showError('Failed to withdraw: ' + error.message)
+    }
+  }
+  
+  if (!isOpen || !gameData) return null
   
   return (
-    <Modal onClick={onClose}>
-      <ModalContent onClick={e => e.stopPropagation()}>
-        <NeonText style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          Load Assets to Start Game
-        </NeonText>
+    <Modal>
+      <ModalContent>
+        <Header>
+          <h2>Load Assets to Start Game</h2>
+          <p>Both players must load their assets before the game can begin</p>
+        </Header>
         
-        <p style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '2rem' }}>
-          Both players must load their assets before the game can begin
-        </p>
-        
-        <AssetContainer>
-          <AssetBox loaded={nftLoaded}>
-            <AssetImage 
-              src={gameData.listing?.nft_image} 
-              alt="NFT"
-              loaded={nftLoaded}
-            />
-            <h3>{gameData.listing?.nft_name}</h3>
-            <StatusText success={nftLoaded}>
-              {nftLoaded ? '✅ NFT Ready' : 'Waiting for NFT...'}
+        <ContentGrid>
+          {/* Player 1 - NFT */}
+          <AssetSection>
+            <PlayerInfo>
+              <h3>Player 1 (Creator)</h3>
+              <p>{gameData.creator.slice(0, 6)}...{gameData.creator.slice(-4)}</p>
+            </PlayerInfo>
+            
+            <NFTImageContainer isLoaded={nftLoaded}>
+              <NFTImage 
+                src={gameData.nftImage} 
+                alt={gameData.nftName}
+                onError={(e) => {
+                  e.target.src = '/placeholder-nft.svg'
+                }}
+              />
+              {isLoadingNFT && (
+                <LoadingOverlay>
+                  <LoadingSpinner />
+                </LoadingOverlay>
+              )}
+              {nftLoaded && (
+                <SuccessAnimation>✅</SuccessAnimation>
+              )}
+            </NFTImageContainer>
+            
+            <StatusText isLoaded={nftLoaded}>
+              {nftLoaded ? 'NFT Loaded!' : isCreator ? 'Load your NFT' : 'Waiting for NFT...'}
             </StatusText>
+            
             {isCreator && !nftLoaded && (
-              <LoadButton 
+              <ActionButton 
+                className="load"
                 onClick={handleLoadNFT}
-                disabled={loading}
+                disabled={isLoadingNFT}
               >
-                {loading ? <LoadingSpinner /> : 'Approve NFT'}
-              </LoadButton>
+                {isLoadingNFT ? 'Loading NFT...' : 'Load NFT'}
+              </ActionButton>
             )}
-          </AssetBox>
+          </AssetSection>
           
-          <VSText>VS</VSText>
+          <Divider />
           
-          <AssetBox loaded={cryptoLoaded}>
-            <AssetImage 
-              src="/images/eth-logo.png" 
-              alt="ETH"
-              loaded={cryptoLoaded}
-            />
-            <h3>${gameData.offer?.offer_price || gameData.listing?.asking_price}</h3>
-            <StatusText success={cryptoLoaded}>
-              {cryptoLoaded ? '✅ Payment Ready' : 'Waiting for payment...'}
+          {/* Player 2 - Crypto */}
+          <AssetSection>
+            <PlayerInfo>
+              <h3>Player 2 (Joiner)</h3>
+              <p>{gameData.joiner?.slice(0, 6)}...{gameData.joiner?.slice(-4)}</p>
+            </PlayerInfo>
+            
+            <CryptoContainer isLoaded={cryptoLoaded}>
+              <CryptoAmount>${gameData.priceUSD}</CryptoAmount>
+              <CryptoCurrency>USD in ETH</CryptoCurrency>
+              {isLoadingCrypto && (
+                <LoadingOverlay>
+                  <LoadingSpinner />
+                </LoadingOverlay>
+              )}
+              {cryptoLoaded && (
+                <SuccessAnimation>✅</SuccessAnimation>
+              )}
+            </CryptoContainer>
+            
+            <StatusText isLoaded={cryptoLoaded}>
+              {cryptoLoaded ? 'Payment Loaded!' : !isCreator ? 'Load your payment' : 'Waiting for payment...'}
             </StatusText>
-            {isJoiner && !cryptoLoaded && (
-              <LoadButton 
+            
+            {!isCreator && !cryptoLoaded && (
+              <ActionButton 
+                className="load"
                 onClick={handleLoadCrypto}
-                disabled={loading}
+                disabled={isLoadingCrypto}
               >
-                {loading ? <LoadingSpinner /> : 'Prepare Payment'}
-              </LoadButton>
+                {isLoadingCrypto ? 'Loading Payment...' : 'Load Payment'}
+              </ActionButton>
             )}
-          </AssetBox>
-        </AssetContainer>
+          </AssetSection>
+        </ContentGrid>
         
-        {gameData.listing?.coin && (
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>
-              Game Coin:
-            </p>
-            <CoinDisplay>
-              <CoinImage src={gameData.listing.coin.headsImage} alt="Heads" />
-              <CoinImage src={gameData.listing.coin.tailsImage} alt="Tails" />
-            </CoinDisplay>
-          </div>
+        {/* Cancel button */}
+        {(!nftLoaded || !cryptoLoaded) && (
+          <ActionButton 
+            className="cancel"
+            onClick={handleCancel}
+            disabled={isCancelling}
+          >
+            {isCancelling ? 'Cancelling...' : 'Cancel Game'}
+          </ActionButton>
         )}
         
-        {nftLoaded && cryptoLoaded && (
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <LoadingSpinner />
-            <p style={{ color: '#00FF41', marginTop: '1rem' }}>
-              Starting game...
-            </p>
+        {/* Coin display */}
+        {gameData.coin && (
+          <div style={{
+            marginTop: '2rem',
+            padding: '1rem',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '1rem',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{ 
+              fontSize: '0.875rem', 
+              color: '#666',
+              marginBottom: '0.5rem'
+            }}>
+              Game Coin
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'center'
+            }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '0.5rem',
+                overflow: 'hidden',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <img 
+                  src={gameData.coin.headsImage} 
+                  alt="Heads" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '0.5rem',
+                overflow: 'hidden',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <img 
+                  src={gameData.coin.tailsImage} 
+                  alt="Tails" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+            </div>
           </div>
         )}
       </ModalContent>

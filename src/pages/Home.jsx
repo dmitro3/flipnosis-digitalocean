@@ -912,7 +912,7 @@ const Home = () => {
                         <Button 
                           onClick={() => {
                             if (selectedFlip.type === 'listing') {
-                              handleMakeOffer(selectedFlip)
+                              navigate(`/flip/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'completed') {
                               // Handle completed game view
                               navigate(`/game/${selectedFlip.id}`)

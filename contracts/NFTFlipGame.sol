@@ -508,4 +508,82 @@ function createAndStartGame(
             game.coinInfo.isCustom
         );
     }
+
+    // Add events
+    event NFTDeposited(uint256 indexed gameId, address indexed depositor);
+    event CryptoDeposited(uint256 indexed gameId, address indexed depositor, uint256 amount);
+    event GameCancelledWithRefund(uint256 indexed gameId, address indexed cancelledBy);
+    
+    // Deposit NFT for a pending game
+    function depositNFTForGame(
+        uint256 gameId,
+        address nftContract,
+        uint256 tokenId
+    ) external nonReentrant {
+        Game storage game = games[gameId];
+        require(game.state == GameState.Created, "Invalid game state");
+        require(msg.sender == game.creator, "Only creator can deposit NFT");
+        require(game.nftContract == nftContract && game.tokenId == tokenId, "Wrong NFT");
+        
+        // Transfer NFT from creator to contract
+        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+        
+        emit NFTDeposited(gameId, msg.sender);
+    }
+    
+    // Deposit crypto for a pending game
+    function depositCryptoForGame(uint256 gameId) external payable nonReentrant {
+        Game storage game = games[gameId];
+        require(game.state == GameState.Created, "Invalid game state");
+        require(msg.sender == game.joiner, "Only joiner can deposit crypto");
+        
+        uint256 requiredAmount = getETHAmount(game.priceUSD);
+        uint256 platformFee = (requiredAmount * platformFeePercent) / BASIS_POINTS;
+        uint256 gameAmount = requiredAmount - platformFee;
+        
+        require(msg.value >= requiredAmount, "Insufficient payment");
+        
+        game.totalPaid = gameAmount;
+        game.state = GameState.Joined;
+        
+        // Send platform fee
+        (bool feeSuccess,) = platformFeeReceiver.call{value: platformFee}("");
+        require(feeSuccess, "Platform fee transfer failed");
+        
+        // Refund excess
+        if (msg.value > requiredAmount) {
+            (bool refundSuccess,) = msg.sender.call{value: msg.value - requiredAmount}("");
+            require(refundSuccess, "Refund failed");
+        }
+        
+        emit CryptoDeposited(gameId, msg.sender, gameAmount);
+    }
+    
+    // Cancel game with refund (only before both assets are loaded)
+    function cancelGameWithRefund(uint256 gameId) external nonReentrant {
+        Game storage game = games[gameId];
+        require(
+            msg.sender == game.creator || msg.sender == game.joiner,
+            "Not a participant"
+        );
+        require(
+            game.state == GameState.Created || game.state == GameState.Joined,
+            "Cannot cancel active game"
+        );
+        
+        game.state = GameState.Cancelled;
+        
+        // Refund NFT to creator if deposited
+        if (IERC721(game.nftContract).ownerOf(game.tokenId) == address(this)) {
+            IERC721(game.nftContract).transferFrom(address(this), game.creator, game.tokenId);
+        }
+        
+        // Refund crypto to joiner if deposited
+        if (game.totalPaid > 0 && game.joiner != address(0)) {
+            (bool success,) = game.joiner.call{value: game.totalPaid}("");
+            require(success, "Refund failed");
+        }
+        
+        emit GameCancelledWithRefund(gameId, msg.sender);
+    }
 } 

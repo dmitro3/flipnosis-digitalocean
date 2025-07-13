@@ -468,6 +468,76 @@ wss.on('connection', (socket) => {
           sendGameState(socket)
           break
           
+        case 'join_listing': {
+          socket.listingId = data.listingId
+          socket.listingAddress = data.address
+          // Track viewers
+          if (!listingViewers.has(data.listingId)) {
+            listingViewers.set(data.listingId, new Set())
+          }
+          listingViewers.get(data.listingId).add(socket.id)
+          // Broadcast viewer count
+          broadcastToListing(data.listingId, {
+            type: 'viewer_joined',
+            viewerCount: listingViewers.get(data.listingId).size
+          })
+          break
+        }
+        case 'listing_chat': {
+          broadcastToListing(socket.listingId, {
+            type: 'listing_chat_message',
+            listingId: socket.listingId,
+            address: socket.listingAddress,
+            message: data.message,
+            timestamp: Date.now()
+          })
+          break
+        }
+        case 'leave_listing': {
+          if (socket.listingId && listingViewers.has(socket.listingId)) {
+            listingViewers.get(socket.listingId).delete(socket.id)
+            // Broadcast viewer left
+            broadcastToListing(socket.listingId, {
+              type: 'viewer_left',
+              viewerCount: listingViewers.get(socket.listingId).size
+            })
+            // Clean up empty listings
+            if (listingViewers.get(socket.listingId).size === 0) {
+              listingViewers.delete(socket.listingId)
+            }
+          }
+          socket.listingId = null
+          socket.listingAddress = null
+          break
+        }
+        case 'join_asset_loading': {
+          socket.assetGameId = data.gameId
+          socket.assetAddress = data.address
+          
+          // Join asset loading room
+          if (!assetLoadingRooms.has(data.gameId)) {
+            assetLoadingRooms.set(data.gameId, new Set())
+          }
+          assetLoadingRooms.get(data.gameId).add(socket.id)
+          break
+        }
+        case 'asset_loaded': {
+          // Broadcast to all in asset loading room
+          broadcastToAssetRoom(data.gameId, {
+            type: data.assetType === 'nft' ? 'nft_loaded' : 'crypto_loaded',
+            gameId: data.gameId,
+            loadedBy: socket.assetAddress
+          })
+          break
+        }
+        case 'game_cancelled': {
+          broadcastToAssetRoom(data.gameId, {
+            type: 'game_cancelled',
+            gameId: data.gameId,
+            cancelledBy: data.cancelledBy
+          })
+          break
+        }
         default:
           console.log('❓ Unknown message type:', data.type)
       }
@@ -623,6 +693,29 @@ function handleDisconnect(socket) {
       address: socket.address,
       isCreator: socket.isCreator
     }, socket.id)
+  }
+  
+  // Clean up listing viewers
+  if (socket.listingId && listingViewers.has(socket.listingId)) {
+    listingViewers.get(socket.listingId).delete(socket.id)
+    // Broadcast viewer left
+    broadcastToListing(socket.listingId, {
+      type: 'viewer_left',
+      viewerCount: listingViewers.get(socket.listingId).size
+    })
+    // Clean up empty listings
+    if (listingViewers.get(socket.listingId).size === 0) {
+      listingViewers.delete(socket.listingId)
+    }
+  }
+  
+  // Clean up asset loading rooms
+  if (socket.assetGameId && assetLoadingRooms.has(socket.assetGameId)) {
+    assetLoadingRooms.get(socket.assetGameId).delete(socket.id)
+    // Clean up empty rooms
+    if (assetLoadingRooms.get(socket.assetGameId).size === 0) {
+      assetLoadingRooms.delete(socket.assetGameId)
+    }
   }
 }
 
@@ -2389,14 +2482,25 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       gameId,
                       listingId: result.listing_id
                     })
-                    
                     broadcastToUser(result.offerer_address, {
                       type: 'offer_accepted',
                       gameId,
                       listingId: result.listing_id
                     })
-                    
-                    res.json({ success: true, gameId })
+                    // Notify both users they need to deposit assets
+                    broadcastToUser(result.creator, {
+                      type: 'game_created_pending_deposit',
+                      gameId,
+                      role: 'creator',
+                      requiredAction: 'deposit_nft'
+                    })
+                    broadcastToUser(result.offerer_address, {
+                      type: 'game_created_pending_deposit',
+                      gameId,
+                      role: 'joiner',
+                      requiredAction: 'deposit_crypto',
+                      amount: result.offer_price
+                    })
                   }
                 )
               }
@@ -2830,3 +2934,30 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason)
 })
+
+// Listing viewers tracking
+const listingViewers = new Map() // listingId -> Set of socket IDs
+
+// Asset loading rooms tracking
+const assetLoadingRooms = new Map() // gameId -> Set of socket IDs
+
+function broadcastToListing(listingId, message, excludeSocketId = null) {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && 
+        client.listingId === listingId && 
+        client.id !== excludeSocketId) {
+      client.send(JSON.stringify(message))
+    }
+  })
+}
+
+function broadcastToAssetRoom(gameId, message) {
+  const room = assetLoadingRooms.get(gameId)
+  if (!room) return
+  
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && room.has(client.id)) {
+      client.send(JSON.stringify(message))
+    }
+  })
+}

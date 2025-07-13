@@ -2311,6 +2311,111 @@ class ContractService {
       }
     }
   }
+
+  // Deposit NFT for a specific game
+  async depositNFTForGame(gameId, nftContract, tokenId) {
+    try {
+      if (!this.gameContract) throw new Error('Contract not initialized')
+      
+      const tx = await this.gameContract.depositNFTForGame(
+        gameId,
+        nftContract,
+        tokenId
+      )
+      
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash
+      }
+    } catch (error) {
+      console.error('Failed to deposit NFT:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Deposit crypto for a specific game
+  async depositCryptoForGame(gameId, options = {}) {
+    try {
+      if (!this.gameContract) throw new Error('Contract not initialized')
+      
+      const tx = await this.gameContract.depositCryptoForGame(gameId, options)
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash
+      }
+    } catch (error) {
+      console.error('Failed to deposit crypto:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Cancel game with refund
+  async cancelGameWithRefund(gameId, requester) {
+    try {
+      if (!this.gameContract) throw new Error('Contract not initialized')
+      
+      const tx = await this.gameContract.cancelGameWithRefund(gameId)
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash
+      }
+    } catch (error) {
+      console.error('Failed to cancel game:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Withdraw ETH
+  async withdrawETH() {
+    try {
+      if (!this.gameContract) throw new Error('Contract not initialized')
+      
+      const tx = await this.gameContract.withdrawETH()
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash
+      }
+    } catch (error) {
+      console.error('Failed to withdraw ETH:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Get ETH amount for USD (updated version)
+  async getETHAmount(usdAmount) {
+    try {
+      if (!this.gameContract) throw new Error('Contract not initialized')
+      
+      const ethAmount = await this.gameContract.getETHAmount(
+        parseEther(usdAmount.toString()) // Convert to wei
+      )
+      
+      return ethAmount
+    } catch (error) {
+      console.error('Failed to get ETH amount:', error)
+      throw error
+    }
+  }
 }
 
 export default new ContractService() 

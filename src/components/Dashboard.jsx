@@ -6,7 +6,6 @@ import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import DashboardChat from './DashboardChat'
-import OfferModal from './OfferModal'
 import AssetLoadingModal from './AssetLoadingModal'
 import {
   Container,
@@ -259,7 +258,6 @@ const Dashboard = () => {
   const [outgoingOffers, setOutgoingOffers] = useState([])
   const [incomingOffers, setIncomingOffers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedListing, setSelectedListing] = useState(null)
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [showAssetModal, setShowAssetModal] = useState(false)
   const [assetModalData, setAssetModalData] = useState(null)
@@ -471,7 +469,7 @@ const Dashboard = () => {
           return (
             <ListingCard 
               key={listing.id}
-              onClick={() => setSelectedListing(listing)}
+              onClick={() => navigate(`/flip/${listing.id}`)}
             >
               {listing.creator_online && <OnlineIndicator online />}
               {offerCount > 0 && <OfferCount>{offerCount} offers</OfferCount>}
@@ -651,50 +649,22 @@ const Dashboard = () => {
             </MainContent>
             
             <SidePanel>
-              {selectedListing && (
-                <>
-                  <GlassCard>
-                    <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Selected Listing</h3>
-                    <NFTImage src={selectedListing.nft_image} alt={selectedListing.nft_name} />
-                    <ListingInfo>
-                      <ListingTitle>{selectedListing.nft_name}</ListingTitle>
-                      <div style={{ color: '#666' }}>
-                        {selectedListing.nft_collection}
-                      </div>
-                      <ListingPrice>${selectedListing.asking_price}</ListingPrice>
-                      
-                      <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                        <Button
-                          onClick={() => handleCancelListing(selectedListing.id)}
-                          style={{ background: 'rgba(255, 68, 68, 0.2)', border: '1px solid #FF4444' }}
-                        >
-                          Cancel Listing
-                        </Button>
-                      </div>
-                    </ListingInfo>
-                  </GlassCard>
-                  
-                  <DashboardChat
-                    listingId={selectedListing.id}
-                    socket={socket}
-                    currentUser={address}
-                  />
-                </>
-              )}
+              <GlassCard>
+                <h3 style={{ marginTop: 0, marginBottom: '1rem' }}>Quick Actions</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <Button onClick={() => navigate('/create')}>
+                    Create New Listing
+                  </Button>
+                  <div style={{ fontSize: '0.875rem', color: '#666', textAlign: 'center' }}>
+                    Click on any listing to view details, chat, and manage offers
+                  </div>
+                </div>
+              </GlassCard>
             </SidePanel>
           </DashboardContainer>
         </ContentWrapper>
         
-        {showOfferModal && selectedListing && (
-          <OfferModal
-            listing={selectedListing}
-            onClose={() => setShowOfferModal(false)}
-            onSuccess={() => {
-              setShowOfferModal(false)
-              fetchDashboardData()
-            }}
-          />
-        )}
+
         
         {showAssetModal && assetModalData && (
           <AssetLoadingModal

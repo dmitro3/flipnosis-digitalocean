@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import styled from '@emotion/styled'
 import { useWallet } from '../contexts/WalletContext'
-
-const DropdownContainer = styled.div`
-  position: relative;
-`
+import { X } from 'lucide-react'
 
 const DropdownButton = styled.button`
   background: rgba(255, 255, 255, 0.05);
@@ -44,91 +41,162 @@ const NotificationBadge = styled.div`
   box-shadow: 0 0 10px ${props => props.theme?.colors?.neonPink || '#FF1493'};
 `
 
-const DropdownMenu = styled.div`
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  backdrop-filter: blur(10px);
+`
+
+const ModalContent = styled.div`
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 20, 147, 0.3);
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.2);
+`
+
+const ModalHeader = styled.div`
+  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  padding: 1.5rem;
+  border-radius: 1rem 1rem 0 0;
+  position: relative;
+`
+
+const CloseButton = styled.button`
   position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  background: rgba(0, 0, 0, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  min-width: 250px;
-  max-height: 400px;
-  overflow-y: auto;
-  z-index: 1000;
-  opacity: ${props => props.isOpen ? 1 : 0};
-  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transform: translateY(${props => props.isOpen ? 0 : '-10px'});
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
   transition: all 0.3s ease;
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: rgba(0, 255, 65, 0.3);
-    border-radius: 3px;
+
+  &:hover {
+    color: #fff;
+    transform: scale(1.1);
   }
 `
 
-const MenuItem = styled(Link)`
+const ModalBody = styled.div`
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: calc(80vh - 120px);
+`
+
+const ListingItem = styled(Link)`
   display: block;
-  padding: 1rem;
+  padding: 1.5rem;
   color: ${props => props.theme?.colors?.textPrimary || '#ffffff'};
   text-decoration: none;
   transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
   
   &:hover {
     background: rgba(0, 255, 65, 0.1);
+    border-color: rgba(0, 255, 65, 0.3);
     color: ${props => props.theme?.colors?.neonGreen || '#00FF41'};
+    transform: translateY(-2px);
   }
   
   &:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
   }
 `
 
-const GameItem = styled.div`
+const ListingContent = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
 `
 
-const GameInfo = styled.div`
+const ListingInfo = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
 `
 
-const GameTitle = styled.div`
+const ListingTitle = styled.div`
   font-weight: 600;
+  font-size: 1.1rem;
 `
 
-const GameStatus = styled.div`
-  font-size: 0.75rem;
+const ListingDetails = styled.div`
+  font-size: 0.875rem;
   color: ${props => props.theme?.colors?.textSecondary || 'rgba(255, 255, 255, 0.7)'};
+`
+
+const ListingPrice = styled.div`
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: ${props => props.theme?.colors?.neonGreen || '#00FF41'};
 `
 
 const OfferBadge = styled.div`
   background: ${props => props.theme?.colors?.neonPink || '#FF1493'};
   color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
   font-weight: 600;
+  margin-left: 1rem;
 `
 
-const ViewAllButton = styled(MenuItem)`
+const EmptyState = styled.div`
   text-align: center;
+  padding: 3rem 2rem;
+  color: rgba(255, 255, 255, 0.7);
+`
+
+const CreateButton = styled(Link)`
+  display: inline-block;
+  background: linear-gradient(45deg, #00FF41, #39FF14);
+  color: #000;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
   font-weight: 600;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 65, 0.3);
+  }
+`
+
+const ViewAllButton = styled(Link)`
+  display: block;
+  text-align: center;
   background: rgba(0, 255, 65, 0.1);
+  color: ${props => props.theme?.colors?.neonGreen || '#00FF41'};
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 1rem;
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  transition: all 0.3s ease;
   
   &:hover {
     background: rgba(0, 255, 65, 0.2);
+    transform: translateY(-2px);
   }
 `
 
@@ -138,13 +206,14 @@ const MyFlipsDropdown = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [listings, setListings] = useState([])
   const [notifications, setNotifications] = useState([])
-  const dropdownRef = useRef(null)
+  const [loading, setLoading] = useState(false)
   
   useEffect(() => {
     if (!isConnected || !address) return
     
     // Fetch user's active listings
     const fetchData = async () => {
+      setLoading(true)
       try {
         const API_URL = process.env.NODE_ENV === 'production' 
           ? 'https://cryptoflipz2-production.up.railway.app'
@@ -160,6 +229,8 @@ const MyFlipsDropdown = () => {
         setNotifications(pendingOffers)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
       }
     }
     
@@ -170,68 +241,79 @@ const MyFlipsDropdown = () => {
     return () => clearInterval(interval)
   }, [address, isConnected])
   
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false)
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  const handleClose = () => {
+    setIsOpen(false)
+  }
   
   if (!isConnected) return null
   
   return (
-    <DropdownContainer ref={dropdownRef}>
+    <>
       <DropdownButton 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(true)}
         hasNotifications={notifications > 0}
       >
         My Flips
         {notifications > 0 && <NotificationBadge>{notifications}</NotificationBadge>}
       </DropdownButton>
       
-      <DropdownMenu isOpen={isOpen}>
-        {listings.length > 0 ? (
-          <>
-            {listings.map(listing => {
-              const offerCount = notifications // Simplified for now
-              
-              return (
-                <MenuItem 
-                  key={listing.id} 
-                  to="/dashboard"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <GameItem>
-                    <GameInfo>
-                      <GameTitle>{listing.nft_name}</GameTitle>
-                      <GameStatus>${listing.asking_price}</GameStatus>
-                    </GameInfo>
-                    {offerCount > 0 && (
-                      <OfferBadge>{offerCount} offers</OfferBadge>
-                    )}
-                  </GameItem>
-                </MenuItem>
-              )
-            })}
-            <ViewAllButton to="/dashboard" onClick={() => setIsOpen(false)}>
-              View All Flips →
-            </ViewAllButton>
-          </>
-        ) : (
-          <MenuItem to="/create" onClick={() => setIsOpen(false)}>
-            <GameInfo>
-              <GameTitle>No active flips</GameTitle>
-              <GameStatus>Create your first flip!</GameStatus>
-            </GameInfo>
-          </MenuItem>
-        )}
-      </DropdownMenu>
-    </DropdownContainer>
+      {isOpen && (
+        <Modal onClick={handleClose}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <h2 style={{ margin: 0, color: '#fff' }}>My Active Flips</h2>
+              <CloseButton onClick={handleClose}>
+                <X size={24} />
+              </CloseButton>
+            </ModalHeader>
+            
+            <ModalBody>
+              {loading ? (
+                <EmptyState>
+                  <div>Loading...</div>
+                </EmptyState>
+              ) : listings.length > 0 ? (
+                <>
+                  {listings.map(listing => {
+                    const offerCount = notifications // Simplified for now
+                    
+                    return (
+                      <ListingItem 
+                        key={listing.id} 
+                        to={`/flip/${listing.id}`}
+                        onClick={handleClose}
+                      >
+                        <ListingContent>
+                          <ListingInfo>
+                            <ListingTitle>{listing.nft_name}</ListingTitle>
+                            <ListingDetails>{listing.nft_collection}</ListingDetails>
+                            <ListingPrice>${listing.asking_price}</ListingPrice>
+                          </ListingInfo>
+                          {offerCount > 0 && (
+                            <OfferBadge>{offerCount} offers</OfferBadge>
+                          )}
+                        </ListingContent>
+                      </ListingItem>
+                    )
+                  })}
+                  <ViewAllButton to="/dashboard" onClick={handleClose}>
+                    View All Flips →
+                  </ViewAllButton>
+                </>
+              ) : (
+                <EmptyState>
+                  <h3>No active flips</h3>
+                  <p>Create your first flip to get started!</p>
+                  <CreateButton to="/create" onClick={handleClose}>
+                    Create Flip
+                  </CreateButton>
+                </EmptyState>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      )}
+    </>
   )
 }
 
