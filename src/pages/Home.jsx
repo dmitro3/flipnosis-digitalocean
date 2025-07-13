@@ -237,30 +237,34 @@ const Home = () => {
     })
   }, [isConnected, address, chain, walletClient, publicClient, nfts, nftsLoading])
 
-  // Fetch games from database (listings endpoint not yet deployed)
+  // Fetch both games and listings from database
   const fetchListingsAndGames = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      // Use production URL for now since local server isn't running
       const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
-      console.log('🔍 Fetching games from:', API_URL)
+      console.log('🔍 Fetching games and listings from:', API_URL)
       
-      // Fetch active games only (listings endpoint not yet available)
-      const gamesResponse = await fetch(`${API_URL}/api/games`)
+      // Fetch both games and listings
+      const [gamesResponse, listingsResponse] = await Promise.all([
+        fetch(`${API_URL}/api/games`),
+        fetch(`${API_URL}/api/listings`)
+      ])
       
       if (!gamesResponse.ok) {
-        throw new Error('Failed to fetch data')
+        throw new Error('Failed to fetch games')
       }
 
       const gamesData = await gamesResponse.json()
+      const listingsData = listingsResponse.ok ? await listingsResponse.json() : []
       
       console.log('📊 Fetched games:', gamesData.length, 'games')
+      console.log('📊 Fetched listings:', listingsData.length, 'listings')
       
       // Convert games to flips format
-      const combinedFlips = gamesData.filter(g => g.status !== 'pending').map(game => ({
+      const gameFlips = gamesData.filter(g => g.status !== 'pending').map(game => ({
         id: game.id,
         type: 'game',
         nft: {
@@ -285,6 +289,39 @@ const Home = () => {
         winner: game.winner,
         description: `${game.nft_name} - ${game.status === 'waiting' ? 'Waiting for player' : 'In progress'}`
       }))
+
+      // Convert listings to flips format
+      const listingFlips = listingsData.map(listing => ({
+        id: listing.id,
+        type: 'listing',
+        listingId: listing.id,
+        nft: {
+          name: listing.nft_name || 'Unknown NFT',
+          image: listing.nft_image || '/placeholder-nft.svg',
+          collection: listing.nft_collection || 'Unknown Collection',
+          contractAddress: listing.nft_contract,
+          tokenId: listing.nft_token_id,
+          chain: listing.nft_chain || 'base',
+          needsMetadataUpdate: !listing.nft_image || listing.nft_image === '' || listing.nft_image === '/placeholder-nft.svg'
+        },
+        gameType: 'nft-vs-crypto', // Listings are always NFT vs Crypto
+        price: listing.asking_price,
+        priceUSD: listing.asking_price,
+        currency: 'USD',
+        chain: listing.nft_chain || 'base',
+        creator: listing.creator,
+        joiner: null,
+        rounds: null,
+        status: 'waiting', // Listings are always waiting for offers
+        createdAt: listing.created_at,
+        winner: null,
+        description: `${listing.nft_name} - Available for offers`,
+        acceptsOffers: listing.accepts_offers,
+        minOfferPrice: listing.min_offer_price
+      }))
+      
+      // Combine games and listings
+      const combinedFlips = [...listingFlips, ...gameFlips]
       
       setFlips(combinedFlips)
       
@@ -293,7 +330,7 @@ const Home = () => {
       }
     } catch (error) {
       console.error('❌ Error fetching data:', error)
-      setError('Failed to load games. Please try again.')
+      setError('Failed to load games and listings. Please try again.')
     } finally {
       setLoading(false)
     }
