@@ -64,17 +64,23 @@ const ClaimRewards = () => {
   const [claiming, setClaiming] = useState(false)
 
   useEffect(() => {
-    if (isConnected && address && contractService.currentChain) {
+    if (isConnected && address && contractService.isInitialized()) {
       checkRewards()
     }
   }, [isConnected, address])
 
   const checkRewards = async () => {
+    // Check if contract service is initialized
+    if (!contractService.isInitialized()) {
+      console.log('ℹ️ Contract service not initialized, skipping reward check')
+      return
+    }
+
     try {
       setLoading(true)
       const result = await contractService.getUnclaimedRewards(address)
-      if (result.success) {
-        setRewards({ eth: result.eth, usdc: result.usdc })
+      if (result && result.success) {
+        setRewards({ eth: result.eth || 0n, usdc: result.usdc || 0n })
       }
     } catch (error) {
       console.error('Error checking rewards:', error)
@@ -84,16 +90,22 @@ const ClaimRewards = () => {
   }
 
   const handleClaim = async () => {
+    // Check if contract service is initialized
+    if (!contractService.isInitialized()) {
+      alert('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+
     try {
       setClaiming(true)
       const result = await contractService.withdrawRewards()
       
-      if (result.success) {
+      if (result && result.success) {
         alert('Rewards claimed successfully! 🎉')
         // Reset rewards
         setRewards({ eth: 0n, usdc: 0n })
       } else {
-        alert('Failed to claim rewards: ' + result.error)
+        alert('Failed to claim rewards: ' + (result?.error || 'Unknown error'))
       }
     } catch (error) {
       console.error('Error claiming rewards:', error)

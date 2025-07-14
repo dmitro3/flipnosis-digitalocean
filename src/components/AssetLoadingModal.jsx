@@ -251,7 +251,7 @@ const AssetLoadingModal = ({
   onGameReady,
   isCreator 
 }) => {
-  const { address, signer } = useWallet()
+  const { address, signer, isFullyConnected, walletClient } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   
   const [nftLoaded, setNftLoaded] = useState(false)
@@ -261,6 +261,11 @@ const AssetLoadingModal = ({
   const [isCancelling, setIsCancelling] = useState(false)
   const [socket, setSocket] = useState(null)
   
+  // Check if contract service is properly initialized
+  const isContractReady = () => {
+    return isFullyConnected && walletClient && contractService.isInitialized()
+  }
+
   // WebSocket connection for real-time updates
   useEffect(() => {
     if (!isOpen || !gameData) return
@@ -319,6 +324,17 @@ const AssetLoadingModal = ({
   const handleLoadNFT = async () => {
     if (!isCreator) return
     
+    // Check wallet connection and contract initialization
+    if (!isFullyConnected || !walletClient) {
+      showError('Please connect your wallet to load NFT')
+      return
+    }
+    
+    if (!contractService.isInitialized()) {
+      showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
     setIsLoadingNFT(true)
     try {
       // Approve NFT transfer to game contract
@@ -330,7 +346,7 @@ const AssetLoadingModal = ({
       
       showInfo('Approving NFT transfer...')
       const approveTx = await nftContract.approve(
-        contractService.gameContractAddress,
+        contractService.contractAddress,
         gameData.tokenId
       )
       await approveTx.wait()
@@ -369,6 +385,17 @@ const AssetLoadingModal = ({
   const handleLoadCrypto = async () => {
     if (isCreator) return
     
+    // Check wallet connection and contract initialization
+    if (!isFullyConnected || !walletClient) {
+      showError('Please connect your wallet to load payment')
+      return
+    }
+    
+    if (!contractService.isInitialized()) {
+      showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
     setIsLoadingCrypto(true)
     try {
       showInfo('Sending payment...')
@@ -406,6 +433,17 @@ const AssetLoadingModal = ({
   
   // Cancel game and withdraw assets
   const handleCancel = async () => {
+    // Check wallet connection and contract initialization
+    if (!isFullyConnected || !walletClient) {
+      showError('Please connect your wallet to cancel game')
+      return
+    }
+    
+    if (!contractService.isInitialized()) {
+      showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
     setIsCancelling(true)
     try {
       const result = await contractService.cancelGameWithRefund(gameData.gameId, address)

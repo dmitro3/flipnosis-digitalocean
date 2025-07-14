@@ -538,17 +538,23 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
     }
 
     try {
+      // Check if contract service is initialized before calling methods
+      if (!contractService.isInitialized()) {
+        console.log('ℹ️ Contract service not initialized, skipping contract data load')
+        return
+      }
+
       // Load user's created games from contract
       const gamesResponse = await contractService.getUserActiveGames(address)
       const games = []
       
       // Handle the response properly - it returns { success: true, games: [] }
-      const gameIds = gamesResponse.success ? gamesResponse.games : []
+      const gameIds = gamesResponse && gamesResponse.success ? gamesResponse.games : []
       
       for (const gameId of gameIds) {
         try {
           const gameDetails = await contractService.getGameDetails(gameId.toString())
-          if (gameDetails.success) {
+          if (gameDetails && gameDetails.success) {
             const { game, nftChallenge } = gameDetails.data
             // Only include games created by this user
             if (game.creator.toLowerCase() === address.toLowerCase()) {

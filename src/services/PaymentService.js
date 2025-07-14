@@ -10,15 +10,22 @@ export class PaymentService {
       // Import contract service
       const contractService = (await import('./ContractService')).default
       
-      if (contractService.isInitialized()) {
-        const result = await contractService.getETHAmount(priceUSD)
-        if (result.success) {
-          return {
-            success: true,
-            ethAmount: parseFloat(result.ethAmount),
-            ethPrice: 3000 // Approximate for display
+      // Check if contract service is properly initialized before calling methods
+      if (contractService && contractService.isInitialized && contractService.isInitialized()) {
+        try {
+          const result = await contractService.getETHAmount(priceUSD)
+          if (result && result.success) {
+            return {
+              success: true,
+              ethAmount: parseFloat(result.ethAmount),
+              ethPrice: 3000 // Approximate for display
+            }
           }
+        } catch (contractError) {
+          console.warn('⚠️ Contract getETHAmount failed, using fallback:', contractError.message)
         }
+      } else {
+        console.log('ℹ️ Contract service not initialized, using fallback calculation')
       }
       
       // Fallback to hardcoded price

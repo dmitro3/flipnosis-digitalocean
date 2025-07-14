@@ -17,6 +17,12 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
   const checkUnclaimedRewards = useCallback(async () => {
     if (!address || !isConnected || !currentChain) return
 
+    // Check if contract service is initialized before calling methods
+    if (!contractService.isInitialized()) {
+      console.log('ℹ️ Contract service not initialized, skipping reward check')
+      return
+    }
+
     try {
       // Get unclaimed crypto rewards
       const rewards = await contractService.getUnclaimedRewards(address)
@@ -27,15 +33,19 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
       const unclaimedNFTs = []
       
       for (const nftContract of nftContracts) {
-        const tokenIds = await contractService.getUserUnclaimedNFTs(address, nftContract)
-        if (tokenIds.length > 0) {
-          unclaimedNFTs.push({ contract: nftContract, tokenIds })
+        try {
+          const tokenIds = await contractService.getUserUnclaimedNFTs(address, nftContract)
+          if (tokenIds && tokenIds.length > 0) {
+            unclaimedNFTs.push({ contract: nftContract, tokenIds })
+          }
+        } catch (nftError) {
+          console.warn('⚠️ Failed to check NFT rewards for contract:', nftContract, nftError.message)
         }
       }
 
       setUnclaimedRewards({
-        eth: parseFloat(rewards.eth),
-        usdc: parseFloat(rewards.usdc),
+        eth: parseFloat(rewards.eth || 0),
+        usdc: parseFloat(rewards.usdc || 0),
         nfts: unclaimedNFTs
       })
 
@@ -84,7 +94,8 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
         setHasNewNotifications(true)
       }
     } catch (error) {
-      console.error('Error checking unclaimed rewards:', error)
+      console.error('❌ Error checking unclaimed rewards:', error)
+      // Don't show error to user for background checks
     }
   }, [address, isConnected, currentChain])
 

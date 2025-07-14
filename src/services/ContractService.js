@@ -1016,8 +1016,21 @@ class ContractService {
       const priceUSDInDecimals = Number(priceUSD_)
       const actualPriceUSD = priceUSDInDecimals / 1000000 // Convert from 6 decimals
       
-      // Get the ETH amount for the game price
-      const ethAmount = await this.getETHAmount(actualPriceUSD)
+      // Get the ETH amount for the game price with fallback
+      let ethAmount = null
+      try {
+        ethAmount = await this.getETHAmount(actualPriceUSD)
+      } catch (ethError) {
+        console.warn('⚠️ Failed to get ETH amount from contract, using fallback:', ethError.message)
+        // Fallback calculation
+        const ethPrice = 3000 // Fixed price for fallback
+        const ethAmountValue = actualPriceUSD / ethPrice
+        ethAmount = {
+          ethAmount: ethAmountValue.toFixed(18),
+          ethAmountWei: parseEther(ethAmountValue.toFixed(18)),
+          fallback: true
+        }
+      }
       
       // Reconstruct the game object
       const game = {
