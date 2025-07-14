@@ -145,6 +145,11 @@ const OfferModal = ({ listing, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    if (!address) {
+      showError('Please connect your wallet first')
+      return
+    }
+    
     if (!offerPrice || parseFloat(offerPrice) <= 0) {
       showError('Please enter a valid offer price')
       return
@@ -167,7 +172,7 @@ const OfferModal = ({ listing, onClose, onSuccess }) => {
         },
         body: JSON.stringify({
           offerer_address: address,
-          offerer_name: address.slice(0, 6) + '...' + address.slice(-4),
+          offerer_name: address ? address.slice(0, 6) + '...' + address.slice(-4) : 'Unknown',
           offer_price: parseFloat(offerPrice),
           message: message.trim() || null
         })

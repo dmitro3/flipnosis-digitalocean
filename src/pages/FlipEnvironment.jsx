@@ -650,7 +650,15 @@ const FlipEnvironment = () => {
       // Fetch listing details
       console.log('🔍 Fetching listing with ID:', listingId)
       const listingResponse = await fetch(`${baseUrl}/api/listings/${listingId}`)
-      if (!listingResponse.ok) throw new Error('Failed to fetch listing')
+      
+      if (!listingResponse.ok) {
+        if (listingResponse.status === 404) {
+          throw new Error(`Listing not found. The listing may have been removed or the ID is incorrect.`)
+        } else {
+          throw new Error(`Failed to fetch listing (${listingResponse.status}: ${listingResponse.statusText})`)
+        }
+      }
+      
       const responseData = await listingResponse.json()
       console.log('📦 Listing data received:', responseData)
       
@@ -684,7 +692,7 @@ const FlipEnvironment = () => {
       
     } catch (error) {
       console.error('Error fetching listing data:', error)
-      showError('Failed to load listing data')
+      showError(error.message || 'Failed to load listing data')
     } finally {
       setLoading(false)
     }
@@ -822,6 +830,11 @@ const FlipEnvironment = () => {
   const handleSubmitOffer = async (e) => {
     e.preventDefault()
     
+    if (!address) {
+      showError('Please connect your wallet first')
+      return
+    }
+    
     if (!offerPrice || parseFloat(offerPrice) <= 0) {
       showError('Please enter a valid offer price')
       return
@@ -844,7 +857,7 @@ const FlipEnvironment = () => {
         },
         body: JSON.stringify({
           offerer_address: address,
-          offerer_name: address.slice(0, 6) + '...' + address.slice(-4),
+          offerer_name: address ? address.slice(0, 6) + '...' + address.slice(-4) : 'Unknown',
           offer_price: parseFloat(offerPrice),
           message: offerMessage.trim() || null
         })

@@ -146,7 +146,7 @@ const DashboardChat = ({ listingId, socket, currentUser }) => {
         {messages.map(msg => (
           <Message key={msg.id} isOwn={msg.address === currentUser}>
             <MessageAuthor>
-              {msg.address === currentUser ? 'You' : `${msg.address.slice(0, 6)}...`}
+              {msg.address === currentUser ? 'You' : `${msg.address ? msg.address.slice(0, 6) + '...' : 'Unknown'}`}
             </MessageAuthor>
             <MessageText>{msg.message}</MessageText>
           </Message>

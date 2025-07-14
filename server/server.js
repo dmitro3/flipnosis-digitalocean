@@ -2404,7 +2404,7 @@ app.post('/api/listings/:listingId/offers', async (req, res) => {
             listing.creator, 
             'new_offer', 
             'New Offer!',
-            `${offerer_name || offerer_address.slice(0, 6) + '...'} offered $${offer_price} for ${listing.nft_name}`,
+            `${offerer_name || (offerer_address ? offerer_address.slice(0, 6) + '...' : 'Unknown')} offered $${offer_price} for ${listing.nft_name}`,
             JSON.stringify({ offerId, listingId })
           )
           

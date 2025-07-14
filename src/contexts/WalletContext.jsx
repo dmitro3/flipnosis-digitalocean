@@ -222,7 +222,7 @@ export const WalletProvider = ({ children }) => {
   // Show connection success
   useEffect(() => {
     if (isConnected && address) {
-      showSuccess(`Connected to ${address.slice(0, 6)}...${address.slice(-4)}`)
+      showSuccess(`Connected to ${address ? address.slice(0, 6) + '...' + address.slice(-4) : 'Unknown'}`)
     }
   }, [isConnected, address])
 

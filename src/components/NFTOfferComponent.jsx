@@ -194,7 +194,7 @@ const NFTOfferComponent = ({
                     fontSize: '0.7rem',
                     marginBottom: '0.5rem'
                   }}>
-                    From: {offer.offererAddress.slice(0, 6)}...{offer.offererAddress.slice(-4)}
+                    From: {offer.offererAddress ? `${offer.offererAddress.slice(0, 6)}...${offer.offererAddress.slice(-4)}` : 'Unknown'}
                   </div>
                   
                   {/* Verification Links */}

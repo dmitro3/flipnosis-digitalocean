@@ -1022,11 +1022,7 @@ const Home = () => {
                             e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
                           }}
                         >
-                                                  {selectedFlip.type === 'listing' ? '💰 Make Offer' :
-                         selectedFlip.status === 'completed' ? '🏆 View Results' :
-                         selectedFlip.status === 'active' ? '🎮 Watch Game' :
-                         selectedFlip.status === 'joined' ? '⏳ Game Starting...' :
-                         'Join Game'}
+                                                  Enter Flip
                         </Button>
                         {selectedFlip.gameType === 'nft-vs-nft' && !selectedFlip.challengerNFT && (
                           <Button 

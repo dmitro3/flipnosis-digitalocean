@@ -527,7 +527,7 @@ const Dashboard = () => {
                 ${offer.offer_price}
               </div>
               <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                from {offer.offerer_name || offer.offerer_address.slice(0, 6) + '...'}
+                from {offer.offerer_name || (offer.offerer_address ? offer.offerer_address.slice(0, 6) + '...' : 'Unknown')}
               </div>
               {offer.message && (
                 <div style={{ fontSize: '0.875rem', fontStyle: 'italic' }}>
@@ -571,7 +571,7 @@ const Dashboard = () => {
                 ${offer.offer_price}
               </div>
               <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                to {offer.creator.slice(0, 6)}...
+                to {offer.creator ? offer.creator.slice(0, 6) + '...' : 'Unknown'}
               </div>
             </OfferInfo>
             

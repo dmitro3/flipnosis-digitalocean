@@ -349,7 +349,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
       <MessagesContainer>
         {messages.map((msg, index) => {
           const isCurrentUser = msg.address === address
-          const displayName = playerNames[msg.address] || msg.address.slice(0, 6) + '...' + msg.address.slice(-4)
+          const displayName = playerNames[msg.address] || (msg.address ? msg.address.slice(0, 6) + '...' + msg.address.slice(-4) : 'Unknown')
           
           return (
             <Message key={index} isCurrentUser={isCurrentUser}>
