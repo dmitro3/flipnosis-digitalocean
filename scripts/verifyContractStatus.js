@@ -4,7 +4,7 @@ async function main() {
   console.log("🔍 Verifying contract status...");
 
   // Contract address on Base
-  const contractAddress = "0x23fc20658f597573A3Fb54f5DAfDdC7c22899C02";
+  const contractAddress = "0xba5ef026f35d1ac9f2ebB7FB047a50900Ec521A1";
   
   console.log(`📍 Contract Address: ${contractAddress}`);
   console.log(`🔗 BaseScan URL: https://basescan.org/address/${contractAddress}`);

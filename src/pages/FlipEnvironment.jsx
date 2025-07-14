@@ -1400,8 +1400,19 @@ const FlipEnvironment = () => {
                           borderRadius: '0.75rem',
                           overflow: 'hidden',
                           border: '2px solid rgba(255, 255, 255, 0.3)',
-                          boxShadow: '0 0 15px rgba(0, 191, 255, 0.2)'
-                        }}>
+                          boxShadow: '0 0 15px rgba(0, 191, 255, 0.2)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.5)'
+                          e.currentTarget.style.zIndex = '10'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)'
+                          e.currentTarget.style.zIndex = '1'
+                        }}
+                        title="Hover to zoom">
                           <img 
                             src={listing.coin.headsImage} 
                             alt="Heads" 
@@ -1421,8 +1432,19 @@ const FlipEnvironment = () => {
                           borderRadius: '0.75rem',
                           overflow: 'hidden',
                           border: '2px solid rgba(255, 255, 255, 0.3)',
-                          boxShadow: '0 0 15px rgba(0, 191, 255, 0.2)'
-                        }}>
+                          boxShadow: '0 0 15px rgba(0, 191, 255, 0.2)',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.5)'
+                          e.currentTarget.style.zIndex = '10'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)'
+                          e.currentTarget.style.zIndex = '1'
+                        }}
+                        title="Hover to zoom">
                           <img 
                             src={listing.coin.tailsImage} 
                             alt="Tails" 

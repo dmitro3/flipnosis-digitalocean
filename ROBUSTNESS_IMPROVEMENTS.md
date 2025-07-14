@@ -18,7 +18,7 @@
 const CHAIN_CONFIGS = {
   base: {
     chain: base,
-    contractAddress: '0x23fc20658f597573A3Fb54f5DAfDdC7c22899C02',
+    contractAddress: '0xba5ef026f35d1ac9f2ebB7FB047a50900Ec521A1',
     rpcUrls: [
       'https://base.blockpi.network/v1/rpc/public',
       'https://mainnet.base.org',

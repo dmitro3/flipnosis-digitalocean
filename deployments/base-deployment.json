@@ -1,6 +1,6 @@
 {
   "chain": "base",
-  "contractAddress": "0x23fc20658f597573A3Fb54f5DAfDdC7c22899C02",
+  "contractAddress": "0xba5ef026f35d1ac9f2ebB7FB047a50900Ec521A1",
   "deployer": "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28",
   "deploymentTime": "2025-01-27T12:00:00.000Z",
   "constructorArgs": {

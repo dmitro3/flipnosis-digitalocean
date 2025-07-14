@@ -553,43 +553,7 @@ const AssetLoadingModal = ({
           </ActionButton>
         )}
         
-        {/* Coin display */}
-        {gameData.coin && (
-          <div style={{
-            marginTop: '2rem',
-            padding: '1rem',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '1rem',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            textAlign: 'center'
-          }}>
-            <div style={{ 
-              fontSize: '0.875rem', 
-              color: '#666',
-              marginBottom: '0.5rem'
-            }}>
-              Game Coin (Hover to zoom)
-            </div>
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'center'
-            }}>
-              <CoinImageContainer>
-                <CoinImage 
-                  src={gameData.coin.headsImage} 
-                  alt="Heads" 
-                />
-              </CoinImageContainer>
-              <CoinImageContainer>
-                <CoinImage 
-                  src={gameData.coin.tailsImage} 
-                  alt="Tails" 
-                />
-              </CoinImageContainer>
-            </div>
-          </div>
-        )}
+
       </ModalContent>
     </Modal>
   )

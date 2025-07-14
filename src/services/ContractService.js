@@ -3,7 +3,7 @@ import { base, mainnet, bsc, avalanche, polygon } from 'viem/chains'
 import { Alchemy } from 'alchemy-sdk'
 
 // Constants
-const CONTRACT_ADDRESS = "0x23fc20658f597573A3Fb54f5DAfDdC7c22899C02"
+const CONTRACT_ADDRESS = "0xba5ef026f35d1ac9f2ebB7FB047a50900Ec521A1"
 const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
 // Common error definitions for better error handling
