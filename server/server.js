@@ -434,6 +434,62 @@ wss.on('connection', (socket) => {
         return
       }
       
+      // Handle listing-specific messages that don't require full authentication
+      if (data.type === 'subscribe_listing_chat' || data.type === 'join_listing') {
+        socket.listingId = data.listingId
+        socket.listingAddress = data.address || 'anonymous'
+        
+        // Track viewers
+        if (!listingViewers.has(data.listingId)) {
+          listingViewers.set(data.listingId, new Set())
+        }
+        listingViewers.get(data.listingId).add(socket.id)
+        
+        // Broadcast viewer count
+        broadcastToListing(data.listingId, {
+          type: 'viewer_joined',
+          viewerCount: listingViewers.get(data.listingId).size
+        })
+        
+        console.log(`👥 Viewer joined listing ${data.listingId}, total: ${listingViewers.get(data.listingId).size}`)
+        return
+      }
+      
+      if (data.type === 'listing_chat') {
+        if (!socket.listingId) {
+          console.log('❌ Chat message without listing subscription')
+          return
+        }
+        
+        // Broadcast chat message to all viewers
+        broadcastToListing(socket.listingId, {
+          type: 'listing_chat_message',
+          listingId: socket.listingId,
+          address: socket.listingAddress,
+          message: data.message,
+          timestamp: Date.now()
+        })
+        return
+      }
+      
+      if (data.type === 'leave_listing') {
+        if (socket.listingId && listingViewers.has(socket.listingId)) {
+          listingViewers.get(socket.listingId).delete(socket.id)
+          // Broadcast viewer left
+          broadcastToListing(socket.listingId, {
+            type: 'viewer_left',
+            viewerCount: listingViewers.get(socket.listingId).size
+          })
+          // Clean up empty listings
+          if (listingViewers.get(socket.listingId).size === 0) {
+            listingViewers.delete(socket.listingId)
+          }
+        }
+        socket.listingId = null
+        socket.listingAddress = null
+        return
+      }
+      
       // Add presence update
       if (data.type === 'update_presence' && socket.authenticated) {
         db.run(
@@ -486,63 +542,6 @@ wss.on('connection', (socket) => {
           sendGameState(socket)
           break
           
-        case 'join_listing': {
-          socket.listingId = data.listingId
-          socket.listingAddress = data.address
-          // Track viewers
-          if (!listingViewers.has(data.listingId)) {
-            listingViewers.set(data.listingId, new Set())
-          }
-          listingViewers.get(data.listingId).add(socket.id)
-          // Broadcast viewer count
-          broadcastToListing(data.listingId, {
-            type: 'viewer_joined',
-            viewerCount: listingViewers.get(data.listingId).size
-          })
-          break
-        }
-        case 'subscribe_listing_chat': {
-          socket.listingId = data.listingId
-          socket.listingAddress = data.address || 'anonymous'
-          // Track viewers
-          if (!listingViewers.has(data.listingId)) {
-            listingViewers.set(data.listingId, new Set())
-          }
-          listingViewers.get(data.listingId).add(socket.id)
-          // Broadcast viewer count
-          broadcastToListing(data.listingId, {
-            type: 'viewer_joined',
-            viewerCount: listingViewers.get(data.listingId).size
-          })
-          break
-        }
-        case 'listing_chat': {
-          broadcastToListing(socket.listingId, {
-            type: 'listing_chat_message',
-            listingId: socket.listingId,
-            address: socket.listingAddress,
-            message: data.message,
-            timestamp: Date.now()
-          })
-          break
-        }
-        case 'leave_listing': {
-          if (socket.listingId && listingViewers.has(socket.listingId)) {
-            listingViewers.get(socket.listingId).delete(socket.id)
-            // Broadcast viewer left
-            broadcastToListing(socket.listingId, {
-              type: 'viewer_left',
-              viewerCount: listingViewers.get(socket.listingId).size
-            })
-            // Clean up empty listings
-            if (listingViewers.get(socket.listingId).size === 0) {
-              listingViewers.delete(socket.listingId)
-            }
-          }
-          socket.listingId = null
-          socket.listingAddress = null
-          break
-        }
         case 'join_asset_loading': {
           socket.assetGameId = data.gameId
           socket.assetAddress = data.address
@@ -575,30 +574,18 @@ wss.on('connection', (socket) => {
           console.log('❓ Unknown message type:', data.type)
       }
     } catch (error) {
-      console.error('❌ Error processing message:', error)
-      socket.send(JSON.stringify({
-        type: 'error',
-        message: 'Invalid message format'
-      }))
+      console.error('❌ Error handling WebSocket message:', error)
     }
   })
   
   socket.on('close', () => {
-    console.log('🔌 Disconnected:', socket.address || 'unknown')
-    
-    // Update user presence if authenticated
-    if (socket.authenticated && socket.address) {
-      db.run(
-        'UPDATE user_presence SET is_online = false WHERE address = ?',
-        [socket.address]
-      )
-    }
-    
+    console.log('🔌 Connection closed:', socket.id)
     handleDisconnect(socket)
   })
   
   socket.on('error', (error) => {
-    console.error('❌ Socket error:', error)
+    console.error('❌ WebSocket error:', error)
+    handleDisconnect(socket)
   })
 })
 
@@ -2494,10 +2481,9 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
               return res.status(500).json({ error: err.message })
             }
             
-            // Update listing status
-            db.run(
-              'UPDATE game_listings SET status = "accepted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-              [result.listing_id],
+            // Keep listing status as "active" - only change to "completed" when game actually starts
+            // The listing should remain active until both players deposit their assets
+            console.log('✅ Offer accepted, keeping listing active for asset deposits')
               async (err) => {
                 if (err) {
                   return res.status(500).json({ error: err.message })
@@ -2843,6 +2829,9 @@ function createNotification(userAddress, type, title, message, data = null) {
 
 // Helper function to broadcast to specific user
 function broadcastToUser(address, message) {
+  console.log(`📡 Broadcasting to user ${address}:`, message.type)
+  
+  // First try to send via user presence (for authenticated users)
   db.get(
     'SELECT socket_id FROM user_presence WHERE address = ? AND is_online = true',
     [address],
@@ -2851,11 +2840,31 @@ function broadcastToUser(address, message) {
         wss.clients.forEach(client => {
           if (client.readyState === WebSocket.OPEN && client.id === presence.socket_id) {
             client.send(JSON.stringify(message))
+            console.log(`✅ Sent to authenticated user ${address} via socket ${presence.socket_id}`)
           }
         })
+      } else {
+        console.log(`⚠️ User ${address} not found in presence table or not online`)
       }
     }
   )
+  
+  // Also try to send to any socket with this address (for listing viewers)
+  let sentCount = 0
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && 
+        (client.address === address || client.listingAddress === address)) {
+      client.send(JSON.stringify(message))
+      sentCount++
+      console.log(`✅ Sent to user ${address} via listing socket ${client.id}`)
+    }
+  })
+  
+  if (sentCount === 0) {
+    console.log(`⚠️ No active sockets found for user ${address}`)
+  } else {
+    console.log(`📡 Sent message to ${sentCount} socket(s) for user ${address}`)
+  }
 }
 
 // Add after existing endpoints

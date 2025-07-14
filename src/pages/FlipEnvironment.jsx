@@ -626,7 +626,7 @@ const FlipEnvironment = () => {
         socket.send(JSON.stringify({
           type: 'leave_listing',
           listingId,
-          address: address
+          address: address || 'anonymous'
         }))
         socket.close()
       }
@@ -705,13 +705,17 @@ const FlipEnvironment = () => {
       console.log('WebSocket connected')
       setWsConnected(true)
       setReconnectAttempts(0)
-      ws.send(JSON.stringify({
-        type: 'subscribe_listing_chat',
-        listingId
-      }))
-      // Join the listing room for viewer tracking
+      
+      // Join the listing room for viewer tracking and chat
       ws.send(JSON.stringify({
         type: 'join_listing',
+        listingId,
+        address: address || 'anonymous'
+      }))
+      
+      // Subscribe to listing chat
+      ws.send(JSON.stringify({
+        type: 'subscribe_listing_chat',
         listingId,
         address: address || 'anonymous'
       }))
@@ -719,6 +723,8 @@ const FlipEnvironment = () => {
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
+      console.log('📡 Received WebSocket message:', data)
+      
       // Listing chat message
       if (data.type === 'listing_chat_message') {
         setMessages(prev => [...prev, {
@@ -730,11 +736,13 @@ const FlipEnvironment = () => {
       }
       // Viewer joined
       if (data.type === 'viewer_joined') {
-        setViewerCount(prev => prev + 1)
+        console.log('👥 Viewer joined, new count:', data.viewerCount)
+        setViewerCount(data.viewerCount || 0)
       }
       // Viewer left
       if (data.type === 'viewer_left') {
-        setViewerCount(prev => Math.max(0, prev - 1))
+        console.log('👥 Viewer left, new count:', data.viewerCount)
+        setViewerCount(data.viewerCount || 0)
       }
       // Handle real-time offer updates
       if (data.type === 'new_offer' && data.listingId === listingId) {
@@ -811,6 +819,8 @@ const FlipEnvironment = () => {
       showError('Not connected. Please wait for reconnection or refresh the page.')
       return
     }
+    
+    console.log('💬 Sending chat message:', newMessage)
     socket.send(JSON.stringify({
       type: 'listing_chat',
       message: newMessage,
