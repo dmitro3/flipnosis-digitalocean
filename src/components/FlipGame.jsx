@@ -722,22 +722,27 @@ const FlipGame = () => {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
-  // Single contract initialization
+  // Single contract initialization with proper wallet checks
   useEffect(() => {
-    if (!isFullyConnected || !walletClient) return
+    if (!isFullyConnected || !walletClient) {
+      console.log('⚠️ Wallet not fully connected, skipping contract initialization')
+      return
+    }
     
     const initContract = async () => {
       try {
+        console.log('🔧 Initializing contract service...')
         const chainId = 8453 // Base network
         await contractService.initializeClients(chainId, walletClient)
-        console.log('✅ Contract service initialized')
+        console.log('✅ Contract service initialized successfully')
       } catch (error) {
         console.error('❌ Contract initialization failed:', error)
+        showError('Failed to connect to smart contract. Please refresh and try again.')
       }
     }
     
     initContract()
-  }, [isFullyConnected, walletClient])
+  }, [isFullyConnected, walletClient, showError])
 
   // WebSocket connection with better organization
   useEffect(() => {
@@ -1443,8 +1448,27 @@ const FlipGame = () => {
   const handleFlip = async () => {
     if (!canFlip) return
     
+    // Check wallet connection
+    if (!isFullyConnected || !walletClient) {
+      showError('Please connect your wallet to flip the coin')
+      return
+    }
+    
+    // Check if contract service is initialized
+    if (!contractService.isInitialized()) {
+      showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
+    // Validate game ID
+    if (!gameData?.contract_game_id) {
+      showError('Invalid game ID. Please refresh the page.')
+      return
+    }
+    
     try {
       setIsFlipping(true)
+      showInfo('Flipping coin on blockchain...')
       
       // Call contract to play round
       const result = await contractService.playRound(gameData.contract_game_id)
@@ -1459,6 +1483,8 @@ const FlipGame = () => {
         result: result.result === 0 ? 'heads' : 'tails'
       })
       
+      showSuccess(`Round ${result.round} completed!`)
+      
       // Reload game state
       setTimeout(async () => {
         await loadGame()
@@ -1467,7 +1493,7 @@ const FlipGame = () => {
       
     } catch (error) {
       console.error('Failed to flip:', error)
-      showError('Failed to play round')
+      showError('Failed to play round: ' + error.message)
       setIsFlipping(false)
     }
   }

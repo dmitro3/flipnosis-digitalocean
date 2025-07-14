@@ -107,20 +107,23 @@ const CreateFlip = () => {
   // Initialize contract service when wallet is connected
   useEffect(() => {
     const initializeService = async () => {
-      if (isFullyConnected && chainId && walletClient && publicClient) {
-        try {
-          console.log('Initializing contract service...')
-          await contractService.initializeClients(chainId, walletClient)
-          console.log('✅ Contract service initialized')
-        } catch (error) {
-          console.error('Failed to initialize contract service:', error)
-          showError('Failed to initialize. Please refresh and try again.')
-        }
+      if (!isFullyConnected || !chainId || !walletClient || !publicClient) {
+        console.log('⚠️ Wallet not fully connected, skipping contract initialization')
+        return
+      }
+      
+      try {
+        console.log('🔧 Initializing contract service...')
+        await contractService.initializeClients(chainId, walletClient)
+        console.log('✅ Contract service initialized successfully')
+      } catch (error) {
+        console.error('❌ Failed to initialize contract service:', error)
+        showError('Failed to initialize smart contract. Please refresh and try again.')
       }
     }
 
     initializeService()
-  }, [isFullyConnected, chainId, walletClient, publicClient])
+  }, [isFullyConnected, chainId, walletClient, publicClient, showError])
 
   // Load NFTs when component mounts
   useEffect(() => {

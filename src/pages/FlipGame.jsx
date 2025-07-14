@@ -42,18 +42,23 @@ const FlipGame = () => {
   
   // Initialize contract service when wallet is connected
   useEffect(() => {
-    if (isFullyConnected && walletClient && publicClient && chain) {
-      const chainName = chain.name.toLowerCase()
-      contractService.initializeClients(chain.id, walletClient)
-        .then(() => {
-          console.log('✅ Contract service initialized for chain:', chainName)
-        })
-        .catch(error => {
-          console.error('❌ Failed to initialize contract service:', error)
-          setError('Failed to connect to smart contract')
-        })
+    if (!isFullyConnected || !walletClient || !publicClient || !chain) {
+      console.log('⚠️ Wallet not fully connected, skipping contract initialization')
+      return
     }
-  }, [isFullyConnected, walletClient, publicClient, chain, contractService])
+    
+    const chainName = chain.name.toLowerCase()
+    console.log('🔧 Initializing contract service for chain:', chainName)
+    
+    contractService.initializeClients(chain.id, walletClient)
+      .then(() => {
+        console.log('✅ Contract service initialized for chain:', chainName)
+      })
+      .catch(error => {
+        console.error('❌ Failed to initialize contract service:', error)
+        setError('Failed to connect to smart contract. Please refresh and try again.')
+      })
+  }, [isFullyConnected, walletClient, publicClient, chain])
 
   // Load game data
   useEffect(() => {
@@ -207,21 +212,23 @@ const FlipGame = () => {
       return
     }
 
+    // Check if contract service is initialized
+    if (!contractService.isInitialized()) {
+      showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+
+    // Validate game ID
+    if (!gameId) {
+      showError('Invalid game ID. Please refresh the page.')
+      return
+    }
+
     setIsFlipping(true)
     try {
-      showInfo('Flipping coin...')
+      showInfo('Flipping coin on blockchain...')
 
-      // Prepare flip parameters
-      const flipParams = {
-        gameId: gameId,
-        player: address,
-        authInfo: JSON.stringify({
-          player: address,
-          flippedAt: new Date().toISOString()
-        })
-      }
-
-      console.log('🎮 Flipping coin with smart contract:', flipParams)
+      console.log('🎮 Flipping coin with smart contract:', gameId)
 
       // Play round using smart contract
       const result = await contractService.playRound(gameId)

@@ -489,6 +489,41 @@ class ContractService {
     this.alchemy = null
   }
 
+  // Utility method to validate and parse game ID
+  validateGameId(gameId) {
+    if (!gameId) {
+      throw new Error('Game ID is required')
+    }
+
+    // If it's already a BigInt, return it
+    if (typeof gameId === 'bigint') {
+      return gameId
+    }
+
+    // If it's a number, convert to BigInt
+    if (typeof gameId === 'number') {
+      return BigInt(gameId)
+    }
+
+    // If it's a string, try to extract numeric part
+    if (typeof gameId === 'string') {
+      // Remove any non-numeric characters and try to parse
+      const numericPart = gameId.replace(/[^0-9]/g, '')
+      
+      if (!numericPart) {
+        throw new Error(`Invalid game ID format: "${gameId}". Expected numeric value.`)
+      }
+
+      try {
+        return BigInt(numericPart)
+      } catch (error) {
+        throw new Error(`Cannot convert game ID "${gameId}" to BigInt. Please provide a valid numeric game ID.`)
+      }
+    }
+
+    throw new Error(`Invalid game ID type: ${typeof gameId}. Expected number, string, or BigInt.`)
+  }
+
   // Initialize contract with clients
   async initializeClients(chainId, walletClient) {
     console.log('🔧 Initializing contract service with:', {
@@ -957,12 +992,15 @@ class ContractService {
       
       const { public: publicClient } = this.getCurrentClients()
 
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
       const result = await this.retryWithBackoff(async () => {
         return await publicClient.readContract({
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'getGameDetails',
-          args: [BigInt(gameId)]
+          args: [validatedGameId]
         })
       })
 
@@ -1037,8 +1075,11 @@ class ContractService {
         throw new Error('Contract service not initialized. Please connect your wallet.')
       }
 
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
       // Get game details from contract
-      const gameDetails = await this.getGameDetails(gameId)
+      const gameDetails = await this.getGameDetails(validatedGameId)
       if (!gameDetails.success) {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
@@ -1088,7 +1129,7 @@ class ContractService {
 
       // Prepare join parameters
       const joinParams = {
-        gameId: BigInt(gameId)
+        gameId: validatedGameId
       }
 
       console.log('📝 Join params:', joinParams)
@@ -1140,8 +1181,11 @@ class ContractService {
         throw new Error('Contract service not initialized. Please connect your wallet.')
       }
 
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(params.gameId)
+
       // Get game details first
-      const gameDetails = await this.getGameDetails(params.gameId)
+      const gameDetails = await this.getGameDetails(validatedGameId)
       if (!gameDetails.success) {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
@@ -1165,7 +1209,7 @@ class ContractService {
         address: this.contractAddress,
         abi: this.contractABI,
         functionName: 'joinGame',
-        args: [BigInt(params.gameId)],
+        args: [validatedGameId],
         value: priceInWei,
         account: this.walletClient.account
       })
@@ -1186,7 +1230,7 @@ class ContractService {
       // Update database
       try {
         const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-        const response = await fetch(`${API_URL}/api/games/${params.gameId}/join`, {
+        const response = await fetch(`${API_URL}/api/games/${validatedGameId}/join`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1468,7 +1512,10 @@ class ContractService {
         throw new Error('Wallet client not available. Please connect your wallet.')
       }
 
-      console.log('🏆 Completing game:', { gameId, winner })
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
+      console.log('🏆 Completing game:', { gameId: validatedGameId, winner })
 
       const gasEstimate = await this.retryWithBackoff(async () => {
         await this.rateLimit('estimateCompleteGas')
@@ -1476,7 +1523,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'completeGame',
-          args: [BigInt(gameId), winner],
+          args: [validatedGameId, winner],
           account: walletClient.account.address
         })
       })
@@ -1490,7 +1537,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'completeGame',
-          args: [BigInt(gameId), winner],
+          args: [validatedGameId, winner],
           account: walletClient.account.address,
           gas: gasLimit,
           maxFeePerGas,
@@ -1568,7 +1615,10 @@ class ContractService {
         throw new Error('Wallet client not available. Please connect your wallet.')
       }
 
-      console.log('❌ Cancelling game:', gameId)
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
+      console.log('❌ Cancelling game:', validatedGameId)
 
       const gasEstimate = await this.retryWithBackoff(async () => {
         await this.rateLimit('estimateCancelGas')
@@ -1576,7 +1626,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'cancelGame',
-          args: [BigInt(gameId)],
+          args: [validatedGameId],
           account: walletClient.account.address
         })
       })
@@ -1590,7 +1640,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'cancelGame',
-          args: [BigInt(gameId)],
+          args: [validatedGameId],
           account: walletClient.account.address,
           gas: gasLimit,
           maxFeePerGas,
@@ -1714,14 +1764,17 @@ class ContractService {
         throw new Error('Wallet client not available')
       }
 
-      console.log('🎲 Playing round for game:', gameId)
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
+      console.log('🎲 Playing round for game:', validatedGameId)
 
       // Simulate first
       const { request } = await publicClient.simulateContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'playRound',
-        args: [BigInt(gameId)],
+        args: [validatedGameId],
         account: walletClient.account
       })
 
@@ -1786,11 +1839,15 @@ class ContractService {
   async getGameRoundDetails(gameId) {
     try {
       const { publicClient } = this.getCurrentClients()
+      
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+      
       const result = await publicClient.readContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'getGameRoundDetails',
-        args: [BigInt(gameId)]
+        args: [validatedGameId]
       })
 
       return {
@@ -2363,7 +2420,10 @@ class ContractService {
         throw new Error('Wallet client not available. Please connect your wallet.')
       }
 
-      console.log('🎮 Depositing NFT for game:', { gameId, nftContract, tokenId })
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
+      console.log('🎮 Depositing NFT for game:', { gameId: validatedGameId, nftContract, tokenId })
 
       const gasEstimate = await this.retryWithBackoff(async () => {
         await this.rateLimit('estimateDepositNFTGas')
@@ -2371,7 +2431,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'depositNFTForGame',
-          args: [BigInt(gameId), nftContract, BigInt(tokenId)],
+          args: [validatedGameId, nftContract, BigInt(tokenId)],
           account: walletClient.account.address
         })
       })
@@ -2385,7 +2445,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'depositNFTForGame',
-          args: [BigInt(gameId), nftContract, BigInt(tokenId)],
+          args: [validatedGameId, nftContract, BigInt(tokenId)],
           account: walletClient.account.address,
           gas: gasLimit,
           maxFeePerGas,
@@ -2422,7 +2482,10 @@ class ContractService {
         throw new Error('Wallet client not available. Please connect your wallet.')
       }
 
-      console.log('💰 Depositing crypto for game:', { gameId, value: options.value })
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
+      console.log('💰 Depositing crypto for game:', { gameId: validatedGameId, value: options.value })
 
       const gasEstimate = await this.retryWithBackoff(async () => {
         await this.rateLimit('estimateDepositCryptoGas')
@@ -2430,7 +2493,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'depositCryptoForGame',
-          args: [BigInt(gameId)],
+          args: [validatedGameId],
           account: walletClient.account.address,
           value: options.value || 0n
         })
@@ -2445,7 +2508,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'depositCryptoForGame',
-          args: [BigInt(gameId)],
+          args: [validatedGameId],
           account: walletClient.account.address,
           gas: gasLimit,
           maxFeePerGas,
@@ -2483,7 +2546,10 @@ class ContractService {
         throw new Error('Wallet client not available. Please connect your wallet.')
       }
 
-      console.log('❌ Cancelling game with refund:', { gameId, requester })
+      // Validate and parse game ID
+      const validatedGameId = this.validateGameId(gameId)
+
+      console.log('❌ Cancelling game with refund:', { gameId: validatedGameId, requester })
 
       const gasEstimate = await this.retryWithBackoff(async () => {
         await this.rateLimit('estimateCancelGameGas')
@@ -2491,7 +2557,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'cancelGameWithRefund',
-          args: [BigInt(gameId)],
+          args: [validatedGameId],
           account: walletClient.account.address
         })
       })
@@ -2505,7 +2571,7 @@ class ContractService {
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'cancelGameWithRefund',
-          args: [BigInt(gameId)],
+          args: [validatedGameId],
           account: walletClient.account.address,
           gas: gasLimit,
           maxFeePerGas,
@@ -2595,9 +2661,7 @@ class ContractService {
     try {
       await this.rateLimit('getETHAmount')
       
-      const { public: publicClient } = this.getCurrentClients()
-      
-      if (!publicClient) {
+      if (!this.publicClient) {
         throw new Error('Public client not available')
       }
 
@@ -2605,9 +2669,9 @@ class ContractService {
 
       const ethAmount = await this.retryWithBackoff(async () => {
         await this.rateLimit('getETHAmountCall')
-        return await publicClient.readContract({
+        return await this.publicClient.readContract({
           address: this.contractAddress,
-          abi: CONTRACT_ABI,
+          abi: this.contractABI,
           functionName: 'getETHAmount',
           args: [BigInt(usdAmount * 1e6)] // Convert to 6 decimals as expected by contract
         })
