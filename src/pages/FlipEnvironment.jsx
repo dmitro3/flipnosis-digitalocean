@@ -32,6 +32,10 @@ const EnvironmentContainer = styled.div`
   margin: 0 auto;
   padding: 2rem;
   min-height: calc(100vh - 120px);
+  background: rgba(0, 0, 20, 0.95);
+  border-radius: 1.5rem;
+  border: 2px solid ${props => props.theme.colors.neonPink};
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
 `
 
 const Header = styled.div`
@@ -40,7 +44,20 @@ const Header = styled.div`
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 0, 0.3);
+  border-bottom: 1px solid ${props => props.theme.colors.neonPink};
+  text-align: center;
+  
+  h2 {
+    color: ${props => props.theme.colors.neonBlue};
+    font-size: 2rem;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+  }
+  
+  p {
+    color: ${props => props.theme.colors.textSecondary};
+    font-size: 1rem;
+  }
 `
 
 const ViewerCount = styled.div`
@@ -48,12 +65,13 @@ const ViewerCount = styled.div`
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 0, 0.1);
-  border: 1px solid rgba(255, 255, 0, 0.3);
+  background: rgba(0, 191, 255, 0.1);
+  border: 1px solid ${props => props.theme.colors.neonBlue};
   border-radius: 0.5rem;
-  color: #FFD700;
+  color: ${props => props.theme.colors.neonBlue};
   font-weight: 600;
   font-size: 0.875rem;
+  box-shadow: 0 0 20px rgba(0, 191, 255, 0.3);
 `
 
 const BackButton = styled(Button)`
@@ -102,9 +120,10 @@ const BottomSection = styled.div`
 const NFTDetailsSection = styled(GlassCard)`
   padding: 2rem;
   margin-bottom: 2rem;
-  background: rgba(255, 255, 0, 0.05);
-  border: 1px solid rgba(255, 255, 0, 0.2);
-  box-shadow: 0 0 20px rgba(255, 255, 0, 0.1);
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid ${props => props.theme.colors.neonPink};
+  border-radius: 1.5rem;
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
 `
 
 const NFTDisplay = styled.div`
@@ -124,8 +143,9 @@ const NFTImage = styled.img`
   height: 225px;
   object-fit: cover;
   border-radius: 1rem;
-  border: 2px solid rgba(0, 255, 65, 0.3);
-  box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+  border: 2px solid ${props => props.isLoaded ? props.theme.colors.neonGreen : props.theme.colors.neonBlue};
+  box-shadow: 0 0 20px ${props => props.isLoaded ? 'rgba(0, 255, 65, 0.3)' : 'rgba(0, 191, 255, 0.3)'};
+  transition: all 0.3s ease;
   
   @media (max-width: 768px) {
     width: 188px;
@@ -152,11 +172,12 @@ const NFTCollection = styled.div`
 `
 
 const PriceSection = styled.div`
-  background: rgba(0, 255, 65, 0.1);
-  border: 1px solid rgba(0, 255, 65, 0.3);
+  background: rgba(0, 191, 255, 0.05);
+  border: 1px solid ${props => props.theme.colors.neonBlue};
   border-radius: 0.5rem;
   padding: 1.5rem;
   text-align: center;
+  box-shadow: 0 0 20px rgba(0, 191, 255, 0.3);
 `
 
 const AskingPrice = styled.div`
@@ -164,6 +185,7 @@ const AskingPrice = styled.div`
   font-weight: bold;
   color: ${props => props.theme.colors.neonGreen};
   margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
 `
 
 const MinOffer = styled.div`
@@ -214,9 +236,9 @@ const ChatSection = styled(GlassCard)`
   display: flex;
   flex-direction: column;
   padding: 1rem;
-  background: rgba(255, 255, 0, 0.05);
-  border: 1px solid rgba(255, 255, 0, 0.2);
-  box-shadow: 0 0 20px rgba(255, 255, 0, 0.1);
+  background: rgba(255, 20, 147, 0.05);
+  border: 2px solid ${props => props.theme.colors.neonPink};
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
 `
 
 const ChatHeader = styled.div`
@@ -362,9 +384,9 @@ const MakeOfferSection = styled(GlassCard)`
 
 const AllOffersSection = styled(GlassCard)`
   padding: 1rem;
-  background: rgba(255, 255, 0, 0.05);
-  border: 1px solid rgba(255, 255, 0, 0.2);
-  box-shadow: 0 0 20px rgba(255, 255, 0, 0.1);
+  background: rgba(255, 20, 147, 0.05);
+  border: 2px solid ${props => props.theme.colors.neonPink};
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
   max-height: 400px;
   overflow-y: auto;
 `
@@ -373,8 +395,9 @@ const AllOffersHeader = styled.div`
   font-weight: bold;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 0, 0.3);
-  color: #FFD700;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+  color: ${props => props.theme.colors.neonGreen};
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
 `
 
 const PublicOfferCard = styled.div`
@@ -1233,15 +1256,15 @@ const FlipEnvironment = () => {
                   <ShareSection style={{
                     marginTop: '2rem',
                     padding: '1.5rem',
-                    background: 'rgba(255, 255, 0, 0.05)',
-                    border: '1px solid rgba(255, 255, 0, 0.2)',
+                    background: 'rgba(0, 191, 255, 0.05)',
+                    border: '1px solid rgba(0, 191, 255, 0.2)',
                     borderRadius: '1rem',
-                    boxShadow: '0 0 20px rgba(255, 255, 0, 0.1)'
+                    boxShadow: '0 0 20px rgba(0, 191, 255, 0.1)'
                   }}>
                     <ShareHeader style={{
                       fontSize: '1.2rem',
                       fontWeight: 'bold',
-                      color: '#FFD700',
+                      color: '#00BFFF',
                       marginBottom: '1rem',
                       textAlign: 'left'
                     }}>
@@ -1272,8 +1295,8 @@ const FlipEnvironment = () => {
                           gap: '0.5rem'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(255, 255, 0, 0.2)'
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 0, 0.4)'
+                          e.currentTarget.style.background = 'rgba(0, 191, 255, 0.2)'
+                          e.currentTarget.style.borderColor = 'rgba(0, 191, 255, 0.4)'
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
@@ -1302,8 +1325,8 @@ const FlipEnvironment = () => {
                           gap: '0.5rem'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(255, 255, 0, 0.2)'
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 0, 0.4)'
+                          e.currentTarget.style.background = 'rgba(0, 191, 255, 0.2)'
+                          e.currentTarget.style.borderColor = 'rgba(0, 191, 255, 0.4)'
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
@@ -1332,8 +1355,8 @@ const FlipEnvironment = () => {
                           gap: '0.5rem'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(255, 255, 0, 0.2)'
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 0, 0.4)'
+                          e.currentTarget.style.background = 'rgba(0, 191, 255, 0.2)'
+                          e.currentTarget.style.borderColor = 'rgba(0, 191, 255, 0.4)'
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
@@ -1350,16 +1373,16 @@ const FlipEnvironment = () => {
                     <div style={{
                       marginTop: '2rem',
                       padding: '1.5rem',
-                      background: 'rgba(255, 255, 0, 0.05)',
-                      border: '1px solid rgba(255, 255, 0, 0.2)',
+                      background: 'rgba(0, 191, 255, 0.05)',
+                      border: '1px solid rgba(0, 191, 255, 0.2)',
                       borderRadius: '1rem',
-                      boxShadow: '0 0 20px rgba(255, 255, 0, 0.1)',
+                      boxShadow: '0 0 20px rgba(0, 191, 255, 0.1)',
                       textAlign: 'left'
                     }}>
                       <div style={{ 
                         fontSize: '1.2rem', 
                         fontWeight: 'bold',
-                        color: '#FFD700',
+                        color: '#00BFFF',
                         marginBottom: '1rem',
                         textAlign: 'left'
                       }}>
@@ -1377,7 +1400,7 @@ const FlipEnvironment = () => {
                           borderRadius: '0.75rem',
                           overflow: 'hidden',
                           border: '2px solid rgba(255, 255, 255, 0.3)',
-                          boxShadow: '0 0 15px rgba(255, 255, 0, 0.2)'
+                          boxShadow: '0 0 15px rgba(0, 191, 255, 0.2)'
                         }}>
                           <img 
                             src={listing.coin.headsImage} 
@@ -1387,7 +1410,7 @@ const FlipEnvironment = () => {
                         </div>
                         <div style={{
                           fontSize: '1.5rem',
-                          color: '#FFD700',
+                          color: '#00BFFF',
                           fontWeight: 'bold'
                         }}>
                           vs
@@ -1398,7 +1421,7 @@ const FlipEnvironment = () => {
                           borderRadius: '0.75rem',
                           overflow: 'hidden',
                           border: '2px solid rgba(255, 255, 255, 0.3)',
-                          boxShadow: '0 0 15px rgba(255, 255, 0, 0.2)'
+                          boxShadow: '0 0 15px rgba(0, 191, 255, 0.2)'
                         }}>
                           <img 
                             src={listing.coin.tailsImage} 
@@ -1453,7 +1476,7 @@ const FlipEnvironment = () => {
                   </ChatInput>
                 </ChatSection>
                 
-                <AllOffersSection>
+                <AllOffersSection style={{ marginTop: '1.5rem' }}>
                   <AllOffersHeader>All Offers ({offers.length})</AllOffersHeader>
                   {offers.length > 0 ? (
                     offers.map(offer => (

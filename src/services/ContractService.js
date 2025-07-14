@@ -198,6 +198,53 @@ const CONTRACT_ABI = [
     outputs: []
   },
   {
+    name: 'depositNFTForGame',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'depositCryptoForGame',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'gameId', type: 'uint256' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'cancelGameWithRefund',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'gameId', type: 'uint256' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'emergencyWithdrawETH',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: 'getETHAmount',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'usdAmount', type: 'uint256' }
+    ],
+    outputs: [
+      { name: '', type: 'uint256' }
+    ]
+  },
+  {
     name: 'adminBatchWithdrawNFTs',
     type: 'function',
     stateMutability: 'nonpayable',
@@ -2308,19 +2355,52 @@ class ContractService {
   // Deposit NFT for a specific game
   async depositNFTForGame(gameId, nftContract, tokenId) {
     try {
-      if (!this.gameContract) throw new Error('Contract not initialized')
+      await this.rateLimit('depositNFTForGame')
       
-      const tx = await this.gameContract.depositNFTForGame(
-        gameId,
-        nftContract,
-        tokenId
-      )
+      const { walletClient, public: publicClient } = this.getCurrentClients()
       
-      const receipt = await tx.wait()
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      console.log('🎮 Depositing NFT for game:', { gameId, nftContract, tokenId })
+
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateDepositNFTGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'depositNFTForGame',
+          args: [BigInt(gameId), nftContract, BigInt(tokenId)],
+          account: walletClient.account.address
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('depositNFTTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'depositNFTForGame',
+          args: [BigInt(gameId), nftContract, BigInt(tokenId)],
+          account: walletClient.account.address,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
       
       return {
         success: true,
-        transactionHash: receipt.transactionHash
+        transactionHash: hash
       }
     } catch (error) {
       console.error('Failed to deposit NFT:', error)
@@ -2334,14 +2414,54 @@ class ContractService {
   // Deposit crypto for a specific game
   async depositCryptoForGame(gameId, options = {}) {
     try {
-      if (!this.gameContract) throw new Error('Contract not initialized')
+      await this.rateLimit('depositCryptoForGame')
       
-      const tx = await this.gameContract.depositCryptoForGame(gameId, options)
-      const receipt = await tx.wait()
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      console.log('💰 Depositing crypto for game:', { gameId, value: options.value })
+
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateDepositCryptoGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'depositCryptoForGame',
+          args: [BigInt(gameId)],
+          account: walletClient.account.address,
+          value: options.value || 0n
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('depositCryptoTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'depositCryptoForGame',
+          args: [BigInt(gameId)],
+          account: walletClient.account.address,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          value: options.value || 0n
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
       
       return {
         success: true,
-        transactionHash: receipt.transactionHash
+        transactionHash: hash
       }
     } catch (error) {
       console.error('Failed to deposit crypto:', error)
@@ -2355,14 +2475,52 @@ class ContractService {
   // Cancel game with refund
   async cancelGameWithRefund(gameId, requester) {
     try {
-      if (!this.gameContract) throw new Error('Contract not initialized')
+      await this.rateLimit('cancelGameWithRefund')
       
-      const tx = await this.gameContract.cancelGameWithRefund(gameId)
-      const receipt = await tx.wait()
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      console.log('❌ Cancelling game with refund:', { gameId, requester })
+
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateCancelGameGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'cancelGameWithRefund',
+          args: [BigInt(gameId)],
+          account: walletClient.account.address
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('cancelGameTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'cancelGameWithRefund',
+          args: [BigInt(gameId)],
+          account: walletClient.account.address,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
       
       return {
         success: true,
-        transactionHash: receipt.transactionHash
+        transactionHash: hash
       }
     } catch (error) {
       console.error('Failed to cancel game:', error)
@@ -2376,14 +2534,52 @@ class ContractService {
   // Withdraw ETH
   async withdrawETH() {
     try {
-      if (!this.gameContract) throw new Error('Contract not initialized')
+      await this.rateLimit('withdrawETH')
       
-      const tx = await this.gameContract.withdrawETH()
-      const receipt = await tx.wait()
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      console.log('💸 Withdrawing ETH')
+
+      const gasEstimate = await this.retryWithBackoff(async () => {
+        await this.rateLimit('estimateWithdrawETHGas')
+        return await publicClient.estimateContractGas({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'emergencyWithdrawETH',
+          args: [],
+          account: walletClient.account.address
+        })
+      })
+
+      const gasLimit = gasEstimate * 120n / 100n
+      const { maxFeePerGas, maxPriorityFeePerGas } = await this.getGasPrices()
+
+      const hash = await this.retryWithBackoff(async () => {
+        await this.rateLimit('withdrawETHTx')
+        return await walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'emergencyWithdrawETH',
+          args: [],
+          account: walletClient.account.address,
+          gas: gasLimit,
+          maxFeePerGas,
+          maxPriorityFeePerGas
+        })
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 2
+      })
       
       return {
         success: true,
-        transactionHash: receipt.transactionHash
+        transactionHash: hash
       }
     } catch (error) {
       console.error('Failed to withdraw ETH:', error)
@@ -2397,11 +2593,25 @@ class ContractService {
   // Get ETH amount for USD (updated version)
   async getETHAmount(usdAmount) {
     try {
-      if (!this.gameContract) throw new Error('Contract not initialized')
+      await this.rateLimit('getETHAmount')
       
-      const ethAmount = await this.gameContract.getETHAmount(
-        parseEther(usdAmount.toString()) // Convert to wei
-      )
+      const { public: publicClient } = this.getCurrentClients()
+      
+      if (!publicClient) {
+        throw new Error('Public client not available')
+      }
+
+      console.log('💱 Getting ETH amount for USD:', usdAmount)
+
+      const ethAmount = await this.retryWithBackoff(async () => {
+        await this.rateLimit('getETHAmountCall')
+        return await publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'getETHAmount',
+          args: [BigInt(usdAmount * 1e6)] // Convert to 6 decimals as expected by contract
+        })
+      })
       
       return ethAmount
     } catch (error) {
