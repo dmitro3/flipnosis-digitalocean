@@ -2484,108 +2484,102 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
             // Keep listing status as "active" - only change to "completed" when game actually starts
             // The listing should remain active until both players deposit their assets
             console.log('✅ Offer accepted, keeping listing active for asset deposits')
-              async (err) => {
+            
+            // Reject all other pending offers
+            db.run(
+              'UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"',
+              [result.listing_id, offerId]
+            )
+            
+            // Create notification for offerer
+            createNotification(
+              result.offerer_address,
+              'offer_accepted',
+              'Offer Accepted!',
+              `Your offer for ${result.nft_name} has been accepted!`,
+              JSON.stringify({ offerId, listingId: result.listing_id })
+            )
+            
+            // Create game in pending state
+            const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            
+            db.run(
+              `INSERT INTO games (
+                id, creator, joiner, nft_contract, nft_token_id,
+                nft_name, nft_image, nft_collection, price_usd,
+                status, game_type, coin, nft_chain
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                gameId,
+                result.creator,
+                result.offerer_address,
+                result.nft_contract,
+                result.nft_token_id,
+                result.nft_name,
+                result.nft_image,
+                result.nft_collection,
+                result.offer_price,
+                'pending', // New status for games waiting for both assets
+                'nft-vs-crypto',
+                result.coin,
+                result.nft_chain
+              ],
+              (err) => {
                 if (err) {
+                  console.error('❌ Error creating game:', err)
                   return res.status(500).json({ error: err.message })
                 }
                 
-                // Reject all other pending offers
-                db.run(
-                  'UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"',
-                  [result.listing_id, offerId]
-                )
+                console.log('✅ Game created from accepted offer:', gameId)
                 
-                // Create notification for offerer
-                createNotification(
-                  result.offerer_address,
-                  'offer_accepted',
-                  'Offer Accepted!',
-                  `Your offer for ${result.nft_name} has been accepted!`,
-                  JSON.stringify({ offerId, listingId: result.listing_id })
-                )
+                // Send response to client
+                res.json({ success: true, gameId })
                 
-                // Create game in pending state
-                const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                // Broadcast to both users
+                broadcastToUser(result.creator, {
+                  type: 'offer_accepted',
+                  gameId,
+                  listingId: result.listing_id
+                })
+                broadcastToUser(result.offerer_address, {
+                  type: 'offer_accepted',
+                  gameId,
+                  listingId: result.listing_id
+                })
                 
-                db.run(
-                  `INSERT INTO games (
-                    id, creator, joiner, nft_contract, nft_token_id,
-                    nft_name, nft_image, nft_collection, price_usd,
-                    status, game_type, coin, nft_chain
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                  [
-                    gameId,
-                    result.creator,
-                    result.offerer_address,
-                    result.nft_contract,
-                    result.nft_token_id,
-                    result.nft_name,
-                    result.nft_image,
-                    result.nft_collection,
-                    result.offer_price,
-                    'pending', // New status for games waiting for both assets
-                    'nft-vs-crypto',
-                    result.coin,
-                    result.nft_chain
-                  ],
-                  (err) => {
-                    if (err) {
-                      console.error('❌ Error creating game:', err)
-                      return res.status(500).json({ error: err.message })
-                    }
-                    
-                    console.log('✅ Game created from accepted offer:', gameId)
-                    
-                    // Send response to client
-                    res.json({ success: true, gameId })
-                    
-                    // Broadcast to both users
-                    broadcastToUser(result.creator, {
-                      type: 'offer_accepted',
-                      gameId,
-                      listingId: result.listing_id
-                    })
-                    broadcastToUser(result.offerer_address, {
-                      type: 'offer_accepted',
-                      gameId,
-                      listingId: result.listing_id
-                    })
-                    
-                    // Broadcast to all users viewing this listing
-                    broadcastToListing(result.listing_id, {
-                      type: 'offer_accepted',
-                      gameId,
-                      listingId: result.listing_id
-                    })
-                    
-                    // Notify both users they need to deposit assets
-                    broadcastToUser(result.creator, {
-                      type: 'game_created_pending_deposit',
-                      gameId,
-                      role: 'creator',
-                      requiredAction: 'deposit_nft',
-                      listingId: result.listing_id,
-                      nft_contract: result.nft_contract,
-                      nft_token_id: result.nft_token_id,
-                      nft_name: result.nft_name,
-                      nft_image: result.nft_image,
-                      coin: result.coin
-                    })
-                    broadcastToUser(result.offerer_address, {
-                      type: 'game_created_pending_deposit',
-                      gameId,
-                      role: 'joiner',
-                      requiredAction: 'deposit_crypto',
-                      amount: result.offer_price,
-                      listingId: result.listing_id,
-                      nft_contract: result.nft_contract,
-                      nft_token_id: result.nft_token_id,
-                      nft_name: result.nft_name,
-                      nft_image: result.nft_image,
-                      coin: result.coin
-                    })
-                  }
-                )
+                // Broadcast to all users viewing this listing
+                broadcastToListing(result.listing_id, {
+                  type: 'offer_accepted',
+                  gameId,
+                  listingId: result.listing_id
+                })
+                
+                // Notify both users they need to deposit assets
+                broadcastToUser(result.creator, {
+                  type: 'game_created_pending_deposit',
+                  gameId,
+                  role: 'creator',
+                  requiredAction: 'deposit_nft',
+                  listingId: result.listing_id,
+                  nft_contract: result.nft_contract,
+                  nft_token_id: result.nft_token_id,
+                  nft_name: result.nft_name,
+                  nft_image: result.nft_image,
+                  coin: result.coin
+                })
+                broadcastToUser(result.offerer_address, {
+                  type: 'game_created_pending_deposit',
+                  gameId,
+                  role: 'joiner',
+                  requiredAction: 'deposit_crypto',
+                  amount: result.offer_price,
+                  listingId: result.listing_id,
+                  nft_contract: result.nft_contract,
+                  nft_token_id: result.nft_token_id,
+                  nft_name: result.nft_name,
+                  nft_image: result.nft_image,
+                  coin: result.coin
+                })
               }
             )
           }
