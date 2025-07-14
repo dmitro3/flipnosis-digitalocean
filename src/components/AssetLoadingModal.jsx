@@ -274,6 +274,22 @@ const AssetLoadingModal = ({
     })
   }, [address, isFullyConnected, isContractInitialized, walletClient, publicClient])
 
+  // ADD THIS - Debug logging to verify roles
+  useEffect(() => {
+    if (gameData && address) {
+      console.log('🎮 Game roles:', {
+        myAddress: address,
+        creator: gameData.creator,
+        joiner: gameData.joiner,
+        isCreator: isCreator,
+        amICreator: address.toLowerCase() === gameData.creator?.toLowerCase(),
+        amIJoiner: address.toLowerCase() === gameData.joiner?.toLowerCase(),
+        contractGameId: gameData.contract_game_id,
+        databaseGameId: gameData.gameId
+      })
+    }
+  }, [gameData, address, isCreator])
+
   // WebSocket connection for real-time updates
   useEffect(() => {
     if (!isOpen || !gameData) return
@@ -348,7 +364,16 @@ const AssetLoadingModal = ({
       // Approve NFT transfer to game contract using the new walletClient
       const nftContract = {
         address: gameData.nftContract,
-        abi: ['function approve(address to, uint256 tokenId)']
+        abi: [{
+          name: 'approve',
+          type: 'function',
+          inputs: [
+            { name: 'to', type: 'address' },
+            { name: 'tokenId', type: 'uint256' }
+          ],
+          outputs: [],
+          stateMutability: 'nonpayable'
+        }]
       }
       
       showInfo('Approving NFT transfer...')
@@ -356,7 +381,16 @@ const AssetLoadingModal = ({
       // Use walletClient.writeContract instead of ethers
       const approveHash = await walletClient.writeContract({
         address: gameData.nftContract,
-        abi: ['function approve(address to, uint256 tokenId)'],
+        abi: [{
+          name: 'approve',
+          type: 'function',
+          inputs: [
+            { name: 'to', type: 'address' },
+            { name: 'tokenId', type: 'uint256' }
+          ],
+          outputs: [],
+          stateMutability: 'nonpayable'
+        }],
         functionName: 'approve',
         args: [contractService.contractAddress, BigInt(gameData.tokenId)]
       })
@@ -368,8 +402,9 @@ const AssetLoadingModal = ({
       })
       
       showInfo('Depositing NFT into game...')
+      // Use contract_game_id instead of gameId
       const result = await contractService.depositNFTForGame(
-        gameData.gameId,
+        gameData.contract_game_id || gameData.gameId,
         gameData.nftContract,
         gameData.tokenId
       )
@@ -419,8 +454,9 @@ const AssetLoadingModal = ({
       // Calculate amount in ETH
       const priceInETH = await contractService.getETHAmount(gameData.priceUSD)
       
+      // Use contract_game_id instead of gameId
       const result = await contractService.depositCryptoForGame(
-        gameData.gameId,
+        gameData.contract_game_id || gameData.gameId,
         { value: priceInETH }
       )
       
@@ -462,7 +498,10 @@ const AssetLoadingModal = ({
     
     setIsCancelling(true)
     try {
-      const result = await contractService.cancelGameWithRefund(gameData.gameId, address)
+      const result = await contractService.cancelGameWithRefund(
+        gameData.contract_game_id || gameData.gameId, 
+        address
+      )
       
       if (result.success) {
         showSuccess('Game cancelled. Assets will be returned.')
