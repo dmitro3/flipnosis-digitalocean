@@ -6,6 +6,7 @@ import contractService from '../services/ContractService'
 import { Button, LoadingSpinner } from '../styles/components'
 import { ethers } from 'ethers'
 import { API_CONFIG } from '../config/api'
+import { useWalletConnection } from '../utils/useWalletConnection'
 
 const Modal = styled.div`
   position: fixed;
@@ -251,7 +252,8 @@ const AssetLoadingModal = ({
   onGameReady,
   isCreator 
 }) => {
-  const { address, isFullyConnected, walletClient, publicClient } = useWallet()
+  const { address, walletClient, publicClient } = useWallet()
+  const { isFullyConnected, isContractInitialized } = useWalletConnection()
   const { showSuccess, showError, showInfo } = useToast()
   
   const [nftLoaded, setNftLoaded] = useState(false)
@@ -260,11 +262,17 @@ const AssetLoadingModal = ({
   const [isLoadingCrypto, setIsLoadingCrypto] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
   const [socket, setSocket] = useState(null)
-  
-  // Check if contract service is properly initialized
-  const isContractReady = () => {
-    return isFullyConnected && walletClient && contractService.isInitialized()
-  }
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('🔍 AssetLoadingModal wallet state:', {
+      address,
+      isFullyConnected,
+      isContractInitialized,
+      hasWalletClient: !!walletClient,
+      hasPublicClient: !!publicClient
+    })
+  }, [address, isFullyConnected, isContractInitialized, walletClient, publicClient])
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -330,7 +338,7 @@ const AssetLoadingModal = ({
       return
     }
     
-    if (!contractService.isInitialized()) {
+    if (!isContractInitialized) {
       showError('Smart contract not connected. Please refresh and try again.')
       return
     }
@@ -399,7 +407,7 @@ const AssetLoadingModal = ({
       return
     }
     
-    if (!contractService.isInitialized()) {
+    if (!isContractInitialized) {
       showError('Smart contract not connected. Please refresh and try again.')
       return
     }
@@ -447,7 +455,7 @@ const AssetLoadingModal = ({
       return
     }
     
-    if (!contractService.isInitialized()) {
+    if (!isContractInitialized) {
       showError('Smart contract not connected. Please refresh and try again.')
       return
     }
