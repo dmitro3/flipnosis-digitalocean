@@ -277,18 +277,92 @@ const AssetLoadingModal = ({
   // ADD THIS - Debug logging to verify roles
   useEffect(() => {
     if (gameData && address) {
-      console.log('🎮 Game roles:', {
-        myAddress: address,
-        creator: gameData.creator,
-        joiner: gameData.joiner,
-        isCreator: isCreator,
-        amICreator: address.toLowerCase() === gameData.creator?.toLowerCase(),
-        amIJoiner: address.toLowerCase() === gameData.joiner?.toLowerCase(),
-        contractGameId: gameData.contract_game_id,
-        databaseGameId: gameData.gameId
+      // Log the actual roles from the database
+      console.log('🎮 Game roles check:', {
+        myAddress: address?.toLowerCase(),
+        dbCreator: gameData.creator?.toLowerCase(),
+        dbJoiner: gameData.joiner?.toLowerCase(),
+        isCreatorProp: isCreator,
+        amIDbCreator: address?.toLowerCase() === gameData.creator?.toLowerCase(),
+        amIDbJoiner: address?.toLowerCase() === gameData.joiner?.toLowerCase(),
+        contractGameId: gameData.contract_game_id
       })
     }
   }, [gameData, address, isCreator])
+
+  // Add this inside AssetLoadingModal component, after the hooks
+  const ensureGameExistsOnBlockchain = async () => {
+    if (!gameData || !isContractInitialized) return false
+    
+    try {
+      // Check if game exists on blockchain
+      const contractGameId = gameData.contract_game_id
+      if (!contractGameId) {
+        console.log('❌ No contract game ID found')
+        return false
+      }
+      
+      // Try to get game details from blockchain
+      const gameDetails = await contractService.getGameDetails(contractGameId)
+      if (gameDetails.success && gameDetails.data.game.creator !== '0x0000000000000000000000000000000000000000') {
+        console.log('✅ Game already exists on blockchain')
+        return true
+      }
+      
+      // Game doesn't exist on blockchain, we need to create it
+      console.log('🎮 Game not found on blockchain, need to create it first')
+      
+      // Only the NFT owner (database creator) should create the game on blockchain
+      if (address?.toLowerCase() !== gameData.creator?.toLowerCase()) {
+        console.log('⏳ Waiting for NFT owner to create game on blockchain')
+        return false
+      }
+      
+      showInfo('Creating game on blockchain...')
+      
+      // Create game on blockchain
+      const result = await contractService.createGame({
+        nftContract: gameData.nft_contract,
+        tokenId: gameData.nft_token_id || gameData.tokenId,
+        priceUSD: gameData.price_usd || gameData.priceUSD,
+        acceptedToken: 0, // ETH
+        gameType: 0, // NFT vs Crypto
+        coinType: gameData.coin?.type || 'default',
+        headsImage: gameData.coin?.headsImage || '',
+        tailsImage: gameData.coin?.tailsImage || '',
+        isCustom: gameData.coin?.isCustom || false
+      })
+      
+      if (result.success) {
+        showSuccess('Game created on blockchain!')
+        
+        // Update the contract_game_id in the database
+        const updateResponse = await fetch(`${API_CONFIG.BASE_URL}/api/games/${gameData.gameId}/update-contract-id`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contract_game_id: result.gameId })
+        })
+        
+        if (updateResponse.ok) {
+          // Update local game data
+          gameData.contract_game_id = result.gameId
+          return true
+        }
+      }
+      
+      return false
+    } catch (error) {
+      console.error('❌ Error ensuring game exists on blockchain:', error)
+      return false
+    }
+  }
+
+  // Add this useEffect to check/create game on blockchain when modal opens
+  useEffect(() => {
+    if (isOpen && gameData && isContractInitialized) {
+      ensureGameExistsOnBlockchain()
+    }
+  }, [isOpen, gameData, isContractInitialized])
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -348,7 +422,7 @@ const AssetLoadingModal = ({
   const handleLoadNFT = async () => {
     if (!isCreator) return
     
-    // Check wallet connection and contract initialization
+    // Check wallet connection
     if (!isFullyConnected || !walletClient) {
       showError('Please connect your wallet to load NFT')
       return
@@ -356,6 +430,13 @@ const AssetLoadingModal = ({
     
     if (!isContractInitialized) {
       showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
+    // Ensure game exists on blockchain first
+    const gameExists = await ensureGameExistsOnBlockchain()
+    if (!gameExists) {
+      showError('Game needs to be created on blockchain first. Please try again.')
       return
     }
     
@@ -436,7 +517,7 @@ const AssetLoadingModal = ({
   const handleLoadCrypto = async () => {
     if (isCreator) return
     
-    // Check wallet connection and contract initialization
+    // Check wallet connection
     if (!isFullyConnected || !walletClient) {
       showError('Please connect your wallet to load payment')
       return
@@ -444,6 +525,25 @@ const AssetLoadingModal = ({
     
     if (!isContractInitialized) {
       showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
+    // Wait for game to exist on blockchain
+    let retries = 0
+    while (retries < 10) {
+      const gameExists = await ensureGameExistsOnBlockchain()
+      if (gameExists) break
+      
+      if (retries === 0) {
+        showInfo('Waiting for game to be created on blockchain...')
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      retries++
+    }
+    
+    if (retries >= 10) {
+      showError('Game creation timeout. Please refresh and try again.')
       return
     }
     
