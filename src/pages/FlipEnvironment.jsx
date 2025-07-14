@@ -763,21 +763,28 @@ const FlipEnvironment = () => {
       // Handle game creation notifications
       if (data.type === 'game_created_pending_deposit') {
         console.log('🎮 Game created, pending deposits:', data)
+        console.log('👤 Current user address:', address)
+        console.log('📋 Current listing:', listing)
         showSuccess(`Game created! Please deposit your ${data.requiredAction === 'deposit_nft' ? 'NFT' : 'payment'}.`)
         
         // Show asset loading modal for both players
-        setAssetModalData({
+        // Use data from WebSocket message instead of relying on listing state
+        const modalData = {
           gameId: data.gameId,
-          creator: data.role === 'creator' ? address : listing.creator,
-          joiner: data.role === 'joiner' ? address : listing.creator,
-          nftContract: data.nft_contract || listing.nft_contract,
-          tokenId: data.nft_token_id || listing.nft_token_id,
-          nftName: data.nft_name || listing.nft_name,
-          nftImage: data.nft_image || listing.nft_image,
-          priceUSD: data.amount || listing.asking_price,
-          coin: data.coin || listing.coin
-        })
+          creator: data.role === 'creator' ? address : data.creator || (listing?.creator || 'Unknown'),
+          joiner: data.role === 'joiner' ? address : data.joiner || (listing?.creator || 'Unknown'),
+          nftContract: data.nft_contract || listing?.nft_contract,
+          tokenId: data.nft_token_id || listing?.nft_token_id,
+          nftName: data.nft_name || listing?.nft_name,
+          nftImage: data.nft_image || listing?.nft_image,
+          priceUSD: data.amount || listing?.asking_price,
+          coin: data.coin || listing?.coin
+        }
+        
+        console.log('🎯 Setting asset modal data:', modalData)
+        setAssetModalData(modalData)
         setShowAssetModal(true)
+        console.log('✅ Asset modal should now be visible')
       }
       // Handle viewer updates (legacy)
       if (data.type === 'viewers_update' && data.listingId === listingId) {
@@ -850,8 +857,8 @@ const FlipEnvironment = () => {
       return
     }
     
-    if (parseFloat(offerPrice) < listing.min_offer_price) {
-      showError(`Minimum offer is $${listing.min_offer_price}`)
+    if (parseFloat(offerPrice) < (listing?.min_offer_price || 0)) {
+      showError(`Minimum offer is $${listing?.min_offer_price || 0}`)
       return
     }
     
@@ -898,7 +905,7 @@ const FlipEnvironment = () => {
     try {
       console.log('🎯 Attempting to accept offer:', offer)
       console.log('👤 Current user address:', address)
-      console.log('📋 Listing creator:', listing.creator)
+      console.log('📋 Listing creator:', listing?.creator || 'Unknown')
       
       // Prevent multiple clicks
       setAcceptingOfferId(offer.id)
@@ -923,8 +930,8 @@ const FlipEnvironment = () => {
       }
       
       // Check if listing is still active
-      if (listing.status !== 'active') {
-        throw new Error(`Listing is no longer active (status: ${listing.status})`)
+      if (listing?.status !== 'active') {
+        throw new Error(`Listing is no longer active (status: ${listing?.status || 'unknown'})`)
       }
       
       const baseUrl = API_CONFIG.BASE_URL
