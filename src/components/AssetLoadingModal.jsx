@@ -251,7 +251,7 @@ const AssetLoadingModal = ({
   onGameReady,
   isCreator 
 }) => {
-  const { address, signer, isFullyConnected, walletClient } = useWallet()
+  const { address, isFullyConnected, walletClient, publicClient } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   
   const [nftLoaded, setNftLoaded] = useState(false)
@@ -337,19 +337,27 @@ const AssetLoadingModal = ({
     
     setIsLoadingNFT(true)
     try {
-      // Approve NFT transfer to game contract
-      const nftContract = new ethers.Contract(
-        gameData.nftContract,
-        ['function approve(address to, uint256 tokenId)'],
-        signer
-      )
+      // Approve NFT transfer to game contract using the new walletClient
+      const nftContract = {
+        address: gameData.nftContract,
+        abi: ['function approve(address to, uint256 tokenId)']
+      }
       
       showInfo('Approving NFT transfer...')
-      const approveTx = await nftContract.approve(
-        contractService.contractAddress,
-        gameData.tokenId
-      )
-      await approveTx.wait()
+      
+      // Use walletClient.writeContract instead of ethers
+      const approveHash = await walletClient.writeContract({
+        address: gameData.nftContract,
+        abi: ['function approve(address to, uint256 tokenId)'],
+        functionName: 'approve',
+        args: [contractService.contractAddress, BigInt(gameData.tokenId)]
+      })
+      
+      // Wait for confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ 
+        hash: approveHash,
+        confirmations: 1 
+      })
       
       showInfo('Depositing NFT into game...')
       const result = await contractService.depositNFTForGame(

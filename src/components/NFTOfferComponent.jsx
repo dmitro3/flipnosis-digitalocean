@@ -15,7 +15,7 @@ const NFTOfferComponent = ({
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
-  const { isConnected, address, nfts, provider } = useWallet()
+  const { isConnected, address, nfts } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)

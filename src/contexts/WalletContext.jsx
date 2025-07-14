@@ -238,36 +238,69 @@ export const WalletProvider = ({ children }) => {
     })
   }, [isConnected, address, chainId, walletClient, publicClient])
 
-  // Create ethers-compatible provider for legacy code
-  const getEthersProvider = () => {
-    // For mobile wallets, we should use the walletClient's transport
-    if (walletClient && walletClient.transport) {
-      try {
-        // Create a custom provider that works with mobile wallets
-        const provider = {
-          // Minimal provider interface for compatibility
-          getSigner: () => {
-            console.warn('getSigner() is deprecated. Use walletClient directly for transactions.')
-            return null
-          },
-          // Add other methods if needed for compatibility
+  // Create a proper signer that works with the new walletClient
+  const getSigner = () => {
+    if (!walletClient || !publicClient) {
+      console.warn('⚠️ Wallet client or public client not available')
+      return null
+    }
+
+    try {
+      // Create a signer that wraps the walletClient for ethers compatibility
+      const signer = {
+        // Basic signer interface
+        getAddress: async () => walletClient.account.address,
+        signMessage: async (message) => {
+          return await walletClient.signMessage({ message })
+        },
+        signTransaction: async (transaction) => {
+          // This is a simplified version - in practice, you'd use walletClient.writeContract
+          console.warn('⚠️ signTransaction is deprecated. Use walletClient.writeContract instead.')
+          throw new Error('Use walletClient.writeContract for transactions')
+        },
+        connect: () => signer,
+        provider: {
+          getNetwork: async () => ({ chainId: chainId }),
+          getBalance: async (address) => {
+            return await publicClient.getBalance({ address })
+          }
         }
-        return provider
-      } catch (error) {
-        console.error('Failed to create provider wrapper:', error)
       }
+      
+      return signer
+    } catch (error) {
+      console.error('Failed to create signer wrapper:', error)
+      return null
     }
-    
-    // Fallback to window.ethereum if available
-    if (window.ethereum) {
-      try {
-        return new ethers.BrowserProvider(window.ethereum)
-      } catch (error) {
-        console.error('Failed to create ethers provider:', error)
+  }
+
+  // Create a provider that works with the new clients
+  const getProvider = () => {
+    if (!publicClient) {
+      console.warn('⚠️ Public client not available')
+      return null
+    }
+
+    try {
+      // Create a provider that wraps the publicClient for ethers compatibility
+      const provider = {
+        getNetwork: async () => ({ chainId: chainId }),
+        getBalance: async (address) => {
+          return await publicClient.getBalance({ address })
+        },
+        getCode: async (address) => {
+          return await publicClient.getBytecode({ address })
+        },
+        getStorageAt: async (address, slot) => {
+          return await publicClient.getStorageAt({ address, slot })
+        }
       }
+      
+      return provider
+    } catch (error) {
+      console.error('Failed to create provider wrapper:', error)
+      return null
     }
-    
-    return null
   }
 
   const value = {
@@ -293,12 +326,13 @@ export const WalletProvider = ({ children }) => {
     // Mobile detection
     isMobile,
     
-    // Clients for transactions
+    // New clients for transactions (preferred)
     walletClient,
     publicClient,
     
-    // Legacy ethers provider for existing code
-    provider: getEthersProvider(),
+    // Legacy compatibility (for existing code)
+    signer: getSigner(),
+    provider: getProvider(),
   }
 
   return (

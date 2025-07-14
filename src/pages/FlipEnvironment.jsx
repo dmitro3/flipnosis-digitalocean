@@ -573,7 +573,7 @@ const CreateGameButton = styled(Button)`
 const FlipEnvironment = () => {
   const { listingId } = useParams()
   const navigate = useNavigate()
-  const { address, signer } = useWallet()
+  const { address, walletClient, publicClient } = useWallet()
   const { showSuccess, showError } = useToast()
   
   // Helper functions for chain URLs
@@ -1022,12 +1022,28 @@ const FlipEnvironment = () => {
   // Contract deposit handlers
   const handleDepositNFT = async (gameId, nftContract, tokenId) => {
     try {
-      // Approve NFT transfer
-      // (Assume ethers and signer are available in scope)
-      const nftContractInstance = new ethers.Contract(nftContract, ['function approve(address,uint256)'], signer)
-      await nftContractInstance.approve(contractService.gameContractAddress, tokenId)
+      // Check if wallet is connected
+      if (!walletClient || !publicClient) {
+        showError('Please connect your wallet to deposit NFT')
+        return
+      }
+
+      // Approve NFT transfer using the new walletClient
+      const approveHash = await walletClient.writeContract({
+        address: nftContract,
+        abi: ['function approve(address to, uint256 tokenId)'],
+        functionName: 'approve',
+        args: [contractService.contractAddress, BigInt(tokenId)]
+      })
+      
+      // Wait for confirmation
+      await publicClient.waitForTransactionReceipt({ 
+        hash: approveHash,
+        confirmations: 1 
+      })
+      
       // Call contract to deposit NFT
-      const result = await contractService.depositNFT(gameId, nftContract, tokenId)
+      const result = await contractService.depositNFTForGame(gameId, nftContract, tokenId)
       if (result.success) {
         showSuccess('NFT deposited successfully!')
       }
