@@ -1140,17 +1140,20 @@ class ContractService {
       // Use the priceUSD parameter that was passed in, not from contract
       const priceUSD = params.priceUSD || gameDetails.data.game.priceUSD
       
+      // Convert USD to cents (contract expects price in cents as integer)
+      const priceInCents = Math.floor(priceUSD * 100)
+      
       // Get the exact amount required from the contract using Chainlink oracle
       const requiredAmount = await this.publicClient.readContract({
         address: this.contractAddress,
         abi: this.contractABI,
         functionName: 'getETHAmount',
-        args: [BigInt(priceUSD)]
+        args: [BigInt(priceInCents)]
       })
 
       const priceInWei = requiredAmount
       
-      console.log('💰 Game price from contract:', priceUSD, 'USD')
+      console.log('💰 Game price from contract:', priceUSD, 'USD (', priceInCents, 'cents)')
       console.log('💰 Contract calculated ETH amount:', formatEther(requiredAmount))
       console.log('💰 Price in Wei:', priceInWei.toString())
 
