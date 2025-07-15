@@ -929,11 +929,18 @@ const FlipEnvironment = () => {
       // Handle game ready messages (for both players to exit lobby)
       if (data.type === 'game_ready' || data.type === 'player_joined') {
         console.log('🎮 Game ready message received:', data)
+        console.log('👤 Current user address:', address)
+        console.log('🎯 Current ID:', currentId)
+        console.log('📡 Target address:', data.targetAddress)
+        console.log('🎮 Game ID:', data.gameId)
+        console.log('📢 Is broadcast:', data.isBroadcast)
         
         // Check if this message is for the current user (either direct or broadcast)
         const isForCurrentUser = data.targetAddress === address || 
                                 data.gameId === currentId ||
                                 data.isBroadcast // Accept broadcast messages
+        
+        console.log('✅ Is for current user:', isForCurrentUser)
         
         if (!isForCurrentUser) {
           console.log('⚠️ Game ready message not for current user, ignoring')

@@ -931,11 +931,13 @@ function handlePlayerConnect(socket, data) {
           })
           
           // Also broadcast to both players to exit lobby
+          console.log('🎮 Broadcasting game ready to creator:', game.creator)
           broadcastToUser(game.creator, {
             type: 'game_ready',
             gameId: gameId,
             message: 'Game is ready! Both players can now enter the game.'
           })
+          console.log('🎮 Broadcasting game ready to joiner:', address)
           broadcastToUser(address, {
             type: 'game_ready',
             gameId: gameId,
@@ -1613,13 +1615,14 @@ app.post('/api/games/:gameId/join', async (req, res) => {
       return res.status(400).json({ error: 'Joiner address is required' })
     }
     
+    console.log(`🎮 Attempting to join game ${gameId} with joiner ${joiner}`)
     db.run(
       `UPDATE games SET 
        joiner = ?, 
        status = 'joined', 
        updated_at = CURRENT_TIMESTAMP,
        transaction_hash = COALESCE(?, transaction_hash)
-       WHERE id = ? AND status = 'waiting'`,
+       WHERE id = ? AND (status = 'waiting' OR status = 'pending')`,
       [joiner, transactionHash, gameId],
       function(err) {
         if (err) {
@@ -1627,7 +1630,10 @@ app.post('/api/games/:gameId/join', async (req, res) => {
           return res.status(500).json({ error: err.message })
         }
         
+        console.log(`📊 Database update result: ${this.changes} rows changed`)
+        
         if (this.changes === 0) {
+          console.log(`⚠️ No rows updated - game not found or already joined`)
           return res.status(404).json({ error: 'Game not found or already joined' })
         }
         

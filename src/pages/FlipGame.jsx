@@ -72,25 +72,7 @@ const FlipGame = () => {
       setLoading(true)
       setError('')
 
-      // First try to load from smart contract
-      if (isFullyConnected && contractService.isInitialized()) {
-        try {
-          const contractGame = await contractService.getGame(gameId)
-          if (contractGame.success && contractGame.game) {
-            console.log('✅ Game loaded from smart contract:', contractGame.game)
-            
-            // Transform contract data to match our UI format
-            const transformedGame = transformContractGameToUI(contractGame.game)
-            setGame(transformedGame)
-            setLoading(false)
-            return
-          }
-        } catch (contractError) {
-          console.warn('⚠️ Failed to load from contract, trying database:', contractError)
-        }
-      }
-
-      // Fallback to database
+      // Always load from database first to get coin data
       const API_URL = API_CONFIG.BASE_URL
       const response = await fetch(`${API_URL}/api/games/${gameId}`)
       
@@ -101,6 +83,32 @@ const FlipGame = () => {
       const gameData = await response.json()
       console.log('✅ Game loaded from database:', gameData)
       
+      // If contract is available, merge contract data with database data
+      if (isFullyConnected && contractService.isInitialized()) {
+        try {
+          const contractGame = await contractService.getGame(gameId)
+          if (contractGame.success && contractGame.game) {
+            console.log('✅ Contract data available, merging with database data')
+            
+            // Transform contract data and merge with database data
+            const transformedGame = transformContractGameToUI(contractGame.game)
+            const mergedGame = {
+              ...gameData, // Database data (includes coin)
+              ...transformedGame, // Contract data (overrides status, scores, etc.)
+              coin: gameData.coin // Keep coin data from database
+            }
+            
+            console.log('✅ Merged game data:', mergedGame)
+            setGame(mergedGame)
+            setLoading(false)
+            return
+          }
+        } catch (contractError) {
+          console.warn('⚠️ Failed to load from contract, using database only:', contractError)
+        }
+      }
+      
+      // Use database data only
       setGame(gameData)
       
     } catch (err) {
@@ -128,7 +136,9 @@ const FlipGame = () => {
       joiner_score: contractGame.joinerScore,
       auth_info: contractGame.authInfo ? JSON.parse(contractGame.authInfo) : {},
       created_at: new Date().toISOString(),
-      contract_game_id: contractGame.gameId.toString()
+      contract_game_id: contractGame.gameId.toString(),
+      // Load coin data from database since contract doesn't store it
+      coin: null // Will be loaded from database
     }
   }
 
@@ -460,6 +470,6 @@ const FlipGame = () => {
       </Container>
     </ThemeProvider>
   )
-}
-
-export default FlipGame 
+  }
+  
+  export default FlipGame 

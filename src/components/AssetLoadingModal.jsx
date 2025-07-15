@@ -269,23 +269,31 @@ const GameLobby = ({
 
   // Listen for game ready events to auto-close modal when game is ready
   useEffect(() => {
+    console.log('🎮 AssetLoadingModal: Setting up game ready event listener')
+    
     const handleGameReady = (event) => {
-      console.log('🎮 Game ready event received:', event.detail)
+      console.log('🎮 AssetLoadingModal: Game ready event received:', event.detail)
+      console.log('🎮 AssetLoadingModal: Normalized data ID:', normalizedData.id)
       
       // Auto-close modal when game is ready for both players
       if (event.detail.type === 'game_ready' || event.detail.type === 'player_joined') {
-        console.log('🎮 Game ready message received, transporting players immediately')
+        console.log('🎮 AssetLoadingModal: Game ready message received, transporting players immediately')
         if (onGameReady) {
+          console.log('🎮 AssetLoadingModal: Calling onGameReady with ID:', normalizedData.id)
           onGameReady(normalizedData.id || normalizedData.id)
+        } else {
+          console.log('⚠️ AssetLoadingModal: onGameReady is not available')
         }
       }
     }
 
     // Add event listener to window for game ready events
     window.addEventListener('gameReady', handleGameReady)
+    console.log('🎮 AssetLoadingModal: Event listener added')
     
     return () => {
       window.removeEventListener('gameReady', handleGameReady)
+      console.log('🎮 AssetLoadingModal: Event listener removed')
     }
   }, [onGameReady, normalizedData.id])
 
