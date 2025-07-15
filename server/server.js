@@ -647,6 +647,28 @@ wss.on('connection', (socket) => {
             }
           })
           break
+        case 'nft_deposited':
+          // Broadcast to all clients in the game
+          broadcastToGame(data.gameId, {
+            type: 'nft_deposited',
+            gameId: data.gameId,
+            contractGameId: data.contractGameId,
+            message: data.message
+          })
+          
+          // Also broadcast as a window event for non-authenticated viewers
+          wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({
+                type: 'nft_deposited',
+                gameId: data.gameId,
+                contractGameId: data.contractGameId,
+                message: data.message,
+                isBroadcast: true
+              }))
+            }
+          })
+          break
         default:
           console.log('❓ Unknown message type:', data.type)
       }

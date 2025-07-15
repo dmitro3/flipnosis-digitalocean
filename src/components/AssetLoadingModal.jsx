@@ -315,10 +315,27 @@ const GameLobby = ({
       }
     }
     
+    const handleNFTDeposited = (event) => {
+      const data = event.detail
+      if (data.type === 'nft_deposited' && data.gameId === (normalizedData.id || normalizedData.id)) {
+        console.log('🎮 NFT deposited, joiner can now deposit crypto!')
+        setNftLoaded(true)
+        
+        // Update the normalized data with the contract game ID
+        if (data.contractGameId) {
+          normalizedData.contract_game_id = data.contractGameId
+        }
+        
+        showSuccess('NFT deposited! You can now deposit your crypto.')
+      }
+    }
+    
     window.addEventListener('websocketMessage', handleBothAssetsLoaded)
+    window.addEventListener('websocketMessage', handleNFTDeposited)
     
     return () => {
       window.removeEventListener('websocketMessage', handleBothAssetsLoaded)
+      window.removeEventListener('websocketMessage', handleNFTDeposited)
     }
   }, [onGameReady, normalizedData.id])
 
@@ -354,7 +371,7 @@ const GameLobby = ({
     }
   }
 
-  const handleLoadCrypto = async () => {
+    const handleLoadCrypto = async () => {
     if (!isFullyConnected || !walletClient) {
       showError('Please connect your wallet')
       return
@@ -376,63 +393,23 @@ const GameLobby = ({
       
       // Check if this is a game created from an offer (no contract game ID yet)
       if (!normalizedData.contract_game_id || normalizedData.contract_game_id === normalizedData.id) {
-        console.log('🎮 Game created from offer, creating blockchain game first...')
+        console.log('🎮 Game created from offer, but joiner cannot create blockchain game')
+        console.log('🎮 Creator needs to deposit NFT first, then joiner can join')
         
-        // Create blockchain game and deposit NFT
-        const createResult = await contractService.createBlockchainGameFromOffer({
-          opponent: normalizedData.joiner,
-          nftContract: normalizedData.nft_contract || normalizedData.nftContract,
-          tokenId: normalizedData.nft_token_id || normalizedData.tokenId,
-          priceUSD: priceUSD,
-          coinType: normalizedData.coin?.type || 'default',
-          headsImage: normalizedData.coin?.headsImage || '',
-          tailsImage: normalizedData.coin?.tailsImage || '',
-          isCustom: normalizedData.coin?.isCustom || false
-        })
-        
-        if (!createResult.success) {
-          throw new Error(createResult.error || 'Failed to create blockchain game')
-        }
-        
-        console.log('✅ Blockchain game created with ID:', createResult.gameId)
-        
-                  // Update the database with the contract game ID
-          try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}/api/games/${normalizedData.id}/update-contract-id`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contract_game_id: createResult.gameId })
-            })
-            
-            if (!response.ok) {
-              console.warn('Failed to update database with contract game ID')
-            }
-          } catch (dbError) {
-            console.error('Database update error:', dbError)
-          }
-        
-        // Now join the newly created blockchain game
-        const joinResult = await contractService.joinGame({
-          gameId: createResult.gameId,
-          priceUSD: priceUSD
-        })
-        
-        if (!joinResult.success) {
-          throw new Error(joinResult.error || 'Failed to join blockchain game')
-        }
-        
-        console.log('✅ Successfully joined blockchain game')
-        
-      } else {
-        // Game already exists on blockchain, just join it
-        const result = await contractService.joinGame({
-          gameId: gameId,
-          priceUSD: priceUSD
-        })
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to join game')
-        }
+        // For offer-based games, the creator (Player 1) needs to deposit NFT first
+        // The joiner (Player 2) cannot create the blockchain game because they don't own the NFT
+        showError('The game creator needs to deposit their NFT first. Please wait for them to complete their deposit.')
+        return
+      }
+      
+      // Game already exists on blockchain, just join it
+      const result = await contractService.joinGame({
+        gameId: gameId,
+        priceUSD: priceUSD
+      })
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to join game')
       }
       
       setCryptoLoaded(true)
@@ -460,6 +437,78 @@ const GameLobby = ({
     } catch (error) {
       console.error('Error loading crypto:', error)
       showError(error.message || 'Failed to load crypto')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDepositNFT = async () => {
+    if (!isFullyConnected || !walletClient) {
+      showError('Please connect your wallet')
+      return
+    }
+    
+    if (!contractService.isInitialized()) {
+      showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
+    setLoading(true)
+    
+    try {
+      showInfo('Creating blockchain game and depositing NFT...')
+      
+      const priceUSD = normalizedData.price_usd || normalizedData.priceUSD
+      
+      // Create blockchain game and deposit NFT
+      const createResult = await contractService.createBlockchainGameFromOffer({
+        opponent: normalizedData.joiner,
+        nftContract: normalizedData.nft_contract || normalizedData.nftContract,
+        tokenId: normalizedData.nft_token_id || normalizedData.tokenId,
+        priceUSD: priceUSD,
+        coinType: normalizedData.coin?.type || 'default',
+        headsImage: normalizedData.coin?.headsImage || '',
+        tailsImage: normalizedData.coin?.tailsImage || '',
+        isCustom: normalizedData.coin?.isCustom || false
+      })
+      
+      if (!createResult.success) {
+        throw new Error(createResult.error || 'Failed to create blockchain game')
+      }
+      
+      console.log('✅ Blockchain game created with ID:', createResult.gameId)
+      
+      // Update the database with the contract game ID
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/games/${normalizedData.id}/update-contract-id`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contract_game_id: createResult.gameId })
+        })
+        
+        if (!response.ok) {
+          console.warn('Failed to update database with contract game ID')
+        }
+      } catch (dbError) {
+        console.error('Database update error:', dbError)
+      }
+      
+      setNftLoaded(true)
+      showSuccess('NFT deposited successfully! Blockchain game created.')
+      
+      // Notify the joiner that they can now deposit crypto
+      if (window.socket && window.socket.readyState === WebSocket.OPEN) {
+        window.socket.send(JSON.stringify({
+          type: 'nft_deposited',
+          gameId: normalizedData.id,
+          contractGameId: createResult.gameId,
+          message: 'NFT deposited, you can now deposit crypto!'
+        }))
+      }
+      
+    } catch (error) {
+      console.error('Error depositing NFT:', error)
+      showError(error.message || 'Failed to deposit NFT')
     } finally {
       setLoading(false)
     }
@@ -533,13 +582,25 @@ const GameLobby = ({
             </NFTImageContainer>
             
             <StatusText isLoaded={nftLoaded}>
-              {nftLoaded ? '✅ NFT Loaded' : '⏳ Loading NFT...'}
+              {nftLoaded ? '✅ NFT Loaded' : 
+               isCreator && !normalizedData.contract_game_id ? '⏳ Waiting for NFT deposit...' : 
+               '⏳ Loading NFT...'}
             </StatusText>
             
             {nftLoaded && (
               <div style={{ textAlign: 'center', color: '#00FF41', fontSize: '0.9rem' }}>
                 NFT transferred to contract when game was created
               </div>
+            )}
+            
+            {!nftLoaded && isCreator && !normalizedData.contract_game_id && (
+              <ActionButton 
+                className="load"
+                onClick={handleDepositNFT}
+                disabled={loading}
+              >
+                Deposit NFT
+              </ActionButton>
             )}
           </AssetSection>
 
@@ -568,10 +629,12 @@ const GameLobby = ({
             </CryptoContainer>
             
             <StatusText isLoaded={cryptoLoaded}>
-              {cryptoLoaded ? '✅ Crypto Loaded' : '⏳ Waiting for crypto...'}
+              {cryptoLoaded ? '✅ Crypto Loaded' : 
+               !isCreator && !normalizedData.contract_game_id ? '⏳ Waiting for creator to deposit NFT...' : 
+               '⏳ Waiting for crypto...'}
             </StatusText>
             
-            {!isCreator && !cryptoLoaded && !loading && (
+            {!isCreator && !cryptoLoaded && !loading && normalizedData.contract_game_id && (
               <ActionButton 
                 className="load"
                 onClick={handleLoadCrypto}
