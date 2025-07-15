@@ -638,6 +638,13 @@ const FlipEnvironment = () => {
   const shouldShowOffers = !isGame || (isGame && listing?.status === 'waiting')
   
   console.log('🎯 Offer logic:', { isGame, listingStatus: listing?.status, shouldShowOffers })
+  console.log('🔗 NFT Links:', { 
+    nft_chain: listing?.nft_chain, 
+    nft_contract: listing?.nft_contract, 
+    nft_token_id: listing?.nft_token_id,
+    explorerUrl: getExplorerUrl(listing?.nft_chain, listing?.nft_contract, listing?.nft_token_id),
+    marketplaceUrl: getMarketplaceUrl(listing?.nft_chain, listing?.nft_contract, listing?.nft_token_id)
+  })
   
   useEffect(() => {
     fetchListingData()
