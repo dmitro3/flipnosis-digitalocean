@@ -2575,12 +2575,29 @@ app.post('/api/games/:gameId/offers', async (req, res) => {
     
     console.log('🎮 Creating offer for game:', { gameId, offerer_address, offer_price })
     
-    // Check if game exists and is waiting for players
-    db.get('SELECT * FROM games WHERE id = ? AND status = "waiting"', [gameId], (err, game) => {
-      if (err || !game) {
-        console.log('❌ Game not found or not waiting:', gameId)
+    // Check if game exists and is waiting for players or pending (after offer accepted)
+    db.get('SELECT * FROM games WHERE id = ? AND (status = "waiting" OR status = "pending")', [gameId], (err, game) => {
+      if (err) {
+        console.error('❌ Database error:', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      if (!game) {
+        console.log('❌ Game not found or not accepting offers:', gameId)
+        // Let's check what the actual game status is
+        db.get('SELECT id, status FROM games WHERE id = ?', [gameId], (err, gameCheck) => {
+          if (err) {
+            console.error('❌ Error checking game:', err)
+          } else if (gameCheck) {
+            console.log('📋 Game exists but status is:', gameCheck.status)
+          } else {
+            console.log('❌ Game does not exist in database')
+          }
+        })
         return res.status(404).json({ error: 'Game not found or not accepting offers' })
       }
+      
+      console.log('✅ Game found with status:', game.status)
       
       // For games, there's no minimum offer requirement - any offer is valid
       const offerId = `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -2708,8 +2725,135 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
         } else {
           // Check if it's a listing (existing logic)
           db.get('SELECT * FROM game_listings WHERE id = ?', [offer.listing_id], (err, listing) => {
-            // ... existing listing logic ...
-            // (leave the old code here, or call the old handler)
+            if (err) {
+              console.error('❌ Database error:', err)
+              return res.status(500).json({ error: 'Database error' })
+            }
+            
+            if (!listing) {
+              return res.status(404).json({ error: 'Listing not found' })
+            }
+            
+            // Verify the acceptor is the listing creator
+            if (listing.creator !== acceptor_address) {
+              return res.status(403).json({ error: 'Only listing creator can accept offers' })
+            }
+            
+            // Update offer status
+            db.run(
+              'UPDATE offers SET status = "accepted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+              [offerId],
+              async (err) => {
+                if (err) {
+                  return res.status(500).json({ error: err.message })
+                }
+                
+                // Keep listing status as "active" - only change to "completed" when game actually starts
+                console.log('✅ Offer accepted, keeping listing active for asset deposits')
+                
+                // Reject all other pending offers
+                db.run(
+                  'UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"',
+                  [listing.id, offerId]
+                )
+                
+                // Create notification for offerer
+                createNotification(
+                  offer.offerer_address,
+                  'offer_accepted',
+                  'Offer Accepted!',
+                  `Your offer for ${listing.nft_name} has been accepted!`,
+                  JSON.stringify({ offerId, listingId: listing.id })
+                )
+                
+                // Create game in pending state
+                const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                
+                db.run(
+                  `INSERT INTO games (
+                    id, creator, joiner, nft_contract, nft_token_id,
+                    nft_name, nft_image, nft_collection, price_usd,
+                    status, game_type, coin, nft_chain
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    gameId,
+                    listing.creator,
+                    offer.offerer_address,
+                    listing.nft_contract,
+                    listing.nft_token_id,
+                    listing.nft_name,
+                    listing.nft_image,
+                    listing.nft_collection,
+                    offer.offer_price,
+                    'pending', // New status for games waiting for both assets
+                    'nft-vs-crypto',
+                    listing.coin,
+                    listing.nft_chain
+                  ],
+                  (err) => {
+                    if (err) {
+                      console.error('❌ Error creating game:', err)
+                      return res.status(500).json({ error: err.message })
+                    }
+                    
+                    console.log('✅ Game created from accepted offer:', gameId)
+                    
+                    // Send response to client
+                    res.json({ success: true, gameId })
+                    
+                    // Broadcast to both users
+                    broadcastToUser(listing.creator, {
+                      type: 'offer_accepted',
+                      gameId,
+                      listingId: listing.id
+                    })
+                    broadcastToUser(offer.offerer_address, {
+                      type: 'offer_accepted',
+                      gameId,
+                      listingId: listing.id
+                    })
+                    
+                    // Broadcast to all users viewing this listing
+                    broadcastToListing(listing.id, {
+                      type: 'offer_accepted',
+                      gameId,
+                      listingId: listing.id
+                    })
+                    
+                    // Notify both users they need to deposit assets
+                    broadcastToUser(listing.creator, {
+                      type: 'game_created_pending_deposit',
+                      gameId,
+                      role: 'creator',
+                      requiredAction: 'deposit_nft',
+                      listingId: listing.id,
+                      creator: listing.creator,
+                      joiner: offer.offerer_address,
+                      nft_contract: listing.nft_contract,
+                      nft_token_id: listing.nft_token_id,
+                      nft_name: listing.nft_name,
+                      nft_image: listing.nft_image,
+                      coin: listing.coin
+                    })
+                    broadcastToUser(offer.offerer_address, {
+                      type: 'game_created_pending_deposit',
+                      gameId,
+                      role: 'joiner',
+                      requiredAction: 'deposit_crypto',
+                      amount: offer.offer_price,
+                      listingId: listing.id,
+                      creator: listing.creator,
+                      joiner: offer.offerer_address,
+                      nft_contract: listing.nft_contract,
+                      nft_token_id: listing.nft_token_id,
+                      nft_name: listing.nft_name,
+                      nft_image: listing.nft_image,
+                      coin: listing.coin
+                    })
+                  }
+                )
+              }
+            )
           })
         }
       })

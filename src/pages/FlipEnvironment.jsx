@@ -1734,6 +1734,7 @@ const FlipEnvironment = () => {
                         marginBottom: '0.5rem'
                       }}>
                         {listing.status === 'waiting' ? 'Waiting for Player' :
+                         listing.status === 'pending' ? 'Waiting for Assets' :
                          listing.status === 'joined' ? 'Game Ready' :
                          listing.status === 'active' ? 'In Progress' :
                          listing.status === 'completed' ? 'Completed' : 'Unknown Status'}
@@ -1743,6 +1744,7 @@ const FlipEnvironment = () => {
                         fontSize: '0.9rem'
                       }}>
                         {listing.status === 'waiting' ? 'Click "Join Game" to participate' :
+                         listing.status === 'pending' ? 'Both players need to deposit their assets' :
                          listing.status === 'joined' ? 'Both players are ready. Game will start soon.' :
                          listing.status === 'active' ? 'Game is currently being played' :
                          listing.status === 'completed' ? 'Game has finished' : 'Unknown'}
