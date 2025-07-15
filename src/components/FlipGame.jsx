@@ -497,6 +497,7 @@ const FlipGame = () => {
   const [flipAnimation, setFlipAnimation] = useState(null)
   const [roundResult, setRoundResult] = useState(null)
   const [lastFlipResult, setLastFlipResult] = useState(null)
+  const [isFlipping, setIsFlipping] = useState(false)
 
   // Custom coin images
   const [customHeadsImage, setCustomHeadsImage] = useState(null)
