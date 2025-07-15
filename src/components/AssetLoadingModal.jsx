@@ -349,6 +349,12 @@ const GameLobby = ({
   }
 
   const handleCancel = async () => {
+    // Only creator can cancel the game
+    if (!isCreator) {
+      showError('Only the game creator can cancel the game')
+      return
+    }
+    
     // Handle both contract_game_id (from database) and gameId (from WebSocket)
     const gameId = normalizedData.contract_game_id || normalizedData.id
     if (!gameId) return
@@ -482,7 +488,7 @@ const GameLobby = ({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-          {!gameReady && (
+          {!gameReady && isCreator && (
             <ActionButton 
               className="cancel"
               onClick={handleCancel}

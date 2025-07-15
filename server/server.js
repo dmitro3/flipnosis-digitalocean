@@ -3126,6 +3126,22 @@ function broadcastToUser(address, message) {
     }
   })
   
+  // BROADCAST TO ALL CONNECTED CLIENTS as fallback for critical messages
+  if (sentCount === 0 && (message.type === 'game_created_pending_deposit' || message.type === 'offer_accepted')) {
+    console.log(`🚨 No sockets found for ${address}, broadcasting to all clients as fallback`)
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({
+          ...message,
+          targetAddress: address, // Add target address so frontend can filter
+          isBroadcast: true
+        }))
+        sentCount++
+      }
+    })
+    console.log(`📡 Broadcast fallback sent to ${sentCount} total clients`)
+  }
+  
   if (sentCount === 0) {
     console.log(`⚠️ No active sockets found for user ${address}`)
   } else {

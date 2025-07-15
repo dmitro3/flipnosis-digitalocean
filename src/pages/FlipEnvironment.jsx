@@ -891,6 +891,18 @@ const FlipEnvironment = () => {
         console.log('🎮 Game created, pending deposits:', data)
         console.log('👤 Current user address:', address)
         console.log('📋 Current listing:', listing)
+        
+        // Check if this message is for the current user (either direct or broadcast)
+        const isForCurrentUser = data.targetAddress === address || 
+                                data.role === 'creator' && address === listing?.creator ||
+                                data.role === 'joiner' && address === data.joiner ||
+                                data.isBroadcast // Accept broadcast messages
+        
+        if (!isForCurrentUser) {
+          console.log('⚠️ Message not for current user, ignoring')
+          return
+        }
+        
         showSuccess(`Game created! Entering Game Lobby...`)
         
         // Show asset loading modal for both players
