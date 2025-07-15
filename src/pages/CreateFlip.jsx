@@ -170,6 +170,39 @@ const CreateFlip = () => {
     setLoading(true)
     
     try {
+      // Check if NFT is approved for the contract
+      showInfo('Checking NFT approval...')
+      const isApproved = await contractService.isNFTApproved(
+        selectedNFT.contractAddress,
+        selectedNFT.tokenId,
+        contractService.contractAddress,
+        address
+      )
+      if (!isApproved) {
+        showInfo('Requesting NFT approval in your wallet...')
+        await contractService.approveNFT(
+          selectedNFT.contractAddress,
+          selectedNFT.tokenId,
+          contractService.contractAddress
+        )
+        showInfo('Waiting for approval confirmation...')
+        // Optionally, poll for approval confirmation
+        let approved = false
+        for (let i = 0; i < 10; i++) {
+          await new Promise(res => setTimeout(res, 2000))
+          approved = await contractService.isNFTApproved(
+            selectedNFT.contractAddress,
+            selectedNFT.tokenId,
+            contractService.contractAddress,
+            address
+          )
+          if (approved) break
+        }
+        if (!approved) {
+          throw new Error('NFT approval not confirmed. Please try again.')
+        }
+        showSuccess('NFT approved!')
+      }
       // First, create the game on blockchain
       showInfo('Creating game on blockchain...')
       
@@ -203,7 +236,7 @@ const CreateFlip = () => {
         price_usd: parseFloat(price),
         game_type: 'nft-vs-crypto',
         status: 'waiting',
-        nft_chain: chain?.name.toLowerCase() || 'base',
+        nft_chain: 'base',
         contract_game_id: contractGameId, // Add the blockchain game ID
         coin: {
           type: selectedCoin?.type || 'default',

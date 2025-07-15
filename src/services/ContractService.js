@@ -2680,6 +2680,53 @@ class ContractService {
       throw error
     }
   }
+
+  // Check if NFT is approved for the contract
+  async isNFTApproved(nftContract, tokenId, operator, owner) {
+    try {
+      const { public: publicClient } = this.getCurrentClients()
+      // Check getApproved first
+      const approvedAddress = await publicClient.readContract({
+        address: nftContract,
+        abi: [
+          {
+            name: 'getApproved',
+            type: 'function',
+            inputs: [{ name: 'tokenId', type: 'uint256' }],
+            outputs: [{ name: '', type: 'address' }],
+            stateMutability: 'view'
+          }
+        ],
+        functionName: 'getApproved',
+        args: [BigInt(tokenId)]
+      })
+      if (approvedAddress && approvedAddress.toLowerCase() === operator.toLowerCase()) {
+        return true
+      }
+      // Check isApprovedForAll
+      const isApprovedForAll = await publicClient.readContract({
+        address: nftContract,
+        abi: [
+          {
+            name: 'isApprovedForAll',
+            type: 'function',
+            inputs: [
+              { name: 'owner', type: 'address' },
+              { name: 'operator', type: 'address' }
+            ],
+            outputs: [{ name: '', type: 'bool' }],
+            stateMutability: 'view'
+          }
+        ],
+        functionName: 'isApprovedForAll',
+        args: [owner, operator]
+      })
+      return isApprovedForAll
+    } catch (error) {
+      console.error('Error checking NFT approval:', error)
+      return false
+    }
+  }
 }
 
 export default new ContractService() 

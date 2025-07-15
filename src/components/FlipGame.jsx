@@ -1955,15 +1955,7 @@ const FlipGame = () => {
 
               {/* Mobile Chat Panel */}
               <MobileInfoPanel isOpen={isChatOpen}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <h3 style={{ color: theme.colors.neonYellow, marginBottom: '0.5rem' }}>Game Chat</h3>
-                  <GameChatBox 
-                    gameId={gameId}
-                    socket={socket}
-                    connected={connected}
-                    isMobile={true}
-                  />
-                </div>
+                {/* [CLEANUP] Removed GameChatBox ... /> usages in mobile and desktop chat panels */}
               </MobileInfoPanel>
 
               {/* Player 1 Box - Profile Image */}
@@ -2695,11 +2687,7 @@ const FlipGame = () => {
 
                 {/* Game Chat Box - Moved here */}
                 <div style={{ marginTop: '2rem' }}>
-                  <GameChatBox 
-                    gameId={gameId}
-                    socket={socket}
-                    connected={connected}
-                  />
+                  {/* [CLEANUP] Removed GameChatBox ... /> usages in mobile and desktop chat panels */}
                 </div>
               </div>
 
