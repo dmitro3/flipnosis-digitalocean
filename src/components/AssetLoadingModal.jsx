@@ -215,6 +215,14 @@ const GameLobby = ({
     price_usd: gameData?.price_usd || gameData?.priceUSD,
     coin: gameData?.coin
   }
+  
+  console.log('🎮 AssetLoadingModal - Normalized data:', {
+    id: normalizedData.id,
+    contract_game_id: normalizedData.contract_game_id,
+    creator: normalizedData.creator,
+    joiner: normalizedData.joiner,
+    isCreator
+  })
   const { isConnected, address, walletClient, publicClient } = useWallet()
   const { isFullyConnected } = useWalletConnection()
   const { showSuccess, showError, showInfo } = useToast()
@@ -260,9 +268,30 @@ const GameLobby = ({
     initializeService()
   }, [isFullyConnected, walletClient, publicClient, showError, initializationAttempted])
 
-  // When modal opens, check current game state
+  // When modal opens, check current game state and join game room
   useEffect(() => {
     if (isOpen && gameData) {
+      console.log('🎮 AssetLoadingModal opened for game:', normalizedData.id)
+      
+      // Join the game room for WebSocket communication
+      if (window.socket && window.socket.readyState === WebSocket.OPEN) {
+        console.log('🎮 Joining game room:', normalizedData.id)
+        console.log('🎮 WebSocket state:', window.socket.readyState)
+        console.log('🎮 WebSocket URL:', window.socket.url)
+        
+        const joinMessage = {
+          type: 'join_game',
+          gameId: normalizedData.id,
+          address: address || 'anonymous'
+        }
+        console.log('🎮 Sending join message:', joinMessage)
+        window.socket.send(JSON.stringify(joinMessage))
+      } else {
+        console.warn('⚠️ WebSocket not available for game room joining')
+        console.log('🎮 Socket available:', !!window.socket)
+        console.log('🎮 Socket state:', window.socket?.readyState)
+      }
+      
       checkGameState()
     }
   }, [isOpen, gameData])
@@ -280,7 +309,7 @@ const GameLobby = ({
         console.log('🎮 AssetLoadingModal: Game ready message received, transporting players immediately')
         if (onGameReady) {
           console.log('🎮 AssetLoadingModal: Calling onGameReady with ID:', normalizedData.id)
-          onGameReady(normalizedData.id || normalizedData.id)
+          onGameReady(normalizedData.id)
         } else {
           console.log('⚠️ AssetLoadingModal: onGameReady is not available')
         }
@@ -301,7 +330,7 @@ const GameLobby = ({
   useEffect(() => {
     const handleBothAssetsLoaded = (event) => {
       const data = event.detail
-      if (data.type === 'both_assets_loaded' && data.gameId === (normalizedData.id || normalizedData.id)) {
+      if (data.type === 'both_assets_loaded' && data.gameId === normalizedData.id) {
         console.log('🎮 Both assets loaded, transporting all players!')
         setGameReady(true)
         setCryptoLoaded(true)
@@ -309,7 +338,7 @@ const GameLobby = ({
         
         setTimeout(() => {
           if (onGameReady) {
-            onGameReady(normalizedData.id || normalizedData.id)
+            onGameReady(normalizedData.id)
           }
         }, 500)
       }
@@ -317,16 +346,23 @@ const GameLobby = ({
     
     const handleNFTDeposited = (event) => {
       const data = event.detail
-      if (data.type === 'nft_deposited' && data.gameId === (normalizedData.id || normalizedData.id)) {
+      console.log('📡 Received WebSocket message:', data)
+      console.log('🎮 Current game ID:', normalizedData.id)
+      console.log('📡 Message game ID:', data.gameId)
+      
+      if (data.type === 'nft_deposited' && data.gameId === normalizedData.id) {
         console.log('🎮 NFT deposited, joiner can now deposit crypto!')
         setNftLoaded(true)
         
         // Update the normalized data with the contract game ID
         if (data.contractGameId) {
           normalizedData.contract_game_id = data.contractGameId
+          console.log('✅ Updated contract game ID:', data.contractGameId)
         }
         
         showSuccess('NFT deposited! You can now deposit your crypto.')
+      } else {
+        console.log('⚠️ Message not for this game or wrong type')
       }
     }
     
@@ -422,7 +458,7 @@ const GameLobby = ({
       if (window.socket && window.socket.readyState === WebSocket.OPEN) {
         window.socket.send(JSON.stringify({
           type: 'both_assets_loaded',
-          gameId: normalizedData.id || normalizedData.id,
+          gameId: normalizedData.id,
           message: 'Both assets loaded, game ready!'
         }))
       }
@@ -430,7 +466,7 @@ const GameLobby = ({
       // Small delay then transport both players
       setTimeout(() => {
         if (onGameReady) {
-          onGameReady(normalizedData.id || normalizedData.id)
+          onGameReady(normalizedData.id)
         }
       }, 1000)
       
@@ -498,12 +534,20 @@ const GameLobby = ({
       
       // Notify the joiner that they can now deposit crypto
       if (window.socket && window.socket.readyState === WebSocket.OPEN) {
-        window.socket.send(JSON.stringify({
+        const message = {
           type: 'nft_deposited',
           gameId: normalizedData.id,
           contractGameId: createResult.gameId,
           message: 'NFT deposited, you can now deposit crypto!'
-        }))
+        }
+        console.log('📡 Sending nft_deposited message:', message)
+        console.log('📡 WebSocket state:', window.socket.readyState)
+        console.log('📡 WebSocket URL:', window.socket.url)
+        window.socket.send(JSON.stringify(message))
+      } else {
+        console.warn('⚠️ WebSocket not available for nft_deposited notification')
+        console.log('📡 Socket available:', !!window.socket)
+        console.log('📡 Socket state:', window.socket?.readyState)
       }
       
     } catch (error) {
@@ -583,8 +627,8 @@ const GameLobby = ({
             
             <StatusText isLoaded={nftLoaded}>
               {nftLoaded ? '✅ NFT Loaded' : 
-               isCreator && !normalizedData.contract_game_id ? '⏳ Waiting for NFT deposit...' : 
-               '⏳ Loading NFT...'}
+               isCreator && !normalizedData.contract_game_id ? '⏳ Click "Deposit NFT" to start' : 
+               '⏳ Waiting for creator to deposit NFT...'}
             </StatusText>
             
             {nftLoaded && (
@@ -631,7 +675,7 @@ const GameLobby = ({
             <StatusText isLoaded={cryptoLoaded}>
               {cryptoLoaded ? '✅ Crypto Loaded' : 
                !isCreator && !normalizedData.contract_game_id ? '⏳ Waiting for creator to deposit NFT...' : 
-               '⏳ Waiting for crypto...'}
+               '⏳ Waiting for joiner to deposit crypto...'}
             </StatusText>
             
             {!isCreator && !cryptoLoaded && !loading && normalizedData.contract_game_id && (
@@ -661,7 +705,9 @@ const GameLobby = ({
           <p style={{ color: '#fff', margin: 0 }}>
             {gameReady ? '🎉 Game Ready! Starting...' : 
              nftLoaded && cryptoLoaded ? '🎮 Both assets loaded! Game will start automatically...' :
+             nftLoaded && !normalizedData.contract_game_id ? '⏳ Creator deposited NFT, waiting for joiner...' :
              nftLoaded ? '⏳ Waiting for Player 2 to load crypto...' :
+             !normalizedData.contract_game_id ? '⏳ Creator needs to deposit NFT first...' :
              '⏳ Loading assets...'}
           </p>
         </div>

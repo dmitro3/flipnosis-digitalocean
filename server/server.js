@@ -648,8 +648,20 @@ wss.on('connection', (socket) => {
           })
           break
         case 'nft_deposited':
+          console.log('🎮 NFT deposited message received:', data)
+          console.log('🎮 Game ID:', data.gameId)
+          console.log('🎮 Contract Game ID:', data.contractGameId)
+          
           // Broadcast to all clients in the game
           broadcastToGame(data.gameId, {
+            type: 'nft_deposited',
+            gameId: data.gameId,
+            contractGameId: data.contractGameId,
+            message: data.message
+          })
+          
+          // Also broadcast to game viewers (for asset loading modal)
+          broadcastToGameViewers(data.gameId, {
             type: 'nft_deposited',
             gameId: data.gameId,
             contractGameId: data.contractGameId,

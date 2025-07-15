@@ -934,6 +934,16 @@ const FlipEnvironment = () => {
         setAssetModalData(modalData)
         setShowAssetModal(true)
         console.log('✅ Asset modal should now be visible')
+        
+        // Join the game room for the new game
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          console.log('🎮 Joining game room for new game:', data.gameId)
+          socket.send(JSON.stringify({
+            type: 'join_game',
+            gameId: data.gameId,
+            address: address || 'anonymous'
+          }))
+        }
       }
       
       // Handle game ready messages (for both players to exit lobby)
