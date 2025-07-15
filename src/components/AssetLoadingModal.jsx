@@ -202,6 +202,19 @@ const GameLobby = ({
   onGameReady,
   isCreator 
 }) => {
+  // CLAUDE OPUS PATCH: Normalize gameData props for consistent usage
+  const normalizedData = {
+    id: gameData?.id || gameData?.gameId,
+    contract_game_id: gameData?.contract_game_id,
+    creator: gameData?.creator,
+    joiner: gameData?.joiner,
+    nft_contract: gameData?.nft_contract || gameData?.nftContract,
+    nft_token_id: gameData?.nft_token_id || gameData?.tokenId,
+    nft_name: gameData?.nft_name || gameData?.nftName,
+    nft_image: gameData?.nft_image || gameData?.nftImage,
+    price_usd: gameData?.price_usd || gameData?.priceUSD,
+    coin: gameData?.coin
+  }
   const { isConnected, address, walletClient, publicClient } = useWallet()
   const { isFullyConnected } = useWalletConnection()
   const { showSuccess, showError, showInfo } = useToast()
@@ -256,7 +269,7 @@ const GameLobby = ({
 
   const checkGameState = async () => {
     // Handle both contract_game_id (from database) and gameId (from WebSocket)
-    const gameId = gameData?.contract_game_id || gameData?.gameId
+    const gameId = normalizedData.contract_game_id || normalizedData.id
     if (!gameId) return
     
     try {
@@ -296,8 +309,8 @@ const GameLobby = ({
       showInfo('Loading crypto into game...')
       
       // Handle both contract_game_id (from database) and gameId (from WebSocket)
-      const gameId = gameData?.contract_game_id || gameData?.gameId
-      const priceUSD = gameData?.price_usd || gameData?.priceUSD
+      const gameId = normalizedData.contract_game_id || normalizedData.id
+      const priceUSD = normalizedData.price_usd || normalizedData.priceUSD
       
       // Join the game with crypto payment
       const result = await contractService.joinGame({
@@ -316,7 +329,7 @@ const GameLobby = ({
       setTimeout(() => {
         setGameReady(true)
         if (onGameReady) {
-          onGameReady(gameData.id || gameData.gameId)
+          onGameReady(normalizedData.id || normalizedData.id)
         }
       }, 2000)
       
@@ -330,7 +343,7 @@ const GameLobby = ({
 
   const handleCancel = async () => {
     // Handle both contract_game_id (from database) and gameId (from WebSocket)
-    const gameId = gameData?.contract_game_id || gameData?.gameId
+    const gameId = normalizedData.contract_game_id || normalizedData.id
     if (!gameId) return
     
     try {
@@ -371,13 +384,13 @@ const GameLobby = ({
           <AssetSection>
             <PlayerInfo>
               <h3>Player 1 (Creator)</h3>
-              <p>{gameData?.creator || 'Unknown'}</p>
+              <p>{normalizedData.creator || 'Unknown'}</p>
             </PlayerInfo>
             
             <NFTImageContainer isLoaded={nftLoaded}>
               <NFTImage 
-                src={gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'} 
-                alt={gameData?.nft_name || gameData?.nftName || 'NFT'}
+                src={normalizedData.nft_image || normalizedData.nftImage || '/placeholder-nft.svg'} 
+                alt={normalizedData.nft_name || normalizedData.nftName || 'NFT'}
                 onError={(e) => {
                   e.target.src = '/placeholder-nft.svg'
                 }}
@@ -410,7 +423,7 @@ const GameLobby = ({
             </PlayerInfo>
             
             <CryptoContainer isLoaded={cryptoLoaded}>
-              <CryptoAmount>${gameData?.price_usd || gameData?.priceUSD || 0}</CryptoAmount>
+              <CryptoAmount>${normalizedData.price_usd || normalizedData.priceUSD || 0}</CryptoAmount>
               <CryptoCurrency>ETH</CryptoCurrency>
               {cryptoLoaded && (
                 <SuccessAnimation>

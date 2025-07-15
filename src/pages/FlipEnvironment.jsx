@@ -1210,6 +1210,11 @@ const FlipEnvironment = () => {
   const isOwner = address?.toLowerCase() === listing.creator?.toLowerCase()
   const hasAcceptedOffer = offers.some(offer => offer.status === 'accepted')
   
+  // CLAUDE OPUS PATCH: Normalize NFT contract and token id for Explorer/OpenSea buttons
+  const nftContract = listing?.nft_contract || listing?.nftContract;
+  const nftTokenId = listing?.nft_token_id || listing?.tokenId;
+  const nftChain = listing?.nft_chain || 'base';
+  
   return (
     <ThemeProvider theme={theme}>
       <Container>
@@ -1303,57 +1308,63 @@ const FlipEnvironment = () => {
                           )}
                         </PriceSection>
                         {/* Explorer and Marketplace Links */}
-                        <div style={{ 
-                          display: 'flex', 
-                          gap: '1rem', 
-                          marginTop: '1rem',
-                          flexWrap: 'wrap'
-                        }}>
-                          {getExplorerUrl(listing.nft_chain, listing.nft_contract, listing.nft_token_id) && (
-                            <a 
-                              href={getExplorerUrl(listing.nft_chain, listing.nft_contract, listing.nft_token_id)}
+                        {(nftContract && nftTokenId) && (
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '0.5rem', 
+                            marginTop: '1rem'
+                          }}>
+                            <a
+                              href={`${getExplorerUrl(nftChain, nftContract, nftTokenId)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{
-                                background: 'rgba(128, 128, 128, 0.1)',
+                                background: 'rgba(255, 255, 255, 0.1)',
                                 padding: '0.4rem 0.8rem',
                                 borderRadius: '0.5rem',
                                 fontSize: '0.8rem',
                                 textDecoration: 'none',
-                                color: '#808080', // Light grey
+                                color: '#fff',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.4rem',
-                                border: '1px solid rgba(128, 128, 128, 0.2)',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
                                 transition: 'all 0.3s ease'
                               }}
                             >
-                              Explorer
+                              🔍 Explorer
                             </a>
-                          )}
-                          {getMarketplaceUrl(listing.nft_chain, listing.nft_contract, listing.nft_token_id) && (
-                            <a 
-                              href={getMarketplaceUrl(listing.nft_chain, listing.nft_contract, listing.nft_token_id)}
+                            <a
+                              href={`${getMarketplaceUrl(nftChain, nftContract, nftTokenId)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{
-                                background: 'rgba(0, 123, 255, 0.1)',
+                                background: 'rgba(255, 255, 255, 0.1)',
                                 padding: '0.4rem 0.8rem',
                                 borderRadius: '0.5rem',
                                 fontSize: '0.8rem',
                                 textDecoration: 'none',
-                                color: '#007BFF', // Light blue
+                                color: '#fff',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.4rem',
-                                border: '1px solid rgba(0, 123, 255, 0.2)',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
                                 transition: 'all 0.3s ease'
                               }}
                             >
+                              <img 
+                                src="/images/opensea.png" 
+                                alt="OpenSea" 
+                                style={{ 
+                                  width: '16px', 
+                                  height: '16px',
+                                  objectFit: 'contain'
+                                }} 
+                              />
                               OpenSea
                             </a>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </NFTInfo>
                     </NFTDisplay>
                   </NFTDetailsSection>
