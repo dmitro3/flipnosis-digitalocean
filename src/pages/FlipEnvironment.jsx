@@ -1091,11 +1091,25 @@ const FlipEnvironment = () => {
       
       const result = await response.json()
       showSuccess('Offer accepted! Preparing game...')
-      
+
+      // Immediately open the asset loading modal for Player 1 (acceptor)
+      setAssetModalData({
+        gameId: result.gameId,
+        creator: address,
+        joiner: offer.offerer_address,
+        nftContract: listing?.nft_contract,
+        tokenId: listing?.nft_token_id,
+        nftName: listing?.nft_name,
+        nftImage: listing?.nft_image,
+        priceUSD: offer.offer_price,
+        coin: listing?.coin
+      })
+      setShowAssetModal(true)
+
       // Refresh data to update offer status
       await fetchListingData()
-      
-      // The modal will be shown via WebSocket broadcast to both players
+
+      // The modal will also be shown via WebSocket broadcast to both players
       
     } catch (error) {
       console.error('Error accepting offer:', error)
