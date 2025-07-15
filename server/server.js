@@ -2464,7 +2464,7 @@ app.get('/api/listings/:listingId', async (req, res) => {
   }
 })
 
-// Create an offer
+// Create an offer for a listing
 app.post('/api/listings/:listingId/offers', async (req, res) => {
   try {
     const { listingId } = req.params
@@ -2537,6 +2537,108 @@ app.post('/api/listings/:listingId/offers', async (req, res) => {
     })
   } catch (error) {
     console.error('❌ Error creating offer:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Get offers for a game
+app.get('/api/games/:gameId/offers', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    
+    console.log('🎮 Fetching offers for game:', gameId)
+    
+    db.all(
+      `SELECT * FROM offers WHERE listing_id = ? ORDER BY created_at DESC`,
+      [gameId],
+      (err, offers) => {
+        if (err) {
+          console.error('❌ Error fetching game offers:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        console.log(`✅ Found ${offers.length} offers for game ${gameId}`)
+        res.json(offers)
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error fetching game offers:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Create an offer for a game
+app.post('/api/games/:gameId/offers', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { offerer_address, offerer_name, offer_price, message } = req.body
+    
+    console.log('🎮 Creating offer for game:', { gameId, offerer_address, offer_price })
+    
+    // Check if game exists and is waiting for players
+    db.get('SELECT * FROM games WHERE id = ? AND status = "waiting"', [gameId], (err, game) => {
+      if (err || !game) {
+        console.log('❌ Game not found or not waiting:', gameId)
+        return res.status(404).json({ error: 'Game not found or not accepting offers' })
+      }
+      
+      // For games, there's no minimum offer requirement - any offer is valid
+      const offerId = `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      db.run(
+        `INSERT INTO offers (
+          id, listing_id, offerer_address, offerer_name, offer_price, message, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [offerId, gameId, offerer_address, offerer_name, offer_price, message, 'pending'],
+        function(err) {
+          if (err) {
+            console.error('❌ Error creating game offer:', err)
+            return res.status(500).json({ error: err.message })
+          }
+          
+          console.log('✅ Game offer created:', offerId)
+          
+          // Create notification for game creator
+          createNotification(
+            game.creator, 
+            'new_offer', 
+            'New Game Offer!',
+            `${offerer_name || (offerer_address ? offerer_address.slice(0, 6) + '...' : 'Unknown')} offered $${offer_price} to join your game`,
+            JSON.stringify({ offerId, gameId })
+          )
+          
+          // Broadcast via WebSocket to game creator
+          broadcastToUser(game.creator, {
+            type: 'new_offer',
+            gameId,
+            offer: {
+              id: offerId,
+              offerer_address,
+              offerer_name,
+              offer_price,
+              message
+            }
+          })
+          
+          // Broadcast to all users viewing this game
+          broadcastToGame(gameId, {
+            type: 'new_offer',
+            gameId,
+            offer: {
+              id: offerId,
+              offerer_address,
+              offerer_name,
+              offer_price,
+              message
+            }
+          })
+          
+          res.json({ success: true, offerId })
+        }
+      )
+    })
+  } catch (error) {
+    console.error('❌ Error creating game offer:', error)
     res.status(500).json({ error: error.message })
   }
 })

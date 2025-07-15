@@ -634,6 +634,11 @@ const FlipEnvironment = () => {
   const messagesEndRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
   
+  // Determine if we should show offers (for listings OR games that are still waiting for players)
+  const shouldShowOffers = !isGame || (isGame && listing?.status === 'waiting')
+  
+  console.log('🎯 Offer logic:', { isGame, listingStatus: listing?.status, shouldShowOffers })
+  
   useEffect(() => {
     fetchListingData()
     setupWebSocket()
@@ -722,7 +727,27 @@ const FlipEnvironment = () => {
         }
         
         setListing(listingData)
-        setOffers([]) // Games don't have offers, they have direct joining
+        
+        // For games, we need to fetch offers if the game is still waiting for players
+        if (gameData.status === 'waiting') {
+          console.log('🎮 Game is waiting, fetching offers...')
+          try {
+            const offersResponse = await fetch(`${baseUrl}/api/games/${currentId}/offers`)
+            if (offersResponse.ok) {
+              const offersData = await offersResponse.json()
+              console.log('📦 Game offers from separate fetch:', offersData)
+              setOffers(offersData)
+            } else {
+              console.log('⚠️ Game offers fetch failed:', offersResponse.status)
+              setOffers([])
+            }
+          } catch (error) {
+            console.log('⚠️ Game offers endpoint not available, using empty array')
+            setOffers([])
+          }
+        } else {
+          setOffers([]) // Games that are not waiting don't have offers
+        }
       } else {
         // Fetch listing details
         console.log('🔍 Fetching listing with ID:', currentId)
@@ -839,17 +864,17 @@ const FlipEnvironment = () => {
         setViewerCount(data.viewerCount || 0)
       }
       // Handle real-time offer updates
-      if (data.type === 'new_offer' && data.listingId === listingId) {
+      if (data.type === 'new_offer' && (data.listingId === currentId || data.gameId === currentId)) {
         console.log('🆕 New offer received:', data.offer)
         showSuccess('New offer received!')
         fetchListingData() // Refresh offers
       }
-      if (data.type === 'offer_accepted' && data.listingId === listingId) {
+      if (data.type === 'offer_accepted' && (data.listingId === currentId || data.gameId === currentId)) {
         console.log('✅ Offer accepted:', data.offer)
         showSuccess('Offer accepted! Game created.')
         fetchListingData() // Refresh offers
       }
-      if (data.type === 'offer_rejected' && data.listingId === listingId) {
+      if (data.type === 'offer_rejected' && (data.listingId === currentId || data.gameId === currentId)) {
         console.log('❌ Offer rejected:', data.offer)
         showError('Offer was rejected.')
         fetchListingData() // Refresh offers
@@ -960,7 +985,8 @@ const FlipEnvironment = () => {
       return
     }
     
-    if (parseFloat(offerPrice) < (listing?.min_offer_price || 0)) {
+    // For games, there's no minimum offer requirement
+    if (!isGame && parseFloat(offerPrice) < (listing?.min_offer_price || 0)) {
       showError(`Minimum offer is $${listing?.min_offer_price || 0}`)
       return
     }
@@ -970,7 +996,7 @@ const FlipEnvironment = () => {
     try {
       const baseUrl = API_CONFIG.BASE_URL
       
-      const response = await fetch(`${baseUrl}/api/listings/${listingId}/offers`, {
+      const response = await fetch(`${baseUrl}/api/${isGame ? 'games' : 'listings'}/${currentId}/offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1032,8 +1058,10 @@ const FlipEnvironment = () => {
         throw new Error(`Offer is no longer pending (status: ${currentOffer.status})`)
       }
       
-      // Check if listing is still active
-      if (listing?.status !== 'active') {
+      // Check if listing/game is still active
+      if (isGame && listing?.status !== 'waiting') {
+        throw new Error(`Game is no longer accepting offers (status: ${listing?.status || 'unknown'})`)
+      } else if (!isGame && listing?.status !== 'active') {
         throw new Error(`Listing is no longer active (status: ${listing?.status || 'unknown'})`)
       }
       
@@ -1323,11 +1351,11 @@ const FlipEnvironment = () => {
                     </NFTDisplay>
                   </NFTDetailsSection>
                   {/* Show offer form for both games and listings */}
-                  {!isOwner && (
+                  {!isOwner && shouldShowOffers && (
                     <MakeOfferSection>
-                      <MakeOfferHeader>{isGame ? 'Join Game' : 'Make an Offer'}</MakeOfferHeader>
-                      {isGame ? (
-                        // Game join section
+                      <MakeOfferHeader>{isGame && listing?.status !== 'waiting' ? 'Join Game' : 'Make an Offer'}</MakeOfferHeader>
+                      {isGame && listing?.status !== 'waiting' ? (
+                        // Game join section (only for games that are not waiting)
                         <div style={{
                           padding: '1.5rem',
                           background: 'rgba(0, 255, 65, 0.05)',
@@ -1389,17 +1417,17 @@ const FlipEnvironment = () => {
                           </Button>
                         </div>
                       ) : (
-                        // Listing offer section
+                        // Offer section for listings and waiting games
                         <OfferForm onSubmit={handleSubmitOffer}>
                           <FormGroup>
                             <Label>Your Offer (USD)</Label>
                             <Input
                               type="number"
                               step="0.01"
-                              min={listing.min_offer_price}
+                              min={isGame ? 0 : listing.min_offer_price}
                               value={offerPrice}
                               onChange={(e) => setOfferPrice(e.target.value)}
-                              placeholder={`Min: $${listing.min_offer_price}`}
+                              placeholder={isGame ? "Enter your offer (any amount)" : `Min: $${listing.min_offer_price}`}
                               required
                             />
                           </FormGroup>
@@ -1408,7 +1436,7 @@ const FlipEnvironment = () => {
                             <TextArea
                               value={offerMessage}
                               onChange={(e) => setOfferMessage(e.target.value)}
-                              placeholder="Add a message to your offer..."
+                              placeholder={isGame ? "Add a message to your offer..." : "Add a message to your offer..."}
                               rows="3"
                             />
                           </FormGroup>
@@ -1416,7 +1444,7 @@ const FlipEnvironment = () => {
                             type="submit" 
                             disabled={submittingOffer}
                           >
-                            {submittingOffer ? 'Submitting...' : 'Submit Offer'}
+                            {submittingOffer ? 'Submitting...' : (isGame ? 'Submit Offer' : 'Submit Offer')}
                           </SubmitOfferButton>
                         </OfferForm>
                       )}
@@ -1670,9 +1698,9 @@ const FlipEnvironment = () => {
                 
                 <AllOffersSection style={{ marginTop: '1.5rem' }}>
                   <AllOffersHeader>
-                    {isGame ? 'Game Status' : `All Offers (${offers.length})`}
+                    {isGame && listing?.status !== 'waiting' ? 'Game Status' : `All Offers (${offers.length})`}
                   </AllOffersHeader>
-                  {isGame ? (
+                  {isGame && listing?.status !== 'waiting' ? (
                     // Game status section
                     <div style={{
                       padding: '1rem',
@@ -1703,7 +1731,7 @@ const FlipEnvironment = () => {
                       </div>
                     </div>
                   ) : (
-                    // Offers section for listings
+                    // Offers section for listings and waiting games
                     offers.length > 0 ? (
                       offers.map(offer => (
                         <PublicOfferCard key={offer.id}>
