@@ -3139,7 +3139,7 @@ function broadcastToUser(address, message) {
   })
   
   // BROADCAST TO ALL CONNECTED CLIENTS as fallback for critical messages
-  if (sentCount === 0 && (message.type === 'game_created_pending_deposit' || message.type === 'offer_accepted')) {
+  if (sentCount === 0 && (message.type === 'game_created_pending_deposit' || message.type === 'offer_accepted' || message.type === 'game_ready' || message.type === 'player_joined')) {
     console.log(`🚨 No sockets found for ${address}, broadcasting to all clients as fallback`)
     wss.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {

@@ -1137,17 +1137,20 @@ class ContractService {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
 
+      // Use the priceUSD parameter that was passed in, not from contract
+      const priceUSD = params.priceUSD || gameDetails.data.game.priceUSD
+      
       // Get the exact amount required from the contract using Chainlink oracle
       const requiredAmount = await this.publicClient.readContract({
         address: this.contractAddress,
         abi: this.contractABI,
         functionName: 'getETHAmount',
-        args: [BigInt(gameDetails.data.game.priceUSD)]
+        args: [BigInt(priceUSD)]
       })
 
       const priceInWei = requiredAmount
       
-      console.log('💰 Game price from contract:', gameDetails.data.game.priceUSD, 'USD')
+      console.log('💰 Game price from contract:', priceUSD, 'USD')
       console.log('💰 Contract calculated ETH amount:', formatEther(requiredAmount))
       console.log('💰 Price in Wei:', priceInWei.toString())
 
@@ -1181,9 +1184,8 @@ class ContractService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            joinerAddress: this.walletClient.account.address,
-            paymentTxHash: hash,
-            paymentAmount: gameDetails.data.payment.priceUSD
+            joiner: this.walletClient.account.address,
+            transactionHash: hash
           })
         })
 

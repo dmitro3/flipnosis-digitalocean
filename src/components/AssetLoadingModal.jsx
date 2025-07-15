@@ -267,28 +267,25 @@ const GameLobby = ({
     }
   }, [isOpen, gameData])
 
-  // Listen for WebSocket messages to auto-close modal when game is ready
+  // Listen for game ready events to auto-close modal when game is ready
   useEffect(() => {
-    const handleWebSocketMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        
-        // Auto-close modal when game is ready for both players
-        if (data.type === 'game_ready' || data.type === 'player_joined') {
-          if (onGameReady) {
-            onGameReady(normalizedData.id || normalizedData.id)
-          }
+    const handleGameReady = (event) => {
+      console.log('🎮 Game ready event received:', event.detail)
+      
+      // Auto-close modal when game is ready for both players
+      if (event.detail.type === 'game_ready' || event.detail.type === 'player_joined') {
+        console.log('🎮 Game ready message received, transporting players immediately')
+        if (onGameReady) {
+          onGameReady(normalizedData.id || normalizedData.id)
         }
-      } catch (error) {
-        // Ignore parsing errors
       }
     }
 
-    // Add event listener to window for WebSocket messages
-    window.addEventListener('message', handleWebSocketMessage)
+    // Add event listener to window for game ready events
+    window.addEventListener('gameReady', handleGameReady)
     
     return () => {
-      window.removeEventListener('message', handleWebSocketMessage)
+      window.removeEventListener('gameReady', handleGameReady)
     }
   }, [onGameReady, normalizedData.id])
 
@@ -357,14 +354,12 @@ const GameLobby = ({
       setCryptoLoaded(true)
       showSuccess('Crypto loaded successfully! Game starting...')
       
-      // Game is now ready to start - notify both players
-      setTimeout(() => {
-        setGameReady(true)
-        if (onGameReady) {
-          // Call onGameReady for both players to exit lobby and enter game
-          onGameReady(normalizedData.id || normalizedData.id)
-        }
-      }, 2000)
+      // Game is now ready to start - immediately transport both players
+      setGameReady(true)
+      if (onGameReady) {
+        // Call onGameReady for both players to exit lobby and enter game
+        onGameReady(normalizedData.id || normalizedData.id)
+      }
       
     } catch (error) {
       console.error('Error loading crypto:', error)

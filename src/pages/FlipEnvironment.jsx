@@ -925,6 +925,31 @@ const FlipEnvironment = () => {
         setShowAssetModal(true)
         console.log('✅ Asset modal should now be visible')
       }
+      
+      // Handle game ready messages (for both players to exit lobby)
+      if (data.type === 'game_ready' || data.type === 'player_joined') {
+        console.log('🎮 Game ready message received:', data)
+        
+        // Check if this message is for the current user (either direct or broadcast)
+        const isForCurrentUser = data.targetAddress === address || 
+                                data.gameId === currentId ||
+                                data.isBroadcast // Accept broadcast messages
+        
+        if (!isForCurrentUser) {
+          console.log('⚠️ Game ready message not for current user, ignoring')
+          return
+        }
+        
+        console.log('🎯 Dispatching game ready event to window')
+        // Dispatch a custom event to the window so AssetLoadingModal can listen for it
+        window.dispatchEvent(new CustomEvent('gameReady', {
+          detail: {
+            type: data.type,
+            gameId: data.gameId,
+            message: data.message
+          }
+        }))
+      }
       // Handle viewer updates (legacy)
       if (data.type === 'viewers_update' && data.listingId === listingId) {
         setActiveViewers(data.viewers || [])
