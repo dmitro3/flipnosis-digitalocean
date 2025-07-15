@@ -917,7 +917,7 @@ const FlipEnvironment = () => {
           nftName: data.nft_name || listing?.nft_name,
           nftImage: data.nft_image || listing?.nft_image,
           priceUSD: data.price_usd || data.amount || listing?.asking_price,
-          coin: data.coin || listing?.coin
+          coin: typeof data.coin === 'string' ? JSON.parse(data.coin) : data.coin || listing?.coin
         }
         
         console.log('🎯 Setting asset modal data:', modalData)

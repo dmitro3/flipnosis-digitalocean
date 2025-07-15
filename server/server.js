@@ -930,6 +930,18 @@ function handlePlayerConnect(socket, data) {
             timestamp: Date.now()
           })
           
+          // Also broadcast to both players to exit lobby
+          broadcastToUser(game.creator, {
+            type: 'game_ready',
+            gameId: gameId,
+            message: 'Game is ready! Both players can now enter the game.'
+          })
+          broadcastToUser(address, {
+            type: 'game_ready',
+            gameId: gameId,
+            message: 'Game is ready! Both players can now enter the game.'
+          })
+          
           // Initialize server-side game state for real-time coordination
           const gameState = {
             phase: 'choosing',

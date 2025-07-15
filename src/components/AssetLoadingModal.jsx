@@ -267,6 +267,31 @@ const GameLobby = ({
     }
   }, [isOpen, gameData])
 
+  // Listen for WebSocket messages to auto-close modal when game is ready
+  useEffect(() => {
+    const handleWebSocketMessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        
+        // Auto-close modal when game is ready for both players
+        if (data.type === 'game_ready' || data.type === 'player_joined') {
+          if (onGameReady) {
+            onGameReady(normalizedData.id || normalizedData.id)
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
+    }
+
+    // Add event listener to window for WebSocket messages
+    window.addEventListener('message', handleWebSocketMessage)
+    
+    return () => {
+      window.removeEventListener('message', handleWebSocketMessage)
+    }
+  }, [onGameReady, normalizedData.id])
+
   const checkGameState = async () => {
     // Handle both contract_game_id (from database) and gameId (from WebSocket)
     const gameId = normalizedData.contract_game_id || normalizedData.id
@@ -332,10 +357,11 @@ const GameLobby = ({
       setCryptoLoaded(true)
       showSuccess('Crypto loaded successfully! Game starting...')
       
-      // Game is now ready to start
+      // Game is now ready to start - notify both players
       setTimeout(() => {
         setGameReady(true)
         if (onGameReady) {
+          // Call onGameReady for both players to exit lobby and enter game
           onGameReady(normalizedData.id || normalizedData.id)
         }
       }, 2000)
