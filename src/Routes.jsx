@@ -36,6 +36,10 @@ export const router = createBrowserRouter([
         path: "flip/:listingId",
         element: <FlipEnvironment />,
       },
+      {
+        path: "flip-environment/:id",
+        element: <FlipEnvironment />,
+      },
     ],
   },
 ]); 

@@ -800,80 +800,14 @@ class ContractService {
       
       console.log('🎮 Game created with ID:', gameId)
 
-      // Save to database
-      const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-      
-      // For custom coins, store the actual image data in the database
-      let coinData = {
-        type: params.coinType,
-        headsImage: params.headsImage,
-        tailsImage: params.tailsImage,
-        isCustom: params.isCustom
-      }
-      
-      // If this is a custom coin, we need to get the actual image data from the frontend
-      // For now, we'll store a reference that the frontend can use to look up the actual images
-      if (params.isCustom) {
-        coinData = {
-          type: 'custom',
-          headsImage: '/coins/custom-heads.png', // Placeholder for contract
-          tailsImage: '/coins/custom-tails.png', // Placeholder for contract
-          isCustom: true,
-          // Store reference to actual images (frontend will handle this)
-          actualHeadsImage: params.actualHeadsImage || null,
-          actualTailsImage: params.actualTailsImage || null
-        }
-      }
-      
-      const dbParams = {
-        id: gameId,
-        contract_game_id: gameId,
-        creator: this.walletClient.account.address,
-        nft_contract: params.nftContract,
-        nft_token_id: params.tokenId.toString(),
-        price_usd: params.priceUSD,
-        status: 'waiting',
-        game_type: params.gameType === 1 ? 'nft-vs-nft' : 'nft-vs-crypto',
-        coin: coinData,
-        transaction_hash: hash,
-        nft_chain: params.nftChain || this.currentChain || 'base',
-        listing_fee_usd: Number(listingFeeUSD) / 1000000
-      }
-
-      console.log('💾 Saving game to database:', dbParams)
-      
-      try {
-        const response = await fetch(`${API_URL}/api/games`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dbParams)
-        })
-
-        console.log('📊 Database save response status:', response.status)
-        console.log('📊 Database save response headers:', response.headers)
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('❌ Failed to save game to database:', errorText)
-          console.error('📊 Response status:', response.status)
-          console.error('📊 Response headers:', response.headers)
-          
-          // Don't throw error, just log it - game creation should still succeed
-          console.warn('⚠️ Game created on-chain but database save failed')
-        } else {
-          const result = await response.json()
-          console.log('✅ Game saved to database:', result)
-        }
-      } catch (fetchError) {
-        console.error('❌ Network error saving game to database:', fetchError)
-        console.warn('⚠️ Game created on-chain but database save failed due to network error')
-      }
+      // Return the game ID for the frontend to save to database
 
       return {
         success: true,
         gameId,
         transactionHash: hash,
-        receipt
+        receipt,
+        listingFeeUSD: Number(listingFeeUSD) / 1000000
       }
 
     } catch (error) {

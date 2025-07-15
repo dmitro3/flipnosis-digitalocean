@@ -981,12 +981,12 @@ const Home = () => {
                             } else if (selectedFlip.status === 'joined') {
                               // Handle joined game view
                               navigate(`/game/${selectedFlip.id}`)
-                            } else if (selectedFlip.status === 'pending') {
-                              // Handle pending game (waiting for deposits)
-                              navigate(`/game/${selectedFlip.id}`)
+                            } else if (selectedFlip.status === 'waiting') {
+                              // Handle waiting games - go to FlipEnvironment where they can accept offers
+                              navigate(`/flip-environment/${selectedFlip.id}`)
                             } else {
-                              // Handle waiting games
-                              navigate(`/game/${selectedFlip.id}`)
+                              // Handle other statuses
+                              navigate(`/flip-environment/${selectedFlip.id}`)
                             }
                           }}
                           style={{
@@ -1033,7 +1033,7 @@ const Home = () => {
                                 showError('Invalid game ID. Please refresh the page.')
                                 return
                               }
-                              navigate(`/game/${selectedFlip.id}`)
+                              navigate(`/flip-environment/${selectedFlip.id}`)
                             }}
                             style={{
                               flex: 1,

@@ -30,6 +30,7 @@ import ShareButton from './ShareButton'
 import styled from '@emotion/styled'
 import GameResultPopup from './GameResultPopup'
 
+
 // Disable console logs in production
 if (process.env.NODE_ENV === 'production') {
   console.log = () => {}
@@ -546,6 +547,9 @@ const FlipGame = () => {
   
   // Add missing isChatOpen state
   const [isChatOpen, setIsChatOpen] = useState(false)
+  
+  // Asset Loading Modal state
+
 
 
 
@@ -1319,6 +1323,8 @@ const FlipGame = () => {
       })
     }
   }, [gameData?.coin])
+
+
 
 
 
@@ -3438,6 +3444,8 @@ const FlipGame = () => {
             onClose={() => setShowResultPopup(false)}
             onClaimWinnings={handleClaimWinnings}
           />
+
+
 
           {/* Winner Screen */}
           {gameState?.winner && ( 

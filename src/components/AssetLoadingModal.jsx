@@ -196,360 +196,285 @@ const SuccessAnimation = styled.div`
   }
 `
 
-const AssetLoadingModal = ({ 
+const GameLobby = ({ 
   isOpen, 
-  onClose, 
   gameData, 
   onGameReady,
   isCreator 
 }) => {
-  const { address, walletClient, publicClient } = useWallet()
-  const { isFullyConnected, isContractInitialized } = useWalletConnection()
+  const { isConnected, address, walletClient, publicClient } = useWallet()
+  const { isFullyConnected } = useWalletConnection()
   const { showSuccess, showError, showInfo } = useToast()
   
   const [nftLoaded, setNftLoaded] = useState(false)
   const [cryptoLoaded, setCryptoLoaded] = useState(false)
-  const [isLoadingNFT, setIsLoadingNFT] = useState(false)
-  const [isLoadingCrypto, setIsLoadingCrypto] = useState(false)
-  const [isCancelling, setIsCancelling] = useState(false)
-  const [socket, setSocket] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [gameReady, setGameReady] = useState(false)
+  const [initializationAttempted, setInitializationAttempted] = useState(false)
 
-  // Debug logging
+  // Initialize contract service when wallet is connected
   useEffect(() => {
-    if (gameData && address) {
-      console.log('🎮 Asset Loading Modal State:', {
-        myAddress: address,
-        isCreator,
-        gameData,
-        contractGameId: gameData.contract_game_id,
-        isFullyConnected,
-        isContractInitialized
-      })
-    }
-  }, [gameData, address, isCreator, isFullyConnected, isContractInitialized])
-
-  // WebSocket connection for real-time updates
-  useEffect(() => {
-    if (!isOpen || !gameData) return
-    
-    const ws = new WebSocket(API_CONFIG.WS_URL)
-    
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        type: 'join_asset_loading',
-        gameId: gameData.gameId,
-        address
-      }))
-    }
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
+    const initializeService = async () => {
+      if (!isFullyConnected || !walletClient || !publicClient) {
+        console.log('⚠️ Wallet not fully connected, skipping contract initialization')
+        return
+      }
       
-      switch (data.type) {
-        case 'nft_loaded':
-          setNftLoaded(true)
-          showInfo('NFT loaded by Player 1!')
-          checkIfReady()
-          break
-          
-        case 'crypto_loaded':
-          setCryptoLoaded(true)
-          showInfo('Crypto loaded by Player 2!')
-          checkIfReady()
-          break
-          
-        case 'game_cancelled':
-          showError('Game cancelled by other player')
-          onClose()
-          break
+      // Prevent repeated initialization attempts
+      if (initializationAttempted) {
+        console.log('⚠️ Contract initialization already attempted, skipping')
+        return
+      }
+      
+      // Check if already initialized to prevent repeated initialization
+      if (contractService.isInitialized()) {
+        console.log('✅ Contract service already initialized, skipping')
+        return
+      }
+      
+      setInitializationAttempted(true)
+      
+      try {
+        console.log('🔧 Initializing contract service...')
+        await contractService.initializeClients(8453, walletClient) // Base chain ID is 8453
+        console.log('✅ Contract service initialized successfully')
+      } catch (error) {
+        console.error('❌ Failed to initialize contract service:', error)
+        showError('Failed to initialize smart contract. Please refresh and try again.')
       }
     }
-    
-    setSocket(ws)
-    
-    return () => {
-      ws.close()
+
+    initializeService()
+  }, [isFullyConnected, walletClient, publicClient, showError, initializationAttempted])
+
+  // When modal opens, check current game state
+  useEffect(() => {
+    if (isOpen && gameData) {
+      checkGameState()
     }
   }, [isOpen, gameData])
-  
-  // Check if both assets are loaded
-  const checkIfReady = () => {
-    if (nftLoaded && cryptoLoaded) {
-      showSuccess('Both assets loaded! Starting game...')
-      setTimeout(() => {
-        onGameReady(gameData.gameId)
-      }, 1500)
-    }
-  }
-  
-  // Load NFT (Creator only)
-  const handleLoadNFT = async () => {
-    if (!isCreator) return
+
+  const checkGameState = async () => {
+    // Handle both contract_game_id (from database) and gameId (from WebSocket)
+    const gameId = gameData?.contract_game_id || gameData?.gameId
+    if (!gameId) return
     
-    if (!isFullyConnected || !walletClient) {
-      showError('Please connect your wallet to load NFT')
-      return
-    }
-    
-    if (!isContractInitialized) {
-      showError('Smart contract not connected. Please refresh and try again.')
-      return
-    }
-    
-    if (!gameData.contract_game_id) {
-      showError('Game not found on blockchain. Please refresh and try again.')
-      return
-    }
-    
-    setIsLoadingNFT(true)
     try {
-      showInfo('Approving NFT transfer...')
+      // Check if NFT is already in contract (it should be since Player 1 created the game)
+      const contractGame = await contractService.getGameDetails(gameId)
       
-      // Approve NFT transfer with proper ABI format
-      const approveHash = await walletClient.writeContract({
-        address: gameData.nft_contract,
-        abi: [{
-          name: 'approve',
-          type: 'function',
-          inputs: [
-            { name: 'to', type: 'address' },
-            { name: 'tokenId', type: 'uint256' }
-          ],
-          outputs: [],
-          stateMutability: 'nonpayable'
-        }],
-        functionName: 'approve',
-        args: [contractService.contractAddress, BigInt(gameData.nft_token_id)]
-      })
-      
-      // Wait for confirmation
-      const receipt = await publicClient.waitForTransactionReceipt({ 
-        hash: approveHash,
-        confirmations: 1 
-      })
-      
-      showInfo('Depositing NFT into game...')
-      
-      // Deposit NFT using contract game ID
-      const result = await contractService.depositNFTForGame(
-        gameData.contract_game_id,
-        gameData.nft_contract,
-        gameData.nft_token_id
-      )
-      
-      if (result.success) {
+      if (contractGame.success) {
+        // NFT is already loaded in contract when game was created
         setNftLoaded(true)
-        showSuccess('NFT successfully loaded!')
+        console.log('✅ NFT already loaded in contract')
         
-        // Notify other player
-        socket?.send(JSON.stringify({
-          type: 'asset_loaded',
-          gameId: gameData.gameId,
-          assetType: 'nft'
-        }))
-        
-        checkIfReady()
-      } else {
-        throw new Error(result.error)
+        // Check if crypto is loaded (game status will be 'joined' if crypto is loaded)
+        if (contractGame.game.state === 1) { // GameState.Joined
+          setCryptoLoaded(true)
+          console.log('✅ Crypto already loaded')
+        }
       }
     } catch (error) {
-      console.error('Failed to load NFT:', error)
-      showError('Failed to load NFT: ' + error.message)
-    } finally {
-      setIsLoadingNFT(false)
+      console.error('Error checking game state:', error)
     }
   }
-  
-  // Load Crypto (Joiner only)
+
   const handleLoadCrypto = async () => {
-    if (isCreator) return
-    
     if (!isFullyConnected || !walletClient) {
-      showError('Please connect your wallet to load payment')
+      showError('Please connect your wallet')
       return
     }
     
-    if (!isContractInitialized) {
+    if (!contractService.isInitialized()) {
       showError('Smart contract not connected. Please refresh and try again.')
       return
     }
     
-    if (!gameData.contract_game_id) {
-      showError('Game not found on blockchain. Please refresh and try again.')
-      return
-    }
+    setLoading(true)
     
-    setIsLoadingCrypto(true)
     try {
-      showInfo('Sending payment...')
+      showInfo('Loading crypto into game...')
       
-      // Get ETH amount from contract
-      const priceInETH = await contractService.getETHAmount(gameData.price_usd)
+      // Handle both contract_game_id (from database) and gameId (from WebSocket)
+      const gameId = gameData?.contract_game_id || gameData?.gameId
+      const priceUSD = gameData?.price_usd || gameData?.priceUSD
       
-      // Deposit crypto using contract game ID
-      const result = await contractService.depositCryptoForGame(
-        gameData.contract_game_id,
-        { value: priceInETH }
-      )
+      // Join the game with crypto payment
+      const result = await contractService.joinGame({
+        gameId: gameId,
+        priceUSD: priceUSD
+      })
       
-      if (result.success) {
-        setCryptoLoaded(true)
-        showSuccess('Payment successfully loaded!')
-        
-        // Notify other player
-        socket?.send(JSON.stringify({
-          type: 'asset_loaded',
-          gameId: gameData.gameId,
-          assetType: 'crypto'
-        }))
-        
-        checkIfReady()
-      } else {
-        throw new Error(result.error)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to join game')
       }
+      
+      setCryptoLoaded(true)
+      showSuccess('Crypto loaded successfully! Game starting...')
+      
+      // Game is now ready to start
+      setTimeout(() => {
+        setGameReady(true)
+        if (onGameReady) {
+          onGameReady(gameData.id || gameData.gameId)
+        }
+      }, 2000)
+      
     } catch (error) {
-      console.error('Failed to load crypto:', error)
-      showError('Failed to load payment: ' + error.message)
+      console.error('Error loading crypto:', error)
+      showError(error.message || 'Failed to load crypto')
     } finally {
-      setIsLoadingCrypto(false)
+      setLoading(false)
     }
   }
-  
-  // Cancel game
+
   const handleCancel = async () => {
-    if (!isFullyConnected || !walletClient) {
-      showError('Please connect your wallet to cancel game')
-      return
-    }
+    // Handle both contract_game_id (from database) and gameId (from WebSocket)
+    const gameId = gameData?.contract_game_id || gameData?.gameId
+    if (!gameId) return
     
-    if (!isContractInitialized) {
-      showError('Smart contract not connected. Please refresh and try again.')
-      return
-    }
-    
-    if (!gameData.contract_game_id) {
-      showError('Game not found on blockchain')
-      return
-    }
-    
-    setIsCancelling(true)
     try {
-      const result = await contractService.cancelGameWithRefund(gameData.contract_game_id)
+      setLoading(true)
+      showInfo('Cancelling game...')
+      
+      const result = await contractService.cancelGame(gameId)
       
       if (result.success) {
-        showSuccess('Game cancelled. Assets will be returned.')
-        socket?.send(JSON.stringify({
-          type: 'game_cancelled',
-          gameId: gameData.gameId
-        }))
-        onClose()
+        showSuccess('Game cancelled successfully')
+        // Close modal and refresh
+        if (onGameReady) {
+          onGameReady(null)
+        }
       } else {
-        throw new Error(result.error)
+        throw new Error(result.error || 'Failed to cancel game')
       }
     } catch (error) {
-      console.error('Failed to cancel game:', error)
-      showError('Failed to cancel game: ' + error.message)
+      console.error('Error cancelling game:', error)
+      showError(error.message || 'Failed to cancel game')
     } finally {
-      setIsCancelling(false)
+      setLoading(false)
     }
   }
-  
+
   if (!isOpen) return null
-  
+
   return (
-    <Modal onClick={onClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
+    <Modal>
+      <ModalContent>
         <Header>
-          <h2>Load Assets to Start Game</h2>
-          <p>Both players must load their assets before the game can begin</p>
+          <h2>🎮 Game Lobby</h2>
+          <p>Waiting for players to load their assets...</p>
         </Header>
-        
+
         <ContentGrid>
-          {/* Player 1 - NFT */}
+          {/* Player 1 - NFT Section */}
           <AssetSection>
             <PlayerInfo>
               <h3>Player 1 (Creator)</h3>
-              <p>{gameData.creator?.slice(0, 6)}...{gameData.creator?.slice(-4)}</p>
+              <p>{gameData?.creator || 'Unknown'}</p>
             </PlayerInfo>
             
             <NFTImageContainer isLoaded={nftLoaded}>
-              <NFTImage src={gameData.nft_image} alt={gameData.nft_name} />
-              {isLoadingNFT && (
-                <LoadingOverlay>
-                  <LoadingSpinner />
-                </LoadingOverlay>
-              )}
+              <NFTImage 
+                src={gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'} 
+                alt={gameData?.nft_name || gameData?.nftName || 'NFT'}
+                onError={(e) => {
+                  e.target.src = '/placeholder-nft.svg'
+                }}
+              />
               {nftLoaded && (
-                <SuccessAnimation>✅</SuccessAnimation>
+                <SuccessAnimation>
+                  ✅
+                </SuccessAnimation>
               )}
             </NFTImageContainer>
             
             <StatusText isLoaded={nftLoaded}>
-              {nftLoaded ? 'NFT Loaded!' : isCreator ? 'Load your NFT' : 'Waiting for NFT...'}
+              {nftLoaded ? '✅ NFT Loaded' : '⏳ Loading NFT...'}
             </StatusText>
             
-            {isCreator && !nftLoaded && (
-              <ActionButton 
-                className="load"
-                onClick={handleLoadNFT}
-                disabled={isLoadingNFT}
-              >
-                {isLoadingNFT ? 'Loading NFT...' : 'Load NFT'}
-              </ActionButton>
+            {nftLoaded && (
+              <div style={{ textAlign: 'center', color: '#00FF41', fontSize: '0.9rem' }}>
+                NFT transferred to contract when game was created
+              </div>
             )}
           </AssetSection>
-          
+
           <Divider />
-          
-          {/* Player 2 - Crypto */}
+
+          {/* Player 2 - Crypto Section */}
           <AssetSection>
             <PlayerInfo>
               <h3>Player 2 (Joiner)</h3>
-              <p>{gameData.joiner?.slice(0, 6)}...{gameData.joiner?.slice(-4)}</p>
+              <p>{isCreator ? 'Waiting for opponent...' : 'You'}</p>
             </PlayerInfo>
             
             <CryptoContainer isLoaded={cryptoLoaded}>
-              <CryptoAmount>${gameData.price_usd}</CryptoAmount>
-              <CryptoCurrency>USD in ETH</CryptoCurrency>
-              {isLoadingCrypto && (
+              <CryptoAmount>${gameData?.price_usd || gameData?.priceUSD || 0}</CryptoAmount>
+              <CryptoCurrency>ETH</CryptoCurrency>
+              {cryptoLoaded && (
+                <SuccessAnimation>
+                  ✅
+                </SuccessAnimation>
+              )}
+              {loading && (
                 <LoadingOverlay>
                   <LoadingSpinner />
                 </LoadingOverlay>
               )}
-              {cryptoLoaded && (
-                <SuccessAnimation>✅</SuccessAnimation>
-              )}
             </CryptoContainer>
             
             <StatusText isLoaded={cryptoLoaded}>
-              {cryptoLoaded ? 'Payment Loaded!' : !isCreator ? 'Load your payment' : 'Waiting for payment...'}
+              {cryptoLoaded ? '✅ Crypto Loaded' : '⏳ Waiting for crypto...'}
             </StatusText>
             
-            {!isCreator && !cryptoLoaded && (
+            {!isCreator && !cryptoLoaded && !loading && (
               <ActionButton 
                 className="load"
                 onClick={handleLoadCrypto}
-                disabled={isLoadingCrypto}
+                disabled={loading}
               >
-                {isLoadingCrypto ? 'Loading Payment...' : 'Load Payment'}
+                Load Crypto
               </ActionButton>
             )}
           </AssetSection>
         </ContentGrid>
-        
-        {/* Cancel button */}
-        {(!nftLoaded || !cryptoLoaded) && (
-          <ActionButton 
-            className="cancel"
-            onClick={handleCancel}
-            disabled={isCancelling}
-          >
-            {isCancelling ? 'Cancelling...' : 'Cancel Game'}
-          </ActionButton>
-        )}
+
+        {/* Game Status */}
+        <div style={{ 
+          textAlign: 'center', 
+          marginBottom: '2rem',
+          padding: '1rem',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '0.5rem',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <h3 style={{ color: '#FFD700', margin: '0 0 0.5rem 0' }}>
+            Game Status
+          </h3>
+          <p style={{ color: '#fff', margin: 0 }}>
+            {gameReady ? '🎉 Game Ready! Starting...' : 
+             nftLoaded && cryptoLoaded ? '🎮 Both assets loaded! Game will start automatically...' :
+             nftLoaded ? '⏳ Waiting for Player 2 to load crypto...' :
+             '⏳ Loading assets...'}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+          {!gameReady && (
+            <ActionButton 
+              className="cancel"
+              onClick={handleCancel}
+              disabled={loading}
+            >
+              Cancel Game
+            </ActionButton>
+          )}
+        </div>
       </ModalContent>
     </Modal>
   )
 }
 
-export default AssetLoadingModal 
+export default GameLobby 

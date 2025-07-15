@@ -224,9 +224,11 @@ const CreateFlip = () => {
       
       showSuccess('Game created on blockchain!')
       const contractGameId = blockchainResult.gameId
+      const transactionHash = blockchainResult.transactionHash
       
       // Then save to database with the contract game ID
       const gameData = {
+        id: `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         creator: address,
         nft_contract: selectedNFT.contractAddress,
         nft_token_id: selectedNFT.tokenId,
@@ -238,6 +240,8 @@ const CreateFlip = () => {
         status: 'waiting',
         nft_chain: 'base',
         contract_game_id: contractGameId, // Add the blockchain game ID
+        transaction_hash: transactionHash,
+        listing_fee_usd: blockchainResult.listingFeeUSD,
         coin: {
           type: selectedCoin?.type || 'default',
           headsImage: selectedCoin?.headsImage || '',
@@ -246,7 +250,9 @@ const CreateFlip = () => {
         }
       }
       
-      const response = await fetch(`${API_CONFIG.BASE_URL}/api/games/create`, {
+      console.log('📤 Sending game data to database:', gameData)
+      
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/games`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -254,15 +260,25 @@ const CreateFlip = () => {
         body: JSON.stringify(gameData)
       })
       
+      console.log('📥 Database response status:', response.status)
+      
       if (!response.ok) {
-        throw new Error('Failed to save game to database')
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+        }
+        throw new Error(`Failed to save game to database: ${errorMessage}`)
       }
       
       const result = await response.json()
+      console.log('✅ Database save result:', result)
       showSuccess('Flip created successfully!')
       
-      // Navigate to the game page
-      navigate(`/game/${result.id}`)
+      // Navigate to the flip environment page
+      navigate(`/flip-environment/${result.id}`)
       
     } catch (error) {
       console.error('Error creating flip:', error)

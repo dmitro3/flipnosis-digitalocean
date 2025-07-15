@@ -16,7 +16,7 @@ import {
 } from '../styles/components'
 import { ethers } from 'ethers'
 import contractService from '../services/ContractService'
-import AssetLoadingModal from '../components/AssetLoadingModal'
+import GameLobby from '../components/AssetLoadingModal'
 
 // Add pulse animation for reconnection indicator
 const pulseKeyframes = `
@@ -571,10 +571,14 @@ const CreateGameButton = styled(Button)`
 `
 
 const FlipEnvironment = () => {
-  const { listingId } = useParams()
+  const { listingId, id } = useParams()
   const navigate = useNavigate()
   const { address, walletClient, publicClient } = useWallet()
   const { showSuccess, showError } = useToast()
+  
+  // Determine if this is a listing or a game based on the URL
+  const isGame = !!id
+  const currentId = id || listingId
   
   // Helper functions for chain URLs
   const getExplorerUrl = (chain, contractAddress, tokenId) => {
@@ -645,16 +649,24 @@ const FlipEnvironment = () => {
         clearTimeout(reconnectTimeoutRef.current)
       }
       if (socket) {
-        // Leave the listing room
-        socket.send(JSON.stringify({
-          type: 'leave_listing',
-          listingId,
-          address: address || 'anonymous'
-        }))
+        // Leave the room (listing or game)
+        if (isGame) {
+          socket.send(JSON.stringify({
+            type: 'leave_game',
+            gameId: currentId,
+            address: address || 'anonymous'
+          }))
+        } else {
+          socket.send(JSON.stringify({
+            type: 'leave_listing',
+            listingId: currentId,
+            address: address || 'anonymous'
+          }))
+        }
         socket.close()
       }
     }
-  }, [listingId])
+  }, [currentId])
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -670,52 +682,92 @@ const FlipEnvironment = () => {
         nodeEnv: process.env.NODE_ENV 
       })
       
-      // Fetch listing details
-      console.log('🔍 Fetching listing with ID:', listingId)
-      const listingResponse = await fetch(`${baseUrl}/api/listings/${listingId}`)
-      
-      if (!listingResponse.ok) {
-        if (listingResponse.status === 404) {
-          throw new Error(`Listing not found. The listing may have been removed or the ID is incorrect.`)
-        } else {
-          throw new Error(`Failed to fetch listing (${listingResponse.status}: ${listingResponse.statusText})`)
-        }
-      }
-      
-      const responseData = await listingResponse.json()
-      console.log('📦 Listing data received:', responseData)
-      
-      // Handle nested data structure
-      const listingData = responseData.listing || responseData
-      console.log('🎯 Processed listing data:', listingData)
-      setListing(listingData)
-      
-      // Handle offers data (might be included in the response or need separate fetch)
-      if (responseData.offers) {
-        console.log('📦 Offers included in response:', responseData.offers)
-        setOffers(responseData.offers)
-      } else {
-        console.log('⚠️ No offers in response, trying separate fetch')
-        // Try to fetch offers separately
-        try {
-          const offersResponse = await fetch(`${baseUrl}/api/listings/${listingId}/offers`)
-          if (offersResponse.ok) {
-            const offersData = await offersResponse.json()
-            console.log('📦 Offers from separate fetch:', offersData)
-            setOffers(offersData)
+      if (isGame) {
+        // Fetch game data instead of listing
+        console.log('🎮 Fetching game with ID:', currentId)
+        const gameResponse = await fetch(`${baseUrl}/api/games/${currentId}`)
+        
+        if (!gameResponse.ok) {
+          if (gameResponse.status === 404) {
+            throw new Error(`Game not found. The game may have been removed or the ID is incorrect.`)
           } else {
-            console.log('⚠️ Separate offers fetch failed:', offersResponse.status)
+            throw new Error(`Failed to fetch game (${gameResponse.status}: ${gameResponse.statusText})`)
+          }
+        }
+        
+        const gameData = await gameResponse.json()
+        console.log('📦 Game data received:', gameData)
+        
+        // Convert game data to listing format for compatibility
+        const listingData = {
+          id: gameData.id,
+          creator: gameData.creator,
+          nft_name: gameData.nft_name,
+          nft_image: gameData.nft_image,
+          nft_collection: gameData.nft_collection,
+          nft_contract: gameData.nft_contract,
+          nft_token_id: gameData.nft_token_id,
+          asking_price: gameData.price_usd,
+          status: gameData.status,
+          created_at: gameData.created_at,
+          coin: gameData.coin,
+          // Game-specific fields
+          game_type: gameData.game_type,
+          joiner: gameData.joiner,
+          winner: gameData.winner,
+          contract_game_id: gameData.contract_game_id
+        }
+        
+        setListing(listingData)
+        setOffers([]) // Games don't have offers, they have direct joining
+      } else {
+        // Fetch listing details
+        console.log('🔍 Fetching listing with ID:', currentId)
+        const listingResponse = await fetch(`${baseUrl}/api/listings/${currentId}`)
+        
+        if (!listingResponse.ok) {
+          if (listingResponse.status === 404) {
+            throw new Error(`Listing not found. The listing may have been removed or the ID is incorrect.`)
+          } else {
+            throw new Error(`Failed to fetch listing (${listingResponse.status}: ${listingResponse.statusText})`)
+          }
+        }
+        
+        const responseData = await listingResponse.json()
+        console.log('📦 Listing data received:', responseData)
+        
+        // Handle nested data structure
+        const listingData = responseData.listing || responseData
+        console.log('🎯 Processed listing data:', listingData)
+        setListing(listingData)
+        
+        // Handle offers data (might be included in the response or need separate fetch)
+        if (responseData.offers) {
+          console.log('📦 Offers included in response:', responseData.offers)
+          setOffers(responseData.offers)
+        } else {
+          console.log('⚠️ No offers in response, trying separate fetch')
+          // Try to fetch offers separately
+          try {
+            const offersResponse = await fetch(`${baseUrl}/api/listings/${currentId}/offers`)
+            if (offersResponse.ok) {
+              const offersData = await offersResponse.json()
+              console.log('📦 Offers from separate fetch:', offersData)
+              setOffers(offersData)
+            } else {
+              console.log('⚠️ Separate offers fetch failed:', offersResponse.status)
+              setOffers([])
+            }
+          } catch (error) {
+            console.log('⚠️ Offers endpoint not available, using empty array')
             setOffers([])
           }
-        } catch (error) {
-          console.log('⚠️ Offers endpoint not available, using empty array')
-          setOffers([])
         }
       }
       
     } catch (error) {
-      console.error('Error fetching listing data:', error)
-      showError(error.message || 'Failed to load listing data')
+      console.error('Error fetching data:', error)
+      showError(error.message || 'Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -729,27 +781,43 @@ const FlipEnvironment = () => {
       setWsConnected(true)
       setReconnectAttempts(0)
       
-      // Join the listing room for viewer tracking and chat
-      ws.send(JSON.stringify({
-        type: 'join_listing',
-        listingId,
-        address: address || 'anonymous'
-      }))
-      
-      // Subscribe to listing chat
-      ws.send(JSON.stringify({
-        type: 'subscribe_listing_chat',
-        listingId,
-        address: address || 'anonymous'
-      }))
+      if (isGame) {
+        // Join the game room for viewer tracking and chat
+        ws.send(JSON.stringify({
+          type: 'join_game',
+          gameId: currentId,
+          address: address || 'anonymous'
+        }))
+        
+        // Subscribe to game chat
+        ws.send(JSON.stringify({
+          type: 'subscribe_game_chat',
+          gameId: currentId,
+          address: address || 'anonymous'
+        }))
+      } else {
+        // Join the listing room for viewer tracking and chat
+        ws.send(JSON.stringify({
+          type: 'join_listing',
+          listingId: currentId,
+          address: address || 'anonymous'
+        }))
+        
+        // Subscribe to listing chat
+        ws.send(JSON.stringify({
+          type: 'subscribe_listing_chat',
+          listingId: currentId,
+          address: address || 'anonymous'
+        }))
+      }
     }
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
       console.log('📡 Received WebSocket message:', data)
       
-      // Listing chat message
-      if (data.type === 'listing_chat_message') {
+      // Chat messages (both listing and game)
+      if (data.type === 'listing_chat_message' || data.type === 'game_chat_message') {
         setMessages(prev => [...prev, {
           id: Date.now(),
           address: data.address,
@@ -788,7 +856,7 @@ const FlipEnvironment = () => {
         console.log('🎮 Game created, pending deposits:', data)
         console.log('👤 Current user address:', address)
         console.log('📋 Current listing:', listing)
-        showSuccess(`Game created! Please deposit your ${data.requiredAction === 'deposit_nft' ? 'NFT' : 'payment'}.`)
+        showSuccess(`Game created! Entering Game Lobby...`)
         
         // Show asset loading modal for both players
         // Use data from WebSocket message instead of relying on listing state
@@ -842,7 +910,7 @@ const FlipEnvironment = () => {
     setSocket(ws)
   }
 
-  // Update sendMessage to use listing_chat
+  // Update sendMessage to use listing_chat or game_chat
   const sendMessage = () => {
     if (!newMessage.trim() || !socket) return
     if (!wsConnected) {
@@ -851,12 +919,21 @@ const FlipEnvironment = () => {
     }
     
     console.log('💬 Sending chat message:', newMessage)
-    socket.send(JSON.stringify({
-      type: 'listing_chat',
-      message: newMessage,
-      address: address || 'anonymous',
-      listingId
-    }))
+    if (isGame) {
+      socket.send(JSON.stringify({
+        type: 'game_chat',
+        message: newMessage,
+        address: address || 'anonymous',
+        gameId: currentId
+      }))
+    } else {
+      socket.send(JSON.stringify({
+        type: 'listing_chat',
+        message: newMessage,
+        address: address || 'anonymous',
+        listingId: currentId
+      }))
+    }
     setNewMessage('')
   }
   
@@ -1156,8 +1233,15 @@ const FlipEnvironment = () => {
                   </button>
                 )}
                 <StatusBadge status={listing.status}>
-                  {listing.status === 'active' ? 'Active' : 
-                   listing.status === 'pending' ? 'Pending' : 'Completed'}
+                  {isGame ? (
+                    listing.status === 'waiting' ? 'Waiting for Player' :
+                    listing.status === 'joined' ? 'Game Ready' :
+                    listing.status === 'active' ? 'In Progress' :
+                    listing.status === 'completed' ? 'Completed' : 'Unknown'
+                  ) : (
+                    listing.status === 'active' ? 'Active' : 
+                    listing.status === 'pending' ? 'Pending' : 'Completed'
+                  )}
                 </StatusBadge>
               </div>
             </Header>
@@ -1175,8 +1259,10 @@ const FlipEnvironment = () => {
                         <NFTCollection>{listing.nft_collection}</NFTCollection>
                         <PriceSection>
                           <AskingPrice>${parseFloat(listing.asking_price).toFixed(2)}</AskingPrice>
-                          <MinOffer>Asking Price</MinOffer>
-                          <MinOffer>Minimum offer: ${parseFloat(listing.min_offer_price).toFixed(2)}</MinOffer>
+                          <MinOffer>{isGame ? 'Entry Fee' : 'Asking Price'}</MinOffer>
+                          {!isGame && (
+                            <MinOffer>Minimum offer: ${parseFloat(listing.min_offer_price || 0).toFixed(2)}</MinOffer>
+                          )}
                         </PriceSection>
                         {/* Explorer and Marketplace Links */}
                         <div style={{ 
@@ -1233,40 +1319,108 @@ const FlipEnvironment = () => {
                       </NFTInfo>
                     </NFTDisplay>
                   </NFTDetailsSection>
-                  {/* Move Make an Offer below NFT details, not in grid with chat */}
+                  {/* Show different content for games vs listings */}
                   {!isOwner && (
-                    <MakeOfferSection>
-                      <MakeOfferHeader>Make an Offer</MakeOfferHeader>
-                      <OfferForm onSubmit={handleSubmitOffer}>
-                        <FormGroup>
-                          <Label>Your Offer (USD)</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min={listing.min_offer_price}
-                            value={offerPrice}
-                            onChange={(e) => setOfferPrice(e.target.value)}
-                            placeholder={`Min: $${listing.min_offer_price}`}
-                            required
-                          />
-                        </FormGroup>
-                        <FormGroup>
-                          <Label>Message (Optional)</Label>
-                          <TextArea
-                            value={offerMessage}
-                            onChange={(e) => setOfferMessage(e.target.value)}
-                            placeholder="Add a message to your offer..."
-                            rows="3"
-                          />
-                        </FormGroup>
-                        <SubmitOfferButton 
-                          type="submit" 
-                          disabled={submittingOffer}
-                        >
-                          {submittingOffer ? 'Submitting...' : 'Submit Offer'}
-                        </SubmitOfferButton>
-                      </OfferForm>
-                    </MakeOfferSection>
+                    isGame ? (
+                      // Game join section
+                      <MakeOfferSection>
+                        <MakeOfferHeader>Join Game</MakeOfferHeader>
+                        <div style={{
+                          padding: '1.5rem',
+                          background: 'rgba(0, 255, 65, 0.05)',
+                          border: '1px solid rgba(0, 255, 65, 0.2)',
+                          borderRadius: '1rem',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 'bold',
+                            color: '#00FF41',
+                            marginBottom: '1rem'
+                          }}>
+                            ${parseFloat(listing.asking_price).toFixed(2)} USD
+                          </div>
+                          <div style={{
+                            color: '#fff',
+                            marginBottom: '1.5rem'
+                          }}>
+                            Join this game by paying the entry fee. The NFT is already loaded in the contract.
+                          </div>
+                          <Button
+                            onClick={() => {
+                              // Show the Game Lobby modal
+                              setAssetModalData({
+                                gameId: listing.contract_game_id,
+                                creator: listing.creator,
+                                joiner: address,
+                                nftContract: listing.nft_contract,
+                                tokenId: listing.nft_token_id,
+                                nftName: listing.nft_name,
+                                nftImage: listing.nft_image,
+                                priceUSD: listing.asking_price,
+                                coin: listing.coin
+                              })
+                              setShowAssetModal(true)
+                            }}
+                            style={{
+                              background: 'linear-gradient(135deg, #00FF41, #39FF14)',
+                              color: '#000',
+                              border: 'none',
+                              padding: '1rem 2rem',
+                              borderRadius: '0.75rem',
+                              fontSize: '1.2rem',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.05)'
+                              e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.4)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)'
+                              e.currentTarget.style.boxShadow = 'none'
+                            }}
+                          >
+                            🎮 Join Game
+                          </Button>
+                        </div>
+                      </MakeOfferSection>
+                    ) : (
+                      // Listing offer section
+                      <MakeOfferSection>
+                        <MakeOfferHeader>Make an Offer</MakeOfferHeader>
+                        <OfferForm onSubmit={handleSubmitOffer}>
+                          <FormGroup>
+                            <Label>Your Offer (USD)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min={listing.min_offer_price}
+                              value={offerPrice}
+                              onChange={(e) => setOfferPrice(e.target.value)}
+                              placeholder={`Min: $${listing.min_offer_price}`}
+                              required
+                            />
+                          </FormGroup>
+                          <FormGroup>
+                            <Label>Message (Optional)</Label>
+                            <TextArea
+                              value={offerMessage}
+                              onChange={(e) => setOfferMessage(e.target.value)}
+                              placeholder="Add a message to your offer..."
+                              rows="3"
+                            />
+                          </FormGroup>
+                          <SubmitOfferButton 
+                            type="submit" 
+                            disabled={submittingOffer}
+                          >
+                            {submittingOffer ? 'Submitting...' : 'Submit Offer'}
+                          </SubmitOfferButton>
+                        </OfferForm>
+                      </MakeOfferSection>
+                    )
                   )}
                   {/* Share Section - Same width as main content */}
                   <ShareSection style={{
@@ -1284,7 +1438,7 @@ const FlipEnvironment = () => {
                       marginBottom: '1rem',
                       textAlign: 'left'
                     }}>
-                      Share this listing
+                      Share this {isGame ? 'game' : 'listing'}
                     </ShareHeader>
                     <ShareButtons style={{
                       display: 'flex',
@@ -1295,7 +1449,7 @@ const FlipEnvironment = () => {
                       <ShareButton
                         onClick={() => {
                           const url = window.location.href
-                          window.open(`https://twitter.com/intent/tweet?text=Check out this NFT listing on Crypto Flipz! ${url}`, '_blank')
+                          window.open(`https://twitter.com/intent/tweet?text=Check out this NFT ${isGame ? 'game' : 'listing'} on Crypto Flipz! ${url}`, '_blank')
                         }}
                         style={{
                           padding: '0.75rem 1.5rem',
@@ -1325,7 +1479,7 @@ const FlipEnvironment = () => {
                       <ShareButton
                         onClick={() => {
                           const url = window.location.href
-                          window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=Check out this NFT listing on Crypto Flipz!`, '_blank')
+                          window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=Check out this NFT ${isGame ? 'game' : 'listing'} on Crypto Flipz!`, '_blank')
                         }}
                         style={{
                           padding: '0.75rem 1.5rem',
@@ -1355,7 +1509,7 @@ const FlipEnvironment = () => {
                       <ShareButton
                         onClick={() => {
                           navigator.clipboard.writeText(window.location.href)
-                          showSuccess('Listing link copied to clipboard!')
+                          showSuccess(`${isGame ? 'Game' : 'Listing'} link copied to clipboard!`)
                         }}
                         style={{
                           padding: '0.75rem 1.5rem',
@@ -1579,10 +1733,9 @@ const FlipEnvironment = () => {
         </ContentWrapper>
       </Container>
       
-      {/* Asset Loading Modal */}
-      <AssetLoadingModal
+      {/* Game Lobby */}
+      <GameLobby
         isOpen={showAssetModal}
-        onClose={() => setShowAssetModal(false)}
         gameData={assetModalData}
         onGameReady={(gameId) => {
           setShowAssetModal(false)
