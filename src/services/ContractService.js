@@ -1140,20 +1140,20 @@ class ContractService {
       // Use the priceUSD parameter that was passed in, not from contract
       const priceUSD = params.priceUSD || gameDetails.data.game.priceUSD
       
-      // Convert USD to cents (contract expects price in cents as integer)
-      const priceInCents = Math.floor(priceUSD * 100)
+      // Convert USD to 6 decimals (contract expects price in 6 decimals, not cents)
+      const priceIn6Decimals = Math.floor(priceUSD * 1000000)
       
       // Get the exact amount required from the contract using Chainlink oracle
       const requiredAmount = await this.publicClient.readContract({
         address: this.contractAddress,
         abi: this.contractABI,
         functionName: 'getETHAmount',
-        args: [BigInt(priceInCents)]
+        args: [BigInt(priceIn6Decimals)]
       })
 
       const priceInWei = requiredAmount
       
-      console.log('💰 Game price from contract:', priceUSD, 'USD (', priceInCents, 'cents)')
+      console.log('💰 Game price from contract:', priceUSD, 'USD (', priceIn6Decimals, 'microdollars)')
       console.log('💰 Contract calculated ETH amount:', formatEther(requiredAmount))
       console.log('💰 Price in Wei:', priceInWei.toString())
 
@@ -2400,6 +2400,164 @@ class ContractService {
       }
     } catch (error) {
       console.error('Failed to deposit NFT:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Create blockchain game and deposit NFT for games created from offers
+  async createBlockchainGameFromOffer(params) {
+    try {
+      await this.rateLimit('createBlockchainGameFromOffer')
+      
+      const { walletClient, public: publicClient } = this.getCurrentClients()
+      
+      if (!walletClient) {
+        throw new Error('Wallet client not available. Please connect your wallet.')
+      }
+
+      const {
+        opponent,
+        nftContract,
+        tokenId,
+        priceUSD,
+        coinType = 'default',
+        headsImage = '',
+        tailsImage = '',
+        isCustom = false
+      } = params
+
+      console.log('🎮 Creating blockchain game from offer:', params)
+
+      // Check NFT approval
+      const currentApproval = await this.publicClient.readContract({
+        address: nftContract,
+        abi: NFT_ABI,
+        functionName: 'getApproved',
+        args: [BigInt(tokenId)]
+      })
+
+      if (currentApproval?.toLowerCase() !== this.contractAddress.toLowerCase()) {
+        throw new Error('NFT is not approved for the contract. Please approve the NFT first.')
+      }
+
+      // Convert USD to 6 decimals
+      const priceIn6Decimals = BigInt(Math.floor(priceUSD * 1000000))
+
+      // Get listing fee
+      const listingFeeUSD = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'listingFeeUSD'
+      })
+
+      const listingFeeETH = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'getETHAmount',
+        args: [listingFeeUSD]
+      })
+
+      // Get game amount in ETH
+      const gameAmountETH = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'getETHAmount',
+        args: [priceIn6Decimals]
+      })
+
+      // Calculate platform fee
+      const platformFeePercent = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'platformFeePercent'
+      })
+
+      const platformFee = (gameAmountETH * platformFeePercent) / 10000n
+      const totalRequired = listingFeeETH + gameAmountETH
+
+      console.log('💰 Required amounts:', {
+        listingFeeETH: formatEther(listingFeeETH),
+        gameAmountETH: formatEther(gameAmountETH),
+        platformFee: formatEther(platformFee),
+        totalRequired: formatEther(totalRequired)
+      })
+
+      // Check user's ETH balance
+      const balance = await this.publicClient.getBalance({
+        address: this.walletClient.account.address
+      })
+      
+      if (balance < totalRequired) {
+        throw new Error(`Insufficient ETH balance. You have ${formatEther(balance)} ETH but need ${formatEther(totalRequired)} ETH.`)
+      }
+
+      // Create and start game
+      const { request } = await this.publicClient.simulateContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'createAndStartGame',
+        args: [
+          opponent,
+          nftContract,
+          BigInt(tokenId),
+          priceIn6Decimals,
+          0, // PaymentToken.ETH
+          coinType,
+          headsImage,
+          tailsImage,
+          isCustom
+        ],
+        account: this.walletClient.account.address,
+        value: totalRequired
+      })
+
+      const hash = await this.walletClient.writeContract(request)
+      
+      console.log('🎯 Create and start game transaction sent:', hash)
+
+      const receipt = await this.publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 1 
+      })
+
+      console.log('✅ Create and start game confirmed:', receipt)
+
+      // Get the game ID from the event
+      const gameCreatedEvent = receipt.logs.find(log => {
+        try {
+          const decoded = decodeEventLog({
+            abi: this.contractABI,
+            data: log.data,
+            topics: log.topics
+          })
+          return decoded.eventName === 'GameCreated'
+        } catch {
+          return false
+        }
+      })
+
+      let gameId = null
+      if (gameCreatedEvent) {
+        const decoded = decodeEventLog({
+          abi: this.contractABI,
+          data: gameCreatedEvent.data,
+          topics: gameCreatedEvent.topics
+        })
+        gameId = decoded.args.gameId.toString()
+      }
+
+      return {
+        success: true,
+        gameId,
+        transactionHash: hash,
+        receipt
+      }
+
+    } catch (error) {
+      console.error('❌ Error creating blockchain game from offer:', error)
       return {
         success: false,
         error: error.message

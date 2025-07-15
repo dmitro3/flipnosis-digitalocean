@@ -2821,8 +2821,8 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   `INSERT INTO games (
                     id, creator, joiner, nft_contract, nft_token_id,
                     nft_name, nft_image, nft_collection, price_usd,
-                    status, game_type, coin, nft_chain
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    status, game_type, coin, nft_chain, contract_game_id
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                   [
                     gameId,
                     listing.creator,
@@ -2836,7 +2836,8 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                     'pending', // New status for games waiting for both assets
                     'nft-vs-crypto',
                     listing.coin, // Make sure this is passed correctly
-                    listing.nft_chain
+                    listing.nft_chain,
+                    null // contract_game_id will be set when blockchain game is created
                   ],
                   (err) => {
                     if (err) {
@@ -2882,8 +2883,8 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       nft_name: listing.nft_name,
                       nft_image: listing.nft_image,
                       coin: coinData, // Use parsed coin data
-                      price_usd: offer.offer_price,
-                      contract_game_id: gameId
+                      price_usd: offer.offer_price
+                      // Don't set contract_game_id yet - it will be set when blockchain game is created
                     })
                     broadcastToUser(offer.offerer_address, {
                       type: 'game_created_pending_deposit',
@@ -2899,8 +2900,8 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       nft_name: listing.nft_name,
                       nft_image: listing.nft_image,
                       coin: coinData, // Use parsed coin data
-                      price_usd: offer.offer_price,
-                      contract_game_id: gameId
+                      price_usd: offer.offer_price
+                      // Don't set contract_game_id yet - it will be set when blockchain game is created
                     })
                   }
                 )

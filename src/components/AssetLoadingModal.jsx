@@ -374,14 +374,65 @@ const GameLobby = ({
       const gameId = normalizedData.contract_game_id || normalizedData.id
       const priceUSD = normalizedData.price_usd || normalizedData.priceUSD
       
-      // Join the game with crypto payment
-      const result = await contractService.joinGame({
-        gameId: gameId,
-        priceUSD: priceUSD
-      })
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to join game')
+      // Check if this is a game created from an offer (no contract game ID yet)
+      if (!normalizedData.contract_game_id || normalizedData.contract_game_id === normalizedData.id) {
+        console.log('🎮 Game created from offer, creating blockchain game first...')
+        
+        // Create blockchain game and deposit NFT
+        const createResult = await contractService.createBlockchainGameFromOffer({
+          opponent: normalizedData.joiner,
+          nftContract: normalizedData.nft_contract || normalizedData.nftContract,
+          tokenId: normalizedData.nft_token_id || normalizedData.tokenId,
+          priceUSD: priceUSD,
+          coinType: normalizedData.coin?.type || 'default',
+          headsImage: normalizedData.coin?.headsImage || '',
+          tailsImage: normalizedData.coin?.tailsImage || '',
+          isCustom: normalizedData.coin?.isCustom || false
+        })
+        
+        if (!createResult.success) {
+          throw new Error(createResult.error || 'Failed to create blockchain game')
+        }
+        
+        console.log('✅ Blockchain game created with ID:', createResult.gameId)
+        
+                  // Update the database with the contract game ID
+          try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/games/${normalizedData.id}/update-contract-id`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contract_game_id: createResult.gameId })
+            })
+            
+            if (!response.ok) {
+              console.warn('Failed to update database with contract game ID')
+            }
+          } catch (dbError) {
+            console.error('Database update error:', dbError)
+          }
+        
+        // Now join the newly created blockchain game
+        const joinResult = await contractService.joinGame({
+          gameId: createResult.gameId,
+          priceUSD: priceUSD
+        })
+        
+        if (!joinResult.success) {
+          throw new Error(joinResult.error || 'Failed to join blockchain game')
+        }
+        
+        console.log('✅ Successfully joined blockchain game')
+        
+      } else {
+        // Game already exists on blockchain, just join it
+        const result = await contractService.joinGame({
+          gameId: gameId,
+          priceUSD: priceUSD
+        })
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to join game')
+        }
       }
       
       setCryptoLoaded(true)
