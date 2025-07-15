@@ -580,6 +580,8 @@ const FlipEnvironment = () => {
   const isGame = !!id
   const currentId = id || listingId
   
+  console.log('🎯 FlipEnvironment params:', { listingId, id, isGame, currentId })
+  
   // Helper functions for chain URLs
   const getExplorerUrl = (chain, contractAddress, tokenId) => {
     if (!chain || !contractAddress || !tokenId) return null
@@ -685,6 +687,7 @@ const FlipEnvironment = () => {
       if (isGame) {
         // Fetch game data instead of listing
         console.log('🎮 Fetching game with ID:', currentId)
+        console.log('🎮 Full URL:', `${baseUrl}/api/games/${currentId}`)
         const gameResponse = await fetch(`${baseUrl}/api/games/${currentId}`)
         
         if (!gameResponse.ok) {
@@ -1319,12 +1322,12 @@ const FlipEnvironment = () => {
                       </NFTInfo>
                     </NFTDisplay>
                   </NFTDetailsSection>
-                  {/* Show different content for games vs listings */}
+                  {/* Show offer form for both games and listings */}
                   {!isOwner && (
-                    isGame ? (
-                      // Game join section
-                      <MakeOfferSection>
-                        <MakeOfferHeader>Join Game</MakeOfferHeader>
+                    <MakeOfferSection>
+                      <MakeOfferHeader>{isGame ? 'Join Game' : 'Make an Offer'}</MakeOfferHeader>
+                      {isGame ? (
+                        // Game join section
                         <div style={{
                           padding: '1.5rem',
                           background: 'rgba(0, 255, 65, 0.05)',
@@ -1385,11 +1388,8 @@ const FlipEnvironment = () => {
                             🎮 Join Game
                           </Button>
                         </div>
-                      </MakeOfferSection>
-                    ) : (
-                      // Listing offer section
-                      <MakeOfferSection>
-                        <MakeOfferHeader>Make an Offer</MakeOfferHeader>
+                      ) : (
+                        // Listing offer section
                         <OfferForm onSubmit={handleSubmitOffer}>
                           <FormGroup>
                             <Label>Your Offer (USD)</Label>
@@ -1419,8 +1419,8 @@ const FlipEnvironment = () => {
                             {submittingOffer ? 'Submitting...' : 'Submit Offer'}
                           </SubmitOfferButton>
                         </OfferForm>
-                      </MakeOfferSection>
-                    )
+                      )}
+                    </MakeOfferSection>
                   )}
                   {/* Share Section - Same width as main content */}
                   <ShareSection style={{
@@ -1669,60 +1669,95 @@ const FlipEnvironment = () => {
                 </ChatSection>
                 
                 <AllOffersSection style={{ marginTop: '1.5rem' }}>
-                  <AllOffersHeader>All Offers ({offers.length})</AllOffersHeader>
-                  {offers.length > 0 ? (
-                    offers.map(offer => (
-                      <PublicOfferCard key={offer.id}>
-                        <PublicOfferHeader>
-                          <PublicOfferPrice>${parseFloat(offer.offer_price).toFixed(2)}</PublicOfferPrice>
-                          {isOwner && offer.status === 'pending' && (
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <ActionButton 
-                                className="accept"
-                                onClick={() => handleAcceptOffer(offer)}
-                                disabled={acceptingOfferId === offer.id}
-                                style={{
-                                  opacity: acceptingOfferId === offer.id ? 0.5 : 1,
-                                  cursor: acceptingOfferId === offer.id ? 'not-allowed' : 'pointer'
-                                }}
-                              >
-                                {acceptingOfferId === offer.id ? 'Accepting...' : 'Accept'}
-                              </ActionButton>
-                              <ActionButton 
-                                className="reject"
-                                onClick={() => handleRejectOffer(offer.id)}
-                                disabled={acceptingOfferId === offer.id || rejectingOfferId === offer.id}
-                                style={{
-                                  opacity: (acceptingOfferId === offer.id || rejectingOfferId === offer.id) ? 0.5 : 1,
-                                  cursor: (acceptingOfferId === offer.id || rejectingOfferId === offer.id) ? 'not-allowed' : 'pointer'
-                                }}
-                              >
-                                {rejectingOfferId === offer.id ? 'Rejecting...' : 'Reject'}
-                              </ActionButton>
+                  <AllOffersHeader>
+                    {isGame ? 'Game Status' : `All Offers (${offers.length})`}
+                  </AllOffersHeader>
+                  {isGame ? (
+                    // Game status section
+                    <div style={{
+                      padding: '1rem',
+                      background: 'rgba(0, 255, 65, 0.05)',
+                      border: '1px solid rgba(0, 255, 65, 0.2)',
+                      borderRadius: '0.5rem',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        color: '#00FF41',
+                        marginBottom: '0.5rem'
+                      }}>
+                        {listing.status === 'waiting' ? 'Waiting for Player' :
+                         listing.status === 'joined' ? 'Game Ready' :
+                         listing.status === 'active' ? 'In Progress' :
+                         listing.status === 'completed' ? 'Completed' : 'Unknown Status'}
+                      </div>
+                      <div style={{
+                        color: '#fff',
+                        fontSize: '0.9rem'
+                      }}>
+                        {listing.status === 'waiting' ? 'Click "Join Game" to participate' :
+                         listing.status === 'joined' ? 'Both players are ready. Game will start soon.' :
+                         listing.status === 'active' ? 'Game is currently being played' :
+                         listing.status === 'completed' ? 'Game has finished' : 'Unknown'}
+                      </div>
+                    </div>
+                  ) : (
+                    // Offers section for listings
+                    offers.length > 0 ? (
+                      offers.map(offer => (
+                        <PublicOfferCard key={offer.id}>
+                          <PublicOfferHeader>
+                            <PublicOfferPrice>${parseFloat(offer.offer_price).toFixed(2)}</PublicOfferPrice>
+                            {isOwner && offer.status === 'pending' && (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <ActionButton 
+                                  className="accept"
+                                  onClick={() => handleAcceptOffer(offer)}
+                                  disabled={acceptingOfferId === offer.id}
+                                  style={{
+                                    opacity: acceptingOfferId === offer.id ? 0.5 : 1,
+                                    cursor: acceptingOfferId === offer.id ? 'not-allowed' : 'pointer'
+                                  }}
+                                >
+                                  {acceptingOfferId === offer.id ? 'Accepting...' : 'Accept'}
+                                </ActionButton>
+                                <ActionButton 
+                                  className="reject"
+                                  onClick={() => handleRejectOffer(offer.id)}
+                                  disabled={acceptingOfferId === offer.id || rejectingOfferId === offer.id}
+                                  style={{
+                                    opacity: (acceptingOfferId === offer.id || rejectingOfferId === offer.id) ? 0.5 : 1,
+                                    cursor: (acceptingOfferId === offer.id || rejectingOfferId === offer.id) ? 'not-allowed' : 'pointer'
+                                  }}
+                                >
+                                  {rejectingOfferId === offer.id ? 'Rejecting...' : 'Reject'}
+                                </ActionButton>
+                              </div>
+                            )}
+                          </PublicOfferHeader>
+                          <PublicOfferInfo>
+                            From: {offer.offerer_name || `${offer.offerer_address?.slice(0, 6)}...${offer.offerer_address?.slice(-4)}`}
+                          </PublicOfferInfo>
+                          {offer.message && (
+                            <PublicOfferMessage>"{offer.message}"</PublicOfferMessage>
+                          )}
+                          {offer.status !== 'pending' && (
+                            <div style={{ 
+                              fontSize: '0.75rem', 
+                              color: offer.status === 'accepted' ? '#00FF41' : '#FF4444',
+                              fontWeight: 'bold'
+                            }}>
+                              {offer.status === 'accepted' ? '✅ Accepted' : '❌ Rejected'}
                             </div>
                           )}
-                        </PublicOfferHeader>
-                        <PublicOfferInfo>
-                          From: {offer.offerer_name || `${offer.offerer_address?.slice(0, 6)}...${offer.offerer_address?.slice(-4)}`}
-                        </PublicOfferInfo>
-                        {offer.message && (
-                          <PublicOfferMessage>"{offer.message}"</PublicOfferMessage>
-                        )}
-                        {offer.status !== 'pending' && (
-                          <div style={{ 
-                            fontSize: '0.75rem', 
-                            color: offer.status === 'accepted' ? '#00FF41' : '#FF4444',
-                            fontWeight: 'bold'
-                          }}>
-                            {offer.status === 'accepted' ? '✅ Accepted' : '❌ Rejected'}
-                          </div>
-                        )}
-                      </PublicOfferCard>
-                    ))
-                  ) : (
-                    <div style={{ color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', padding: '1rem' }}>
-                      No offers yet
-                    </div>
+                        </PublicOfferCard>
+                      ))
+                    ) : (
+                      <div style={{ color: 'rgba(255, 255, 255, 0.5)', textAlign: 'center', padding: '1rem' }}>
+                        No offers yet
+                      </div>
+                    )
                   )}
                 </AllOffersSection>
               </div>

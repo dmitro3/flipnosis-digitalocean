@@ -275,6 +275,8 @@ const CreateFlip = () => {
       
       const result = await response.json()
       console.log('✅ Database save result:', result)
+      console.log('🎯 Navigating to game with ID:', result.id)
+      console.log('🎯 Full navigation URL:', `/flip-environment/${result.id}`)
       showSuccess('Flip created successfully!')
       
       // Navigate to the flip environment page

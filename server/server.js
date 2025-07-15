@@ -18,6 +18,7 @@ const wss = new WebSocket.Server({ server })
 // Session management
 const activeSessions = new Map()
 const gameRooms = new Map() // gameId -> Set of socket IDs
+const gameViewers = new Map() // gameId -> Set of socket IDs for viewers
 
 // Helper to generate session ID
 function generateSessionId() {
@@ -455,6 +456,27 @@ wss.on('connection', (socket) => {
         return
       }
       
+      // Handle game-specific messages that don't require full authentication
+      if (data.type === 'subscribe_game_chat' || data.type === 'join_game') {
+        socket.gameId = data.gameId
+        socket.gameAddress = data.address || 'anonymous'
+        
+        // Track game viewers
+        if (!gameViewers.has(data.gameId)) {
+          gameViewers.set(data.gameId, new Set())
+        }
+        gameViewers.get(data.gameId).add(socket.id)
+        
+        // Broadcast viewer count
+        broadcastToGameViewers(data.gameId, {
+          type: 'viewer_joined',
+          viewerCount: gameViewers.get(data.gameId).size
+        })
+        
+        console.log(`👥 Viewer joined game ${data.gameId}, total: ${gameViewers.get(data.gameId).size}`)
+        return
+      }
+      
       if (data.type === 'listing_chat') {
         if (!socket.listingId) {
           console.log('❌ Chat message without listing subscription')
@@ -466,6 +488,23 @@ wss.on('connection', (socket) => {
           type: 'listing_chat_message',
           listingId: socket.listingId,
           address: socket.listingAddress,
+          message: data.message,
+          timestamp: Date.now()
+        })
+        return
+      }
+      
+      if (data.type === 'game_chat') {
+        if (!socket.gameId) {
+          console.log('❌ Game chat message without game subscription')
+          return
+        }
+        
+        // Broadcast chat message to all game viewers
+        broadcastToGameViewers(socket.gameId, {
+          type: 'game_chat_message',
+          gameId: socket.gameId,
+          address: socket.gameAddress,
           message: data.message,
           timestamp: Date.now()
         })
@@ -487,6 +526,24 @@ wss.on('connection', (socket) => {
         }
         socket.listingId = null
         socket.listingAddress = null
+        return
+      }
+      
+      if (data.type === 'leave_game') {
+        if (socket.gameId && gameViewers.has(socket.gameId)) {
+          gameViewers.get(socket.gameId).delete(socket.id)
+          // Broadcast viewer left
+          broadcastToGameViewers(socket.gameId, {
+            type: 'viewer_left',
+            viewerCount: gameViewers.get(socket.gameId).size
+          })
+          // Clean up empty games
+          if (gameViewers.get(socket.gameId).size === 0) {
+            gameViewers.delete(socket.gameId)
+          }
+        }
+        socket.gameId = null
+        socket.gameAddress = null
         return
       }
       
@@ -729,6 +786,20 @@ function handleDisconnect(socket) {
     }
   }
   
+  // Clean up game viewers
+  if (socket.gameId && gameViewers.has(socket.gameId)) {
+    gameViewers.get(socket.gameId).delete(socket.id)
+    // Broadcast viewer left
+    broadcastToGameViewers(socket.gameId, {
+      type: 'viewer_left',
+      viewerCount: gameViewers.get(socket.gameId).size
+    })
+    // Clean up empty games
+    if (gameViewers.get(socket.gameId).size === 0) {
+      gameViewers.delete(socket.gameId)
+    }
+  }
+  
   // Clean up asset loading rooms
   if (socket.assetGameId && assetLoadingRooms.has(socket.assetGameId)) {
     assetLoadingRooms.get(socket.assetGameId).delete(socket.id)
@@ -755,6 +826,24 @@ function broadcastToGame(gameId, message, excludeSocketId = null) {
   })
   
   console.log(`📡 Broadcasted ${message.type} to ${sentCount} clients in game ${gameId}`)
+}
+
+// Broadcast to game viewers (non-participants)
+function broadcastToGameViewers(gameId, message, excludeSocketId = null) {
+  const viewers = gameViewers.get(gameId)
+  if (!viewers) return
+  
+  let sentCount = 0
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && 
+        viewers.has(client.id) && 
+        client.id !== excludeSocketId) {
+      client.send(JSON.stringify(message))
+      sentCount++
+    }
+  })
+  
+  console.log(`📡 Broadcasted ${message.type} to ${sentCount} viewers in game ${gameId}`)
 }
 
 // Send game state to specific socket
@@ -1459,13 +1548,13 @@ app.post('/api/games', async (req, res) => {
         }
         
         console.log('✅ Game created successfully with NFT metadata:', {
-          id: this.lastID,
+          id: gameData.id,
           nftName,
           nftImage: nftImage?.substring(0, 50) + '...',
           nftCollection
         })
         
-        res.json({ success: true, id: this.lastID })
+        res.json({ success: true, id: gameData.id })
       }
     )
   } catch (error) {
