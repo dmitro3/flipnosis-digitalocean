@@ -297,6 +297,31 @@ const GameLobby = ({
     }
   }, [onGameReady, normalizedData.id])
 
+  // Add this useEffect to listen for both_assets_loaded message
+  useEffect(() => {
+    const handleBothAssetsLoaded = (event) => {
+      const data = event.detail
+      if (data.type === 'both_assets_loaded' && data.gameId === (normalizedData.id || normalizedData.id)) {
+        console.log('🎮 Both assets loaded, transporting all players!')
+        setGameReady(true)
+        setCryptoLoaded(true)
+        setNftLoaded(true)
+        
+        setTimeout(() => {
+          if (onGameReady) {
+            onGameReady(normalizedData.id || normalizedData.id)
+          }
+        }, 500)
+      }
+    }
+    
+    window.addEventListener('websocketMessage', handleBothAssetsLoaded)
+    
+    return () => {
+      window.removeEventListener('websocketMessage', handleBothAssetsLoaded)
+    }
+  }, [onGameReady, normalizedData.id])
+
   const checkGameState = async () => {
     // Handle both contract_game_id (from database) and gameId (from WebSocket)
     const gameId = normalizedData.contract_game_id || normalizedData.id
@@ -362,12 +387,24 @@ const GameLobby = ({
       setCryptoLoaded(true)
       showSuccess('Crypto loaded successfully! Game starting...')
       
-      // Game is now ready to start - immediately transport both players
+      // Game is now ready to start
       setGameReady(true)
-      if (onGameReady) {
-        // Call onGameReady for both players to exit lobby and enter game
-        onGameReady(normalizedData.id || normalizedData.id)
+      
+      // Send WebSocket message to notify both players
+      if (window.socket && window.socket.readyState === WebSocket.OPEN) {
+        window.socket.send(JSON.stringify({
+          type: 'both_assets_loaded',
+          gameId: normalizedData.id || normalizedData.id,
+          message: 'Both assets loaded, game ready!'
+        }))
       }
+      
+      // Small delay then transport both players
+      setTimeout(() => {
+        if (onGameReady) {
+          onGameReady(normalizedData.id || normalizedData.id)
+        }
+      }, 1000)
       
     } catch (error) {
       console.error('Error loading crypto:', error)

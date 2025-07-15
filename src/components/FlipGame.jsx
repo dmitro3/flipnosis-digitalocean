@@ -804,6 +804,18 @@ const FlipGame = () => {
       try {
         const data = JSON.parse(event.data)
         
+        // Make socket available globally for components
+        if (ws) {
+          window.socket = ws
+        }
+        
+        // Also dispatch WebSocket messages as window events
+        try {
+          window.dispatchEvent(new CustomEvent('websocketMessage', { detail: data }))
+        } catch (error) {
+          console.error('Error dispatching WebSocket message event:', error)
+        }
+        
         // Handle game messages
         switch (data.type) {
           case 'game_state':

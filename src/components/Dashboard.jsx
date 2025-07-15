@@ -290,6 +290,16 @@ const Dashboard = () => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
       
+      // Make socket available globally for components
+      window.socket = ws
+      
+      // Also dispatch WebSocket messages as window events
+      try {
+        window.dispatchEvent(new CustomEvent('websocketMessage', { detail: data }))
+      } catch (error) {
+        console.error('Error dispatching WebSocket message event:', error)
+      }
+      
       switch (data.type) {
         case 'new_offer':
           showInfo('New offer received!')

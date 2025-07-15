@@ -851,6 +851,16 @@ const FlipEnvironment = () => {
       const data = JSON.parse(event.data)
       console.log('📡 Received WebSocket message:', data)
       
+      // Make socket available globally for components
+      window.socket = ws
+      
+      // Also dispatch WebSocket messages as window events
+      try {
+        window.dispatchEvent(new CustomEvent('websocketMessage', { detail: data }))
+      } catch (error) {
+        console.error('Error dispatching WebSocket message event:', error)
+      }
+      
       // Chat messages (both listing and game)
       if (data.type === 'listing_chat_message' || data.type === 'game_chat_message') {
         setMessages(prev => [...prev, {
@@ -1137,6 +1147,16 @@ const FlipEnvironment = () => {
       const result = await response.json()
       showSuccess('Offer accepted! Preparing game...')
 
+      // Parse coin data if it's a string
+      let coinData = listing?.coin
+      if (coinData && typeof coinData === 'string') {
+        try {
+          coinData = JSON.parse(coinData)
+        } catch (e) {
+          console.warn('Could not parse coin data:', e)
+        }
+      }
+
       // Immediately open the asset loading modal for Player 1 (acceptor)
       setAssetModalData({
         gameId: result.gameId,
@@ -1147,7 +1167,7 @@ const FlipEnvironment = () => {
         nftName: listing?.nft_name,
         nftImage: listing?.nft_image,
         priceUSD: offer.offer_price,
-        coin: listing?.coin
+        coin: coinData // Pass parsed coin data
       })
       setShowAssetModal(true)
 

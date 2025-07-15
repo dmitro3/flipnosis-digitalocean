@@ -627,6 +627,26 @@ wss.on('connection', (socket) => {
           })
           break
         }
+        case 'both_assets_loaded':
+          // Broadcast to all clients in the game
+          broadcastToGame(data.gameId, {
+            type: 'both_assets_loaded',
+            gameId: data.gameId,
+            message: data.message
+          })
+          
+          // Also broadcast as a window event for non-authenticated viewers
+          wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({
+                type: 'both_assets_loaded',
+                gameId: data.gameId,
+                message: data.message,
+                isBroadcast: true
+              }))
+            }
+          })
+          break
         default:
           console.log('❓ Unknown message type:', data.type)
       }
@@ -2787,6 +2807,16 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                 // Create game in pending state
                 const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
                 
+                // Parse the coin data if it's a string
+                let coinData = listing.coin
+                if (typeof coinData === 'string') {
+                  try {
+                    coinData = JSON.parse(coinData)
+                  } catch (e) {
+                    console.warn('Could not parse coin data')
+                  }
+                }
+                
                 db.run(
                   `INSERT INTO games (
                     id, creator, joiner, nft_contract, nft_token_id,
@@ -2805,7 +2835,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                     offer.offer_price,
                     'pending', // New status for games waiting for both assets
                     'nft-vs-crypto',
-                    listing.coin,
+                    listing.coin, // Make sure this is passed correctly
                     listing.nft_chain
                   ],
                   (err) => {
@@ -2814,7 +2844,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       return res.status(500).json({ error: err.message })
                     }
                     
-                    console.log('✅ Game created from accepted offer:', gameId)
+                    console.log('✅ Game created with coin data:', coinData)
                     
                     // Send response to client
                     res.json({ success: true, gameId })
@@ -2838,7 +2868,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       listingId: listing.id
                     })
                     
-                    // Notify both users they need to deposit assets
+                    // In the broadcast messages, make sure to include parsed coin data:
                     broadcastToUser(listing.creator, {
                       type: 'game_created_pending_deposit',
                       gameId,
@@ -2851,7 +2881,9 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       nft_token_id: listing.nft_token_id,
                       nft_name: listing.nft_name,
                       nft_image: listing.nft_image,
-                      coin: listing.coin
+                      coin: coinData, // Use parsed coin data
+                      price_usd: offer.offer_price,
+                      contract_game_id: gameId
                     })
                     broadcastToUser(offer.offerer_address, {
                       type: 'game_created_pending_deposit',
@@ -2866,7 +2898,9 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       nft_token_id: listing.nft_token_id,
                       nft_name: listing.nft_name,
                       nft_image: listing.nft_image,
-                      coin: listing.coin
+                      coin: coinData, // Use parsed coin data
+                      price_usd: offer.offer_price,
+                      contract_game_id: gameId
                     })
                   }
                 )
