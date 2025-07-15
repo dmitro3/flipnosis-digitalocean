@@ -147,99 +147,93 @@ const CreateFlip = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    console.log('🔄 Submit triggered with data:', {
-      isFullyConnected,
-      address,
-      selectedNFT,
-      price,
-      selectedCoin
-    })
-    
-    if (!isFullyConnected) {
-      showError('Please connect your wallet first')
-      return
-    }
-
-    if (!address) {
-      showError('Wallet address not found. Please reconnect your wallet.')
-      return
-    }
-
     if (!selectedNFT) {
       showError('Please select an NFT')
       return
     }
-
+    
     if (!price || parseFloat(price) <= 0) {
       showError('Please enter a valid price')
       return
     }
-
+    
+    if (!isFullyConnected || !walletClient) {
+      showError('Please connect your wallet')
+      return
+    }
+    
+    if (!contractService.isInitialized()) {
+      showError('Smart contract not connected. Please refresh and try again.')
+      return
+    }
+    
     setLoading(true)
-
+    
     try {
-      // Create a listing instead of a game (no blockchain interaction yet)
-      showInfo('Creating listing...')
+      // First, create the game on blockchain
+      showInfo('Creating game on blockchain...')
       
-      // Prepare coin data
-      const coinData = {
-        coinType: selectedCoin.type,
-        headsImage: selectedCoin.headsImage,
-        tailsImage: selectedCoin.tailsImage,
-        isCustom: selectedCoin.type === 'custom'
+      const blockchainResult = await contractService.createGame({
+        nftContract: selectedNFT.contractAddress,
+        tokenId: selectedNFT.tokenId,
+        priceUSD: parseFloat(price),
+        acceptedToken: 0, // ETH
+        gameType: 0, // NFT vs Crypto
+        coinType: selectedCoin?.type || 'default',
+        headsImage: selectedCoin?.headsImage || '',
+        tailsImage: selectedCoin?.tailsImage || '',
+        isCustom: selectedCoin?.isCustom || false
+      })
+      
+      if (!blockchainResult.success) {
+        throw new Error(blockchainResult.error || 'Failed to create game on blockchain')
       }
       
-      // Create listing via API
-      const baseUrl = API_CONFIG.BASE_URL
+      showSuccess('Game created on blockchain!')
+      const contractGameId = blockchainResult.gameId
       
-      const listingData = {
+      // Then save to database with the contract game ID
+      const gameData = {
         creator: address,
         nft_contract: selectedNFT.contractAddress,
         nft_token_id: selectedNFT.tokenId,
         nft_name: selectedNFT.name,
         nft_image: selectedNFT.image,
         nft_collection: selectedNFT.collection,
-        nft_chain: selectedNFT.chain || 'base',
-        asking_price: parseFloat(price),
-        accepts_offers: acceptsOffers,
-        min_offer_price: acceptsOffers ? parseFloat(price) * 0.8 : parseFloat(price),
-        coin: coinData
+        price_usd: parseFloat(price),
+        game_type: 'nft-vs-crypto',
+        status: 'waiting',
+        nft_chain: chain?.name.toLowerCase() || 'base',
+        contract_game_id: contractGameId, // Add the blockchain game ID
+        coin: {
+          type: selectedCoin?.type || 'default',
+          headsImage: selectedCoin?.headsImage || '',
+          tailsImage: selectedCoin?.tailsImage || '',
+          isCustom: selectedCoin?.isCustom || false
+        }
       }
       
-      console.log('📤 Sending listing data:', listingData)
-      console.log('🌐 API URL:', `${baseUrl}/api/listings`)
-      
-      const response = await fetch(`${baseUrl}/api/listings`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/games/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(listingData)
+        body: JSON.stringify(gameData)
       })
-
-      console.log('📥 Response status:', response.status)
-      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()))
-
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorMessage
-        } catch (parseError) {
-          console.error('Failed to parse error response:', parseError)
-        }
-        throw new Error(errorMessage)
-      }
-
-      const result = await response.json()
-      console.log('✅ Listing created successfully:', result)
       
-      showSuccess('Listing created successfully! You can manage it from your dashboard.')
-      navigate('/dashboard')
+      if (!response.ok) {
+        throw new Error('Failed to save game to database')
+      }
+      
+      const result = await response.json()
+      showSuccess('Flip created successfully!')
+      
+      // Navigate to the game page
+      navigate(`/game/${result.id}`)
       
     } catch (error) {
-      console.error('❌ Failed to create listing:', error)
-      showError(error.message)
+      console.error('Error creating flip:', error)
+      showError(error.message || 'Failed to create flip')
     } finally {
       setLoading(false)
     }

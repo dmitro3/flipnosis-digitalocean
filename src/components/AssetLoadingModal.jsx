@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { useWallet } from '../contexts/WalletContext'
+import { useWalletConnection } from '../utils/useWalletConnection'
 import { useToast } from '../contexts/ToastContext'
 import contractService from '../services/ContractService'
 import { Button, LoadingSpinner } from '../styles/components'
-import { ethers } from 'ethers'
 import { API_CONFIG } from '../config/api'
-import { useWalletConnection } from '../utils/useWalletConnection'
 
 const Modal = styled.div`
   position: fixed;
@@ -79,6 +78,20 @@ const AssetSection = styled.div`
   gap: 1.5rem;
 `
 
+const PlayerInfo = styled.div`
+  text-align: center;
+  
+  h3 {
+    color: ${props => props.theme.colors.neonBlue};
+    margin: 0 0 0.5rem 0;
+  }
+  
+  p {
+    color: ${props => props.theme.colors.textSecondary};
+    font-size: 0.9rem;
+  }
+`
+
 const NFTImageContainer = styled.div`
   width: 200px;
   height: 200px;
@@ -111,88 +124,6 @@ const CryptoContainer = styled.div`
   transition: all 0.3s ease;
 `
 
-const LoadingOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(5px);
-`
-
-const StatusText = styled.div`
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: ${props => props.isLoaded ? props.theme.colors.neonGreen : props.theme.colors.textPrimary};
-  text-align: center;
-`
-
-const PlayerInfo = styled.div`
-  text-align: center;
-  
-  h3 {
-    color: ${props => props.theme.colors.neonBlue};
-    margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
-  }
-  
-  p {
-    color: ${props => props.theme.colors.textSecondary};
-    font-size: 0.9rem;
-    margin: 0;
-  }
-`
-
-const ActionButton = styled(Button)`
-  width: 100%;
-  padding: 1rem;
-  font-size: 1rem;
-  font-weight: bold;
-  
-  &.load {
-    background: linear-gradient(45deg, #00FF41, #39FF14);
-    color: #000;
-  }
-  
-  &.cancel {
-    background: transparent;
-    border: 1px solid ${props => props.theme.colors.statusError};
-    color: ${props => props.theme.colors.statusError};
-    
-    &:hover {
-      background: rgba(255, 68, 68, 0.1);
-    }
-  }
-`
-
-const SuccessAnimation = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 4rem;
-  animation: successPulse 0.6s ease-out;
-  
-  @keyframes successPulse {
-    0% {
-      transform: translate(-50%, -50%) scale(0);
-      opacity: 0;
-    }
-    50% {
-      transform: translate(-50%, -50%) scale(1.2);
-      opacity: 1;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-  }
-`
-
 const CryptoAmount = styled.div`
   font-size: 2.5rem;
   font-weight: bold;
@@ -205,43 +136,63 @@ const CryptoCurrency = styled.div`
   color: ${props => props.theme.colors.textSecondary};
 `
 
-const CoinImageContainer = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  position: relative;
-  cursor: pointer;
+const StatusText = styled.div`
+  color: ${props => props.isLoaded ? props.theme.colors.neonGreen : props.theme.colors.textSecondary};
+  font-weight: ${props => props.isLoaded ? 'bold' : 'normal'};
   transition: all 0.3s ease;
-  
-  &:hover {
-    transform: scale(1.1);
-    border-color: rgba(255, 255, 0, 0.5);
-    box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
-    z-index: 10;
-    animation: coinGlow 1.5s ease-in-out infinite;
+`
+
+const ActionButton = styled(Button)`
+  &.load {
+    background: ${props => props.theme.colors.neonBlue};
+    
+    &:hover {
+      background: ${props => props.theme.colors.neonPurple};
+    }
   }
   
-  @keyframes coinGlow {
-    0%, 100% {
-      box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(255, 255, 0, 0.6);
+  &.cancel {
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid red;
+    margin-top: 1rem;
+    
+    &:hover {
+      background: rgba(255, 0, 0, 0.3);
     }
   }
 `
 
-const CoinImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: all 0.3s ease;
+const LoadingOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+`
+
+const SuccessAnimation = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  animation: successPulse 0.5s ease-out;
   
-  ${CoinImageContainer}:hover & {
-    transform: scale(1.2);
-    filter: brightness(1.1) contrast(1.1);
+  @keyframes successPulse {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 `
 
@@ -263,106 +214,19 @@ const AssetLoadingModal = ({
   const [isCancelling, setIsCancelling] = useState(false)
   const [socket, setSocket] = useState(null)
 
-  // Add debug logging
-  useEffect(() => {
-    console.log('🔍 AssetLoadingModal wallet state:', {
-      address,
-      isFullyConnected,
-      isContractInitialized,
-      hasWalletClient: !!walletClient,
-      hasPublicClient: !!publicClient
-    })
-  }, [address, isFullyConnected, isContractInitialized, walletClient, publicClient])
-
-  // ADD THIS - Debug logging to verify roles
+  // Debug logging
   useEffect(() => {
     if (gameData && address) {
-      // Log the actual roles from the database
-      console.log('🎮 Game roles check:', {
-        myAddress: address?.toLowerCase(),
-        dbCreator: gameData.creator?.toLowerCase(),
-        dbJoiner: gameData.joiner?.toLowerCase(),
-        isCreatorProp: isCreator,
-        amIDbCreator: address?.toLowerCase() === gameData.creator?.toLowerCase(),
-        amIDbJoiner: address?.toLowerCase() === gameData.joiner?.toLowerCase(),
-        contractGameId: gameData.contract_game_id
+      console.log('🎮 Asset Loading Modal State:', {
+        myAddress: address,
+        isCreator,
+        gameData,
+        contractGameId: gameData.contract_game_id,
+        isFullyConnected,
+        isContractInitialized
       })
     }
-  }, [gameData, address, isCreator])
-
-  // Add this inside AssetLoadingModal component, after the hooks
-  const ensureGameExistsOnBlockchain = async () => {
-    if (!gameData || !isContractInitialized) return false
-    
-    try {
-      // Check if game exists on blockchain
-      const contractGameId = gameData.contract_game_id
-      if (!contractGameId) {
-        console.log('❌ No contract game ID found')
-        return false
-      }
-      
-      // Try to get game details from blockchain
-      const gameDetails = await contractService.getGameDetails(contractGameId)
-      if (gameDetails.success && gameDetails.data.game.creator !== '0x0000000000000000000000000000000000000000') {
-        console.log('✅ Game already exists on blockchain')
-        return true
-      }
-      
-      // Game doesn't exist on blockchain, we need to create it
-      console.log('🎮 Game not found on blockchain, need to create it first')
-      
-      // Only the NFT owner (database creator) should create the game on blockchain
-      if (address?.toLowerCase() !== gameData.creator?.toLowerCase()) {
-        console.log('⏳ Waiting for NFT owner to create game on blockchain')
-        return false
-      }
-      
-      showInfo('Creating game on blockchain...')
-      
-      // Create game on blockchain
-      const result = await contractService.createGame({
-        nftContract: gameData.nft_contract,
-        tokenId: gameData.nft_token_id || gameData.tokenId,
-        priceUSD: gameData.price_usd || gameData.priceUSD,
-        acceptedToken: 0, // ETH
-        gameType: 0, // NFT vs Crypto
-        coinType: gameData.coin?.type || 'default',
-        headsImage: gameData.coin?.headsImage || '',
-        tailsImage: gameData.coin?.tailsImage || '',
-        isCustom: gameData.coin?.isCustom || false
-      })
-      
-      if (result.success) {
-        showSuccess('Game created on blockchain!')
-        
-        // Update the contract_game_id in the database
-        const updateResponse = await fetch(`${API_CONFIG.BASE_URL}/api/games/${gameData.gameId}/update-contract-id`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contract_game_id: result.gameId })
-        })
-        
-        if (updateResponse.ok) {
-          // Update local game data
-          gameData.contract_game_id = result.gameId
-          return true
-        }
-      }
-      
-      return false
-    } catch (error) {
-      console.error('❌ Error ensuring game exists on blockchain:', error)
-      return false
-    }
-  }
-
-  // Add this useEffect to check/create game on blockchain when modal opens
-  useEffect(() => {
-    if (isOpen && gameData && isContractInitialized) {
-      ensureGameExistsOnBlockchain()
-    }
-  }, [isOpen, gameData, isContractInitialized])
+  }, [gameData, address, isCreator, isFullyConnected, isContractInitialized])
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -396,7 +260,7 @@ const AssetLoadingModal = ({
           
         case 'game_cancelled':
           showError('Game cancelled by other player')
-          handleWithdraw()
+          onClose()
           break
       }
     }
@@ -422,7 +286,6 @@ const AssetLoadingModal = ({
   const handleLoadNFT = async () => {
     if (!isCreator) return
     
-    // Check wallet connection
     if (!isFullyConnected || !walletClient) {
       showError('Please connect your wallet to load NFT')
       return
@@ -433,35 +296,18 @@ const AssetLoadingModal = ({
       return
     }
     
-    // Ensure game exists on blockchain first
-    const gameExists = await ensureGameExistsOnBlockchain()
-    if (!gameExists) {
-      showError('Game needs to be created on blockchain first. Please try again.')
+    if (!gameData.contract_game_id) {
+      showError('Game not found on blockchain. Please refresh and try again.')
       return
     }
     
     setIsLoadingNFT(true)
     try {
-      // Approve NFT transfer to game contract using the new walletClient
-      const nftContract = {
-        address: gameData.nftContract,
-        abi: [{
-          name: 'approve',
-          type: 'function',
-          inputs: [
-            { name: 'to', type: 'address' },
-            { name: 'tokenId', type: 'uint256' }
-          ],
-          outputs: [],
-          stateMutability: 'nonpayable'
-        }]
-      }
-      
       showInfo('Approving NFT transfer...')
       
-      // Use walletClient.writeContract instead of ethers
+      // Approve NFT transfer with proper ABI format
       const approveHash = await walletClient.writeContract({
-        address: gameData.nftContract,
+        address: gameData.nft_contract,
         abi: [{
           name: 'approve',
           type: 'function',
@@ -473,7 +319,7 @@ const AssetLoadingModal = ({
           stateMutability: 'nonpayable'
         }],
         functionName: 'approve',
-        args: [contractService.contractAddress, BigInt(gameData.tokenId)]
+        args: [contractService.contractAddress, BigInt(gameData.nft_token_id)]
       })
       
       // Wait for confirmation
@@ -483,11 +329,12 @@ const AssetLoadingModal = ({
       })
       
       showInfo('Depositing NFT into game...')
-      // Use contract_game_id instead of gameId
+      
+      // Deposit NFT using contract game ID
       const result = await contractService.depositNFTForGame(
-        gameData.contract_game_id || gameData.gameId,
-        gameData.nftContract,
-        gameData.tokenId
+        gameData.contract_game_id,
+        gameData.nft_contract,
+        gameData.nft_token_id
       )
       
       if (result.success) {
@@ -517,7 +364,6 @@ const AssetLoadingModal = ({
   const handleLoadCrypto = async () => {
     if (isCreator) return
     
-    // Check wallet connection
     if (!isFullyConnected || !walletClient) {
       showError('Please connect your wallet to load payment')
       return
@@ -528,22 +374,8 @@ const AssetLoadingModal = ({
       return
     }
     
-    // Wait for game to exist on blockchain
-    let retries = 0
-    while (retries < 10) {
-      const gameExists = await ensureGameExistsOnBlockchain()
-      if (gameExists) break
-      
-      if (retries === 0) {
-        showInfo('Waiting for game to be created on blockchain...')
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      retries++
-    }
-    
-    if (retries >= 10) {
-      showError('Game creation timeout. Please refresh and try again.')
+    if (!gameData.contract_game_id) {
+      showError('Game not found on blockchain. Please refresh and try again.')
       return
     }
     
@@ -551,12 +383,12 @@ const AssetLoadingModal = ({
     try {
       showInfo('Sending payment...')
       
-      // Calculate amount in ETH
-      const priceInETH = await contractService.getETHAmount(gameData.priceUSD)
+      // Get ETH amount from contract
+      const priceInETH = await contractService.getETHAmount(gameData.price_usd)
       
-      // Use contract_game_id instead of gameId
+      // Deposit crypto using contract game ID
       const result = await contractService.depositCryptoForGame(
-        gameData.contract_game_id || gameData.gameId,
+        gameData.contract_game_id,
         { value: priceInETH }
       )
       
@@ -583,9 +415,8 @@ const AssetLoadingModal = ({
     }
   }
   
-  // Cancel game and withdraw assets
+  // Cancel game
   const handleCancel = async () => {
-    // Check wallet connection and contract initialization
     if (!isFullyConnected || !walletClient) {
       showError('Please connect your wallet to cancel game')
       return
@@ -596,23 +427,21 @@ const AssetLoadingModal = ({
       return
     }
     
+    if (!gameData.contract_game_id) {
+      showError('Game not found on blockchain')
+      return
+    }
+    
     setIsCancelling(true)
     try {
-      const result = await contractService.cancelGameWithRefund(
-        gameData.contract_game_id || gameData.gameId, 
-        address
-      )
+      const result = await contractService.cancelGameWithRefund(gameData.contract_game_id)
       
       if (result.success) {
         showSuccess('Game cancelled. Assets will be returned.')
-        
-        // Notify other player
         socket?.send(JSON.stringify({
           type: 'game_cancelled',
-          gameId: gameData.gameId,
-          cancelledBy: address
+          gameId: gameData.gameId
         }))
-        
         onClose()
       } else {
         throw new Error(result.error)
@@ -625,32 +454,11 @@ const AssetLoadingModal = ({
     }
   }
   
-  // Withdraw assets if game was cancelled
-  const handleWithdraw = async () => {
-    try {
-      if (nftLoaded && isCreator) {
-        showInfo('Withdrawing NFT...')
-        await contractService.withdrawNFT(gameData.nftContract, gameData.tokenId)
-      }
-      
-      if (cryptoLoaded && !isCreator) {
-        showInfo('Withdrawing payment...')
-        await contractService.withdrawETH()
-      }
-      
-      showSuccess('Assets withdrawn successfully')
-      onClose()
-    } catch (error) {
-      console.error('Failed to withdraw:', error)
-      showError('Failed to withdraw: ' + error.message)
-    }
-  }
-  
-  if (!isOpen || !gameData) return null
+  if (!isOpen) return null
   
   return (
-    <Modal>
-      <ModalContent>
+    <Modal onClick={onClose}>
+      <ModalContent onClick={(e) => e.stopPropagation()}>
         <Header>
           <h2>Load Assets to Start Game</h2>
           <p>Both players must load their assets before the game can begin</p>
@@ -661,17 +469,11 @@ const AssetLoadingModal = ({
           <AssetSection>
             <PlayerInfo>
               <h3>Player 1 (Creator)</h3>
-              <p>{gameData.creator.slice(0, 6)}...{gameData.creator.slice(-4)}</p>
+              <p>{gameData.creator?.slice(0, 6)}...{gameData.creator?.slice(-4)}</p>
             </PlayerInfo>
             
             <NFTImageContainer isLoaded={nftLoaded}>
-              <NFTImage 
-                src={gameData.nftImage} 
-                alt={gameData.nftName}
-                onError={(e) => {
-                  e.target.src = '/placeholder-nft.svg'
-                }}
-              />
+              <NFTImage src={gameData.nft_image} alt={gameData.nft_name} />
               {isLoadingNFT && (
                 <LoadingOverlay>
                   <LoadingSpinner />
@@ -707,7 +509,7 @@ const AssetLoadingModal = ({
             </PlayerInfo>
             
             <CryptoContainer isLoaded={cryptoLoaded}>
-              <CryptoAmount>${gameData.priceUSD}</CryptoAmount>
+              <CryptoAmount>${gameData.price_usd}</CryptoAmount>
               <CryptoCurrency>USD in ETH</CryptoCurrency>
               {isLoadingCrypto && (
                 <LoadingOverlay>
@@ -745,8 +547,6 @@ const AssetLoadingModal = ({
             {isCancelling ? 'Cancelling...' : 'Cancel Game'}
           </ActionButton>
         )}
-        
-
       </ModalContent>
     </Modal>
   )

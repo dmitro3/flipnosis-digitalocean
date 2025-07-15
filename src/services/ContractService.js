@@ -1350,45 +1350,29 @@ class ContractService {
   // Get ETH amount for USD price
   async getETHAmount(priceUSD) {
     try {
-      if (!this.publicClient || !this.contractAddress) {
+      if (!this.isInitialized()) {
         throw new Error('Contract service not initialized')
       }
 
-      // Convert USD to 6 decimals as expected by contract
-      const usdAmount = BigInt(Math.floor(priceUSD * 1000000))
+      const { public: publicClient } = this.getCurrentClients()
       
-      try {
-        // Try to get from contract first
-        const ethAmount = await this.publicClient.readContract({
-          address: this.contractAddress,
-          abi: this.contractABI,
-          functionName: 'getETHAmount',
-          args: [usdAmount]
-        })
-        
-        return {
-          success: true,
-          ethAmount: formatEther(ethAmount),
-          ethAmountWei: ethAmount
-        }
-      } catch (contractError) {
-        console.warn('⚠️ Contract getETHAmount failed:', contractError)
-        
-        // Fallback calculation for local testing
-        const ethPrice = 3000 // Fixed price for testing
-        const ethAmount = priceUSD / ethPrice
-        const ethAmountWei = parseEther(ethAmount.toFixed(18))
-        
-        return {
-          success: true,
-          ethAmount: formatEther(ethAmountWei),
-          ethAmountWei: ethAmountWei,
-          fallback: true
-        }
-      }
+      // Convert USD to 6 decimals (as used by the contract)
+      const priceWith6Decimals = BigInt(Math.floor(priceUSD * 1000000))
+      
+      const ethAmount = await publicClient.readContract({
+        address: this.contractAddress,
+        abi: this.contractABI,
+        functionName: 'getETHAmount',
+        args: [priceWith6Decimals]
+      })
+      
+      return ethAmount // Return the BigInt directly for use in transactions
     } catch (error) {
       console.error('Error getting ETH amount:', error)
-      throw error
+      // Fallback calculation
+      const ethPrice = 3000 // You should get this from an oracle
+      const ethAmount = (priceUSD / ethPrice) * 1e18
+      return BigInt(Math.floor(ethAmount))
     }
   }
 

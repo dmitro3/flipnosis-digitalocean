@@ -4,7 +4,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
 // Removed useProfile import - game now only uses game-specific coin data
 import { useWalletConnection } from '../utils/useWalletConnection'
-import { useSignMessage } from 'wagmi'
+
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import { API_CONFIG } from '../config/api'
@@ -547,10 +547,7 @@ const FlipGame = () => {
   // Add missing isChatOpen state
   const [isChatOpen, setIsChatOpen] = useState(false)
 
-  // Session-based authentication state
-  const { signMessageAsync } = useSignMessage()
-  const [sessionEstablished, setSessionEstablished] = useState(false)
-  const [isAuthenticating, setIsAuthenticating] = useState(false)
+
 
   // Animation handlers
   const showChoiceAnimationEffect = (text, color = '#00FF41') => {
@@ -765,29 +762,12 @@ const FlipGame = () => {
         setSocket(websocket)
         reconnectAttempts = 0
         
-        // Authenticate session
-        if (!sessionEstablished && address) {
-          setIsAuthenticating(true)
-          try {
-            const timestamp = Date.now()
-            const message = `Join Flip Game #${gameId} at ${timestamp}`
-            
-            console.log('🔐 Signing authentication message...')
-            const signature = await signMessageAsync({ message })
-            
-            websocket.send(JSON.stringify({
-              type: 'authenticate_session',
-              gameId,
-              address,
-              signature,
-              timestamp
-            }))
-          } catch (error) {
-            console.error('❌ Failed to sign message:', error)
-            showError('Failed to authenticate. Please try again.')
-            setIsAuthenticating(false)
-          }
-        }
+        // Join game without signature authentication
+        websocket.send(JSON.stringify({
+          type: 'join_game',
+          gameId,
+          address
+        }))
       }
 
       websocket.onmessage = handleWebSocketMessage
@@ -796,7 +776,6 @@ const FlipGame = () => {
         console.log('🔌 WebSocket closed:', event.code, event.reason)
         setConnected(false)
         setSocket(null)
-        setSessionEstablished(false)
         
         if (reconnectAttempts < maxReconnectAttempts) {
           reconnectAttempts++
@@ -819,28 +798,6 @@ const FlipGame = () => {
     const handleWebSocketMessage = async (event) => {
       try {
         const data = JSON.parse(event.data)
-        
-        // Handle authentication response
-        if (data.type === 'session_established') {
-          console.log('✅ Session authenticated!')
-          setSessionEstablished(true)
-          setIsAuthenticating(false)
-          showSuccess('Connected to game!')
-          return
-        }
-        
-        if (data.type === 'auth_failed') {
-          console.error('❌ Authentication failed:', data.error)
-          setIsAuthenticating(false)
-          showError(data.error || 'Authentication failed')
-          return
-        }
-        
-        // Only process other messages if authenticated
-        if (!sessionEstablished && data.type !== 'session_established') {
-          console.warn('⚠️ Received message before authentication:', data.type)
-          return
-        }
         
         // Handle game messages
         switch (data.type) {
@@ -1367,7 +1324,7 @@ const FlipGame = () => {
 
   // Update power charging - also no signature needed
   const handlePowerChargeStart = useCallback(() => {
-    if (!socket || !sessionEstablished) return
+    if (!socket) return
     if (!gameState?.bothChosen) {
       showError('Wait for both players to choose!')
       return
@@ -1378,7 +1335,7 @@ const FlipGame = () => {
     socket.send(JSON.stringify({
       type: 'start_charging'
     }))
-  }, [socket, sessionEstablished, gameState?.bothChosen])
+  }, [socket, gameState?.bothChosen])
 
   const handlePowerChargeStop = useCallback(async () => {
     if (!socket || !isChargingRef.current) return
@@ -1418,7 +1375,7 @@ const FlipGame = () => {
 
   // Update the player choice handler - NO SIGNATURE NEEDED
   const handlePlayerChoice = (choice) => {
-    if (!socket || !sessionEstablished) {
+    if (!socket) {
       showError('Not connected to game')
       return
     }
@@ -1753,32 +1710,7 @@ const FlipGame = () => {
 
   // [CLEANUP] Removed renderOfferReviewModal - NFT offer logic now handled in Dashboard
 
-  // Add loading state while authenticating
-  if (isAuthenticating) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Container>
-          <ContentWrapper>
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              gap: '2rem',
-              padding: '3rem' 
-            }}>
-              <LoadingSpinner />
-              <div style={{ color: theme.colors.textPrimary }}>
-                Authenticating session...
-              </div>
-              <div style={{ color: theme.colors.textSecondary, fontSize: '0.875rem' }}>
-                Please sign the message in your wallet
-              </div>
-            </div>
-          </ContentWrapper>
-        </Container>
-      </ThemeProvider>
-    )
-  }
+
 
   if (!isFullyConnected) {
     return (

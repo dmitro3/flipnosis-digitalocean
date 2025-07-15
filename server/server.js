@@ -2173,6 +2173,27 @@ app.post('/api/games/:gameId/update-nft-metadata', async (req, res) => {
   }
 })
 
+// Update contract game ID
+app.post('/api/games/:gameId/update-contract-id', async (req, res) => {
+  try {
+    const { gameId } = req.params
+    const { contract_game_id } = req.body
+    
+    db.run(
+      'UPDATE games SET contract_game_id = ? WHERE id = ?',
+      [contract_game_id, gameId],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message })
+        }
+        res.json({ success: true })
+      }
+    )
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // ===== GAME LISTINGS ENDPOINTS =====
 
 // Create a new game listing (no blockchain interaction)
