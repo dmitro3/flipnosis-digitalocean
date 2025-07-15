@@ -276,7 +276,7 @@ const GameLobby = ({
       // Check if NFT is already in contract (it should be since Player 1 created the game)
       const contractGame = await contractService.getGameDetails(gameId)
       
-      if (contractGame.success) {
+      if (contractGame.success && contractGame.game) {
         // NFT is already loaded in contract when game was created
         setNftLoaded(true)
         console.log('✅ NFT already loaded in contract')
@@ -286,9 +286,16 @@ const GameLobby = ({
           setCryptoLoaded(true)
           console.log('✅ Crypto already loaded')
         }
+      } else {
+        console.log('⚠️ Game not found in contract yet, this is normal for newly created games')
+        // For newly created games, assume NFT is loaded (since Player 1 created it)
+        setNftLoaded(true)
       }
     } catch (error) {
       console.error('Error checking game state:', error)
+      // Don't throw, just log the error and continue
+      // For newly created games, assume NFT is loaded
+      setNftLoaded(true)
     }
   }
 

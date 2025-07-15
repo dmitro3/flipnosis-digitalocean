@@ -895,6 +895,7 @@ const FlipEnvironment = () => {
         
         // Show asset loading modal for both players
         // Use data from WebSocket message instead of relying on listing state
+        // Handle both property names: price_usd (game offers) and amount (listing offers)
         const modalData = {
           gameId: data.gameId,
           creator: data.role === 'creator' ? address : data.creator || (listing?.creator || 'Unknown'),
@@ -903,7 +904,7 @@ const FlipEnvironment = () => {
           tokenId: data.nft_token_id || listing?.nft_token_id,
           nftName: data.nft_name || listing?.nft_name,
           nftImage: data.nft_image || listing?.nft_image,
-          priceUSD: data.amount || listing?.asking_price,
+          priceUSD: data.price_usd || data.amount || listing?.asking_price,
           coin: data.coin || listing?.coin
         }
         
