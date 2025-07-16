@@ -1107,6 +1107,7 @@ const FlipEnvironment = () => {
   const [rejectingOfferId, setRejectingOfferId] = useState(null)
   
   const handleAcceptOffer = async (offer) => {
+    console.log('🚨 handleAcceptOffer FUNCTION CALLED!', offer)
     try {
       console.log('🎯 Attempting to accept offer:', offer)
       console.log('👤 Current user address:', address)
@@ -1308,6 +1309,17 @@ const FlipEnvironment = () => {
   
   const isOwner = address?.toLowerCase() === listing.creator?.toLowerCase()
   const hasAcceptedOffer = offers.some(offer => offer.status === 'accepted')
+  
+  // Debug logging for owner check
+  console.log('🔍 Owner check debug:', {
+    address: address,
+    listingCreator: listing?.creator,
+    addressLower: address?.toLowerCase(),
+    creatorLower: listing?.creator?.toLowerCase(),
+    isOwner: isOwner,
+    hasOffers: offers.length > 0,
+    pendingOffers: offers.filter(o => o.status === 'pending').length
+  })
   
   // CLAUDE OPUS PATCH: Normalize NFT contract and token id for Explorer/OpenSea buttons
   const nftContract = listing?.nft_contract || listing?.nftContract;
@@ -1856,11 +1868,19 @@ const FlipEnvironment = () => {
                         <PublicOfferCard key={offer.id}>
                           <PublicOfferHeader>
                             <PublicOfferPrice>${parseFloat(offer.offer_price).toFixed(2)}</PublicOfferPrice>
+                            {console.log('🎯 Rendering offer buttons for offer:', offer.id, {
+                              isOwner,
+                              offerStatus: offer.status,
+                              shouldShowButtons: isOwner && offer.status === 'pending'
+                            })}
                             {isOwner && offer.status === 'pending' && (
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <ActionButton 
                                   className="accept"
-                                  onClick={() => handleAcceptOffer(offer)}
+                                  onClick={() => {
+                                    console.log('🎯 Accept button clicked for offer:', offer.id)
+                                    handleAcceptOffer(offer)
+                                  }}
                                   disabled={acceptingOfferId === offer.id}
                                   style={{
                                     opacity: acceptingOfferId === offer.id ? 0.5 : 1,
