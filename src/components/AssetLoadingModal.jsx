@@ -241,6 +241,7 @@ const GameLobby = ({
   const [loading, setLoading] = useState(false)
   const [gameReady, setGameReady] = useState(false)
   const [initializationAttempted, setInitializationAttempted] = useState(false)
+  const [showJoinButton, setShowJoinButton] = useState(false)
 
   // Initialize contract service when wallet is connected
   useEffect(() => {
@@ -406,15 +407,33 @@ const GameLobby = ({
         console.log('⚠️ Message not for this game or wrong type')
       }
     }
+
+    const handleCryptoLoaded = (event) => {
+      const data = event.detail
+      console.log('💰 Crypto loaded message received in AssetLoadingModal:', data)
+      
+      // Check if this message is for the current game
+      const isForCurrentGame = data.gameId === normalizedData.id || 
+                              data.contract_game_id === normalizedData.contract_game_id
+      
+      if (isForCurrentGame && isCreator) {
+        console.log('🎮 Player 2 has paid! Showing join button for Player 1')
+        setCryptoLoaded(true)
+        setShowJoinButton(true)
+        showSuccess('Player 2 has loaded their crypto! You can now join the game.')
+      }
+    }
     
     window.addEventListener('websocketMessage', handleBothAssetsLoaded)
     window.addEventListener('websocketMessage', handleNFTDeposited)
+    window.addEventListener('websocketMessage', handleCryptoLoaded)
     
     return () => {
       window.removeEventListener('websocketMessage', handleBothAssetsLoaded)
       window.removeEventListener('websocketMessage', handleNFTDeposited)
+      window.removeEventListener('websocketMessage', handleCryptoLoaded)
     }
-  }, [onGameReady, normalizedData.id])
+  }, [onGameReady, normalizedData.id, isCreator])
 
   // 2. Update checkGameState to handle game offers (around line 340)
   const checkGameState = async () => {
@@ -559,6 +578,17 @@ const GameLobby = ({
 
   // 4. Remove handleDepositNFT function - it's not needed for game offers
 
+    const handleJoinGame = async () => {
+    console.log('🎮 Player 1 joining game:', normalizedData.id || normalizedData.contract_game_id)
+    
+    if (onGameReady) {
+      console.log('🎮 Calling onGameReady to navigate to game')
+      onGameReady(normalizedData.id || normalizedData.contract_game_id)
+    } else {
+      console.error('⚠️ onGameReady callback not provided!')
+    }
+  }
+
   const handleCancel = async () => {
     // Only creator can cancel the game
     if (!isCreator) {
@@ -693,6 +723,7 @@ const GameLobby = ({
           </h3>
           <p style={{ color: '#fff', margin: 0 }}>
             {gameReady ? '🎉 Game Ready! Starting...' : 
+             showJoinButton && isCreator ? '🎮 Player 2 has paid! Click "Join Game Now!" to enter the game!' :
              nftLoaded && cryptoLoaded ? '🎮 Both assets loaded! Game will start automatically...' :
              isGameOffer ? 
                (isCreator ? '⏳ Waiting for Player 2 to load crypto...' : '⏳ Load your crypto to start the game!') :
@@ -705,9 +736,30 @@ const GameLobby = ({
           )}
         </div>
 
-        {/* 8. Remove the "Cancel Game" button for game offers since the game is already on-chain */}
+        {/* 8. Action buttons section */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-          {!gameReady && isCreator && !isGameOffer && (
+          {/* Join Game button for Player 1 when Player 2 has paid */}
+          {showJoinButton && isCreator && !gameReady && (
+            <ActionButton 
+              className="load"
+              onClick={handleJoinGame}
+              disabled={loading}
+              style={{
+                background: '#00FF41',
+                color: '#000',
+                fontWeight: 'bold',
+                fontSize: '1.1rem',
+                padding: '1rem 2rem',
+                border: '2px solid #00FF41',
+                boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
+              }}
+            >
+              🎮 Join Game Now!
+            </ActionButton>
+          )}
+          
+          {/* Cancel Game button */}
+          {!gameReady && isCreator && !isGameOffer && !showJoinButton && (
             <ActionButton 
               className="cancel"
               onClick={handleCancel}

@@ -681,6 +681,29 @@ wss.on('connection', (socket) => {
                     forceTransport: true
                   })
                   
+                  // Also broadcast crypto_loaded to all clients so Player 1 can see it
+                  broadcastToGame(game.id, {
+                    type: 'crypto_loaded',
+                    gameId: game.id,
+                    contract_game_id: game.contract_game_id,
+                    joiner: game.joiner,
+                    message: 'Crypto loaded successfully!'
+                  })
+                  
+                  // Also broadcast as a window event for non-authenticated viewers
+                  wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                      client.send(JSON.stringify({
+                        type: 'crypto_loaded',
+                        gameId: game.id,
+                        contract_game_id: game.contract_game_id,
+                        joiner: game.joiner,
+                        message: 'Crypto loaded successfully!',
+                        isBroadcast: true
+                      }))
+                    }
+                  })
+                  
                   // Also broadcast game_started to initialize game state
                   setTimeout(() => {
                     broadcastToGame(game.id, {
