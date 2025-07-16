@@ -219,13 +219,17 @@ const GameLobby = ({
   // 1. At the top, determine if this is a game with NFT already loaded (game offer OR listing offer)
   const hasNFTLoaded = !!normalizedData.contract_game_id
   
+  // Determine if this is a game created from an offer (has contract_game_id and NFT is already loaded)
+  const isGameOffer = !!normalizedData.contract_game_id
+  
   console.log('🎮 AssetLoadingModal - Normalized data:', {
     id: normalizedData.id,
     contract_game_id: normalizedData.contract_game_id,
     creator: normalizedData.creator,
     joiner: normalizedData.joiner,
     isCreator,
-    hasNFTLoaded
+    hasNFTLoaded,
+    isGameOffer
   })
   const { isConnected, address, walletClient, publicClient } = useWallet()
   const { isFullyConnected } = useWalletConnection()
