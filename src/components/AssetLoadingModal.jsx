@@ -462,28 +462,12 @@ const GameLobby = ({
       // Use the existing contract game ID
       const gameId = normalizedData.contract_game_id
       
-      // Get the actual price from the blockchain game, not from the offer
-      let priceUSD = normalizedData.price_usd || normalizedData.priceUSD
-      
-      try {
-        // Get the actual game details from the blockchain to ensure we use the correct price
-        const gameDetails = await contractService.getGameDetails(gameId)
-        if (gameDetails.success && gameDetails.game) {
-          // Use the price from the blockchain game (this is the price the game was created with)
-          const blockchainPriceUSD = Number(gameDetails.game.priceUSD) / 1000000 // Convert from 6 decimals
-          console.log('🎮 Blockchain game price:', blockchainPriceUSD, 'USD')
-          console.log('🎮 Offer price:', priceUSD, 'USD')
-          
-          // Use the blockchain price to ensure consistency
-          priceUSD = blockchainPriceUSD
-        }
-      } catch (error) {
-        console.warn('⚠️ Could not get blockchain game price, using offer price:', error)
-      }
+      // Get the offer price that was accepted
+      const offerPriceUSD = normalizedData.price_usd || normalizedData.priceUSD
+      console.log('🎮 AssetLoadingModal: handleLoadCrypto called for game:', gameId, 'with offer price:', offerPriceUSD)
       
       console.log('🎮 AssetLoadingModal: handleLoadCrypto called with data:', {
         gameId,
-        priceUSD,
         hasNFTLoaded,
         normalizedData: {
           id: normalizedData.id,
@@ -504,7 +488,7 @@ const GameLobby = ({
       // Join the existing blockchain game with the accepted offer price
       const result = await contractService.joinGame({
         gameId: gameId,
-        priceUSD: priceUSD // This should be the accepted offer price
+        priceUSD: offerPriceUSD
       })
       
       console.log('🎮 AssetLoadingModal: joinGame result:', result)

@@ -1165,8 +1165,8 @@ class ContractService {
         throw new Error('Failed to get game details: ' + gameDetails.error)
       }
 
-      // Use the priceUSD parameter that was passed in, not from contract
-      const priceUSD = params.priceUSD || gameDetails.data.game.priceUSD
+      // Use the offer price that was accepted (params.priceUSD) or fallback to blockchain price
+      const priceUSD = params.priceUSD || (Number(gameDetails.data.game.priceUSD_) / 1000000)
       
       // Convert USD to 6 decimals (contract expects price in 6 decimals, not cents)
       const priceIn6Decimals = Math.floor(priceUSD * 1000000)
@@ -1208,20 +1208,36 @@ class ContractService {
 
       console.log('✅ Join game confirmed:', receipt)
 
-      // Update database
+      // Update database - try to find game by contract_game_id first
       try {
         const API_URL = 'https://cryptoflipz2-production.up.railway.app'
-        const response = await fetch(`${API_URL}/api/games/${validatedGameId}/join`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            joiner: this.walletClient.account.address,
-            transactionHash: hash
+        
+        // First, try to find the database game by contract_game_id
+        const findResponse = await fetch(`${API_URL}/api/games/by-contract/${validatedGameId}`)
+        
+        if (findResponse.ok) {
+          const gameData = await findResponse.json()
+          const dbGameId = gameData.id
+          
+          // Update the database game using the database ID
+          const updateResponse = await fetch(`${API_URL}/api/games/${dbGameId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              joiner: this.walletClient.account.address,
+              transactionHash: hash
+            })
           })
-        })
 
-        if (!response.ok) {
-          console.warn('Failed to update database after join:', await response.text())
+          if (!updateResponse.ok) {
+            console.warn('Failed to update database after join:', await updateResponse.text())
+          } else {
+            console.log('✅ Database updated successfully')
+          }
+        } else {
+          console.warn('Database game not found by contract_game_id, skipping database update')
+          // This is normal for blockchain-only games that don't have database records
+          // The game will still work on-chain
         }
       } catch (dbError) {
         console.error('Database update error:', dbError)

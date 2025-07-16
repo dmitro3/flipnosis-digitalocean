@@ -1820,6 +1820,39 @@ app.get('/api/games/creator/:address', async (req, res) => {
   }
 })
 
+// Get game by contract_game_id
+app.get('/api/games/by-contract/:contractGameId', async (req, res) => {
+  try {
+    const { contractGameId } = req.params
+    
+    db.get('SELECT * FROM games WHERE contract_game_id = ?', [contractGameId], (err, game) => {
+      if (err) {
+        console.error('❌ Error fetching game by contract_game_id:', err)
+        return res.status(500).json({ error: err.message })
+      }
+      
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' })
+      }
+      
+      // Parse coin data
+      if (game.coin && typeof game.coin === 'string') {
+        try {
+          game.coin = JSON.parse(game.coin)
+        } catch (e) {
+          console.warn('Could not parse coin data for game:', game.id)
+          game.coin = null
+        }
+      }
+      
+      res.json(game)
+    })
+  } catch (error) {
+    console.error('❌ Error fetching game by contract_game_id:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // ===== ADMIN ENDPOINTS =====
 
 // Get all games for admin panel
