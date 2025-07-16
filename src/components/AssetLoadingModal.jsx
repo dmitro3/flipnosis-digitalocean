@@ -216,12 +216,16 @@ const GameLobby = ({
     coin: gameData?.coin
   }
   
+  // 1. At the top, determine if this is a game offer scenario
+  const isGameOffer = normalizedData.contract_game_id && normalizedData.contract_game_id !== normalizedData.id
+  
   console.log('🎮 AssetLoadingModal - Normalized data:', {
     id: normalizedData.id,
     contract_game_id: normalizedData.contract_game_id,
     creator: normalizedData.creator,
     joiner: normalizedData.joiner,
-    isCreator
+    isCreator,
+    isGameOffer
   })
   const { isConnected, address, walletClient, publicClient } = useWallet()
   const { isFullyConnected } = useWalletConnection()
@@ -375,39 +379,52 @@ const GameLobby = ({
     }
   }, [onGameReady, normalizedData.id])
 
+  // 2. Update checkGameState to handle game offers (around line 340)
   const checkGameState = async () => {
-    // Handle both contract_game_id (from database) and gameId (from WebSocket)
     const gameId = normalizedData.contract_game_id || normalizedData.id
-    if (!gameId) return
+    
+    // For game offers, the NFT is already loaded
+    if (isGameOffer) {
+      setNftLoaded(true)
+      console.log('✅ Game offer - NFT already loaded in contract')
+      
+      // Check if crypto is also loaded
+      try {
+        const contractGame = await contractService.getGameDetails(normalizedData.contract_game_id)
+        if (contractGame.success && contractGame.game) {
+          if (contractGame.game.state === 1) { // GameState.Joined
+            setCryptoLoaded(true)
+            console.log('✅ Crypto already loaded')
+          }
+        }
+      } catch (error) {
+        console.error('Error checking game state:', error)
+      }
+      return
+    }
+    
+    // For new games created from listings, check normally
+    if (!gameId || gameId === normalizedData.id) return
     
     try {
-      // Check if NFT is already in contract (it should be since Player 1 created the game)
       const contractGame = await contractService.getGameDetails(gameId)
       
       if (contractGame.success && contractGame.game) {
-        // NFT is already loaded in contract when game was created
         setNftLoaded(true)
         console.log('✅ NFT already loaded in contract')
         
-        // Check if crypto is loaded (game status will be 'joined' if crypto is loaded)
         if (contractGame.game.state === 1) { // GameState.Joined
           setCryptoLoaded(true)
           console.log('✅ Crypto already loaded')
         }
-      } else {
-        console.log('⚠️ Game not found in contract yet, this is normal for newly created games')
-        // For newly created games, assume NFT is loaded (since Player 1 created it)
-        setNftLoaded(true)
       }
     } catch (error) {
       console.error('Error checking game state:', error)
-      // Don't throw, just log the error and continue
-      // For newly created games, assume NFT is loaded
-      setNftLoaded(true)
     }
   }
 
-    const handleLoadCrypto = async () => {
+  // 3. Update handleLoadCrypto to handle game offers (around line 460)
+  const handleLoadCrypto = async () => {
     if (!isFullyConnected || !walletClient) {
       showError('Please connect your wallet')
       return
@@ -423,25 +440,21 @@ const GameLobby = ({
     try {
       showInfo('Loading crypto into game...')
       
-      // Handle both contract_game_id (from database) and gameId (from WebSocket)
-      const gameId = normalizedData.contract_game_id || normalizedData.id
+      // For game offers, use the existing contract game ID
+      const gameId = normalizedData.contract_game_id
       const priceUSD = normalizedData.price_usd || normalizedData.priceUSD
       
-      // Check if this is a game created from an offer (no contract game ID yet)
-      if (!normalizedData.contract_game_id || normalizedData.contract_game_id === normalizedData.id) {
-        console.log('🎮 Game created from offer, but joiner cannot create blockchain game')
-        console.log('🎮 Creator needs to deposit NFT first, then joiner can join')
-        
-        // For offer-based games, the creator (Player 1) needs to deposit NFT first
-        // The joiner (Player 2) cannot create the blockchain game because they don't own the NFT
-        showError('The game creator needs to deposit their NFT first. Please wait for them to complete their deposit.')
+      if (!gameId) {
+        showError('Invalid game configuration. Please refresh and try again.')
         return
       }
       
-      // Game already exists on blockchain, just join it
+      console.log('✅ Joining blockchain game:', gameId)
+      
+      // Join the existing blockchain game with the accepted offer price
       const result = await contractService.joinGame({
         gameId: gameId,
-        priceUSD: priceUSD
+        priceUSD: priceUSD // This should be the accepted offer price
       })
       
       if (!result.success) {
@@ -450,11 +463,9 @@ const GameLobby = ({
       
       setCryptoLoaded(true)
       showSuccess('Crypto loaded successfully! Game starting...')
-      
-      // Game is now ready to start
       setGameReady(true)
       
-      // Send WebSocket message to notify both players
+      // Notify both players
       if (window.socket && window.socket.readyState === WebSocket.OPEN) {
         window.socket.send(JSON.stringify({
           type: 'both_assets_loaded',
@@ -463,7 +474,7 @@ const GameLobby = ({
         }))
       }
       
-      // Small delay then transport both players
+      // Navigate to game
       setTimeout(() => {
         if (onGameReady) {
           onGameReady(normalizedData.id)
@@ -478,85 +489,7 @@ const GameLobby = ({
     }
   }
 
-  const handleDepositNFT = async () => {
-    if (!isFullyConnected || !walletClient) {
-      showError('Please connect your wallet')
-      return
-    }
-    
-    if (!contractService.isInitialized()) {
-      showError('Smart contract not connected. Please refresh and try again.')
-      return
-    }
-    
-    setLoading(true)
-    
-    try {
-      showInfo('Creating blockchain game and depositing NFT...')
-      
-      const priceUSD = normalizedData.price_usd || normalizedData.priceUSD
-      
-      // Create blockchain game and deposit NFT
-      const createResult = await contractService.createBlockchainGameFromOffer({
-        opponent: normalizedData.joiner,
-        nftContract: normalizedData.nft_contract || normalizedData.nftContract,
-        tokenId: normalizedData.nft_token_id || normalizedData.tokenId,
-        priceUSD: priceUSD,
-        coinType: normalizedData.coin?.type || 'default',
-        headsImage: normalizedData.coin?.headsImage || '',
-        tailsImage: normalizedData.coin?.tailsImage || '',
-        isCustom: normalizedData.coin?.isCustom || false
-      })
-      
-      if (!createResult.success) {
-        throw new Error(createResult.error || 'Failed to create blockchain game')
-      }
-      
-      console.log('✅ Blockchain game created with ID:', createResult.gameId)
-      
-      // Update the database with the contract game ID
-      try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/api/games/${normalizedData.id}/update-contract-id`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contract_game_id: createResult.gameId })
-        })
-        
-        if (!response.ok) {
-          console.warn('Failed to update database with contract game ID')
-        }
-      } catch (dbError) {
-        console.error('Database update error:', dbError)
-      }
-      
-      setNftLoaded(true)
-      showSuccess('NFT deposited successfully! Blockchain game created.')
-      
-      // Notify the joiner that they can now deposit crypto
-      if (window.socket && window.socket.readyState === WebSocket.OPEN) {
-        const message = {
-          type: 'nft_deposited',
-          gameId: normalizedData.id,
-          contractGameId: createResult.gameId,
-          message: 'NFT deposited, you can now deposit crypto!'
-        }
-        console.log('📡 Sending nft_deposited message:', message)
-        console.log('📡 WebSocket state:', window.socket.readyState)
-        console.log('📡 WebSocket URL:', window.socket.url)
-        window.socket.send(JSON.stringify(message))
-      } else {
-        console.warn('⚠️ WebSocket not available for nft_deposited notification')
-        console.log('📡 Socket available:', !!window.socket)
-        console.log('📡 Socket state:', window.socket?.readyState)
-      }
-      
-    } catch (error) {
-      console.error('Error depositing NFT:', error)
-      showError(error.message || 'Failed to deposit NFT')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // 4. Remove handleDepositNFT function - it's not needed for game offers
 
   const handleCancel = async () => {
     // Only creator can cancel the game
@@ -603,7 +536,7 @@ const GameLobby = ({
         </Header>
 
         <ContentGrid>
-          {/* Player 1 - NFT Section */}
+          {/* 5. Update the NFT section UI (around line 650) */}
           <AssetSection>
             <PlayerInfo>
               <h3>Player 1 (Creator)</h3>
@@ -626,31 +559,19 @@ const GameLobby = ({
             </NFTImageContainer>
             
             <StatusText isLoaded={nftLoaded}>
-              {nftLoaded ? '✅ NFT Loaded' : 
-               isCreator && !normalizedData.contract_game_id ? '⏳ Click "Deposit NFT" to start' : 
-               '⏳ Waiting for creator to deposit NFT...'}
+              {nftLoaded ? '✅ NFT Already Loaded' : '⏳ Checking NFT status...'}
             </StatusText>
             
-            {nftLoaded && (
-              <div style={{ textAlign: 'center', color: '#00FF41', fontSize: '0.9rem' }}>
-                NFT transferred to contract when game was created
+            {isGameOffer && (
+              <div style={{ textAlign: 'center', color: '#00FF41', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                NFT was loaded when the game was created
               </div>
-            )}
-            
-            {!nftLoaded && isCreator && !normalizedData.contract_game_id && (
-              <ActionButton 
-                className="load"
-                onClick={handleDepositNFT}
-                disabled={loading}
-              >
-                Deposit NFT
-              </ActionButton>
             )}
           </AssetSection>
 
           <Divider />
 
-          {/* Player 2 - Crypto Section */}
+          {/* 6. Update the Crypto section UI (around line 700) */}
           <AssetSection>
             <PlayerInfo>
               <h3>Player 2 (Joiner)</h3>
@@ -674,11 +595,11 @@ const GameLobby = ({
             
             <StatusText isLoaded={cryptoLoaded}>
               {cryptoLoaded ? '✅ Crypto Loaded' : 
-               !isCreator && !normalizedData.contract_game_id ? '⏳ Waiting for creator to deposit NFT...' : 
-               '⏳ Waiting for joiner to deposit crypto...'}
+               isCreator ? '⏳ Waiting for joiner to deposit crypto...' :
+               '⏳ Click "Load Crypto" to join the game'}
             </StatusText>
             
-            {!isCreator && !cryptoLoaded && !loading && normalizedData.contract_game_id && (
+            {!isCreator && !cryptoLoaded && !loading && (
               <ActionButton 
                 className="load"
                 onClick={handleLoadCrypto}
@@ -690,7 +611,7 @@ const GameLobby = ({
           </AssetSection>
         </ContentGrid>
 
-        {/* Game Status */}
+        {/* 7. Update game status message (around line 750) */}
         <div style={{ 
           textAlign: 'center', 
           marginBottom: '2rem',
@@ -705,16 +626,20 @@ const GameLobby = ({
           <p style={{ color: '#fff', margin: 0 }}>
             {gameReady ? '🎉 Game Ready! Starting...' : 
              nftLoaded && cryptoLoaded ? '🎮 Both assets loaded! Game will start automatically...' :
-             nftLoaded && !normalizedData.contract_game_id ? '⏳ Creator deposited NFT, waiting for joiner...' :
-             nftLoaded ? '⏳ Waiting for Player 2 to load crypto...' :
-             !normalizedData.contract_game_id ? '⏳ Creator needs to deposit NFT first...' :
-             '⏳ Loading assets...'}
+             isGameOffer ? 
+               (isCreator ? '⏳ Waiting for Player 2 to load crypto...' : '⏳ Load your crypto to start the game!') :
+               '⏳ Loading assets...'}
           </p>
+          {isGameOffer && (
+            <p style={{ color: '#00FF41', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+              Price: ${normalizedData.price_usd || normalizedData.priceUSD} (accepted offer)
+            </p>
+          )}
         </div>
 
-        {/* Action Buttons */}
+        {/* 8. Remove the "Cancel Game" button for game offers since the game is already on-chain */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-          {!gameReady && isCreator && (
+          {!gameReady && isCreator && !isGameOffer && (
             <ActionButton 
               className="cancel"
               onClick={handleCancel}
