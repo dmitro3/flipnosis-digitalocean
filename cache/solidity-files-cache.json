@@ -304,8 +304,8 @@
       ]
     },
     "D:\\Crypto Flipz Final 2\\contracts\\NFTFlipGame.sol": {
-      "lastModificationDate": 1752414543207,
-      "contentHash": "ee6d2aa4f28acf036bae97a30798c984",
+      "lastModificationDate": 1752684631444,
+      "contentHash": "2810a0a341c689d6249277ae9faef313",
       "sourceName": "contracts/NFTFlipGame.sol",
       "solcConfig": {
         "version": "0.8.20",

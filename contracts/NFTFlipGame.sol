@@ -160,14 +160,47 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         emit GameCreated(gameId, msg.sender);
     }
     
-    // Join game
+    // Join game (original function - uses blockchain game price)
     function joinGame(uint256 gameId) external payable nonReentrant whenNotPaused {
         Game storage game = games[gameId];
         require(game.state == GameState.Created, "Game not available");
         require(msg.sender != game.creator, "Cannot join own game");
         
-        // Calculate required amount
-            uint256 requiredAmount = getETHAmount(game.priceUSD);
+        // Calculate required amount using blockchain game price
+        uint256 requiredAmount = getETHAmount(game.priceUSD);
+        uint256 platformFee = (requiredAmount * platformFeePercent) / BASIS_POINTS;
+        uint256 gameAmount = requiredAmount - platformFee;
+        
+        require(msg.value >= requiredAmount, "Insufficient payment");
+        
+        // Store amount minus platform fee
+        game.totalPaid = gameAmount;
+        game.joiner = msg.sender;
+        game.state = GameState.Joined;
+        
+        userGames[msg.sender].push(gameId);
+        
+        // Send platform fee immediately
+        (bool feeSuccess,) = platformFeeReceiver.call{value: platformFee}("");
+        require(feeSuccess, "Platform fee transfer failed");
+        
+        // Refund excess
+        if (msg.value > requiredAmount) {
+            (bool refundSuccess,) = msg.sender.call{value: msg.value - requiredAmount}("");
+            require(refundSuccess, "Refund failed");
+        }
+        
+        emit GameJoined(gameId, msg.sender);
+    }
+    
+    // Join game with custom price (for offers)
+    function joinGameWithPrice(uint256 gameId, uint256 customPriceUSD) external payable nonReentrant whenNotPaused {
+        Game storage game = games[gameId];
+        require(game.state == GameState.Created, "Game not available");
+        require(msg.sender != game.creator, "Cannot join own game");
+        
+        // Calculate required amount using custom price (offer price)
+        uint256 requiredAmount = getETHAmount(customPriceUSD);
         uint256 platformFee = (requiredAmount * platformFeePercent) / BASIS_POINTS;
         uint256 gameAmount = requiredAmount - platformFee;
         

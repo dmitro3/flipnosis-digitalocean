@@ -3,7 +3,7 @@ import { base, mainnet, bsc, avalanche, polygon } from 'viem/chains'
 import { Alchemy } from 'alchemy-sdk'
 
 // Constants
-const CONTRACT_ADDRESS = "0xba5ef026f35d1ac9f2ebB7FB047a50900Ec521A1"
+const CONTRACT_ADDRESS = "0xa326de351a8E7118F48F08199b0EC8649Df3C1E6"
 const API_URL = 'https://cryptoflipz2-production.up.railway.app'
 
 // Common error definitions for better error handling
@@ -140,6 +140,16 @@ const CONTRACT_ABI = [
     stateMutability: 'payable',
     inputs: [
       { name: 'gameId', type: 'uint256' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'joinGameWithPrice',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'gameId', type: 'uint256' },
+      { name: 'customPriceUSD', type: 'uint256' }
     ],
     outputs: []
   },
@@ -1189,8 +1199,8 @@ class ContractService {
       const { request } = await this.publicClient.simulateContract({
         address: this.contractAddress,
         abi: this.contractABI,
-        functionName: 'joinGame',
-        args: [validatedGameId],
+        functionName: 'joinGameWithPrice',
+        args: [validatedGameId, BigInt(priceIn6Decimals)],
         value: priceInWei,
         account: this.walletClient.account
       })

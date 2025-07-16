@@ -13,7 +13,7 @@ async function main() {
   // Get the deployer account
   const [deployer] = await ethers.getSigners();
   console.log("📝 Deploying contracts with account:", deployer.address);
-  console.log("💰 Account balance:", ethers.formatEther(await deployer.getBalance()));
+  console.log("💰 Account balance:", ethers.formatEther(await deployer.provider.getBalance(deployer.address)));
 
   // Deploy NFTFlipGame contract
   console.log("🏗️ Deploying NFTFlipGame...");
