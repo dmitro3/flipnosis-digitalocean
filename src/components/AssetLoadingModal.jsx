@@ -200,7 +200,8 @@ const GameLobby = ({
   isOpen, 
   gameData, 
   onGameReady,
-  isCreator 
+  isCreator,
+  socket 
 }) => {
   // CLAUDE OPUS PATCH: Normalize gameData props for consistent usage
   const normalizedData = {
@@ -282,10 +283,10 @@ const GameLobby = ({
       console.log('🎮 AssetLoadingModal opened for game:', normalizedData.id)
       
       // Join the game room for WebSocket communication
-      if (window.socket && window.socket.readyState === WebSocket.OPEN) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
         console.log('🎮 Joining game room:', normalizedData.id)
-        console.log('🎮 WebSocket state:', window.socket.readyState)
-        console.log('🎮 WebSocket URL:', window.socket.url)
+        console.log('🎮 WebSocket state:', socket.readyState)
+        console.log('🎮 WebSocket URL:', socket.url)
         
         const joinMessage = {
           type: 'join_game',
@@ -293,11 +294,11 @@ const GameLobby = ({
           address: address || 'anonymous'
         }
         console.log('🎮 Sending join message:', joinMessage)
-        window.socket.send(JSON.stringify(joinMessage))
+        socket.send(JSON.stringify(joinMessage))
       } else {
         console.warn('⚠️ WebSocket not available for game room joining')
-        console.log('🎮 Socket available:', !!window.socket)
-        console.log('🎮 Socket state:', window.socket?.readyState)
+        console.log('🎮 Socket available:', !!socket)
+        console.log('🎮 Socket state:', socket?.readyState)
       }
       
       checkGameState()
@@ -503,14 +504,14 @@ const GameLobby = ({
       
       // Notify both players that crypto has been loaded
       console.log('🎮 AssetLoadingModal: Sending crypto_loaded message:', {
-        socketAvailable: !!window.socket,
-        socketState: window.socket?.readyState,
+        socketAvailable: !!socket,
+        socketState: socket?.readyState,
         gameId: normalizedData.id,
         contract_game_id: normalizedData.contract_game_id,
         joiner: address
       })
       
-      if (window.socket && window.socket.readyState === WebSocket.OPEN) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
         const message = {
           type: 'crypto_loaded',
           gameId: normalizedData.id,
@@ -519,7 +520,7 @@ const GameLobby = ({
           message: 'Crypto loaded successfully!'
         }
         console.log('📡 Sending WebSocket message:', message)
-        window.socket.send(JSON.stringify(message))
+        socket.send(JSON.stringify(message))
       } else {
         console.warn('⚠️ WebSocket not available for crypto_loaded message')
       }

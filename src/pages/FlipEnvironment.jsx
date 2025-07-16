@@ -2030,6 +2030,7 @@ const FlipEnvironment = () => {
         gameData={assetModalData}
         onGameReady={handleGameReady}
         isCreator={address === assetModalData?.creator}
+        socket={socket}
       />
     </ThemeProvider>
   )
