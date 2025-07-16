@@ -1636,10 +1636,10 @@ const FlipEnvironment = () => {
                             <Input
                               type="number"
                               step="0.01"
-                              min={isGame ? 0 : listing.min_offer_price}
+                              min={isGame ? 0 : (listing.min_offer_price || 0)}
                               value={offerPrice}
                               onChange={(e) => setOfferPrice(e.target.value)}
-                              placeholder={isGame ? "Enter your offer (any amount)" : `Min: $${listing.min_offer_price}`}
+                              placeholder={isGame ? "Enter your offer (any amount)" : `Min: $${listing.min_offer_price || 0}`}
                               required
                             />
                           </FormGroup>
