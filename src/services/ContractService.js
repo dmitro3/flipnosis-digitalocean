@@ -795,14 +795,41 @@ class ContractService {
 
       console.log('✅ Game creation confirmed:', receipt)
 
-      // The game ID is the nextGameId we read before creating the game
-      const gameId = nextGameId.toString()
+      // Get the actual game ID from the transaction receipt
+      // Look for the GameCreated event in the logs
+      let gameId = null
+      if (receipt.logs && receipt.logs.length > 0) {
+        for (const log of receipt.logs) {
+          try {
+            // Try to decode the log as a GameCreated event
+            const decodedLog = decodeEventLog({
+              abi: this.contractABI,
+              data: log.data,
+              topics: log.topics
+            })
+            
+            if (decodedLog.eventName === 'GameCreated') {
+              gameId = decodedLog.args.gameId.toString()
+              console.log('🎮 Found GameCreated event with game ID:', gameId)
+              break
+            }
+          } catch (decodeError) {
+            // This log is not a GameCreated event, continue
+            continue
+          }
+        }
+      }
+      
+      // Fallback to the nextGameId if we couldn't find the event
+      if (!gameId) {
+        gameId = nextGameId.toString()
+        console.log('⚠️ Could not find GameCreated event, using nextGameId as fallback:', gameId)
+      }
       
       console.log('🎮 Game created with ID:', gameId)
       console.log('🎮 This ID should be saved as contract_game_id in the database')
 
       // Return the game ID for the frontend to save to database
-
       return {
         success: true,
         gameId,

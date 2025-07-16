@@ -1116,6 +1116,12 @@ const FlipEnvironment = () => {
       console.log('👤 Current user address:', address)
       console.log('📋 Listing creator:', listing?.creator || 'Unknown')
       
+      // SECURITY CHECK: Verify listing has contract_game_id before allowing offer acceptance
+      if (!listing?.contract_game_id) {
+        showError('❌ GAME CREATION FAILED: This game was not properly created on the blockchain. Please contact support.')
+        return
+      }
+      
       // Prevent multiple clicks
       setAcceptingOfferId(offer.id)
       
@@ -1159,6 +1165,13 @@ const FlipEnvironment = () => {
       
       if (!response.ok) {
         const errorData = await response.json()
+        
+        // Handle specific game creation failure
+        if (errorData.error === 'GAME_CREATION_FAILED') {
+          showError('❌ GAME CREATION FAILED: This game was not properly created on the blockchain. Please contact support.')
+          return
+        }
+        
         throw new Error(errorData.error || 'Failed to accept offer')
       }
       
@@ -1416,6 +1429,27 @@ const FlipEnvironment = () => {
               {/* Left Column - Main Content */}
               <div style={{ flex: '1' }}>
                 <div style={{ maxWidth: 600, margin: '0 auto' }}>
+                  
+                  {/* SECURITY WARNING: Show if listing doesn't have contract_game_id */}
+                  {!listing?.contract_game_id && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #ff4444, #cc0000)',
+                      color: '#fff',
+                      padding: '1rem',
+                      borderRadius: '0.75rem',
+                      marginBottom: '1rem',
+                      border: '2px solid #ff6666',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '1.1rem'
+                    }}>
+                      ⚠️ GAME CREATION FAILED ⚠️
+                      <br />
+                      This game was not properly created on the blockchain.
+                      <br />
+                      Please contact support.
+                    </div>
+                  )}
                   <NFTDetailsSection>
                     <NFTDisplay>
                       <NFTImage src={listing.nft_image} alt={listing.nft_name} />
@@ -1491,7 +1525,7 @@ const FlipEnvironment = () => {
                     </NFTDisplay>
                   </NFTDetailsSection>
                   {/* Show offer form for both games and listings */}
-                  {!isOwner && shouldShowOffers && (
+                  {!isOwner && shouldShowOffers && listing?.contract_game_id && (
                     <MakeOfferSection>
                       <MakeOfferHeader>{isGame && listing?.status !== 'waiting' ? 'Join Game' : 'Make an Offer'}</MakeOfferHeader>
                       {isGame && listing?.status !== 'waiting' ? (

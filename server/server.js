@@ -2783,6 +2783,59 @@ app.post('/api/games/:gameId/offers', async (req, res) => {
   }
 })
 
+// Update listing with contract game ID (called after blockchain game creation)
+app.post('/api/listings/:listingId/update-contract-game', async (req, res) => {
+  try {
+    const { listingId } = req.params
+    const { contract_game_id, transaction_hash } = req.body
+    
+    if (!contract_game_id) {
+      return res.status(400).json({ error: 'contract_game_id is required' })
+    }
+    
+    console.log('🔄 Updating listing with contract game ID:', { listingId, contract_game_id, transaction_hash })
+    
+    db.run(
+      'UPDATE game_listings SET contract_game_id = ?, transaction_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [contract_game_id, transaction_hash, listingId],
+      function(err) {
+        if (err) {
+          console.error('❌ Error updating listing with contract game ID:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Listing not found' })
+        }
+        
+        console.log('✅ Successfully updated listing with contract game ID:', { listingId, contract_game_id })
+        
+        // Also update any existing games for this listing
+        db.run(
+          'UPDATE games SET contract_game_id = ? WHERE listing_id = ?',
+          [contract_game_id, listingId],
+          (err) => {
+            if (err) {
+              console.warn('⚠️ Could not update games table:', err)
+            } else {
+              console.log('✅ Updated games table with contract game ID')
+            }
+          }
+        )
+        
+        res.json({ 
+          success: true, 
+          message: 'Contract game ID updated successfully',
+          contract_game_id 
+        })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Error updating contract game ID:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Accept an offer
 app.post('/api/offers/:offerId/accept', async (req, res) => {
   // CLAUDE OPUS PATCH: Accept endpoint now handles both games and listings
@@ -2901,13 +2954,17 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   }
                 }
                 
-                // Check if listing has a contract_game_id
+                // SECURITY CHECK: Verify listing has a valid contract_game_id
                 if (!listing.contract_game_id) {
-                  console.error('❌ Server: Listing missing contract_game_id:', listingId)
-                  return res.status(500).json({ error: 'Listing does not have a blockchain game. Please create the blockchain game first.' })
+                  console.error('❌ SECURITY: Listing missing contract_game_id:', listing.id)
+                  return res.status(400).json({ 
+                    error: 'GAME_CREATION_FAILED',
+                    message: 'This game was not properly created on the blockchain. Please contact support.',
+                    details: 'Missing blockchain game ID'
+                  })
                 }
                 
-                console.log('✅ Server: Listing has contract_game_id:', listing.contract_game_id)
+                console.log('✅ SECURITY: Listing has valid contract_game_id:', listing.contract_game_id)
                 
                 console.log('✅ Server: Using existing blockchain game for offer acceptance:', {
                   listingId,
@@ -3537,34 +3594,64 @@ app.post('/api/listings/:listingId/create-blockchain-game', async (req, res) => 
     const { listingId } = req.params
     const { contract_game_id, transaction_hash } = req.body
     
+    if (!contract_game_id) {
+      return res.status(400).json({ error: 'contract_game_id is required' })
+    }
+    
     console.log('📥 Server: Creating blockchain game for listing:', {
       listingId,
       contract_game_id,
       transaction_hash
     })
     
-    // Update the listing with the contract game ID
-    db.run(
-      'UPDATE game_listings SET contract_game_id = ?, transaction_hash = ? WHERE id = ?',
-      [contract_game_id, transaction_hash, listingId],
-      function(err) {
-        if (err) {
-          console.error('❌ Server: Error updating listing with contract game ID:', err)
-          return res.status(500).json({ error: err.message })
-        }
-        
-        console.log('✅ Server: Listing updated with contract game ID:', {
-          listingId,
-          contract_game_id,
-          rowsAffected: this.changes
-        })
-        
-        res.json({ 
-          success: true, 
-          message: 'Blockchain game created successfully for listing'
-        })
+    // First verify the listing exists
+    db.get('SELECT * FROM game_listings WHERE id = ?', [listingId], (err, listing) => {
+      if (err) {
+        console.error('❌ Server: Database error checking listing:', err)
+        return res.status(500).json({ error: err.message })
       }
-    )
+      
+      if (!listing) {
+        return res.status(404).json({ error: 'Listing not found' })
+      }
+      
+      // Update the listing with the contract game ID
+      db.run(
+        'UPDATE game_listings SET contract_game_id = ?, transaction_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [contract_game_id, transaction_hash, listingId],
+        function(err) {
+          if (err) {
+            console.error('❌ Server: Error updating listing with contract game ID:', err)
+            return res.status(500).json({ error: err.message })
+          }
+          
+          console.log('✅ Server: Listing updated with contract game ID:', {
+            listingId,
+            contract_game_id,
+            rowsAffected: this.changes
+          })
+          
+          // Also update any existing games for this listing
+          db.run(
+            'UPDATE games SET contract_game_id = ? WHERE listing_id = ?',
+            [contract_game_id, listingId],
+            (err) => {
+              if (err) {
+                console.warn('⚠️ Could not update games table:', err)
+              } else {
+                console.log('✅ Updated games table with contract game ID')
+              }
+            }
+          )
+          
+          res.json({ 
+            success: true, 
+            message: 'Blockchain game created successfully for listing',
+            contract_game_id
+          })
+        }
+      )
+    })
   } catch (error) {
     console.error('❌ Server: Error creating blockchain game for listing:', error)
     res.status(500).json({ error: error.message })
