@@ -11,7 +11,8 @@ import { ThemeProvider } from '@emotion/react'
 import { theme } from './styles/theme'
 import { RouterProvider } from 'react-router-dom'
 import { config } from './config/rainbowkit'
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useGlobalGameTransport } from './utils/useGlobalGameTransport'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -79,6 +80,37 @@ function App() {
     hasChains: !!config?.chains,
     chainsLength: config?.chains?.length 
   })
+
+  // Add global WebSocket listener for TRANSPORT_TO_GAME messages
+  useEffect(() => {
+    const handleGlobalWebSocketMessage = (event) => {
+      const data = event.detail
+      
+      // Handle TRANSPORT_TO_GAME message globally
+      if (data.type === 'TRANSPORT_TO_GAME' && data.forceTransport) {
+        console.log('🚀 GLOBAL: Received TRANSPORT_TO_GAME message:', data)
+        
+        const gameId = data.gameId || data.contract_game_id
+        if (gameId) {
+          console.log('🎮 GLOBAL: Force transporting to game:', gameId)
+          
+          // Close any open modals
+          window.dispatchEvent(new CustomEvent('closeAllModals'))
+          
+          // Navigate to game
+          setTimeout(() => {
+            window.location.href = `/game/${gameId}`
+          }, 100)
+        }
+      }
+    }
+    
+    window.addEventListener('websocketMessage', handleGlobalWebSocketMessage)
+    
+    return () => {
+      window.removeEventListener('websocketMessage', handleGlobalWebSocketMessage)
+    }
+  }, [])
 
   return (
     <ErrorBoundary>

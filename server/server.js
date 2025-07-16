@@ -631,62 +631,70 @@ wss.on('connection', (socket) => {
         }
         case 'crypto_loaded':
           console.log('💰 Crypto loaded message received:', data)
-          console.log('📡 WebSocket socket info:', {
-            id: socket.id,
-            address: socket.address,
-            gameId: socket.gameId,
-            authenticated: socket.authenticated
-          })
           
-          // Broadcast to all clients in the game
-          broadcastToGame(data.gameId, {
-            type: 'crypto_loaded',
-            gameId: data.gameId,
-            contract_game_id: data.contract_game_id,
-            joiner: data.joiner,
-            message: data.message
-          })
-          
-          // Also broadcast to both players to exit lobby and enter game
-          console.log('📡 Broadcasting game_ready to joiner:', data.joiner)
-          broadcastToUser(data.joiner, {
-            type: 'game_ready',
-            gameId: data.gameId,
-            contract_game_id: data.contract_game_id,
-            message: 'Crypto loaded! Game starting...'
-          })
-          
-          // Get the creator from the database
-          console.log('🔍 Looking up creator for game:', { gameId: data.gameId, contract_game_id: data.contract_game_id })
-          db.get('SELECT creator FROM games WHERE id = ? OR contract_game_id = ?', [data.gameId, data.contract_game_id], (err, game) => {
-            if (!err && game) {
-              console.log('📡 Broadcasting game_ready to creator:', game.creator)
-              broadcastToUser(game.creator, {
-                type: 'game_ready',
-                gameId: data.gameId,
-                contract_game_id: data.contract_game_id,
-                message: 'Opponent loaded crypto! Game starting...'
+          // Get game details to find the creator
+          db.get('SELECT * FROM games WHERE id = ? OR contract_game_id = ?', 
+            [data.gameId, data.contract_game_id], 
+            (err, game) => {
+              if (err || !game) {
+                console.error('❌ Game not found for crypto_loaded')
+                return
+              }
+              
+              console.log('🎮 Game found:', {
+                id: game.id,
+                creator: game.creator,
+                joiner: game.joiner,
+                status: game.status
               })
-            } else {
-              console.warn('⚠️ Could not find creator for game:', { gameId: data.gameId, contract_game_id: data.contract_game_id, error: err })
+              
+              // Update game status to active
+              db.run(
+                `UPDATE games SET status = 'active' WHERE id = ?`,
+                [game.id],
+                (updateErr) => {
+                  if (updateErr) {
+                    console.error('❌ Error updating game status:', updateErr)
+                    return
+                  }
+                  
+                  console.log('✅ Game status updated to active')
+                  
+                  // Send TRANSPORT_TO_GAME message to both players
+                  // This is a special message that will bypass any modal restrictions
+                  
+                  // Transport creator (Player 1)
+                  broadcastToUser(game.creator, {
+                    type: 'TRANSPORT_TO_GAME',
+                    gameId: game.id,
+                    contract_game_id: game.contract_game_id,
+                    message: 'Both players ready! Transporting to game...',
+                    forceTransport: true
+                  })
+                  
+                  // Transport joiner (Player 2)
+                  broadcastToUser(game.joiner, {
+                    type: 'TRANSPORT_TO_GAME',
+                    gameId: game.id,
+                    contract_game_id: game.contract_game_id,
+                    message: 'Both players ready! Transporting to game...',
+                    forceTransport: true
+                  })
+                  
+                  // Also broadcast game_started to initialize game state
+                  setTimeout(() => {
+                    broadcastToGame(game.id, {
+                      type: 'game_started',
+                      gameId: game.id,
+                      timestamp: Date.now()
+                    })
+                    
+                    initializeGameState(game.id)
+                  }, 500)
+                }
+              )
             }
-          })
-          
-          // Also broadcast as a window event for non-authenticated viewers
-          console.log('📡 Broadcasting crypto_loaded to all clients as fallback')
-          wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({
-                type: 'crypto_loaded',
-                gameId: data.gameId,
-                contract_game_id: data.contract_game_id,
-                joiner: data.joiner,
-                message: data.message,
-                isBroadcast: true
-              }))
-            }
-          })
-          console.log(`📡 Broadcast fallback sent to all ${wss.clients.size} connected clients`)
+          )
           break
           
         case 'both_assets_loaded':

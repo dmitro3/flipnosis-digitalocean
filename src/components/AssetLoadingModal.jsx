@@ -353,6 +353,20 @@ const GameLobby = ({
     }
   }, [onGameReady, normalizedData.id])
 
+  // Add this useEffect to listen for closeAllModals event
+  useEffect(() => {
+    const handleCloseAllModals = () => {
+      console.log('🎮 AssetLoadingModal: Received closeAllModals event')
+      // Don't need to do anything here, the global handler will navigate
+    }
+    
+    window.addEventListener('closeAllModals', handleCloseAllModals)
+    
+    return () => {
+      window.removeEventListener('closeAllModals', handleCloseAllModals)
+    }
+  }, [])
+
   // Add this useEffect to listen for both_assets_loaded message
   useEffect(() => {
     const handleBothAssetsLoaded = (event) => {

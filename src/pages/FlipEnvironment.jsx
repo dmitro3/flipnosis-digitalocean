@@ -848,178 +848,183 @@ const FlipEnvironment = () => {
     }
     
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log('📡 Received WebSocket message:', data)
-      console.log('📡 Message type:', data.type)
-      console.log('📡 Current ID:', currentId)
-      console.log('📡 Is game:', isGame)
-      
-      // Make socket available globally for components
-      window.socket = ws
-      
-      // Also dispatch WebSocket messages as window events
       try {
-        window.dispatchEvent(new CustomEvent('websocketMessage', { detail: data }))
-      } catch (error) {
-        console.error('Error dispatching WebSocket message event:', error)
-      }
-      
-      // Chat messages (both listing and game)
-      if (data.type === 'listing_chat_message' || data.type === 'game_chat_message') {
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          address: data.address,
-          message: data.message,
-          timestamp: data.timestamp
-        }])
-      }
-      // Viewer joined
-      if (data.type === 'viewer_joined') {
-        console.log('👥 Viewer joined, new count:', data.viewerCount)
-        setViewerCount(data.viewerCount || 0)
-      }
-      // Viewer left
-      if (data.type === 'viewer_left') {
-        console.log('👥 Viewer left, new count:', data.viewerCount)
-        setViewerCount(data.viewerCount || 0)
-      }
-      // Handle real-time offer updates
-      if (data.type === 'new_offer' && (data.listingId === currentId || data.gameId === currentId)) {
-        console.log('🆕 New offer received:', data.offer)
-        showSuccess('New offer received!')
-        fetchListingData() // Refresh offers
-      }
-      if (data.type === 'offer_accepted' && (data.listingId === currentId || data.gameId === currentId)) {
-        console.log('✅ Offer accepted:', data.offer)
-        showSuccess('Offer accepted! Game created.')
-        fetchListingData() // Refresh offers
-      }
-      if (data.type === 'offer_rejected' && (data.listingId === currentId || data.gameId === currentId)) {
-        console.log('❌ Offer rejected:', data.offer)
-        showError('Offer was rejected.')
-        fetchListingData() // Refresh offers
-      }
-      // Handle game creation notifications (legacy - should be replaced by enter_lobby)
-      if (data.type === 'game_created_pending_deposit') {
-        console.log('🎮 WebSocket: Legacy game_created_pending_deposit received:', data)
-        // This is legacy - the new flow uses enter_lobby
-        // Don't process this message to avoid conflicts
-        return
-      }
-      
-      // Handle crypto loaded messages (for Player 1 to be notified)
-      if (data.type === 'crypto_loaded') {
-        console.log('💰 Crypto loaded message received:', data)
-        console.log('👤 Current user address:', address)
-        console.log('🎯 Current ID:', currentId)
-        console.log('📡 Is broadcast:', data.isBroadcast)
+        const data = JSON.parse(event.data)
+        console.log('📡 WebSocket message received:', data)
         
-        // Check if this message is for the current user
-        const isForCurrentUser = data.gameId === currentId || 
-                                data.contract_game_id === currentId ||
-                                data.isBroadcast
+        // ALWAYS dispatch WebSocket messages as window events
+        // This ensures they can be caught globally
+        window.dispatchEvent(new CustomEvent('websocketMessage', { 
+          detail: data,
+          bubbles: true // Make sure it bubbles up
+        }))
         
-        console.log('✅ Is for current user:', isForCurrentUser)
+        // Make socket available globally for components
+        window.socket = ws
         
-        if (isForCurrentUser) {
-          console.log('✅ Crypto loaded message is for current user')
-          showSuccess('Opponent loaded crypto! Game starting...')
+        console.log('📡 Message type:', data.type)
+        console.log('📡 Current ID:', currentId)
+        console.log('📡 Is game:', isGame)
+        
+        // Chat messages (both listing and game)
+        if (data.type === 'listing_chat_message' || data.type === 'game_chat_message') {
+          setMessages(prev => [...prev, {
+            id: Date.now(),
+            address: data.address,
+            message: data.message,
+            timestamp: data.timestamp
+          }])
+        }
+        // Viewer joined
+        if (data.type === 'viewer_joined') {
+          console.log('👥 Viewer joined, new count:', data.viewerCount)
+          setViewerCount(data.viewerCount || 0)
+        }
+        // Viewer left
+        if (data.type === 'viewer_left') {
+          console.log('👥 Viewer left, new count:', data.viewerCount)
+          setViewerCount(data.viewerCount || 0)
+        }
+        // Handle real-time offer updates
+        if (data.type === 'new_offer' && (data.listingId === currentId || data.gameId === currentId)) {
+          console.log('🆕 New offer received:', data.offer)
+          showSuccess('New offer received!')
+          fetchListingData() // Refresh offers
+        }
+        if (data.type === 'offer_accepted' && (data.listingId === currentId || data.gameId === currentId)) {
+          console.log('✅ Offer accepted:', data.offer)
+          showSuccess('Offer accepted! Game created.')
+          fetchListingData() // Refresh offers
+        }
+        if (data.type === 'offer_rejected' && (data.listingId === currentId || data.gameId === currentId)) {
+          console.log('❌ Offer rejected:', data.offer)
+          showError('Offer was rejected.')
+          fetchListingData() // Refresh offers
+        }
+        // Handle game creation notifications (legacy - should be replaced by enter_lobby)
+        if (data.type === 'game_created_pending_deposit') {
+          console.log('🎮 WebSocket: Legacy game_created_pending_deposit received:', data)
+          // This is legacy - the new flow uses enter_lobby
+          // Don't process this message to avoid conflicts
+          return
+        }
+        
+        // Handle crypto loaded messages (for Player 1 to be notified)
+        if (data.type === 'crypto_loaded') {
+          console.log('💰 Crypto loaded message received:', data)
+          console.log('👤 Current user address:', address)
+          console.log('🎯 Current ID:', currentId)
+          console.log('📡 Is broadcast:', data.isBroadcast)
           
-          // Dispatch game ready event to trigger modal close
+          // Check if this message is for the current user
+          const isForCurrentUser = data.gameId === currentId || 
+                                  data.contract_game_id === currentId ||
+                                  data.isBroadcast
+          
+          console.log('✅ Is for current user:', isForCurrentUser)
+          
+          if (isForCurrentUser) {
+            console.log('✅ Crypto loaded message is for current user')
+            showSuccess('Opponent loaded crypto! Game starting...')
+            
+            // Dispatch game ready event to trigger modal close
+            window.dispatchEvent(new CustomEvent('gameReady', {
+              detail: {
+                type: 'crypto_loaded',
+                gameId: data.gameId,
+                contract_game_id: data.contract_game_id,
+                message: 'Opponent loaded crypto! Game starting...'
+              }
+            }))
+          } else {
+            console.log('⚠️ Crypto loaded message not for current user, ignoring')
+          }
+        }
+        
+        // Handle game ready messages (for both players to exit lobby)
+        if (data.type === 'game_ready' || data.type === 'player_joined') {
+          console.log('🎮 Game ready message received:', data)
+          console.log('👤 Current user address:', address)
+          console.log('🎯 Current ID:', currentId)
+          console.log('📡 Target address:', data.targetAddress)
+          console.log('🎮 Game ID:', data.gameId)
+          console.log('📢 Is broadcast:', data.isBroadcast)
+          
+          // Check if this message is for the current user (either direct or broadcast)
+          const isForCurrentUser = data.targetAddress === address || 
+                                  data.gameId === currentId ||
+                                  data.isBroadcast // Accept broadcast messages
+          
+          console.log('✅ Is for current user:', isForCurrentUser)
+          
+          if (!isForCurrentUser) {
+            console.log('⚠️ Game ready message not for current user, ignoring')
+            return
+          }
+          
+          console.log('🎯 Dispatching game ready event to window')
+          // Dispatch a custom event to the window so AssetLoadingModal can listen for it
           window.dispatchEvent(new CustomEvent('gameReady', {
             detail: {
-              type: 'crypto_loaded',
+              type: data.type,
               gameId: data.gameId,
-              contract_game_id: data.contract_game_id,
-              message: 'Opponent loaded crypto! Game starting...'
+              message: data.message
             }
           }))
-        } else {
-          console.log('⚠️ Crypto loaded message not for current user, ignoring')
         }
-      }
-      
-      // Handle game ready messages (for both players to exit lobby)
-      if (data.type === 'game_ready' || data.type === 'player_joined') {
-        console.log('🎮 Game ready message received:', data)
-        console.log('👤 Current user address:', address)
-        console.log('🎯 Current ID:', currentId)
-        console.log('📡 Target address:', data.targetAddress)
-        console.log('🎮 Game ID:', data.gameId)
-        console.log('📢 Is broadcast:', data.isBroadcast)
-        
-        // Check if this message is for the current user (either direct or broadcast)
-        const isForCurrentUser = data.targetAddress === address || 
-                                data.gameId === currentId ||
-                                data.isBroadcast // Accept broadcast messages
-        
-        console.log('✅ Is for current user:', isForCurrentUser)
-        
-        if (!isForCurrentUser) {
-          console.log('⚠️ Game ready message not for current user, ignoring')
-          return
+        // Handle viewer updates (legacy)
+        if (data.type === 'viewers_update' && data.listingId === listingId) {
+          setActiveViewers(data.viewers || [])
+          setViewerCount(data.viewerCount || 0)
         }
-        
-        console.log('🎯 Dispatching game ready event to window')
-        // Dispatch a custom event to the window so AssetLoadingModal can listen for it
-        window.dispatchEvent(new CustomEvent('gameReady', {
-          detail: {
-            type: data.type,
-            gameId: data.gameId,
-            message: data.message
+        // Handle enter_lobby message (new flow)
+        if (data.type === 'enter_lobby') {
+          console.log('🎮 Enter lobby message received:', data)
+          console.log('👤 Current user address:', address)
+          console.log('📋 Current listing:', listing)
+          
+          // Check if this message is for the current user
+          const isForCurrentUser = data.targetAddress === address || 
+                                  data.role === 'creator' && address === listing?.creator ||
+                                  data.role === 'joiner' && address === data.joiner
+          
+          if (!isForCurrentUser) {
+            console.log('⚠️ Enter lobby message not for current user, ignoring')
+            return
           }
-        }))
-      }
-      // Handle viewer updates (legacy)
-      if (data.type === 'viewers_update' && data.listingId === listingId) {
-        setActiveViewers(data.viewers || [])
-        setViewerCount(data.viewerCount || 0)
-      }
-      // Handle enter_lobby message (new flow)
-      if (data.type === 'enter_lobby') {
-        console.log('🎮 Enter lobby message received:', data)
-        console.log('👤 Current user address:', address)
-        console.log('📋 Current listing:', listing)
-        
-        // Check if this message is for the current user
-        const isForCurrentUser = data.targetAddress === address || 
-                                data.role === 'creator' && address === listing?.creator ||
-                                data.role === 'joiner' && address === data.joiner
-        
-        if (!isForCurrentUser) {
-          console.log('⚠️ Enter lobby message not for current user, ignoring')
-          return
+          
+          showSuccess(`Game created! Entering Game Lobby...`)
+          
+          const modalData = {
+            gameId: data.contract_game_id || data.gameId, // Use contract_game_id if available
+            contract_game_id: data.contract_game_id, // Ensure this is passed
+            creator: data.creator,
+            joiner: data.joiner,
+            nftContract: data.nft_contract,
+            tokenId: data.nft_token_id,
+            nftName: data.nft_name,
+            nftImage: data.nft_image,
+            priceUSD: data.price_usd,
+            coin: data.coin
+          }
+          
+          console.log('🎯 Setting asset modal data:', modalData)
+          setAssetModalData(modalData)
+          setShowAssetModal(true)
+          console.log('✅ Asset modal should now be visible')
+          
+          // Join the game room for the new game
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            console.log('🎮 Joining game room for new game:', data.contract_game_id || data.gameId)
+            socket.send(JSON.stringify({
+              type: 'join_game',
+              gameId: data.contract_game_id || data.gameId,
+              address: address || 'anonymous'
+            }))
+          }
         }
-        
-        showSuccess(`Game created! Entering Game Lobby...`)
-        
-        const modalData = {
-          gameId: data.contract_game_id || data.gameId, // Use contract_game_id if available
-          contract_game_id: data.contract_game_id, // Ensure this is passed
-          creator: data.creator,
-          joiner: data.joiner,
-          nftContract: data.nft_contract,
-          tokenId: data.nft_token_id,
-          nftName: data.nft_name,
-          nftImage: data.nft_image,
-          priceUSD: data.price_usd,
-          coin: data.coin
-        }
-        
-        console.log('🎯 Setting asset modal data:', modalData)
-        setAssetModalData(modalData)
-        setShowAssetModal(true)
-        console.log('✅ Asset modal should now be visible')
-        
-        // Join the game room for the new game
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          console.log('🎮 Joining game room for new game:', data.contract_game_id || data.gameId)
-          socket.send(JSON.stringify({
-            type: 'join_game',
-            gameId: data.contract_game_id || data.gameId,
-            address: address || 'anonymous'
-          }))
-        }
+      } catch (error) {
+        console.error('❌ Error handling WebSocket message:', error)
       }
     }
     
