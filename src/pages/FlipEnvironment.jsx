@@ -850,6 +850,9 @@ const FlipEnvironment = () => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
       console.log('📡 Received WebSocket message:', data)
+      console.log('📡 Message type:', data.type)
+      console.log('📡 Current ID:', currentId)
+      console.log('📡 Is game:', isGame)
       
       // Make socket available globally for components
       window.socket = ws
@@ -898,9 +901,10 @@ const FlipEnvironment = () => {
       }
       // Handle game creation notifications
       if (data.type === 'game_created_pending_deposit') {
-        console.log('🎮 Game created, pending deposits:', data)
+        console.log('🎮 WebSocket: Game created, pending deposits:', data)
         console.log('👤 Current user address:', address)
         console.log('📋 Current listing:', listing)
+        console.log('🔗 WebSocket connection state:', socket?.readyState)
         
         // Check if this message is for the current user (either direct or broadcast)
         const isForCurrentUser = data.targetAddress === address || 
@@ -1155,6 +1159,7 @@ const FlipEnvironment = () => {
       }
       
       const result = await response.json()
+      console.log('✅ Offer acceptance API response:', result)
       showSuccess('Offer accepted! Preparing game...')
 
       // Parse coin data if it's a string
@@ -1167,8 +1172,9 @@ const FlipEnvironment = () => {
         }
       }
 
+      console.log('🎯 Setting asset modal data immediately after API response')
       // Immediately open the asset loading modal for Player 1 (acceptor)
-      setAssetModalData({
+      const modalData = {
         gameId: result.gameId,
         creator: address,
         joiner: offer.offerer_address,
@@ -1178,8 +1184,12 @@ const FlipEnvironment = () => {
         nftImage: listing?.nft_image,
         priceUSD: offer.offer_price,
         coin: coinData // Pass parsed coin data
-      })
+      }
+      
+      console.log('📦 Modal data:', modalData)
+      setAssetModalData(modalData)
       setShowAssetModal(true)
+      console.log('✅ Asset modal should now be visible')
 
       // Refresh data to update offer status
       await fetchListingData()
@@ -1906,10 +1916,17 @@ const FlipEnvironment = () => {
       </Container>
       
       {/* Game Lobby */}
+      {console.log('🎯 Rendering GameLobby with props:', {
+        isOpen: showAssetModal,
+        hasGameData: !!assetModalData,
+        gameData: assetModalData,
+        isCreator: address === assetModalData?.creator
+      })}
       <GameLobby
         isOpen={showAssetModal}
         gameData={assetModalData}
         onGameReady={(gameId) => {
+          console.log('🎮 Game ready, navigating to:', gameId)
           setShowAssetModal(false)
           navigate(`/game/${gameId}`)
         }}
