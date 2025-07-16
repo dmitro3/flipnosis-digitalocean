@@ -196,6 +196,24 @@ const SuccessAnimation = styled.div`
   }
 `
 
+// Add this CSS animation at the top of the component
+const pulseAnimation = `
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+    }
+    50% {
+      transform: scale(1.02);
+      box-shadow: 0 0 30px rgba(0, 255, 65, 0.7);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+    }
+  }
+`
+
 const GameLobby = ({ 
   isOpen, 
   gameData, 
@@ -241,7 +259,7 @@ const GameLobby = ({
   const [loading, setLoading] = useState(false)
   const [gameReady, setGameReady] = useState(false)
   const [initializationAttempted, setInitializationAttempted] = useState(false)
-  const [showJoinButton, setShowJoinButton] = useState(false)
+  const [player2HasPaid, setPlayer2HasPaid] = useState(false)
 
   // Initialize contract service when wallet is connected
   useEffect(() => {
@@ -368,10 +386,19 @@ const GameLobby = ({
     }
   }, [])
 
-  // Add this useEffect to listen for both_assets_loaded message
+  // Add this useEffect to listen for WebSocket messages
   useEffect(() => {
-    const handleBothAssetsLoaded = (event) => {
+    const handleWebSocketMessage = (event) => {
       const data = event.detail
+      
+      // Add this new condition
+      if (data.type === 'crypto_loaded' && data.gameId === normalizedData.id) {
+        console.log('💰 Player 2 has loaded crypto!')
+        setPlayer2HasPaid(true)
+        showSuccess('Player 2 has deposited crypto! Click "Enter Game" to start.')
+      }
+      
+      // Handle both_assets_loaded message
       if (data.type === 'both_assets_loaded' && data.gameId === normalizedData.id) {
         console.log('🎮 Both assets loaded, transporting all players!')
         setGameReady(true)
@@ -384,14 +411,8 @@ const GameLobby = ({
           }
         }, 500)
       }
-    }
-    
-    const handleNFTDeposited = (event) => {
-      const data = event.detail
-      console.log('📡 Received WebSocket message:', data)
-      console.log('🎮 Current game ID:', normalizedData.id)
-      console.log('📡 Message game ID:', data.gameId)
       
+      // Handle NFT deposited message
       if (data.type === 'nft_deposited' && data.gameId === normalizedData.id) {
         console.log('🎮 NFT deposited, joiner can now deposit crypto!')
         setNftLoaded(true)
@@ -403,37 +424,26 @@ const GameLobby = ({
         }
         
         showSuccess('NFT deposited! You can now deposit your crypto.')
-      } else {
-        console.log('⚠️ Message not for this game or wrong type')
-      }
-    }
-
-    const handleCryptoLoaded = (event) => {
-      const data = event.detail
-      console.log('💰 Crypto loaded message received in AssetLoadingModal:', data)
-      
-      // Check if this message is for the current game
-      const isForCurrentGame = data.gameId === normalizedData.id || 
-                              data.contract_game_id === normalizedData.contract_game_id
-      
-      if (isForCurrentGame && isCreator) {
-        console.log('🎮 Player 2 has paid! Showing join button for Player 1')
-        setCryptoLoaded(true)
-        setShowJoinButton(true)
-        showSuccess('Player 2 has loaded their crypto! You can now join the game.')
       }
     }
     
-    window.addEventListener('websocketMessage', handleBothAssetsLoaded)
-    window.addEventListener('websocketMessage', handleNFTDeposited)
-    window.addEventListener('websocketMessage', handleCryptoLoaded)
+    window.addEventListener('websocketMessage', handleWebSocketMessage)
     
     return () => {
-      window.removeEventListener('websocketMessage', handleBothAssetsLoaded)
-      window.removeEventListener('websocketMessage', handleNFTDeposited)
-      window.removeEventListener('websocketMessage', handleCryptoLoaded)
+      window.removeEventListener('websocketMessage', handleWebSocketMessage)
     }
-  }, [onGameReady, normalizedData.id, isCreator])
+  }, [onGameReady, normalizedData.id, showSuccess])
+
+  // Add the style tag in a useEffect
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.textContent = pulseAnimation
+    document.head.appendChild(style)
+    
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
 
   // 2. Update checkGameState to handle game offers (around line 340)
   const checkGameState = async () => {
@@ -578,17 +588,6 @@ const GameLobby = ({
 
   // 4. Remove handleDepositNFT function - it's not needed for game offers
 
-    const handleJoinGame = async () => {
-    console.log('🎮 Player 1 joining game:', normalizedData.id || normalizedData.contract_game_id)
-    
-    if (onGameReady) {
-      console.log('🎮 Calling onGameReady to navigate to game')
-      onGameReady(normalizedData.id || normalizedData.contract_game_id)
-    } else {
-      console.error('⚠️ onGameReady callback not provided!')
-    }
-  }
-
   const handleCancel = async () => {
     // Only creator can cancel the game
     if (!isCreator) {
@@ -665,6 +664,53 @@ const GameLobby = ({
                 NFT was loaded when the game was created
               </div>
             )}
+            
+            {/* Add this after the Player 1 (Creator) section */}
+            {isCreator && player2HasPaid && (
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '1rem', 
+                background: 'rgba(0, 255, 65, 0.1)',
+                border: '1px solid rgba(0, 255, 65, 0.3)',
+                borderRadius: '0.5rem',
+                textAlign: 'center'
+              }}>
+                <p style={{ color: '#00FF41', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  🎉 Player 2 has deposited crypto!
+                </p>
+                <button
+                  onClick={() => {
+                    console.log('🎮 Player 1 clicking Enter Game')
+                    if (onGameReady) {
+                      onGameReady(normalizedData.id)
+                    }
+                  }}
+                  style={{
+                    background: 'linear-gradient(45deg, #00FF41, #39FF14)',
+                    color: '#000',
+                    border: 'none',
+                    padding: '0.75rem 2rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)',
+                    transition: 'all 0.2s ease',
+                    animation: 'pulse 2s infinite'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.05)'
+                    e.target.style.boxShadow = '0 0 30px rgba(0, 255, 65, 0.7)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)'
+                    e.target.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.5)'
+                  }}
+                >
+                  🚀 ENTER GAME
+                </button>
+              </div>
+            )}
           </AssetSection>
 
           <Divider />
@@ -676,10 +722,10 @@ const GameLobby = ({
               <p>{isCreator ? 'Waiting for opponent...' : 'You'}</p>
             </PlayerInfo>
             
-            <CryptoContainer isLoaded={cryptoLoaded}>
+            <CryptoContainer isLoaded={cryptoLoaded || player2HasPaid}>
               <CryptoAmount>${normalizedData.price_usd || normalizedData.priceUSD || 0}</CryptoAmount>
               <CryptoCurrency>ETH</CryptoCurrency>
-              {cryptoLoaded && (
+              {(cryptoLoaded || player2HasPaid) && (
                 <SuccessAnimation>
                   ✅
                 </SuccessAnimation>
@@ -691,8 +737,8 @@ const GameLobby = ({
               )}
             </CryptoContainer>
             
-            <StatusText isLoaded={cryptoLoaded}>
-              {cryptoLoaded ? '✅ Crypto Loaded' : 
+            <StatusText isLoaded={cryptoLoaded || player2HasPaid}>
+              {cryptoLoaded || player2HasPaid ? '✅ Crypto Loaded' : 
                isCreator ? '⏳ Waiting for joiner to deposit crypto...' :
                '⏳ Click "Load Crypto" to join the game'}
             </StatusText>
@@ -723,7 +769,6 @@ const GameLobby = ({
           </h3>
           <p style={{ color: '#fff', margin: 0 }}>
             {gameReady ? '🎉 Game Ready! Starting...' : 
-             showJoinButton && isCreator ? '🎮 Player 2 has paid! Click "Join Game Now!" to enter the game!' :
              nftLoaded && cryptoLoaded ? '🎮 Both assets loaded! Game will start automatically...' :
              isGameOffer ? 
                (isCreator ? '⏳ Waiting for Player 2 to load crypto...' : '⏳ Load your crypto to start the game!') :
@@ -736,30 +781,9 @@ const GameLobby = ({
           )}
         </div>
 
-        {/* 8. Action buttons section */}
+        {/* 8. Remove the "Cancel Game" button for game offers since the game is already on-chain */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-          {/* Join Game button for Player 1 when Player 2 has paid */}
-          {showJoinButton && isCreator && !gameReady && (
-            <ActionButton 
-              className="load"
-              onClick={handleJoinGame}
-              disabled={loading}
-              style={{
-                background: '#00FF41',
-                color: '#000',
-                fontWeight: 'bold',
-                fontSize: '1.1rem',
-                padding: '1rem 2rem',
-                border: '2px solid #00FF41',
-                boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)'
-              }}
-            >
-              🎮 Join Game Now!
-            </ActionButton>
-          )}
-          
-          {/* Cancel Game button */}
-          {!gameReady && isCreator && !isGameOffer && !showJoinButton && (
+          {!gameReady && isCreator && !isGameOffer && (
             <ActionButton 
               className="cancel"
               onClick={handleCancel}

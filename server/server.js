@@ -632,6 +632,28 @@ wss.on('connection', (socket) => {
         case 'crypto_loaded':
           console.log('💰 Crypto loaded message received:', data)
           
+          // Broadcast to all clients in the game room
+          broadcastToGame(data.gameId, {
+            type: 'crypto_loaded',
+            gameId: data.gameId,
+            contract_game_id: data.contract_game_id,
+            joiner: data.joiner,
+            message: 'Player 2 has deposited crypto!'
+          })
+          
+          // Also update game status
+          db.run(
+            `UPDATE games SET status = 'ready_to_start' WHERE id = ? OR contract_game_id = ?`,
+            [data.gameId, data.contract_game_id],
+            (err) => {
+              if (err) {
+                console.error('❌ Error updating game status:', err)
+              } else {
+                console.log('✅ Game marked as ready to start')
+              }
+            }
+          )
+          
           // Get game details to find the creator
           db.get('SELECT * FROM games WHERE id = ? OR contract_game_id = ?', 
             [data.gameId, data.contract_game_id], 
@@ -679,29 +701,6 @@ wss.on('connection', (socket) => {
                     contract_game_id: game.contract_game_id,
                     message: 'Both players ready! Transporting to game...',
                     forceTransport: true
-                  })
-                  
-                  // Also broadcast crypto_loaded to all clients so Player 1 can see it
-                  broadcastToGame(game.id, {
-                    type: 'crypto_loaded',
-                    gameId: game.id,
-                    contract_game_id: game.contract_game_id,
-                    joiner: game.joiner,
-                    message: 'Crypto loaded successfully!'
-                  })
-                  
-                  // Also broadcast as a window event for non-authenticated viewers
-                  wss.clients.forEach(client => {
-                    if (client.readyState === WebSocket.OPEN) {
-                      client.send(JSON.stringify({
-                        type: 'crypto_loaded',
-                        gameId: game.id,
-                        contract_game_id: game.contract_game_id,
-                        joiner: game.joiner,
-                        message: 'Crypto loaded successfully!',
-                        isBroadcast: true
-                      }))
-                    }
                   })
                   
                   // Also broadcast game_started to initialize game state
