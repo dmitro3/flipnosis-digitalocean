@@ -2813,35 +2813,34 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
               (err) => {
                 if (err) return res.status(500).json({ error: err.message })
                 res.json({ success: true, gameId: game.id })
-                // Notify both players to show asset loading modal
+                // Send WebSocket message to BOTH players to open the lobby
+                const modalData = {
+                  type: 'enter_lobby',
+                  gameId: game.id,
+                  creator: game.creator,
+                  joiner: offer.offerer_address,
+                  nft_contract: game.nft_contract,
+                  nft_token_id: game.nft_token_id,
+                  nft_name: game.nft_name,
+                  nft_image: game.nft_image,
+                  price_usd: offer.offer_price, // Use the accepted offer price
+                  coin: game.coin,
+                  contract_game_id: game.contract_game_id,
+                  role: 'varies' // Will be set per user below
+                }
+                // Notify creator
                 broadcastToUser(game.creator, {
-                  type: 'game_created_pending_deposit',
-                  gameId: game.id,
+                  ...modalData,
                   role: 'creator',
-                  creator: game.creator,
-                  joiner: offer.offerer_address,
-                  nft_contract: game.nft_contract,
-                  nft_token_id: game.nft_token_id,
-                  nft_name: game.nft_name,
-                  nft_image: game.nft_image,
-                  price_usd: offer.offer_price,
-                  coin: game.coin,
-                  contract_game_id: game.contract_game_id
+                  targetAddress: game.creator
                 })
+                // Notify joiner (offer maker)
                 broadcastToUser(offer.offerer_address, {
-                  type: 'game_created_pending_deposit',
-                  gameId: game.id,
+                  ...modalData,
                   role: 'joiner',
-                  creator: game.creator,
-                  joiner: offer.offerer_address,
-                  nft_contract: game.nft_contract,
-                  nft_token_id: game.nft_token_id,
-                  nft_name: game.nft_name,
-                  nft_image: game.nft_image,
-                  price_usd: offer.offer_price,
-                  coin: game.coin,
-                  contract_game_id: game.contract_game_id
+                  targetAddress: offer.offerer_address
                 })
+                console.log('🎮 Sent enter_lobby messages to both players')
               }
             )
           })

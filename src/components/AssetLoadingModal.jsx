@@ -205,14 +205,14 @@ const GameLobby = ({
   // CLAUDE OPUS PATCH: Normalize gameData props for consistent usage
   const normalizedData = {
     id: gameData?.id || gameData?.gameId,
-    contract_game_id: gameData?.contract_game_id,
+    contract_game_id: gameData?.contract_game_id, // Make sure this is included
     creator: gameData?.creator,
     joiner: gameData?.joiner,
     nft_contract: gameData?.nft_contract || gameData?.nftContract,
     nft_token_id: gameData?.nft_token_id || gameData?.tokenId,
     nft_name: gameData?.nft_name || gameData?.nftName,
     nft_image: gameData?.nft_image || gameData?.nftImage,
-    price_usd: gameData?.price_usd || gameData?.priceUSD,
+    price_usd: gameData?.price_usd || gameData?.priceUSD || gameData?.amount,
     coin: gameData?.coin
   }
   

@@ -986,6 +986,24 @@ const FlipEnvironment = () => {
         setActiveViewers(data.viewers || [])
         setViewerCount(data.viewerCount || 0)
       }
+      // In the WebSocket message handler, update enter_lobby handling
+      if (data.type === 'enter_lobby') {
+        console.log('🎮 Enter lobby message received:', data)
+        const modalData = {
+          gameId: data.gameId,
+          contract_game_id: data.contract_game_id, // Ensure this is passed
+          creator: data.creator,
+          joiner: data.joiner,
+          nftContract: data.nft_contract,
+          tokenId: data.nft_token_id,
+          nftName: data.nft_name,
+          nftImage: data.nft_image,
+          priceUSD: data.price_usd,
+          coin: data.coin
+        }
+        setAssetModalData(modalData)
+        setShowAssetModal(true)
+      }
     }
     
     ws.onerror = (error) => {
@@ -1325,6 +1343,12 @@ const FlipEnvironment = () => {
   const nftContract = listing?.nft_contract || listing?.nftContract;
   const nftTokenId = listing?.nft_token_id || listing?.tokenId;
   const nftChain = listing?.nft_chain || 'base';
+  
+  // Add this function around line 600
+  const handleGameReady = (gameId) => {
+    console.log('🎮 Game ready, navigating to game:', gameId)
+    navigate(`/game/${gameId}`)
+  }
   
   return (
     <ThemeProvider theme={theme}>
@@ -1945,11 +1969,7 @@ const FlipEnvironment = () => {
       <GameLobby
         isOpen={showAssetModal}
         gameData={assetModalData}
-        onGameReady={(gameId) => {
-          console.log('🎮 Game ready, navigating to:', gameId)
-          setShowAssetModal(false)
-          navigate(`/game/${gameId}`)
-        }}
+        onGameReady={handleGameReady}
         isCreator={address === assetModalData?.creator}
       />
     </ThemeProvider>
