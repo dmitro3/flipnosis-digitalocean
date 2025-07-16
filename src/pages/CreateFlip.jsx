@@ -170,7 +170,53 @@ const CreateFlip = () => {
     setLoading(true)
     
     try {
-      // Check if NFT is approved for the contract
+      // Step 1: Create the listing in the database first
+      showInfo('Creating listing...')
+      
+      const listingData = {
+        creator: address,
+        nft_contract: selectedNFT.contractAddress,
+        nft_token_id: selectedNFT.tokenId,
+        nft_name: selectedNFT.name,
+        nft_image: selectedNFT.image,
+        nft_collection: selectedNFT.collection,
+        nft_chain: 'base',
+        asking_price: parseFloat(price),
+        accepts_offers: acceptsOffers,
+        min_offer_price: acceptsOffers ? parseFloat(price) * 0.8 : parseFloat(price),
+        coin: {
+          type: selectedCoin?.type || 'default',
+          headsImage: selectedCoin?.headsImage || '',
+          tailsImage: selectedCoin?.tailsImage || '',
+          isCustom: selectedCoin?.isCustom || false
+        }
+      }
+      
+      console.log('📤 CreateFlip: Creating listing with data:', listingData)
+      
+      const listingResponse = await fetch(`${API_CONFIG.BASE_URL}/api/listings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(listingData)
+      })
+      
+      if (!listingResponse.ok) {
+        let errorMessage = `HTTP ${listingResponse.status}: ${listingResponse.statusText}`
+        try {
+          const errorData = await listingResponse.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+        }
+        throw new Error(`Failed to create listing: ${errorMessage}`)
+      }
+      
+      const listingResult = await listingResponse.json()
+      console.log('✅ CreateFlip: Listing created successfully:', listingResult)
+      
+      // Step 2: Check if NFT is approved for the contract
       showInfo('Checking NFT approval...')
       const isApproved = await contractService.isNFTApproved(
         selectedNFT.contractAddress,
@@ -203,8 +249,21 @@ const CreateFlip = () => {
         }
         showSuccess('NFT approved!')
       }
-      // First, create the game on blockchain
+      
+      // Step 3: Create the blockchain game
       showInfo('Creating game on blockchain...')
+      
+      console.log('🎮 CreateFlip: Starting blockchain game creation with params:', {
+        nftContract: selectedNFT.contractAddress,
+        tokenId: selectedNFT.tokenId,
+        priceUSD: parseFloat(price),
+        acceptedToken: 0, // ETH
+        gameType: 0, // NFT vs Crypto
+        coinType: selectedCoin?.type || 'default',
+        headsImage: selectedCoin?.headsImage || '',
+        tailsImage: selectedCoin?.tailsImage || '',
+        isCustom: selectedCoin?.isCustom || false
+      })
       
       const blockchainResult = await contractService.createGame({
         nftContract: selectedNFT.contractAddress,
@@ -218,6 +277,8 @@ const CreateFlip = () => {
         isCustom: selectedCoin?.isCustom || false
       })
       
+      console.log('🎮 CreateFlip: Blockchain game creation result:', blockchainResult)
+      
       if (!blockchainResult.success) {
         throw new Error(blockchainResult.error || 'Failed to create game on blockchain')
       }
@@ -226,61 +287,36 @@ const CreateFlip = () => {
       const contractGameId = blockchainResult.gameId
       const transactionHash = blockchainResult.transactionHash
       
-      // Then save to database with the contract game ID
-      const gameData = {
-        id: `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        creator: address,
-        nft_contract: selectedNFT.contractAddress,
-        nft_token_id: selectedNFT.tokenId,
-        nft_name: selectedNFT.name,
-        nft_image: selectedNFT.image,
-        nft_collection: selectedNFT.collection,
-        price_usd: parseFloat(price),
-        game_type: 'nft-vs-crypto',
-        status: 'waiting',
-        nft_chain: 'base',
-        contract_game_id: contractGameId, // Add the blockchain game ID
-        transaction_hash: transactionHash,
-        listing_fee_usd: blockchainResult.listingFeeUSD,
-        coin: {
-          type: selectedCoin?.type || 'default',
-          headsImage: selectedCoin?.headsImage || '',
-          tailsImage: selectedCoin?.tailsImage || '',
-          isCustom: selectedCoin?.isCustom || false
-        }
-      }
+      console.log('🎮 CreateFlip: Contract game created successfully:', {
+        contractGameId,
+        transactionHash,
+        listingFeeUSD: blockchainResult.listingFeeUSD
+      })
       
-      console.log('📤 Sending game data to database:', gameData)
+      // Step 4: Update the listing with the contract game ID
+      showInfo('Updating listing with blockchain game...')
       
-      const response = await fetch(`${API_CONFIG.BASE_URL}/api/games`, {
+      const updateResponse = await fetch(`${API_CONFIG.BASE_URL}/api/listings/${listingResult.listingId}/create-blockchain-game`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(gameData)
+        body: JSON.stringify({
+          contract_game_id: contractGameId,
+          transaction_hash: transactionHash
+        })
       })
       
-      console.log('📥 Database response status:', response.status)
-      
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorMessage
-        } catch (parseError) {
-          console.error('Failed to parse error response:', parseError)
-        }
-        throw new Error(`Failed to save game to database: ${errorMessage}`)
+      if (!updateResponse.ok) {
+        console.warn('⚠️ Failed to update listing with contract game ID, but blockchain game was created')
+      } else {
+        console.log('✅ CreateFlip: Listing updated with contract game ID')
       }
       
-      const result = await response.json()
-      console.log('✅ Database save result:', result)
-      console.log('🎯 Navigating to game with ID:', result.id)
-      console.log('🎯 Full navigation URL:', `/flip-environment/${result.id}`)
       showSuccess('Flip created successfully!')
       
-      // Navigate to the flip environment page
-      navigate(`/flip-environment/${result.id}`)
+      // Navigate to the listing page
+      navigate(`/flip-environment/${listingResult.listingId}`)
       
     } catch (error) {
       console.error('Error creating flip:', error)
@@ -384,10 +420,10 @@ const CreateFlip = () => {
               <SubmitButton type="submit" disabled={loading || !isFullyConnected}>
                 {loading ? (
                   <>
-                    <LoadingSpinner /> Creating Listing...
+                    <LoadingSpinner /> Creating Flip...
                   </>
                 ) : (
-                  'Create Listing'
+                  'Create Flip'
                 )}
               </SubmitButton>
             </form>

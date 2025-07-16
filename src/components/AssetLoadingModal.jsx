@@ -444,18 +444,33 @@ const GameLobby = ({
       const gameId = normalizedData.contract_game_id
       const priceUSD = normalizedData.price_usd || normalizedData.priceUSD
       
+      console.log('🎮 AssetLoadingModal: handleLoadCrypto called with data:', {
+        gameId,
+        priceUSD,
+        isGameOffer,
+        normalizedData: {
+          id: normalizedData.id,
+          contract_game_id: normalizedData.contract_game_id,
+          creator: normalizedData.creator,
+          joiner: normalizedData.joiner
+        }
+      })
+      
       if (!gameId) {
+        console.error('❌ AssetLoadingModal: Missing contract_game_id for game:', normalizedData.id)
         showError('Invalid game configuration. Please refresh and try again.')
         return
       }
       
-      console.log('✅ Joining blockchain game:', gameId)
+      console.log('✅ AssetLoadingModal: Joining blockchain game:', gameId)
       
       // Join the existing blockchain game with the accepted offer price
       const result = await contractService.joinGame({
         gameId: gameId,
         priceUSD: priceUSD // This should be the accepted offer price
       })
+      
+      console.log('🎮 AssetLoadingModal: joinGame result:', result)
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to join game')
@@ -482,7 +497,7 @@ const GameLobby = ({
       }, 1000)
       
     } catch (error) {
-      console.error('Error loading crypto:', error)
+      console.error('❌ AssetLoadingModal: Error loading crypto:', error)
       showError(error.message || 'Failed to load crypto')
     } finally {
       setLoading(false)

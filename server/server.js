@@ -302,7 +302,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
 // Add after the existing table creation code (around line 200)
 
-// Game listings table (games not yet on blockchain)
+// Game listings table (games that will be created on blockchain)
 db.run(`
   CREATE TABLE IF NOT EXISTS game_listings (
     id TEXT PRIMARY KEY,
@@ -318,6 +318,8 @@ db.run(`
     min_offer_price REAL,
     coin TEXT,
     status TEXT DEFAULT 'active',
+    contract_game_id TEXT,
+    transaction_hash TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
@@ -1541,6 +1543,16 @@ app.post('/api/games', async (req, res) => {
   try {
     const gameData = req.body
     
+    console.log('📥 Server: Received game creation request:', {
+      id: gameData.id,
+      contract_game_id: gameData.contract_game_id,
+      creator: gameData.creator,
+      nft_contract: gameData.nft_contract,
+      nft_token_id: gameData.nft_token_id,
+      price_usd: gameData.price_usd,
+      transaction_hash: gameData.transaction_hash
+    })
+    
     // Convert coin data to JSON string if it's an object
     const coinData = gameData.coin ? JSON.stringify(gameData.coin) : null
     
@@ -1580,6 +1592,8 @@ app.post('/api/games', async (req, res) => {
       }
     }
     
+    console.log('💾 Server: Inserting game into database with contract_game_id:', gameData.contract_game_id)
+    
     db.run(
       `INSERT INTO games (
         id, contract_game_id, creator, joiner, nft_contract, nft_token_id,
@@ -1611,22 +1625,24 @@ app.post('/api/games', async (req, res) => {
       ],
       function(err) {
         if (err) {
-          console.error('❌ Error creating game:', err)
+          console.error('❌ Server: Error creating game:', err)
           return res.status(500).json({ error: err.message })
         }
         
-        console.log('✅ Game created successfully with NFT metadata:', {
+        console.log('✅ Server: Game created successfully in database:', {
           id: gameData.id,
+          contract_game_id: gameData.contract_game_id,
           nftName,
           nftImage: nftImage?.substring(0, 50) + '...',
-          nftCollection
+          nftCollection,
+          dbLastID: this.lastID
         })
         
         res.json({ success: true, id: gameData.id })
       }
     )
   } catch (error) {
-    console.error('❌ Error creating game:', error)
+    console.error('❌ Server: Error creating game:', error)
     res.status(500).json({ error: error.message })
   }
 })
@@ -2357,7 +2373,7 @@ app.post('/api/games/:gameId/update-contract-id', async (req, res) => {
 
 // ===== GAME LISTINGS ENDPOINTS =====
 
-// Create a new game listing (no blockchain interaction)
+// Create a new game listing WITH blockchain game creation
 app.post('/api/listings', async (req, res) => {
   try {
     const {
@@ -2373,6 +2389,14 @@ app.post('/api/listings', async (req, res) => {
       min_offer_price,
       coin
     } = req.body
+
+    console.log('📥 Server: Received listing creation request:', {
+      creator,
+      nft_contract,
+      nft_token_id,
+      asking_price,
+      accepts_offers
+    })
 
     const listingId = `listing_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
@@ -2392,6 +2416,26 @@ app.post('/api/listings', async (req, res) => {
     
     const coinData = coin ? JSON.stringify(coin) : null
     
+    // Parse coin data for blockchain creation
+    let coinType = 'default'
+    let headsImage = ''
+    let tailsImage = ''
+    let isCustom = false
+    
+    if (coinData) {
+      try {
+        const parsedCoin = typeof coinData === 'string' ? JSON.parse(coinData) : coinData
+        coinType = parsedCoin.type || 'default'
+        headsImage = parsedCoin.headsImage || ''
+        tailsImage = parsedCoin.tailsImage || ''
+        isCustom = parsedCoin.isCustom || false
+      } catch (e) {
+        console.warn('Could not parse coin data for blockchain creation')
+      }
+    }
+    
+    console.log('💾 Server: Creating listing in database with blockchain game creation')
+    
     db.run(
       `INSERT INTO game_listings (
         id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
@@ -2405,22 +2449,29 @@ app.post('/api/listings', async (req, res) => {
       ],
       function(err) {
         if (err) {
-          console.error('❌ Error creating listing:', err)
+          console.error('❌ Server: Error creating listing:', err)
           return res.status(500).json({ error: err.message })
         }
         
-        console.log('✅ Game listing created:', listingId)
+        console.log('✅ Server: Listing created in database:', listingId)
         
         // Create notification for creator
         createNotification(creator, 'listing_created', 'Listing Created', 
           `Your ${finalNftName} listing is now active!`, 
           JSON.stringify({ listingId }))
         
-        res.json({ success: true, listingId })
+        // Return success with listing ID
+        // Note: The blockchain game will be created by the frontend when the user
+        // navigates to the listing and approves their NFT
+        res.json({ 
+          success: true, 
+          listingId,
+          message: 'Listing created successfully. Please approve your NFT to create the blockchain game.'
+        })
       }
     )
   } catch (error) {
-    console.error('❌ Error creating listing:', error)
+    console.error('❌ Server: Error creating listing:', error)
     res.status(500).json({ error: error.message })
   }
 })
@@ -2838,7 +2889,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   JSON.stringify({ offerId, listingId: listing.id })
                 )
                 
-                // Create game in pending state
+                // Create game in pending state using the existing blockchain game
                 const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
                 
                 // Parse the coin data if it's a string
@@ -2850,6 +2901,18 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                     console.warn('Could not parse coin data')
                   }
                 }
+                
+                // Check if listing has a contract_game_id
+                if (!listing.contract_game_id) {
+                  console.error('❌ Server: Listing missing contract_game_id:', listingId)
+                  return res.status(500).json({ error: 'Listing does not have a blockchain game. Please create the blockchain game first.' })
+                }
+                
+                console.log('✅ Server: Using existing blockchain game for offer acceptance:', {
+                  listingId,
+                  contract_game_id: listing.contract_game_id,
+                  offer_price: offer.offer_price
+                })
                 
                 db.run(
                   `INSERT INTO games (
@@ -2871,13 +2934,22 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                     'nft-vs-crypto',
                     listing.coin, // Make sure this is passed correctly
                     listing.nft_chain,
-                    null // contract_game_id will be set when blockchain game is created
+                    listing.contract_game_id // Use the existing blockchain game ID
                   ],
                   (err) => {
                     if (err) {
                       console.error('❌ Error creating game:', err)
                       return res.status(500).json({ error: err.message })
                     }
+                    
+                    console.log('✅ Server: Game created from listing offer:', {
+                      gameId,
+                      creator: listing.creator,
+                      joiner: offer.offerer_address,
+                      price_usd: offer.offer_price,
+                      contract_game_id: null,
+                      note: 'contract_game_id will be set when blockchain game is created'
+                    })
                     
                     console.log('✅ Game created with coin data:', coinData)
                     
@@ -3454,6 +3526,46 @@ app.post('/api/admin/cleanup-abandoned-games', async (req, res) => {
       }
     )
   } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Create blockchain game for a listing
+app.post('/api/listings/:listingId/create-blockchain-game', async (req, res) => {
+  try {
+    const { listingId } = req.params
+    const { contract_game_id, transaction_hash } = req.body
+    
+    console.log('📥 Server: Creating blockchain game for listing:', {
+      listingId,
+      contract_game_id,
+      transaction_hash
+    })
+    
+    // Update the listing with the contract game ID
+    db.run(
+      'UPDATE game_listings SET contract_game_id = ?, transaction_hash = ? WHERE id = ?',
+      [contract_game_id, transaction_hash, listingId],
+      function(err) {
+        if (err) {
+          console.error('❌ Server: Error updating listing with contract game ID:', err)
+          return res.status(500).json({ error: err.message })
+        }
+        
+        console.log('✅ Server: Listing updated with contract game ID:', {
+          listingId,
+          contract_game_id,
+          rowsAffected: this.changes
+        })
+        
+        res.json({ 
+          success: true, 
+          message: 'Blockchain game created successfully for listing'
+        })
+      }
+    )
+  } catch (error) {
+    console.error('❌ Server: Error creating blockchain game for listing:', error)
     res.status(500).json({ error: error.message })
   }
 })
