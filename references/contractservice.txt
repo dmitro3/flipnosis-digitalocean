@@ -4,7 +4,7 @@ import { base } from 'viem/chains'
 // Contract configuration
 const CONTRACT_CONFIG = {
   // Contract address on Base network
-  address: "0xa326de351a8E7118F48F08199b0EC8649Df3C1E6",
+  address: "0xF5980979c1B0B43f78c8EeAaB697d25C611c0E0a",
   
   // Contract ABI (exact function signatures from contract)
   abi: [
