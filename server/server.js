@@ -3033,40 +3033,36 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                       listingId: listing.id
                     })
                     
-                    // In the broadcast messages, make sure to include parsed coin data:
+                    // Send enter_lobby messages to both players (new flow)
+                    const modalData = {
+                      type: 'enter_lobby',
+                      gameId: gameId,
+                      contract_game_id: listing.contract_game_id, // Use the existing blockchain game ID
+                      creator: listing.creator,
+                      joiner: offer.offerer_address,
+                      nft_contract: listing.nft_contract,
+                      nft_token_id: listing.nft_token_id,
+                      nft_name: listing.nft_name,
+                      nft_image: listing.nft_image,
+                      price_usd: offer.offer_price,
+                      coin: coinData
+                    }
+
+                    // Notify creator
                     broadcastToUser(listing.creator, {
-                      type: 'game_created_pending_deposit',
-                      gameId,
+                      ...modalData,
                       role: 'creator',
-                      requiredAction: 'deposit_nft',
-                      listingId: listing.id,
-                      creator: listing.creator,
-                      joiner: offer.offerer_address,
-                      nft_contract: listing.nft_contract,
-                      nft_token_id: listing.nft_token_id,
-                      nft_name: listing.nft_name,
-                      nft_image: listing.nft_image,
-                      coin: coinData, // Use parsed coin data
-                      price_usd: offer.offer_price
-                      // Don't set contract_game_id yet - it will be set when blockchain game is created
+                      targetAddress: listing.creator
                     })
+
+                    // Notify joiner (offer maker)
                     broadcastToUser(offer.offerer_address, {
-                      type: 'game_created_pending_deposit',
-                      gameId,
+                      ...modalData,
                       role: 'joiner',
-                      requiredAction: 'deposit_crypto',
-                      amount: offer.offer_price,
-                      listingId: listing.id,
-                      creator: listing.creator,
-                      joiner: offer.offerer_address,
-                      nft_contract: listing.nft_contract,
-                      nft_token_id: listing.nft_token_id,
-                      nft_name: listing.nft_name,
-                      nft_image: listing.nft_image,
-                      coin: coinData, // Use parsed coin data
-                      price_usd: offer.offer_price
-                      // Don't set contract_game_id yet - it will be set when blockchain game is created
+                      targetAddress: offer.offerer_address
                     })
+
+                    console.log('🎮 Sent enter_lobby messages to both players for listing offer')
                   }
                 )
               }

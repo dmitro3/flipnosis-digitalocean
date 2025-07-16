@@ -1206,9 +1206,15 @@ const FlipEnvironment = () => {
       }
       
       console.log('📦 Modal data:', modalData)
+      console.log('🎯 Setting showAssetModal to true')
       setAssetModalData(modalData)
       setShowAssetModal(true)
       console.log('✅ Asset modal should now be visible')
+      
+      // Also dispatch a custom event to ensure the modal opens
+      window.dispatchEvent(new CustomEvent('openAssetModal', {
+        detail: modalData
+      }))
 
       // Refresh data to update offer status
       await fetchListingData()

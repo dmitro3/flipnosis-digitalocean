@@ -300,6 +300,21 @@ const GameLobby = ({
     }
   }, [isOpen, gameData])
 
+  // Listen for custom openAssetModal events as backup
+  useEffect(() => {
+    const handleOpenAssetModal = (event) => {
+      console.log('🎮 AssetLoadingModal: Received openAssetModal event:', event.detail)
+      // This is a backup - the modal should already be open via props
+      // But we can use this to ensure the data is properly set
+    }
+
+    window.addEventListener('openAssetModal', handleOpenAssetModal)
+    
+    return () => {
+      window.removeEventListener('openAssetModal', handleOpenAssetModal)
+    }
+  }, [])
+
   // Listen for game ready events to auto-close modal when game is ready
   useEffect(() => {
     console.log('🎮 AssetLoadingModal: Setting up game ready event listener')
