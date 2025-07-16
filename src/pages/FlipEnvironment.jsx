@@ -1191,10 +1191,10 @@ const FlipEnvironment = () => {
 
       console.log('🎯 Setting asset modal data immediately after API response')
       // Immediately open the asset loading modal for Player 1 (acceptor)
-      // Use contract_game_id from listing, not database game ID from API response
+      // Use the existing blockchain game ID from the API response
       const modalData = {
-        gameId: listing?.contract_game_id || result.gameId, // Use contract_game_id if available
-        contract_game_id: listing?.contract_game_id, // Ensure this is passed
+        gameId: result.contract_game_id || result.gameId, // Use the blockchain game ID from API
+        contract_game_id: result.contract_game_id || result.gameId, // Ensure this is passed
         creator: address,
         joiner: offer.offerer_address,
         nftContract: listing?.nft_contract,

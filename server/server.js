@@ -2941,9 +2941,6 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   JSON.stringify({ offerId, listingId: listing.id })
                 )
                 
-                // Create game in pending state using the existing blockchain game
-                const gameId = `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-                
                 // Parse the coin data if it's a string
                 let coinData = listing.coin
                 if (typeof coinData === 'string') {
@@ -2967,104 +2964,67 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                 console.log('✅ SECURITY: Listing has valid contract_game_id:', listing.contract_game_id)
                 
                 console.log('✅ Server: Using existing blockchain game for offer acceptance:', {
-                  listingId,
+                  listingId: listing.id,
                   contract_game_id: listing.contract_game_id,
                   offer_price: offer.offer_price
                 })
                 
-                db.run(
-                  `INSERT INTO games (
-                    id, creator, joiner, nft_contract, nft_token_id,
-                    nft_name, nft_image, nft_collection, price_usd,
-                    status, game_type, coin, nft_chain, contract_game_id
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                  [
-                    gameId,
-                    listing.creator,
-                    offer.offerer_address,
-                    listing.nft_contract,
-                    listing.nft_token_id,
-                    listing.nft_name,
-                    listing.nft_image,
-                    listing.nft_collection,
-                    offer.offer_price,
-                    'pending', // New status for games waiting for both assets
-                    'nft-vs-crypto',
-                    listing.coin, // Make sure this is passed correctly
-                    listing.nft_chain,
-                    listing.contract_game_id // Use the existing blockchain game ID
-                  ],
-                  (err) => {
-                    if (err) {
-                      console.error('❌ Error creating game:', err)
-                      return res.status(500).json({ error: err.message })
-                    }
-                    
-                    console.log('✅ Server: Game created from listing offer:', {
-                      gameId,
-                      creator: listing.creator,
-                      joiner: offer.offerer_address,
-                      price_usd: offer.offer_price,
-                      contract_game_id: null,
-                      note: 'contract_game_id will be set when blockchain game is created'
-                    })
-                    
-                    console.log('✅ Game created with coin data:', coinData)
-                    
-                    // Send response to client
-                    res.json({ success: true, gameId })
-                    
-                    // Broadcast to both users
-                    broadcastToUser(listing.creator, {
-                      type: 'offer_accepted',
-                      gameId,
-                      listingId: listing.id
-                    })
-                    broadcastToUser(offer.offerer_address, {
-                      type: 'offer_accepted',
-                      gameId,
-                      listingId: listing.id
-                    })
-                    
-                    // Broadcast to all users viewing this listing
-                    broadcastToListing(listing.id, {
-                      type: 'offer_accepted',
-                      gameId,
-                      listingId: listing.id
-                    })
-                    
-                    // Send enter_lobby messages to both players (new flow)
-                    const modalData = {
-                      type: 'enter_lobby',
-                      gameId: gameId,
-                      contract_game_id: listing.contract_game_id, // Use the existing blockchain game ID
-                      creator: listing.creator,
-                      joiner: offer.offerer_address,
-                      nft_contract: listing.nft_contract,
-                      nft_token_id: listing.nft_token_id,
-                      nft_name: listing.nft_name,
-                      nft_image: listing.nft_image,
-                      price_usd: offer.offer_price,
-                      coin: coinData
-                    }
+                // Send response to client with the existing blockchain game ID
+                res.json({ 
+                  success: true, 
+                  gameId: listing.contract_game_id, // Use the existing blockchain game ID
+                  contract_game_id: listing.contract_game_id
+                })
+                
+                // Broadcast to both users
+                broadcastToUser(listing.creator, {
+                  type: 'offer_accepted',
+                  gameId: listing.contract_game_id,
+                  listingId: listing.id
+                })
+                broadcastToUser(offer.offerer_address, {
+                  type: 'offer_accepted',
+                  gameId: listing.contract_game_id,
+                  listingId: listing.id
+                })
+                
+                // Broadcast to all users viewing this listing
+                broadcastToListing(listing.id, {
+                  type: 'offer_accepted',
+                  gameId: listing.contract_game_id,
+                  listingId: listing.id
+                })
+                
+                // Send enter_lobby messages to both players using the existing blockchain game
+                const modalData = {
+                  type: 'enter_lobby',
+                  gameId: listing.contract_game_id, // Use the existing blockchain game ID
+                  contract_game_id: listing.contract_game_id,
+                  creator: listing.creator,
+                  joiner: offer.offerer_address,
+                  nft_contract: listing.nft_contract,
+                  nft_token_id: listing.nft_token_id,
+                  nft_name: listing.nft_name,
+                  nft_image: listing.nft_image,
+                  price_usd: offer.offer_price,
+                  coin: coinData
+                }
 
-                    // Notify creator
-                    broadcastToUser(listing.creator, {
-                      ...modalData,
-                      role: 'creator',
-                      targetAddress: listing.creator
-                    })
+                // Notify creator
+                broadcastToUser(listing.creator, {
+                  ...modalData,
+                  role: 'creator',
+                  targetAddress: listing.creator
+                })
 
-                    // Notify joiner (offer maker)
-                    broadcastToUser(offer.offerer_address, {
-                      ...modalData,
-                      role: 'joiner',
-                      targetAddress: offer.offerer_address
-                    })
+                // Notify joiner (offer maker)
+                broadcastToUser(offer.offerer_address, {
+                  ...modalData,
+                  role: 'joiner',
+                  targetAddress: offer.offerer_address
+                })
 
-                    console.log('🎮 Sent enter_lobby messages to both players for listing offer')
-                  }
-                )
+                console.log('🎮 Sent enter_lobby messages to both players for listing offer using existing blockchain game')
               }
             )
           })
