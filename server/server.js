@@ -1087,7 +1087,13 @@ function handlePlayerConnect(socket, data) {
             round: 1
           })
           
-          console.log('✅ Player joined - game state initialized for real-time coordination')
+          console.log('✅ Player joined - checking if we should auto-start game')
+          
+          // Auto-start the game after a short delay
+          setTimeout(() => {
+            console.log('🎮 Auto-starting game after player join')
+            handleStartGame(socket, { gameId: gameId })
+          }, 2000) // 2 second delay to ensure both players are ready
         }
       )
     } else if (game.creator === address || game.joiner === address) {
@@ -1117,8 +1123,8 @@ function handleStartGame(socket, data) {
   
   console.log(`🎮 Starting game ${gameId} via WebSocket`)
   
-  // First check current game status
-  db.get('SELECT status FROM games WHERE id = ?', [gameId], (err, game) => {
+  // First check current game status and if both players have loaded assets
+  db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
     if (err) {
       console.error('❌ Error checking game status:', err)
       return
@@ -1131,8 +1137,16 @@ function handleStartGame(socket, data) {
     
     console.log(`📊 Current game status: ${game.status}`)
     
-    if (game.status !== 'joined') {
-      console.warn(`⚠️ Game ${gameId} is not in 'joined' status (current: ${game.status})`)
+    // Allow starting from both 'joined' and 'active' states
+    if (game.status !== 'joined' && game.status !== 'active') {
+      console.warn(`⚠️ Game ${gameId} is not ready to start (current: ${game.status})`)
+      return
+    }
+    
+    // If already active, just send the game state
+    if (game.status === 'active') {
+      console.log(`✅ Game ${gameId} already active, sending state`)
+      initializeGameState(gameId)
       return
     }
     
@@ -1160,10 +1174,8 @@ function handleStartGame(socket, data) {
           timestamp: Date.now()
         })
         
-        // Initialize game state for the first round
-        setTimeout(() => {
-          initializeGameState(gameId)
-        }, 1000)
+        // Initialize game state for the first round immediately
+        initializeGameState(gameId)
       }
     )
   })

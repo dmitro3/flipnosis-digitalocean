@@ -528,7 +528,10 @@ const GameLobby = ({
       // Navigate to game
       setTimeout(() => {
         if (onGameReady) {
-          onGameReady(normalizedData.id)
+          console.log('🎮 Calling onGameReady to navigate to game')
+          onGameReady(normalizedData.id || normalizedData.contract_game_id)
+        } else {
+          console.error('⚠️ onGameReady callback not provided!')
         }
       }, 1000)
       

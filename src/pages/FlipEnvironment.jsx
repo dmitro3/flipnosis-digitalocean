@@ -16,7 +16,7 @@ import {
 } from '../styles/components'
 import { ethers } from 'ethers'
 import contractService from '../services/ContractService'
-import GameLobby from '../components/AssetLoadingModal'
+import AssetLoadingModal from '../components/AssetLoadingModal'
 
 // Add pulse animation for reconnection indicator
 const pulseKeyframes = `
@@ -2018,14 +2018,14 @@ const FlipEnvironment = () => {
         </ContentWrapper>
       </Container>
       
-      {/* Game Lobby */}
-      {console.log('🎯 Rendering GameLobby with props:', {
+      {/* Asset Loading Modal */}
+      {console.log('🎯 Rendering AssetLoadingModal with props:', {
         isOpen: showAssetModal,
         hasGameData: !!assetModalData,
         gameData: assetModalData,
         isCreator: address === assetModalData?.creator
       })}
-      <GameLobby
+      <AssetLoadingModal
         isOpen={showAssetModal}
         gameData={assetModalData}
         onGameReady={handleGameReady}
