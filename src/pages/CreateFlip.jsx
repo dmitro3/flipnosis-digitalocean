@@ -316,7 +316,7 @@ const CreateFlip = () => {
       showSuccess('Flip created successfully!')
       
       // Navigate to the listing page
-      navigate(`/flip-environment/${listingResult.listingId}`)
+      navigate(`/flip/${listingResult.listingId}`)
       
     } catch (error) {
       console.error('Error creating flip:', error)
