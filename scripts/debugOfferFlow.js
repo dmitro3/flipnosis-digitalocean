@@ -95,7 +95,7 @@ async function debugOfferFlow() {
           console.log('2. But the contract_game_id was not set');
           console.log('3. This means the on-chain game was never created');
           console.log('4. Check the offer acceptance flow in server.js');
-          console.log('5. Verify that createBlockchainGameFromOffer is being called');
+          console.log('5. Verify that joinExistingGameWithPrice is being called');
           console.log('6. Ensure the returned gameId is being saved to the database\n');
         } else {
           console.log('✅ All games with joiners have contract_game_id set\n');

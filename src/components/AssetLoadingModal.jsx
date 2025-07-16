@@ -483,13 +483,10 @@ const GameLobby = ({
         return
       }
       
-      console.log('✅ AssetLoadingModal: Joining blockchain game:', gameId)
+      console.log('✅ AssetLoadingModal: Joining existing blockchain game with custom price:', gameId)
       
       // Join the existing blockchain game with the accepted offer price
-      const result = await contractService.joinGame({
-        gameId: gameId,
-        priceUSD: offerPriceUSD
-      })
+      const result = await contractService.joinExistingGameWithPrice(gameId, offerPriceUSD)
       
       console.log('🎮 AssetLoadingModal: joinGame result:', result)
       

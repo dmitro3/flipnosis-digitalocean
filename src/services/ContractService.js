@@ -1245,9 +1245,42 @@ class ContractService {
             console.log('✅ Database updated successfully')
           }
         } else {
-          console.warn('Database game not found by contract_game_id, skipping database update')
-          // This is normal for blockchain-only games that don't have database records
-          // The game will still work on-chain
+          console.warn('Database game not found by contract_game_id, creating new database record')
+          
+          // Create database game record for existing blockchain game
+          try {
+            const gameDetails = await this.getGameDetails(validatedGameId)
+            if (gameDetails.success && gameDetails.data && gameDetails.data.game) {
+              const game = gameDetails.data.game
+              
+              const gameData = {
+                id: validatedGameId,
+                contract_game_id: validatedGameId,
+                creator: game.creator_,
+                joiner: this.walletClient.account.address,
+                nft_contract: game.nftContract_,
+                nft_token_id: game.tokenId_.toString(),
+                price_usd: Number(game.priceUSD_) / 1000000,
+                status: 'joined',
+                game_type: 'nft-vs-crypto',
+                transaction_hash: hash
+              }
+
+              const createResponse = await fetch(`${API_URL}/api/games`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gameData)
+              })
+
+              if (createResponse.ok) {
+                console.log('✅ Database game record created for existing blockchain game')
+              } else {
+                console.warn('⚠️ Failed to create database game record:', await createResponse.text())
+              }
+            }
+          } catch (dbError) {
+            console.error('❌ Database game creation error:', dbError)
+          }
         }
       } catch (dbError) {
         console.error('Database update error:', dbError)
@@ -2461,10 +2494,10 @@ class ContractService {
     }
   }
 
-  // Create blockchain game and deposit NFT for games created from offers
-  async createBlockchainGameFromOffer(params) {
+  // Join existing blockchain game with custom price (for offer acceptance)
+  async joinExistingGameWithPrice(gameId, customPriceUSD) {
     try {
-      await this.rateLimit('createBlockchainGameFromOffer')
+      await this.rateLimit('joinExistingGameWithPrice')
       
       const { walletClient, public: publicClient } = this.getCurrentClients()
       
@@ -2472,49 +2505,12 @@ class ContractService {
         throw new Error('Wallet client not available. Please connect your wallet.')
       }
 
-      const {
-        opponent,
-        nftContract,
-        tokenId,
-        priceUSD,
-        coinType = 'default',
-        headsImage = '',
-        tailsImage = '',
-        isCustom = false
-      } = params
-
-      console.log('🎮 Creating blockchain game from offer:', params)
-
-      // Check NFT approval
-      const currentApproval = await this.publicClient.readContract({
-        address: nftContract,
-        abi: NFT_ABI,
-        functionName: 'getApproved',
-        args: [BigInt(tokenId)]
-      })
-
-      if (currentApproval?.toLowerCase() !== this.contractAddress.toLowerCase()) {
-        throw new Error('NFT is not approved for the contract. Please approve the NFT first.')
-      }
+      console.log('🎮 Joining existing blockchain game with custom price:', { gameId, customPriceUSD })
 
       // Convert USD to 6 decimals
-      const priceIn6Decimals = BigInt(Math.floor(priceUSD * 1000000))
+      const priceIn6Decimals = BigInt(Math.floor(customPriceUSD * 1000000))
 
-      // Get listing fee
-      const listingFeeUSD = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: this.contractABI,
-        functionName: 'listingFeeUSD'
-      })
-
-      const listingFeeETH = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: this.contractABI,
-        functionName: 'getETHAmount',
-        args: [listingFeeUSD]
-      })
-
-      // Get game amount in ETH
+      // Get game amount in ETH for the custom price
       const gameAmountETH = await this.publicClient.readContract({
         address: this.contractAddress,
         abi: this.contractABI,
@@ -2522,85 +2518,69 @@ class ContractService {
         args: [priceIn6Decimals]
       })
 
-      // Calculate platform fee
-      const platformFeePercent = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: this.contractABI,
-        functionName: 'platformFeePercent'
-      })
-
-      const platformFee = (gameAmountETH * platformFeePercent) / 10000n
-      const totalRequired = listingFeeETH + gameAmountETH
-
-      console.log('💰 Required amounts:', {
-        listingFeeETH: formatEther(listingFeeETH),
-        gameAmountETH: formatEther(gameAmountETH),
-        platformFee: formatEther(platformFee),
-        totalRequired: formatEther(totalRequired)
-      })
+      console.log('💰 Required ETH amount for custom price:', formatEther(gameAmountETH))
 
       // Check user's ETH balance
       const balance = await this.publicClient.getBalance({
         address: this.walletClient.account.address
       })
       
-      if (balance < totalRequired) {
-        throw new Error(`Insufficient ETH balance. You have ${formatEther(balance)} ETH but need ${formatEther(totalRequired)} ETH.`)
+      if (balance < gameAmountETH) {
+        throw new Error(`Insufficient ETH balance. You have ${formatEther(balance)} ETH but need ${formatEther(gameAmountETH)} ETH.`)
       }
 
-      // Create and start game
+      // Join game with custom price
       const { request } = await this.publicClient.simulateContract({
         address: this.contractAddress,
         abi: this.contractABI,
-        functionName: 'createAndStartGame',
+        functionName: 'joinGameWithPrice',
         args: [
-          opponent,
-          nftContract,
-          BigInt(tokenId),
-          priceIn6Decimals,
-          0, // PaymentToken.ETH
-          coinType,
-          headsImage,
-          tailsImage,
-          isCustom
+          BigInt(gameId),
+          priceIn6Decimals
         ],
         account: this.walletClient.account.address,
-        value: totalRequired
+        value: gameAmountETH
       })
 
       const hash = await this.walletClient.writeContract(request)
       
-      console.log('🎯 Create and start game transaction sent:', hash)
+      console.log('🎯 Join game with price transaction sent:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ 
         hash,
         confirmations: 1 
       })
 
-      console.log('✅ Create and start game confirmed:', receipt)
+      console.log('✅ Join game with price confirmed:', receipt)
 
-      // Get the game ID from the event
-      const gameCreatedEvent = receipt.logs.find(log => {
-        try {
-          const decoded = decodeEventLog({
-            abi: this.contractABI,
-            data: log.data,
-            topics: log.topics
-          })
-          return decoded.eventName === 'GameCreated'
-        } catch {
-          return false
+      // Create database game record if it doesn't exist
+      try {
+        console.log('🗄️ Creating database game record for joined game:', gameId)
+        
+        const gameData = {
+          id: gameId,
+          contract_game_id: gameId,
+          joiner: this.walletClient.account.address,
+          price_usd: customPriceUSD,
+          status: 'joined',
+          game_type: 'nft-vs-crypto',
+          transaction_hash: hash
         }
-      })
 
-      let gameId = null
-      if (gameCreatedEvent) {
-        const decoded = decodeEventLog({
-          abi: this.contractABI,
-          data: gameCreatedEvent.data,
-          topics: gameCreatedEvent.topics
+        const response = await fetch(`${API_URL}/api/games`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gameData)
         })
-        gameId = decoded.args.gameId.toString()
+
+        if (response.ok) {
+          console.log('✅ Database game record created successfully')
+        } else {
+          console.warn('⚠️ Failed to create database game record:', await response.text())
+        }
+      } catch (dbError) {
+        console.error('❌ Database game creation error:', dbError)
+        // Don't fail the whole operation if database creation fails
       }
 
       return {
@@ -2611,7 +2591,7 @@ class ContractService {
       }
 
     } catch (error) {
-      console.error('❌ Error creating blockchain game from offer:', error)
+      console.error('❌ Error joining existing game with price:', error)
       return {
         success: false,
         error: error.message
