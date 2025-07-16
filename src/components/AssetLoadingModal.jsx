@@ -216,8 +216,8 @@ const GameLobby = ({
     coin: gameData?.coin
   }
   
-  // 1. At the top, determine if this is a game offer scenario
-  const isGameOffer = normalizedData.contract_game_id && normalizedData.contract_game_id !== normalizedData.id
+  // 1. At the top, determine if this is a game with NFT already loaded (game offer OR listing offer)
+  const hasNFTLoaded = !!normalizedData.contract_game_id
   
   console.log('🎮 AssetLoadingModal - Normalized data:', {
     id: normalizedData.id,
@@ -225,7 +225,7 @@ const GameLobby = ({
     creator: normalizedData.creator,
     joiner: normalizedData.joiner,
     isCreator,
-    isGameOffer
+    hasNFTLoaded
   })
   const { isConnected, address, walletClient, publicClient } = useWallet()
   const { isFullyConnected } = useWalletConnection()
@@ -398,10 +398,10 @@ const GameLobby = ({
   const checkGameState = async () => {
     const gameId = normalizedData.contract_game_id || normalizedData.id
     
-    // For game offers, the NFT is already loaded
-    if (isGameOffer) {
+    // For games with contract_game_id, the NFT is already loaded (game offers OR listing offers)
+    if (hasNFTLoaded) {
       setNftLoaded(true)
-      console.log('✅ Game offer - NFT already loaded in contract')
+      console.log('✅ Game has contract_game_id - NFT already loaded in contract')
       
       // Check if crypto is also loaded
       try {
@@ -455,14 +455,32 @@ const GameLobby = ({
     try {
       showInfo('Loading crypto into game...')
       
-      // For game offers, use the existing contract game ID
+      // Use the existing contract game ID
       const gameId = normalizedData.contract_game_id
-      const priceUSD = normalizedData.price_usd || normalizedData.priceUSD
+      
+      // Get the actual price from the blockchain game, not from the offer
+      let priceUSD = normalizedData.price_usd || normalizedData.priceUSD
+      
+      try {
+        // Get the actual game details from the blockchain to ensure we use the correct price
+        const gameDetails = await contractService.getGameDetails(gameId)
+        if (gameDetails.success && gameDetails.game) {
+          // Use the price from the blockchain game (this is the price the game was created with)
+          const blockchainPriceUSD = Number(gameDetails.game.priceUSD) / 1000000 // Convert from 6 decimals
+          console.log('🎮 Blockchain game price:', blockchainPriceUSD, 'USD')
+          console.log('🎮 Offer price:', priceUSD, 'USD')
+          
+          // Use the blockchain price to ensure consistency
+          priceUSD = blockchainPriceUSD
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not get blockchain game price, using offer price:', error)
+      }
       
       console.log('🎮 AssetLoadingModal: handleLoadCrypto called with data:', {
         gameId,
         priceUSD,
-        isGameOffer,
+        hasNFTLoaded,
         normalizedData: {
           id: normalizedData.id,
           contract_game_id: normalizedData.contract_game_id,
