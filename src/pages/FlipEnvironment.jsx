@@ -912,11 +912,14 @@ const FlipEnvironment = () => {
         console.log('💰 Crypto loaded message received:', data)
         console.log('👤 Current user address:', address)
         console.log('🎯 Current ID:', currentId)
+        console.log('📡 Is broadcast:', data.isBroadcast)
         
         // Check if this message is for the current user
         const isForCurrentUser = data.gameId === currentId || 
                                 data.contract_game_id === currentId ||
                                 data.isBroadcast
+        
+        console.log('✅ Is for current user:', isForCurrentUser)
         
         if (isForCurrentUser) {
           console.log('✅ Crypto loaded message is for current user')
@@ -931,6 +934,8 @@ const FlipEnvironment = () => {
               message: 'Opponent loaded crypto! Game starting...'
             }
           }))
+        } else {
+          console.log('⚠️ Crypto loaded message not for current user, ignoring')
         }
       }
       

@@ -326,9 +326,10 @@ const GameLobby = ({
     const handleGameReady = (event) => {
       console.log('🎮 AssetLoadingModal: Game ready event received:', event.detail)
       console.log('🎮 AssetLoadingModal: Normalized data ID:', normalizedData.id)
+      console.log('🎮 AssetLoadingModal: Event type:', event.detail.type)
       
       // Auto-close modal when game is ready for both players
-      if (event.detail.type === 'game_ready' || event.detail.type === 'player_joined') {
+      if (event.detail.type === 'game_ready' || event.detail.type === 'player_joined' || event.detail.type === 'crypto_loaded') {
         console.log('🎮 AssetLoadingModal: Game ready message received, transporting players immediately')
         if (onGameReady) {
           console.log('🎮 AssetLoadingModal: Calling onGameReady with ID:', normalizedData.id)
@@ -336,6 +337,8 @@ const GameLobby = ({
         } else {
           console.log('⚠️ AssetLoadingModal: onGameReady is not available')
         }
+      } else {
+        console.log('⚠️ AssetLoadingModal: Event type not recognized:', event.detail.type)
       }
     }
 
@@ -499,14 +502,26 @@ const GameLobby = ({
       setGameReady(true)
       
       // Notify both players that crypto has been loaded
+      console.log('🎮 AssetLoadingModal: Sending crypto_loaded message:', {
+        socketAvailable: !!window.socket,
+        socketState: window.socket?.readyState,
+        gameId: normalizedData.id,
+        contract_game_id: normalizedData.contract_game_id,
+        joiner: address
+      })
+      
       if (window.socket && window.socket.readyState === WebSocket.OPEN) {
-        window.socket.send(JSON.stringify({
+        const message = {
           type: 'crypto_loaded',
           gameId: normalizedData.id,
           contract_game_id: normalizedData.contract_game_id,
           joiner: address,
           message: 'Crypto loaded successfully!'
-        }))
+        }
+        console.log('📡 Sending WebSocket message:', message)
+        window.socket.send(JSON.stringify(message))
+      } else {
+        console.warn('⚠️ WebSocket not available for crypto_loaded message')
       }
       
       // Navigate to game
