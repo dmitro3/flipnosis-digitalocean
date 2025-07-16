@@ -2557,6 +2557,27 @@ class ContractService {
       try {
         console.log('🗄️ Creating database game record for joined game:', gameId)
         
+        // First, try to get the original listing details to include NFT info
+        let nftDetails = {}
+        try {
+          const listingResponse = await fetch(`${API_URL}/api/game-listings/by-contract-game/${gameId}`)
+          if (listingResponse.ok) {
+            const listing = await listingResponse.json()
+            nftDetails = {
+              nft_contract: listing.nft_contract,
+              nft_token_id: listing.nft_token_id,
+              nft_name: listing.nft_name,
+              nft_image: listing.nft_image,
+              nft_collection: listing.nft_collection,
+              nft_chain: listing.nft_chain,
+              coin: listing.coin
+            }
+            console.log('✅ Found original listing with NFT details:', nftDetails)
+          }
+        } catch (listingError) {
+          console.warn('⚠️ Could not fetch original listing details:', listingError)
+        }
+        
         const gameData = {
           id: gameId,
           contract_game_id: gameId,
@@ -2564,7 +2585,8 @@ class ContractService {
           price_usd: customPriceUSD,
           status: 'joined',
           game_type: 'nft-vs-crypto',
-          transaction_hash: hash
+          transaction_hash: hash,
+          ...nftDetails // Include NFT details if available
         }
 
         const response = await fetch(`${API_URL}/api/games`, {
@@ -2574,7 +2596,7 @@ class ContractService {
         })
 
         if (response.ok) {
-          console.log('✅ Database game record created successfully')
+          console.log('✅ Database game record created successfully with NFT details')
         } else {
           console.warn('⚠️ Failed to create database game record:', await response.text())
         }

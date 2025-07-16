@@ -498,12 +498,14 @@ const GameLobby = ({
       showSuccess('Crypto loaded successfully! Game starting...')
       setGameReady(true)
       
-      // Notify both players
+      // Notify both players that crypto has been loaded
       if (window.socket && window.socket.readyState === WebSocket.OPEN) {
         window.socket.send(JSON.stringify({
-          type: 'both_assets_loaded',
+          type: 'crypto_loaded',
           gameId: normalizedData.id,
-          message: 'Both assets loaded, game ready!'
+          contract_game_id: normalizedData.contract_game_id,
+          joiner: address,
+          message: 'Crypto loaded successfully!'
         }))
       }
       

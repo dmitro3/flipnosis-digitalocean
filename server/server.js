@@ -629,6 +629,53 @@ wss.on('connection', (socket) => {
           })
           break
         }
+        case 'crypto_loaded':
+          console.log('💰 Crypto loaded message received:', data)
+          
+          // Broadcast to all clients in the game
+          broadcastToGame(data.gameId, {
+            type: 'crypto_loaded',
+            gameId: data.gameId,
+            contract_game_id: data.contract_game_id,
+            joiner: data.joiner,
+            message: data.message
+          })
+          
+          // Also broadcast to both players to exit lobby and enter game
+          broadcastToUser(data.joiner, {
+            type: 'game_ready',
+            gameId: data.gameId,
+            contract_game_id: data.contract_game_id,
+            message: 'Crypto loaded! Game starting...'
+          })
+          
+          // Get the creator from the database
+          db.get('SELECT creator FROM games WHERE id = ? OR contract_game_id = ?', [data.gameId, data.contract_game_id], (err, game) => {
+            if (!err && game) {
+              broadcastToUser(game.creator, {
+                type: 'game_ready',
+                gameId: data.gameId,
+                contract_game_id: data.contract_game_id,
+                message: 'Opponent loaded crypto! Game starting...'
+              })
+            }
+          })
+          
+          // Also broadcast as a window event for non-authenticated viewers
+          wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({
+                type: 'crypto_loaded',
+                gameId: data.gameId,
+                contract_game_id: data.contract_game_id,
+                joiner: data.joiner,
+                message: data.message,
+                isBroadcast: true
+              }))
+            }
+          })
+          break
+          
         case 'both_assets_loaded':
           // Broadcast to all clients in the game
           broadcastToGame(data.gameId, {
@@ -2618,6 +2665,33 @@ app.get('/api/listings/:listingId', async (req, res) => {
     console.error('❌ Error fetching listing:', error)
     res.status(500).json({ error: error.message })
   }
+})
+
+// Get listing by contract game ID
+app.get('/api/game-listings/by-contract-game/:contractGameId', (req, res) => {
+  const { contractGameId } = req.params
+  
+  db.get('SELECT * FROM game_listings WHERE contract_game_id = ?', [contractGameId], (err, listing) => {
+    if (err) {
+      console.error('❌ Database error:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+    
+    // Parse coin data if it's a string
+    if (listing.coin && typeof listing.coin === 'string') {
+      try {
+        listing.coin = JSON.parse(listing.coin)
+      } catch (e) {
+        console.warn('Could not parse coin data')
+      }
+    }
+    
+    res.json(listing)
+  })
 })
 
 // Create an offer for a listing

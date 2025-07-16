@@ -1161,14 +1161,38 @@ const FlipGame = () => {
       setGameData(finalGameData)
       
       // Set NFT data directly from database
-      setNftData({
+      let nftDataFromGame = {
         contractAddress: finalGameData.nft_contract,
         tokenId: finalGameData.nft_token_id,
         name: finalGameData.nft_name,
         image: finalGameData.nft_image,
         collection: finalGameData.nft_collection,
         chain: finalGameData.nft_chain
-      })
+      }
+      
+      // If NFT data is missing, try to fetch from the original listing
+      if (!nftDataFromGame.contractAddress && finalGameData.contract_game_id) {
+        try {
+          console.log('🔍 NFT data missing, fetching from original listing...')
+          const listingResponse = await fetch(`${API_URL}/api/game-listings/by-contract-game/${finalGameData.contract_game_id}`)
+          if (listingResponse.ok) {
+            const listing = await listingResponse.json()
+            nftDataFromGame = {
+              contractAddress: listing.nft_contract,
+              tokenId: listing.nft_token_id,
+              name: listing.nft_name,
+              image: listing.nft_image,
+              collection: listing.nft_collection,
+              chain: listing.nft_chain
+            }
+            console.log('✅ Fetched NFT data from listing:', nftDataFromGame)
+          }
+        } catch (listingError) {
+          console.warn('⚠️ Could not fetch listing data:', listingError)
+        }
+      }
+      
+      setNftData(nftDataFromGame)
       
     } catch (err) {
       console.error('❌ Error polling game data:', err)

@@ -907,6 +907,33 @@ const FlipEnvironment = () => {
         return
       }
       
+      // Handle crypto loaded messages (for Player 1 to be notified)
+      if (data.type === 'crypto_loaded') {
+        console.log('💰 Crypto loaded message received:', data)
+        console.log('👤 Current user address:', address)
+        console.log('🎯 Current ID:', currentId)
+        
+        // Check if this message is for the current user
+        const isForCurrentUser = data.gameId === currentId || 
+                                data.contract_game_id === currentId ||
+                                data.isBroadcast
+        
+        if (isForCurrentUser) {
+          console.log('✅ Crypto loaded message is for current user')
+          showSuccess('Opponent loaded crypto! Game starting...')
+          
+          // Dispatch game ready event to trigger modal close
+          window.dispatchEvent(new CustomEvent('gameReady', {
+            detail: {
+              type: 'crypto_loaded',
+              gameId: data.gameId,
+              contract_game_id: data.contract_game_id,
+              message: 'Opponent loaded crypto! Game starting...'
+            }
+          }))
+        }
+      }
+      
       // Handle game ready messages (for both players to exit lobby)
       if (data.type === 'game_ready' || data.type === 'player_joined') {
         console.log('🎮 Game ready message received:', data)
