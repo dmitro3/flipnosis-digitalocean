@@ -2907,6 +2907,8 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   return res.status(500).json({ error: 'Listing does not have a blockchain game. Please create the blockchain game first.' })
                 }
                 
+                console.log('✅ Server: Listing has contract_game_id:', listing.contract_game_id)
+                
                 console.log('✅ Server: Using existing blockchain game for offer acceptance:', {
                   listingId,
                   contract_game_id: listing.contract_game_id,

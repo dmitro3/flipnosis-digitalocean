@@ -899,55 +899,12 @@ const FlipEnvironment = () => {
         showError('Offer was rejected.')
         fetchListingData() // Refresh offers
       }
-      // Handle game creation notifications
+      // Handle game creation notifications (legacy - should be replaced by enter_lobby)
       if (data.type === 'game_created_pending_deposit') {
-        console.log('🎮 WebSocket: Game created, pending deposits:', data)
-        console.log('👤 Current user address:', address)
-        console.log('📋 Current listing:', listing)
-        console.log('🔗 WebSocket connection state:', socket?.readyState)
-        
-        // Check if this message is for the current user (either direct or broadcast)
-        const isForCurrentUser = data.targetAddress === address || 
-                                data.role === 'creator' && address === listing?.creator ||
-                                data.role === 'joiner' && address === data.joiner ||
-                                data.isBroadcast // Accept broadcast messages
-        
-        if (!isForCurrentUser) {
-          console.log('⚠️ Message not for current user, ignoring')
-          return
-        }
-        
-        showSuccess(`Game created! Entering Game Lobby...`)
-        
-        // Show asset loading modal for both players
-        // Use data from WebSocket message instead of relying on listing state
-        // Handle both property names: price_usd (game offers) and amount (listing offers)
-        const modalData = {
-          gameId: data.gameId,
-          creator: data.role === 'creator' ? address : data.creator || (listing?.creator || 'Unknown'),
-          joiner: data.role === 'joiner' ? address : data.joiner || (listing?.creator || 'Unknown'),
-          nftContract: data.nft_contract || listing?.nft_contract,
-          tokenId: data.nft_token_id || listing?.nft_token_id,
-          nftName: data.nft_name || listing?.nft_name,
-          nftImage: data.nft_image || listing?.nft_image,
-          priceUSD: data.price_usd || data.amount || listing?.asking_price,
-          coin: typeof data.coin === 'string' ? JSON.parse(data.coin) : data.coin || listing?.coin
-        }
-        
-        console.log('🎯 Setting asset modal data:', modalData)
-        setAssetModalData(modalData)
-        setShowAssetModal(true)
-        console.log('✅ Asset modal should now be visible')
-        
-        // Join the game room for the new game
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          console.log('🎮 Joining game room for new game:', data.gameId)
-          socket.send(JSON.stringify({
-            type: 'join_game',
-            gameId: data.gameId,
-            address: address || 'anonymous'
-          }))
-        }
+        console.log('🎮 WebSocket: Legacy game_created_pending_deposit received:', data)
+        // This is legacy - the new flow uses enter_lobby
+        // Don't process this message to avoid conflicts
+        return
       }
       
       // Handle game ready messages (for both players to exit lobby)
@@ -986,11 +943,26 @@ const FlipEnvironment = () => {
         setActiveViewers(data.viewers || [])
         setViewerCount(data.viewerCount || 0)
       }
-      // In the WebSocket message handler, update enter_lobby handling
+      // Handle enter_lobby message (new flow)
       if (data.type === 'enter_lobby') {
         console.log('🎮 Enter lobby message received:', data)
+        console.log('👤 Current user address:', address)
+        console.log('📋 Current listing:', listing)
+        
+        // Check if this message is for the current user
+        const isForCurrentUser = data.targetAddress === address || 
+                                data.role === 'creator' && address === listing?.creator ||
+                                data.role === 'joiner' && address === data.joiner
+        
+        if (!isForCurrentUser) {
+          console.log('⚠️ Enter lobby message not for current user, ignoring')
+          return
+        }
+        
+        showSuccess(`Game created! Entering Game Lobby...`)
+        
         const modalData = {
-          gameId: data.gameId,
+          gameId: data.contract_game_id || data.gameId, // Use contract_game_id if available
           contract_game_id: data.contract_game_id, // Ensure this is passed
           creator: data.creator,
           joiner: data.joiner,
@@ -1001,8 +973,21 @@ const FlipEnvironment = () => {
           priceUSD: data.price_usd,
           coin: data.coin
         }
+        
+        console.log('🎯 Setting asset modal data:', modalData)
         setAssetModalData(modalData)
         setShowAssetModal(true)
+        console.log('✅ Asset modal should now be visible')
+        
+        // Join the game room for the new game
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          console.log('🎮 Joining game room for new game:', data.contract_game_id || data.gameId)
+          socket.send(JSON.stringify({
+            type: 'join_game',
+            gameId: data.contract_game_id || data.gameId,
+            address: address || 'anonymous'
+          }))
+        }
       }
     }
     
@@ -1193,8 +1178,10 @@ const FlipEnvironment = () => {
 
       console.log('🎯 Setting asset modal data immediately after API response')
       // Immediately open the asset loading modal for Player 1 (acceptor)
+      // Use contract_game_id from listing, not database game ID from API response
       const modalData = {
-        gameId: result.gameId,
+        gameId: listing?.contract_game_id || result.gameId, // Use contract_game_id if available
+        contract_game_id: listing?.contract_game_id, // Ensure this is passed
         creator: address,
         joiner: offer.offerer_address,
         nftContract: listing?.nft_contract,

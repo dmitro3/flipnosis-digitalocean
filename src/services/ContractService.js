@@ -799,6 +799,7 @@ class ContractService {
       const gameId = nextGameId.toString()
       
       console.log('🎮 Game created with ID:', gameId)
+      console.log('🎮 This ID should be saved as contract_game_id in the database')
 
       // Return the game ID for the frontend to save to database
 

@@ -250,8 +250,9 @@ const CreateFlip = () => {
         showSuccess('NFT approved!')
       }
       
-      // Step 3: Create the blockchain game
+      // Step 3: Create the blockchain game (this will be a separate transaction)
       showInfo('Creating game on blockchain...')
+      showInfo('You will need to approve the game creation transaction in your wallet...')
       
       console.log('🎮 CreateFlip: Starting blockchain game creation with params:', {
         nftContract: selectedNFT.contractAddress,
@@ -308,7 +309,10 @@ const CreateFlip = () => {
       })
       
       if (!updateResponse.ok) {
-        console.warn('⚠️ Failed to update listing with contract game ID, but blockchain game was created')
+        console.error('❌ Failed to update listing with contract game ID')
+        const errorText = await updateResponse.text()
+        console.error('Error response:', errorText)
+        throw new Error('Failed to save blockchain game ID to database. Please contact support.')
       } else {
         console.log('✅ CreateFlip: Listing updated with contract game ID')
       }
