@@ -630,6 +630,8 @@ const FlipEnvironment = () => {
   const [maxReconnectAttempts] = useState(5)
   const [showAssetModal, setShowAssetModal] = useState(false)
   const [assetModalData, setAssetModalData] = useState(null)
+  const [player2HasPaid, setPlayer2HasPaid] = useState(false)
+  const [gameReadyToStart, setGameReadyToStart] = useState(false)
   
   const messagesEndRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
@@ -685,6 +687,14 @@ const FlipEnvironment = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Reset player2HasPaid and gameReadyToStart when modal closes or game changes
+  useEffect(() => {
+    if (!showAssetModal) {
+      setPlayer2HasPaid(false)
+      setGameReadyToStart(false)
+    }
+  }, [showAssetModal])
   
   const fetchListingData = async () => {
     try {
@@ -911,33 +921,14 @@ const FlipEnvironment = () => {
         
         // Handle crypto loaded messages (for Player 1 to be notified)
         if (data.type === 'crypto_loaded') {
-          console.log('💰 Crypto loaded message received:', data)
-          console.log('👤 Current user address:', address)
-          console.log('🎯 Current ID:', currentId)
-          console.log('📡 Is broadcast:', data.isBroadcast)
+          console.log('💰 Crypto loaded message in FlipEnvironment:', data)
           
-          // Check if this message is for the current user
-          const isForCurrentUser = data.gameId === currentId || 
-                                  data.contract_game_id === currentId ||
-                                  data.isBroadcast
-          
-          console.log('✅ Is for current user:', isForCurrentUser)
-          
-          if (isForCurrentUser) {
-            console.log('✅ Crypto loaded message is for current user')
-            showSuccess('Opponent loaded crypto! Game starting...')
-            
-            // Dispatch game ready event to trigger modal close
-            window.dispatchEvent(new CustomEvent('gameReady', {
-              detail: {
-                type: 'crypto_loaded',
-                gameId: data.gameId,
-                contract_game_id: data.contract_game_id,
-                message: 'Opponent loaded crypto! Game starting...'
-              }
-            }))
-          } else {
-            console.log('⚠️ Crypto loaded message not for current user, ignoring')
+          // Check if this message is for the current game
+          if (data.gameId === currentId || data.contract_game_id === assetModalData?.contract_game_id) {
+            console.log('✅ Player 2 has deposited crypto for this game!')
+            setPlayer2HasPaid(true)
+            setGameReadyToStart(true)
+            showSuccess('Player 2 has deposited crypto! Click "Enter Game" to start.')
           }
         }
         
@@ -2036,6 +2027,8 @@ const FlipEnvironment = () => {
         onGameReady={handleGameReady}
         isCreator={address === assetModalData?.creator}
         socket={socket}
+        player2HasPaid={player2HasPaid}
+        gameReadyToStart={gameReadyToStart}
       />
     </ThemeProvider>
   )

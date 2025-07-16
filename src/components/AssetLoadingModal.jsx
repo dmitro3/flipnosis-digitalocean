@@ -201,15 +201,27 @@ const pulseAnimation = `
   @keyframes pulse {
     0% {
       transform: scale(1);
-      box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 255, 65, 0.5);
     }
     50% {
       transform: scale(1.02);
-      box-shadow: 0 0 30px rgba(0, 255, 65, 0.7);
+      box-shadow: 0 6px 30px rgba(0, 255, 65, 0.7);
     }
     100% {
       transform: scale(1);
-      box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 255, 65, 0.5);
+    }
+  }
+  
+  @keyframes glow {
+    0% {
+      box-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.8), 0 0 30px rgba(0, 255, 65, 0.6);
+    }
+    100% {
+      box-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
     }
   }
 `
@@ -219,7 +231,9 @@ const GameLobby = ({
   gameData, 
   onGameReady,
   isCreator,
-  socket 
+  socket,
+  player2HasPaid,
+  gameReadyToStart
 }) => {
   // CLAUDE OPUS PATCH: Normalize gameData props for consistent usage
   const normalizedData = {
@@ -259,7 +273,6 @@ const GameLobby = ({
   const [loading, setLoading] = useState(false)
   const [gameReady, setGameReady] = useState(false)
   const [initializationAttempted, setInitializationAttempted] = useState(false)
-  const [player2HasPaid, setPlayer2HasPaid] = useState(false)
 
   // Initialize contract service when wallet is connected
   useEffect(() => {
@@ -386,17 +399,10 @@ const GameLobby = ({
     }
   }, [])
 
-  // Add this useEffect to listen for WebSocket messages
+  // Add this useEffect to listen for WebSocket messages (simplified - no crypto_loaded handling)
   useEffect(() => {
     const handleWebSocketMessage = (event) => {
       const data = event.detail
-      
-      // Add this new condition
-      if (data.type === 'crypto_loaded' && data.gameId === normalizedData.id) {
-        console.log('💰 Player 2 has loaded crypto!')
-        setPlayer2HasPaid(true)
-        showSuccess('Player 2 has deposited crypto! Click "Enter Game" to start.')
-      }
       
       // Handle both_assets_loaded message
       if (data.type === 'both_assets_loaded' && data.gameId === normalizedData.id) {
@@ -545,14 +551,8 @@ const GameLobby = ({
       showSuccess('Crypto loaded successfully! Game starting...')
       setGameReady(true)
       
-      // Notify both players that crypto has been loaded
-      console.log('🎮 AssetLoadingModal: Sending crypto_loaded message:', {
-        socketAvailable: !!socket,
-        socketState: socket?.readyState,
-        gameId: normalizedData.id,
-        contract_game_id: normalizedData.contract_game_id,
-        joiner: address
-      })
+      // After successful crypto deposit, send WebSocket message
+      console.log('💰 Sending crypto_loaded message via WebSocket')
       
       if (socket && socket.readyState === WebSocket.OPEN) {
         const message = {
@@ -564,8 +564,13 @@ const GameLobby = ({
         }
         console.log('📡 Sending WebSocket message:', message)
         socket.send(JSON.stringify(message))
+        
+        // Also set local state
+        setCryptoLoaded(true)
+        showSuccess('Crypto deposited successfully!')
       } else {
-        console.warn('⚠️ WebSocket not available for crypto_loaded message')
+        console.error('⚠️ WebSocket not available for crypto_loaded message')
+        showError('Connection issue - please refresh and try again')
       }
       
       // Navigate to game
@@ -665,17 +670,23 @@ const GameLobby = ({
               </div>
             )}
             
-            {/* Add this after the Player 1 (Creator) section */}
+            {/* Join Game Button for Player 1 */}
             {isCreator && player2HasPaid && (
               <div style={{ 
                 marginTop: '1rem', 
                 padding: '1rem', 
                 background: 'rgba(0, 255, 65, 0.1)',
-                border: '1px solid rgba(0, 255, 65, 0.3)',
+                border: '2px solid rgba(0, 255, 65, 0.5)',
                 borderRadius: '0.5rem',
-                textAlign: 'center'
+                textAlign: 'center',
+                animation: 'glow 2s ease-in-out infinite'
               }}>
-                <p style={{ color: '#00FF41', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                <p style={{ 
+                  color: '#00FF41', 
+                  marginBottom: '1rem', 
+                  fontWeight: 'bold',
+                  fontSize: '1.1rem'
+                }}>
                   🎉 Player 2 has deposited crypto!
                 </p>
                 <button
@@ -689,25 +700,27 @@ const GameLobby = ({
                     background: 'linear-gradient(45deg, #00FF41, #39FF14)',
                     color: '#000',
                     border: 'none',
-                    padding: '0.75rem 2rem',
+                    padding: '1rem 3rem',
                     borderRadius: '0.5rem',
-                    fontSize: '1rem',
+                    fontSize: '1.2rem',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)',
+                    boxShadow: '0 4px 20px rgba(0, 255, 65, 0.5)',
                     transition: 'all 0.2s ease',
-                    animation: 'pulse 2s infinite'
+                    animation: 'pulse 2s infinite',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px'
                   }}
                   onMouseEnter={(e) => {
                     e.target.style.transform = 'scale(1.05)'
-                    e.target.style.boxShadow = '0 0 30px rgba(0, 255, 65, 0.7)'
+                    e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 65, 0.7)'
                   }}
                   onMouseLeave={(e) => {
                     e.target.style.transform = 'scale(1)'
-                    e.target.style.boxShadow = '0 0 20px rgba(0, 255, 65, 0.5)'
+                    e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 65, 0.5)'
                   }}
                 >
-                  🚀 ENTER GAME
+                  🚀 ENTER GAME NOW
                 </button>
               </div>
             )}

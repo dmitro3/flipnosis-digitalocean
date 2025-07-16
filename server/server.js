@@ -631,6 +631,7 @@ wss.on('connection', (socket) => {
         }
         case 'crypto_loaded':
           console.log('💰 Crypto loaded message received:', data)
+          console.log('📡 Broadcasting to game:', data.gameId)
           
           // Broadcast to all clients in the game room
           broadcastToGame(data.gameId, {
@@ -638,21 +639,23 @@ wss.on('connection', (socket) => {
             gameId: data.gameId,
             contract_game_id: data.contract_game_id,
             joiner: data.joiner,
-            message: 'Player 2 has deposited crypto!'
+            message: 'Player 2 has deposited crypto!',
+            timestamp: Date.now()
           })
           
-          // Also update game status
-          db.run(
-            `UPDATE games SET status = 'ready_to_start' WHERE id = ? OR contract_game_id = ?`,
-            [data.gameId, data.contract_game_id],
-            (err) => {
-              if (err) {
-                console.error('❌ Error updating game status:', err)
-              } else {
-                console.log('✅ Game marked as ready to start')
-              }
-            }
-          )
+          // Also broadcast with contract_game_id if available
+          if (data.contract_game_id) {
+            broadcastToGame(data.contract_game_id, {
+              type: 'crypto_loaded',
+              gameId: data.gameId,
+              contract_game_id: data.contract_game_id,
+              joiner: data.joiner,
+              message: 'Player 2 has deposited crypto!',
+              timestamp: Date.now()
+            })
+          }
+          
+          console.log('✅ Crypto loaded message broadcast complete')
           
           // Get game details to find the creator
           db.get('SELECT * FROM games WHERE id = ? OR contract_game_id = ?', 
