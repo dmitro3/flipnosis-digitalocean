@@ -970,6 +970,12 @@ const FlipEnvironment = () => {
         if (data.type === 'offer_accepted_with_timer') {
           console.log('⏰ Offer accepted with timer:', data)
           
+          // Only process if this is for the current listing
+          if (data.listingId !== currentId) {
+            console.log('⚠️ Offer accepted message not for current listing, ignoring')
+            return
+          }
+          
           // Set the active offer and timer for everyone
           setActiveOffer({
             offerId: data.offerId,
@@ -1003,6 +1009,13 @@ const FlipEnvironment = () => {
         // Handle crypto loaded
         if (data.type === 'crypto_loaded') {
           console.log('💰 Crypto loaded:', data)
+          
+          // Only process if this is for the current active offer
+          if (!activeOffer || activeOffer.gameId !== data.gameId) {
+            console.log('⚠️ Crypto loaded message not for current active offer, ignoring')
+            return
+          }
+          
           setCryptoLoaded(true)
           setOfferTimer(null)
           showSuccess('Crypto loaded! Preparing to enter game...')
@@ -1018,6 +1031,12 @@ const FlipEnvironment = () => {
 
         // Handle timer expiration
         if (data.type === 'timer_expired') {
+          // Only process if this is for the current active offer
+          if (!activeOffer || activeOffer.gameId !== data.gameId) {
+            console.log('⚠️ Timer expired message not for current active offer, ignoring')
+            return
+          }
+          
           setOfferTimer(null)
           setActiveOffer(null)
           setShowCryptoLoader(false)

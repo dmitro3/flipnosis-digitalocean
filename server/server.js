@@ -633,29 +633,21 @@ wss.on('connection', (socket) => {
         }
         case 'crypto_loaded':
           console.log('💰 Crypto loaded message received:', data)
-          console.log('📡 Broadcasting to game:', data.gameId)
+          console.log('📡 Broadcasting to all connected clients')
           
-          // Broadcast to all clients in the game room
-          broadcastToGame(data.gameId, {
-            type: 'crypto_loaded',
-            gameId: data.gameId,
-            contract_game_id: data.contract_game_id,
-            joiner: data.joiner,
-            message: 'Player 2 has deposited crypto!',
-            timestamp: Date.now()
+          // Broadcast to ALL connected clients (no room logic)
+          wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({
+                type: 'crypto_loaded',
+                gameId: data.gameId,
+                contract_game_id: data.contract_game_id,
+                joiner: data.joiner,
+                message: 'Player 2 has deposited crypto!',
+                timestamp: Date.now()
+              }))
+            }
           })
-          
-          // Also broadcast with contract_game_id if available
-          if (data.contract_game_id) {
-            broadcastToGame(data.contract_game_id, {
-              type: 'crypto_loaded',
-              gameId: data.gameId,
-              contract_game_id: data.contract_game_id,
-              joiner: data.joiner,
-              message: 'Player 2 has deposited crypto!',
-              timestamp: Date.now()
-            })
-          }
           
           console.log('✅ Crypto loaded message broadcast complete')
           
@@ -671,21 +663,16 @@ wss.on('connection', (socket) => {
             )
           }
           
-          // Broadcast to all users that crypto is loaded
-          broadcastToGame(data.gameId, {
-            type: 'crypto_loaded',
-            gameId: data.gameId,
-            contract_game_id: data.contract_game_id,
-            joiner: data.joiner,
-            message: 'Player 2 has deposited crypto!'
-          })
-          
           // Send game ready message to transport both players
           setTimeout(() => {
-            broadcastToGame(data.gameId, {
-              type: 'game_ready',
-              gameId: data.gameId,
-              message: 'Game is ready! Entering...'
+            wss.clients.forEach(client => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                  type: 'game_ready',
+                  gameId: data.gameId,
+                  message: 'Game is ready! Entering...'
+                }))
+              }
             })
           }, 1000)
           
@@ -740,10 +727,14 @@ wss.on('connection', (socket) => {
                   
                   // Also broadcast game_started to initialize game state
                   setTimeout(() => {
-                    broadcastToGame(game.id, {
-                      type: 'game_started',
-                      gameId: game.id,
-                      timestamp: Date.now()
+                    wss.clients.forEach(client => {
+                      if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                          type: 'game_started',
+                          gameId: game.id,
+                          timestamp: Date.now()
+                        }))
+                      }
                     })
                     
                     initializeGameState(game.id)
@@ -1022,13 +1013,17 @@ function startOfferTimer(gameId, offerId, duration = 120000) { // 2 minutes defa
   // Start countdown
   const startTime = Date.now()
   
-  // Broadcast timer start to all users in the game
-  broadcastToGame(gameId, {
-    type: 'timer_started',
-    gameId,
-    offerId,
-    duration,
-    startTime
+  // Broadcast timer start to all connected clients
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({
+        type: 'timer_started',
+        gameId,
+        offerId,
+        duration,
+        startTime
+      }))
+    }
   })
   
   // Set timeout for expiration
@@ -1044,12 +1039,16 @@ function startOfferTimer(gameId, offerId, duration = 120000) { // 2 minutes defa
       }
     )
     
-    // Notify all users
-    broadcastToGame(gameId, {
-      type: 'timer_expired',
-      gameId,
-      offerId,
-      message: 'Game cancelled - Player 2 did not load crypto in time'
+    // Notify all connected clients
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({
+          type: 'timer_expired',
+          gameId,
+          offerId,
+          message: 'Game cancelled - Player 2 did not load crypto in time'
+        }))
+      }
     })
     
     // Clean up
@@ -1066,9 +1065,13 @@ function cancelOfferTimer(gameId) {
     gameTimers.delete(gameId)
     activeGameOffers.delete(gameId)
     
-    broadcastToGame(gameId, {
-      type: 'timer_cancelled',
-      gameId
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({
+          type: 'timer_cancelled',
+          gameId
+        }))
+      }
     })
   }
 }
@@ -3240,23 +3243,30 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                 // Start the 2-minute timer
                 startOfferTimer(listing.contract_game_id, offerId, 120000)
 
-                // Broadcast offer acceptance with timer to all users
-                broadcastToGame(listing.contract_game_id || listing.id, {
-                  type: 'offer_accepted_with_timer',
-                  gameId: listing.contract_game_id,
-                  listingId: listing.id,
-                  offerId: offerId,
-                  acceptedBy: listing.creator,
-                  offererAddress: offer.offerer_address,
-                  offerPrice: offer.offer_price,
-                  duration: 120000,
-                  startTime: Date.now(),
-                  nftContract: listing.nft_contract,
-                  nftTokenId: listing.nft_token_id,
-                  nftName: listing.nft_name,
-                  nftImage: listing.nft_image,
-                  coin: coinData
+                // Broadcast offer acceptance with timer to ALL connected clients
+                // Frontend will filter based on user address and listing ID
+                wss.clients.forEach(client => {
+                  if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                      type: 'offer_accepted_with_timer',
+                      gameId: listing.contract_game_id,
+                      listingId: listing.id,
+                      offerId: offerId,
+                      acceptedBy: listing.creator,
+                      offererAddress: offer.offerer_address,
+                      offerPrice: offer.offer_price,
+                      duration: 120000,
+                      startTime: Date.now(),
+                      nftContract: listing.nft_contract,
+                      nftTokenId: listing.nft_token_id,
+                      nftName: listing.nft_name,
+                      nftImage: listing.nft_image,
+                      coin: coinData
+                    }))
+                  }
                 })
+                
+                console.log('📡 Broadcasted offer_accepted_with_timer to all connected clients')
 
                 // Send success response
                 res.json({ 
