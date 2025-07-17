@@ -633,6 +633,13 @@ wss.on('connection', (socket) => {
         }
         case 'crypto_loaded':
           console.log('💰 Crypto loaded received:', data)
+          console.log('🎯 Broadcasting to all clients:', {
+            gameId: data.gameId,
+            listingId: data.listingId,
+            contract_game_id: data.contract_game_id || data.gameId,
+            player: data.player,
+            address: data.address
+          })
           
           // Verify transaction if hash provided
           if (data.transactionHash) {
@@ -641,6 +648,7 @@ wss.on('connection', (socket) => {
           }
           
           // Broadcast to all clients with both IDs
+          let cryptoLoadedSentCount = 0
           wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({
@@ -653,11 +661,14 @@ wss.on('connection', (socket) => {
                 transactionHash: data.transactionHash,
                 timestamp: Date.now()
               }))
+              cryptoLoadedSentCount++
             }
           })
+          console.log(`📡 Sent crypto_loaded message to ${cryptoLoadedSentCount} clients`)
           
           // Send game ready after confirmation
           setTimeout(() => {
+            let gameReadySentCount = 0
             wss.clients.forEach(client => {
               if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
@@ -667,8 +678,10 @@ wss.on('connection', (socket) => {
                   message: 'Game is ready! Entering...',
                   isBroadcast: true
                 }))
+                gameReadySentCount++
               }
             })
+            console.log(`📡 Sent game_ready message to ${gameReadySentCount} clients`)
           }, 1500) // Slight delay to ensure messages are processed
           break
         case 'both_assets_loaded':
@@ -3395,7 +3408,7 @@ function broadcastToUser(address, message) {
   })
   
   // BROADCAST TO ALL CONNECTED CLIENTS as fallback for critical messages
-  if (sentCount === 0 && (message.type === 'game_created_pending_deposit' || message.type === 'offer_accepted' || message.type === 'game_ready' || message.type === 'player_joined')) {
+  if (sentCount === 0 && (message.type === 'game_created_pending_deposit' || message.type === 'offer_accepted' || message.type === 'offer_accepted_with_timer' || message.type === 'game_ready' || message.type === 'player_joined')) {
     console.log(`🚨 No sockets found for ${address}, broadcasting to all clients as fallback`)
     wss.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {

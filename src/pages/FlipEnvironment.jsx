@@ -944,12 +944,37 @@ const FlipEnvironment = () => {
         if (data.type === 'crypto_loaded') {
           console.log('💰 Crypto loaded message in FlipEnvironment:', data)
           
-          // Check if this message is for the current game
-          if (data.gameId === currentId || data.contract_game_id === assetModalData?.contract_game_id) {
+          // Check if this message is for the current listing/game
+          // Player 1 might be on the listing page (currentId = listingId) or game page (currentId = gameId)
+          const isForCurrentListing = data.listingId === currentId || data.listingId === listingId
+          const isForCurrentGame = data.gameId === currentId || data.contract_game_id === currentId
+          const isForCurrentUser = isForCurrentListing || isForCurrentGame || data.contract_game_id === assetModalData?.contract_game_id
+          
+          console.log('🎯 Crypto loaded check:', {
+            currentId,
+            listingId,
+            dataGameId: data.gameId,
+            dataListingId: data.listingId,
+            dataContractGameId: data.contract_game_id,
+            isForCurrentListing,
+            isForCurrentGame,
+            isForCurrentUser
+          })
+          
+          if (isForCurrentUser) {
             console.log('✅ Player 2 has deposited crypto for this game!')
             setPlayer2HasPaid(true)
             setGameReadyToStart(true)
             showSuccess('Player 2 has deposited crypto! Click "Enter Game" to start.')
+            
+            // Auto-navigate Player 1 to the game after a short delay
+            setTimeout(() => {
+              const gameIdToNavigate = data.gameId || data.contract_game_id
+              if (gameIdToNavigate) {
+                console.log('🎮 Auto-navigating Player 1 to game:', gameIdToNavigate)
+                navigate(`/game/${gameIdToNavigate}`)
+              }
+            }, 3000) // 3 second delay to show the success message
           }
         }
         
@@ -963,11 +988,23 @@ const FlipEnvironment = () => {
           console.log('📢 Is broadcast:', data.isBroadcast)
           
           // Check if this message is for the current user (either direct or broadcast)
+          // Player 1 might be on the listing page (currentId = listingId) or game page (currentId = gameId)
+          const isForCurrentListing = data.listingId === currentId || data.listingId === listingId
+          const isForCurrentGame = data.gameId === currentId
           const isForCurrentUser = data.targetAddress === address || 
-                                  data.gameId === currentId ||
+                                  isForCurrentListing ||
+                                  isForCurrentGame ||
                                   data.isBroadcast // Accept broadcast messages
           
-          console.log('✅ Is for current user:', isForCurrentUser)
+          console.log('🎯 Game ready check:', {
+            currentId,
+            listingId,
+            dataGameId: data.gameId,
+            dataListingId: data.listingId,
+            isForCurrentListing,
+            isForCurrentGame,
+            isForCurrentUser
+          })
           
           if (!isForCurrentUser) {
             console.log('⚠️ Game ready message not for current user, ignoring')
@@ -983,6 +1020,14 @@ const FlipEnvironment = () => {
               message: data.message
             }
           }))
+          
+          // Auto-navigate to game if we have a valid game ID
+          if (data.gameId) {
+            setTimeout(() => {
+              console.log('🎮 Auto-navigating to game after game ready:', data.gameId)
+              navigate(`/game/${data.gameId}`)
+            }, 1000) // 1 second delay
+          }
         }
         // Handle viewer updates (legacy)
         if (data.type === 'viewers_update' && data.listingId === listingId) {
@@ -995,9 +1040,17 @@ const FlipEnvironment = () => {
         if (data.type === 'offer_accepted_with_timer') {
           console.log('⏰ Offer accepted with timer:', data)
           
-          // Only process if this is for the current listing
-          if (data.listingId !== currentId && data.listingId !== listingId) {
-            console.log('⚠️ Offer accepted message not for current listing, ignoring')
+          // Check if this message is for the current user (either direct or broadcast)
+          const isForCurrentUser = (data.listingId === currentId || data.listingId === listingId) ||
+                                  (data.isBroadcast && data.targetAddress === address) ||
+                                  (data.offererAddress === address)
+          
+          if (!isForCurrentUser) {
+            console.log('⚠️ Offer accepted message not for current user, ignoring')
+            console.log('🎯 Current user address:', address)
+            console.log('🎯 Target address:', data.targetAddress)
+            console.log('🎯 Offerer address:', data.offererAddress)
+            console.log('🎯 Is broadcast:', data.isBroadcast)
             return
           }
           

@@ -81,7 +81,7 @@ function App() {
     chainsLength: config?.chains?.length 
   })
 
-  // Add global WebSocket listener for TRANSPORT_TO_GAME messages
+  // Add global WebSocket listener for TRANSPORT_TO_GAME messages and offer acceptance
   useEffect(() => {
     const handleGlobalWebSocketMessage = (event) => {
       const data = event.detail
@@ -101,6 +101,37 @@ function App() {
           setTimeout(() => {
             window.location.href = `/game/${gameId}`
           }, 100)
+        }
+      }
+      
+      // Handle offer_accepted_with_timer message globally for Player 2
+      if (data.type === 'offer_accepted_with_timer') {
+        console.log('⏰ GLOBAL: Received offer_accepted_with_timer message:', data)
+        
+        // Check if this message is for the current user (Player 2)
+        const { address } = useWallet()
+        if (address && data.offererAddress === address) {
+          console.log('🎯 GLOBAL: Player 2 detected, showing crypto loader')
+          
+          // Dispatch a global event to show the crypto loader
+          window.dispatchEvent(new CustomEvent('showCryptoLoader', {
+            detail: {
+              offerId: data.offerId,
+              listingId: data.listingId,
+              gameId: data.gameId,
+              contract_game_id: data.gameId,
+              offererAddress: data.offererAddress,
+              offerPrice: data.offerPrice,
+              originalPrice: data.originalPrice,
+              nftContract: data.nftContract,
+              nftTokenId: data.nftTokenId,
+              nftName: data.nftName,
+              nftImage: data.nftImage,
+              coin: data.coin,
+              startTime: data.startTime,
+              duration: data.duration
+            }
+          }))
         }
       }
     }
