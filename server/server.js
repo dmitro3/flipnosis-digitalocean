@@ -661,12 +661,19 @@ wss.on('connection', (socket) => {
           // Cancel the timer since Player 2 has loaded crypto
           cancelOfferTimer(data.gameId)
 
-          // Notify both players they can enter the game
-          broadcastToGame(data.gameId, {
-            type: 'game_ready',
+          // Now transport both players to the game
+          // Player 1 - from environment page
+          broadcastToUser(data.creator, {
+            type: 'transport_to_game',
             gameId: data.gameId,
-            message: 'Both players ready! Enter the game now.',
-            isBroadcast: true
+            message: 'Player 2 has loaded crypto! Entering game...'
+          })
+
+          // Player 2 - from asset loading modal
+          broadcastToUser(data.joiner, {
+            type: 'transport_to_game',
+            gameId: data.gameId,
+            message: 'Crypto loaded! Entering game...'
           })
           
           // Get game details to find the creator
@@ -3213,7 +3220,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                 // Start the 2-minute timer
                 startOfferTimer(listing.contract_game_id, 120000)
 
-                // Immediately notify Player 2 to go to asset loading
+                // Only notify Player 2 to go to asset loading
                 broadcastToUser(offer.offerer_address, {
                   type: 'redirect_to_asset_loading',
                   gameId: listing.contract_game_id,
@@ -3229,11 +3236,12 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   message: 'Offer accepted! You have 2 minutes to load crypto.'
                 })
 
-                // Notify Player 1 about timer
+                // Notify Player 1 to start timer (but stay on environment page)
                 broadcastToUser(listing.creator, {
                   type: 'offer_accepted_timer_started',
                   gameId: listing.contract_game_id,
                   duration: 120000,
+                  acceptedOfferId: offerId,
                   message: 'Waiting for Player 2 to load crypto...'
                 })
                 
@@ -3255,37 +3263,8 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   gameId: listing.contract_game_id,
                   listingId: listing.id
                 })
-                
-                // Send enter_lobby messages to both players using the existing blockchain game
-                const modalData = {
-                  type: 'enter_lobby',
-                  gameId: listing.contract_game_id, // Use the existing blockchain game ID
-                  contract_game_id: listing.contract_game_id,
-                  creator: listing.creator,
-                  joiner: offer.offerer_address,
-                  nft_contract: listing.nft_contract,
-                  nft_token_id: listing.nft_token_id,
-                  nft_name: listing.nft_name,
-                  nft_image: listing.nft_image,
-                  price_usd: offer.offer_price,
-                  coin: coinData
-                }
 
-                // Notify creator
-                broadcastToUser(listing.creator, {
-                  ...modalData,
-                  role: 'creator',
-                  targetAddress: listing.creator
-                })
-
-                // Notify joiner (offer maker)
-                broadcastToUser(offer.offerer_address, {
-                  ...modalData,
-                  role: 'joiner',
-                  targetAddress: offer.offerer_address
-                })
-
-                console.log('🎮 Sent enter_lobby messages to both players for listing offer using existing blockchain game')
+                console.log('🎮 Sent timer start to Player 1 and redirect to Player 2')
               }
             )
           })

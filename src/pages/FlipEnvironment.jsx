@@ -634,6 +634,7 @@ const FlipEnvironment = () => {
   const [gameReadyToStart, setGameReadyToStart] = useState(false)
   const [offerTimer, setOfferTimer] = useState(null)
   const [timerSeconds, setTimerSeconds] = useState(0)
+  const [activeOfferId, setActiveOfferId] = useState(null)
   
   const messagesEndRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
@@ -970,55 +971,10 @@ const FlipEnvironment = () => {
           setActiveViewers(data.viewers || [])
           setViewerCount(data.viewerCount || 0)
         }
-        // Handle enter_lobby message (new flow)
-        if (data.type === 'enter_lobby') {
-          console.log('🎮 Enter lobby message received:', data)
-          console.log('👤 Current user address:', address)
-          console.log('📋 Current listing:', listing)
-          
-          // Check if this message is for the current user
-          const isForCurrentUser = data.targetAddress === address || 
-                                  data.role === 'creator' && address === listing?.creator ||
-                                  data.role === 'joiner' && address === data.joiner
-          
-          if (!isForCurrentUser) {
-            console.log('⚠️ Enter lobby message not for current user, ignoring')
-            return
-          }
-          
-          showSuccess(`Game created! Entering Game Lobby...`)
-          
-          const modalData = {
-            gameId: data.contract_game_id || data.gameId, // Use contract_game_id if available
-            contract_game_id: data.contract_game_id, // Ensure this is passed
-            creator: data.creator,
-            joiner: data.joiner,
-            nftContract: data.nft_contract,
-            tokenId: data.nft_token_id,
-            nftName: data.nft_name,
-            nftImage: data.nft_image,
-            priceUSD: data.price_usd,
-            coin: data.coin
-          }
-          
-          console.log('🎯 Setting asset modal data:', modalData)
-          setAssetModalData(modalData)
-          setShowAssetModal(true)
-          console.log('✅ Asset modal should now be visible')
-          
-          // Join the game room for the new game
-          if (socket && socket.readyState === WebSocket.OPEN) {
-            console.log('🎮 Joining game room for new game:', data.contract_game_id || data.gameId)
-            socket.send(JSON.stringify({
-              type: 'join_game',
-              gameId: data.contract_game_id || data.gameId,
-              address: address || 'anonymous'
-            }))
-          }
-        }
+        // REMOVE or comment out the enter_lobby handler - Player 1 doesn't need it
 
-        // Handle redirect for Player 2
-        if (data.type === 'redirect_to_asset_loading') {
+        // Handle redirect for Player 2 ONLY
+        if (data.type === 'redirect_to_asset_loading' && address === data.joiner) {
           console.log('🚀 Player 2: Redirecting to asset loading')
           showSuccess(data.message)
           
@@ -1041,13 +997,29 @@ const FlipEnvironment = () => {
         }
 
         // Handle timer start for Player 1
-        if (data.type === 'offer_accepted_timer_started') {
+        if (data.type === 'offer_accepted_timer_started' && address === data.creator) {
           console.log('⏰ Timer started for Player 1')
           setOfferTimer({
             startTime: Date.now(),
             duration: data.duration
           })
+          setActiveOfferId(data.acceptedOfferId)
           showSuccess(data.message)
+          // DO NOT open asset modal for Player 1!
+        }
+
+        // Handle transport to game
+        if (data.type === 'transport_to_game') {
+          console.log('🎮 Transporting to game:', data.gameId)
+          showSuccess(data.message)
+          
+          // Close any open modals first
+          setShowAssetModal(false)
+          
+          // Navigate to game
+          setTimeout(() => {
+            navigate(`/flip/${data.gameId}`)
+          }, 1000)
         }
 
         // Handle timer updates
@@ -1060,11 +1032,12 @@ const FlipEnvironment = () => {
 
         if (data.type === 'timer_cancelled') {
           setOfferTimer(null)
-          showSuccess('Player 2 has loaded crypto!')
+          setActiveOfferId(null)
         }
 
         if (data.type === 'timer_expired') {
           setOfferTimer(null)
+          setActiveOfferId(null)
           showError(data.message)
           // Refresh listing data to show cancelled status
           fetchListingData()
@@ -1110,6 +1083,7 @@ const FlipEnvironment = () => {
         
         if (remaining === 0) {
           setOfferTimer(null)
+          setActiveOfferId(null)
           showError('Timer expired - Player 2 did not load crypto in time')
         }
       }, 1000)
@@ -1284,49 +1258,11 @@ const FlipEnvironment = () => {
       
       const result = await response.json()
       console.log('✅ Offer acceptance API response:', result)
-      showSuccess('Offer accepted! Preparing game...')
+      showSuccess('Offer accepted! Waiting for Player 2 to load crypto...')
 
-      // Parse coin data if it's a string
-      let coinData = listing?.coin
-      if (coinData && typeof coinData === 'string') {
-        try {
-          coinData = JSON.parse(coinData)
-        } catch (e) {
-          console.warn('Could not parse coin data:', e)
-        }
-      }
-
-      console.log('🎯 Setting asset modal data immediately after API response')
-      // Immediately open the asset loading modal for Player 1 (acceptor)
-      // Use the existing blockchain game ID from the API response
-      const modalData = {
-        gameId: result.contract_game_id || result.gameId, // Use the blockchain game ID from API
-        contract_game_id: result.contract_game_id || result.gameId, // Ensure this is passed
-        creator: address,
-        joiner: offer.offerer_address,
-        nftContract: listing?.nft_contract,
-        tokenId: listing?.nft_token_id,
-        nftName: listing?.nft_name,
-        nftImage: listing?.nft_image,
-        priceUSD: offer.offer_price,
-        coin: coinData // Pass parsed coin data
-      }
-      
-      console.log('📦 Modal data:', modalData)
-      console.log('🎯 Setting showAssetModal to true')
-      setAssetModalData(modalData)
-      setShowAssetModal(true)
-      console.log('✅ Asset modal should now be visible')
-      
-      // Also dispatch a custom event to ensure the modal opens
-      window.dispatchEvent(new CustomEvent('openAssetModal', {
-        detail: modalData
-      }))
-
-      // Refresh data to update offer status
+      // DO NOT set asset modal data or open it for Player 1
+      // Just refresh the listing data
       await fetchListingData()
-
-      // The modal will also be shown via WebSocket broadcast to both players
       
     } catch (error) {
       console.error('Error accepting offer:', error)
@@ -2081,7 +2017,7 @@ const FlipEnvironment = () => {
                               offerStatus: offer.status,
                               shouldShowButtons: isOwner && offer.status === 'pending'
                             })}
-                            {isOwner && offer.status === 'pending' && (
+                            {address === listing?.creator && offer.status === 'pending' && !offerTimer && (
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <ActionButton 
                                   className="accept"
@@ -2089,10 +2025,10 @@ const FlipEnvironment = () => {
                                     console.log('🎯 Accept button clicked for offer:', offer.id)
                                     handleAcceptOffer(offer)
                                   }}
-                                  disabled={acceptingOfferId === offer.id}
+                                  disabled={acceptingOfferId === offer.id || offerTimer !== null}
                                   style={{
-                                    opacity: acceptingOfferId === offer.id ? 0.5 : 1,
-                                    cursor: acceptingOfferId === offer.id ? 'not-allowed' : 'pointer'
+                                    opacity: (acceptingOfferId === offer.id || offerTimer) ? 0.5 : 1,
+                                    cursor: (acceptingOfferId === offer.id || offerTimer) ? 'not-allowed' : 'pointer'
                                   }}
                                 >
                                   {acceptingOfferId === offer.id ? 'Accepting...' : 'Accept'}
@@ -2108,6 +2044,18 @@ const FlipEnvironment = () => {
                                 >
                                   {rejectingOfferId === offer.id ? 'Rejecting...' : 'Reject'}
                                 </ActionButton>
+                              </div>
+                            )}
+
+                            {/* Show timer message for the accepted offer */}
+                            {activeOfferId === offer.id && offerTimer && (
+                              <div style={{
+                                color: '#00FF41',
+                                fontSize: '0.9rem',
+                                marginTop: '0.5rem',
+                                animation: 'pulse 2s infinite'
+                              }}>
+                                ⏳ Waiting for crypto deposit...
                               </div>
                             )}
                           </PublicOfferHeader>

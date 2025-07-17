@@ -479,6 +479,30 @@ const GameLobby = ({
     }
   }, [isOpen, isCreator, cryptoLoaded, player2HasPaid, showError, onGameReady])
 
+  // Handle transport message
+  useEffect(() => {
+    if (!socket) return
+    
+    const handleMessage = (event) => {
+      const data = JSON.parse(event.data)
+      
+      if (data.type === 'transport_to_game' && data.gameId === normalizedData.id) {
+        console.log('🎮 AssetLoadingModal: Received transport message')
+        showSuccess('Entering game...')
+        
+        // Close modal and navigate
+        setTimeout(() => {
+          if (onGameReady) {
+            onGameReady(data.gameId)
+          }
+        }, 1000)
+      }
+    }
+    
+    socket.addEventListener('message', handleMessage)
+    return () => socket.removeEventListener('message', handleMessage)
+  }, [socket, normalizedData.id, onGameReady, showSuccess])
+
   // 2. Update checkGameState to handle game offers (around line 340)
   const checkGameState = async () => {
     const gameId = normalizedData.contract_game_id || normalizedData.id
@@ -698,60 +722,7 @@ const GameLobby = ({
               </div>
             )}
             
-            {/* Join Game Button for Player 1 */}
-            {isCreator && player2HasPaid && (
-              <div style={{ 
-                marginTop: '1rem', 
-                padding: '1rem', 
-                background: 'rgba(0, 255, 65, 0.1)',
-                border: '2px solid rgba(0, 255, 65, 0.5)',
-                borderRadius: '0.5rem',
-                textAlign: 'center',
-                animation: 'glow 2s ease-in-out infinite'
-              }}>
-                <p style={{ 
-                  color: '#00FF41', 
-                  marginBottom: '1rem', 
-                  fontWeight: 'bold',
-                  fontSize: '1.1rem'
-                }}>
-                  🎉 Player 2 has deposited crypto!
-                </p>
-                <button
-                  onClick={() => {
-                    console.log('🎮 Player 1 clicking Enter Game')
-                    if (onGameReady) {
-                      onGameReady(normalizedData.id)
-                    }
-                  }}
-                  style={{
-                    background: 'linear-gradient(45deg, #00FF41, #39FF14)',
-                    color: '#000',
-                    border: 'none',
-                    padding: '1rem 3rem',
-                    borderRadius: '0.5rem',
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 20px rgba(0, 255, 65, 0.5)',
-                    transition: 'all 0.2s ease',
-                    animation: 'pulse 2s infinite',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.05)'
-                    e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 65, 0.7)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)'
-                    e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 65, 0.5)'
-                  }}
-                >
-                  🚀 ENTER GAME NOW
-                </button>
-              </div>
-            )}
+            {/* Player 1 should NOT see an enter game button - they wait on the environment page */}
           </AssetSection>
 
           <Divider />
@@ -806,8 +777,7 @@ const GameLobby = ({
             </CryptoContainer>
             
             <StatusText isLoaded={cryptoLoaded || player2HasPaid}>
-              {cryptoLoaded || player2HasPaid ? '✅ Crypto Loaded' : 
-               isCreator ? '⏳ Waiting for joiner to deposit crypto...' :
+              {cryptoLoaded || player2HasPaid ? '✅ Crypto Loaded - Entering game...' : 
                '⚡ Load crypto now to join the game!'}
             </StatusText>
             
