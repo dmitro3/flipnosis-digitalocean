@@ -995,14 +995,21 @@ const FlipEnvironment = () => {
         if (data.type === 'offer_accepted_with_timer') {
           console.log('⏰ Offer accepted with timer:', data)
           
-          // Store both IDs
+          // Only process if this is for the current listing
+          if (data.listingId !== currentId && data.listingId !== listingId) {
+            console.log('⚠️ Offer accepted message not for current listing, ignoring')
+            return
+          }
+          
+          // Set the active offer with BOTH IDs
           setActiveOffer({
             offerId: data.offerId,
-            listingId: data.listingId, // Keep listing ID
-            gameId: data.gameId, // Game ID for contract
+            listingId: data.listingId || currentId, // Always keep listing ID
+            gameId: data.gameId, // Contract game ID for blockchain
+            contract_game_id: data.gameId, // Explicit contract game ID
             offererAddress: data.offererAddress,
             offerPrice: data.offerPrice,
-            originalPrice: data.originalPrice,
+            originalPrice: data.originalPrice || data.asking_price,
             nftContract: data.nftContract,
             nftTokenId: data.nftTokenId,
             nftName: data.nftName,
@@ -1044,7 +1051,7 @@ const FlipEnvironment = () => {
           // Auto-navigate to game after a short delay
           setTimeout(() => {
             console.log('🎮 Auto-navigating to game after crypto loaded:', data.gameId)
-            navigate(`/flip/${data.gameId}`)
+            navigate(`/game/${data.gameId}`)
           }, 2000) // 2 second delay to show the success message
         }
 
@@ -1052,7 +1059,7 @@ const FlipEnvironment = () => {
         if (data.type === 'game_ready' && activeOffer?.gameId === data.gameId) {
           console.log('🎮 Game ready, navigating...')
           setTimeout(() => {
-            navigate(`/flip/${data.gameId}`)
+            navigate(`/game/${data.gameId}`)
           }, 500)
         }
 
@@ -1060,7 +1067,7 @@ const FlipEnvironment = () => {
         if (data.type === 'TRANSPORT_TO_GAME') {
           console.log('🚀 Transport to game message received:', data)
           setTimeout(() => {
-            navigate(`/flip/${data.gameId}`)
+            navigate(`/game/${data.gameId}`)
           }, 500)
         }
 
@@ -1137,15 +1144,31 @@ const FlipEnvironment = () => {
 
   // Auto-navigate effect when crypto is loaded
   useEffect(() => {
-    if (cryptoLoaded && activeOffer?.gameId) {
-      console.log('🎮 Crypto loaded, auto-navigating to game:', activeOffer.gameId)
-      const timer = setTimeout(() => {
-        navigate(`/flip/${activeOffer.gameId}`)
-      }, 3000) // 3 second delay to ensure all messages are processed
+    if (cryptoLoaded && activeOffer) {
+      console.log('🎮 Crypto loaded, preparing to navigate...')
       
-      return () => clearTimeout(timer)
+      // Use listing ID for current environment, game ID for navigation
+      const gameIdToNavigate = activeOffer.contract_game_id || activeOffer.gameId
+      const listingId = activeOffer.listingId || currentId
+      
+      console.log('🔍 Navigation details:', {
+        currentId,
+        listingId,
+        gameIdToNavigate,
+        isCurrentlyGame: isGame
+      })
+      
+      // Only navigate if we have a valid game ID and we're currently on a listing
+      if (gameIdToNavigate && !isGame) {
+        const timer = setTimeout(() => {
+          console.log('🚀 Navigating to game:', gameIdToNavigate)
+          navigate(`/game/${gameIdToNavigate}`)
+        }, 3000)
+        
+        return () => clearTimeout(timer)
+      }
     }
-  }, [cryptoLoaded, activeOffer?.gameId, navigate])
+  }, [cryptoLoaded, activeOffer, navigate, currentId, isGame])
 
   // Update sendMessage to use listing_chat or game_chat
   const sendMessage = () => {

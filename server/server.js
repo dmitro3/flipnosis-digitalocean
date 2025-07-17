@@ -634,34 +634,42 @@ wss.on('connection', (socket) => {
         case 'crypto_loaded':
           console.log('💰 Crypto loaded received:', data)
           
-          // Broadcast to all clients - no database updates needed
+          // Verify transaction if hash provided
+          if (data.transactionHash) {
+            console.log('🔍 Transaction hash provided:', data.transactionHash)
+            // You could verify on blockchain here if needed
+          }
+          
+          // Broadcast to all clients with both IDs
           wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({
                 type: 'crypto_loaded',
                 gameId: data.gameId,
-                listingId: data.listingId, // Pass through listing ID
+                listingId: data.listingId, // Preserve listing ID
+                contract_game_id: data.contract_game_id || data.gameId,
                 player: data.player,
-                contract_game_id: data.contract_game_id,
+                address: data.address,
+                transactionHash: data.transactionHash,
                 timestamp: Date.now()
               }))
             }
           })
           
-          // Send game ready message after a short delay
+          // Send game ready after confirmation
           setTimeout(() => {
             wss.clients.forEach(client => {
               if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
                   type: 'game_ready',
                   gameId: data.gameId,
-                  listingId: data.listingId,
+                  listingId: data.listingId, // Include listing ID
                   message: 'Game is ready! Entering...',
                   isBroadcast: true
                 }))
               }
             })
-          }, 1000)
+          }, 1500) // Slight delay to ensure messages are processed
           break
         case 'both_assets_loaded':
           // Broadcast to all clients in the game

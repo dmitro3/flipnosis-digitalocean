@@ -557,60 +557,69 @@ const GameLobby = ({
 
     setLoading(true)
     try {
-      // Get the correct IDs
       const gameId = normalizedData.contract_game_id || normalizedData.id
       const listingId = normalizedData.listingId || normalizedData.id
       
-      // Get the offer price that was accepted
-      const offerPriceUSD = normalizedData.price_usd || normalizedData.priceUSD
-      console.log('🎮 AssetLoadingModal: handleLoadCrypto called for game:', gameId, 'with offer price:', offerPriceUSD)
+      console.log('💰 Loading crypto for game:', { gameId, listingId })
       
-      console.log('🎮 AssetLoadingModal: handleLoadCrypto called with data:', {
-        gameId,
-        hasNFTLoaded,
-        normalizedData: {
-          id: normalizedData.id,
-          contract_game_id: normalizedData.contract_game_id,
-          creator: normalizedData.creator,
-          joiner: normalizedData.joiner
-        }
-      })
-      
-      if (!gameId) {
-        console.error('❌ AssetLoadingModal: Missing contract_game_id for game:', normalizedData.id)
-        showError('Invalid game configuration. Please refresh and try again.')
-        return
+      // Initialize contract service if needed
+      if (!contractService.isInitialized()) {
+        await contractService.initializeClients(8453, walletClient) // Base chain ID
       }
+
+      // Join the game with the offer price
+      const priceInUSD = normalizedData.offerPrice || normalizedData.price_usd || normalizedData.priceUSD
       
-      console.log('✅ AssetLoadingModal: Joining existing blockchain game with custom price:', gameId)
+      showInfo('Please confirm the transaction in your wallet...')
       
-      // Join the existing blockchain game with the accepted offer price
-      const result = await contractService.joinExistingGameWithPrice(gameId, offerPriceUSD)
-      
-      console.log('🎮 AssetLoadingModal: joinGame result:', result)
+      const result = await contractService.joinExistingGameWithPrice(gameId, priceInUSD)
       
       if (!result.success) {
-        throw new Error(result.error || 'Failed to join game')
+        throw new Error(result.error || 'Transaction failed')
       }
       
-      // After successful crypto load, emit with both IDs
+      // Wait for transaction confirmation
+      showInfo('Waiting for blockchain confirmation...')
+      
+      if (result.transactionHash && publicClient) {
+        try {
+          const receipt = await publicClient.waitForTransactionReceipt({
+            hash: result.transactionHash,
+            confirmations: 1
+          })
+          
+          if (receipt.status !== 'success') {
+            throw new Error('Transaction failed on blockchain')
+          }
+          
+          console.log('✅ Transaction confirmed:', receipt)
+        } catch (waitError) {
+          console.error('Error waiting for confirmation:', waitError)
+          throw new Error('Transaction confirmation failed')
+        }
+      }
+      
+      // Now we know the payment succeeded
+      setCryptoLoaded(true)
+      showSuccess('Crypto loaded successfully!')
+      
+      // Emit the crypto loaded event with both IDs
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({
           type: 'crypto_loaded',
           gameId: gameId,
-          listingId: listingId, // Include listing ID
+          listingId: listingId,
           contract_game_id: gameId,
           player: 'player2',
-          address: address
+          address: address,
+          transactionHash: result.transactionHash
         }))
       }
-      
-      setCryptoLoaded(true)
-      showSuccess('Crypto loaded successfully!')
       
     } catch (error) {
       console.error('Failed to load crypto:', error)
       showError(`Failed to load crypto: ${error.message}`)
+      setCryptoLoaded(false)
     } finally {
       setLoading(false)
     }
