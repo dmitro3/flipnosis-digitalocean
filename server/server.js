@@ -3130,181 +3130,129 @@ app.post('/api/listings/:listingId/update-contract-game', async (req, res) => {
 
 // Accept an offer
 app.post('/api/offers/:offerId/accept', async (req, res) => {
-  // CLAUDE OPUS PATCH: Accept endpoint now handles both games and listings
   try {
     const { offerId } = req.params
     const { acceptor_address } = req.body
-    
+
     // First get the offer
-    db.get('SELECT * FROM offers WHERE id = ? AND status = "pending"', [offerId], async (err, offer) => {
+    db.get('SELECT * FROM offers WHERE id = ? AND status = "pending"', [offerId], (err, offer) => {
       if (err || !offer) {
         return res.status(404).json({ error: 'Offer not found or not pending' })
       }
-      
-      // Check if it's a game or listing
-      db.get('SELECT * FROM games WHERE id = ?', [offer.listing_id], async (err, game) => {
-        if (game) {
-          // It's a game offer
-          if (game.creator !== acceptor_address) {
-            return res.status(403).json({ error: 'Only game creator can accept offers' })
-          }
-          // Update offer status
-          db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId], (err) => {
-            if (err) return res.status(500).json({ error: err.message })
-            // Update game with joiner
-            db.run(
-              'UPDATE games SET joiner = ?, price_usd = ?, status = "pending" WHERE id = ?',
-              [offer.offerer_address, offer.offer_price, game.id],
-              (err) => {
-                if (err) return res.status(500).json({ error: err.message })
-                res.json({ success: true, gameId: game.id })
-                // Send WebSocket message to BOTH players to open the lobby
-                const modalData = {
-                  type: 'enter_lobby',
-                  gameId: game.id,
-                  creator: game.creator,
-                  joiner: offer.offerer_address,
-                  nft_contract: game.nft_contract,
-                  nft_token_id: game.nft_token_id,
-                  nft_name: game.nft_name,
-                  nft_image: game.nft_image,
-                  price_usd: offer.offer_price, // Use the accepted offer price
-                  coin: game.coin,
-                  contract_game_id: game.contract_game_id,
-                  role: 'varies' // Will be set per user below
-                }
-                // Notify creator
-                broadcastToUser(game.creator, {
-                  ...modalData,
-                  role: 'creator',
-                  targetAddress: game.creator
-                })
-                // Notify joiner (offer maker)
-                broadcastToUser(offer.offerer_address, {
-                  ...modalData,
-                  role: 'joiner',
-                  targetAddress: offer.offerer_address
-                })
-                console.log('🎮 Sent enter_lobby messages to both players')
-              }
-            )
-          })
-        } else {
-          // Check if it's a listing (existing logic)
-          db.get('SELECT * FROM game_listings WHERE id = ?', [offer.listing_id], (err, listing) => {
-            if (err) {
-              console.error('❌ Database error:', err)
-              return res.status(500).json({ error: 'Database error' })
-            }
-            
-            if (!listing) {
-              return res.status(404).json({ error: 'Listing not found' })
-            }
-            
-            // Verify the acceptor is the listing creator
-            if (listing.creator !== acceptor_address) {
-              return res.status(403).json({ error: 'Only listing creator can accept offers' })
-            }
-            
-            // Update offer status
-            db.run(
-              'UPDATE offers SET status = "accepted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-              [offerId],
-              async (err) => {
-                if (err) {
-                  return res.status(500).json({ error: err.message })
-                }
-                
-                // SIMPLIFIED: Just update listing status to "in_progress" - no new games, no price updates
-                console.log('✅ Offer accepted, updating listing status to in_progress')
-                
-                // Update listing status to in_progress (no price change, no new game)
-                db.run(
-                  'UPDATE game_listings SET status = "in_progress" WHERE id = ?',
-                  [listing.id]
-                )
-                
-                // Reject all other pending offers
-                db.run(
-                  'UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"',
-                  [listing.id, offerId]
-                )
-                
-                // Create notification for offerer
-                createNotification(
-                  offer.offerer_address,
-                  'offer_accepted',
-                  'Offer Accepted!',
-                  `Your offer for ${listing.nft_name} has been accepted!`,
-                  JSON.stringify({ offerId, listingId: listing.id })
-                )
-                
-                // Parse the coin data if it's a string
-                let coinData = listing.coin
-                if (typeof coinData === 'string') {
-                  try {
-                    coinData = JSON.parse(coinData)
-                  } catch (e) {
-                    console.warn('Could not parse coin data')
-                  }
-                }
-                
-                // SECURITY CHECK: Verify listing has a valid contract_game_id
-                if (!listing.contract_game_id) {
-                  console.error('❌ SECURITY: Listing missing contract_game_id:', listing.id)
-                  return res.status(400).json({ 
-                    error: 'GAME_CREATION_FAILED',
-                    message: 'This game was not properly created on the blockchain. Please contact support.',
-                    details: 'Missing blockchain game ID'
-                  })
-                }
-                
-                console.log('✅ SECURITY: Listing has valid contract_game_id:', listing.contract_game_id)
-                
-                console.log('✅ Server: Using existing blockchain game for offer acceptance:', {
-                  listingId: listing.id,
-                  contract_game_id: listing.contract_game_id,
-                  offer_price: offer.offer_price
-                })
-                
-                // Start the 2-minute timer
-                startOfferTimer(listing.contract_game_id, offerId, 120000)
 
-                // Broadcast offer acceptance with timer to ALL connected clients
-                // Frontend will filter based on user address and listing ID
-                wss.clients.forEach(client => {
-                  if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({
-                      type: 'offer_accepted_with_timer',
-                      gameId: listing.contract_game_id,
-                      listingId: listing.id,
-                      offerId: offerId,
-                      acceptedBy: listing.creator,
-                      offererAddress: offer.offerer_address,
-                      offerPrice: offer.offer_price,
-                      duration: 120000,
-                      startTime: Date.now(),
-                      nftContract: listing.nft_contract,
-                      nftTokenId: listing.nft_token_id,
-                      nftName: listing.nft_name,
-                      nftImage: listing.nft_image,
-                      coin: coinData
-                    }))
-                  }
-                })
-                
-                console.log('📡 Broadcasted offer_accepted_with_timer to all connected clients')
-
-                // Send response to client with the existing blockchain game ID
-                res.json({ 
-                  success: true, 
-                  gameId: listing.contract_game_id, // Use the existing blockchain game ID
-                  contract_game_id: listing.contract_game_id
-                })
-              }
-            )
-          })
+      // Only handle listing offers
+      db.get('SELECT * FROM game_listings WHERE id = ?', [offer.listing_id], (err, listing) => {
+        if (err) {
+          console.error('❌ Database error:', err)
+          return res.status(500).json({ error: 'Database error' })
         }
+
+        if (!listing) {
+          return res.status(404).json({ error: 'Listing not found' })
+        }
+
+        // Verify the acceptor is the listing creator
+        if (listing.creator !== acceptor_address) {
+          return res.status(403).json({ error: 'Only listing creator can accept offers' })
+        }
+
+        // Update offer status
+        db.run(
+          'UPDATE offers SET status = "accepted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [offerId],
+          (err) => {
+            if (err) {
+              return res.status(500).json({ error: err.message })
+            }
+
+            // SIMPLIFIED: Just update listing status to "in_progress" - no new games, no price updates
+            console.log('✅ Offer accepted, updating listing status to in_progress')
+
+            // Update listing status to in_progress (no price change, no new game)
+            db.run(
+              'UPDATE game_listings SET status = "in_progress" WHERE id = ?',
+              [listing.id]
+            )
+
+            // Reject all other pending offers
+            db.run(
+              'UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"',
+              [listing.id, offerId]
+            )
+
+            // Create notification for offerer
+            createNotification(
+              offer.offerer_address,
+              'offer_accepted',
+              'Offer Accepted!',
+              `Your offer for ${listing.nft_name} has been accepted!`,
+              JSON.stringify({ offerId, listingId: listing.id })
+            )
+
+            // Parse the coin data if it's a string
+            let coinData = listing.coin
+            if (typeof coinData === 'string') {
+              try {
+                coinData = JSON.parse(coinData)
+              } catch (e) {
+                console.warn('Could not parse coin data')
+              }
+            }
+
+            // SECURITY CHECK: Verify listing has a valid contract_game_id
+            if (!listing.contract_game_id) {
+              console.error('❌ SECURITY: Listing missing contract_game_id:', listing.id)
+              return res.status(400).json({ 
+                error: 'GAME_CREATION_FAILED',
+                message: 'This game was not properly created on the blockchain. Please contact support.',
+                details: 'Missing blockchain game ID'
+              })
+            }
+
+            console.log('✅ SECURITY: Listing has valid contract_game_id:', listing.contract_game_id)
+
+            console.log('✅ Server: Using existing blockchain game for offer acceptance:', {
+              listingId: listing.id,
+              contract_game_id: listing.contract_game_id,
+              offer_price: offer.offer_price
+            })
+
+            // Start the 2-minute timer
+            startOfferTimer(listing.contract_game_id, offerId, 120000)
+
+            // Broadcast offer acceptance with timer to ALL connected clients
+            // Frontend will filter based on user address and listing ID
+            wss.clients.forEach(client => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                  type: 'offer_accepted_with_timer',
+                  gameId: listing.contract_game_id,
+                  listingId: listing.id,
+                  offerId: offerId,
+                  acceptedBy: listing.creator,
+                  offererAddress: offer.offerer_address,
+                  offerPrice: offer.offer_price,
+                  duration: 120000,
+                  startTime: Date.now(),
+                  nftContract: listing.nft_contract,
+                  nftTokenId: listing.nft_token_id,
+                  nftName: listing.nft_name,
+                  nftImage: listing.nft_image,
+                  coin: coinData
+                }))
+              }
+            })
+
+            console.log('📡 Broadcasted offer_accepted_with_timer to all connected clients')
+
+            // Send response to client with the existing blockchain game ID
+            res.json({ 
+              success: true, 
+              gameId: listing.contract_game_id, // Use the existing blockchain game ID
+              contract_game_id: listing.contract_game_id
+            })
+          }
+        )
       })
     })
   } catch (error) {
