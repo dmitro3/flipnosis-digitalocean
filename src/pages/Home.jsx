@@ -350,7 +350,7 @@ const Home = () => {
         creator: listing.creator,
         joiner: null,
         rounds: null,
-        status: 'waiting', // Listings are always waiting for offers
+        status: listing.status, // Use the actual backend status
         createdAt: listing.created_at,
         winner: null,
         description: `${listing.nft_name} - Available for offers`,
@@ -468,6 +468,7 @@ const Home = () => {
       case 'active': return 'LIVE'
       case 'in_progress': return 'IN PROGRESS'
       case 'completed': return 'COMPLETE'
+      case 'cancelled': return 'CANCELLED'
       default: return 'UNKNOWN'
     }
   }
@@ -477,6 +478,7 @@ const Home = () => {
       case 'active': return '#00FF41' // Green
       case 'in_progress': return '#FFA500' // Orange
       case 'completed': return '#FF4444' // Red
+      case 'cancelled': return '#808080' // Gray
       default: return '#808080' // Gray
     }
   }
