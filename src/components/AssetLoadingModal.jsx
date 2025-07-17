@@ -246,7 +246,8 @@ const GameLobby = ({
     nft_name: gameData?.nft_name || gameData?.nftName,
     nft_image: gameData?.nft_image || gameData?.nftImage,
     price_usd: gameData?.price_usd || gameData?.priceUSD || gameData?.amount,
-    coin: gameData?.coin
+    coin: gameData?.coin,
+    listingId: gameData?.listingId // Added for handleLoadCrypto
   }
   
   // 1. At the top, determine if this is a game with NFT already loaded (game offer OR listing offer)
@@ -549,23 +550,16 @@ const GameLobby = ({
 
   // 3. Update handleLoadCrypto to handle game offers (around line 460)
   const handleLoadCrypto = async () => {
-    if (!isFullyConnected || !walletClient) {
-      showError('Please connect your wallet')
+    if (!walletClient || !publicClient || !address) {
+      showError('Please connect wallet first')
       return
     }
-    
-    if (!contractService.isInitialized()) {
-      showError('Smart contract not connected. Please refresh and try again.')
-      return
-    }
-    
+
     setLoading(true)
-    
     try {
-      showInfo('Loading crypto into game...')
-      
-      // Use the existing contract game ID
-      const gameId = normalizedData.contract_game_id
+      // Get the correct IDs
+      const gameId = normalizedData.contract_game_id || normalizedData.id
+      const listingId = normalizedData.listingId || normalizedData.id
       
       // Get the offer price that was accepted
       const offerPriceUSD = normalizedData.price_usd || normalizedData.priceUSD
@@ -599,45 +593,24 @@ const GameLobby = ({
         throw new Error(result.error || 'Failed to join game')
       }
       
-      setCryptoLoaded(true)
-      showSuccess('Crypto loaded successfully! Game starting...')
-      setGameReady(true)
-      
-      // After successful crypto deposit, send WebSocket message
-      console.log('💰 Sending crypto_loaded message via WebSocket')
-      
+      // After successful crypto load, emit with both IDs
       if (socket && socket.readyState === WebSocket.OPEN) {
-        const message = {
+        socket.send(JSON.stringify({
           type: 'crypto_loaded',
-          gameId: normalizedData.id,
-          contract_game_id: normalizedData.contract_game_id,
-          joiner: address,
-          message: 'Crypto loaded successfully!'
-        }
-        console.log('📡 Sending WebSocket message:', message)
-        socket.send(JSON.stringify(message))
-        
-        // Also set local state
-        setCryptoLoaded(true)
-        showSuccess('Crypto deposited successfully!')
-      } else {
-        console.error('⚠️ WebSocket not available for crypto_loaded message')
-        showError('Connection issue - please refresh and try again')
+          gameId: gameId,
+          listingId: listingId, // Include listing ID
+          contract_game_id: gameId,
+          player: 'player2',
+          address: address
+        }))
       }
       
-      // Navigate to game
-      setTimeout(() => {
-        if (onGameReady) {
-          console.log('🎮 Calling onGameReady to navigate to game')
-          onGameReady(normalizedData.id || normalizedData.contract_game_id)
-        } else {
-          console.error('⚠️ onGameReady callback not provided!')
-        }
-      }, 1000)
+      setCryptoLoaded(true)
+      showSuccess('Crypto loaded successfully!')
       
     } catch (error) {
-      console.error('❌ AssetLoadingModal: Error loading crypto:', error)
-      showError(error.message || 'Failed to load crypto')
+      console.error('Failed to load crypto:', error)
+      showError(`Failed to load crypto: ${error.message}`)
     } finally {
       setLoading(false)
     }

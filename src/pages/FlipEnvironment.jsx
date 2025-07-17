@@ -786,9 +786,10 @@ const FlipEnvironment = () => {
           setOffers([]) // Games that are not waiting don't have offers
         }
       } else {
-        // Fetch listing details
-        console.log('🔍 Fetching listing with ID:', currentId)
-        const listingResponse = await fetch(`${baseUrl}/api/listings/${currentId}`)
+        // Fetch listing details - ONLY use listingId, never gameId
+        const actualListingId = listingId || currentId
+        console.log('🔍 Fetching listing with ID:', actualListingId)
+        const listingResponse = await fetch(`${baseUrl}/api/listings/${actualListingId}`)
         
         if (!listingResponse.ok) {
           if (listingResponse.status === 404) {
@@ -812,9 +813,9 @@ const FlipEnvironment = () => {
           setOffers(responseData.offers)
         } else {
           console.log('⚠️ No offers in response, trying separate fetch')
-          // Try to fetch offers separately
+          // Try to fetch offers separately - ONLY use listingId
           try {
-            const offersResponse = await fetch(`${baseUrl}/api/listings/${currentId}/offers`)
+            const offersResponse = await fetch(`${baseUrl}/api/listings/${actualListingId}/offers`)
             if (offersResponse.ok) {
               const offersData = await offersResponse.json()
               console.log('📦 Offers from separate fetch:', offersData)
@@ -994,18 +995,14 @@ const FlipEnvironment = () => {
         if (data.type === 'offer_accepted_with_timer') {
           console.log('⏰ Offer accepted with timer:', data)
           
-          // Only process if this is for the current listing
-          if (data.listingId !== currentId) {
-            console.log('⚠️ Offer accepted message not for current listing, ignoring')
-            return
-          }
-          
-          // Set the active offer and timer for everyone
+          // Store both IDs
           setActiveOffer({
             offerId: data.offerId,
+            listingId: data.listingId, // Keep listing ID
+            gameId: data.gameId, // Game ID for contract
             offererAddress: data.offererAddress,
             offerPrice: data.offerPrice,
-            gameId: data.gameId,
+            originalPrice: data.originalPrice,
             nftContract: data.nftContract,
             nftTokenId: data.nftTokenId,
             nftName: data.nftName,
@@ -1018,16 +1015,11 @@ const FlipEnvironment = () => {
             duration: data.duration
           })
           
-          // Show crypto loader ONLY for Player 2 (the offerer)
+          // Show crypto loader ONLY for Player 2
           if (address === data.offererAddress) {
             setShowCryptoLoader(true)
-            showSuccess('Your offer was accepted! Load crypto to join the game.')
-          } else if (address === data.acceptedBy) {
-            showSuccess('Offer accepted! Waiting for Player 2 to load crypto...')
+            showSuccess('Your offer was accepted! Load crypto to join.')
           }
-          
-          // Refresh offers to update UI
-          fetchListingData()
         }
 
         // Handle crypto loaded

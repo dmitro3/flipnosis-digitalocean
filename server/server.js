@@ -632,125 +632,37 @@ wss.on('connection', (socket) => {
           break
         }
         case 'crypto_loaded':
-          console.log('💰 Crypto loaded message received:', data)
-          console.log('📡 Broadcasting to all connected clients')
+          console.log('💰 Crypto loaded received:', data)
           
-          // IMPORTANT: DO NOT DELETE THE LISTING - Keep it for reference
-          console.log('🔒 SECURITY: Ensuring listing is not deleted during crypto loading')
-          
-          // Broadcast to ALL connected clients (no room logic)
+          // Broadcast to all clients - no database updates needed
           wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({
                 type: 'crypto_loaded',
                 gameId: data.gameId,
+                listingId: data.listingId, // Pass through listing ID
+                player: data.player,
                 contract_game_id: data.contract_game_id,
-                joiner: data.joiner,
-                message: 'Player 2 has deposited crypto!',
                 timestamp: Date.now()
               }))
             }
           })
           
-          console.log('✅ Crypto loaded message broadcast complete')
-          
-          // Cancel the timer
-          cancelOfferTimer(data.gameId)
-          
-          // Update offer status to completed (but keep listing active)
-          const offerId = activeGameOffers.get(data.gameId)
-          if (offerId) {
-            db.run(
-              'UPDATE offers SET status = "completed" WHERE id = ?',
-              [offerId]
-            )
-          }
-          
-          // Listing is already "in_progress" from offer acceptance, no need to update again
-          console.log('✅ Listing already in_progress from offer acceptance, proceeding to game')
-          
-          // Send game ready message to transport both players
+          // Send game ready message after a short delay
           setTimeout(() => {
             wss.clients.forEach(client => {
               if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
                   type: 'game_ready',
                   gameId: data.gameId,
-                  message: 'Game is ready! Entering...'
+                  listingId: data.listingId,
+                  message: 'Game is ready! Entering...',
+                  isBroadcast: true
                 }))
               }
             })
           }, 1000)
-          
-          // Get game details to find the creator
-          db.get('SELECT * FROM games WHERE id = ? OR contract_game_id = ?', 
-            [data.gameId, data.contract_game_id], 
-            (err, game) => {
-              if (err || !game) {
-                console.error('❌ Game not found for crypto_loaded')
-                return
-              }
-              
-              console.log('🎮 Game found:', {
-                id: game.id,
-                creator: game.creator,
-                joiner: game.joiner,
-                status: game.status
-              })
-              
-              // Update game status to active
-              db.run(
-                `UPDATE games SET status = 'active' WHERE id = ?`,
-                [game.id],
-                (updateErr) => {
-                  if (updateErr) {
-                    console.error('❌ Error updating game status:', updateErr)
-                    return
-                  }
-                  
-                  console.log('✅ Game status updated to active')
-                  
-                  // Send TRANSPORT_TO_GAME message to both players
-                  // This is a special message that will bypass any modal restrictions
-                  
-                  // Transport creator (Player 1)
-                  broadcastToUser(game.creator, {
-                    type: 'TRANSPORT_TO_GAME',
-                    gameId: game.id,
-                    contract_game_id: game.contract_game_id,
-                    message: 'Both players ready! Transporting to game...',
-                    forceTransport: true
-                  })
-                  
-                  // Transport joiner (Player 2)
-                  broadcastToUser(game.joiner, {
-                    type: 'TRANSPORT_TO_GAME',
-                    gameId: game.id,
-                    contract_game_id: game.contract_game_id,
-                    message: 'Both players ready! Transporting to game...',
-                    forceTransport: true
-                  })
-                  
-                  // Also broadcast game_started to initialize game state
-                  setTimeout(() => {
-                    wss.clients.forEach(client => {
-                      if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({
-                          type: 'game_started',
-                          gameId: game.id,
-                          timestamp: Date.now()
-                        }))
-                      }
-                    })
-                    
-                    initializeGameState(game.id)
-                  }, 500)
-                }
-              )
-            }
-          )
           break
-          
         case 'both_assets_loaded':
           // Broadcast to all clients in the game
           broadcastToGame(data.gameId, {
@@ -3134,16 +3046,15 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
     const { offerId } = req.params
     const { acceptor_address } = req.body
 
-    // First get the offer
+    // Get the offer
     db.get('SELECT * FROM offers WHERE id = ? AND status = "pending"', [offerId], (err, offer) => {
       if (err || !offer) {
         return res.status(404).json({ error: 'Offer not found or not pending' })
       }
 
-      // Only handle listing offers
+      // Get the listing
       db.get('SELECT * FROM game_listings WHERE id = ?', [offer.listing_id], (err, listing) => {
         if (err) {
-          console.error('❌ Database error:', err)
           return res.status(500).json({ error: 'Database error' })
         }
 
@@ -3156,7 +3067,15 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
           return res.status(403).json({ error: 'Only listing creator can accept offers' })
         }
 
-        // Update offer status
+        // Security check: offer must be within 20% of asking price
+        const minAcceptablePrice = listing.asking_price * 0.8
+        if (offer.offer_price < minAcceptablePrice) {
+          return res.status(400).json({ 
+            error: `Offer price must be at least 80% of asking price ($${minAcceptablePrice})` 
+          })
+        }
+
+        // Update offer status ONLY
         db.run(
           'UPDATE offers SET status = "accepted", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
           [offerId],
@@ -3165,98 +3084,42 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
               return res.status(500).json({ error: err.message })
             }
 
-            // SIMPLIFIED: Just update listing status to "in_progress" - no new games, no price updates
-            console.log('✅ Offer accepted, updating listing status to in_progress')
-
-            // Update listing status to in_progress (no price change, no new game)
-            db.run(
-              'UPDATE game_listings SET status = "in_progress" WHERE id = ?',
-              [listing.id]
-            )
-
-            // Reject all other pending offers
+            // DO NOT update listing status or price
+            // DO NOT create new games
+            // Just reject other offers
             db.run(
               'UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"',
               [listing.id, offerId]
             )
 
-            // Create notification for offerer
-            createNotification(
-              offer.offerer_address,
-              'offer_accepted',
-              'Offer Accepted!',
-              `Your offer for ${listing.nft_name} has been accepted!`,
-              JSON.stringify({ offerId, listingId: listing.id })
-            )
-
-            // Parse the coin data if it's a string
-            let coinData = listing.coin
-            if (typeof coinData === 'string') {
-              try {
-                coinData = JSON.parse(coinData)
-              } catch (e) {
-                console.warn('Could not parse coin data')
-              }
-            }
-
-            // SECURITY CHECK: Verify listing has a valid contract_game_id
-            if (!listing.contract_game_id) {
-              console.error('❌ SECURITY: Listing missing contract_game_id:', listing.id)
-              return res.status(400).json({ 
-                error: 'GAME_CREATION_FAILED',
-                message: 'This game was not properly created on the blockchain. Please contact support.',
-                details: 'Missing blockchain game ID'
-              })
-            }
-
-            console.log('✅ SECURITY: Listing has valid contract_game_id:', listing.contract_game_id)
-
-            console.log('✅ Server: Using existing blockchain game for offer acceptance:', {
-              listingId: listing.id,
-              contract_game_id: listing.contract_game_id,
-              offer_price: offer.offer_price
+            // Send WebSocket notification
+            broadcastToUser(offer.offerer_address, {
+              type: 'offer_accepted_with_timer',
+              offerId: offerId,
+              listingId: listing.id,  // Keep using listing ID
+              gameId: listing.contract_game_id || listing.id, // Use contract game ID if available
+              offererAddress: offer.offerer_address,
+              offerPrice: offer.offer_price,
+              originalPrice: listing.asking_price, // Keep original price
+              nftContract: listing.nft_contract,
+              nftTokenId: listing.nft_token_id,
+              nftName: listing.nft_name,
+              nftImage: listing.nft_image,
+              coin: listing.coin,
+              startTime: Date.now(),
+              duration: 120000 // 2 minute timer
             })
 
-            // Start the 2-minute timer
-            startOfferTimer(listing.contract_game_id, offerId, 120000)
-
-            // Broadcast offer acceptance with timer to ALL connected clients
-            // Frontend will filter based on user address and listing ID
-            wss.clients.forEach(client => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                  type: 'offer_accepted_with_timer',
-                  gameId: listing.contract_game_id,
-                  listingId: listing.id,
-                  offerId: offerId,
-                  acceptedBy: listing.creator,
-                  offererAddress: offer.offerer_address,
-                  offerPrice: offer.offer_price,
-                  duration: 120000,
-                  startTime: Date.now(),
-                  nftContract: listing.nft_contract,
-                  nftTokenId: listing.nft_token_id,
-                  nftName: listing.nft_name,
-                  nftImage: listing.nft_image,
-                  coin: coinData
-                }))
-              }
-            })
-
-            console.log('📡 Broadcasted offer_accepted_with_timer to all connected clients')
-
-            // Send response to client with the existing blockchain game ID
             res.json({ 
               success: true, 
-              gameId: listing.contract_game_id, // Use the existing blockchain game ID
-              contract_game_id: listing.contract_game_id
+              gameId: listing.contract_game_id || listing.id,
+              listingId: listing.id
             })
           }
         )
       })
     })
   } catch (error) {
-    console.error('❌ Error accepting offer:', error)
     res.status(500).json({ error: error.message })
   }
 })
