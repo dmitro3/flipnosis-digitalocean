@@ -16,7 +16,6 @@ import {
 } from '../styles/components'
 import { ethers } from 'ethers'
 import contractService from '../services/ContractService'
-import AssetLoadingModal from '../components/AssetLoadingModal'
 
 // Add pulse animation for reconnection indicator
 const pulseKeyframes = `
@@ -628,13 +627,13 @@ const FlipEnvironment = () => {
   const [wsConnected, setWsConnected] = useState(false)
   const [reconnectAttempts, setReconnectAttempts] = useState(0)
   const [maxReconnectAttempts] = useState(5)
-  const [showAssetModal, setShowAssetModal] = useState(false)
-  const [assetModalData, setAssetModalData] = useState(null)
-  const [player2HasPaid, setPlayer2HasPaid] = useState(false)
-  const [gameReadyToStart, setGameReadyToStart] = useState(false)
+  // AssetLoadingModal state removed for integrated solution
+  const [activeOffer, setActiveOffer] = useState(null)
   const [offerTimer, setOfferTimer] = useState(null)
   const [timerSeconds, setTimerSeconds] = useState(0)
-  const [activeOfferId, setActiveOfferId] = useState(null)
+  const [showCryptoLoader, setShowCryptoLoader] = useState(false)
+  const [cryptoLoading, setCryptoLoading] = useState(false)
+  const [cryptoLoaded, setCryptoLoaded] = useState(false)
   
   const messagesEndRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
@@ -691,13 +690,7 @@ const FlipEnvironment = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Reset player2HasPaid and gameReadyToStart when modal closes or game changes
-  useEffect(() => {
-    if (!showAssetModal) {
-      setPlayer2HasPaid(false)
-      setGameReadyToStart(false)
-    }
-  }, [showAssetModal])
+  // AssetLoadingModal useEffect removed for integrated solution
   
   const fetchListingData = async () => {
     try {
@@ -973,73 +966,62 @@ const FlipEnvironment = () => {
         }
         // REMOVE or comment out the enter_lobby handler - Player 1 doesn't need it
 
-        // Handle redirect for Player 2 ONLY
-        if (data.type === 'redirect_to_asset_loading' && address === data.joiner) {
-          console.log('🚀 Player 2: Redirecting to asset loading')
-          showSuccess(data.message)
+        // Handle offer acceptance with timer
+        if (data.type === 'offer_accepted_with_timer') {
+          console.log('⏰ Offer accepted with timer:', data)
           
-          // Set asset modal data and open it
-          const modalData = {
+          // Set the active offer and timer for everyone
+          setActiveOffer({
+            offerId: data.offerId,
+            offererAddress: data.offererAddress,
+            offerPrice: data.offerPrice,
             gameId: data.gameId,
-            contract_game_id: data.contract_game_id,
-            creator: data.creator,
-            joiner: data.joiner,
-            nftContract: data.nft_contract,
-            tokenId: data.nft_token_id,
-            nftName: data.nft_name,
-            nftImage: data.nft_image,
-            priceUSD: data.price_usd,
+            nftContract: data.nftContract,
+            nftTokenId: data.nftTokenId,
+            nftName: data.nftName,
+            nftImage: data.nftImage,
             coin: data.coin
-          }
-          
-          setAssetModalData(modalData)
-          setShowAssetModal(true)
-        }
-
-        // Handle timer start for Player 1
-        if (data.type === 'offer_accepted_timer_started' && address === data.creator) {
-          console.log('⏰ Timer started for Player 1')
-          setOfferTimer({
-            startTime: Date.now(),
-            duration: data.duration
           })
-          setActiveOfferId(data.acceptedOfferId)
-          showSuccess(data.message)
-          // DO NOT open asset modal for Player 1!
-        }
-
-        // Handle transport to game
-        if (data.type === 'transport_to_game') {
-          console.log('🎮 Transporting to game:', data.gameId)
-          showSuccess(data.message)
           
-          // Close any open modals first
-          setShowAssetModal(false)
-          
-          // Navigate to game
-          setTimeout(() => {
-            navigate(`/flip/${data.gameId}`)
-          }, 1000)
-        }
-
-        // Handle timer updates
-        if (data.type === 'timer_started') {
           setOfferTimer({
             startTime: data.startTime,
             duration: data.duration
           })
+          
+          // Show crypto loader ONLY for Player 2 (the offerer)
+          if (address === data.offererAddress) {
+            setShowCryptoLoader(true)
+            showSuccess('Your offer was accepted! Load crypto to join the game.')
+          } else if (address === data.acceptedBy) {
+            showSuccess('Offer accepted! Waiting for Player 2 to load crypto...')
+          }
+          
+          // Refresh offers to update UI
+          fetchListingData()
         }
 
-        if (data.type === 'timer_cancelled') {
+        // Handle crypto loaded
+        if (data.type === 'crypto_loaded') {
+          console.log('💰 Crypto loaded:', data)
+          setCryptoLoaded(true)
           setOfferTimer(null)
-          setActiveOfferId(null)
+          showSuccess('Crypto loaded! Preparing to enter game...')
         }
 
+        // Handle game ready - transport both players
+        if (data.type === 'game_ready' && activeOffer?.gameId === data.gameId) {
+          console.log('🎮 Game ready, navigating...')
+          setTimeout(() => {
+            navigate(`/flip/${data.gameId}`)
+          }, 500)
+        }
+
+        // Handle timer expiration
         if (data.type === 'timer_expired') {
           setOfferTimer(null)
-          setActiveOfferId(null)
+          setActiveOffer(null)
+          setShowCryptoLoader(false)
           showError(data.message)
-          // Refresh listing data to show cancelled status
           fetchListingData()
         }
       } catch (error) {
@@ -1083,7 +1065,8 @@ const FlipEnvironment = () => {
         
         if (remaining === 0) {
           setOfferTimer(null)
-          setActiveOfferId(null)
+          setActiveOffer(null)
+          setShowCryptoLoader(false)
           showError('Timer expired - Player 2 did not load crypto in time')
         }
       }, 1000)
@@ -1345,6 +1328,46 @@ const FlipEnvironment = () => {
       showError('Failed to deposit payment: ' + error.message)
     }
   }
+
+  // Add this function after handleAcceptOffer (around line 1600)
+  const handleLoadCrypto = async () => {
+    try {
+      setCryptoLoading(true)
+      console.log('💰 Loading crypto for game:', activeOffer.gameId)
+      
+      // Call your smart contract to deposit crypto
+      if (!contractService.isInitialized()) {
+        throw new Error('Game contract not initialized')
+      }
+      
+      const priceInWei = ethers.parseEther(activeOffer.offerPrice.toString())
+      
+      const result = await contractService.joinExistingGameWithPrice(activeOffer.gameId, activeOffer.offerPrice)
+      
+      if (result.success) {
+        showSuccess('Crypto deposited successfully!')
+        setCryptoLoaded(true)
+        
+        // Notify server that crypto is loaded
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'crypto_loaded',
+            gameId: activeOffer.gameId,
+            contract_game_id: activeOffer.gameId,
+            joiner: address,
+            transactionHash: result.transactionHash
+          }))
+        }
+      } else {
+        throw new Error(result.error || 'Failed to deposit crypto')
+      }
+    } catch (error) {
+      console.error('Error loading crypto:', error)
+      showError(error.message || 'Failed to load crypto')
+    } finally {
+      setCryptoLoading(false)
+    }
+  }
   
   if (loading) {
     return (
@@ -1399,12 +1422,148 @@ const FlipEnvironment = () => {
     navigate(`/game/${gameId}`)
   }
   
-  // Timer Display Component
-  const TimerDisplay = () => {
-    if (!offerTimer || timerSeconds === 0) return null
+  // Integrated Crypto Loader Component
+  const CryptoLoaderOverlay = () => {
+    if (!showCryptoLoader || !activeOffer) return null
     
     const minutes = Math.floor(timerSeconds / 60)
     const seconds = timerSeconds % 60
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.95)',
+        zIndex: 2000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backdropFilter: 'blur(10px)'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(10, 10, 10, 0.9))',
+          border: '2px solid #00FF41',
+          borderRadius: '20px',
+          padding: '40px',
+          maxWidth: '500px',
+          width: '90%',
+          boxShadow: '0 20px 60px rgba(0, 255, 65, 0.3)'
+        }}>
+          <h2 style={{
+            color: '#00FF41',
+            fontSize: '2rem',
+            marginBottom: '30px',
+            textAlign: 'center'
+          }}>
+            Load Crypto to Join Game
+          </h2>
+          
+          {/* Timer */}
+          <div style={{
+            background: timerSeconds < 30 ? 'rgba(255, 68, 68, 0.1)' : 'rgba(0, 255, 65, 0.1)',
+            border: `2px solid ${timerSeconds < 30 ? '#FF4444' : '#00FF41'}`,
+            borderRadius: '10px',
+            padding: '20px',
+            marginBottom: '30px',
+            textAlign: 'center'
+          }}>
+            <div style={{ 
+              fontSize: '2.5rem', 
+              fontWeight: 'bold',
+              color: timerSeconds < 30 ? '#FF4444' : '#00FF41',
+              fontFamily: 'monospace'
+            }}>
+              {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </div>
+            <div style={{ 
+              color: 'rgba(255, 255, 255, 0.7)', 
+              fontSize: '1rem',
+              marginTop: '10px'
+            }}>
+              Time remaining to load crypto
+            </div>
+          </div>
+          
+          {/* NFT Info */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '20px',
+            marginBottom: '30px',
+            padding: '20px',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '10px'
+          }}>
+            <img 
+              src={activeOffer.nftImage || '/placeholder-nft.svg'}
+              alt={activeOffer.nftName}
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '10px',
+                objectFit: 'cover'
+              }}
+            />
+            <div>
+              <div style={{ color: '#FFFFFF', fontWeight: 'bold' }}>
+                {activeOffer.nftName}
+              </div>
+              <div style={{ color: '#00FF41', fontSize: '1.5rem', marginTop: '5px' }}>
+                ${activeOffer.offerPrice} ETH
+              </div>
+            </div>
+          </div>
+          
+          {/* Load Button */}
+          {!cryptoLoaded ? (
+            <button
+              onClick={handleLoadCrypto}
+              disabled={cryptoLoading}
+              style={{
+                width: '100%',
+                padding: '20px',
+                fontSize: '1.3rem',
+                fontWeight: 'bold',
+                background: cryptoLoading ? '#333' : 'linear-gradient(45deg, #00FF41, #39FF14)',
+                color: cryptoLoading ? '#666' : '#000',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: cryptoLoading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                animation: !cryptoLoading ? 'pulse 2s infinite' : 'none'
+              }}
+            >
+              {cryptoLoading ? 'Loading...' : 'Load Crypto Now'}
+            </button>
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              color: '#00FF41',
+              fontSize: '1.5rem',
+              fontWeight: 'bold'
+            }}>
+              ✅ Crypto Loaded! Entering game...
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Timer Display Component
+  const TimerDisplay = () => {
+    if (!offerTimer || timerSeconds === 0 || showCryptoLoader) return null
+    
+    const minutes = Math.floor(timerSeconds / 60)
+    const seconds = timerSeconds % 60
+    const isPlayer1 = address === listing?.creator
+    const isPlayer2 = address === activeOffer?.offererAddress
+    
+    // Only show timer to Player 1 and Player 2, not spectators
+    if (!isPlayer1 && !isPlayer2) return null
     
     return (
       <div style={{
@@ -1424,7 +1583,7 @@ const FlipEnvironment = () => {
           fontWeight: 'bold',
           textAlign: 'center'
         }}>
-          Waiting for Player 2
+          {isPlayer1 ? 'Waiting for Player 2' : 'Time to Load Crypto'}
         </div>
         <div style={{
           fontSize: '2rem',
@@ -1436,22 +1595,25 @@ const FlipEnvironment = () => {
         }}>
           {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
         </div>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.7)',
-          fontSize: '0.9rem',
-          textAlign: 'center',
-          marginTop: '10px'
-        }}>
-          No new offers can be accepted
-        </div>
+        {isPlayer1 && (
+          <div style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '0.9rem',
+            textAlign: 'center',
+            marginTop: '10px'
+          }}>
+            No new offers can be accepted
+          </div>
+        )}
       </div>
     )
   }
   
   return (
     <ThemeProvider theme={theme}>
+      <TimerDisplay />
+      <CryptoLoaderOverlay />
       <Container>
-        <TimerDisplay />
         <ContentWrapper>
           <EnvironmentContainer>
             <Header>
@@ -2017,7 +2179,7 @@ const FlipEnvironment = () => {
                               offerStatus: offer.status,
                               shouldShowButtons: isOwner && offer.status === 'pending'
                             })}
-                            {address === listing?.creator && offer.status === 'pending' && !offerTimer && (
+                            {address === listing?.creator && offer.status === 'pending' && !activeOffer && (
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <ActionButton 
                                   className="accept"
@@ -2025,10 +2187,10 @@ const FlipEnvironment = () => {
                                     console.log('🎯 Accept button clicked for offer:', offer.id)
                                     handleAcceptOffer(offer)
                                   }}
-                                  disabled={acceptingOfferId === offer.id || offerTimer !== null}
+                                  disabled={acceptingOfferId === offer.id || activeOffer !== null}
                                   style={{
-                                    opacity: (acceptingOfferId === offer.id || offerTimer) ? 0.5 : 1,
-                                    cursor: (acceptingOfferId === offer.id || offerTimer) ? 'not-allowed' : 'pointer'
+                                    opacity: (acceptingOfferId === offer.id || activeOffer) ? 0.5 : 1,
+                                    cursor: (acceptingOfferId === offer.id || activeOffer) ? 'not-allowed' : 'pointer'
                                   }}
                                 >
                                   {acceptingOfferId === offer.id ? 'Accepting...' : 'Accept'}
@@ -2047,8 +2209,8 @@ const FlipEnvironment = () => {
                               </div>
                             )}
 
-                            {/* Show timer message for the accepted offer */}
-                            {activeOfferId === offer.id && offerTimer && (
+                            {/* Show timer status for the active offer */}
+                            {activeOffer?.offerId === offer.id && offerTimer && (
                               <div style={{
                                 color: '#00FF41',
                                 fontSize: '0.9rem',
@@ -2091,22 +2253,7 @@ const FlipEnvironment = () => {
         </ContentWrapper>
       </Container>
       
-      {/* Asset Loading Modal */}
-      {console.log('🎯 Rendering AssetLoadingModal with props:', {
-        isOpen: showAssetModal,
-        hasGameData: !!assetModalData,
-        gameData: assetModalData,
-        isCreator: address === assetModalData?.creator
-      })}
-      <AssetLoadingModal
-        isOpen={showAssetModal}
-        gameData={assetModalData}
-        onGameReady={handleGameReady}
-        isCreator={address === assetModalData?.creator}
-        socket={socket}
-        player2HasPaid={player2HasPaid}
-        gameReadyToStart={gameReadyToStart}
-      />
+      {/* Asset Loading Modal - Removed for integrated solution */}
     </ThemeProvider>
   )
 }

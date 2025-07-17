@@ -20,6 +20,7 @@ const activeSessions = new Map()
 const gameRooms = new Map() // gameId -> Set of socket IDs
 const gameViewers = new Map() // gameId -> Set of socket IDs for viewers
 const gameTimers = new Map() // Track offer acceptance timers
+const activeGameOffers = new Map() // Track which offers are being processed
 
 // Helper to generate session ID
 function generateSessionId() {
@@ -658,23 +659,35 @@ wss.on('connection', (socket) => {
           
           console.log('✅ Crypto loaded message broadcast complete')
           
-          // Cancel the timer since Player 2 has loaded crypto
+          // Cancel the timer
           cancelOfferTimer(data.gameId)
-
-          // Now transport both players to the game
-          // Player 1 - from environment page
-          broadcastToUser(data.creator, {
-            type: 'transport_to_game',
+          
+          // Update offer status to completed
+          const offerId = activeGameOffers.get(data.gameId)
+          if (offerId) {
+            db.run(
+              'UPDATE offers SET status = "completed" WHERE id = ?',
+              [offerId]
+            )
+          }
+          
+          // Broadcast to all users that crypto is loaded
+          broadcastToGame(data.gameId, {
+            type: 'crypto_loaded',
             gameId: data.gameId,
-            message: 'Player 2 has loaded crypto! Entering game...'
+            contract_game_id: data.contract_game_id,
+            joiner: data.joiner,
+            message: 'Player 2 has deposited crypto!'
           })
-
-          // Player 2 - from asset loading modal
-          broadcastToUser(data.joiner, {
-            type: 'transport_to_game',
-            gameId: data.gameId,
-            message: 'Crypto loaded! Entering game...'
-          })
+          
+          // Send game ready message to transport both players
+          setTimeout(() => {
+            broadcastToGame(data.gameId, {
+              type: 'game_ready',
+              gameId: data.gameId,
+              message: 'Game is ready! Entering...'
+            })
+          }, 1000)
           
           // Get game details to find the creator
           db.get('SELECT * FROM games WHERE id = ? OR contract_game_id = ?', 
@@ -997,19 +1010,23 @@ function broadcastToGame(gameId, message, excludeSocketId = null) {
 }
 
 // Timer Management Functions
-function startOfferTimer(gameId, duration = 120000) { // 2 minutes default
+function startOfferTimer(gameId, offerId, duration = 120000) { // 2 minutes default
   // Clear any existing timer
   if (gameTimers.has(gameId)) {
     clearTimeout(gameTimers.get(gameId))
   }
   
+  // Track the active offer
+  activeGameOffers.set(gameId, offerId)
+  
   // Start countdown
   const startTime = Date.now()
   
-  // Broadcast timer start
+  // Broadcast timer start to all users in the game
   broadcastToGame(gameId, {
     type: 'timer_started',
     gameId,
+    offerId,
     duration,
     startTime
   })
@@ -1018,24 +1035,26 @@ function startOfferTimer(gameId, duration = 120000) { // 2 minutes default
   const timer = setTimeout(() => {
     console.log(`⏰ Timer expired for game ${gameId}`)
     
-    // Update game status to cancelled
+    // Update offer status to expired
     db.run(
-      'UPDATE game_listings SET status = "cancelled" WHERE contract_game_id = ?',
-      [gameId],
+      'UPDATE offers SET status = "expired" WHERE id = ?',
+      [offerId],
       (err) => {
-        if (err) console.error('Error cancelling game:', err)
+        if (err) console.error('Error expiring offer:', err)
       }
     )
     
-    // Notify both players
+    // Notify all users
     broadcastToGame(gameId, {
       type: 'timer_expired',
       gameId,
+      offerId,
       message: 'Game cancelled - Player 2 did not load crypto in time'
     })
     
     // Clean up
     gameTimers.delete(gameId)
+    activeGameOffers.delete(gameId)
   }, duration)
   
   gameTimers.set(gameId, timer)
@@ -1045,6 +1064,7 @@ function cancelOfferTimer(gameId) {
   if (gameTimers.has(gameId)) {
     clearTimeout(gameTimers.get(gameId))
     gameTimers.delete(gameId)
+    activeGameOffers.delete(gameId)
     
     broadcastToGame(gameId, {
       type: 'timer_cancelled',
@@ -3218,53 +3238,32 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                 })
                 
                 // Start the 2-minute timer
-                startOfferTimer(listing.contract_game_id, 120000)
+                startOfferTimer(listing.contract_game_id, offerId, 120000)
 
-                // Only notify Player 2 to go to asset loading
-                broadcastToUser(offer.offerer_address, {
-                  type: 'redirect_to_asset_loading',
+                // Broadcast offer acceptance with timer to all users
+                broadcastToGame(listing.contract_game_id || listing.id, {
+                  type: 'offer_accepted_with_timer',
                   gameId: listing.contract_game_id,
-                  contract_game_id: listing.contract_game_id,
-                  creator: listing.creator,
-                  joiner: offer.offerer_address,
-                  nft_contract: listing.nft_contract,
-                  nft_token_id: listing.nft_token_id,
-                  nft_name: listing.nft_name,
-                  nft_image: listing.nft_image,
-                  price_usd: offer.offer_price,
-                  coin: coinData,
-                  message: 'Offer accepted! You have 2 minutes to load crypto.'
-                })
-
-                // Notify Player 1 to start timer (but stay on environment page)
-                broadcastToUser(listing.creator, {
-                  type: 'offer_accepted_timer_started',
-                  gameId: listing.contract_game_id,
+                  listingId: listing.id,
+                  offerId: offerId,
+                  acceptedBy: listing.creator,
+                  offererAddress: offer.offerer_address,
+                  offerPrice: offer.offer_price,
                   duration: 120000,
-                  acceptedOfferId: offerId,
-                  message: 'Waiting for Player 2 to load crypto...'
-                })
-                
-                // Broadcast to both users
-                broadcastToUser(listing.creator, {
-                  type: 'offer_accepted',
-                  gameId: listing.contract_game_id,
-                  listingId: listing.id
-                })
-                broadcastToUser(offer.offerer_address, {
-                  type: 'offer_accepted',
-                  gameId: listing.contract_game_id,
-                  listingId: listing.id
-                })
-                
-                // Broadcast to all users viewing this listing
-                broadcastToListing(listing.id, {
-                  type: 'offer_accepted',
-                  gameId: listing.contract_game_id,
-                  listingId: listing.id
+                  startTime: Date.now(),
+                  nftContract: listing.nft_contract,
+                  nftTokenId: listing.nft_token_id,
+                  nftName: listing.nft_name,
+                  nftImage: listing.nft_image,
+                  coin: coinData
                 })
 
-                console.log('🎮 Sent timer start to Player 1 and redirect to Player 2')
+                // Send success response
+                res.json({ 
+                  success: true, 
+                  gameId: listing.contract_game_id,
+                  contract_game_id: listing.contract_game_id
+                })
               }
             )
           })
