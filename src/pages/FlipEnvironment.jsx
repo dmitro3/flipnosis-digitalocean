@@ -632,6 +632,8 @@ const FlipEnvironment = () => {
   const [assetModalData, setAssetModalData] = useState(null)
   const [player2HasPaid, setPlayer2HasPaid] = useState(false)
   const [gameReadyToStart, setGameReadyToStart] = useState(false)
+  const [offerTimer, setOfferTimer] = useState(null)
+  const [timerSeconds, setTimerSeconds] = useState(0)
   
   const messagesEndRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
@@ -1014,6 +1016,59 @@ const FlipEnvironment = () => {
             }))
           }
         }
+
+        // Handle redirect for Player 2
+        if (data.type === 'redirect_to_asset_loading') {
+          console.log('🚀 Player 2: Redirecting to asset loading')
+          showSuccess(data.message)
+          
+          // Set asset modal data and open it
+          const modalData = {
+            gameId: data.gameId,
+            contract_game_id: data.contract_game_id,
+            creator: data.creator,
+            joiner: data.joiner,
+            nftContract: data.nft_contract,
+            tokenId: data.nft_token_id,
+            nftName: data.nft_name,
+            nftImage: data.nft_image,
+            priceUSD: data.price_usd,
+            coin: data.coin
+          }
+          
+          setAssetModalData(modalData)
+          setShowAssetModal(true)
+        }
+
+        // Handle timer start for Player 1
+        if (data.type === 'offer_accepted_timer_started') {
+          console.log('⏰ Timer started for Player 1')
+          setOfferTimer({
+            startTime: Date.now(),
+            duration: data.duration
+          })
+          showSuccess(data.message)
+        }
+
+        // Handle timer updates
+        if (data.type === 'timer_started') {
+          setOfferTimer({
+            startTime: data.startTime,
+            duration: data.duration
+          })
+        }
+
+        if (data.type === 'timer_cancelled') {
+          setOfferTimer(null)
+          showSuccess('Player 2 has loaded crypto!')
+        }
+
+        if (data.type === 'timer_expired') {
+          setOfferTimer(null)
+          showError(data.message)
+          // Refresh listing data to show cancelled status
+          fetchListingData()
+        }
       } catch (error) {
         console.error('❌ Error handling WebSocket message:', error)
       }
@@ -1044,6 +1099,24 @@ const FlipEnvironment = () => {
     
     setSocket(ws)
   }
+
+  // Timer effect for offer countdown
+  useEffect(() => {
+    if (offerTimer) {
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - offerTimer.startTime
+        const remaining = Math.max(0, offerTimer.duration - elapsed)
+        setTimerSeconds(Math.ceil(remaining / 1000))
+        
+        if (remaining === 0) {
+          setOfferTimer(null)
+          showError('Timer expired - Player 2 did not load crypto in time')
+        }
+      }, 1000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [offerTimer])
 
   // Update sendMessage to use listing_chat or game_chat
   const sendMessage = () => {
@@ -1143,6 +1216,12 @@ const FlipEnvironment = () => {
       console.log('🎯 Attempting to accept offer:', offer)
       console.log('👤 Current user address:', address)
       console.log('📋 Listing creator:', listing?.creator || 'Unknown')
+      
+      // Check if there's already an active timer
+      if (offerTimer) {
+        showError('Please wait for the current offer to complete or expire')
+        return
+      }
       
       // SECURITY CHECK: Verify listing has contract_game_id before allowing offer acceptance
       if (!listing?.contract_game_id) {
@@ -1384,9 +1463,59 @@ const FlipEnvironment = () => {
     navigate(`/game/${gameId}`)
   }
   
+  // Timer Display Component
+  const TimerDisplay = () => {
+    if (!offerTimer || timerSeconds === 0) return null
+    
+    const minutes = Math.floor(timerSeconds / 60)
+    const seconds = timerSeconds % 60
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        background: 'rgba(0, 0, 0, 0.9)',
+        border: '2px solid #00FF41',
+        borderRadius: '10px',
+        padding: '15px 25px',
+        zIndex: 1000,
+        boxShadow: '0 4px 20px rgba(0, 255, 65, 0.3)'
+      }}>
+        <div style={{ 
+          color: '#00FF41', 
+          fontSize: '1.2rem', 
+          fontWeight: 'bold',
+          textAlign: 'center'
+        }}>
+          Waiting for Player 2
+        </div>
+        <div style={{
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          color: timerSeconds < 30 ? '#FF4444' : '#FFFFFF',
+          textAlign: 'center',
+          marginTop: '10px',
+          fontFamily: 'monospace'
+        }}>
+          {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+        </div>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          fontSize: '0.9rem',
+          textAlign: 'center',
+          marginTop: '10px'
+        }}>
+          No new offers can be accepted
+        </div>
+      </div>
+    )
+  }
+  
   return (
     <ThemeProvider theme={theme}>
       <Container>
+        <TimerDisplay />
         <ContentWrapper>
           <EnvironmentContainer>
             <Header>

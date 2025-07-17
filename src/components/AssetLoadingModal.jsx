@@ -273,6 +273,8 @@ const GameLobby = ({
   const [loading, setLoading] = useState(false)
   const [gameReady, setGameReady] = useState(false)
   const [initializationAttempted, setInitializationAttempted] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes
+  const [timerStarted, setTimerStarted] = useState(false)
 
   // Initialize contract service when wallet is connected
   useEffect(() => {
@@ -450,6 +452,32 @@ const GameLobby = ({
       document.head.removeChild(style)
     }
   }, [])
+
+  // Timer effect for Player 2
+  useEffect(() => {
+    if (isOpen && !isCreator && !cryptoLoaded && !player2HasPaid) {
+      setTimerStarted(true)
+      const startTime = Date.now()
+      
+      const interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        const remaining = Math.max(0, 120 - elapsed)
+        setTimeRemaining(remaining)
+        
+        if (remaining === 0) {
+          clearInterval(interval)
+          showError('Time expired! Game has been cancelled.')
+          setTimeout(() => {
+            if (onGameReady) {
+              onGameReady(null)
+            }
+          }, 3000)
+        }
+      }, 1000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [isOpen, isCreator, cryptoLoaded, player2HasPaid, showError, onGameReady])
 
   // 2. Update checkGameState to handle game offers (around line 340)
   const checkGameState = async () => {
@@ -735,6 +763,33 @@ const GameLobby = ({
               <p>{isCreator ? 'Waiting for opponent...' : 'You'}</p>
             </PlayerInfo>
             
+            {/* Timer for Player 2 */}
+            {!isCreator && timerStarted && !cryptoLoaded && (
+              <div style={{
+                background: timeRemaining < 30 ? 'rgba(255, 68, 68, 0.1)' : 'rgba(0, 255, 65, 0.1)',
+                border: `2px solid ${timeRemaining < 30 ? '#FF4444' : '#00FF41'}`,
+                borderRadius: '10px',
+                padding: '15px',
+                marginBottom: '15px',
+                textAlign: 'center'
+              }}>
+                <div style={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 'bold',
+                  color: timeRemaining < 30 ? '#FF4444' : '#00FF41'
+                }}>
+                  {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
+                </div>
+                <div style={{ 
+                  color: 'rgba(255, 255, 255, 0.7)', 
+                  fontSize: '0.9rem',
+                  marginTop: '5px'
+                }}>
+                  Time remaining to load crypto
+                </div>
+              </div>
+            )}
+            
             <CryptoContainer isLoaded={cryptoLoaded || player2HasPaid}>
               <CryptoAmount>${normalizedData.price_usd || normalizedData.priceUSD || 0}</CryptoAmount>
               <CryptoCurrency>ETH</CryptoCurrency>
@@ -753,7 +808,7 @@ const GameLobby = ({
             <StatusText isLoaded={cryptoLoaded || player2HasPaid}>
               {cryptoLoaded || player2HasPaid ? '✅ Crypto Loaded' : 
                isCreator ? '⏳ Waiting for joiner to deposit crypto...' :
-               '⏳ Click "Load Crypto" to join the game'}
+               '⚡ Load crypto now to join the game!'}
             </StatusText>
             
             {!isCreator && !cryptoLoaded && !loading && (
@@ -761,8 +816,12 @@ const GameLobby = ({
                 className="load"
                 onClick={handleLoadCrypto}
                 disabled={loading}
+                style={{
+                  animation: 'pulse 1.5s infinite',
+                  fontSize: '1.1rem'
+                }}
               >
-                Load Crypto
+                Load Crypto Now
               </ActionButton>
             )}
           </AssetSection>

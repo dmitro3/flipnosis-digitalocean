@@ -19,6 +19,7 @@ const wss = new WebSocket.Server({ server })
 const activeSessions = new Map()
 const gameRooms = new Map() // gameId -> Set of socket IDs
 const gameViewers = new Map() // gameId -> Set of socket IDs for viewers
+const gameTimers = new Map() // Track offer acceptance timers
 
 // Helper to generate session ID
 function generateSessionId() {
@@ -657,6 +658,17 @@ wss.on('connection', (socket) => {
           
           console.log('✅ Crypto loaded message broadcast complete')
           
+          // Cancel the timer since Player 2 has loaded crypto
+          cancelOfferTimer(data.gameId)
+
+          // Notify both players they can enter the game
+          broadcastToGame(data.gameId, {
+            type: 'game_ready',
+            gameId: data.gameId,
+            message: 'Both players ready! Enter the game now.',
+            isBroadcast: true
+          })
+          
           // Get game details to find the creator
           db.get('SELECT * FROM games WHERE id = ? OR contract_game_id = ?', 
             [data.gameId, data.contract_game_id], 
@@ -975,6 +987,63 @@ function broadcastToGame(gameId, message, excludeSocketId = null) {
   })
   
   console.log(`📡 Broadcasted ${message.type} to ${sentCount} clients in game ${gameId}`)
+}
+
+// Timer Management Functions
+function startOfferTimer(gameId, duration = 120000) { // 2 minutes default
+  // Clear any existing timer
+  if (gameTimers.has(gameId)) {
+    clearTimeout(gameTimers.get(gameId))
+  }
+  
+  // Start countdown
+  const startTime = Date.now()
+  
+  // Broadcast timer start
+  broadcastToGame(gameId, {
+    type: 'timer_started',
+    gameId,
+    duration,
+    startTime
+  })
+  
+  // Set timeout for expiration
+  const timer = setTimeout(() => {
+    console.log(`⏰ Timer expired for game ${gameId}`)
+    
+    // Update game status to cancelled
+    db.run(
+      'UPDATE game_listings SET status = "cancelled" WHERE contract_game_id = ?',
+      [gameId],
+      (err) => {
+        if (err) console.error('Error cancelling game:', err)
+      }
+    )
+    
+    // Notify both players
+    broadcastToGame(gameId, {
+      type: 'timer_expired',
+      gameId,
+      message: 'Game cancelled - Player 2 did not load crypto in time'
+    })
+    
+    // Clean up
+    gameTimers.delete(gameId)
+  }, duration)
+  
+  gameTimers.set(gameId, timer)
+}
+
+function cancelOfferTimer(gameId) {
+  if (gameTimers.has(gameId)) {
+    clearTimeout(gameTimers.get(gameId))
+    gameTimers.delete(gameId)
+    
+    broadcastToGame(gameId, {
+      type: 'timer_cancelled',
+      gameId
+    })
+  }
 }
 
 // Broadcast to game viewers (non-participants)
@@ -3139,6 +3208,33 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   success: true, 
                   gameId: listing.contract_game_id, // Use the existing blockchain game ID
                   contract_game_id: listing.contract_game_id
+                })
+                
+                // Start the 2-minute timer
+                startOfferTimer(listing.contract_game_id, 120000)
+
+                // Immediately notify Player 2 to go to asset loading
+                broadcastToUser(offer.offerer_address, {
+                  type: 'redirect_to_asset_loading',
+                  gameId: listing.contract_game_id,
+                  contract_game_id: listing.contract_game_id,
+                  creator: listing.creator,
+                  joiner: offer.offerer_address,
+                  nft_contract: listing.nft_contract,
+                  nft_token_id: listing.nft_token_id,
+                  nft_name: listing.nft_name,
+                  nft_image: listing.nft_image,
+                  price_usd: offer.offer_price,
+                  coin: coinData,
+                  message: 'Offer accepted! You have 2 minutes to load crypto.'
+                })
+
+                // Notify Player 1 about timer
+                broadcastToUser(listing.creator, {
+                  type: 'offer_accepted_timer_started',
+                  gameId: listing.contract_game_id,
+                  duration: 120000,
+                  message: 'Waiting for Player 2 to load crypto...'
                 })
                 
                 // Broadcast to both users
