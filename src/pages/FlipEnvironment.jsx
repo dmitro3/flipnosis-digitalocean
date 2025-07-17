@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
+import { useWalletConnection } from '../utils/useWalletConnection'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
@@ -573,6 +574,7 @@ const FlipEnvironment = () => {
   const { listingId, id } = useParams()
   const navigate = useNavigate()
   const { address, walletClient, publicClient } = useWallet()
+  const { isFullyConnected, isContractInitialized } = useWalletConnection()
   const { showSuccess, showError } = useToast()
   
   // Determine if this is a listing or a game based on the URL
@@ -650,6 +652,28 @@ const FlipEnvironment = () => {
     marketplaceUrl: getMarketplaceUrl(listing?.nft_chain, listing?.nft_contract, listing?.nft_token_id)
   })
   
+  // Initialize contract service when wallet is connected
+  useEffect(() => {
+    if (!isFullyConnected || !walletClient) {
+      console.log('⚠️ Wallet not fully connected, skipping contract initialization')
+      return
+    }
+    
+    const initContract = async () => {
+      try {
+        console.log('🔧 Initializing contract service in FlipEnvironment...')
+        const chainId = 8453 // Base network
+        await contractService.initializeClients(chainId, walletClient)
+        console.log('✅ Contract service initialized successfully in FlipEnvironment')
+      } catch (error) {
+        console.error('❌ Contract initialization failed in FlipEnvironment:', error)
+        showError('Failed to connect to smart contract. Please refresh and try again.')
+      }
+    }
+    
+    initContract()
+  }, [isFullyConnected, walletClient, showError])
+
   useEffect(() => {
     fetchListingData()
     setupWebSocket()
@@ -1354,9 +1378,22 @@ const FlipEnvironment = () => {
       setCryptoLoading(true)
       console.log('💰 Loading crypto for game:', activeOffer.gameId)
       
-      // Call your smart contract to deposit crypto
+      // Check if wallet is connected
+      if (!isFullyConnected) {
+        throw new Error('Please connect your wallet first')
+      }
+      
+      // Check if contract service is initialized
       if (!contractService.isInitialized()) {
-        throw new Error('Game contract not initialized')
+        console.log('⚠️ Contract service not initialized, attempting to initialize...')
+        try {
+          const chainId = 8453 // Base network
+          await contractService.initializeClients(chainId, walletClient)
+          console.log('✅ Contract service initialized successfully')
+        } catch (initError) {
+          console.error('❌ Failed to initialize contract service:', initError)
+          throw new Error('Failed to connect to smart contract. Please refresh and try again.')
+        }
       }
       
       const priceInWei = ethers.parseEther(activeOffer.offerPrice.toString())
