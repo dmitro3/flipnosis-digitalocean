@@ -635,6 +635,9 @@ wss.on('connection', (socket) => {
           console.log('💰 Crypto loaded message received:', data)
           console.log('📡 Broadcasting to all connected clients')
           
+          // IMPORTANT: DO NOT DELETE THE LISTING - Keep it for reference
+          console.log('🔒 SECURITY: Ensuring listing is not deleted during crypto loading')
+          
           // Broadcast to ALL connected clients (no room logic)
           wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
@@ -654,7 +657,7 @@ wss.on('connection', (socket) => {
           // Cancel the timer
           cancelOfferTimer(data.gameId)
           
-          // Update offer status to completed
+          // Update offer status to completed (but keep listing active)
           const offerId = activeGameOffers.get(data.gameId)
           if (offerId) {
             db.run(
@@ -662,6 +665,19 @@ wss.on('connection', (socket) => {
               [offerId]
             )
           }
+          
+          // Update listing status to "in_progress" instead of deleting it
+          db.get('SELECT * FROM game_listings WHERE contract_game_id = ?', [data.contract_game_id], (err, listing) => {
+            if (listing) {
+              console.log('🔒 Updating listing status to in_progress instead of deleting:', listing.id)
+              db.run(
+                'UPDATE game_listings SET status = "in_progress" WHERE contract_game_id = ?',
+                [data.contract_game_id]
+              )
+            } else {
+              console.log('⚠️ No listing found for contract_game_id:', data.contract_game_id)
+            }
+          })
           
           // Send game ready message to transport both players
           setTimeout(() => {
@@ -3233,13 +3249,6 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   offer_price: offer.offer_price
                 })
                 
-                // Send response to client with the existing blockchain game ID
-                res.json({ 
-                  success: true, 
-                  gameId: listing.contract_game_id, // Use the existing blockchain game ID
-                  contract_game_id: listing.contract_game_id
-                })
-                
                 // Start the 2-minute timer
                 startOfferTimer(listing.contract_game_id, offerId, 120000)
 
@@ -3268,10 +3277,10 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                 
                 console.log('📡 Broadcasted offer_accepted_with_timer to all connected clients')
 
-                // Send success response
+                // Send response to client with the existing blockchain game ID
                 res.json({ 
                   success: true, 
-                  gameId: listing.contract_game_id,
+                  gameId: listing.contract_game_id, // Use the existing blockchain game ID
                   contract_game_id: listing.contract_game_id
                 })
               }
