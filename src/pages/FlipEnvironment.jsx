@@ -1032,17 +1032,28 @@ const FlipEnvironment = () => {
 
         // Handle crypto loaded
         if (data.type === 'crypto_loaded') {
-          console.log('💰 Crypto loaded:', data)
+          console.log('💰 Crypto loaded message received:', data)
+          console.log('🎯 Current active offer:', activeOffer)
+          console.log('🎯 Current user address:', address)
           
           // Only process if this is for the current active offer
           if (!activeOffer || activeOffer.gameId !== data.gameId) {
             console.log('⚠️ Crypto loaded message not for current active offer, ignoring')
+            console.log('🎯 Active offer gameId:', activeOffer?.gameId)
+            console.log('🎯 Message gameId:', data.gameId)
             return
           }
           
+          console.log('✅ Processing crypto loaded message for current offer')
           setCryptoLoaded(true)
           setOfferTimer(null)
           showSuccess('Crypto loaded! Preparing to enter game...')
+          
+          // Auto-navigate to game after a short delay
+          setTimeout(() => {
+            console.log('🎮 Auto-navigating to game after crypto loaded:', data.gameId)
+            navigate(`/flip/${data.gameId}`)
+          }, 2000) // 2 second delay to show the success message
         }
 
         // Handle game ready - transport both players
@@ -1051,6 +1062,20 @@ const FlipEnvironment = () => {
           setTimeout(() => {
             navigate(`/flip/${data.gameId}`)
           }, 500)
+        }
+
+        // Handle transport to game message
+        if (data.type === 'TRANSPORT_TO_GAME') {
+          console.log('🚀 Transport to game message received:', data)
+          setTimeout(() => {
+            navigate(`/flip/${data.gameId}`)
+          }, 500)
+        }
+
+        // Handle game started message
+        if (data.type === 'game_started') {
+          console.log('🎮 Game started message received:', data)
+          // This can be used to show additional UI feedback if needed
         }
 
         // Handle timer expiration
@@ -1117,6 +1142,18 @@ const FlipEnvironment = () => {
       return () => clearInterval(interval)
     }
   }, [offerTimer])
+
+  // Auto-navigate effect when crypto is loaded
+  useEffect(() => {
+    if (cryptoLoaded && activeOffer?.gameId) {
+      console.log('🎮 Crypto loaded, auto-navigating to game:', activeOffer.gameId)
+      const timer = setTimeout(() => {
+        navigate(`/flip/${activeOffer.gameId}`)
+      }, 3000) // 3 second delay to ensure all messages are processed
+      
+      return () => clearTimeout(timer)
+    }
+  }, [cryptoLoaded, activeOffer?.gameId, navigate])
 
   // Update sendMessage to use listing_chat or game_chat
   const sendMessage = () => {
