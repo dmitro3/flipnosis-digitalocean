@@ -666,18 +666,8 @@ wss.on('connection', (socket) => {
             )
           }
           
-          // Update listing status to "in_progress" instead of deleting it
-          db.get('SELECT * FROM game_listings WHERE contract_game_id = ?', [data.contract_game_id], (err, listing) => {
-            if (listing) {
-              console.log('🔒 Updating listing status to in_progress instead of deleting:', listing.id)
-              db.run(
-                'UPDATE game_listings SET status = "in_progress" WHERE contract_game_id = ?',
-                [data.contract_game_id]
-              )
-            } else {
-              console.log('⚠️ No listing found for contract_game_id:', data.contract_game_id)
-            }
-          })
+          // Listing is already "in_progress" from offer acceptance, no need to update again
+          console.log('✅ Listing already in_progress from offer acceptance, proceeding to game')
           
           // Send game ready message to transport both players
           setTimeout(() => {
@@ -2790,10 +2780,32 @@ app.get('/api/listings/:listingId', async (req, res) => {
     
     console.log('🔍 Fetching listing:', listingId)
     
+    // Add comprehensive logging to track listing access
+    console.log('🔒 SECURITY: Checking if listing exists:', listingId)
+    
     db.get('SELECT * FROM game_listings WHERE id = ?', [listingId], (err, listing) => {
-      if (err || !listing) {
-        console.log('❌ Listing not found:', listingId)
-        return res.status(404).json({ error: 'Listing not found' })
+      if (err) {
+        console.error('❌ Database error fetching listing:', listingId, err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      if (!listing) {
+        console.error('❌ SECURITY ALERT: Listing not found in database:', listingId)
+        console.log('🔍 Checking if listing was recently deleted...')
+        
+        // Check if there are any recent offers for this listing
+        db.all('SELECT * FROM offers WHERE listing_id = ? ORDER BY created_at DESC LIMIT 5', [listingId], (offerErr, offers) => {
+          if (offers && offers.length > 0) {
+            console.error('⚠️ Found offers for deleted listing:', offers.length, 'offers')
+            offers.forEach(offer => {
+              console.error('  - Offer ID:', offer.id, 'Status:', offer.status, 'Created:', offer.created_at)
+            })
+          } else {
+            console.log('✅ No offers found for listing, it may have been legitimately deleted')
+          }
+        })
+        
+        return res.status(404).json({ error: 'Listing not found. The listing may have been removed or the ID is incorrect.' })
       }
       
       // Parse coin data
@@ -3203,8 +3215,14 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
                   return res.status(500).json({ error: err.message })
                 }
                 
-                // Keep listing status as "active" - only change to "completed" when game actually starts
-                console.log('✅ Offer accepted, keeping listing active for asset deposits')
+                // SIMPLIFIED: Just update listing status to "in_progress" - no new games, no price updates
+                console.log('✅ Offer accepted, updating listing status to in_progress')
+                
+                // Update listing status to in_progress (no price change, no new game)
+                db.run(
+                  'UPDATE game_listings SET status = "in_progress" WHERE id = ?',
+                  [listing.id]
+                )
                 
                 // Reject all other pending offers
                 db.run(

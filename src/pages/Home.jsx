@@ -465,11 +465,8 @@ const Home = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'waiting': return 'LIVE'
-      case 'joined': return 'IN PROGRESS'
-      case 'active': return 'IN PROGRESS'
+      case 'active': return 'LIVE'
       case 'in_progress': return 'IN PROGRESS'
-      case 'pending': return 'PENDING DEPOSITS'
       case 'completed': return 'COMPLETE'
       default: return 'UNKNOWN'
     }
@@ -477,11 +474,8 @@ const Home = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'waiting': return '#00FF41' // Green
-      case 'joined': return '#FFA500' // Orange
-      case 'active': return '#FFA500' // Orange
+      case 'active': return '#00FF41' // Green
       case 'in_progress': return '#FFA500' // Orange
-      case 'pending': return '#FFD700' // Gold
       case 'completed': return '#FF4444' // Red
       default: return '#808080' // Gray
     }
@@ -847,9 +841,8 @@ const Home = () => {
                               fontSize: '0.7rem',
                               color: theme.colors.textSecondary
                             }}>
-                              {selectedFlip.status === 'waiting' ? '' :
-                               selectedFlip.status === 'joined' ? 'Game will start automatically in a few seconds' :
-                               selectedFlip.status === 'active' ? 'Players are currently flipping coins' :
+                              {selectedFlip.status === 'active' ? 'Accepting offers' :
+                               selectedFlip.status === 'in_progress' ? 'Game will start automatically in a few seconds' :
                                selectedFlip.status === 'completed' ? `Winner: ${selectedFlip.winner ? selectedFlip.winner.slice(0, 6) + '...' + selectedFlip.winner.slice(-4) : 'Unknown'}` :
                                'Status unknown'}
                             </div>
