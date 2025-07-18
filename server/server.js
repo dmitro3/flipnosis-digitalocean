@@ -413,6 +413,25 @@ app.get('/api/listings', (req, res) => {
   })
 })
 
+// Get listing by ID
+app.get('/api/listings/:listingId', (req, res) => {
+  const { listingId } = req.params
+  console.log(`📋 Fetching listing: ${listingId}`)
+  
+  db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, row) => {
+    if (err) {
+      console.error('❌ Error fetching listing:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    if (!row) {
+      console.log(`❌ Listing not found: ${listingId}`)
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+    console.log(`✅ Listing found: ${listingId}`)
+    res.json(row)
+  })
+})
+
 // Get dashboard data for user
 app.get('/api/dashboard/:address', (req, res) => {
   const { address } = req.params

@@ -249,9 +249,17 @@ const UnifiedGamePage = () => {
   const [customHeadsImage, setCustomHeadsImage] = useState(null)
   const [customTailsImage, setCustomTailsImage] = useState(null)
   
+  // Helper functions to handle both game and listing data structures
+  const getGameCreator = () => game?.creator || game?.creator_address
+  const getGameJoiner = () => game?.joiner || game?.joiner_address
+  const getGamePrice = () => game?.final_price || game?.asking_price || 0
+  const getGameNFTImage = () => game?.nft_image || game?.nftImage || '/placeholder-nft.svg'
+  const getGameNFTName = () => game?.nft_name || game?.nftName || 'Unknown NFT'
+  const getGameNFTCollection = () => game?.nft_collection || game?.nftCollection || 'Unknown Collection'
+  
   // Derived state
-  const isCreator = game?.creator === address
-  const isJoiner = game?.joiner === address
+  const isCreator = getGameCreator() === address
+  const isJoiner = getGameJoiner() === address
   const isPlayer = isCreator || isJoiner
   const needsPayment = game?.status === 'waiting_payment' && isJoiner
   const gameActive = game?.status === 'active'
@@ -336,16 +344,38 @@ const UnifiedGamePage = () => {
   
   const loadGame = async () => {
     try {
-      const response = await fetch(getApiUrl(`/games/${gameId}`))
-      if (!response.ok) throw new Error('Game not found')
+      // First try to load as a game
+      let response = await fetch(getApiUrl(`/games/${gameId}`))
       
-      const gameData = await response.json()
-      setGame(gameData)
-      
-      // Set initial game state if provided
-      if (gameData.gameState) {
-        setGameState(gameData.gameState)
+      if (response.ok) {
+        const gameData = await response.json()
+        setGame(gameData)
+        
+        // Set initial game state if provided
+        if (gameData.gameState) {
+          setGameState(gameData.gameState)
+        }
+        return
       }
+      
+      // If not found as game, try as listing
+      response = await fetch(getApiUrl(`/listings/${gameId}`))
+      if (!response.ok) throw new Error('Game/Listing not found')
+      
+      const listingData = await response.json()
+      setGame(listingData)
+      
+      // Set initial game state for listing
+      setGameState({
+        phase: 'waiting_payment',
+        creatorChoice: null,
+        joinerChoice: null,
+        chargingPlayer: null,
+        creatorWins: 0,
+        joinerWins: 0,
+        currentRound: 1
+      })
+      
     } catch (error) {
       console.error('Error loading game:', error)
       showError('Failed to load game')
@@ -487,7 +517,7 @@ const UnifiedGamePage = () => {
       
       const result = await contractService.joinExistingGameWithPrice(
         game.blockchain_id,
-        game.final_price
+        getGamePrice()
       )
       
       if (!result.success) {
@@ -642,17 +672,17 @@ const UnifiedGamePage = () => {
               </h2>
               
               <NFTPreview>
-                <NFTImage src={game.nft_image} alt={game.nft_name} />
+                <NFTImage src={getGameNFTImage()} alt={getGameNFTName()} />
                 <NFTInfo>
-                  <h3>{game.nft_name}</h3>
-                  <p>{game.nft_collection}</p>
+                  <h3>{getGameNFTName()}</h3>
+                  <p>{getGameNFTCollection()}</p>
                   <p style={{ color: theme.colors.textSecondary }}>
-                    Playing against: {game.creator.slice(0, 6)}...{game.creator.slice(-4)}
+                    Playing against: {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
                   </p>
                 </NFTInfo>
               </NFTPreview>
               
-              <PriceDisplay>${game.final_price} ETH</PriceDisplay>
+              <PriceDisplay>${getGamePrice()} ETH</PriceDisplay>
               
               <PayButton onClick={handlePayment} disabled={paymentLoading}>
                 {paymentLoading ? 'Processing...' : 'Pay & Start Game'}
@@ -665,7 +695,7 @@ const UnifiedGamePage = () => {
             {/* Players */}
             <PlayerSection>
               <PlayerBox isActive={gameState.phase === 'choosing' && isCreator}>
-                <ProfilePicture address={game.creator} size={40} />
+                <ProfilePicture address={getGameCreator()} size={40} />
                 <RoundIndicators>
                   {[1, 2, 3, 4, 5].map(round => (
                     <RoundDot
@@ -680,7 +710,7 @@ const UnifiedGamePage = () => {
               </PlayerBox>
               
               <PlayerBox isActive={gameState.phase === 'choosing' && isJoiner}>
-                <ProfilePicture address={game.joiner || '0x0'} size={40} />
+                <ProfilePicture address={getGameJoiner() || '0x0'} size={40} />
                 <RoundIndicators>
                   {[1, 2, 3, 4, 5].map(round => (
                     <RoundDot
@@ -773,8 +803,8 @@ const UnifiedGamePage = () => {
               creatorPower={gameState.creatorPower}
               joinerPower={gameState.joinerPower}
               currentPlayer={address}
-              creator={game.creator}
-              joiner={game.joiner}
+              creator={getGameCreator()}
+              joiner={getGameJoiner()}
               chargingPlayer={gameState.chargingPlayer}
               gamePhase={gameState.phase}
               isMyTurn={isMyTurn}
