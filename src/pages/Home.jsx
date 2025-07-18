@@ -244,14 +244,12 @@ const Home = () => {
       setLoading(true)
       setError(null)
 
-      const API_URL = API_CONFIG.BASE_URL
-
-      console.log('🔍 Fetching games and listings from:', API_URL)
+      console.log('🔍 Fetching games and listings from:', getApiUrl(''))
       
       // Fetch both games and listings
       const [gamesResponse, listingsResponse] = await Promise.all([
-        fetch(`${API_URL}/api/games`),
-        fetch(`${API_URL}/api/listings`)
+        fetch(getApiUrl('/games')),
+        fetch(getApiUrl('/listings'))
       ])
       
       if (!gamesResponse.ok) {
