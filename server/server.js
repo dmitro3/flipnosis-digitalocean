@@ -510,6 +510,7 @@ app.get('/api/dashboard/:address', (req, res) => {
 app.post('/api/listings', (req, res) => {
   const { creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data } = req.body
   console.log(`📋 Creating listing for: ${creator}`)
+  console.log(`🪙 Coin data received:`, coin_data)
   
   const listingId = `listing_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
   
@@ -522,6 +523,7 @@ app.post('/api/listings', (req, res) => {
       return res.status(500).json({ error: 'Database error' })
     }
     console.log(`✅ Listing created: ${listingId}`)
+    console.log(`🪙 Coin data saved:`, JSON.stringify(coin_data))
     res.json({ success: true, listingId, message: 'Listing created successfully. Please approve your NFT to create the blockchain game.' })
   })
 })
@@ -545,15 +547,46 @@ app.put('/api/listings/:listingId/contract-game', (req, res) => {
       return res.status(500).json({ error: 'Database error' })
     }
     
-    // Update listing status
-    db.run('UPDATE listings SET status = "game_created" WHERE id = ?', [listingId], (err) => {
-      if (err) {
-        console.error('❌ Error updating listing:', err)
-        return res.status(500).json({ error: 'Database error' })
+    // Verify coin data was copied
+    db.get('SELECT coin_data FROM games WHERE id = ?', [gameId], (err, row) => {
+      if (!err && row) {
+        console.log(`🪙 Coin data copied to game ${gameId}:`, row.coin_data)
       }
-      console.log(`✅ Game created: ${gameId} (contract: ${contractGameId})`)
-      res.json({ success: true, gameId, contractGameId })
     })
+    
+            // Update listing status
+        db.run('UPDATE listings SET status = "game_created" WHERE id = ?', [listingId], (err) => {
+          if (err) {
+            console.error('❌ Error updating listing:', err)
+            return res.status(500).json({ error: 'Database error' })
+          }
+          console.log(`✅ Game created: ${gameId} (contract: ${contractGameId})`)
+          
+          // Transfer WebSocket subscriptions from listing to game
+          const listingRoom = gameRooms.get(listingId)
+          if (listingRoom && listingRoom.size > 0) {
+            console.log(`🔄 Transferring ${listingRoom.size} WebSocket subscriptions from listing ${listingId} to game ${gameId}`)
+            gameRooms.set(gameId, listingRoom)
+            gameRooms.delete(listingId)
+            
+            // Update all sockets in the room to point to the new game ID
+            wss.clients.forEach(client => {
+              if (client.readyState === WebSocket.OPEN && listingRoom.has(client.id)) {
+                client.gameId = gameId
+              }
+            })
+            
+            // Notify clients that the listing has been converted to a game
+            broadcastToGame(gameId, {
+              type: 'listing_converted_to_game',
+              listingId,
+              gameId,
+              contractGameId
+            })
+          }
+          
+          res.json({ success: true, gameId, contractGameId })
+        })
   })
 })
 
@@ -583,6 +616,30 @@ app.post('/api/listings/:listingId/create-blockchain-game', (req, res) => {
         return res.status(500).json({ error: 'Database error' })
       }
       console.log(`✅ Blockchain game created: ${gameId} (contract: ${contract_game_id})`)
+      
+                // Transfer WebSocket subscriptions from listing to game
+          const listingRoom = gameRooms.get(listingId)
+          if (listingRoom && listingRoom.size > 0) {
+            console.log(`🔄 Transferring ${listingRoom.size} WebSocket subscriptions from listing ${listingId} to game ${gameId}`)
+            gameRooms.set(gameId, listingRoom)
+            gameRooms.delete(listingId)
+            
+            // Update all sockets in the room to point to the new game ID
+            wss.clients.forEach(client => {
+              if (client.readyState === WebSocket.OPEN && listingRoom.has(client.id)) {
+                client.gameId = gameId
+              }
+            })
+            
+            // Notify clients that the listing has been converted to a game
+            broadcastToGame(gameId, {
+              type: 'listing_converted_to_game',
+              listingId,
+              gameId,
+              contractGameId: contract_game_id
+            })
+          }
+      
       res.json({ success: true, gameId, contractGameId: contract_game_id })
     })
   })

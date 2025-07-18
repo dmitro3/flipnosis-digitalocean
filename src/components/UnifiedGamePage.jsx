@@ -521,6 +521,18 @@ const UnifiedGamePage = () => {
       case 'game_completed':
         handleGameCompleted(data)
         break
+        
+      case 'listing_converted_to_game':
+        console.log('🔄 Listing converted to game:', data)
+        // Update the gameId and reload the game data
+        if (data.gameId && data.gameId !== gameId) {
+          console.log(`🔄 Navigating from listing ${gameId} to game ${data.gameId}`)
+          // Update the URL without a full page reload
+          window.history.replaceState(null, '', `/game/${data.gameId}`)
+          // Reload the game data
+          loadGame()
+        }
+        break
     }
   }
   
