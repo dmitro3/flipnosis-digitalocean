@@ -18,7 +18,7 @@ export const ProfileProvider = ({ children }) => {
   const [loading, setLoading] = useState({})
 
   // API base URL
-  const API_BASE = getApiUrl()
+  const API_BASE = getApiUrl('')
 
   const getPlayerName = async (playerAddress) => {
     try {

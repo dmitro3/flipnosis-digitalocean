@@ -223,7 +223,7 @@ const Home = () => {
 
 
   // API URL
-  const API_URL = getApiUrl()
+  const API_URL = getApiUrl('')
 
   // Debug logging
   useEffect(() => {

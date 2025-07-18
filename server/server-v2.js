@@ -15,7 +15,7 @@ const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
 
 // ===== CONFIGURATION =====
-const PORT = process.env.PORT_V2 || 3002
+const PORT = process.env.PORT || 3001
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, 'games-v2.db')
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 const ALCHEMY_BASE_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`

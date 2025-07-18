@@ -1,11 +1,10 @@
 // Single source of truth for API configuration
 export const API_CONFIG = {
-  // Keep old server for now
+  // V2 server endpoints - same URL for both dev and production since we replaced the server
   BASE_URL: import.meta.env.DEV ? 'http://localhost:3001' : 'https://cryptoflipz2-production.up.railway.app',
-  // New V2 server endpoints
-  BASE_URL_V2: import.meta.env.DEV ? 'http://localhost:3002' : 'https://cryptoflipz2-production.up.railway.app',
+  BASE_URL_V2: import.meta.env.DEV ? 'http://localhost:3001' : 'https://cryptoflipz2-production.up.railway.app',
   WS_URL: import.meta.env.DEV ? 'ws://localhost:3001' : 'wss://cryptoflipz2-production.up.railway.app',
-  WS_URL_V2: import.meta.env.DEV ? 'ws://localhost:3002' : 'wss://cryptoflipz2-production.up.railway.app',
+  WS_URL_V2: import.meta.env.DEV ? 'ws://localhost:3001' : 'wss://cryptoflipz2-production.up.railway.app',
   // Toggle this to use V2
   USE_V2: true
 }

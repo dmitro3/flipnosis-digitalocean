@@ -194,7 +194,7 @@ const CreateFlip = () => {
       
       console.log('📤 CreateFlip: Creating listing with data:', listingData)
       
-      const listingResponse = await fetch(`${getApiUrl()}/api/listings`, {
+      const listingResponse = await fetch(`${getApiUrl('/listings')}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -297,7 +297,7 @@ const CreateFlip = () => {
       // Step 4: Update the listing with the contract game ID
       showInfo('Updating listing with blockchain game...')
       
-      const updateResponse = await fetch(`${getApiUrl()}/api/listings/${listingResult.listingId}/create-blockchain-game`, {
+      const updateResponse = await fetch(`${getApiUrl(`/listings/${listingResult.listingId}/create-blockchain-game`)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
