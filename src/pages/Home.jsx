@@ -979,11 +979,11 @@ const Home = () => {
                               // Handle joined game view
                               navigate(`/game/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'waiting') {
-                              // Handle waiting games - go to FlipEnvironment where they can accept offers
-                              navigate(`/flip-environment/${selectedFlip.id}`)
+                              // Handle waiting games - go to unified game page
+                              navigate(`/game/${selectedFlip.id}`)
                             } else {
                               // Handle other statuses
-                              navigate(`/flip-environment/${selectedFlip.id}`)
+                              navigate(`/game/${selectedFlip.id}`)
                             }
                           }}
                           style={{
@@ -1030,7 +1030,7 @@ const Home = () => {
                                 showError('Invalid game ID. Please refresh the page.')
                                 return
                               }
-                              navigate(`/flip-environment/${selectedFlip.id}`)
+                              navigate(`/game/${selectedFlip.id}`)
                             }}
                             style={{
                               flex: 1,

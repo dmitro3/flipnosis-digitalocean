@@ -6,7 +6,6 @@ import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import DashboardChat from './DashboardChat'
-import AssetLoadingModal from './AssetLoadingModal'
 import {
   Container,
   ContentWrapper,
@@ -259,8 +258,6 @@ const Dashboard = () => {
   const [incomingOffers, setIncomingOffers] = useState([])
   const [loading, setLoading] = useState(true)
   const [showOfferModal, setShowOfferModal] = useState(false)
-  const [showAssetModal, setShowAssetModal] = useState(false)
-  const [assetModalData, setAssetModalData] = useState(null)
   const [socket, setSocket] = useState(null)
   const [notifications, setNotifications] = useState([])
   
@@ -308,11 +305,10 @@ const Dashboard = () => {
           
         case 'offer_accepted':
           showSuccess('Your offer was accepted!')
-          setShowAssetModal(true)
-          setAssetModalData({
-            gameId: data.gameId,
-            listingId: data.listingId
-          })
+          // Navigate directly to the game
+          if (data.gameId) {
+            navigate(`/game/${data.gameId}`)
+          }
           break
           
         case 'new_notification':
@@ -409,13 +405,10 @@ const Dashboard = () => {
       const result = await response.json()
       showSuccess('Offer accepted! Loading game...')
       
-      // Show asset loading modal
-      setShowAssetModal(true)
-      setAssetModalData({
-        gameId: result.gameId,
-        listing: listings.find(l => l.id === offer.listing_id),
-        offer
-      })
+      // Navigate directly to the game
+      if (result.gameId) {
+        navigate(`/game/${result.gameId}`)
+      }
       
       fetchDashboardData()
     } catch (error) {
@@ -682,15 +675,7 @@ const Dashboard = () => {
         
 
         
-        {showAssetModal && assetModalData && (
-          <AssetLoadingModal
-            gameData={assetModalData}
-            onGameReady={(gameId) => {
-              navigate(`/game/${gameId}`)
-            }}
-            onClose={() => setShowAssetModal(false)}
-          />
-        )}
+
       </Container>
     </ThemeProvider>
   )

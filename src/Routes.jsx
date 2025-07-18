@@ -1,11 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 import Home from "./pages/Home";
 import CreateFlip from "./pages/CreateFlip";
-import FlipGame from "./pages/FlipGame";
-import FlipEnvironment from "./pages/FlipEnvironment";
 import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
+import UnifiedGamePage from "./components/UnifiedGamePage";
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +21,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "game/:gameId",
-        element: <FlipGame />,
+        element: <UnifiedGamePage />,
       },
       {
         path: "admin",
@@ -31,14 +30,6 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <Dashboard />,
-      },
-      {
-        path: "flip/:listingId",
-        element: <FlipEnvironment />,
-      },
-      {
-        path: "flip-environment/:id",
-        element: <FlipEnvironment />,
       },
     ],
   },
