@@ -479,7 +479,7 @@ app.post('/api/listings', (req, res) => {
   })
 })
 
-// Update listing with contract game ID
+// Update listing with contract game ID (PUT version)
 app.put('/api/listings/:listingId/contract-game', (req, res) => {
   const { listingId } = req.params
   const { contractGameId, transactionHash, listingFeeUSD } = req.body
@@ -506,6 +506,37 @@ app.put('/api/listings/:listingId/contract-game', (req, res) => {
       }
       console.log(`✅ Game created: ${gameId} (contract: ${contractGameId})`)
       res.json({ success: true, gameId, contractGameId })
+    })
+  })
+})
+
+// Create blockchain game (POST version - for compatibility)
+app.post('/api/listings/:listingId/create-blockchain-game', (req, res) => {
+  const { listingId } = req.params
+  const { contract_game_id, transaction_hash } = req.body
+  console.log(`🔄 Creating blockchain game for listing ${listingId}: ${contract_game_id}`)
+  
+  // Create game record
+  const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+  
+  db.run(`
+    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data)
+    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?
+    FROM listings WHERE id = ?
+  `, [gameId, contract_game_id, listingId, JSON.stringify({ transaction_hash }), listingId], function(err) {
+    if (err) {
+      console.error('❌ Error creating game:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    // Update listing status
+    db.run('UPDATE listings SET blockchain_game_id = ?, status = "game_created" WHERE id = ?', [contract_game_id, listingId], (err) => {
+      if (err) {
+        console.error('❌ Error updating listing:', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      console.log(`✅ Blockchain game created: ${gameId} (contract: ${contract_game_id})`)
+      res.json({ success: true, gameId, contractGameId: contract_game_id })
     })
   })
 })
