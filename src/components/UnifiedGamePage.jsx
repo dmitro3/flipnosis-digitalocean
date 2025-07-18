@@ -333,21 +333,15 @@ const UnifiedGamePage = () => {
       setSocket(ws)
       
       // Subscribe to game/listing
+      console.log(`📡 Subscribing to game/listing: ${gameId}`)
       ws.send(JSON.stringify({
         type: 'subscribe_game',
         gameId
       }))
       
-      // Also subscribe to listing ID if this is a listing
-      if (gameId.startsWith('listing_')) {
-        ws.send(JSON.stringify({
-          type: 'subscribe_game',
-          gameId: gameId
-        }))
-      }
-      
       // Register user if authenticated
       if (address) {
+        console.log(`📡 Registering user: ${address}`)
         ws.send(JSON.stringify({
           type: 'register_user',
           address
@@ -385,9 +379,18 @@ const UnifiedGamePage = () => {
   
   // Set coin images when game loads
   useEffect(() => {
+    console.log('🪙 Loading coin images for game:', {
+      hasGame: !!game,
+      hasCoinData: !!game?.coin_data,
+      hasCoin: !!game?.coin,
+      coinData: game?.coin_data,
+      coin: game?.coin
+    })
+    
     if (game?.coin_data) {
       try {
         const coinData = typeof game.coin_data === 'string' ? JSON.parse(game.coin_data) : game.coin_data
+        console.log('🪙 Parsed coin data:', coinData)
         setCustomHeadsImage(coinData.headsImage || '/coins/plainh.png')
         setCustomTailsImage(coinData.tailsImage || '/coins/plaint.png')
       } catch (error) {
@@ -396,9 +399,11 @@ const UnifiedGamePage = () => {
         setCustomTailsImage('/coins/plaint.png')
       }
     } else if (game?.coin) {
+      console.log('🪙 Using game.coin:', game.coin)
       setCustomHeadsImage(game.coin.headsImage || '/coins/plainh.png')
       setCustomTailsImage(game.coin.tailsImage || '/coins/plaint.png')
     } else {
+      console.log('🪙 Using default coin images')
       // Default coin images
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
@@ -470,14 +475,18 @@ const UnifiedGamePage = () => {
   }
   
   const handleWebSocketMessage = (data) => {
+    console.log('📡 WebSocket message received:', data.type, data)
+    
     switch (data.type) {
       case 'offer_accepted':
       case 'game_joined':
+        console.log('🔄 Refreshing game data due to offer_accepted/game_joined')
         loadGame() // Refresh game data
         break
         
       case 'offer_created':
       case 'offer_updated':
+        console.log('💰 Refreshing offers due to offer_created/offer_updated')
         // Refresh offers when a new offer is created or updated
         if (game?.id) {
           loadOffers(game.id)
@@ -1060,6 +1069,45 @@ const UnifiedGamePage = () => {
                     >
                       OpenSea
                     </a>
+                  </div>
+                </div>
+                
+                {/* Coin Display */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                    <strong>Coin:</strong>
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <img 
+                        src={customHeadsImage} 
+                        alt="Heads" 
+                        style={{ 
+                          width: '40px', 
+                          height: '40px', 
+                          borderRadius: '0.25rem',
+                          border: `2px solid ${theme.colors.neonYellow}`
+                        }} 
+                      />
+                      <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: theme.colors.textSecondary }}>
+                        Heads
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <img 
+                        src={customTailsImage} 
+                        alt="Tails" 
+                        style={{ 
+                          width: '40px', 
+                          height: '40px', 
+                          borderRadius: '0.25rem',
+                          border: `2px solid ${theme.colors.neonYellow}`
+                        }} 
+                      />
+                      <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: theme.colors.textSecondary }}>
+                        Tails
+                      </p>
+                    </div>
                   </div>
                 </div>
                 

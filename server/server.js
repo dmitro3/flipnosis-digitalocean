@@ -226,7 +226,9 @@ function handleSubscribeGame(socket, data) {
   }
   gameRooms.get(gameId).add(socket.id)
   
-  console.log(`👥 Socket ${socket.id} subscribed to game ${gameId}`)
+  console.log(`👥 Socket ${socket.id} subscribed to game/listing ${gameId}`)
+  console.log(`📊 Current rooms:`, Array.from(gameRooms.keys()))
+  console.log(`👥 Room ${gameId} has ${gameRooms.get(gameId).size} subscribers`)
 }
 
 function handleRegisterUser(socket, data) {
@@ -284,13 +286,23 @@ function handleDisconnect(socket) {
 
 function broadcastToGame(gameId, message) {
   const room = gameRooms.get(gameId)
-  if (!room) return
+  if (!room) {
+    console.log(`⚠️ No room found for gameId: ${gameId}`)
+    return
+  }
   
+  console.log(`📡 Broadcasting to room ${gameId}:`, message.type)
+  console.log(`👥 Room has ${room.size} subscribers`)
+  
+  let sentCount = 0
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN && room.has(client.id)) {
       client.send(JSON.stringify(message))
+      sentCount++
     }
   })
+  
+  console.log(`✅ Message sent to ${sentCount} clients in room ${gameId}`)
 }
 
 function sendToUser(address, message) {
@@ -524,8 +536,8 @@ app.put('/api/listings/:listingId/contract-game', (req, res) => {
   const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
   
   db.run(`
-    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data)
-    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?
+    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data, coin_data)
+    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?, coin_data
     FROM listings WHERE id = ?
   `, [gameId, contractGameId, listingId, JSON.stringify({ transactionHash, listingFeeUSD }), listingId], function(err) {
     if (err) {
@@ -555,8 +567,8 @@ app.post('/api/listings/:listingId/create-blockchain-game', (req, res) => {
   const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
   
   db.run(`
-    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data)
-    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?
+    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data, coin_data)
+    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?, coin_data
     FROM listings WHERE id = ?
   `, [gameId, contract_game_id, listingId, JSON.stringify({ transaction_hash }), listingId], function(err) {
     if (err) {
@@ -672,6 +684,7 @@ app.post('/api/listings/:listingId/offers', (req, res) => {
     console.log(`✅ Offer created: ${offerId}`)
     
     // Broadcast offer creation to all users subscribed to this listing
+    console.log(`📡 Broadcasting offer_created to listing ${listingId}`)
     broadcastToGame(listingId, {
       type: 'offer_created',
       offerId,
@@ -710,6 +723,7 @@ app.post('/api/offers/:offerId/accept', (req, res) => {
         console.log(`✅ Offer accepted: ${offerId}`)
         
         // Broadcast offer acceptance to all users subscribed to this listing
+        console.log(`📡 Broadcasting offer_updated (accepted) to listing ${offer.listing_id}`)
         broadcastToGame(offer.listing_id, {
           type: 'offer_updated',
           offerId,
@@ -744,13 +758,14 @@ app.post('/api/offers/:offerId/reject', (req, res) => {
       
       console.log(`✅ Offer rejected: ${offerId}`)
       
-      // Broadcast offer rejection to all users subscribed to this listing
-      broadcastToGame(offer.listing_id, {
-        type: 'offer_updated',
-        offerId,
-        listingId: offer.listing_id,
-        status: 'rejected'
-      })
+              // Broadcast offer rejection to all users subscribed to this listing
+        console.log(`📡 Broadcasting offer_updated (rejected) to listing ${offer.listing_id}`)
+        broadcastToGame(offer.listing_id, {
+          type: 'offer_updated',
+          offerId,
+          listingId: offer.listing_id,
+          status: 'rejected'
+        })
       
       res.json({ success: true, message: 'Offer rejected successfully' })
     })
