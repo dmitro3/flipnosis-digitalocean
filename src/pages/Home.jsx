@@ -10,7 +10,7 @@ import hazeVideo from '../../Images/Video/haze.webm'
 import { PaymentService } from '../services/PaymentService'
 import ClaimRewards from '../components/ClaimRewards'
 import contractService from '../services/ContractService'
-import { API_CONFIG } from '../config/api'
+import { API_CONFIG, getApiUrl } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -383,7 +383,7 @@ const Home = () => {
   // Function to update NFT metadata for a game
   const updateNFTMetadata = async (gameId) => {
     try {
-      const response = await fetch(`https://cryptoflipz2-production.up.railway.app/api/games/${gameId}/update-nft-metadata`, {
+      const response = await fetch(getApiUrl(`/games/${gameId}/update-nft-metadata`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
@@ -503,7 +503,7 @@ const Home = () => {
       showInfo('Making offer...')
 
       // Use production API URL
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = getApiUrl('')
 
       const offerData = {
         listing_id: flip.listingId,

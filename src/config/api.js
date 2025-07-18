@@ -13,7 +13,7 @@ export const API_CONFIG = {
 // Helper functions
 export const getApiUrl = (endpoint) => {
   const baseUrl = API_CONFIG.USE_V2 ? API_CONFIG.BASE_URL_V2 : API_CONFIG.BASE_URL
-  const prefix = API_CONFIG.USE_V2 ? '/api/v2' : '/api'
+  const prefix = '/api'
   return `${baseUrl}${prefix}${endpoint}`
 }
 

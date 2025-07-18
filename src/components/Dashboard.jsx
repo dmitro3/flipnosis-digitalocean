@@ -6,6 +6,7 @@ import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import DashboardChat from './DashboardChat'
+import { getApiUrl, getWsUrl } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -265,8 +266,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (!address) return
     
-    // Use production WebSocket URL
-    const wsUrl = 'wss://cryptoflipz2-production.up.railway.app'
+    // Use V2 WebSocket URL
+    const wsUrl = getWsUrl()
     
     const ws = new WebSocket(wsUrl)
     
@@ -345,8 +346,8 @@ const Dashboard = () => {
     try {
       setLoading(true)
       
-      // Use production API URL
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      // Use V2 API URL
+      const baseUrl = getApiUrl('')
       
       const response = await fetch(`${baseUrl}/api/dashboard/${address}`)
       
@@ -389,7 +390,7 @@ const Dashboard = () => {
   
   const handleAcceptOffer = async (offer) => {
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = getApiUrl('')
       
       const response = await fetch(`${baseUrl}/api/offers/${offer.id}/accept`, {
         method: 'POST',
@@ -418,7 +419,7 @@ const Dashboard = () => {
   
   const handleRejectOffer = async (offerId) => {
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = getApiUrl('')
       
       const response = await fetch(`${baseUrl}/api/offers/${offerId}/reject`, {
         method: 'POST'
@@ -438,7 +439,7 @@ const Dashboard = () => {
   
   const handleCancelListing = async (listingId) => {
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = getApiUrl('')
       
       const response = await fetch(`${baseUrl}/api/listings/${listingId}/cancel`, {
         method: 'POST',
