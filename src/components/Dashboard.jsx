@@ -479,7 +479,7 @@ const Dashboard = () => {
           return (
             <ListingCard 
               key={listing.id}
-              onClick={() => navigate(`/flip/${listing.id}`)}
+                              onClick={() => navigate(`/game/${listing.id}`)}
             >
               {listing.creator_online && <OnlineIndicator online />}
               {offerCount > 0 && <OfferCount>{offerCount} offers</OfferCount>}

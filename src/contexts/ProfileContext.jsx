@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useWallet } from './WalletContext'
-import { API_CONFIG } from '../config/api'
+import { API_CONFIG, getApiUrl } from '../config/api'
 
 const ProfileContext = createContext()
 
@@ -18,7 +18,7 @@ export const ProfileProvider = ({ children }) => {
   const [loading, setLoading] = useState({})
 
   // API base URL
-  const API_BASE = API_CONFIG.BASE_URL
+  const API_BASE = getApiUrl()
 
   const getPlayerName = async (playerAddress) => {
     try {

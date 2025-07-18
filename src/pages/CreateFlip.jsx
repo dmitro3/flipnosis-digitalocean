@@ -9,7 +9,7 @@ import CoinSelector from '../components/CoinSelector'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
-import { API_CONFIG } from '../config/api'
+import { API_CONFIG, getApiUrl } from '../config/api'
 import {
   Container,
   ContentWrapper,
@@ -194,7 +194,7 @@ const CreateFlip = () => {
       
       console.log('📤 CreateFlip: Creating listing with data:', listingData)
       
-      const listingResponse = await fetch(`${API_CONFIG.BASE_URL}/api/listings`, {
+      const listingResponse = await fetch(`${getApiUrl()}/api/listings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -297,7 +297,7 @@ const CreateFlip = () => {
       // Step 4: Update the listing with the contract game ID
       showInfo('Updating listing with blockchain game...')
       
-      const updateResponse = await fetch(`${API_CONFIG.BASE_URL}/api/listings/${listingResult.listingId}/create-blockchain-game`, {
+      const updateResponse = await fetch(`${getApiUrl()}/api/listings/${listingResult.listingId}/create-blockchain-game`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -319,8 +319,8 @@ const CreateFlip = () => {
       
       showSuccess('Flip created successfully!')
       
-      // Navigate to the listing page
-      navigate(`/flip/${listingResult.listingId}`)
+      // Navigate to the game page
+      navigate(`/game/${listingResult.listingId}`)
       
     } catch (error) {
       console.error('Error creating flip:', error)

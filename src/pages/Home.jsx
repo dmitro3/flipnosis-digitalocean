@@ -223,7 +223,7 @@ const Home = () => {
 
 
   // API URL
-  const API_URL = API_CONFIG.BASE_URL
+  const API_URL = getApiUrl()
 
   // Debug logging
   useEffect(() => {
@@ -966,7 +966,7 @@ const Home = () => {
                             }
                             
                             if (selectedFlip.type === 'listing') {
-                              navigate(`/flip/${selectedFlip.id}`)
+                              navigate(`/game/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'completed') {
                               // Handle completed game view
                               navigate(`/game/${selectedFlip.id}`)

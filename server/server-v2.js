@@ -361,6 +361,11 @@ async function getNFTMetadataWithCache(contractAddress, tokenId, chain = 'base')
 
 // ===== API ROUTES =====
 
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', server: 'v2', timestamp: new Date().toISOString() })
+})
+
 // Get game by ID
 app.get('/api/games/:gameId', (req, res) => {
   const { gameId } = req.params
