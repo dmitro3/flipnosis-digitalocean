@@ -395,7 +395,7 @@ const Dashboard = () => {
       const response = await fetch(`${baseUrl}/api/offers/${offer.id}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acceptor_address: address })
+        body: JSON.stringify({ final_price: offer.offer_price })
       })
       
       if (!response.ok) {
@@ -403,14 +403,7 @@ const Dashboard = () => {
         throw new Error(errorData.error || 'Failed to accept offer')
       }
       
-      const result = await response.json()
-      showSuccess('Offer accepted! Loading game...')
-      
-      // Navigate directly to the game
-      if (result.gameId) {
-        navigate(`/game/${result.gameId}`)
-      }
-      
+      showSuccess('Offer accepted!')
       fetchDashboardData()
     } catch (error) {
       showError(error.message)

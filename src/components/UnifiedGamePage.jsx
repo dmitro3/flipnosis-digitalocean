@@ -332,11 +332,19 @@ const UnifiedGamePage = () => {
       console.log('WebSocket connected')
       setSocket(ws)
       
-      // Subscribe to game
+      // Subscribe to game/listing
       ws.send(JSON.stringify({
         type: 'subscribe_game',
         gameId
       }))
+      
+      // Also subscribe to listing ID if this is a listing
+      if (gameId.startsWith('listing_')) {
+        ws.send(JSON.stringify({
+          type: 'subscribe_game',
+          gameId: gameId
+        }))
+      }
       
       // Register user if authenticated
       if (address) {
@@ -473,6 +481,9 @@ const UnifiedGamePage = () => {
         // Refresh offers when a new offer is created or updated
         if (game?.id) {
           loadOffers(game.id)
+        } else if (gameId.startsWith('listing_')) {
+          // For listings, use the gameId as the listing ID
+          loadOffers(gameId)
         }
         break
         
@@ -687,11 +698,11 @@ const UnifiedGamePage = () => {
   }
   
   const sendMessage = () => {
-    if (!newMessage.trim() || !socket || !game) return
+    if (!newMessage.trim() || !socket) return
     
     const messageData = {
       type: 'chat_message',
-      gameId: game.id || game.blockchain_id || gameId,
+      gameId: game?.id || game?.blockchain_id || gameId,
       from: address,
       message: newMessage.trim()
     }
@@ -741,9 +752,9 @@ const UnifiedGamePage = () => {
       })
       
       if (response.ok) {
-        showSuccess('Offer accepted! Game price updated.')
+        showSuccess('Offer accepted!')
         await loadOffers(game.id) // Refresh offers
-        await loadGame() // Refresh game data
+        await loadGame() // Refresh game/listing data
       } else {
         showError('Failed to accept offer')
       }

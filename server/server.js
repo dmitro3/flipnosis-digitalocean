@@ -154,6 +154,22 @@ function initializeDatabase() {
           if (err) console.error('❌ Error creating user_presence table:', err)
           else console.log('✅ User presence table ready')
         })
+        
+        // Profiles table
+        database.run(`
+          CREATE TABLE IF NOT EXISTS profiles (
+            address TEXT PRIMARY KEY,
+            name TEXT,
+            avatar TEXT,
+            heads_image TEXT,
+            tails_image TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `, (err) => {
+          if (err) console.error('❌ Error creating profiles table:', err)
+          else console.log('✅ Profiles table ready')
+        })
       })
       
       resolve(database)
@@ -580,6 +596,46 @@ app.post('/api/games/:gameId/payment-confirmed', (req, res) => {
   })
 })
 
+// ===== PROFILE API ENDPOINTS =====
+
+// Get profile by address
+app.get('/api/profile/:address', (req, res) => {
+  const { address } = req.params
+  console.log(`👤 Fetching profile for: ${address}`)
+  
+  db.get('SELECT * FROM profiles WHERE address = ?', [address], (err, row) => {
+    if (err) {
+      console.error('❌ Error fetching profile:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    if (!row) {
+      console.log(`❌ Profile not found: ${address}`)
+      return res.status(404).json({ error: 'Profile not found' })
+    }
+    console.log(`✅ Profile found: ${address}`)
+    res.json(row)
+  })
+})
+
+// Update profile
+app.put('/api/profile/:address', (req, res) => {
+  const { address } = req.params
+  const profileData = req.body
+  console.log(`👤 Updating profile for: ${address}`)
+  
+  db.run(`
+    INSERT OR REPLACE INTO profiles (address, name, avatar, heads_image, tails_image, updated_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now'))
+  `, [address, profileData.name || '', profileData.avatar || '', profileData.headsImage || '', profileData.tailsImage || ''], function(err) {
+    if (err) {
+      console.error('❌ Error updating profile:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    console.log(`✅ Profile updated: ${address}`)
+    res.json({ success: true, message: 'Profile updated successfully' })
+  })
+})
+
 // ===== OFFERS API ENDPOINTS =====
 
 // Get offers for a listing
@@ -661,6 +717,7 @@ app.post('/api/offers/:offerId/accept', (req, res) => {
           status: 'accepted'
         })
         
+        // Only return success, never a gameId
         res.json({ success: true, message: 'Offer accepted successfully' })
       })
     })

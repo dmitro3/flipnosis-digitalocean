@@ -20,6 +20,10 @@ export const router = createBrowserRouter([
         element: <CreateFlip />,
       },
       {
+        path: "game/listing_:listingId",
+        element: <UnifiedGamePage />,
+      },
+      {
         path: "game/:gameId",
         element: <UnifiedGamePage />,
       },
