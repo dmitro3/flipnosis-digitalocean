@@ -177,15 +177,49 @@ const CoinSection = styled.div`
   min-height: 400px;
 `
 
-const ChatSection = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+const BottomSection = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+  
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+`
+
+const InfoSection = styled.div`
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid ${props => props.theme.colors.neonYellow};
   border-radius: 1rem;
   padding: 1rem;
-  margin-top: 2rem;
-  height: 300px;
+  height: 400px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+`
+
+const ChatSection = styled.div`
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid ${props => props.theme.colors.neonBlue};
+  border-radius: 1rem;
+  padding: 1rem;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(0, 191, 255, 0.3);
+`
+
+const OffersSection = styled.div`
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid ${props => props.theme.colors.neonPink};
+  border-radius: 1rem;
+  padding: 1rem;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
 `
 
 const MessagesContainer = styled.div`
@@ -231,6 +265,11 @@ const UnifiedGamePage = () => {
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
   
+  // Offers state
+  const [offers, setOffers] = useState([])
+  const [newOffer, setNewOffer] = useState({ price: '', message: '' })
+  const [creatingOffer, setCreatingOffer] = useState(false)
+  
   // Game state from server
   const [gameState, setGameState] = useState({
     phase: 'waiting', // waiting, choosing, charging, completed
@@ -264,6 +303,8 @@ const UnifiedGamePage = () => {
   const needsPayment = game?.status === 'waiting_payment' && isJoiner
   const gameActive = game?.status === 'active'
   const isMyTurn = gameActive && isPlayer && gameState.phase === 'choosing'
+  const isListing = game?.id?.startsWith('listing_') || game?.listing_id
+  const canMakeOffer = isListing && !isCreator && address
   
   // Initialize contract service
   useEffect(() => {
@@ -365,6 +406,9 @@ const UnifiedGamePage = () => {
       const listingData = await response.json()
       setGame(listingData)
       
+      // Load offers for listing
+      await loadOffers(listingData.id)
+      
       // Set initial game state for listing
       setGameState({
         phase: 'waiting_payment',
@@ -381,6 +425,25 @@ const UnifiedGamePage = () => {
       showError('Failed to load game')
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const loadOffers = async (listingId) => {
+    try {
+      console.log(`💰 Loading offers for listing: ${listingId}`)
+      const response = await fetch(getApiUrl(`/listings/${listingId}/offers`))
+      
+      if (response.ok) {
+        const offersData = await response.json()
+        console.log(`✅ Offers loaded:`, offersData)
+        setOffers(offersData)
+      } else {
+        console.log(`⚠️ No offers found for listing: ${listingId}`)
+        setOffers([])
+      }
+    } catch (error) {
+      console.error('❌ Error loading offers:', error)
+      setOffers([])
     }
   }
   
@@ -613,6 +676,78 @@ const UnifiedGamePage = () => {
     setNewMessage('')
   }
   
+  const createOffer = async () => {
+    if (!newOffer.price || !game?.id) return
+    
+    try {
+      setCreatingOffer(true)
+      const response = await fetch(getApiUrl(`/listings/${game.id}/offers`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          offerer_address: address,
+          offerer_name: address.slice(0, 6) + '...' + address.slice(-4),
+          offer_price: parseFloat(newOffer.price),
+          message: newOffer.message
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        showSuccess('Offer created successfully!')
+        setNewOffer({ price: '', message: '' })
+        await loadOffers(game.id) // Refresh offers
+      } else {
+        showError('Failed to create offer')
+      }
+    } catch (error) {
+      console.error('Error creating offer:', error)
+      showError('Failed to create offer')
+    } finally {
+      setCreatingOffer(false)
+    }
+  }
+  
+  const acceptOffer = async (offerId, offerPrice) => {
+    try {
+      const response = await fetch(getApiUrl(`/offers/${offerId}/accept`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ final_price: offerPrice })
+      })
+      
+      if (response.ok) {
+        showSuccess('Offer accepted! Game price updated.')
+        await loadOffers(game.id) // Refresh offers
+        await loadGame() // Refresh game data
+      } else {
+        showError('Failed to accept offer')
+      }
+    } catch (error) {
+      console.error('Error accepting offer:', error)
+      showError('Failed to accept offer')
+    }
+  }
+  
+  const rejectOffer = async (offerId) => {
+    try {
+      const response = await fetch(getApiUrl(`/offers/${offerId}/reject`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        showSuccess('Offer rejected')
+        await loadOffers(game.id) // Refresh offers
+      } else {
+        showError('Failed to reject offer')
+      }
+    } catch (error) {
+      console.error('Error rejecting offer:', error)
+      showError('Failed to reject offer')
+    }
+  }
+  
   const handleClaimWinnings = async () => {
     try {
       showInfo('Claiming winnings...')
@@ -812,44 +947,239 @@ const UnifiedGamePage = () => {
               onChoiceSelect={handlePlayerChoice}
             />
             
-            {/* Chat */}
-            <ChatSection>
-              <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonBlue }}>Game Chat</h4>
-              <MessagesContainer>
-                {messages.map((msg, i) => (
-                  <div key={i} style={{ marginBottom: '0.5rem' }}>
-                    <strong style={{ color: theme.colors.neonPink }}>
-                      {msg.from.slice(0, 6)}...{msg.from.slice(-4)}:
-                    </strong>{' '}
-                    <span style={{ color: theme.colors.textPrimary }}>{msg.message}</span>
+            {/* Three Column Layout */}
+            <BottomSection>
+              {/* NFT Info Section */}
+              <InfoSection>
+                <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonYellow }}>NFT Details</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <img 
+                    src={getGameNFTImage()} 
+                    alt={getGameNFTName()} 
+                    style={{ 
+                      width: '80px', 
+                      height: '80px', 
+                      borderRadius: '0.5rem',
+                      border: `2px solid ${theme.colors.neonYellow}`
+                    }} 
+                  />
+                  <div>
+                    <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.textPrimary }}>
+                      {getGameNFTName()}
+                    </h5>
+                    <p style={{ margin: '0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                      {getGameNFTCollection()}
+                    </p>
                   </div>
-                ))}
-              </MessagesContainer>
-              <ChatInput>
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  placeholder="Type a message..."
-                  disabled={!gameActive}
-                />
-                <button 
-                  onClick={sendMessage} 
-                  disabled={!gameActive}
-                  style={{
-                    background: theme.colors.neonGreen,
-                    color: '#000',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '0.5rem',
-                    cursor: gameActive ? 'pointer' : 'not-allowed',
-                    opacity: gameActive ? 1 : 0.5
-                  }}
-                >
-                  Send
-                </button>
-              </ChatInput>
-            </ChatSection>
+                </div>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                  <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.textSecondary }}>
+                    <strong>Creator:</strong> {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
+                  </p>
+                  {getGameJoiner() && (
+                    <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.textSecondary }}>
+                      <strong>Player:</strong> {getGameJoiner().slice(0, 6)}...{getGameJoiner().slice(-4)}
+                    </p>
+                  )}
+                  <p style={{ margin: '0', color: theme.colors.neonYellow, fontSize: '1.2rem', fontWeight: 'bold' }}>
+                    Price: ${getGamePrice()} ETH
+                  </p>
+                </div>
+                
+                <div style={{ marginTop: 'auto' }}>
+                  <p style={{ margin: '0', color: theme.colors.textSecondary, fontSize: '0.8rem' }}>
+                    Status: {game?.status || 'Unknown'}
+                  </p>
+                </div>
+              </InfoSection>
+              
+              {/* Chat Section */}
+              <ChatSection>
+                <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonBlue }}>Game Chat</h4>
+                <MessagesContainer>
+                  {messages.map((msg, i) => (
+                    <div key={i} style={{ marginBottom: '0.5rem' }}>
+                      <strong style={{ color: theme.colors.neonPink }}>
+                        {msg.from.slice(0, 6)}...{msg.from.slice(-4)}:
+                      </strong>{' '}
+                      <span style={{ color: theme.colors.textPrimary }}>{msg.message}</span>
+                    </div>
+                  ))}
+                </MessagesContainer>
+                <ChatInput>
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    placeholder="Type a message..."
+                    disabled={!gameActive}
+                  />
+                  <button 
+                    onClick={sendMessage} 
+                    disabled={!gameActive}
+                    style={{
+                      background: theme.colors.neonGreen,
+                      color: '#000',
+                      border: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0.5rem',
+                      cursor: gameActive ? 'pointer' : 'not-allowed',
+                      opacity: gameActive ? 1 : 0.5
+                    }}
+                  >
+                    Send
+                  </button>
+                </ChatInput>
+              </ChatSection>
+              
+              {/* Offers Section */}
+              <OffersSection>
+                <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonPink }}>Offers</h4>
+                
+                {isListing && (
+                  <>
+                    {/* Create Offer Form */}
+                    {canMakeOffer && (
+                      <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255, 20, 147, 0.1)', borderRadius: '0.5rem' }}>
+                        <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
+                        <input
+                          type="number"
+                          placeholder="Offer price (ETH)"
+                          value={newOffer.price}
+                          onChange={(e) => setNewOffer(prev => ({ ...prev, price: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            marginBottom: '0.5rem',
+                            padding: '0.5rem',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            borderRadius: '0.25rem'
+                          }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Message (optional)"
+                          value={newOffer.message}
+                          onChange={(e) => setNewOffer(prev => ({ ...prev, message: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            marginBottom: '0.5rem',
+                            padding: '0.5rem',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            borderRadius: '0.25rem'
+                          }}
+                        />
+                        <button
+                          onClick={createOffer}
+                          disabled={creatingOffer || !newOffer.price}
+                          style={{
+                            width: '100%',
+                            background: theme.colors.neonPink,
+                            color: '#000',
+                            border: 'none',
+                            padding: '0.5rem',
+                            borderRadius: '0.25rem',
+                            cursor: creatingOffer ? 'not-allowed' : 'pointer',
+                            opacity: creatingOffer ? 0.5 : 1
+                          }}
+                        >
+                          {creatingOffer ? 'Creating...' : 'Submit Offer'}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Offers List */}
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                      {offers.length === 0 ? (
+                        <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
+                          No offers yet
+                        </p>
+                      ) : (
+                        offers.map((offer) => (
+                          <div 
+                            key={offer.id} 
+                            style={{ 
+                              marginBottom: '1rem', 
+                              padding: '1rem', 
+                              background: 'rgba(255, 255, 255, 0.05)', 
+                              borderRadius: '0.5rem',
+                              border: `1px solid ${offer.status === 'accepted' ? theme.colors.neonGreen : offer.status === 'rejected' ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.1)'}`
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                              <strong style={{ color: theme.colors.neonPink }}>
+                                {offer.offerer_name || offer.offerer_address.slice(0, 6) + '...' + offer.offerer_address.slice(-4)}
+                              </strong>
+                              <span style={{ 
+                                color: offer.status === 'accepted' ? theme.colors.neonGreen : 
+                                       offer.status === 'rejected' ? theme.colors.neonPink : 
+                                       theme.colors.neonYellow,
+                                fontSize: '0.8rem',
+                                textTransform: 'uppercase'
+                              }}>
+                                {offer.status}
+                              </span>
+                            </div>
+                            <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonYellow, fontWeight: 'bold' }}>
+                              ${offer.offer_price} ETH
+                            </p>
+                            {offer.message && (
+                              <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                                "{offer.message}"
+                              </p>
+                            )}
+                            {isCreator && offer.status === 'pending' && (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => acceptOffer(offer.id, offer.offer_price)}
+                                  style={{
+                                    flex: 1,
+                                    background: theme.colors.neonGreen,
+                                    color: '#000',
+                                    border: 'none',
+                                    padding: '0.25rem',
+                                    borderRadius: '0.25rem',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem'
+                                  }}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => rejectOffer(offer.id)}
+                                  style={{
+                                    flex: 1,
+                                    background: theme.colors.neonPink,
+                                    color: '#000',
+                                    border: 'none',
+                                    padding: '0.25rem',
+                                    borderRadius: '0.25rem',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem'
+                                  }}
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+                
+                {!isListing && (
+                  <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
+                    Game in progress - no offers available
+                  </p>
+                )}
+              </OffersSection>
+            </BottomSection>
           </GameSection>
         </GameContainer>
       </Container>

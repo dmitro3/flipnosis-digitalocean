@@ -580,6 +580,91 @@ app.post('/api/games/:gameId/payment-confirmed', (req, res) => {
   })
 })
 
+// ===== OFFERS API ENDPOINTS =====
+
+// Get offers for a listing
+app.get('/api/listings/:listingId/offers', (req, res) => {
+  const { listingId } = req.params
+  console.log(`💰 Fetching offers for listing: ${listingId}`)
+  
+  db.all('SELECT * FROM offers WHERE listing_id = ? ORDER BY created_at DESC', [listingId], (err, rows) => {
+    if (err) {
+      console.error('❌ Error fetching offers:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    console.log(`✅ Found ${rows.length} offers for listing ${listingId}`)
+    res.json(rows)
+  })
+})
+
+// Create offer
+app.post('/api/listings/:listingId/offers', (req, res) => {
+  const { listingId } = req.params
+  const { offerer_address, offerer_name, offer_price, message } = req.body
+  console.log(`💰 Creating offer for listing: ${listingId}`)
+  
+  const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+  
+  db.run(`
+    INSERT INTO offers (id, listing_id, offerer_address, offerer_name, offer_price, message, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending')
+  `, [offerId, listingId, offerer_address, offerer_name, offer_price, message], function(err) {
+    if (err) {
+      console.error('❌ Error creating offer:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    console.log(`✅ Offer created: ${offerId}`)
+    res.json({ success: true, offerId, message: 'Offer created successfully' })
+  })
+})
+
+// Accept offer
+app.post('/api/offers/:offerId/accept', (req, res) => {
+  const { offerId } = req.params
+  const { final_price } = req.body
+  console.log(`✅ Accepting offer: ${offerId}`)
+  
+  db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId], function(err) {
+    if (err) {
+      console.error('❌ Error accepting offer:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    // Get the listing ID from the offer
+    db.get('SELECT listing_id FROM offers WHERE id = ?', [offerId], (err, offer) => {
+      if (err || !offer) {
+        console.error('❌ Error fetching offer:', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      // Update listing with final price
+      db.run('UPDATE listings SET final_price = ?, status = "offer_accepted" WHERE id = ?', [final_price, offer.listing_id], (err) => {
+        if (err) {
+          console.error('❌ Error updating listing:', err)
+          return res.status(500).json({ error: 'Database error' })
+        }
+        console.log(`✅ Offer accepted: ${offerId}`)
+        res.json({ success: true, message: 'Offer accepted successfully' })
+      })
+    })
+  })
+})
+
+// Reject offer
+app.post('/api/offers/:offerId/reject', (req, res) => {
+  const { offerId } = req.params
+  console.log(`❌ Rejecting offer: ${offerId}`)
+  
+  db.run('UPDATE offers SET status = "rejected" WHERE id = ?', [offerId], function(err) {
+    if (err) {
+      console.error('❌ Error rejecting offer:', err)
+      return res.status(500).json({ error: 'Database error' })
+    }
+    console.log(`✅ Offer rejected: ${offerId}`)
+    res.json({ success: true, message: 'Offer rejected successfully' })
+  })
+})
+
 // ===== SERVER STARTUP =====
 console.log('🚀 Starting server...')
 
