@@ -614,6 +614,14 @@ app.post('/api/listings/:listingId/offers', (req, res) => {
       return res.status(500).json({ error: 'Database error' })
     }
     console.log(`✅ Offer created: ${offerId}`)
+    
+    // Broadcast offer creation to all users subscribed to this listing
+    broadcastToGame(listingId, {
+      type: 'offer_created',
+      offerId,
+      listingId
+    })
+    
     res.json({ success: true, offerId, message: 'Offer created successfully' })
   })
 })
@@ -644,6 +652,15 @@ app.post('/api/offers/:offerId/accept', (req, res) => {
           return res.status(500).json({ error: 'Database error' })
         }
         console.log(`✅ Offer accepted: ${offerId}`)
+        
+        // Broadcast offer acceptance to all users subscribed to this listing
+        broadcastToGame(offer.listing_id, {
+          type: 'offer_updated',
+          offerId,
+          listingId: offer.listing_id,
+          status: 'accepted'
+        })
+        
         res.json({ success: true, message: 'Offer accepted successfully' })
       })
     })
@@ -660,8 +677,26 @@ app.post('/api/offers/:offerId/reject', (req, res) => {
       console.error('❌ Error rejecting offer:', err)
       return res.status(500).json({ error: 'Database error' })
     }
-    console.log(`✅ Offer rejected: ${offerId}`)
-    res.json({ success: true, message: 'Offer rejected successfully' })
+    
+    // Get the listing ID from the offer
+    db.get('SELECT listing_id FROM offers WHERE id = ?', [offerId], (err, offer) => {
+      if (err || !offer) {
+        console.error('❌ Error fetching offer:', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      console.log(`✅ Offer rejected: ${offerId}`)
+      
+      // Broadcast offer rejection to all users subscribed to this listing
+      broadcastToGame(offer.listing_id, {
+        type: 'offer_updated',
+        offerId,
+        listingId: offer.listing_id,
+        status: 'rejected'
+      })
+      
+      res.json({ success: true, message: 'Offer rejected successfully' })
+    })
   })
 })
 

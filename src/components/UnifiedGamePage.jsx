@@ -377,11 +377,25 @@ const UnifiedGamePage = () => {
   
   // Set coin images when game loads
   useEffect(() => {
-    if (game?.coin) {
+    if (game?.coin_data) {
+      try {
+        const coinData = typeof game.coin_data === 'string' ? JSON.parse(game.coin_data) : game.coin_data
+        setCustomHeadsImage(coinData.headsImage || '/coins/plainh.png')
+        setCustomTailsImage(coinData.tailsImage || '/coins/plaint.png')
+      } catch (error) {
+        console.error('Error parsing coin data:', error)
+        setCustomHeadsImage('/coins/plainh.png')
+        setCustomTailsImage('/coins/plaint.png')
+      }
+    } else if (game?.coin) {
       setCustomHeadsImage(game.coin.headsImage || '/coins/plainh.png')
       setCustomTailsImage(game.coin.tailsImage || '/coins/plaint.png')
+    } else {
+      // Default coin images
+      setCustomHeadsImage('/coins/plainh.png')
+      setCustomTailsImage('/coins/plaint.png')
     }
-  }, [game?.coin])
+  }, [game?.coin_data, game?.coin])
   
   const loadGame = async () => {
     try {
@@ -452,6 +466,14 @@ const UnifiedGamePage = () => {
       case 'offer_accepted':
       case 'game_joined':
         loadGame() // Refresh game data
+        break
+        
+      case 'offer_created':
+      case 'offer_updated':
+        // Refresh offers when a new offer is created or updated
+        if (game?.id) {
+          loadOffers(game.id)
+        }
         break
         
       case 'game_started':
@@ -665,14 +687,16 @@ const UnifiedGamePage = () => {
   }
   
   const sendMessage = () => {
-    if (!newMessage.trim() || !socket) return
+    if (!newMessage.trim() || !socket || !game) return
     
-    socket.send(JSON.stringify({
+    const messageData = {
       type: 'chat_message',
-      gameId,
+      gameId: game.id || game.blockchain_id || gameId,
+      from: address,
       message: newMessage.trim()
-    }))
+    }
     
+    socket.send(JSON.stringify(messageData))
     setNewMessage('')
   }
   
@@ -982,9 +1006,50 @@ const UnifiedGamePage = () => {
                       <strong>Player:</strong> {getGameJoiner().slice(0, 6)}...{getGameJoiner().slice(-4)}
                     </p>
                   )}
-                  <p style={{ margin: '0', color: theme.colors.neonYellow, fontSize: '1.2rem', fontWeight: 'bold' }}>
-                    Price: ${getGamePrice()} ETH
+                  <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonYellow, fontSize: '1.2rem', fontWeight: 'bold' }}>
+                    Price: ${getGamePrice()} USD
                   </p>
+                  <p style={{ margin: '0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                    <strong>Chain:</strong> Base (ETH)
+                  </p>
+                </div>
+                
+                {/* External Links */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <a 
+                      href={`https://basescan.org/token/${game?.nft_contract}?a=${game?.nft_token_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        background: theme.colors.neonBlue,
+                        color: '#000',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '0.25rem',
+                        textDecoration: 'none',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      Explorer
+                    </a>
+                    <a 
+                      href={`https://opensea.io/assets/base/${game?.nft_contract}/${game?.nft_token_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        background: theme.colors.neonGreen,
+                        color: '#000',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '0.25rem',
+                        textDecoration: 'none',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      OpenSea
+                    </a>
+                  </div>
                 </div>
                 
                 <div style={{ marginTop: 'auto' }}>
@@ -1008,28 +1073,28 @@ const UnifiedGamePage = () => {
                   ))}
                 </MessagesContainer>
                 <ChatInput>
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type a message..."
-                    disabled={!gameActive}
-                  />
-                  <button 
-                    onClick={sendMessage} 
-                    disabled={!gameActive}
-                    style={{
-                      background: theme.colors.neonGreen,
-                      color: '#000',
-                      border: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '0.5rem',
-                      cursor: gameActive ? 'pointer' : 'not-allowed',
-                      opacity: gameActive ? 1 : 0.5
-                    }}
-                  >
-                    Send
-                  </button>
+                                  <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Type a message..."
+                  disabled={!gameActive && !isListing}
+                />
+                <button 
+                  onClick={sendMessage} 
+                  disabled={!gameActive && !isListing}
+                  style={{
+                    background: theme.colors.neonGreen,
+                    color: '#000',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    cursor: (gameActive || isListing) ? 'pointer' : 'not-allowed',
+                    opacity: (gameActive || isListing) ? 1 : 0.5
+                  }}
+                >
+                  Send
+                </button>
                 </ChatInput>
               </ChatSection>
               
@@ -1045,7 +1110,7 @@ const UnifiedGamePage = () => {
                         <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
                         <input
                           type="number"
-                          placeholder="Offer price (ETH)"
+                          placeholder="Offer price (USD)"
                           value={newOffer.price}
                           onChange={(e) => setNewOffer(prev => ({ ...prev, price: e.target.value }))}
                           style={{
@@ -1125,7 +1190,7 @@ const UnifiedGamePage = () => {
                               </span>
                             </div>
                             <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonYellow, fontWeight: 'bold' }}>
-                              ${offer.offer_price} ETH
+                              ${offer.offer_price} USD
                             </p>
                             {offer.message && (
                               <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
