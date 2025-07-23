@@ -678,8 +678,15 @@ app.get('/api/profile/:address', (req, res) => {
       return res.status(500).json({ error: 'Database error' })
     }
     if (!row) {
-      console.log(`❌ Profile not found: ${address}`)
-      return res.status(404).json({ error: 'Profile not found' })
+      // Return empty profile instead of 404
+      console.log(`ℹ️ No profile found for ${address}, returning empty profile`)
+      return res.json({
+        address,
+        name: '',
+        avatar: '',
+        heads_image: '',
+        tails_image: ''
+      })
     }
     console.log(`✅ Profile found: ${address}`)
     res.json(row)
@@ -689,19 +696,29 @@ app.get('/api/profile/:address', (req, res) => {
 // Update profile
 app.put('/api/profile/:address', (req, res) => {
   const { address } = req.params
-  const profileData = req.body
+  const { name, avatar, headsImage, tailsImage } = req.body
   console.log(`👤 Updating profile for: ${address}`)
   
   db.run(`
     INSERT OR REPLACE INTO profiles (address, name, avatar, heads_image, tails_image, updated_at)
     VALUES (?, ?, ?, ?, ?, datetime('now'))
-  `, [address, profileData.name || '', profileData.avatar || '', profileData.headsImage || '', profileData.tailsImage || ''], function(err) {
+  `, [address, name || '', avatar || '', headsImage || '', tailsImage || ''], function(err) {
     if (err) {
       console.error('❌ Error updating profile:', err)
       return res.status(500).json({ error: 'Database error' })
     }
     console.log(`✅ Profile updated: ${address}`)
-    res.json({ success: true, message: 'Profile updated successfully' })
+    res.json({ 
+      success: true, 
+      message: 'Profile updated successfully',
+      profile: {
+        address,
+        name: name || '',
+        avatar: avatar || '',
+        heads_image: headsImage || '',
+        tails_image: tailsImage || ''
+      }
+    })
   })
 })
 
@@ -731,44 +748,48 @@ app.post('/api/listings/:listingId/offers', (req, res) => {
   const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
   
   db.run(`
-    INSERT INTO offers (id, listing_id, offerer_address, offerer_name, offer_price, message, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'pending')
-  `, [offerId, listingId, offerer_address, offerer_name, offer_price, message], function(err) {
+    INSERT INTO offers (id, listing_id, offerer_address, offerer_name, offer_price, message, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
+  `, [offerId, listingId, offerer_address, offerer_name || `${offerer_address.slice(0,6)}...${offerer_address.slice(-4)}`, offer_price, message], function(err) {
     if (err) {
       console.error('❌ Error creating offer:', err)
       return res.status(500).json({ error: 'Database error' })
     }
     console.log(`✅ Offer created: ${offerId}`)
     
-    // Get the complete offer data to broadcast
-    db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, offer) => {
-      if (err) {
-        console.error('❌ Error fetching created offer:', err)
-        return res.status(500).json({ error: 'Database error' })
-      }
-      
-      // Broadcast to listing room
-      console.log(`📡 Broadcasting offer_created to listing ${listingId}`)
-      broadcastToGame(listingId, {
-        type: 'offer_created',
-        offer: offer,
-        listingId
-      })
-      
-      // Also check if there's a game associated and broadcast there too
-      db.get('SELECT id FROM games WHERE listing_id = ?', [listingId], (err, game) => {
-        if (!err && game) {
-          console.log(`📡 Also broadcasting to game ${game.id}`)
-          broadcastToGame(game.id, {
-            type: 'offer_created',
-            offer: offer,
-            listingId
-          })
-        }
-      })
-      
-      res.json({ success: true, offerId, offer, message: 'Offer created successfully' })
+    // Create the complete offer object to broadcast
+    const newOffer = {
+      id: offerId,
+      listing_id: listingId,
+      offerer_address,
+      offerer_name: offerer_name || `${offerer_address.slice(0,6)}...${offerer_address.slice(-4)}`,
+      offer_price,
+      message,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    }
+    
+    // Broadcast to listing room
+    console.log(`📡 Broadcasting offer_created to listing ${listingId}`)
+    broadcastToGame(listingId, {
+      type: 'offer_created',
+      offer: newOffer,
+      listingId
     })
+    
+    // Also check if there's a game associated and broadcast there too
+    db.get('SELECT id FROM games WHERE listing_id = ?', [listingId], (err, game) => {
+      if (!err && game) {
+        console.log(`📡 Also broadcasting to game ${game.id}`)
+        broadcastToGame(game.id, {
+          type: 'offer_created',
+          offer: newOffer,
+          listingId
+        })
+      }
+    })
+    
+    res.json({ success: true, offerId, offer: newOffer, message: 'Offer created successfully' })
   })
 })
 
@@ -875,6 +896,21 @@ app.post('/api/offers/:offerId/reject', (req, res) => {
       res.json({ success: true, message: 'Offer rejected successfully' })
     })
   })
+})
+
+// SPA catch-all route (after all API routes, before server.listen)
+app.get('*', (req, res) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'API endpoint not found' })
+  }
+  
+  const indexPath = path.join(__dirname, '..', 'index.html')
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath)
+  } else {
+    res.status(404).send('Application not found. Please build the frontend.')
+  }
 })
 
 // ===== SERVER STARTUP =====

@@ -386,43 +386,32 @@ const UnifiedGamePage = () => {
       coinData: game?.coin_data
     })
     
+    let coinData = null
+    
+    // Try to get coin data from various sources
     if (game?.coin_data) {
       try {
         // Parse coin_data if it's a string
-        const coinData = typeof game.coin_data === 'string' ? 
+        coinData = typeof game.coin_data === 'string' ? 
           JSON.parse(game.coin_data) : game.coin_data
-        
-        console.log('🪙 Parsed coin data:', coinData)
-        
-        // Extract the actual coin object if it's nested
-        const coin = coinData.coin || coinData
-        
-        // Set the images
-        if (coin.headsImage && coin.tailsImage) {
-          setCustomHeadsImage(coin.headsImage)
-          setCustomTailsImage(coin.tailsImage)
-          console.log('✅ Custom coin images set:', {
-            heads: coin.headsImage,
-            tails: coin.tailsImage
-          })
-        } else {
-          // Fallback to default
-          console.log('⚠️ No custom images found, using defaults')
-          setCustomHeadsImage('/coins/plainh.png')
-          setCustomTailsImage('/coins/plaint.png')
-        }
       } catch (error) {
         console.error('❌ Error parsing coin data:', error)
-        // Use defaults on error
-        setCustomHeadsImage('/coins/plainh.png')
-        setCustomTailsImage('/coins/plaint.png')
       }
+    } else if (game?.coin) {
+      coinData = game.coin
+    }
+    
+    // Set coin images
+    if (coinData && coinData.headsImage && coinData.tailsImage) {
+      console.log('✅ Setting custom coin images:', coinData)
+      setCustomHeadsImage(coinData.headsImage)
+      setCustomTailsImage(coinData.tailsImage)
     } else {
-      console.log('🪙 No coin data, using default images')
+      console.log('🪙 Using default coin images')
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
     }
-  }, [game?.coin_data])
+  }, [game])
   
   const loadGame = async () => {
     try {

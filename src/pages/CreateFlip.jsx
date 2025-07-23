@@ -184,12 +184,12 @@ const CreateFlip = () => {
         asking_price: parseFloat(price),
         accepts_offers: acceptsOffers,
         min_offer_price: acceptsOffers ? parseFloat(price) * 0.8 : parseFloat(price),
-        coin: {
+        coin_data: JSON.stringify({
           type: selectedCoin?.type || 'default',
-          headsImage: selectedCoin?.headsImage || '',
-          tailsImage: selectedCoin?.tailsImage || '',
+          headsImage: selectedCoin?.headsImage || '/coins/plainh.png',
+          tailsImage: selectedCoin?.tailsImage || '/coins/plaint.png',
           isCustom: selectedCoin?.isCustom || false
-        }
+        })
       }
       
       console.log('📤 CreateFlip: Creating listing with data:', listingData)

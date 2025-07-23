@@ -340,15 +340,15 @@ const Home = () => {
           chain: listing.nft_chain || 'base',
           needsMetadataUpdate: !listing.nft_image || listing.nft_image === '' || listing.nft_image === '/placeholder-nft.svg'
         },
-        gameType: 'nft-vs-crypto', // Listings are always NFT vs Crypto
-        price: listing.asking_price,
-        priceUSD: listing.asking_price,
+        gameType: 'nft-vs-crypto',
+        price: listing.asking_price || 0,  // Use asking_price
+        priceUSD: listing.asking_price || 0,  // Use asking_price
         currency: 'USD',
         chain: listing.nft_chain || 'base',
         creator: listing.creator,
         joiner: null,
         rounds: null,
-        status: listing.status, // Use the actual backend status
+        status: listing.status,
         createdAt: listing.created_at,
         winner: null,
         description: `${listing.nft_name} - Available for offers`,
