@@ -87,17 +87,23 @@ const SubmitButton = styled(Button)`
 const CreateFlip = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { address, walletClient } = useWallet()
+  const { address, walletClient, nfts, loading: nftsLoading } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [price, setPrice] = useState('')
   const [loading, setLoading] = useState(false)
+  const [gameType, setGameType] = useState('nft-vs-crypto')
+  const [acceptsOffers, setAcceptsOffers] = useState(true)
+  const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [selectedCoin, setSelectedCoin] = useState({
     type: 'default',
     headsImage: '/coins/plainh.png',
     tailsImage: '/coins/plaint.png',
     isCustom: false
   })
+
+  // Check if wallet is fully connected and ready
+  const isFullyConnected = address && walletClient
 
   const handleSubmit = async (e) => {
     e.preventDefault()
