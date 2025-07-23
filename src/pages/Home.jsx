@@ -41,6 +41,7 @@ import {
   StatusBadge,
   PriceBadge
 } from '../styles/components'
+import ClaimRewards from '../components/ClaimRewards'
 
 
   // Helper functions for chain URLs
@@ -209,11 +210,13 @@ const Home = () => {
   const [loading, setLoading] = useState(false)
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [error, setError] = useState(null)
 
   // Fetch data from database
   const fetchData = async () => {
     try {
       setLoading(true)
+      setError(null)
       const [gamesData, listingsData] = await Promise.all([
         GameService.fetchGames(),
         GameService.fetchListings()
@@ -222,6 +225,7 @@ const Home = () => {
       setListings(listingsData)
     } catch (error) {
       console.error('Error fetching data:', error)
+      setError('Failed to load games and listings')
       showError('Failed to load games and listings')
     } finally {
       setLoading(false)
