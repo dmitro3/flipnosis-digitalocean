@@ -105,6 +105,22 @@ const CreateFlip = () => {
   // Check if wallet is fully connected and ready
   const isFullyConnected = address && walletClient
 
+  // Initialize contract service when wallet is ready
+  useEffect(() => {
+    if (isFullyConnected && walletClient) {
+      const initializeContract = async () => {
+        try {
+          await contractService.initializeClients(8453, walletClient)
+          console.log('✅ Contract service initialized in CreateFlip')
+        } catch (error) {
+          console.error('❌ Failed to initialize contract service:', error)
+          showError('Failed to initialize contract service')
+        }
+      }
+      initializeContract()
+    }
+  }, [isFullyConnected, walletClient, showError])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selectedNFT) {
