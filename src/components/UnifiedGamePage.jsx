@@ -118,7 +118,7 @@ const PayButton = styled.button`
 `
 
 const GameSection = styled.div`
-  background: rgba(0, 0, 20, 0.95);
+  background: transparent;
   border: 2px solid ${props => props.theme.colors.neonBlue};
   border-radius: 1.5rem;
   padding: 2rem;
@@ -185,6 +185,9 @@ const BottomSection = styled.div`
   grid-template-columns: 1fr 1fr 1fr;
   gap: 2rem;
   margin-top: 2rem;
+  background: rgba(0, 0, 20, 0.95);
+  border-radius: 1rem;
+  padding: 2rem;
   
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
@@ -352,7 +355,13 @@ const UnifiedGamePage = () => {
         break
       case 'nft_offer_received':
         console.log('🎯 NFT offer received:', data.offer)
-        setOfferedNFTs(prev => [...prev, data.offer])
+        console.log('🎯 Current offeredNFTs:', offeredNFTs)
+        console.log('🎯 Is creator:', isCreator)
+        setOfferedNFTs(prev => {
+          const newOffers = [...prev, data.offer]
+          console.log('🎯 Updated offeredNFTs:', newOffers)
+          return newOffers
+        })
         if (!isCreator) {
           showInfo(`New NFT battle offer: ${data.offer.nft.name}`)
         }
@@ -1248,8 +1257,8 @@ const UnifiedGamePage = () => {
                   </p>
                 )}
                 
-                {/* NFT Battle Offers */}
-                {isListing && (
+                {/* NFT Battle Offers - Only show for NFT vs NFT games */}
+                {isListing && gameData?.game_type === 'nft-vs-nft' && (
                   <NFTOfferComponent
                     gameId={gameId}
                     gameData={gameData}

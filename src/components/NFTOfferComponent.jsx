@@ -22,7 +22,11 @@ const NFTOfferComponent = ({
   const [showNFTSelector, setShowNFTSelector] = useState(false)
 
   const handleSubmitOffer = async () => {
-    if (!selectedNFT || !connected || !socket) return
+    if (!selectedNFT || !connected || !socket) {
+      console.error('❌ Cannot submit offer:', { selectedNFT: !!selectedNFT, connected, socket: !!socket })
+      showError('Cannot submit offer: WebSocket not connected')
+      return
+    }
 
     try {
       setIsSubmittingOffer(true)
@@ -44,6 +48,8 @@ const NFTOfferComponent = ({
         timestamp: new Date().toISOString()
       }
 
+      console.log('📤 Sending NFT offer:', offerData)
+      
       // Send offer via WebSocket
       socket.send(JSON.stringify(offerData))
       
@@ -267,7 +273,14 @@ const NFTOfferComponent = ({
   }
 
   // If user is not the creator and game is waiting for NFT offers
-  if (!isCreator && gameData?.gameType === 'nft-vs-nft' && gameData?.status === 'waiting') {
+  if (!isCreator && gameData?.game_type === 'nft-vs-nft' && gameData?.status === 'waiting') {
+    console.log('🎮 NFT vs NFT game detected for non-creator:', {
+      isCreator,
+      gameType: gameData?.game_type,
+      status: gameData?.status,
+      connected,
+      socket: !!socket
+    })
     return (
       <div style={{
         background: 'rgba(255, 20, 147, 0.1)',
@@ -284,6 +297,21 @@ const NFTOfferComponent = ({
         }}>
           ⚔️ Challenge with Your NFT!
         </h3>
+        
+        {/* Connection Status */}
+        <div style={{
+          background: connected && socket ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
+          border: `1px solid ${connected && socket ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'}`,
+          borderRadius: '0.5rem',
+          padding: '0.5rem',
+          marginBottom: '1rem',
+          fontSize: '0.8rem',
+          textAlign: 'center'
+        }}>
+          <span style={{ color: connected && socket ? '#00FF00' : '#FF0000' }}>
+            {connected && socket ? '🟢 Connected' : '🔴 Disconnected'}
+          </span>
+        </div>
 
         <div style={{
           background: 'rgba(0, 0, 0, 0.3)',
@@ -364,18 +392,19 @@ const NFTOfferComponent = ({
         ) : (
           <button
             onClick={() => setShowNFTSelector(true)}
+            disabled={!connected || !socket}
             style={{
               width: '100%',
               padding: '1rem',
-              background: 'rgba(255, 255, 255, 0.1)',
+              background: connected && socket ? 'rgba(255, 255, 255, 0.1)' : 'rgba(100, 100, 100, 0.3)',
               border: '2px dashed rgba(255, 20, 147, 0.5)',
               borderRadius: '0.75rem',
-              color: '#FF1493',
-              cursor: 'pointer',
+              color: connected && socket ? '#FF1493' : '#666',
+              cursor: connected && socket ? 'pointer' : 'not-allowed',
               marginBottom: '1rem'
             }}
           >
-            Select Your NFT to Battle
+            {connected && socket ? 'Select Your NFT to Battle' : 'Connecting...'}
           </button>
         )}
 

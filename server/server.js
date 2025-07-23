@@ -285,8 +285,10 @@ function handleChatMessage(socket, data) {
 function handleNFTOffer(socket, data) {
   const { gameId, offererAddress, nft } = data
   console.log('🎯 NFT offer received:', { gameId, offererAddress, nft })
+  console.log('🎯 Socket info:', { socketId: socket.id, address: socket.address })
   
   // Broadcast the offer to all users in the game room
+  console.log('🎯 Broadcasting NFT offer to game room:', gameId)
   broadcastToGame(gameId, {
     type: 'nft_offer_received',
     offer: {
@@ -411,10 +413,12 @@ function broadcastToGame(gameId, message) {
   
   console.log(`📡 Broadcasting to room ${gameId}:`, message.type)
   console.log(`👥 Room has ${room.size} subscribers`)
+  console.log(`👥 Room subscribers:`, Array.from(room))
   
   let sentCount = 0
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN && room.has(client.id)) {
+      console.log(`📤 Sending to client ${client.id} (${client.address}):`, message.type)
       client.send(JSON.stringify(message))
       sentCount++
     }
