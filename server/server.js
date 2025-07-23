@@ -431,7 +431,7 @@ app.get('/api/games', (req, res) => {
 app.get('/api/listings', (req, res) => {
   console.log('📋 Fetching listings')
   
-  db.all('SELECT * FROM listings WHERE status = "active" ORDER BY created_at DESC', (err, rows) => {
+  db.all('SELECT * FROM listings WHERE status IN ("active", "game_created") ORDER BY created_at DESC', (err, rows) => {
     if (err) {
       console.error('❌ Error fetching listings:', err)
       return res.status(500).json({ error: 'Database error' })
@@ -797,17 +797,6 @@ app.post('/api/offers/:offerId/accept', (req, res) => {
           type: 'offer_accepted',
           offer: offer,
           listingId: offer.listing_id
-        })
-        
-        // Also check if there's a game and broadcast there
-        db.get('SELECT id FROM games WHERE listing_id = ?', [offer.listing_id], (err, game) => {
-          if (!err && game) {
-            broadcastToGame(game.id, {
-              type: 'offer_accepted',
-              offer: offer,
-              listingId: offer.listing_id
-            })
-          }
         })
         
         res.json({ success: true, message: 'Offer accepted successfully' })
