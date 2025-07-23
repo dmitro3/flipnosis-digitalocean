@@ -15,6 +15,7 @@ import styled from '@emotion/styled'
 import { API_CONFIG, getApiUrl, getWsUrl } from '../config/api'
 import hazeVideo from '../../Images/Video/haze.webm'
 import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
+import GameChatBox from './GameChatBox'
 
 // Styled Components
 const Container = styled.div`
@@ -382,33 +383,46 @@ const UnifiedGamePage = () => {
     console.log('🪙 Loading coin images for game:', {
       hasGame: !!game,
       hasCoinData: !!game?.coin_data,
-      hasCoin: !!game?.coin,
-      coinData: game?.coin_data,
-      coin: game?.coin
+      coinData: game?.coin_data
     })
     
     if (game?.coin_data) {
       try {
-        const coinData = typeof game.coin_data === 'string' ? JSON.parse(game.coin_data) : game.coin_data
+        // Parse coin_data if it's a string
+        const coinData = typeof game.coin_data === 'string' ? 
+          JSON.parse(game.coin_data) : game.coin_data
+        
         console.log('🪙 Parsed coin data:', coinData)
-        setCustomHeadsImage(coinData.headsImage || '/coins/plainh.png')
-        setCustomTailsImage(coinData.tailsImage || '/coins/plaint.png')
+        
+        // Extract the actual coin object if it's nested
+        const coin = coinData.coin || coinData
+        
+        // Set the images
+        if (coin.headsImage && coin.tailsImage) {
+          setCustomHeadsImage(coin.headsImage)
+          setCustomTailsImage(coin.tailsImage)
+          console.log('✅ Custom coin images set:', {
+            heads: coin.headsImage,
+            tails: coin.tailsImage
+          })
+        } else {
+          // Fallback to default
+          console.log('⚠️ No custom images found, using defaults')
+          setCustomHeadsImage('/coins/plainh.png')
+          setCustomTailsImage('/coins/plaint.png')
+        }
       } catch (error) {
-        console.error('Error parsing coin data:', error)
+        console.error('❌ Error parsing coin data:', error)
+        // Use defaults on error
         setCustomHeadsImage('/coins/plainh.png')
         setCustomTailsImage('/coins/plaint.png')
       }
-    } else if (game?.coin) {
-      console.log('🪙 Using game.coin:', game.coin)
-      setCustomHeadsImage(game.coin.headsImage || '/coins/plainh.png')
-      setCustomTailsImage(game.coin.tailsImage || '/coins/plaint.png')
     } else {
-      console.log('🪙 Using default coin images')
-      // Default coin images
+      console.log('🪙 No coin data, using default images')
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
     }
-  }, [game?.coin_data, game?.coin])
+  }, [game?.coin_data])
   
   const loadGame = async () => {
     try {
@@ -479,21 +493,45 @@ const UnifiedGamePage = () => {
     
     switch (data.type) {
       case 'offer_accepted':
-      case 'game_joined':
-        console.log('🔄 Refreshing game data due to offer_accepted/game_joined')
+        console.log('✅ Offer accepted, refreshing game data')
         loadGame() // Refresh game data
+        if (data.offer && data.offer.offerer_address === address) {
+          showSuccess('Your offer was accepted!')
+        }
         break
         
       case 'offer_created':
-      case 'offer_updated':
-        console.log('💰 Refreshing offers due to offer_created/offer_updated')
-        // Refresh offers when a new offer is created or updated
+        console.log('💰 New offer created:', data.offer)
+        // Add the new offer to the state immediately
+        if (data.offer) {
+          setOffers(prev => [data.offer, ...prev])
+        }
+        // Also refresh from server to ensure consistency
         if (game?.id) {
           loadOffers(game.id)
-        } else if (gameId.startsWith('listing_')) {
-          // For listings, use the gameId as the listing ID
-          loadOffers(gameId)
         }
+        break
+        
+      case 'offer_rejected':
+        console.log('❌ Offer rejected:', data.offer)
+        // Update the offer status in state
+        if (data.offer) {
+          setOffers(prev => prev.map(o => 
+            o.id === data.offer.id ? { ...o, status: 'rejected' } : o
+          ))
+        }
+        // Refresh offers
+        if (game?.id) {
+          loadOffers(game.id)
+        }
+        if (data.offer && data.offer.offerer_address === address) {
+          showInfo('Your offer was rejected')
+        }
+        break
+        
+      case 'game_joined':
+        console.log('🔄 Refreshing game data due to game_joined')
+        loadGame() // Refresh game data
         break
         
       case 'game_started':
@@ -511,11 +549,7 @@ const UnifiedGamePage = () => {
         break
         
       case 'chat_message':
-        setMessages(prev => [...prev, {
-          from: data.from,
-          message: data.message,
-          timestamp: data.timestamp
-        }])
+        // This is now handled in GameChatBox component
         break
         
       case 'game_completed':
@@ -524,12 +558,9 @@ const UnifiedGamePage = () => {
         
       case 'listing_converted_to_game':
         console.log('🔄 Listing converted to game:', data)
-        // Update the gameId and reload the game data
         if (data.gameId && data.gameId !== gameId) {
           console.log(`🔄 Navigating from listing ${gameId} to game ${data.gameId}`)
-          // Update the URL without a full page reload
           window.history.replaceState(null, '', `/game/${data.gameId}`)
-          // Reload the game data
           loadGame()
         }
         break
@@ -1133,40 +1164,11 @@ const UnifiedGamePage = () => {
               {/* Chat Section */}
               <ChatSection>
                 <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonBlue }}>Game Chat</h4>
-                <MessagesContainer>
-                  {messages.map((msg, i) => (
-                    <div key={i} style={{ marginBottom: '0.5rem' }}>
-                      <strong style={{ color: theme.colors.neonPink }}>
-                        {msg.from.slice(0, 6)}...{msg.from.slice(-4)}:
-                      </strong>{' '}
-                      <span style={{ color: theme.colors.textPrimary }}>{msg.message}</span>
-                    </div>
-                  ))}
-                </MessagesContainer>
-                <ChatInput>
-                                  <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  placeholder="Type a message..."
-                  disabled={!gameActive && !isListing}
+                <GameChatBox 
+                  gameId={gameId} 
+                  socket={socket} 
+                  connected={!!socket && socket.readyState === WebSocket.OPEN}
                 />
-                <button 
-                  onClick={sendMessage} 
-                  disabled={!gameActive && !isListing}
-                  style={{
-                    background: theme.colors.neonGreen,
-                    color: '#000',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '0.5rem',
-                    cursor: (gameActive || isListing) ? 'pointer' : 'not-allowed',
-                    opacity: (gameActive || isListing) ? 1 : 0.5
-                  }}
-                >
-                  Send
-                </button>
-                </ChatInput>
               </ChatSection>
               
               {/* Offers Section */}

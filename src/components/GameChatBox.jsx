@@ -111,8 +111,6 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   const [isNameModalOpen, setIsNameModalOpen] = useState(false)
   const [tempName, setTempName] = useState('')
   const [playerName, setPlayerNameState] = useState('')
-  const [isChatOpen, setIsChatOpen] = useState(true)
-  const [unreadCount, setUnreadCount] = useState(0)
   const [playerNames, setPlayerNames] = useState({})
   
   const messagesEndRef = useRef(null)
@@ -134,20 +132,24 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Listen for chat messages
+  // Listen for chat messages from socket
   useEffect(() => {
     if (!socket) return
     
     const handleMessage = (event) => {
-      const data = JSON.parse(event.data)
-      
-      if (data.type === 'chat_message') {
-        setMessages(prev => [...prev, {
-          address: data.address,
-          isCreator: data.isCreator,
-          message: data.message,
-          timestamp: data.timestamp
-        }])
+      try {
+        const data = JSON.parse(event.data)
+        
+        if (data.type === 'chat_message') {
+          console.log('📩 Received chat message:', data)
+          setMessages(prev => [...prev, {
+            address: data.from || data.address,
+            message: data.message,
+            timestamp: data.timestamp || new Date().toISOString()
+          }])
+        }
+      } catch (error) {
+        console.error('Error parsing chat message:', error)
       }
     }
     
@@ -158,55 +160,32 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     }
   }, [socket])
 
-  // Validate and sanitize message input
-  const validateMessage = (message) => {
-    if (!message || typeof message !== 'string') return false
-    if (message.trim().length === 0) return false
-    if (message.length > 500) return false // Max length
-    
-    // Basic content validation - no HTML allowed
-    if (message.includes('<') || message.includes('>')) return false
-    if (message.includes('javascript:')) return false
-    if (message.includes('data:')) return false
-    
-    return true
-  }
+  // Load player names for messages
+  useEffect(() => {
+    const loadPlayerNames = async () => {
+      const names = {}
+      const uniqueAddresses = [...new Set(messages.map(m => m.address).filter(Boolean))]
+      
+      for (const addr of uniqueAddresses) {
+        if (!names[addr] && addr) {
+          const name = await getPlayerName(addr)
+          names[addr] = name || `${addr.slice(0, 6)}...${addr.slice(-4)}`
+        }
+      }
+      setPlayerNames(names)
+    }
 
-  // Validate and sanitize name input
-  const validateName = (name) => {
-    if (!name || typeof name !== 'string') return false
-    if (name.trim().length === 0) return false
-    if (name.length > 50) return false // Max length
-    
-    // Only allow alphanumeric, spaces, and basic punctuation
-    const validNameRegex = /^[a-zA-Z0-9\s\-_.!@#$%^&*()]+$/
-    if (!validNameRegex.test(name)) return false
-    
-    // No HTML or script injection attempts
-    if (name.includes('<') || name.includes('>')) return false
-    if (name.includes('javascript:')) return false
-    if (name.includes('data:')) return false
-    
-    return true
-  }
+    if (messages.length > 0) {
+      loadPlayerNames()
+    }
+  }, [messages, getPlayerName])
 
-  const sendMessage = () => {
-    if (!currentMessage.trim() || !socket || !connected) return
-    
-    // No signature needed - already authenticated!
-    socket.send(JSON.stringify({
-      type: 'chat_message',
-      message: currentMessage.trim()
-    }))
-    
-    setCurrentMessage('')
-  }
-
-  const handleSendMessage = async (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault()
     
-    if (!connected || !socket || !address || !isConnected) {
-      showError('Not connected to game')
+    if (!currentMessage.trim() || !socket || !connected || !address) {
+      if (!address) showError('Please connect your wallet')
+      else if (!connected) showError('Not connected to game')
       return
     }
 
@@ -216,22 +195,14 @@ const GameChatBox = ({ gameId, socket, connected }) => {
       return
     }
 
-    const message = currentMessage.trim()
-    if (!validateMessage(message)) {
-      showError('Invalid message. Keep it under 500 characters and avoid special characters.')
-      return
-    }
-
     try {
       const chatMessage = {
         type: 'chat_message',
         gameId,
-        address,
-        name: playerName,
-        message,
-        timestamp: new Date().toISOString()
+        message: currentMessage.trim()
       }
 
+      console.log('📤 Sending chat message:', chatMessage)
       socket.send(JSON.stringify(chatMessage))
       setCurrentMessage('')
       
@@ -244,8 +215,8 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   }
 
   const handleSaveName = async () => {
-    if (!validateName(tempName)) {
-      showError('Invalid name. Use 50 characters or less, alphanumeric and basic punctuation only.')
+    if (!tempName.trim()) {
+      showError('Please enter a valid name')
       return
     }
 
@@ -260,32 +231,15 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     }
   }
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage(e)
-    }
-  }
-
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  useEffect(() => {
-    const loadPlayerNames = async () => {
-      const names = {}
-      for (const message of messages) {
-        if (!names[message.address]) {
-          const name = await getPlayerName(message.address)
-          names[message.address] = name
-        }
-      }
-      setPlayerNames(names)
-    }
-
-    loadPlayerNames()
-  }, [messages, getPlayerName])
+  const getDisplayName = (addr) => {
+    if (!addr) return 'Unknown'
+    return playerNames[addr] || `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
 
   if (!isConnected) {
     return (
@@ -347,61 +301,46 @@ const GameChatBox = ({ gameId, socket, connected }) => {
 
       {/* Messages Container */}
       <MessagesContainer>
-        {messages.map((msg, index) => {
-          const isCurrentUser = msg.address === address
-          const displayName = playerNames[msg.address] || (msg.address ? msg.address.slice(0, 6) + '...' + msg.address.slice(-4) : 'Unknown')
-          
-          return (
-            <Message key={index} isCurrentUser={isCurrentUser}>
-              <MessageHeader isCurrentUser={isCurrentUser}>
-                <span>{displayName}</span>
-                <span>{formatTimestamp(msg.timestamp)}</span>
-              </MessageHeader>
-              <MessageContent>{msg.message}</MessageContent>
-            </Message>
-          )
-        })}
+        {messages.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            color: theme.colors.textSecondary,
+            padding: '2rem'
+          }}>
+            No messages yet. Start the conversation!
+          </div>
+        ) : (
+          messages.map((msg, index) => {
+            const isCurrentUser = msg.address === address
+            const displayName = getDisplayName(msg.address)
+            
+            return (
+              <Message key={index} isCurrentUser={isCurrentUser}>
+                <MessageHeader isCurrentUser={isCurrentUser}>
+                  <span>{displayName}</span>
+                  <span>{formatTimestamp(msg.timestamp)}</span>
+                </MessageHeader>
+                <MessageContent>{msg.message}</MessageContent>
+              </Message>
+            )
+          })
+        )}
         <div ref={messagesEndRef} />
       </MessagesContainer>
 
       {/* Message Input */}
-      <InputContainer onSubmit={(e) => {
-        e.preventDefault()
-        sendMessage()
-      }}>
+      <InputContainer onSubmit={sendMessage}>
         <Input
           ref={inputRef}
           type="text"
           value={currentMessage}
           onChange={(e) => setCurrentMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
           placeholder="Type your message..."
           disabled={!connected}
-          style={{
-            flex: 1,
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '0.5rem',
-            padding: '0.75rem',
-            color: '#fff',
-            fontSize: '0.9rem'
-          }}
         />
         <SendButton
           type="submit"
           disabled={!connected || !currentMessage.trim()}
-          style={{
-            background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
-            border: 'none',
-            borderRadius: '0.5rem',
-            padding: '0.75rem 1rem',
-            color: '#fff',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            minWidth: '60px',
-            whiteSpace: 'nowrap'
-          }}
         >
           Send
         </SendButton>

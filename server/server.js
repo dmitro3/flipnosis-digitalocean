@@ -740,15 +740,35 @@ app.post('/api/listings/:listingId/offers', (req, res) => {
     }
     console.log(`✅ Offer created: ${offerId}`)
     
-    // Broadcast offer creation to all users subscribed to this listing
-    console.log(`📡 Broadcasting offer_created to listing ${listingId}`)
-    broadcastToGame(listingId, {
-      type: 'offer_created',
-      offerId,
-      listingId
+    // Get the complete offer data to broadcast
+    db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, offer) => {
+      if (err) {
+        console.error('❌ Error fetching created offer:', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      // Broadcast to listing room
+      console.log(`📡 Broadcasting offer_created to listing ${listingId}`)
+      broadcastToGame(listingId, {
+        type: 'offer_created',
+        offer: offer,
+        listingId
+      })
+      
+      // Also check if there's a game associated and broadcast there too
+      db.get('SELECT id FROM games WHERE listing_id = ?', [listingId], (err, game) => {
+        if (!err && game) {
+          console.log(`📡 Also broadcasting to game ${game.id}`)
+          broadcastToGame(game.id, {
+            type: 'offer_created',
+            offer: offer,
+            listingId
+          })
+        }
+      })
+      
+      res.json({ success: true, offerId, offer, message: 'Offer created successfully' })
     })
-    
-    res.json({ success: true, offerId, message: 'Offer created successfully' })
   })
 })
 
@@ -764,31 +784,45 @@ app.post('/api/offers/:offerId/accept', (req, res) => {
       return res.status(500).json({ error: 'Database error' })
     }
     
-    // Get the listing ID from the offer
-    db.get('SELECT listing_id FROM offers WHERE id = ?', [offerId], (err, offer) => {
+    // Get the complete offer with listing info
+    db.get(`
+      SELECT o.*, l.id as listing_id 
+      FROM offers o 
+      JOIN listings l ON o.listing_id = l.id 
+      WHERE o.id = ?
+    `, [offerId], (err, offer) => {
       if (err || !offer) {
         console.error('❌ Error fetching offer:', err)
         return res.status(500).json({ error: 'Database error' })
       }
       
       // Update listing with final price
-      db.run('UPDATE listings SET final_price = ?, status = "offer_accepted" WHERE id = ?', [final_price, offer.listing_id], (err) => {
+      db.run('UPDATE listings SET final_price = ?, status = "offer_accepted" WHERE id = ?', 
+        [final_price, offer.listing_id], (err) => {
         if (err) {
           console.error('❌ Error updating listing:', err)
           return res.status(500).json({ error: 'Database error' })
         }
         console.log(`✅ Offer accepted: ${offerId}`)
         
-        // Broadcast offer acceptance to all users subscribed to this listing
-        console.log(`📡 Broadcasting offer_updated (accepted) to listing ${offer.listing_id}`)
+        // Broadcast to listing room
         broadcastToGame(offer.listing_id, {
-          type: 'offer_updated',
-          offerId,
-          listingId: offer.listing_id,
-          status: 'accepted'
+          type: 'offer_accepted',
+          offer: offer,
+          listingId: offer.listing_id
         })
         
-        // Only return success, never a gameId
+        // Also check if there's a game and broadcast there
+        db.get('SELECT id FROM games WHERE listing_id = ?', [offer.listing_id], (err, game) => {
+          if (!err && game) {
+            broadcastToGame(game.id, {
+              type: 'offer_accepted',
+              offer: offer,
+              listingId: offer.listing_id
+            })
+          }
+        })
+        
         res.json({ success: true, message: 'Offer accepted successfully' })
       })
     })
@@ -806,8 +840,13 @@ app.post('/api/offers/:offerId/reject', (req, res) => {
       return res.status(500).json({ error: 'Database error' })
     }
     
-    // Get the listing ID from the offer
-    db.get('SELECT listing_id FROM offers WHERE id = ?', [offerId], (err, offer) => {
+    // Get the complete offer with listing info
+    db.get(`
+      SELECT o.*, l.id as listing_id 
+      FROM offers o 
+      JOIN listings l ON o.listing_id = l.id 
+      WHERE o.id = ?
+    `, [offerId], (err, offer) => {
       if (err || !offer) {
         console.error('❌ Error fetching offer:', err)
         return res.status(500).json({ error: 'Database error' })
@@ -815,14 +854,23 @@ app.post('/api/offers/:offerId/reject', (req, res) => {
       
       console.log(`✅ Offer rejected: ${offerId}`)
       
-              // Broadcast offer rejection to all users subscribed to this listing
-        console.log(`📡 Broadcasting offer_updated (rejected) to listing ${offer.listing_id}`)
-        broadcastToGame(offer.listing_id, {
-          type: 'offer_updated',
-          offerId,
-          listingId: offer.listing_id,
-          status: 'rejected'
-        })
+      // Broadcast to listing room
+      broadcastToGame(offer.listing_id, {
+        type: 'offer_rejected',
+        offer: offer,
+        listingId: offer.listing_id
+      })
+      
+      // Also check if there's a game and broadcast there
+      db.get('SELECT id FROM games WHERE listing_id = ?', [offer.listing_id], (err, game) => {
+        if (!err && game) {
+          broadcastToGame(game.id, {
+            type: 'offer_rejected',
+            offer: offer,
+            listingId: offer.listing_id
+          })
+        }
+      })
       
       res.json({ success: true, message: 'Offer rejected successfully' })
     })
