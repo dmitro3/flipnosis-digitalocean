@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import contractService from '../services/ContractService'
+import GameService from '../services/GameService'
 import NFTSelector from '../components/NFTSelector'
 import CoinSelector from '../components/CoinSelector'
 import { ThemeProvider } from '@emotion/react'
@@ -86,93 +87,32 @@ const SubmitButton = styled(Button)`
 const CreateFlip = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { isConnected, address, nfts, loadNFTs, chainId, walletClient, publicClient } = useWallet()
-  const { isFullyConnected, connectionError } = useWalletConnection()
+  const { address, walletClient } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
-  const [gameType, setGameType] = useState('nft-vs-crypto')
   const [price, setPrice] = useState('')
   const [loading, setLoading] = useState(false)
-  const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
-  const [nftsLoading, setNftsLoading] = useState(false)
   const [selectedCoin, setSelectedCoin] = useState({
-    id: 'plain',
     type: 'default',
-    name: 'Classic',
     headsImage: '/coins/plainh.png',
-    tailsImage: '/coins/plaint.png'
+    tailsImage: '/coins/plaint.png',
+    isCustom: false
   })
-  const [acceptsOffers, setAcceptsOffers] = useState(true)
-
-  // Initialize contract service when wallet is connected
-  useEffect(() => {
-    const initializeService = async () => {
-      if (!isFullyConnected || !chainId || !walletClient || !publicClient) {
-        console.log('⚠️ Wallet not fully connected, skipping contract initialization')
-        return
-      }
-      
-      try {
-        console.log('🔧 Initializing contract service...')
-        await contractService.initializeClients(chainId, walletClient)
-        console.log('✅ Contract service initialized successfully')
-      } catch (error) {
-        console.error('❌ Failed to initialize contract service:', error)
-        showError('Failed to initialize smart contract. Please refresh and try again.')
-      }
-    }
-
-    initializeService()
-  }, [isFullyConnected, chainId, walletClient, publicClient, showError])
-
-  // Load NFTs when component mounts
-  useEffect(() => {
-    if (isConnected && (!nfts || nfts.length === 0)) {
-      loadUserNFTs()
-    }
-  }, [isConnected])
-
-  const loadUserNFTs = async () => {
-    try {
-      setNftsLoading(true)
-      await loadNFTs()
-    } catch (error) {
-      console.error('Error loading NFTs:', error)
-      showError('Failed to load NFTs')
-    } finally {
-      setNftsLoading(false)
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
     if (!selectedNFT) {
       showError('Please select an NFT')
       return
     }
-    
     if (!price || parseFloat(price) <= 0) {
       showError('Please enter a valid price')
       return
     }
-    
-    if (!isFullyConnected || !walletClient) {
-      showError('Please connect your wallet')
-      return
-    }
-    
-    if (!contractService.isInitialized()) {
-      showError('Smart contract not connected. Please refresh and try again.')
-      return
-    }
-    
     setLoading(true)
-    
     try {
-      // Step 1: Create the listing in the database first
+      // Step 1: Create listing in database
       showInfo('Creating listing...')
-      
       const listingData = {
         creator: address,
         nft_contract: selectedNFT.contractAddress,
@@ -182,41 +122,15 @@ const CreateFlip = () => {
         nft_collection: selectedNFT.collection,
         nft_chain: 'base',
         asking_price: parseFloat(price),
-        accepts_offers: acceptsOffers,
-        min_offer_price: acceptsOffers ? parseFloat(price) * 0.8 : parseFloat(price),
         coin_data: JSON.stringify({
-          type: selectedCoin?.type || 'default',
-          headsImage: selectedCoin?.headsImage || '/coins/plainh.png',
-          tailsImage: selectedCoin?.tailsImage || '/coins/plaint.png',
-          isCustom: selectedCoin?.isCustom || false
+          type: selectedCoin.type,
+          headsImage: selectedCoin.headsImage,
+          tailsImage: selectedCoin.tailsImage,
+          isCustom: selectedCoin.isCustom
         })
       }
-      
-      console.log('📤 CreateFlip: Creating listing with data:', listingData)
-      
-      const listingResponse = await fetch(`${getApiUrl('/listings')}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(listingData)
-      })
-      
-      if (!listingResponse.ok) {
-        let errorMessage = `HTTP ${listingResponse.status}: ${listingResponse.statusText}`
-        try {
-          const errorData = await listingResponse.json()
-          errorMessage = errorData.error || errorMessage
-        } catch (parseError) {
-          console.error('Failed to parse error response:', parseError)
-        }
-        throw new Error(`Failed to create listing: ${errorMessage}`)
-      }
-      
-      const listingResult = await listingResponse.json()
-      console.log('✅ CreateFlip: Listing created successfully:', listingResult)
-      
-      // Step 2: Check if NFT is approved for the contract
+      const listingResult = await GameService.createListing(listingData)
+      // Step 2: Check NFT approval
       showInfo('Checking NFT approval...')
       const isApproved = await contractService.isNFTApproved(
         selectedNFT.contractAddress,
@@ -225,103 +139,39 @@ const CreateFlip = () => {
         address
       )
       if (!isApproved) {
-        showInfo('Requesting NFT approval in your wallet...')
+        showInfo('Requesting NFT approval...')
         await contractService.approveNFT(
           selectedNFT.contractAddress,
           selectedNFT.tokenId,
           contractService.contractAddress
         )
-        showInfo('Waiting for approval confirmation...')
-        // Optionally, poll for approval confirmation
-        let approved = false
-        for (let i = 0; i < 10; i++) {
-          await new Promise(res => setTimeout(res, 2000))
-          approved = await contractService.isNFTApproved(
-            selectedNFT.contractAddress,
-            selectedNFT.tokenId,
-            contractService.contractAddress,
-            address
-          )
-          if (approved) break
-        }
-        if (!approved) {
-          throw new Error('NFT approval not confirmed. Please try again.')
-        }
         showSuccess('NFT approved!')
       }
-      
-      // Step 3: Create the blockchain game (this will be a separate transaction)
+      // Step 3: Create blockchain game
       showInfo('Creating game on blockchain...')
-      showInfo('You will need to approve the game creation transaction in your wallet...')
-      
-      console.log('🎮 CreateFlip: Starting blockchain game creation with params:', {
-        nftContract: selectedNFT.contractAddress,
-        tokenId: selectedNFT.tokenId,
-        priceUSD: parseFloat(price),
-        acceptedToken: 0, // ETH
-        gameType: 0, // NFT vs Crypto
-        coinType: selectedCoin?.type || 'default',
-        headsImage: selectedCoin?.headsImage || '',
-        tailsImage: selectedCoin?.tailsImage || '',
-        isCustom: selectedCoin?.isCustom || false
-      })
-      
       const blockchainResult = await contractService.createGame({
         nftContract: selectedNFT.contractAddress,
         tokenId: selectedNFT.tokenId,
         priceUSD: parseFloat(price),
-        acceptedToken: 0, // ETH
-        gameType: 0, // NFT vs Crypto
-        coinType: selectedCoin?.type || 'default',
-        headsImage: selectedCoin?.headsImage || '',
-        tailsImage: selectedCoin?.tailsImage || '',
-        isCustom: selectedCoin?.isCustom || false
+        acceptedToken: 0,
+        gameType: 0,
+        coinType: selectedCoin.type,
+        headsImage: selectedCoin.headsImage,
+        tailsImage: selectedCoin.tailsImage,
+        isCustom: selectedCoin.isCustom
       })
-      
-      console.log('🎮 CreateFlip: Blockchain game creation result:', blockchainResult)
-      
       if (!blockchainResult.success) {
-        throw new Error(blockchainResult.error || 'Failed to create game on blockchain')
+        throw new Error(blockchainResult.error)
       }
-      
-      showSuccess('Game created on blockchain!')
-      const contractGameId = blockchainResult.gameId
-      const transactionHash = blockchainResult.transactionHash
-      
-      console.log('🎮 CreateFlip: Contract game created successfully:', {
-        contractGameId,
-        transactionHash,
-        listingFeeUSD: blockchainResult.listingFeeUSD
-      })
-      
-      // Step 4: Update the listing with the contract game ID
-      showInfo('Updating listing with blockchain game...')
-      
-      const updateResponse = await fetch(`${getApiUrl(`/listings/${listingResult.listingId}/create-blockchain-game`)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contract_game_id: contractGameId,
-          transaction_hash: transactionHash
-        })
-      })
-      
-      if (!updateResponse.ok) {
-        console.error('❌ Failed to update listing with contract game ID')
-        const errorText = await updateResponse.text()
-        console.error('Error response:', errorText)
-        throw new Error('Failed to save blockchain game ID to database. Please contact support.')
-      } else {
-        console.log('✅ CreateFlip: Listing updated with contract game ID')
-      }
-      
+      // Step 4: Update listing with blockchain game ID
+      showInfo('Finalizing...')
+      await GameService.updateListingWithBlockchainGame(
+        listingResult.listingId,
+        blockchainResult.gameId,
+        blockchainResult.transactionHash
+      )
       showSuccess('Flip created successfully!')
-      
-      // Navigate to the game page
       navigate(`/game/${listingResult.listingId}`)
-      
     } catch (error) {
       console.error('Error creating flip:', error)
       showError(error.message || 'Failed to create flip')

@@ -7,8 +7,8 @@ import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import hazeVideo from '../../Images/Video/haze.webm'
+import GameService from '../services/GameService'
 import { PaymentService } from '../services/PaymentService'
-import ClaimRewards from '../components/ClaimRewards'
 import contractService from '../services/ContractService'
 import { API_CONFIG, getApiUrl } from '../config/api'
 import {
@@ -202,235 +202,66 @@ const SearchInput = styled.input`
 const Home = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { 
-    isConnected, 
-    address, 
-    chain,
-    walletClient,
-    publicClient,
-    nfts,
-    loading: nftsLoading
-  } = useWallet()
+  const { isConnected, address } = useWallet()
+  
+  const [games, setGames] = useState([])
+  const [listings, setListings] = useState([])
+  const [loading, setLoading] = useState(false)
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [flips, setFlips] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [selectedFlip, setSelectedFlip] = useState(null)
-  const [error, setError] = useState('')
 
-
-
-
-
-  // API URL
-  const API_URL = getApiUrl('')
-
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 Home Debug:', {
-      isConnected,
-      address,
-      chain,
-      hasWalletClient: !!walletClient,
-      hasPublicClient: !!publicClient,
-      nftsCount: nfts?.length || 0,
-      nftsLoading
-    })
-  }, [isConnected, address, chain, walletClient, publicClient, nfts, nftsLoading])
-
-  // Fetch both games and listings from database
-  const fetchListingsAndGames = async () => {
+  // Fetch data from database
+  const fetchData = async () => {
     try {
       setLoading(true)
-      setError(null)
-
-      console.log('🔍 Fetching games and listings from:', getApiUrl(''))
-      
-      // Fetch both games and listings
-      const [gamesResponse, listingsResponse] = await Promise.all([
-        fetch(getApiUrl('/games')),
-        fetch(getApiUrl('/listings'))
+      const [gamesData, listingsData] = await Promise.all([
+        GameService.fetchGames(),
+        GameService.fetchListings()
       ])
-      
-      if (!gamesResponse.ok) {
-        throw new Error('Failed to fetch games')
-      }
-
-      const gamesData = await gamesResponse.json()
-      const listingsData = listingsResponse.ok ? await listingsResponse.json() : []
-      
-      console.log('📊 Fetched games:', gamesData.length, 'games')
-      console.log('📊 Fetched listings:', listingsData.length, 'listings')
-      
-      // Debug: Log game statuses
-      const statusCounts = gamesData.reduce((acc, game) => {
-        acc[game.status] = (acc[game.status] || 0) + 1
-        return acc
-      }, {})
-      console.log('📊 Game status counts:', statusCounts)
-      
-      // Debug: Log pending games data
-      const pendingGames = gamesData.filter(g => g.status === 'pending')
-      if (pendingGames.length > 0) {
-        console.log('📊 Pending games data:', pendingGames.map(g => ({
-          id: g.id,
-          price_usd: g.price_usd,
-          nft_name: g.nft_name,
-          creator: g.creator,
-          joiner: g.joiner
-        })))
-      }
-      
-      // Debug: Log games with null/invalid IDs
-      const invalidGames = gamesData.filter(g => !g.id || g.id === 'null')
-      if (invalidGames.length > 0) {
-        console.log('⚠️ Games with invalid IDs:', invalidGames.map(g => ({
-          id: g.id,
-          status: g.status,
-          nft_name: g.nft_name,
-          creator: g.creator
-        })))
-      }
-      
-      // Debug: Log listing statuses
-      const listingStatusCounts = listingsData.reduce((acc, listing) => {
-        acc[listing.status] = (acc[listing.status] || 0) + 1
-        return acc
-      }, {})
-      console.log('📊 Listing status counts:', listingStatusCounts)
-      
-      // Convert games to flips format
-      const gameFlips = gamesData.filter(g => g.status !== 'cancelled' && g.id && g.id !== 'null').map(game => ({
-        id: game.id,
-        type: 'game',
-        nft: {
-          name: game.nft_name || 'Unknown NFT',
-          image: game.nft_image || '/placeholder-nft.svg',
-          collection: game.nft_collection || 'Unknown Collection',
-          contractAddress: game.nft_contract,
-          tokenId: game.nft_token_id,
-          chain: game.nft_chain || 'base',
-          needsMetadataUpdate: !game.nft_image || game.nft_image === '' || game.nft_image === '/placeholder-nft.svg'
-        },
-        gameType: game.game_type || 'nft-vs-crypto',
-        price: game.price_usd || 0,
-        priceUSD: game.price_usd || 0,
-        currency: 'USD',
-        chain: game.nft_chain || 'base',
-        creator: game.creator,
-        joiner: game.joiner,
-        rounds: game.rounds,
-        status: game.status,
-        createdAt: game.created_at,
-        winner: game.winner,
-        description: `${game.nft_name} - ${game.status === 'waiting' ? 'Waiting for player' : 'In progress'}`
-      }))
-
-      // Convert listings to flips format
-      const listingFlips = listingsData.map(listing => ({
-        id: listing.id,
-        type: 'listing',
-        listingId: listing.id,
-        nft: {
-          name: listing.nft_name || 'Unknown NFT',
-          image: listing.nft_image || '/placeholder-nft.svg',
-          collection: listing.nft_collection || 'Unknown Collection',
-          contractAddress: listing.nft_contract,
-          tokenId: listing.nft_token_id,
-          chain: listing.nft_chain || 'base',
-          needsMetadataUpdate: !listing.nft_image || listing.nft_image === '' || listing.nft_image === '/placeholder-nft.svg'
-        },
-        gameType: 'nft-vs-crypto',
-        price: listing.asking_price || 0,  // Use asking_price
-        priceUSD: listing.asking_price || 0,  // Use asking_price
-        currency: 'USD',
-        chain: listing.nft_chain || 'base',
-        creator: listing.creator,
-        joiner: null,
-        rounds: null,
-        status: listing.status,
-        createdAt: listing.created_at,
-        winner: null,
-        description: `${listing.nft_name} - Available for offers`,
-        acceptsOffers: listing.accepts_offers,
-        minOfferPrice: listing.min_offer_price
-      }))
-      
-      // Combine games and listings
-      const combinedFlips = [...listingFlips, ...gameFlips]
-      
-      setFlips(combinedFlips)
-      
-      if (combinedFlips.length > 0) {
-        // Find the first valid flip
-        const validFlip = combinedFlips.find(flip => flip.id && flip.id !== 'null')
-        if (validFlip) {
-          setSelectedFlip(validFlip)
-        } else {
-          console.error('⚠️ No valid flips found in combined data')
-        }
-      }
+      setGames(gamesData)
+      setListings(listingsData)
     } catch (error) {
-      console.error('❌ Error fetching data:', error)
-      setError('Failed to load games and listings. Please try again.')
+      console.error('Error fetching data:', error)
+      showError('Failed to load games and listings')
     } finally {
       setLoading(false)
     }
   }
 
-  // Function to update NFT metadata for a game
-  const updateNFTMetadata = async (gameId) => {
-    try {
-      const response = await fetch(getApiUrl(`/games/${gameId}/update-nft-metadata`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to update NFT metadata')
-      }
-      
-      const result = await response.json()
-      console.log('✅ NFT metadata updated:', result)
-      
-      // Refresh the games list to show updated data
-      await fetchListingsAndGames()
-      
-      showSuccess('NFT metadata updated successfully!')
-    } catch (error) {
-      console.error('❌ Error updating NFT metadata:', error)
-      showError('Failed to update NFT metadata')
-    }
-  }
-
-  // Load games on component mount
   useEffect(() => {
-    fetchListingsAndGames()
-    
-    // Refresh every 10 seconds
-    const interval = setInterval(fetchListingsAndGames, 10000)
+    fetchData()
+    const interval = setInterval(fetchData, 10000) // Refresh every 10 seconds
     return () => clearInterval(interval)
   }, [])
 
-  const filteredFlips = flips.filter(flip => {
-    const matchesFilter = activeFilter === 'all' || 
-      (activeFilter === 'nft-vs-crypto' || activeFilter === 'nft-vs-nft' ? 
-        flip.gameType === activeFilter : 
-        flip.chain === activeFilter);
+  // Combine and filter games/listings
+  const getAllItems = () => {
+    const allItems = [
+      ...listings.map(l => ({ ...l, isListing: true })),
+      ...games.filter(g => g.status !== 'cancelled').map(g => ({ ...g, isListing: false }))
+    ]
+    return allItems.filter(item => {
+      const matchesFilter = activeFilter === 'all' || 
+        (activeFilter === 'listings' && item.isListing) ||
+        (activeFilter === 'games' && !item.isListing) ||
+        (activeFilter === item.nft.chain)
+      const matchesSearch = !searchQuery || 
+        item.nft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.nft.collection.toLowerCase().includes(searchQuery.toLowerCase())
+      return matchesFilter && matchesSearch
+    })
+  }
 
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = !searchQuery || 
-      flip.nft.name.toLowerCase().includes(searchLower) ||
-      flip.nft.collection.toLowerCase().includes(searchLower) ||
-      flip.description.toLowerCase().includes(searchLower);
+  const handleItemClick = (item) => {
+    navigate(`/game/${item.id}`)
+  }
 
-    return matchesFilter && matchesSearch;
-  }).slice(0, 100) // Limit to 100 games for performance
+  const filteredItems = getAllItems()
 
   const chainFilters = [
     { key: 'all', name: 'ALL', icon: '🌐' },
-    { key: 'nft-vs-crypto', name: 'NFT VS CRYPTO', icon: '💎💰' },
-    { key: 'nft-vs-nft', name: 'NFT VS NFT', icon: '⚔️' },
+    { key: 'listings', name: 'LISTINGS', icon: '💰' },
+    { key: 'games', name: 'GAMES', icon: '⚔️' },
     { key: 'ethereum', name: 'ETH', icon: '💎' },
     { key: 'base', name: 'BASE', icon: '🔵' },
     { key: 'bnb', name: 'BNB', icon: '🟡' },
@@ -534,7 +365,7 @@ const Home = () => {
       showSuccess('Offer made successfully! The creator will be notified.')
       
       // Refresh the listings and games
-      await fetchListingsAndGames()
+      await fetchData()
     } catch (error) {
       console.error('❌ Error making offer:', error)
       showError(error.message || 'Failed to make offer')
@@ -618,7 +449,7 @@ const Home = () => {
                 Error Loading Games
               </NeonText>
               <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>{error}</p>
-              <Button onClick={fetchListingsAndGames} style={{ background: theme.colors.neonPink }}>
+              <Button onClick={fetchData} style={{ background: theme.colors.neonPink }}>
                 Retry
               </Button>
             </GlassCard>
@@ -668,7 +499,7 @@ const Home = () => {
             </FilterContainer>
           </TransparentCard>
 
-          {filteredFlips.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: '3rem', border: `2px solid ${theme.colors.neonPink}` }}>
               <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Games Available</NeonText>
               <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
@@ -1085,8 +916,8 @@ const Home = () => {
                   borderBottom: `1px solid ${theme.colors.neonBlue}`,
                   textShadow: '0 0 10px rgba(0, 150, 255, 0.5)'
                 }}>
-                  {filteredFlips.length > 0 ?
-                    `All Flips (${filteredFlips.length})` :
+                  {filteredItems.length > 0 ?
+                    `All Flips (${filteredItems.length})` :
                     isConnected && nfts && nfts.length > 0 ? 
                       `Your NFTs (${nfts.length})` : 
                       'No Games Available'
@@ -1114,29 +945,28 @@ const Home = () => {
                   gridAutoRows: 'minmax(auto, auto)',
                   gridAutoFlow: 'row'
                 }}>
-                              {filteredFlips.length > 0 ? (
-              filteredFlips.map(flip => (
+                              {filteredItems.map(item => (
                     <div
-                      key={flip.id}
+                      key={item.id}
                       onClick={() => {
-                        handleSelectFlip(flip)
+                        handleItemClick(item)
                       }}
                       style={{
                         background: 'rgba(255, 255, 255, 0.05)',
                         borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
                         padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                        cursor: isGameJoinable(flip.status) ? 'pointer' : 'default',
+                        cursor: isGameJoinable(item.status) ? 'pointer' : 'default',
                         transition: 'all 0.2s ease',
-                        border: `1px solid ${isGameJoinable(flip.status) ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'}`,
+                        border: `1px solid ${isGameJoinable(item.status) ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'}`,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
                         height: window.innerWidth <= 768 ? 'auto' : '210px',
                         width: '100%',
-                        opacity: isGameJoinable(flip.status) ? 1 : 0.7
+                        opacity: isGameJoinable(item.status) ? 1 : 0.7
                       }}
                       onMouseEnter={(e) => {
-                        if (isGameJoinable(flip.status)) {
+                        if (isGameJoinable(item.status)) {
                           e.currentTarget.style.transform = 'scale(1.02)';
                           e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                         }
@@ -1156,8 +986,8 @@ const Home = () => {
                         minHeight: window.innerWidth <= 768 ? '80px' : '135px'
                       }}>
                         <GameImage 
-                          src={flip.nft.image} 
-                          alt={flip.nft.name}
+                          src={item.nft.image} 
+                          alt={item.nft.name}
                           style={{
                             width: '100%',
                             height: '100%',
@@ -1172,16 +1002,16 @@ const Home = () => {
                           position: 'absolute',
                           bottom: '0.25rem',
                           right: '0.25rem',
-                          background: flip.gameType === 'nft-vs-nft' ? 
+                          background: item.gameType === 'nft-vs-nft' ? 
                             'linear-gradient(45deg, #00FF41, #39FF14)' : 
                             'linear-gradient(45deg, #FF1493, #FF69B4)',
-                          color: flip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
+                          color: item.gameType === 'nft-vs-nft' ? '#000' : '#fff',
                           padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.15rem 0.35rem',
                           borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
                           fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
                           fontWeight: 'bold'
                         }}>
-                          {flip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                          {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
                         </div>
                         
                         {/* Status indicator */}
@@ -1189,7 +1019,7 @@ const Home = () => {
                           position: 'absolute',
                           top: '0.25rem',
                           left: '0.25rem',
-                          background: `rgba(${getStatusColor(flip.status).replace('#', '')}, 0.9)`,
+                          background: `rgba(${getStatusColor(item.status).replace('#', '')}, 0.9)`,
                           color: '#fff',
                           padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
                           borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
@@ -1199,14 +1029,14 @@ const Home = () => {
                           alignItems: 'center',
                           gap: '0.1rem'
                         }}>
-                          <span>{getStatusIcon(flip.status)}</span>
-                          <span>{getStatusText(flip.status)}</span>
+                          <span>{getStatusIcon(item.status)}</span>
+                          <span>{getStatusText(item.status)}</span>
                         </div>
-                        {flip.nft.needsMetadataUpdate && (
+                        {item.nft.needsMetadataUpdate && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateNFTMetadata(flip.id);
+                              updateNFTMetadata(item.id);
                             }}
                             style={{
                               position: 'absolute',
@@ -1248,7 +1078,7 @@ const Home = () => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>
-                          {flip.nft.name}
+                          {item.nft.name}
                         </div>
                         <div style={{ 
                           fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
@@ -1257,7 +1087,7 @@ const Home = () => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>
-                          {flip.nft.collection}
+                          {item.nft.collection}
                         </div>
                         <div style={{
                           display: 'flex',
@@ -1269,7 +1099,7 @@ const Home = () => {
                             fontWeight: 'bold',
                             color: theme.colors.neonBlue
                           }}>
-                            ${(flip.priceUSD || 0).toFixed(2)}
+                            ${(item.priceUSD || 0).toFixed(2)}
                           </div>
                           <div style={{
                             background: 'rgba(255, 255, 255, 0.1)',
@@ -1281,8 +1111,8 @@ const Home = () => {
                             alignItems: 'center',
                             gap: '0.1rem'
                           }}>
-                            <span>{getChainIcon(flip.nft.chain)}</span>
-                            <span>{getChainName(flip.nft.chain)}</span>
+                            <span>{getChainIcon(item.nft.chain)}</span>
+                            <span>{getChainName(item.nft.chain)}</span>
                           </div>
                         </div>
                       </div>

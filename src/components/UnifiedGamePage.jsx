@@ -16,6 +16,7 @@ import { API_CONFIG, getApiUrl, getWsUrl } from '../config/api'
 import hazeVideo from '../../Images/Video/haze.webm'
 import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
 import GameChatBox from './GameChatBox'
+import GameService from '../services/GameService'
 
 // Styled Components
 const Container = styled.div`
@@ -252,26 +253,93 @@ const UnifiedGamePage = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
   const { address, walletClient } = useWallet()
-  const { isFullyConnected } = useWalletConnection()
   const { showSuccess, showError, showInfo } = useToast()
   
-  // State
-  const [game, setGame] = useState(null)
+  const [gameData, setGameData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [paymentLoading, setPaymentLoading] = useState(false)
   const [socket, setSocket] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [newMessage, setNewMessage] = useState('')
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
-  const [showResultPopup, setShowResultPopup] = useState(false)
-  const [resultData, setResultData] = useState(null)
-  
-  // Offers state
   const [offers, setOffers] = useState([])
-  const [newOffer, setNewOffer] = useState({ price: '', message: '' })
-  const [creatingOffer, setCreatingOffer] = useState(false)
+
+  // Load game data
+  const loadGameData = async () => {
+    try {
+      setLoading(true)
+      const result = await GameService.fetchGameOrListing(gameId)
+      setGameData(result.data)
+      // If it's a listing, load offers
+      if (result.type === 'listing') {
+        const offersData = await GameService.fetchOffers(gameId)
+        setOffers(offersData)
+      }
+    } catch (error) {
+      console.error('Error loading game:', error)
+      showError('Failed to load game')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Setup WebSocket with proper game subscription
+  useEffect(() => {
+    if (!gameId) return
+    const ws = new WebSocket(getWsUrl())
+    ws.onopen = () => {
+      console.log('WebSocket connected')
+      setSocket(ws)
+      // Subscribe to game updates
+      ws.send(JSON.stringify({
+        type: 'subscribe_game',
+        gameId
+      }))
+      // Register user if connected
+      if (address) {
+        ws.send(JSON.stringify({
+          type: 'register_user',
+          address
+        }))
+      }
+    }
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        handleWebSocketMessage(data)
+      } catch (error) {
+        console.error('WebSocket message error:', error)
+      }
+    }
+    ws.onclose = () => {
+      console.log('WebSocket disconnected')
+      setSocket(null)
+    }
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close()
+      }
+    }
+  }, [gameId, address])
+
+  const handleWebSocketMessage = (data) => {
+    switch (data.type) {
+      case 'listing_converted_to_game':
+        // Reload the game data
+        loadGameData()
+        break
+      case 'offer_created':
+      case 'offer_updated':
+        // Reload offers
+        if (gameData?.type === 'listing') {
+          GameService.fetchOffers(gameId).then(setOffers)
+        }
+        break
+      case 'game_joined':
+      case 'game_state_update':
+        // Reload game data
+        loadGameData()
+        break
+    }
+  }
   
-  // Game state from server
+  // State
   const [gameState, setGameState] = useState({
     phase: 'waiting', // waiting, choosing, charging, completed
     currentRound: 1,
@@ -290,115 +358,60 @@ const UnifiedGamePage = () => {
   const [customTailsImage, setCustomTailsImage] = useState(null)
   
   // Helper functions to handle both game and listing data structures
-  const getGameCreator = () => game?.creator || game?.creator_address
-  const getGameJoiner = () => game?.joiner || game?.joiner_address
-  const getGamePrice = () => game?.final_price || game?.asking_price || 0
-  const getGameNFTImage = () => game?.nft_image || game?.nftImage || '/placeholder-nft.svg'
-  const getGameNFTName = () => game?.nft_name || game?.nftName || 'Unknown NFT'
-  const getGameNFTCollection = () => game?.nft_collection || game?.nftCollection || 'Unknown Collection'
+  const getGameCreator = () => gameData?.creator || gameData?.creator_address
+  const getGameJoiner = () => gameData?.joiner || gameData?.joiner_address
+  const getGamePrice = () => gameData?.final_price || gameData?.asking_price || 0
+  const getGameNFTImage = () => gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
+  const getGameNFTName = () => gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
+  const getGameNFTCollection = () => gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
   
   // Derived state
   const isCreator = getGameCreator() === address
   const isJoiner = getGameJoiner() === address
   const isPlayer = isCreator || isJoiner
-  const needsPayment = game?.status === 'waiting_payment' && isJoiner
-  const gameActive = game?.status === 'active'
+  const needsPayment = gameData?.status === 'waiting_payment' && isJoiner
+  const gameActive = gameData?.status === 'active'
   const isMyTurn = gameActive && isPlayer && gameState.phase === 'choosing'
-  const isListing = game?.id?.startsWith('listing_') || game?.listing_id
+  const isListing = gameData?.id?.startsWith('listing_') || gameData?.listing_id
   const canMakeOffer = isListing && !isCreator && address
   
   // Initialize contract service
   useEffect(() => {
-    if (!isFullyConnected || !walletClient) return
+    if (!isCreator && !isJoiner) return // Only initialize if user is involved
     
     contractService.initializeClients(8453, walletClient)
       .catch(error => {
         console.error('Failed to initialize contract:', error)
         showError('Failed to connect to smart contract')
       })
-  }, [isFullyConnected, walletClient])
+  }, [isCreator, isJoiner, walletClient])
   
   // Load game data
   useEffect(() => {
-    loadGame()
+    loadGameData()
   }, [gameId])
-  
-  // Setup WebSocket
-  useEffect(() => {
-    if (!gameId) return
-    
-    const ws = new WebSocket(getWsUrl())
-    
-    ws.onopen = () => {
-      console.log('WebSocket connected')
-      setSocket(ws)
-      
-      // Subscribe to game/listing
-      console.log(`📡 Subscribing to game/listing: ${gameId}`)
-      ws.send(JSON.stringify({
-        type: 'subscribe_game',
-        gameId
-      }))
-      
-      // Register user if authenticated
-      if (address) {
-        console.log(`📡 Registering user: ${address}`)
-        ws.send(JSON.stringify({
-          type: 'register_user',
-          address
-        }))
-      }
-    }
-    
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        handleWebSocketMessage(data)
-      } catch (error) {
-        console.error('WebSocket message error:', error)
-      }
-    }
-    
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
-      setSocket(null)
-    }
-    
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close()
-      }
-    }
-  }, [gameId, address])
-  
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
   
   // Set coin images when game loads
   useEffect(() => {
     console.log('🪙 Loading coin images for game:', {
-      hasGame: !!game,
-      hasCoinData: !!game?.coin_data,
-      coinData: game?.coin_data
+      hasGame: !!gameData,
+      hasCoinData: !!gameData?.coin_data,
+      coinData: gameData?.coin_data
     })
     
     let coinData = null
     
     // Try to get coin data from various sources
-    if (game?.coin_data) {
+    if (gameData?.coin_data) {
       try {
         // Parse coin_data if it's a string
-        coinData = typeof game.coin_data === 'string' ? 
-          JSON.parse(game.coin_data) : game.coin_data
+        coinData = typeof gameData.coin_data === 'string' ? 
+          JSON.parse(gameData.coin_data) : gameData.coin_data
       } catch (error) {
         console.error('❌ Error parsing coin data:', error)
       }
-    } else if (game?.coin) {
-      coinData = game.coin
+    } else if (gameData?.coin) {
+      coinData = gameData.coin
     }
     
     // Set coin images
@@ -411,157 +424,14 @@ const UnifiedGamePage = () => {
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
     }
-  }, [game])
-  
-  const loadGame = async () => {
-    try {
-      // First try to load as a game
-      let response = await fetch(getApiUrl(`/games/${gameId}`))
-      
-      if (response.ok) {
-        const gameData = await response.json()
-        setGame(gameData)
-        
-        // Set initial game state if provided
-        if (gameData.gameState) {
-          setGameState(gameData.gameState)
-        }
-        return
-      }
-      
-      // If not found as game, try as listing
-      response = await fetch(getApiUrl(`/listings/${gameId}`))
-      if (!response.ok) throw new Error('Game/Listing not found')
-      
-      const listingData = await response.json()
-      setGame(listingData)
-      
-      // Load offers for listing
-      await loadOffers(listingData.id)
-      
-      // Set initial game state for listing
-      setGameState({
-        phase: 'waiting_payment',
-        creatorChoice: null,
-        joinerChoice: null,
-        chargingPlayer: null,
-        creatorWins: 0,
-        joinerWins: 0,
-        currentRound: 1
-      })
-      
-    } catch (error) {
-      console.error('Error loading game:', error)
-      showError('Failed to load game')
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  const loadOffers = async (listingId) => {
-    try {
-      console.log(`💰 Loading offers for listing: ${listingId}`)
-      const response = await fetch(getApiUrl(`/listings/${listingId}/offers`))
-      
-      if (response.ok) {
-        const offersData = await response.json()
-        console.log(`✅ Offers loaded:`, offersData)
-        setOffers(offersData)
-      } else {
-        console.log(`⚠️ No offers found for listing: ${listingId}`)
-        setOffers([])
-      }
-    } catch (error) {
-      console.error('❌ Error loading offers:', error)
-      setOffers([])
-    }
-  }
-  
-  const handleWebSocketMessage = (data) => {
-    console.log('📡 WebSocket message received:', data.type, data)
-    
-    switch (data.type) {
-      case 'offer_accepted':
-        console.log('✅ Offer accepted, refreshing game data')
-        loadGame() // Refresh game data
-        if (data.offer && data.offer.offerer_address === address) {
-          showSuccess('Your offer was accepted!')
-        }
-        break
-        
-      case 'offer_created':
-        console.log('💰 New offer created:', data.offer)
-        // Add the new offer to the state immediately
-        if (data.offer) {
-          setOffers(prev => [data.offer, ...prev])
-        }
-        // Also refresh from server to ensure consistency
-        if (game?.id) {
-          loadOffers(game.id)
-        }
-        break
-        
-      case 'offer_rejected':
-        console.log('❌ Offer rejected:', data.offer)
-        // Update the offer status in state
-        if (data.offer) {
-          setOffers(prev => prev.map(o => 
-            o.id === data.offer.id ? { ...o, status: 'rejected' } : o
-          ))
-        }
-        // Refresh offers
-        if (game?.id) {
-          loadOffers(game.id)
-        }
-        if (data.offer && data.offer.offerer_address === address) {
-          showInfo('Your offer was rejected')
-        }
-        break
-        
-      case 'game_joined':
-        console.log('🔄 Refreshing game data due to game_joined')
-        loadGame() // Refresh game data
-        break
-        
-      case 'game_started':
-        setGame(prev => ({ ...prev, status: 'active' }))
-        setGameState(prev => ({ ...prev, phase: 'choosing' }))
-        showSuccess('Game started!')
-        break
-        
-      case 'game_action':
-        handleGameAction(data)
-        break
-        
-      case 'game_state_update':
-        setGameState(data.gameState)
-        break
-        
-      case 'chat_message':
-        // This is now handled in GameChatBox component
-        break
-        
-      case 'game_completed':
-        handleGameCompleted(data)
-        break
-        
-      case 'listing_converted_to_game':
-        console.log('🔄 Listing converted to game:', data)
-        if (data.gameId && data.gameId !== gameId) {
-          console.log(`🔄 Navigating from listing ${gameId} to game ${data.gameId}`)
-          window.history.replaceState(null, '', `/game/${data.gameId}`)
-          loadGame()
-        }
-        break
-    }
-  }
+  }, [gameData])
   
   const handleGameAction = (data) => {
     const { action, payload, from } = data
     
     switch (action) {
       case 'choice':
-        if (from === game?.creator) {
+        if (from === gameData?.creator) {
           setGameState(prev => ({ ...prev, creatorChoice: payload.choice }))
         } else {
           setGameState(prev => ({ ...prev, joinerChoice: payload.choice }))
@@ -569,7 +439,7 @@ const UnifiedGamePage = () => {
         
         // Check if both players have chosen
         const updatedState = { ...gameState }
-        if (from === game?.creator) {
+        if (from === gameData?.creator) {
           updatedState.creatorChoice = payload.choice
         } else {
           updatedState.joinerChoice = payload.choice
@@ -616,7 +486,7 @@ const UnifiedGamePage = () => {
     setResultData({
       isWinner,
       flipResult: result.outcome,
-      gameData: game,
+      gameData: gameData,
       isRoundResult: true,
       round: result.currentRound - 1
     })
@@ -633,7 +503,7 @@ const UnifiedGamePage = () => {
     
     setResultData({
       isWinner,
-      gameData: game,
+      gameData: gameData,
       finalScore: {
         creatorWins: gameState.creatorWins,
         joinerWins: gameState.joinerWins
@@ -643,17 +513,14 @@ const UnifiedGamePage = () => {
   }
   
   const handlePayment = async () => {
-    if (!isFullyConnected) {
-      showError('Please connect your wallet')
-      return
-    }
+    if (!isCreator && !isJoiner) return // Only allow payment if user is involved
     
     try {
       setPaymentLoading(true)
       showInfo('Processing payment...')
       
       const result = await contractService.joinExistingGameWithPrice(
-        game.blockchain_id,
+        gameData.blockchain_id,
         getGamePrice()
       )
       
@@ -676,7 +543,7 @@ const UnifiedGamePage = () => {
       }
       
       showSuccess('Payment successful! Game starting...')
-      loadGame()
+      loadGameData()
       
     } catch (error) {
       console.error('Payment error:', error)
@@ -719,9 +586,9 @@ const UnifiedGamePage = () => {
     if (!gameActive || !isPlayer || gameState.phase !== 'charging') return
     
     // For blockchain game, execute flip on-chain
-    if (game.blockchain_id && contractService.isInitialized()) {
+    if (gameData.blockchain_id && contractService.isInitialized()) {
       try {
-        const result = await contractService.playRound(game.blockchain_id)
+        const result = await contractService.playRound(gameData.blockchain_id)
         if (!result.success) throw new Error(result.error)
         
         // Server will detect blockchain event and update game
@@ -743,7 +610,7 @@ const UnifiedGamePage = () => {
     
     const messageData = {
       type: 'chat_message',
-      gameId: game?.id || game?.blockchain_id || gameId,
+      gameId: gameData?.id || gameData?.blockchain_id || gameId,
       from: address,
       message: newMessage.trim()
     }
@@ -753,11 +620,11 @@ const UnifiedGamePage = () => {
   }
   
   const createOffer = async () => {
-    if (!newOffer.price || !game?.id) return
+    if (!newOffer.price || !gameData?.id) return
     
     try {
       setCreatingOffer(true)
-      const response = await fetch(getApiUrl(`/listings/${game.id}/offers`), {
+      const response = await fetch(getApiUrl(`/listings/${gameData.id}/offers`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -772,7 +639,7 @@ const UnifiedGamePage = () => {
         const result = await response.json()
         showSuccess('Offer created successfully!')
         setNewOffer({ price: '', message: '' })
-        await loadOffers(game.id) // Refresh offers
+        await GameService.fetchOffers(gameData.id) // Refresh offers
       } else {
         showError('Failed to create offer')
       }
@@ -794,8 +661,8 @@ const UnifiedGamePage = () => {
       
       if (response.ok) {
         showSuccess('Offer accepted!')
-        await loadOffers(game.id) // Refresh offers
-        await loadGame() // Refresh game/listing data
+        await GameService.fetchOffers(gameData.id) // Refresh offers
+        await loadGameData() // Refresh game/listing data
       } else {
         showError('Failed to accept offer')
       }
@@ -814,7 +681,7 @@ const UnifiedGamePage = () => {
       
       if (response.ok) {
         showSuccess('Offer rejected')
-        await loadOffers(game.id) // Refresh offers
+        await GameService.fetchOffers(gameData.id) // Refresh offers
       } else {
         showError('Failed to reject offer')
       }
@@ -852,7 +719,7 @@ const UnifiedGamePage = () => {
     )
   }
   
-  if (!game) {
+  if (!gameData) {
     return (
       <ThemeProvider theme={theme}>
         <Container>
@@ -1070,7 +937,7 @@ const UnifiedGamePage = () => {
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                     <a 
-                      href={`https://basescan.org/token/${game?.nft_contract}?a=${game?.nft_token_id}`}
+                      href={`https://basescan.org/token/${gameData?.nft_contract}?a=${gameData?.nft_token_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -1086,7 +953,7 @@ const UnifiedGamePage = () => {
                       Explorer
                     </a>
                     <a 
-                      href={`https://opensea.io/assets/base/${game?.nft_contract}/${game?.nft_token_id}`}
+                      href={`https://opensea.io/assets/base/${gameData?.nft_contract}/${gameData?.nft_token_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -1145,7 +1012,7 @@ const UnifiedGamePage = () => {
                 
                 <div style={{ marginTop: 'auto' }}>
                   <p style={{ margin: '0', color: theme.colors.textSecondary, fontSize: '0.8rem' }}>
-                    Status: {game?.status || 'Unknown'}
+                    Status: {gameData?.status || 'Unknown'}
                   </p>
                 </div>
               </InfoSection>
