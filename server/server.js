@@ -596,52 +596,18 @@ app.post('/api/listings/:listingId/create-blockchain-game', (req, res) => {
   const { contract_game_id, transaction_hash } = req.body
   console.log(`🔄 Creating blockchain game for listing ${listingId}: ${contract_game_id}`)
   
-  // Create game record
-  const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
-  
+  // Update the existing listing with blockchain game ID and status
   db.run(`
-    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data, coin_data)
-    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?, coin_data
-    FROM listings WHERE id = ?
-  `, [gameId, contract_game_id, listingId, JSON.stringify({ transaction_hash }), listingId], function(err) {
+    UPDATE listings 
+    SET blockchain_game_id = ?, status = 'game_created', updated_at = CURRENT_TIMESTAMP 
+    WHERE id = ?
+  `, [contract_game_id, listingId], function(err) {
     if (err) {
-      console.error('❌ Error creating game:', err)
+      console.error('❌ Error updating listing with blockchain game ID:', err)
       return res.status(500).json({ error: 'Database error' })
     }
-    
-    // Update listing status
-    db.run('UPDATE listings SET blockchain_game_id = ?, status = "game_created" WHERE id = ?', [contract_game_id, listingId], (err) => {
-      if (err) {
-        console.error('❌ Error updating listing:', err)
-        return res.status(500).json({ error: 'Database error' })
-      }
-      console.log(`✅ Blockchain game created: ${gameId} (contract: ${contract_game_id})`)
-      
-                // Transfer WebSocket subscriptions from listing to game
-          const listingRoom = gameRooms.get(listingId)
-          if (listingRoom && listingRoom.size > 0) {
-            console.log(`🔄 Transferring ${listingRoom.size} WebSocket subscriptions from listing ${listingId} to game ${gameId}`)
-            gameRooms.set(gameId, listingRoom)
-            gameRooms.delete(listingId)
-            
-            // Update all sockets in the room to point to the new game ID
-            wss.clients.forEach(client => {
-              if (client.readyState === WebSocket.OPEN && listingRoom.has(client.id)) {
-                client.gameId = gameId
-              }
-            })
-            
-            // Notify clients that the listing has been converted to a game
-            broadcastToGame(gameId, {
-              type: 'listing_converted_to_game',
-              listingId,
-              gameId,
-              contractGameId: contract_game_id
-            })
-          }
-      
-      res.json({ success: true, gameId, contractGameId: contract_game_id })
-    })
+    console.log(`✅ Listing updated with blockchain game ID: ${contract_game_id}`)
+    res.json({ success: true, listingId, contractGameId: contract_game_id })
   })
 })
 
