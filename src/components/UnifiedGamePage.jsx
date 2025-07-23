@@ -17,6 +17,7 @@ import hazeVideo from '../../Images/Video/haze.webm'
 import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
 import GameChatBox from './GameChatBox'
 import GameService from '../services/GameService'
+import NFTOfferComponent from './NFTOfferComponent'
 
 // Styled Components
 const Container = styled.div`
@@ -265,6 +266,11 @@ const UnifiedGamePage = () => {
   const [resultData, setResultData] = useState(null)
   const [newMessage, setNewMessage] = useState('')
   const [paymentLoading, setPaymentLoading] = useState(false)
+  
+  // NFT Offer state
+  const [offeredNFTs, setOfferedNFTs] = useState([])
+  const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
+  const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
 
   // Load game data
   const loadGameData = async () => {
@@ -325,6 +331,8 @@ const UnifiedGamePage = () => {
   }, [gameId, address])
 
   const handleWebSocketMessage = (data) => {
+    console.log('📩 WebSocket message received:', data.type, data)
+    
     switch (data.type) {
       case 'listing_converted_to_game':
         // Reload the game data
@@ -341,6 +349,33 @@ const UnifiedGamePage = () => {
       case 'game_state_update':
         // Reload game data
         loadGameData()
+        break
+      case 'nft_offer_received':
+        console.log('🎯 NFT offer received:', data.offer)
+        setOfferedNFTs(prev => [...prev, data.offer])
+        if (!isCreator) {
+          showInfo(`New NFT battle offer: ${data.offer.nft.name}`)
+        }
+        break
+      case 'nft_offer_accepted':
+        console.log('✅ NFT offer accepted:', data.acceptedOffer)
+        showSuccess('NFT offer accepted! Waiting for challenger to join...')
+        // Reload game data to reflect the accepted offer
+        loadGameData()
+        break
+      case 'nft_offer_rejected':
+        console.log('❌ NFT offer rejected:', data.offer)
+        showInfo('NFT offer was rejected')
+        break
+      case 'challenger_payment_confirmed':
+        console.log('💰 Challenger payment confirmed')
+        showSuccess('Payment confirmed! Game starting...')
+        // Reload game data to show the game is now active
+        loadGameData()
+        break
+      case 'chat_message':
+        // Chat messages are handled by the GameChatBox component
+        console.log('💬 Chat message received:', data)
         break
     }
   }
@@ -1211,6 +1246,25 @@ const UnifiedGamePage = () => {
                   <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
                     Game in progress - no offers available
                   </p>
+                )}
+                
+                {/* NFT Battle Offers */}
+                {isListing && (
+                  <NFTOfferComponent
+                    gameId={gameId}
+                    gameData={gameData}
+                    isCreator={isCreator}
+                    socket={socket}
+                    connected={!!socket}
+                    offeredNFTs={offeredNFTs}
+                    onOfferSubmitted={(offerData) => {
+                      console.log('📤 NFT offer submitted:', offerData)
+                    }}
+                    onOfferAccepted={(offer) => {
+                      console.log('✅ NFT offer accepted:', offer)
+                      setOfferedNFTs(prev => prev.filter(o => o !== offer))
+                    }}
+                  />
                 )}
               </OffersSection>
             </BottomSection>

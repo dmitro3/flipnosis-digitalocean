@@ -206,6 +206,22 @@ wss.on('connection', (socket) => {
         case 'chat_message':
           handleChatMessage(socket, data)
           break
+          
+        case 'nft_offer':
+          handleNFTOffer(socket, data)
+          break
+          
+        case 'accept_nft_offer':
+          handleAcceptNFTOffer(socket, data)
+          break
+          
+        case 'reject_nft_offer':
+          handleRejectNFTOffer(socket, data)
+          break
+          
+        case 'nft_payment_complete':
+          handleNFTPaymentComplete(socket, data)
+          break
       }
     } catch (error) {
       console.error('❌ WebSocket error:', error)
@@ -263,6 +279,108 @@ function handleChatMessage(socket, data) {
     message,
     from: socket.address,
     timestamp: Date.now()
+  })
+}
+
+function handleNFTOffer(socket, data) {
+  const { gameId, offererAddress, nft } = data
+  console.log('🎯 NFT offer received:', { gameId, offererAddress, nft })
+  
+  // Broadcast the offer to all users in the game room
+  broadcastToGame(gameId, {
+    type: 'nft_offer_received',
+    offer: {
+      offererAddress,
+      nft,
+      timestamp: Date.now()
+    }
+  })
+  
+  // Also send to the creator specifically
+  db.get('SELECT creator FROM listings WHERE id = ?', [gameId], (err, listing) => {
+    if (!err && listing) {
+      sendToUser(listing.creator, {
+        type: 'nft_offer_received',
+        gameId,
+        offer: {
+          offererAddress,
+          nft,
+          timestamp: Date.now()
+        }
+      })
+    }
+  })
+}
+
+function handleAcceptNFTOffer(socket, data) {
+  const { gameId, creatorAddress, acceptedOffer } = data
+  console.log('✅ NFT offer accepted:', { gameId, creatorAddress, acceptedOffer })
+  
+  // Broadcast acceptance to all users in the game room
+  broadcastToGame(gameId, {
+    type: 'nft_offer_accepted',
+    acceptedOffer,
+    creatorAddress,
+    timestamp: Date.now()
+  })
+  
+  // Send specific message to the offerer
+  sendToUser(acceptedOffer.offererAddress, {
+    type: 'nft_offer_accepted',
+    gameId,
+    acceptedOffer,
+    creatorAddress,
+    timestamp: Date.now()
+  })
+}
+
+function handleRejectNFTOffer(socket, data) {
+  const { gameId, creatorAddress, offer } = data
+  console.log('❌ NFT offer rejected:', { gameId, creatorAddress, offer })
+  
+  // Broadcast rejection to all users in the game room
+  broadcastToGame(gameId, {
+    type: 'nft_offer_rejected',
+    offer,
+    creatorAddress,
+    timestamp: Date.now()
+  })
+  
+  // Send specific message to the offerer
+  sendToUser(offer.offererAddress, {
+    type: 'nft_offer_rejected',
+    gameId,
+    offer,
+    creatorAddress,
+    timestamp: Date.now()
+  })
+}
+
+function handleNFTPaymentComplete(socket, data) {
+  const { gameId, challengerAddress, paymentTxHash, acceptedOffer } = data
+  console.log('💰 NFT payment complete:', { gameId, challengerAddress, paymentTxHash })
+  
+  // Broadcast payment completion to all users in the game room
+  broadcastToGame(gameId, {
+    type: 'challenger_payment_confirmed',
+    challengerAddress,
+    paymentTxHash,
+    acceptedOffer,
+    timestamp: Date.now()
+  })
+  
+  // Send specific message to the creator
+  db.get('SELECT creator FROM listings WHERE id = ?', [gameId], (err, listing) => {
+    if (!err && listing) {
+      sendToUser(listing.creator, {
+        type: 'challenger_payment_confirmed',
+        gameId,
+        challengerAddress,
+        paymentTxHash,
+        acceptedOffer,
+        timestamp: Date.now()
+      })
+    }
   })
 }
 
