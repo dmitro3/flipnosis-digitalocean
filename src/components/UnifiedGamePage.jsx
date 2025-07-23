@@ -366,10 +366,12 @@ const UnifiedGamePage = () => {
   // Helper functions to handle both game and listing data structures
   const getGameCreator = () => gameData?.creator || gameData?.creator_address
   const getGameJoiner = () => gameData?.joiner || gameData?.joiner_address
-  const getGamePrice = () => gameData?.final_price || gameData?.asking_price || 0
-  const getGameNFTImage = () => gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
-  const getGameNFTName = () => gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
-  const getGameNFTCollection = () => gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
+  const getGamePrice = () => gameData?.price || gameData?.priceUSD || gameData?.final_price || gameData?.asking_price || 0
+  const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
+  const getGameNFTName = () => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
+  const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
+  const getGameNFTContract = () => gameData?.nft?.contract || gameData?.nft_contract
+  const getGameNFTTokenId = () => gameData?.nft?.tokenId || gameData?.nft_token_id
   
   // Derived state
   const isCreator = getGameCreator() === address
@@ -378,8 +380,30 @@ const UnifiedGamePage = () => {
   const needsPayment = gameData?.status === 'waiting_payment' && isJoiner
   const gameActive = gameData?.status === 'active'
   const isMyTurn = gameActive && isPlayer && gameState.phase === 'choosing'
-  const isListing = gameData?.id?.startsWith('listing_') || gameData?.listing_id
-  const canMakeOffer = isListing && !isCreator && address
+  
+  // Better listing detection logic
+  const isListing = gameData?.type === 'listing' || 
+                   gameData?.id?.startsWith('listing_') || 
+                   gameData?.listing_id ||
+                   (!gameData?.joiner && gameData?.status !== 'active')
+  
+  const canMakeOffer = isListing && !isCreator && address && gameData?.status !== 'active'
+  
+  // Debug logging
+  useEffect(() => {
+    if (gameData) {
+      console.log('🎮 Game data debug:', {
+        id: gameData.id,
+        type: gameData.type,
+        status: gameData.status,
+        creator: gameData.creator,
+        joiner: gameData.joiner,
+        isListing,
+        canMakeOffer,
+        address
+      })
+    }
+  }, [gameData, isListing, canMakeOffer, address])
   
   // Initialize contract service
   useEffect(() => {
@@ -401,14 +425,16 @@ const UnifiedGamePage = () => {
   useEffect(() => {
     console.log('🪙 Loading coin images for game:', {
       hasGame: !!gameData,
-      hasCoinData: !!gameData?.coin_data,
-      coinData: gameData?.coin_data
+      hasCoinData: !!gameData?.coinData,
+      coinData: gameData?.coinData
     })
     
     let coinData = null
     
-    // Try to get coin data from various sources
-    if (gameData?.coin_data) {
+    // Try to get coin data from normalized structure first
+    if (gameData?.coinData) {
+      coinData = gameData.coinData
+    } else if (gameData?.coin_data) {
       try {
         // Parse coin_data if it's a string
         coinData = typeof gameData.coin_data === 'string' ? 
@@ -943,7 +969,7 @@ const UnifiedGamePage = () => {
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                     <a 
-                      href={`https://basescan.org/token/${gameData?.nft_contract}?a=${gameData?.nft_token_id}`}
+                      href={`https://basescan.org/token/${getGameNFTContract()}?a=${getGameNFTTokenId()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -959,7 +985,7 @@ const UnifiedGamePage = () => {
                       Explorer
                     </a>
                     <a 
-                      href={`https://opensea.io/assets/base/${gameData?.nft_contract}/${gameData?.nft_token_id}`}
+                      href={`https://opensea.io/assets/base/${getGameNFTContract()}/${getGameNFTTokenId()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -1020,6 +1046,14 @@ const UnifiedGamePage = () => {
                   <p style={{ margin: '0', color: theme.colors.textSecondary, fontSize: '0.8rem' }}>
                     Status: {gameData?.status || 'Unknown'}
                   </p>
+                  <p style={{ margin: '0.25rem 0 0 0', color: theme.colors.textSecondary, fontSize: '0.8rem' }}>
+                    Type: {isListing ? 'Listing' : 'Game'}
+                  </p>
+                  {isListing && (
+                    <p style={{ margin: '0.25rem 0 0 0', color: theme.colors.neonYellow, fontSize: '0.8rem' }}>
+                      Accepting offers
+                    </p>
+                  )}
                 </div>
               </InfoSection>
               
@@ -1201,4 +1235,4 @@ const UnifiedGamePage = () => {
   )
 }
 
-export default UnifiedGamePage 
+export default UnifiedGamePage
