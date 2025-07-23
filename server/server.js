@@ -298,9 +298,10 @@ function handleNFTOffer(socket, data) {
     }
   })
   
-  // Also send to the creator specifically
+  // Also send to the creator specifically - check both listings and games tables
   db.get('SELECT creator FROM listings WHERE id = ?', [gameId], (err, listing) => {
     if (!err && listing) {
+      console.log('🎯 Found creator in listings table:', listing.creator)
       sendToUser(listing.creator, {
         type: 'nft_offer_received',
         gameId,
@@ -308,6 +309,24 @@ function handleNFTOffer(socket, data) {
           offererAddress,
           nft,
           timestamp: Date.now()
+        }
+      })
+    } else {
+      // If not found in listings, check games table
+      db.get('SELECT creator FROM games WHERE id = ?', [gameId], (err2, game) => {
+        if (!err2 && game) {
+          console.log('🎯 Found creator in games table:', game.creator)
+          sendToUser(game.creator, {
+            type: 'nft_offer_received',
+            gameId,
+            offer: {
+              offererAddress,
+              nft,
+              timestamp: Date.now()
+            }
+          })
+        } else {
+          console.log('⚠️ Creator not found in either listings or games table for gameId:', gameId)
         }
       })
     }

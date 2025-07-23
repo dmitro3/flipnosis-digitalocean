@@ -333,6 +333,11 @@ const UnifiedGamePage = () => {
     }
   }, [gameId, address])
 
+  // Debug useEffect to monitor offeredNFTs state changes
+  useEffect(() => {
+    console.log('🔄 offeredNFTs state changed:', offeredNFTs)
+  }, [offeredNFTs])
+
   const handleWebSocketMessage = (data) => {
     console.log('📩 WebSocket message received:', data.type, data)
     
@@ -430,6 +435,16 @@ const UnifiedGamePage = () => {
                    gameData?.id?.startsWith('listing_') || 
                    gameData?.listing_id ||
                    (!gameData?.joiner && gameData?.status !== 'active')
+  
+  // Debug logging for listing detection
+  console.log('🔍 Listing detection debug:', {
+    gameData: gameData,
+    isListing: isListing,
+    gameType: gameData?.game_type,
+    status: gameData?.status,
+    offeredNFTs: offeredNFTs,
+    isCreator: isCreator
+  })
   
   const canMakeOffer = isListing && !isCreator && address && gameData?.status !== 'active'
   
@@ -1259,21 +1274,39 @@ const UnifiedGamePage = () => {
                 
                 {/* NFT Battle Offers - Only show for NFT vs NFT games */}
                 {isListing && gameData?.game_type === 'nft-vs-nft' && (
-                  <NFTOfferComponent
-                    gameId={gameId}
-                    gameData={gameData}
-                    isCreator={isCreator}
-                    socket={socket}
-                    connected={!!socket}
-                    offeredNFTs={offeredNFTs}
-                    onOfferSubmitted={(offerData) => {
-                      console.log('📤 NFT offer submitted:', offerData)
-                    }}
-                    onOfferAccepted={(offer) => {
-                      console.log('✅ NFT offer accepted:', offer)
-                      setOfferedNFTs(prev => prev.filter(o => o !== offer))
-                    }}
-                  />
+                  <>
+                    {/* Debug info */}
+                    <div style={{
+                      background: 'rgba(255, 0, 0, 0.1)',
+                      border: '1px solid rgba(255, 0, 0, 0.3)',
+                      borderRadius: '0.5rem',
+                      padding: '0.5rem',
+                      marginBottom: '1rem',
+                      fontSize: '0.8rem'
+                    }}>
+                      <strong>Debug Info:</strong><br/>
+                      isListing: {isListing.toString()}<br/>
+                      game_type: {gameData?.game_type}<br/>
+                      offeredNFTs count: {offeredNFTs.length}<br/>
+                      isCreator: {isCreator.toString()}
+                    </div>
+                    
+                    <NFTOfferComponent
+                      gameId={gameId}
+                      gameData={gameData}
+                      isCreator={isCreator}
+                      socket={socket}
+                      connected={!!socket}
+                      offeredNFTs={offeredNFTs}
+                      onOfferSubmitted={(offerData) => {
+                        console.log('📤 NFT offer submitted:', offerData)
+                      }}
+                      onOfferAccepted={(offer) => {
+                        console.log('✅ NFT offer accepted:', offer)
+                        setOfferedNFTs(prev => prev.filter(o => o !== offer))
+                      }}
+                    />
+                  </>
                 )}
               </OffersSection>
             </BottomSection>

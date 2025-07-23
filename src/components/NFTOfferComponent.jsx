@@ -15,6 +15,15 @@ const NFTOfferComponent = ({
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
+  // Debug logging
+  console.log('🎮 NFTOfferComponent props:', {
+    gameId,
+    isCreator,
+    connected,
+    offeredNFTs: offeredNFTs,
+    offeredNFTsLength: offeredNFTs.length,
+    gameData: gameData
+  })
   const { isConnected, address, nfts } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   const [selectedNFT, setSelectedNFT] = useState(null)
