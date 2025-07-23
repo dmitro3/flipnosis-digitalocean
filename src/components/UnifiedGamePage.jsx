@@ -252,7 +252,7 @@ const Input = styled.input`
 const UnifiedGamePage = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { address, walletClient } = useWallet()
+  const { address, walletClient, isMobile } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   
   const [gameData, setGameData] = useState(null)

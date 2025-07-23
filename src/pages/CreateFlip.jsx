@@ -193,7 +193,7 @@ const CreateFlip = () => {
         blockchainResult.transactionHash
       )
       showSuccess('Flip created successfully!')
-      navigate(`/game/${listingResult.listingId}`)
+      navigate(`/listing/${listingResult.listingId}`)
     } catch (error) {
       console.error('Error creating flip:', error)
       showError(error.message || 'Failed to create flip')
