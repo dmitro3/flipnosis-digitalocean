@@ -261,6 +261,10 @@ const UnifiedGamePage = () => {
   const [offers, setOffers] = useState([])
   const [newOffer, setNewOffer] = useState({ price: '', message: '' })
   const [creatingOffer, setCreatingOffer] = useState(false)
+  const [showResultPopup, setShowResultPopup] = useState(false)
+  const [resultData, setResultData] = useState(null)
+  const [newMessage, setNewMessage] = useState('')
+  const [paymentLoading, setPaymentLoading] = useState(false)
 
   // Load game data
   const loadGameData = async () => {
