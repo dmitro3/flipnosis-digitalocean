@@ -119,7 +119,7 @@ const CreateFlip = () => {
       }
       initializeContract()
     }
-  }, [isFullyConnected, walletClient, showError])
+  }, [isFullyConnected, walletClient])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

@@ -211,6 +211,7 @@ const Home = () => {
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState(null)
+  const [selectedFlip, setSelectedFlip] = useState(null)
 
   // Fetch data from database
   const fetchData = async () => {
