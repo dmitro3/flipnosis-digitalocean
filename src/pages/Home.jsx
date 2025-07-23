@@ -918,9 +918,7 @@ const Home = () => {
                 }}>
                   {filteredItems.length > 0 ?
                     `All Flips (${filteredItems.length})` :
-                    isConnected && nfts && nfts.length > 0 ? 
-                      `Your NFTs (${nfts.length})` : 
-                      'No Games Available'
+                    'No Games Available'
                   }
                 </div>
 
@@ -945,7 +943,8 @@ const Home = () => {
                   gridAutoRows: 'minmax(auto, auto)',
                   gridAutoFlow: 'row'
                 }}>
-                              {filteredItems.map(item => (
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map(item => (
                     <div
                       key={item.id}
                       onClick={() => {
@@ -1117,110 +1116,14 @@ const Home = () => {
                         </div>
                       </div>
                     </div>
-                  ))) : isConnected && nfts && nfts.length > 0 ? (
-                    nfts.map(nft => (
-                      <div
-                        key={`${nft.contractAddress}-${nft.tokenId}`}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
-                          padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                          height: window.innerWidth <= 768 ? 'auto' : '210px',
-                          width: '100%'
-                        }}
-                      >
-                        <div style={{ 
-                          position: 'relative',
-                          aspectRatio: '1',
-                          borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                          overflow: 'hidden',
-                          width: '100%',
-                          height: window.innerWidth <= 768 ? 'auto' : '135px',
-                          minHeight: window.innerWidth <= 768 ? '80px' : '135px'
-                        }}>
-                          <GameImage 
-                            src={nft.image} 
-                            alt={nft.name}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              objectPosition: 'center'
-                            }}
-                            onError={(e) => {
-                              e.target.src = '/placeholder-nft.svg'
-                            }}
-                          />
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
-                          padding: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
-                          height: window.innerWidth <= 768 ? 'auto' : '60px',
-                          justifyContent: 'space-between'
-                        }}>
-                          <div style={{ 
-                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
-                            {nft.name}
-                          </div>
-                          <div style={{ 
-                            fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
-                            color: theme.colors.textSecondary,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
-                            {nft.collection}
-                          </div>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem'
-                          }}>
-                            <div style={{ 
-                              fontWeight: 'bold',
-                              color: theme.colors.neonBlue
-                            }}>
-                              {getChainName(nft.chain)}
-                            </div>
-                            <div style={{
-                              background: 'rgba(255, 255, 255, 0.1)',
-                              padding: '0.1rem 0.3rem',
-                              borderRadius: '0.2rem',
-                              fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
-                              border: '1px solid rgba(255, 255, 255, 0.2)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.1rem'
-                            }}>
-                              <span>{getChainIcon(nft.chain)}</span>
-                              <span>{getChainName(nft.chain)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
+                  ))) : (
                     <div style={{
                       gridColumn: '1 / -1',
                       textAlign: 'center',
                       padding: '2rem',
                       color: theme.colors.textSecondary
                     }}>
-                      {nftsLoading ? 'Loading your NFTs...' : 'No games or NFTs available'}
+                      No games or listings available
                     </div>
                   )}
                 </div>
