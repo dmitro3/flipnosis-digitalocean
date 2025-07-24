@@ -194,28 +194,34 @@ wss.on('connection', (socket) => {
   socket.on('message', async (message) => {
     try {
       const data = JSON.parse(message)
-      console.log('📡 Received:', data.type)
+      console.log('📡 Received WebSocket message:', data)
       
       switch (data.type) {
         case 'join_room':
           handleJoinRoom(socket, data)
           break
-          
         case 'register_user':
           handleRegisterUser(socket, data)
           break
-          
         case 'chat_message':
+          // Ensure roomId is present
+          if (!data.roomId && data.gameId) data.roomId = data.gameId
           handleChatMessage(socket, data)
           break
-          
         case 'game_choice':
           handleGameChoice(socket, data)
           break
-          
         case 'flip_coin':
           handleFlipCoin(socket, data)
           break
+        case 'nft_offer':
+          handleNftOffer(socket, data)
+          break
+        case 'accept_nft_offer':
+          handleAcceptNftOffer(socket, data)
+          break
+        default:
+          console.log('⚠️ Unhandled WebSocket message type:', data.type)
       }
     } catch (error) {
       console.error('❌ WebSocket error:', error)
@@ -400,6 +406,42 @@ async function handleFlipCoin(socket, data) {
       }
     )
   })
+}
+
+// Handle NFT offer (for NFT-vs-NFT games)
+function handleNftOffer(socket, data) {
+  const { gameId, offererAddress, nft, timestamp } = data
+  if (!gameId || !offererAddress || !nft) {
+    console.error('❌ Invalid NFT offer data:', data)
+    return
+  }
+  // Broadcast to the game room
+  broadcastToRoom(gameId, {
+    type: 'nft_offer_received',
+    offer: {
+      offererAddress,
+      nft,
+      timestamp: timestamp || new Date().toISOString()
+    }
+  })
+  console.log('📢 Broadcasted nft_offer_received to room', gameId)
+}
+
+// Handle NFT offer acceptance (for NFT-vs-NFT games)
+function handleAcceptNftOffer(socket, data) {
+  const { gameId, creatorAddress, acceptedOffer, timestamp } = data
+  if (!gameId || !creatorAddress || !acceptedOffer) {
+    console.error('❌ Invalid accept_nft_offer data:', data)
+    return
+  }
+  // Broadcast acceptance to the game room
+  broadcastToRoom(gameId, {
+    type: 'nft_offer_accepted',
+    acceptedOffer,
+    creatorAddress,
+    timestamp: timestamp || new Date().toISOString()
+  })
+  console.log('📢 Broadcasted nft_offer_accepted to room', gameId)
 }
 
 function handleDisconnect(socket) {
