@@ -445,19 +445,7 @@ const UnifiedGamePage = () => {
   const getGameNFTTokenId = () => gameData?.nft?.tokenId || gameData?.nft_token_id
   
   // Derived state
-  // Robust isCreator logic
-  const isCreator = address && gameData?.creator && (address.toLowerCase() === gameData.creator.toLowerCase())
-
-  // Debug logging for offer eligibility
-  console.log('Player debug:', {
-    address,
-    gameDataCreator: gameData?.creator,
-    isCreator,
-    canMakeOffer,
-    isListing,
-    status: gameData?.status
-  })
-  
+  const isCreator = getGameCreator() === address
   const isJoiner = getGameJoiner() === address
   const isPlayer = isCreator || isJoiner
   const needsPayment = gameData?.status === 'waiting_payment' && isJoiner
