@@ -183,9 +183,9 @@ const GameChatBox = ({ gameId, socket, connected }) => {
   const sendMessage = async (e) => {
     e.preventDefault()
     
-    if (!currentMessage.trim() || !socket || !connected || !address) {
+    if (!currentMessage.trim() || !socket || socket.readyState !== WebSocket.OPEN || !address) {
       if (!address) showError('Please connect your wallet')
-      else if (!connected) showError('Not connected to game')
+      else if (!socket || socket.readyState !== WebSocket.OPEN) showError('Not connected to game')
       return
     }
 

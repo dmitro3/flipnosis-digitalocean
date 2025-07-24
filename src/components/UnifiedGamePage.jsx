@@ -314,23 +314,30 @@ const UnifiedGamePage = () => {
   // Setup WebSocket with proper game subscription
   useEffect(() => {
     if (!gameId) return
+    
     const ws = new WebSocket(getWsUrl())
+    
     ws.onopen = () => {
       console.log('WebSocket connected')
       setSocket(ws)
-      // Join room (could be listing or game)
+      
+      // Join room with the actual gameId (not the type-prefixed one)
+      const roomId = gameId.startsWith('listing_') || gameId.startsWith('game_') ? gameId : gameId
+      
       ws.send(JSON.stringify({
         type: 'join_room',
-        roomId: gameId
+        roomId: roomId
       }))
-      // Register user
+      
+      // Register user if we have an address
       if (address) {
         ws.send(JSON.stringify({
           type: 'register_user',
-          address
+          address: address
         }))
       }
     }
+    
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
@@ -339,10 +346,16 @@ const UnifiedGamePage = () => {
         console.error('WebSocket message error:', error)
       }
     }
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error)
+    }
+    
     ws.onclose = () => {
       console.log('WebSocket disconnected')
       setSocket(null)
     }
+    
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.close()
@@ -453,10 +466,12 @@ const UnifiedGamePage = () => {
   const isMyTurn = gameActive && isPlayer && gameState.phase === 'choosing'
   
   // Better listing detection logic
-  const isListing = gameData?.type === 'listing' || 
+  const isListing = (gameData?.type === 'listing' || 
                    gameData?.id?.startsWith('listing_') || 
                    gameData?.listing_id ||
-                   (!gameData?.joiner && gameData?.status !== 'active')
+                   (gameData?.status === 'active' && !gameData?.joiner && !gameData?.challenger)) &&
+                   gameData?.status !== 'waiting_deposits' &&
+                   gameData?.status !== 'active' // active with joiner means it's a game
   
   // Debug logging for listing detection
   console.log('🔍 Listing detection debug:', {
@@ -468,7 +483,7 @@ const UnifiedGamePage = () => {
     isCreator: isCreator
   })
   
-  const canMakeOffer = isListing && !isCreator && address && gameData?.status !== 'active'
+  const canMakeOffer = isListing && !isCreator && address && !gameData?.joiner && !gameData?.challenger
   
   // Debug logging
   useEffect(() => {
@@ -761,15 +776,16 @@ const UnifiedGamePage = () => {
   }
   
   const sendMessage = () => {
-    if (!newMessage.trim() || !socket) return
+    if (!newMessage.trim() || !socket || socket.readyState !== WebSocket.OPEN) return
     
     const messageData = {
       type: 'chat_message',
-      gameId: gameData?.id || gameData?.blockchain_id || gameId,
-      from: address,
-      message: newMessage.trim()
+      roomId: gameId, // Use roomId instead of gameId
+      message: newMessage.trim(),
+      from: address // Include the from field
     }
     
+    console.log('📤 Sending chat message:', messageData)
     socket.send(JSON.stringify(messageData))
     setNewMessage('')
   }
@@ -1240,10 +1256,11 @@ const UnifiedGamePage = () => {
               <OffersSection>
                 <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonPink }}>Offers</h4>
                 
-                {isListing && (
+                {/* NFT Battle Offers - Show for listings, not active games */}
+                {isListing && !gameData?.joiner && (
                   <>
-                    {/* Create Offer Form */}
-                    {canMakeOffer && (
+                    {/* For NFT vs Crypto games - show price offer form */}
+                    {gameData?.game_type !== 'nft-vs-nft' && canMakeOffer && (
                       <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255, 20, 147, 0.1)', borderRadius: '0.5rem' }}>
                         <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
                         <input
@@ -1295,84 +1312,24 @@ const UnifiedGamePage = () => {
                       </div>
                     )}
                     
-                    {/* Offers List */}
-                    <div style={{ flex: 1, overflowY: 'auto' }}>
-                      {offers.length === 0 ? (
-                        <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
-                          No offers yet
-                        </p>
-                      ) : (
-                        offers.map((offer) => (
-                          <div 
-                            key={offer.id} 
-                            style={{ 
-                              marginBottom: '1rem', 
-                              padding: '1rem', 
-                              background: 'rgba(255, 255, 255, 0.05)', 
-                              borderRadius: '0.5rem',
-                              border: `1px solid ${offer.status === 'accepted' ? theme.colors.neonGreen : offer.status === 'rejected' ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.1)'}`
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                              <strong style={{ color: theme.colors.neonPink }}>
-                                {offer.offerer_name || offer.offerer_address.slice(0, 6) + '...' + offer.offerer_address.slice(-4)}
-                              </strong>
-                              <span style={{ 
-                                color: offer.status === 'accepted' ? theme.colors.neonGreen : 
-                                       offer.status === 'rejected' ? theme.colors.neonPink : 
-                                       theme.colors.neonYellow,
-                                fontSize: '0.8rem',
-                                textTransform: 'uppercase'
-                              }}>
-                                {offer.status}
-                              </span>
-                            </div>
-                            <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonYellow, fontWeight: 'bold' }}>
-                              ${offer.offer_price} USD
-                            </p>
-                            {offer.message && (
-                              <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
-                                "{offer.message}"
-                              </p>
-                            )}
-                            {isCreator && offer.status === 'pending' && (
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button
-                                  onClick={() => acceptOffer(offer.id, offer.offer_price)}
-                                  style={{
-                                    flex: 1,
-                                    background: theme.colors.neonGreen,
-                                    color: '#000',
-                                    border: 'none',
-                                    padding: '0.25rem',
-                                    borderRadius: '0.25rem',
-                                    cursor: 'pointer',
-                                    fontSize: '0.8rem'
-                                  }}
-                                >
-                                  Accept
-                                </button>
-                                <button
-                                  onClick={() => rejectOffer(offer.id)}
-                                  style={{
-                                    flex: 1,
-                                    background: theme.colors.neonPink,
-                                    color: '#000',
-                                    border: 'none',
-                                    padding: '0.25rem',
-                                    borderRadius: '0.25rem',
-                                    cursor: 'pointer',
-                                    fontSize: '0.8rem'
-                                  }}
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
+                    {/* For NFT vs NFT games - show NFT offer component */}
+                    {gameData?.game_type === 'nft-vs-nft' && (
+                      <NFTOfferComponent
+                        gameId={gameId}
+                        gameData={gameData}
+                        isCreator={isCreator}
+                        socket={socket}
+                        connected={!!socket && socket.readyState === WebSocket.OPEN}
+                        offeredNFTs={offeredNFTs}
+                        onOfferSubmitted={(offerData) => {
+                          console.log('📤 NFT offer submitted:', offerData)
+                        }}
+                        onOfferAccepted={(offer) => {
+                          console.log('✅ NFT offer accepted:', offer)
+                          setOfferedNFTs(prev => prev.filter(o => o !== offer))
+                        }}
+                      />
+                    )}
                   </>
                 )}
                 
@@ -1382,42 +1339,88 @@ const UnifiedGamePage = () => {
                   </p>
                 )}
                 
-                {/* NFT Battle Offers - Only show for NFT vs NFT games */}
-                {isListing && gameData?.game_type === 'nft-vs-nft' && (
-                  <>
-                    {/* Debug info */}
-                    <div style={{
-                      background: 'rgba(255, 0, 0, 0.1)',
-                      border: '1px solid rgba(255, 0, 0, 0.3)',
-                      borderRadius: '0.5rem',
-                      padding: '0.5rem',
-                      marginBottom: '1rem',
-                      fontSize: '0.8rem'
-                    }}>
-                      <strong>Debug Info:</strong><br/>
-                      isListing: {isListing.toString()}<br/>
-                      game_type: {gameData?.game_type}<br/>
-                      offeredNFTs count: {offeredNFTs.length}<br/>
-                      isCreator: {isCreator.toString()}
-                    </div>
-                    
-                    <NFTOfferComponent
-                      gameId={gameId}
-                      gameData={gameData}
-                      isCreator={isCreator}
-                      socket={socket}
-                      connected={!!socket}
-                      offeredNFTs={offeredNFTs}
-                      onOfferSubmitted={(offerData) => {
-                        console.log('📤 NFT offer submitted:', offerData)
-                      }}
-                      onOfferAccepted={(offer) => {
-                        console.log('✅ NFT offer accepted:', offer)
-                        setOfferedNFTs(prev => prev.filter(o => o !== offer))
-                      }}
-                    />
-                  </>
+                {/* Offers List for NFT vs Crypto games */}
+                {isListing && gameData?.game_type !== 'nft-vs-nft' && (
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {offers.length === 0 ? (
+                      <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
+                        No offers yet
+                      </p>
+                    ) : (
+                      offers.map((offer) => (
+                        <div 
+                          key={offer.id} 
+                          style={{ 
+                            marginBottom: '1rem', 
+                            padding: '1rem', 
+                            background: 'rgba(255, 255, 255, 0.05)', 
+                            borderRadius: '0.5rem',
+                            border: `1px solid ${offer.status === 'accepted' ? theme.colors.neonGreen : offer.status === 'rejected' ? theme.colors.neonPink : 'rgba(255, 255, 255, 0.1)'}`
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <strong style={{ color: theme.colors.neonPink }}>
+                              {offer.offerer_name || offer.offerer_address.slice(0, 6) + '...' + offer.offerer_address.slice(-4)}
+                            </strong>
+                            <span style={{ 
+                              color: offer.status === 'accepted' ? theme.colors.neonGreen : 
+                                     offer.status === 'rejected' ? theme.colors.neonPink : 
+                                     theme.colors.neonYellow,
+                              fontSize: '0.8rem',
+                              textTransform: 'uppercase'
+                            }}>
+                              {offer.status}
+                            </span>
+                          </div>
+                          <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonYellow, fontWeight: 'bold' }}>
+                            ${offer.offer_price} USD
+                          </p>
+                          {offer.message && (
+                            <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                              "{offer.message}"
+                            </p>
+                          )}
+                          {isCreator && offer.status === 'pending' && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                onClick={() => acceptOffer(offer.id, offer.offer_price)}
+                                style={{
+                                  flex: 1,
+                                  background: theme.colors.neonGreen,
+                                  color: '#000',
+                                  border: 'none',
+                                  padding: '0.25rem',
+                                  borderRadius: '0.25rem',
+                                  cursor: 'pointer',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => rejectOffer(offer.id)}
+                                style={{
+                                  flex: 1,
+                                  background: theme.colors.neonPink,
+                                  color: '#000',
+                                  border: 'none',
+                                  padding: '0.25rem',
+                                  borderRadius: '0.25rem',
+                                  cursor: 'pointer',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 )}
+                
+
               </OffersSection>
             </BottomSection>
           </GameSection>

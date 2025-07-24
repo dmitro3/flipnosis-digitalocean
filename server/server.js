@@ -254,20 +254,23 @@ function handleRegisterUser(socket, data) {
 }
 
 async function handleChatMessage(socket, data) {
-  const { roomId, message } = data
+  const { roomId, message, from } = data
+  
+  // Use the sender's address from the socket or the provided 'from' field
+  const senderAddress = socket.address || from || 'anonymous'
   
   // Save to database
   db.run(
     'INSERT INTO chat_messages (room_id, sender_address, message) VALUES (?, ?, ?)',
-    [roomId, socket.address || 'anonymous', message]
+    [roomId, senderAddress, message]
   )
   
   // Broadcast to room
   broadcastToRoom(roomId, {
     type: 'chat_message',
     message,
-    from: socket.address || 'anonymous',
-    timestamp: Date.now()
+    from: senderAddress,
+    timestamp: new Date().toISOString()
   })
 }
 
@@ -720,7 +723,9 @@ app.get('/api/games/:gameId', (req, res) => {
         res.json({
           id: listing.id,
           type: 'listing',
+          game_type: 'nft-vs-crypto', // Add this line
           creator: listing.creator,
+          creator_address: listing.creator, // Add for compatibility
           nft_contract: listing.nft_contract,
           nft_token_id: listing.nft_token_id,
           nft_name: listing.nft_name,
@@ -728,7 +733,8 @@ app.get('/api/games/:gameId', (req, res) => {
           nft_collection: listing.nft_collection,
           asking_price: listing.asking_price,
           coin_data: listing.coin_data,
-          status: listing.status
+          status: listing.status,
+          coinData: listing.coin_data ? JSON.parse(listing.coin_data) : null // Parse coin data
         })
       })
       return
