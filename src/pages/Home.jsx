@@ -256,17 +256,39 @@ const Home = () => {
   // Combine and filter games/listings
   const getAllItems = () => {
     const allItems = [
-      ...listings.map(l => ({ ...l, isListing: true })),
-      ...games.filter(g => g.status !== 'cancelled').map(g => ({ ...g, isListing: false }))
+      ...listings.map(l => ({ 
+        ...l, 
+        isListing: true,
+        nft: {
+          name: l.nft_name || 'Unknown NFT',
+          image: l.nft_image || '/placeholder-nft.svg',
+          collection: l.nft_collection || 'Unknown Collection',
+          chain: l.nft_chain || 'base'
+        },
+        gameType: 'nft-vs-crypto',
+        priceUSD: l.asking_price || 0
+      })),
+      ...games.filter(g => g.status !== 'cancelled').map(g => ({ 
+        ...g, 
+        isListing: false,
+        nft: {
+          name: g.nft_name || 'Unknown NFT',
+          image: g.nft_image || '/placeholder-nft.svg',
+          collection: g.nft_collection || 'Unknown Collection',
+          chain: 'base'
+        },
+        gameType: 'nft-vs-nft',
+        priceUSD: g.final_price || 0
+      }))
     ]
     return allItems.filter(item => {
       const matchesFilter = activeFilter === 'all' || 
         (activeFilter === 'listings' && item.isListing) ||
         (activeFilter === 'games' && !item.isListing) ||
-        (activeFilter === item.nft.chain)
+        (activeFilter === item.nft?.chain)
       const matchesSearch = !searchQuery || 
-        item.nft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.nft.collection.toLowerCase().includes(searchQuery.toLowerCase())
+        (item.nft?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.nft?.collection?.toLowerCase().includes(searchQuery.toLowerCase()))
       return matchesFilter && matchesSearch
     })
   }
@@ -1004,8 +1026,8 @@ const Home = () => {
                         minHeight: window.innerWidth <= 768 ? '80px' : '135px'
                       }}>
                         <GameImage 
-                          src={item.nft.image} 
-                          alt={item.nft.name}
+                          src={item.nft?.image || '/placeholder-nft.svg'} 
+                          alt={item.nft?.name || 'NFT'}
                           style={{
                             width: '100%',
                             height: '100%',
@@ -1050,7 +1072,7 @@ const Home = () => {
                           <span>{getStatusIcon(item.status)}</span>
                           <span>{getStatusText(item.status)}</span>
                         </div>
-                        {item.nft.needsMetadataUpdate && (
+                        {item.nft?.needsMetadataUpdate && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1096,7 +1118,7 @@ const Home = () => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>
-                          {item.nft.name}
+                          {item.nft?.name || 'Unknown NFT'}
                         </div>
                         <div style={{ 
                           fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
@@ -1105,7 +1127,7 @@ const Home = () => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
                         }}>
-                          {item.nft.collection}
+                          {item.nft?.collection || 'Unknown Collection'}
                         </div>
                         <div style={{
                           display: 'flex',
@@ -1129,8 +1151,8 @@ const Home = () => {
                             alignItems: 'center',
                             gap: '0.1rem'
                           }}>
-                            <span>{getChainIcon(item.nft.chain)}</span>
-                            <span>{getChainName(item.nft.chain)}</span>
+                            <span>{getChainIcon(item.nft?.chain || 'base')}</span>
+                            <span>{getChainName(item.nft?.chain || 'base')}</span>
                           </div>
                         </div>
                       </div>

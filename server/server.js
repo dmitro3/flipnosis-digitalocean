@@ -882,6 +882,45 @@ app.get('/api/profile/:address', (req, res) => {
     res.json(profile)
   })
 })
+
+// Get dashboard data for user
+app.get('/api/dashboard/:address', (req, res) => {
+  const { address } = req.params
+  
+  // Get user's listings
+  db.all('SELECT * FROM listings WHERE creator = ? ORDER BY created_at DESC', [address], (err, listings) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    // Get user's outgoing offers
+    db.all('SELECT * FROM offers WHERE offerer_address = ? ORDER BY created_at DESC', [address], (err, outgoingOffers) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      // Get user's incoming offers (offers on their listings)
+      db.all(`
+        SELECT o.*, l.nft_name, l.nft_image, l.nft_collection 
+        FROM offers o 
+        JOIN listings l ON o.listing_id = l.id 
+        WHERE l.creator = ? AND o.status = 'pending'
+        ORDER BY o.created_at DESC
+      `, [address], (err, incomingOffers) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' })
+        }
+        
+        res.json({
+          listings: listings || [],
+          outgoingOffers: outgoingOffers || [],
+          incomingOffers: incomingOffers || []
+        })
+      })
+    })
+  })
+})
+
 // Update user profile
 app.put('/api/profile/:address', (req, res) => {
   const { address } = req.params
