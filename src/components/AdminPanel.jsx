@@ -731,8 +731,8 @@ export default function AdminPanel() {
   
   // Update platform fee
   const updatePlatformFee = async () => {
-    if (!contractService.currentChain) {
-      addNotification('error', 'Contract not initialized')
+    if (!contractService.isReady()) {
+      addNotification('error', 'Wallet not connected or contract service not initialized.')
       return
     }
     
@@ -758,8 +758,8 @@ export default function AdminPanel() {
   
   // Update listing fee
   const updateListingFee = async () => {
-    if (!contractService.currentChain) {
-      addNotification('error', 'Contract not initialized')
+    if (!contractService.isReady()) {
+      addNotification('error', 'Wallet not connected or contract service not initialized.')
       return
     }
     
@@ -785,6 +785,11 @@ export default function AdminPanel() {
   
   // Emergency withdraw NFT from contract
   const emergencyWithdrawNFT = async (gameId) => {
+    if (!contractService.isReady()) {
+      addNotification('error', 'Wallet not connected or contract service not initialized.')
+      return
+    }
+    
     if (!confirm('Emergency withdraw NFT from this game?')) return
     
     try {

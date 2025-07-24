@@ -127,6 +127,11 @@ class CleanContractService {
     console.log('✅ Contract service initialized')
   }
 
+  // Helper to check if clients are ready
+  isReady() {
+    return !!(this.publicClient && this.walletClient);
+  }
+
   // Convert game ID to bytes32
   getGameIdBytes32(gameId) {
     // Use viem's keccak256 to create deterministic bytes32 from string
@@ -134,8 +139,11 @@ class CleanContractService {
     return keccak256(toHex(gameId))
   }
 
-  // Pay listing fee
+  // Patch all contract methods to check readiness
   async payListingFee() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       // Get listing fee amount
       const listingFeeUSD = await this.publicClient.readContract({
@@ -183,6 +191,9 @@ class CleanContractService {
 
   // Approve NFT for deposit
   async approveNFT(nftContract, tokenId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       // Check current approval
       const currentApproval = await this.publicClient.readContract({
@@ -227,6 +238,9 @@ class CleanContractService {
 
   // Deposit NFT (player 1)
   async depositNFT(gameId, nftContract, tokenId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       // First approve if needed
       const approvalResult = await this.approveNFT(nftContract, tokenId)
@@ -278,6 +292,9 @@ class CleanContractService {
 
   // Deposit ETH (player 2)
   async depositETH(gameId, priceUSD) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
 
@@ -335,6 +352,9 @@ class CleanContractService {
 
   // Deposit USDC (player 2)
   async depositUSDC(gameId, usdcAmount, usdcTokenAddress) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       // Check if can deposit
@@ -394,6 +414,9 @@ class CleanContractService {
 
   // Reclaim assets if timeout
   async reclaimAssets(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
 
@@ -426,6 +449,9 @@ class CleanContractService {
 
   // Get game state
   async getGameState(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
 
@@ -462,6 +488,9 @@ class CleanContractService {
 
   // Get ETH price for USD amount
   async getETHAmount(usdAmount) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+    }
     try {
       const priceIn6Decimals = BigInt(Math.floor(usdAmount * 1000000))
       const ethAmount = await this.publicClient.readContract({

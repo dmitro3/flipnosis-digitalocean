@@ -120,6 +120,11 @@ const CreateFlip = () => {
       showError('Please enter a valid price')
       return
     }
+    // Check contract readiness
+    if (!contractService.isReady()) {
+      showError('Wallet not connected or contract service not initialized.')
+      return
+    }
     setLoading(true)
     try {
       // Step 1: Pay listing fee

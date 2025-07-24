@@ -16,6 +16,16 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
   // Check for unclaimed rewards
   const checkUnclaimedRewards = useCallback(async () => {
     if (!address || !isConnected || !currentChain) return
+    if (!contractService.isReady()) {
+      setNotifications(prev => [{
+        id: `error-${Date.now()}`,
+        type: 'error',
+        title: 'Wallet not connected',
+        message: 'Wallet not connected or contract service not initialized.',
+        timestamp: Date.now()
+      }, ...prev])
+      return
+    }
 
     try {
       // Get unclaimed crypto rewards
@@ -122,6 +132,16 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
   // Handle claim specific NFT
   const handleClaimNFT = async (nftContract, tokenId) => {
     if (!address || !isConnected) return
+    if (!contractService.isReady()) {
+      setNotifications(prev => [{
+        id: `error-${Date.now()}`,
+        type: 'error',
+        title: 'Wallet not connected',
+        message: 'Wallet not connected or contract service not initialized.',
+        timestamp: Date.now()
+      }, ...prev])
+      return
+    }
 
     setLoading(true)
     try {

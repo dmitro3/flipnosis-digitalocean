@@ -615,6 +615,10 @@ const UnifiedGamePage = () => {
   }
   
   const handleDepositNFT = async () => {
+    if (!contractService.isReady()) {
+      showError('Wallet not connected or contract service not initialized.')
+      return
+    }
     try {
       setLoading(true)
       showInfo('Depositing NFT...')
@@ -642,6 +646,10 @@ const UnifiedGamePage = () => {
     }
   }
   const handleDepositETH = async () => {
+    if (!contractService.isReady()) {
+      showError('Wallet not connected or contract service not initialized.')
+      return
+    }
     try {
       setLoading(true)
       showInfo('Depositing ETH...')
@@ -668,6 +676,10 @@ const UnifiedGamePage = () => {
     }
   }
   const handleDepositUSDC = async () => {
+    if (!contractService.isReady()) {
+      showError('Wallet not connected or contract service not initialized.')
+      return
+    }
     try {
       setLoading(true)
       showInfo('Depositing USDC...')
