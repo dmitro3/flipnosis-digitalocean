@@ -1,8 +1,8 @@
 {
   "network": "base",
-  "contractAddress": "0xF5980979c1B0B43f78c8EeAaB697d25C611c0E0a",
+  "contractAddress": "0x807885ec42b9A727C4763d8F929f2ac132eDF6F0",
   "deployer": "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28",
-  "deploymentTime": "2025-07-16T17:07:53.038Z",
+  "deploymentTime": "2025-07-24T19:08:16.295Z",
   "constructorArgs": {
     "ethUsdFeed": "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
     "usdcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",

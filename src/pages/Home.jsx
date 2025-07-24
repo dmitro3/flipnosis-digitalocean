@@ -7,8 +7,6 @@ import { theme } from '../styles/theme'
 import styled from '@emotion/styled'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import hazeVideo from '../../Images/Video/haze.webm'
-import GameService from '../services/GameService'
-import { PaymentService } from '../services/PaymentService'
 import contractService from '../services/ContractService'
 import { API_CONFIG, getApiUrl } from '../config/api'
 import {
@@ -218,12 +216,14 @@ const Home = () => {
     try {
       setLoading(true)
       setError(null)
-      const [gamesData, listingsData] = await Promise.all([
-        GameService.fetchGames(),
-        GameService.fetchListings()
-      ])
-      setGames(gamesData)
-      setListings(listingsData)
+      // Fetch listings
+      const listingsResponse = await fetch(getApiUrl('/listings'))
+      const listings = await listingsResponse.json()
+      // Fetch games
+      const gamesResponse = await fetch(getApiUrl('/games'))
+      const games = await gamesResponse.json()
+      setListings(listings)
+      setGames(games)
     } catch (error) {
       console.error('Error fetching data:', error)
       setError('Failed to load games and listings')

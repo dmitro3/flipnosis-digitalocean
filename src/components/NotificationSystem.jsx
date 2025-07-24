@@ -17,17 +17,9 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
   const checkUnclaimedRewards = useCallback(async () => {
     if (!address || !isConnected || !currentChain) return
 
-    // Check if contract service is initialized before calling methods
-    if (!contractService.isInitialized()) {
-      console.log('ℹ️ Contract service not initialized, skipping reward check')
-      return
-    }
-
     try {
       // Get unclaimed crypto rewards
-      const rewards = await contractService.getUnclaimedRewards(address)
-      
-      // For NFTs, we'd need to check multiple contracts
+      // Remove all usages of contractService.getUnclaimedRewards
       // This is simplified - in production, track NFT contracts from games
       const nftContracts = [] // Would be populated from game history
       const unclaimedNFTs = []
@@ -44,38 +36,15 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
       }
 
       setUnclaimedRewards({
-        eth: parseFloat(rewards.eth || 0),
-        usdc: parseFloat(rewards.usdc || 0),
+        eth: 0, // No longer fetching ETH rewards
+        usdc: 0, // No longer fetching USDC rewards
         nfts: unclaimedNFTs
       })
 
       // Create notifications for unclaimed rewards
       const newNotifications = []
       
-      if (rewards.eth > 0) {
-        newNotifications.push({
-          id: `eth-${Date.now()}`,
-          type: 'reward',
-          title: 'Unclaimed ETH',
-          message: `You have ${rewards.eth} ETH ready to withdraw!`,
-          icon: <Coins className="w-5 h-5" />,
-          action: 'withdraw',
-          timestamp: Date.now()
-        })
-      }
-
-      if (rewards.usdc > 0) {
-        newNotifications.push({
-          id: `usdc-${Date.now()}`,
-          type: 'reward',
-          title: 'Unclaimed USDC',
-          message: `You have ${rewards.usdc} USDC ready to withdraw!`,
-          icon: <DollarSign className="w-5 h-5" />,
-          action: 'withdraw',
-          timestamp: Date.now()
-        })
-      }
-
+      // No longer creating notifications for ETH or USDC rewards
       if (unclaimedNFTs.length > 0) {
         const totalNFTs = unclaimedNFTs.reduce((sum, nft) => sum + nft.tokenIds.length, 0)
         newNotifications.push({
@@ -116,16 +85,17 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
     setLoading(true)
     try {
       // Withdraw crypto rewards
-      if (unclaimedRewards.eth > 0 || unclaimedRewards.usdc > 0) {
-        const tx = await contractService.withdrawRewards()
+      // No longer withdrawing ETH or USDC rewards
+      if (unclaimedRewards.nfts.length > 0) {
+        const tx = await contractService.withdrawNFTs(unclaimedRewards.nfts)
         await tx.receipt
         
         // Add success notification
         setNotifications(prev => [{
           id: `success-${Date.now()}`,
           type: 'success',
-          title: 'Rewards Withdrawn!',
-          message: 'Your crypto rewards have been sent to your wallet.',
+          title: 'NFTs Claimed!',
+          message: 'Your NFTs have been sent to your wallet.',
           icon: <CheckCircle className="w-5 h-5" />,
           timestamp: Date.now()
         }, ...prev])
@@ -140,7 +110,7 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
         id: `error-${Date.now()}`,
         type: 'error',
         title: 'Withdrawal Failed',
-        message: 'There was an error withdrawing your rewards. Please try again.',
+        message: 'There was an error claiming your NFTs. Please try again.',
         icon: <AlertCircle className="w-5 h-5" />,
         timestamp: Date.now()
       }, ...prev])
@@ -241,7 +211,7 @@ const NotificationSystem = ({ address, isConnected, currentChain }) => {
           )}
           {(unclaimedRewards.eth > 0 || unclaimedRewards.usdc > 0 || unclaimedRewards.nfts.length > 0) && (
             <span className="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-              {unclaimedRewards.nfts.length + (unclaimedRewards.eth > 0 ? 1 : 0) + (unclaimedRewards.usdc > 0 ? 1 : 0)}
+              {unclaimedRewards.nfts.length}
             </span>
           )}
         </button>

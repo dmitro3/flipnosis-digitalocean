@@ -16,7 +16,6 @@ import { API_CONFIG, getApiUrl, getWsUrl } from '../config/api'
 import hazeVideo from '../../Images/Video/haze.webm'
 import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
 import GameChatBox from './GameChatBox'
-import GameService from '../services/GameService'
 import NFTOfferComponent from './NFTOfferComponent'
 
 // Styled Components
@@ -279,12 +278,30 @@ const UnifiedGamePage = () => {
   const loadGameData = async () => {
     try {
       setLoading(true)
-      const result = await GameService.fetchGameOrListing(gameId)
-      setGameData(result.data)
-      // If it's a listing, load offers
-      if (result.type === 'listing') {
-        const offersData = await GameService.fetchOffers(gameId)
-        setOffers(offersData)
+      const response = await fetch(getApiUrl(`/games/${gameId}`))
+      if (!response.ok) throw new Error('Failed to load game')
+      const data = await response.json()
+      setGameData(data)
+      // Handle deposit phase
+      if (data.status === 'waiting_deposits') {
+        setGameState(prev => ({ ...prev, phase: 'deposits' }))
+        // Check deposit deadline
+        const deadline = new Date(data.deposit_deadline)
+        if (new Date() > deadline) {
+          setGameState(prev => ({ ...prev, phase: 'expired' }))
+        }
+      } else if (data.status === 'active') {
+        setGameState(prev => ({ ...prev, phase: 'playing' }))
+      } else if (data.status === 'completed') {
+        setGameState(prev => ({ ...prev, phase: 'completed' }))
+      }
+      // Load offers if it's a listing
+      if (data.type === 'listing') {
+        const offersResponse = await fetch(getApiUrl(`/listings/${gameId}/offers`))
+        if (offersResponse.ok) {
+          const offersData = await offersResponse.json()
+          setOffers(offersData)
+        }
       }
     } catch (error) {
       console.error('Error loading game:', error)
@@ -301,12 +318,12 @@ const UnifiedGamePage = () => {
     ws.onopen = () => {
       console.log('WebSocket connected')
       setSocket(ws)
-      // Subscribe to game updates
+      // Join room (could be listing or game)
       ws.send(JSON.stringify({
-        type: 'subscribe_game',
-        gameId
+        type: 'join_room',
+        roomId: gameId
       }))
-      // Register user if connected
+      // Register user
       if (address) {
         ws.send(JSON.stringify({
           type: 'register_user',
@@ -350,7 +367,12 @@ const UnifiedGamePage = () => {
       case 'offer_updated':
         // Reload offers
         if (gameData?.type === 'listing') {
-          GameService.fetchOffers(gameId).then(setOffers)
+          fetch(getApiUrl(`/listings/${gameId}/offers`)).then(async response => {
+            if (response.ok) {
+              const offersData = await response.json()
+              setOffers(offersData)
+            }
+          })
         }
         break
       case 'game_joined':
@@ -463,17 +485,6 @@ const UnifiedGamePage = () => {
       })
     }
   }, [gameData, isListing, canMakeOffer, address])
-  
-  // Initialize contract service
-  useEffect(() => {
-    if (!isCreator && !isJoiner) return // Only initialize if user is involved
-    
-    contractService.initializeClients(8453, walletClient)
-      .catch(error => {
-        console.error('Failed to initialize contract:', error)
-        showError('Failed to connect to smart contract')
-      })
-  }, [isCreator, isJoiner, walletClient])
   
   // Load game data
   useEffect(() => {
@@ -603,44 +614,85 @@ const UnifiedGamePage = () => {
     setShowResultPopup(true)
   }
   
-  const handlePayment = async () => {
-    if (!isCreator && !isJoiner) return // Only allow payment if user is involved
-    
+  const handleDepositNFT = async () => {
     try {
-      setPaymentLoading(true)
-      showInfo('Processing payment...')
-      
-      const result = await contractService.joinExistingGameWithPrice(
-        gameData.blockchain_id,
-        getGamePrice()
+      setLoading(true)
+      showInfo('Depositing NFT...')
+      const result = await contractService.depositNFT(
+        gameData.id,
+        gameData.nft_contract,
+        gameData.nft_token_id
       )
-      
-      if (!result.success) {
-        throw new Error(result.error)
-      }
-      
+      if (!result.success) throw new Error(result.error)
       // Notify server
-      const response = await fetch(getApiUrl(`/games/${gameId}/payment-confirmed`), {
+      await fetch(getApiUrl(`/games/${gameData.id}/deposit-confirmed`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          joiner_address: address,
-          transaction_hash: result.transactionHash
+          player: address,
+          assetType: 'nft'
         })
       })
-      
-      if (!response.ok) {
-        throw new Error('Failed to confirm payment')
-      }
-      
-      showSuccess('Payment successful! Game starting...')
+      showSuccess('NFT deposited!')
       loadGameData()
-      
     } catch (error) {
-      console.error('Payment error:', error)
-      showError(error.message || 'Payment failed')
+      showError(error.message || 'Failed to deposit NFT')
     } finally {
-      setPaymentLoading(false)
+      setLoading(false)
+    }
+  }
+  const handleDepositETH = async () => {
+    try {
+      setLoading(true)
+      showInfo('Depositing ETH...')
+      const result = await contractService.depositETH(
+        gameData.id,
+        gameData.final_price
+      )
+      if (!result.success) throw new Error(result.error)
+      // Notify server
+      await fetch(getApiUrl(`/games/${gameData.id}/deposit-confirmed`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player: address,
+          assetType: 'eth'
+        })
+      })
+      showSuccess('ETH deposited!')
+      loadGameData()
+    } catch (error) {
+      showError(error.message || 'Failed to deposit ETH')
+    } finally {
+      setLoading(false)
+    }
+  }
+  const handleDepositUSDC = async () => {
+    try {
+      setLoading(true)
+      showInfo('Depositing USDC...')
+      const usdcAmount = BigInt(Math.floor(gameData.final_price * 1000000))
+      const result = await contractService.depositUSDC(
+        gameData.id,
+        usdcAmount,
+        gameData.usdc_token_address // You may need to add this to your backend/gameData
+      )
+      if (!result.success) throw new Error(result.error)
+      // Notify server
+      await fetch(getApiUrl(`/games/${gameData.id}/deposit-confirmed`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player: address,
+          assetType: 'usdc'
+        })
+      })
+      showSuccess('USDC deposited!')
+      loadGameData()
+    } catch (error) {
+      showError(error.message || 'Failed to deposit USDC')
+    } finally {
+      setLoading(false)
     }
   }
   
@@ -730,7 +782,12 @@ const UnifiedGamePage = () => {
         const result = await response.json()
         showSuccess('Offer created successfully!')
         setNewOffer({ price: '', message: '' })
-        await GameService.fetchOffers(gameData.id) // Refresh offers
+        await fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
+          if (response.ok) {
+            const offersData = await response.json()
+            setOffers(offersData)
+          }
+        })
       } else {
         showError('Failed to create offer')
       }
@@ -752,7 +809,12 @@ const UnifiedGamePage = () => {
       
       if (response.ok) {
         showSuccess('Offer accepted!')
-        await GameService.fetchOffers(gameData.id) // Refresh offers
+        await fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
+          if (response.ok) {
+            const offersData = await response.json()
+            setOffers(offersData)
+          }
+        })
         await loadGameData() // Refresh game/listing data
       } else {
         showError('Failed to accept offer')
@@ -772,7 +834,12 @@ const UnifiedGamePage = () => {
       
       if (response.ok) {
         showSuccess('Offer rejected')
-        await GameService.fetchOffers(gameData.id) // Refresh offers
+        await fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
+          if (response.ok) {
+            const offersData = await response.json()
+            setOffers(offersData)
+          }
+        })
       } else {
         showError('Failed to reject offer')
       }
@@ -834,28 +901,59 @@ const UnifiedGamePage = () => {
       <Container>
         <GameContainer>
           {/* Payment Section - Only show when payment needed */}
-          {needsPayment && (
+          {gameData?.status === 'waiting_deposits' && (
             <PaymentSection>
               <h2 style={{ color: theme.colors.neonYellow, marginBottom: '1rem' }}>
-                Complete Payment to Start Game
+                Deposit Assets to Start Game
               </h2>
-              
-              <NFTPreview>
-                <NFTImage src={getGameNFTImage()} alt={getGameNFTName()} />
-                <NFTInfo>
-                  <h3>{getGameNFTName()}</h3>
-                  <p>{getGameNFTCollection()}</p>
-                  <p style={{ color: theme.colors.textSecondary }}>
-                    Playing against: {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                {/* Creator deposit box */}
+                <div style={{ padding: '1.5rem', border: `2px solid ${gameData.creator_deposited ? theme.colors.neonGreen : theme.colors.neonPink}`, borderRadius: '1rem', textAlign: 'center' }}>
+                  <h3>Player 1 (NFT)</h3>
+                  <p>{gameData.creator.slice(0, 6)}...{gameData.creator.slice(-4)}</p>
+                  <NFTImage src={gameData.nft_image} alt={gameData.nft_name} />
+                  <h4>{gameData.nft_name}</h4>
+                  {gameData.creator_deposited ? (
+                    <p style={{ color: theme.colors.neonGreen }}>✅ Deposited</p>
+                  ) : isCreator ? (
+                    <PayButton onClick={handleDepositNFT} disabled={loading}>
+                      Deposit NFT
+                    </PayButton>
+                  ) : (
+                    <p>Waiting for deposit...</p>
+                  )}
+                </div>
+                {/* Challenger deposit box */}
+                <div style={{ padding: '1.5rem', border: `2px solid ${gameData.challenger_deposited ? theme.colors.neonGreen : theme.colors.neonBlue}`, borderRadius: '1rem', textAlign: 'center' }}>
+                  <h3>Player 2 ({gameData.payment_token === 'USDC' ? 'USDC' : 'ETH'})</h3>
+                  <p>{gameData.challenger.slice(0, 6)}...{gameData.challenger.slice(-4)}</p>
+                  <PriceDisplay>${gameData.final_price}</PriceDisplay>
+                  {gameData.challenger_deposited ? (
+                    <p style={{ color: theme.colors.neonGreen }}>✅ Deposited</p>
+                  ) : isJoiner ? (
+                    gameData.payment_token === 'USDC' ? (
+                      <PayButton onClick={handleDepositUSDC} disabled={loading}>
+                        Deposit USDC
+                      </PayButton>
+                    ) : (
+                      <PayButton onClick={handleDepositETH} disabled={loading}>
+                        Deposit ETH
+                      </PayButton>
+                    )
+                  ) : (
+                    <p>Waiting for deposit...</p>
+                  )}
+                </div>
+              </div>
+              {/* Deadline timer */}
+              <div style={{ textAlign: 'center', color: theme.colors.textSecondary }}>
+                <p>Deposit deadline: {new Date(gameData.deposit_deadline).toLocaleString()}</p>
+                {new Date() > new Date(gameData.deposit_deadline) && (
+                  <p style={{ color: theme.colors.neonPink }}>
+                    Deadline passed! You can reclaim your assets.
                   </p>
-                </NFTInfo>
-              </NFTPreview>
-              
-              <PriceDisplay>${getGamePrice()} ETH</PriceDisplay>
-              
-              <PayButton onClick={handlePayment} disabled={paymentLoading}>
-                {paymentLoading ? 'Processing...' : 'Pay & Start Game'}
-              </PayButton>
+                )}
+              </div>
             </PaymentSection>
           )}
           

@@ -5,10 +5,10 @@ const cors = require('cors')
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 const fs = require('fs')
-const fetch = require('node-fetch')
 const crypto = require('crypto')
+const ethers = require('ethers')
 
-console.log('🚀 Starting CryptoFlipz V2 Server...')
+console.log('🚀 Starting CryptoFlipz Clean Server...')
 
 const app = express()
 const server = http.createServer(app)
@@ -16,9 +16,14 @@ const wss = new WebSocket.Server({ server })
 
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3001
-const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, 'games-v2.db')
-const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
-const ALCHEMY_BASE_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, 'flipz-clean.db')
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x807885ec42b9A727C4763d8F929f2ac132eDF6F0'
+const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY // Private key for contract owner
+const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+
+// Initialize ethers
+const provider = new ethers.JsonRpcProvider(RPC_URL)
+const contractOwnerWallet = CONTRACT_OWNER_KEY ? new ethers.Wallet(CONTRACT_OWNER_KEY, provider) : null
 
 // ===== MIDDLEWARE =====
 app.use(cors({
@@ -52,33 +57,6 @@ function initializeDatabase() {
       console.log('✅ Connected to SQLite database')
       
       database.serialize(() => {
-        // Simplified games table
-        database.run(`
-          CREATE TABLE IF NOT EXISTS games (
-            id TEXT PRIMARY KEY,
-            blockchain_id TEXT UNIQUE,
-            listing_id TEXT,
-            creator TEXT NOT NULL,
-            joiner TEXT,
-            nft_contract TEXT NOT NULL,
-            nft_token_id TEXT NOT NULL,
-            nft_name TEXT,
-            nft_image TEXT,
-            nft_collection TEXT,
-            nft_chain TEXT DEFAULT 'base',
-            final_price REAL NOT NULL,
-            status TEXT DEFAULT 'waiting_payment',
-            winner TEXT,
-            game_data TEXT,
-            coin_data TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          )
-        `, (err) => {
-          if (err) console.error('❌ Error creating games table:', err)
-          else console.log('✅ Games table ready')
-        })
-        
         // Listings table
         database.run(`
           CREATE TABLE IF NOT EXISTS listings (
@@ -91,10 +69,9 @@ function initializeDatabase() {
             nft_collection TEXT,
             nft_chain TEXT DEFAULT 'base',
             asking_price REAL NOT NULL,
-            min_offer_price REAL,
-            blockchain_game_id TEXT,
             status TEXT DEFAULT 'active',
             coin_data TEXT,
+            listing_fee_paid BOOLEAN DEFAULT false,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           )
@@ -109,7 +86,6 @@ function initializeDatabase() {
             id TEXT PRIMARY KEY,
             listing_id TEXT NOT NULL,
             offerer_address TEXT NOT NULL,
-            offerer_name TEXT,
             offer_price REAL NOT NULL,
             message TEXT,
             status TEXT DEFAULT 'pending',
@@ -122,53 +98,68 @@ function initializeDatabase() {
           else console.log('✅ Offers table ready')
         })
         
-        // NFT metadata cache
+        // Games table - only created when offer is accepted
         database.run(`
-          CREATE TABLE IF NOT EXISTS nft_metadata_cache (
-            contract_address TEXT,
-            token_id TEXT,
-            chain TEXT,
-            name TEXT,
-            image_url TEXT,
-            collection_name TEXT,
-            description TEXT,
-            attributes TEXT,
-            token_type TEXT,
-            fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (contract_address, token_id, chain)
-          )
-        `, (err) => {
-          if (err) console.error('❌ Error creating nft_metadata_cache table:', err)
-          else console.log('✅ NFT metadata cache table ready')
-        })
-        
-        // User presence
-        database.run(`
-          CREATE TABLE IF NOT EXISTS user_presence (
-            address TEXT PRIMARY KEY,
-            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            is_online BOOLEAN DEFAULT true,
-            socket_id TEXT
-          )
-        `, (err) => {
-          if (err) console.error('❌ Error creating user_presence table:', err)
-          else console.log('✅ User presence table ready')
-        })
-        
-        // Profiles table
-        database.run(`
-          CREATE TABLE IF NOT EXISTS profiles (
-            address TEXT PRIMARY KEY,
-            name TEXT,
-            avatar TEXT,
-            heads_image TEXT,
-            tails_image TEXT,
+          CREATE TABLE IF NOT EXISTS games (
+            id TEXT PRIMARY KEY,
+            listing_id TEXT NOT NULL,
+            offer_id TEXT,
+            blockchain_game_id TEXT UNIQUE,
+            creator TEXT NOT NULL,
+            challenger TEXT NOT NULL,
+            nft_contract TEXT NOT NULL,
+            nft_token_id TEXT NOT NULL,
+            nft_name TEXT,
+            nft_image TEXT,
+            nft_collection TEXT,
+            final_price REAL NOT NULL,
+            coin_data TEXT,
+            status TEXT DEFAULT 'waiting_deposits',
+            creator_deposited BOOLEAN DEFAULT false,
+            challenger_deposited BOOLEAN DEFAULT false,
+            deposit_deadline TIMESTAMP,
+            winner TEXT,
+            game_data TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (listing_id) REFERENCES listings(id),
+            FOREIGN KEY (offer_id) REFERENCES offers(id)
           )
         `, (err) => {
-          if (err) console.error('❌ Error creating profiles table:', err)
-          else console.log('✅ Profiles table ready')
+          if (err) console.error('❌ Error creating games table:', err)
+          else console.log('✅ Games table ready')
+        })
+        
+        // Game rounds table
+        database.run(`
+          CREATE TABLE IF NOT EXISTS game_rounds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id TEXT NOT NULL,
+            round_number INTEGER NOT NULL,
+            creator_choice TEXT,
+            challenger_choice TEXT,
+            flip_result TEXT,
+            round_winner TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (game_id) REFERENCES games(id)
+          )
+        `, (err) => {
+          if (err) console.error('❌ Error creating game_rounds table:', err)
+          else console.log('✅ Game rounds table ready')
+        })
+        
+        // Chat messages table
+        database.run(`
+          CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            room_id TEXT NOT NULL,
+            sender_address TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `, (err) => {
+          if (err) console.error('❌ Error creating chat_messages table:', err)
+          else console.log('✅ Chat messages table ready')
         })
       })
       
@@ -178,8 +169,9 @@ function initializeDatabase() {
 }
 
 // ===== WEBSOCKET MANAGEMENT =====
-const gameRooms = new Map() // gameId -> Set of socket IDs
-const userSockets = new Map() // address -> socket ID
+const rooms = new Map() // roomId -> Set of socket IDs
+const socketRooms = new Map() // socket.id -> roomId
+const userSockets = new Map() // address -> socket
 
 wss.on('connection', (socket) => {
   socket.id = crypto.randomBytes(16).toString('hex')
@@ -191,36 +183,24 @@ wss.on('connection', (socket) => {
       console.log('📡 Received:', data.type)
       
       switch (data.type) {
-        case 'subscribe_game':
-          handleSubscribeGame(socket, data)
+        case 'join_room':
+          handleJoinRoom(socket, data)
           break
           
         case 'register_user':
           handleRegisterUser(socket, data)
           break
           
-        case 'game_action':
-          handleGameAction(socket, data)
-          break
-          
         case 'chat_message':
           handleChatMessage(socket, data)
           break
           
-        case 'nft_offer':
-          handleNFTOffer(socket, data)
+        case 'game_choice':
+          handleGameChoice(socket, data)
           break
           
-        case 'accept_nft_offer':
-          handleAcceptNFTOffer(socket, data)
-          break
-          
-        case 'reject_nft_offer':
-          handleRejectNFTOffer(socket, data)
-          break
-          
-        case 'nft_payment_complete':
-          handleNFTPaymentComplete(socket, data)
+        case 'flip_coin':
+          handleFlipCoin(socket, data)
           break
       }
     } catch (error) {
@@ -233,425 +213,276 @@ wss.on('connection', (socket) => {
   })
 })
 
-function handleSubscribeGame(socket, data) {
-  const { gameId } = data
-  socket.gameId = gameId
+function handleJoinRoom(socket, data) {
+  const { roomId } = data
   
-  if (!gameRooms.has(gameId)) {
-    gameRooms.set(gameId, new Set())
+  // Leave previous room if any
+  const oldRoom = socketRooms.get(socket.id)
+  if (oldRoom && rooms.has(oldRoom)) {
+    rooms.get(oldRoom).delete(socket.id)
   }
-  gameRooms.get(gameId).add(socket.id)
   
-  console.log(`👥 Socket ${socket.id} subscribed to game/listing ${gameId}`)
-  console.log(`📊 Current rooms:`, Array.from(gameRooms.keys()))
-  console.log(`👥 Room ${gameId} has ${gameRooms.get(gameId).size} subscribers`)
+  // Join new room
+  if (!rooms.has(roomId)) {
+    rooms.set(roomId, new Set())
+  }
+  rooms.get(roomId).add(socket.id)
+  socketRooms.set(socket.id, roomId)
+  
+  console.log(`👥 Socket ${socket.id} joined room ${roomId}`)
 }
 
 function handleRegisterUser(socket, data) {
   const { address } = data
   socket.address = address
-  userSockets.set(address, socket.id)
+  userSockets.set(address, socket)
+  console.log(`👤 User registered: ${address}`)
+}
+
+async function handleChatMessage(socket, data) {
+  const { roomId, message } = data
   
-  // Update presence
+  // Save to database
   db.run(
-    'INSERT OR REPLACE INTO user_presence (address, socket_id, is_online) VALUES (?, ?, true)',
-    [address, socket.id]
+    'INSERT INTO chat_messages (room_id, sender_address, message) VALUES (?, ?, ?)',
+    [roomId, socket.address || 'anonymous', message]
   )
-}
-
-function handleGameAction(socket, data) {
-  const { gameId, action, payload } = data
   
-  // Broadcast to all in game room
-  broadcastToGame(gameId, {
-    type: 'game_action',
-    action,
-    payload,
-    from: socket.address
-  })
-}
-
-function handleChatMessage(socket, data) {
-  const { gameId, message } = data
-  
-  broadcastToGame(gameId, {
+  // Broadcast to room
+  broadcastToRoom(roomId, {
     type: 'chat_message',
     message,
-    from: socket.address,
+    from: socket.address || 'anonymous',
     timestamp: Date.now()
   })
 }
 
-function handleNFTOffer(socket, data) {
-  const { gameId, offererAddress, nft } = data
-  console.log('🎯 NFT offer received:', { gameId, offererAddress, nft })
-  console.log('🎯 Socket info:', { socketId: socket.id, address: socket.address })
+async function handleGameChoice(socket, data) {
+  const { gameId, choice } = data
   
-  // Broadcast the offer to all users in the game room
-  console.log('🎯 Broadcasting NFT offer to game room:', gameId)
-  broadcastToGame(gameId, {
-    type: 'nft_offer_received',
-    offer: {
-      offererAddress,
-      nft,
-      timestamp: Date.now()
+  // Get game from database
+  db.get('SELECT * FROM games WHERE id = ?', [gameId], async (err, game) => {
+    if (err || !game) {
+      console.error('❌ Game not found:', gameId)
+      return
     }
-  })
-  
-  // Also send to the creator specifically - check both listings and games tables
-  db.get('SELECT creator FROM listings WHERE id = ?', [gameId], (err, listing) => {
-    if (!err && listing) {
-      console.log('🎯 Found creator in listings table:', listing.creator)
-      sendToUser(listing.creator, {
-        type: 'nft_offer_received',
-        gameId,
-        offer: {
-          offererAddress,
-          nft,
-          timestamp: Date.now()
-        }
-      })
-    } else {
-      // If not found in listings, check games table
-      db.get('SELECT creator FROM games WHERE id = ?', [gameId], (err2, game) => {
-        if (!err2 && game) {
-          console.log('🎯 Found creator in games table:', game.creator)
-          sendToUser(game.creator, {
-            type: 'nft_offer_received',
-            gameId,
-            offer: {
-              offererAddress,
-              nft,
-              timestamp: Date.now()
+    
+    // Get current round
+    db.get(
+      'SELECT COUNT(*) as round FROM game_rounds WHERE game_id = ?',
+      [gameId],
+      (err, result) => {
+        const currentRound = (result?.round || 0) + 1
+        
+        // Store choice
+        const isCreator = socket.address === game.creator
+        db.run(
+          `UPDATE game_rounds 
+           SET ${isCreator ? 'creator_choice' : 'challenger_choice'} = ?
+           WHERE game_id = ? AND round_number = ?`,
+          [choice, gameId, currentRound],
+          (err) => {
+            if (err) {
+              // Create new round if doesn't exist
+              db.run(
+                'INSERT INTO game_rounds (game_id, round_number, ' +
+                (isCreator ? 'creator_choice' : 'challenger_choice') + 
+                ') VALUES (?, ?, ?)',
+                [gameId, currentRound, choice]
+              )
             }
-          })
-        } else {
-          console.log('⚠️ Creator not found in either listings or games table for gameId:', gameId)
+          }
+        )
+        
+        // Notify room
+        broadcastToRoom(gameId, {
+          type: 'player_choice',
+          player: socket.address,
+          roundNumber: currentRound
+        })
+      }
+    )
+  })
+}
+
+async function handleFlipCoin(socket, data) {
+  const { gameId } = data
+  
+  // Get game and current round
+  db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+    if (err || !game || game.status !== 'active') {
+      console.error('❌ Invalid game state')
+      return
+    }
+    
+    db.get(
+      'SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number DESC LIMIT 1',
+      [gameId],
+      (err, round) => {
+        if (!round || !round.creator_choice || !round.challenger_choice) {
+          console.error('❌ Both players must choose first')
+          return
         }
-      })
-    }
-  })
-}
-
-function handleAcceptNFTOffer(socket, data) {
-  const { gameId, creatorAddress, acceptedOffer } = data
-  console.log('✅ NFT offer accepted:', { gameId, creatorAddress, acceptedOffer })
-  
-  // Broadcast acceptance to all users in the game room
-  broadcastToGame(gameId, {
-    type: 'nft_offer_accepted',
-    acceptedOffer,
-    creatorAddress,
-    timestamp: Date.now()
-  })
-  
-  // Send specific message to the offerer
-  sendToUser(acceptedOffer.offererAddress, {
-    type: 'nft_offer_accepted',
-    gameId,
-    acceptedOffer,
-    creatorAddress,
-    timestamp: Date.now()
-  })
-}
-
-function handleRejectNFTOffer(socket, data) {
-  const { gameId, creatorAddress, offer } = data
-  console.log('❌ NFT offer rejected:', { gameId, creatorAddress, offer })
-  
-  // Broadcast rejection to all users in the game room
-  broadcastToGame(gameId, {
-    type: 'nft_offer_rejected',
-    offer,
-    creatorAddress,
-    timestamp: Date.now()
-  })
-  
-  // Send specific message to the offerer
-  sendToUser(offer.offererAddress, {
-    type: 'nft_offer_rejected',
-    gameId,
-    offer,
-    creatorAddress,
-    timestamp: Date.now()
-  })
-}
-
-function handleNFTPaymentComplete(socket, data) {
-  const { gameId, challengerAddress, paymentTxHash, acceptedOffer } = data
-  console.log('💰 NFT payment complete:', { gameId, challengerAddress, paymentTxHash })
-  
-  // Broadcast payment completion to all users in the game room
-  broadcastToGame(gameId, {
-    type: 'challenger_payment_confirmed',
-    challengerAddress,
-    paymentTxHash,
-    acceptedOffer,
-    timestamp: Date.now()
-  })
-  
-  // Send specific message to the creator
-  db.get('SELECT creator FROM listings WHERE id = ?', [gameId], (err, listing) => {
-    if (!err && listing) {
-      sendToUser(listing.creator, {
-        type: 'challenger_payment_confirmed',
-        gameId,
-        challengerAddress,
-        paymentTxHash,
-        acceptedOffer,
-        timestamp: Date.now()
-      })
-    }
+        
+        // Generate flip result
+        const result = Math.random() < 0.5 ? 'heads' : 'tails'
+        const creatorWins = round.creator_choice === result
+        const roundWinner = creatorWins ? game.creator : game.challenger
+        
+        // Update round
+        db.run(
+          'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
+          [result, roundWinner, round.id]
+        )
+        
+        // Check if game is complete (best of 5)
+        db.all(
+          'SELECT round_winner, COUNT(*) as wins FROM game_rounds WHERE game_id = ? GROUP BY round_winner',
+          [gameId],
+          (err, results) => {
+            const wins = {}
+            results.forEach(r => wins[r.round_winner] = r.wins)
+            
+            let gameComplete = false
+            let gameWinner = null
+            
+            if (wins[game.creator] >= 3) {
+              gameComplete = true
+              gameWinner = game.creator
+            } else if (wins[game.challenger] >= 3) {
+              gameComplete = true
+              gameWinner = game.challenger
+            }
+            
+            // Broadcast result
+            broadcastToRoom(gameId, {
+              type: 'flip_result',
+              result,
+              roundWinner,
+              roundNumber: round.round_number,
+              creatorWins: wins[game.creator] || 0,
+              challengerWins: wins[game.challenger] || 0,
+              gameComplete,
+              gameWinner
+            })
+            
+            // If game complete, update database and blockchain
+            if (gameComplete) {
+              db.run(
+                'UPDATE games SET status = ?, winner = ? WHERE id = ?',
+                ['completed', gameWinner, gameId]
+              )
+              
+              // Call smart contract to complete game
+              if (contractOwnerWallet && game.blockchain_game_id) {
+                completeGameOnChain(game.blockchain_game_id, gameWinner)
+              }
+            }
+          }
+        )
+      }
+    )
   })
 }
 
 function handleDisconnect(socket) {
   console.log('🔌 Disconnected:', socket.id)
   
-  // Remove from game rooms
-  if (socket.gameId && gameRooms.has(socket.gameId)) {
-    gameRooms.get(socket.gameId).delete(socket.id)
+  // Remove from rooms
+  const roomId = socketRooms.get(socket.id)
+  if (roomId && rooms.has(roomId)) {
+    rooms.get(roomId).delete(socket.id)
   }
+  socketRooms.delete(socket.id)
   
-  // Update user presence
+  // Remove from user sockets
   if (socket.address) {
     userSockets.delete(socket.address)
-    db.run(
-      'UPDATE user_presence SET is_online = false WHERE address = ?',
-      [socket.address]
-    )
   }
 }
 
-function broadcastToGame(gameId, message) {
-  const room = gameRooms.get(gameId)
-  if (!room) {
-    console.log(`⚠️ No room found for gameId: ${gameId}`)
-    return
-  }
+function broadcastToRoom(roomId, message) {
+  const room = rooms.get(roomId)
+  if (!room) return
   
-  console.log(`📡 Broadcasting to room ${gameId}:`, message.type)
-  console.log(`👥 Room has ${room.size} subscribers`)
-  console.log(`👥 Room subscribers:`, Array.from(room))
-  
-  let sentCount = 0
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN && room.has(client.id)) {
-      console.log(`📤 Sending to client ${client.id} (${client.address}):`, message.type)
+  room.forEach(socketId => {
+    const client = Array.from(wss.clients).find(c => c.id === socketId)
+    if (client && client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(message))
-      sentCount++
     }
   })
-  
-  console.log(`✅ Message sent to ${sentCount} clients in room ${gameId}`)
 }
 
 function sendToUser(address, message) {
-  const socketId = userSockets.get(address)
-  if (!socketId) return
-  
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN && client.id === socketId) {
-      client.send(JSON.stringify(message))
-    }
-  })
-}
-
-// ===== NFT METADATA HELPERS =====
-async function fetchNFTMetadata(contractAddress, tokenId, chain = 'base') {
-  try {
-    const url = `${ALCHEMY_BASE_URL}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`
-    const response = await fetch(url)
-    
-    if (!response.ok) {
-      throw new Error(`Alchemy API error: ${response.status}`)
-    }
-    
-    const data = await response.json()
-    
-    let imageUrl = ''
-    if (data.media && data.media.length > 0) {
-      imageUrl = data.media[0].gateway || data.media[0].raw || ''
-    }
-    if (!imageUrl && data.rawMetadata) {
-      imageUrl = data.rawMetadata.image || data.rawMetadata.image_url || ''
-    }
-    if (imageUrl && imageUrl.startsWith('ipfs://')) {
-      imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
-    }
-    
-    return {
-      name: data.title || data.name || `NFT #${tokenId}`,
-      image_url: imageUrl,
-      collection_name: data.contract?.name || 'Unknown Collection',
-      description: data.description || '',
-      attributes: JSON.stringify(data.attributes || [])
-    }
-  } catch (error) {
-    console.error('❌ Error fetching NFT metadata:', error)
-    return null
+  const socket = userSockets.get(address)
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(message))
   }
 }
 
-async function getNFTMetadataWithCache(contractAddress, tokenId, chain = 'base') {
-  return new Promise((resolve) => {
-    // Check cache first
-    db.get(
-      'SELECT * FROM nft_metadata_cache WHERE contract_address = ? AND token_id = ? AND chain = ?',
-      [contractAddress, tokenId, chain],
-      async (err, cached) => {
-        if (!err && cached) {
-          const cacheAge = Date.now() - new Date(cached.fetched_at).getTime()
-          if (cacheAge < 7 * 24 * 60 * 60 * 1000) { // 7 days
-            return resolve(cached)
-          }
-        }
-        
-        // Fetch fresh
-        const metadata = await fetchNFTMetadata(contractAddress, tokenId, chain)
-        if (!metadata) {
-          return resolve(cached || { name: `NFT #${tokenId}`, image_url: '' })
-        }
-        
-        // Cache it
-        db.run(
-          `INSERT OR REPLACE INTO nft_metadata_cache 
-           (contract_address, token_id, chain, name, image_url, collection_name, description, attributes, token_type)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [contractAddress, tokenId, chain, metadata.name, metadata.image_url, 
-           metadata.collection_name, metadata.description, metadata.attributes, 'ERC721']
-        )
-        
-        resolve(metadata)
-      }
+// ===== BLOCKCHAIN INTERACTION =====
+const CONTRACT_ABI = [
+  "function initializeGame(bytes32 gameId, address player1, address player2, address nftContract, uint256 tokenId, uint256 priceUSD)",
+  "function completeGame(bytes32 gameId, address winner)",
+  "function cancelGame(bytes32 gameId)"
+]
+
+async function initializeGameOnChain(gameId, player1, player2, nftContract, tokenId, priceUSD) {
+  if (!contractOwnerWallet) {
+    console.error('❌ Contract owner wallet not configured')
+    return false
+  }
+  
+  try {
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, contractOwnerWallet)
+    const gameIdBytes32 = ethers.id(gameId)
+    
+    const tx = await contract.initializeGame(
+      gameIdBytes32,
+      player1,
+      player2,
+      nftContract,
+      tokenId,
+      ethers.parseUnits(priceUSD.toString(), 6) // 6 decimals for USD
     )
-  })
+    
+    await tx.wait()
+    console.log('✅ Game initialized on chain:', gameId)
+    return true
+  } catch (error) {
+    console.error('❌ Failed to initialize game on chain:', error)
+    return false
+  }
+}
+
+async function completeGameOnChain(gameIdBytes32, winner) {
+  if (!contractOwnerWallet) return
+  
+  try {
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, contractOwnerWallet)
+    const tx = await contract.completeGame(gameIdBytes32, winner)
+    await tx.wait()
+    console.log('✅ Game completed on chain')
+  } catch (error) {
+    console.error('❌ Failed to complete game on chain:', error)
+  }
 }
 
 // ===== API ROUTES =====
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', server: 'v2', timestamp: new Date().toISOString() })
-})
-
-// Get game by ID
-app.get('/api/games/:gameId', (req, res) => {
-  const { gameId } = req.params
-  console.log(`🎮 Fetching game: ${gameId}`)
-  
-  db.get('SELECT * FROM games WHERE blockchain_id = ? OR id = ?', [gameId, gameId], (err, row) => {
-    if (err) {
-      console.error('❌ Error fetching game:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    if (!row) {
-      console.log(`❌ Game not found: ${gameId}`)
-      return res.status(404).json({ error: 'Game not found' })
-    }
-    console.log(`✅ Game found: ${gameId}`)
-    res.json(row)
-  })
-})
-
-// Get all games
-app.get('/api/games', (req, res) => {
-  console.log('🎮 Fetching all games')
-  
-  db.all('SELECT * FROM games ORDER BY created_at DESC', (err, rows) => {
-    if (err) {
-      console.error('❌ Error fetching games:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    console.log(`✅ Found ${rows.length} games`)
-    res.json(rows)
-  })
-})
-
-// Get listings
-app.get('/api/listings', (req, res) => {
-  console.log('📋 Fetching listings')
-  
-  db.all('SELECT * FROM listings WHERE status = "active" ORDER BY created_at DESC', (err, rows) => {
-    if (err) {
-      console.error('❌ Error fetching listings:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    console.log(`✅ Found ${rows.length} listings`)
-    res.json(rows)
-  })
-})
-
-// Get listing by ID
-app.get('/api/listings/:listingId', (req, res) => {
-  const { listingId } = req.params
-  console.log(`📋 Fetching listing: ${listingId}`)
-  
-  db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, row) => {
-    if (err) {
-      console.error('❌ Error fetching listing:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    if (!row) {
-      console.log(`❌ Listing not found: ${listingId}`)
-      return res.status(404).json({ error: 'Listing not found' })
-    }
-    console.log(`✅ Listing found: ${listingId}`)
-    res.json(row)
-  })
-})
-
-// Get dashboard data for user
-app.get('/api/dashboard/:address', (req, res) => {
-  const { address } = req.params
-  console.log(`📊 Fetching dashboard for: ${address}`)
-  
-  db.all(`
-    SELECT 
-      l.*,
-      g.id as game_id,
-      g.status as game_status
-    FROM listings l
-    LEFT JOIN games g ON l.id = g.listing_id
-    WHERE l.creator = ?
-    ORDER BY l.created_at DESC
-  `, [address], (err, listings) => {
-    if (err) {
-      console.error('❌ Error fetching dashboard:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    
-    // Get offers
-    db.all(`
-      SELECT o.*, l.nft_name, l.nft_image
-      FROM offers o
-      JOIN listings l ON o.listing_id = l.id
-      WHERE o.offerer_address = ? OR l.creator = ?
-      ORDER BY o.created_at DESC
-    `, [address, address], (err, offers) => {
-      if (err) {
-        console.error('❌ Error fetching offers:', err)
-        return res.status(500).json({ error: 'Database error' })
-      }
-      
-      const outgoingOffers = offers.filter(o => o.offerer_address === address)
-      const incomingOffers = offers.filter(o => o.offerer_address !== address)
-      
-      console.log(`✅ Dashboard data: ${listings.length} listings, ${outgoingOffers.length} outgoing, ${incomingOffers.length} incoming`)
-      res.json({
-        listings: listings || [],
-        outgoingOffers: outgoingOffers || [],
-        incomingOffers: incomingOffers || []
-      })
-    })
+  res.json({ 
+    status: 'ok', 
+    server: 'clean-architecture', 
+    timestamp: new Date().toISOString(),
+    hasContractOwner: !!contractOwnerWallet
   })
 })
 
 // Create listing
 app.post('/api/listings', (req, res) => {
   const { creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data } = req.body
-  console.log(`📋 Creating listing for: ${creator}`)
-  console.log(`🪙 Coin data received:`, coin_data)
   
   const listingId = `listing_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
   
@@ -664,273 +495,171 @@ app.post('/api/listings', (req, res) => {
       return res.status(500).json({ error: 'Database error' })
     }
     console.log(`✅ Listing created: ${listingId}`)
-    console.log(`🪙 Coin data saved:`, JSON.stringify(coin_data))
-    res.json({ success: true, listingId, message: 'Listing created successfully. Please approve your NFT to create the blockchain game.' })
+    res.json({ success: true, listingId })
   })
 })
 
-// Update listing with contract game ID (PUT version)
-app.put('/api/listings/:listingId/contract-game', (req, res) => {
+// Get listing
+app.get('/api/listings/:listingId', (req, res) => {
   const { listingId } = req.params
-  const { contractGameId, transactionHash, listingFeeUSD } = req.body
-  console.log(`🔄 Updating listing ${listingId} with contract game: ${contractGameId}`)
   
-  // Create game record
-  const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
-  
-  db.run(`
-    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data, coin_data)
-    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?, coin_data
-    FROM listings WHERE id = ?
-  `, [gameId, contractGameId, listingId, JSON.stringify({ transactionHash, listingFeeUSD }), listingId], function(err) {
+  db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, listing) => {
     if (err) {
-      console.error('❌ Error creating game:', err)
       return res.status(500).json({ error: 'Database error' })
     }
-    
-    // Verify coin data was copied
-    db.get('SELECT coin_data FROM games WHERE id = ?', [gameId], (err, row) => {
-      if (!err && row) {
-        console.log(`🪙 Coin data copied to game ${gameId}:`, row.coin_data)
-      }
-    })
-    
-            // Update listing status
-        db.run('UPDATE listings SET status = "game_created" WHERE id = ?', [listingId], (err) => {
-          if (err) {
-            console.error('❌ Error updating listing:', err)
-            return res.status(500).json({ error: 'Database error' })
-          }
-          console.log(`✅ Game created: ${gameId} (contract: ${contractGameId})`)
-          
-          // Transfer WebSocket subscriptions from listing to game
-          const listingRoom = gameRooms.get(listingId)
-          if (listingRoom && listingRoom.size > 0) {
-            console.log(`🔄 Transferring ${listingRoom.size} WebSocket subscriptions from listing ${listingId} to game ${gameId}`)
-            gameRooms.set(gameId, listingRoom)
-            gameRooms.delete(listingId)
-            
-            // Update all sockets in the room to point to the new game ID
-            wss.clients.forEach(client => {
-              if (client.readyState === WebSocket.OPEN && listingRoom.has(client.id)) {
-                client.gameId = gameId
-              }
-            })
-            
-            // Notify clients that the listing has been converted to a game
-            broadcastToGame(gameId, {
-              type: 'listing_converted_to_game',
-              listingId,
-              gameId,
-              contractGameId
-            })
-          }
-          
-          res.json({ success: true, gameId, contractGameId })
-        })
-  })
-})
-
-// Create blockchain game (POST version - for compatibility)
-app.post('/api/listings/:listingId/create-blockchain-game', (req, res) => {
-  const { listingId } = req.params
-  const { contract_game_id, transaction_hash } = req.body
-  console.log(`🔄 Creating blockchain game for listing ${listingId}: ${contract_game_id}`)
-  
-  // Create game record
-  const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
-  
-  db.run(`
-    INSERT INTO games (id, blockchain_id, listing_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, final_price, status, game_data, coin_data)
-    SELECT ?, ?, ?, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, 'waiting_payment', ?, coin_data
-    FROM listings WHERE id = ?
-  `, [gameId, contract_game_id, listingId, JSON.stringify({ transaction_hash }), listingId], function(err) {
-    if (err) {
-      console.error('❌ Error creating game:', err)
-      return res.status(500).json({ error: 'Database error' })
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' })
     }
     
-    // Update listing status
-    db.run('UPDATE listings SET blockchain_game_id = ?, status = "game_created" WHERE id = ?', [contract_game_id, listingId], (err) => {
-      if (err) {
-        console.error('❌ Error updating listing:', err)
-        return res.status(500).json({ error: 'Database error' })
-      }
-      console.log(`✅ Blockchain game created: ${gameId} (contract: ${contract_game_id})`)
-      
-                // Transfer WebSocket subscriptions from listing to game
-          const listingRoom = gameRooms.get(listingId)
-          if (listingRoom && listingRoom.size > 0) {
-            console.log(`🔄 Transferring ${listingRoom.size} WebSocket subscriptions from listing ${listingId} to game ${gameId}`)
-            gameRooms.set(gameId, listingRoom)
-            gameRooms.delete(listingId)
-            
-            // Update all sockets in the room to point to the new game ID
-            wss.clients.forEach(client => {
-              if (client.readyState === WebSocket.OPEN && listingRoom.has(client.id)) {
-                client.gameId = gameId
-              }
-            })
-            
-            // Notify clients that the listing has been converted to a game
-            broadcastToGame(gameId, {
-              type: 'listing_converted_to_game',
-              listingId,
-              gameId,
-              contractGameId: contract_game_id
-            })
-          }
-      
-      res.json({ success: true, gameId, contractGameId: contract_game_id })
+    // Get offers count
+    db.get('SELECT COUNT(*) as count FROM offers WHERE listing_id = ? AND status = "pending"', [listingId], (err, result) => {
+      listing.pending_offers = result?.count || 0
+      res.json(listing)
     })
   })
 })
 
-// Confirm payment and start game
-app.post('/api/games/:gameId/payment-confirmed', (req, res) => {
-  const { gameId } = req.params
-  const { joiner_address, payment_transaction_hash } = req.body
-  console.log(`💰 Payment confirmed for game: ${gameId}`)
-  
-  db.run(`
-    UPDATE games 
-    SET joiner = ?, status = 'active', game_data = json_set(game_data, '$.payment_transaction_hash', ?)
-    WHERE id = ? OR blockchain_id = ?
-  `, [joiner_address, payment_transaction_hash, gameId, gameId], function(err) {
+// Get all active listings
+app.get('/api/listings', (req, res) => {
+  db.all('SELECT * FROM listings WHERE status = "active" ORDER BY created_at DESC', (err, listings) => {
     if (err) {
-      console.error('❌ Error updating game:', err)
       return res.status(500).json({ error: 'Database error' })
     }
-    console.log(`✅ Game activated: ${gameId}`)
-    res.json({ success: true, message: 'Game activated successfully' })
-  })
-})
-
-// ===== PROFILE API ENDPOINTS =====
-
-// Get profile by address
-app.get('/api/profile/:address', (req, res) => {
-  const { address } = req.params
-  console.log(`👤 Fetching profile for: ${address}`)
-  
-  db.get('SELECT * FROM profiles WHERE address = ?', [address], (err, row) => {
-    if (err) {
-      console.error('❌ Error fetching profile:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    if (!row) {
-      console.log(`❌ Profile not found: ${address}`)
-      return res.status(404).json({ error: 'Profile not found' })
-    }
-    console.log(`✅ Profile found: ${address}`)
-    res.json(row)
-  })
-})
-
-// Update profile
-app.put('/api/profile/:address', (req, res) => {
-  const { address } = req.params
-  const profileData = req.body
-  console.log(`👤 Updating profile for: ${address}`)
-  
-  db.run(`
-    INSERT OR REPLACE INTO profiles (address, name, avatar, heads_image, tails_image, updated_at)
-    VALUES (?, ?, ?, ?, ?, datetime('now'))
-  `, [address, profileData.name || '', profileData.avatar || '', profileData.headsImage || '', profileData.tailsImage || ''], function(err) {
-    if (err) {
-      console.error('❌ Error updating profile:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    console.log(`✅ Profile updated: ${address}`)
-    res.json({ success: true, message: 'Profile updated successfully' })
-  })
-})
-
-// ===== OFFERS API ENDPOINTS =====
-
-// Get offers for a listing
-app.get('/api/listings/:listingId/offers', (req, res) => {
-  const { listingId } = req.params
-  console.log(`💰 Fetching offers for listing: ${listingId}`)
-  
-  db.all('SELECT * FROM offers WHERE listing_id = ? ORDER BY created_at DESC', [listingId], (err, rows) => {
-    if (err) {
-      console.error('❌ Error fetching offers:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    console.log(`✅ Found ${rows.length} offers for listing ${listingId}`)
-    res.json(rows)
+    res.json(listings)
   })
 })
 
 // Create offer
 app.post('/api/listings/:listingId/offers', (req, res) => {
   const { listingId } = req.params
-  const { offerer_address, offerer_name, offer_price, message } = req.body
-  console.log(`💰 Creating offer for listing: ${listingId}`)
+  const { offerer_address, offer_price, message } = req.body
   
   const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
   
   db.run(`
-    INSERT INTO offers (id, listing_id, offerer_address, offerer_name, offer_price, message, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'pending')
-  `, [offerId, listingId, offerer_address, offerer_name, offer_price, message], function(err) {
+    INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status)
+    VALUES (?, ?, ?, ?, ?, 'pending')
+  `, [offerId, listingId, offerer_address, offer_price, message], function(err) {
     if (err) {
       console.error('❌ Error creating offer:', err)
       return res.status(500).json({ error: 'Database error' })
     }
-    console.log(`✅ Offer created: ${offerId}`)
     
-    // Broadcast offer creation to all users subscribed to this listing
-    console.log(`📡 Broadcasting offer_created to listing ${listingId}`)
-    broadcastToGame(listingId, {
-      type: 'offer_created',
-      offerId,
-      listingId
+    // Notify listing creator
+    db.get('SELECT creator FROM listings WHERE id = ?', [listingId], (err, listing) => {
+      if (listing) {
+        sendToUser(listing.creator, {
+          type: 'new_offer',
+          listingId,
+          offerId,
+          offer_price,
+          message
+        })
+      }
     })
     
-    res.json({ success: true, offerId, message: 'Offer created successfully' })
+    res.json({ success: true, offerId })
+  })
+})
+
+// Get offers for listing
+app.get('/api/listings/:listingId/offers', (req, res) => {
+  const { listingId } = req.params
+  
+  db.all('SELECT * FROM offers WHERE listing_id = ? ORDER BY created_at DESC', [listingId], (err, offers) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    res.json(offers)
   })
 })
 
 // Accept offer
-app.post('/api/offers/:offerId/accept', (req, res) => {
+app.post('/api/offers/:offerId/accept', async (req, res) => {
   const { offerId } = req.params
-  const { final_price } = req.body
-  console.log(`✅ Accepting offer: ${offerId}`)
   
-  db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId], function(err) {
-    if (err) {
-      console.error('❌ Error accepting offer:', err)
-      return res.status(500).json({ error: 'Database error' })
+  db.get('SELECT * FROM offers WHERE id = ?', [offerId], async (err, offer) => {
+    if (err || !offer) {
+      return res.status(404).json({ error: 'Offer not found' })
     }
     
-    // Get the listing ID from the offer
-    db.get('SELECT listing_id FROM offers WHERE id = ?', [offerId], (err, offer) => {
-      if (err || !offer) {
-        console.error('❌ Error fetching offer:', err)
-        return res.status(500).json({ error: 'Database error' })
+    if (offer.status !== 'pending') {
+      return res.status(400).json({ error: 'Offer already processed' })
+    }
+    
+    // Get listing details
+    db.get('SELECT * FROM listings WHERE id = ?', [offer.listing_id], async (err, listing) => {
+      if (err || !listing) {
+        return res.status(404).json({ error: 'Listing not found' })
       }
       
-      // Update listing with final price
-      db.run('UPDATE listings SET final_price = ?, status = "offer_accepted" WHERE id = ?', [final_price, offer.listing_id], (err) => {
+      // Create game
+      const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+      const blockchainGameId = ethers.id(gameId)
+      const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString() // 2 minutes
+      
+      // Update offer status
+      db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
+      
+      // Update listing status
+      db.run('UPDATE listings SET status = "offer_accepted" WHERE id = ?', [offer.listing_id])
+      
+      // Create game record
+      db.run(`
+        INSERT INTO games (
+          id, listing_id, offer_id, blockchain_game_id, creator, challenger,
+          nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+          final_price, coin_data, status, deposit_deadline
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        gameId, offer.listing_id, offerId, blockchainGameId, listing.creator, offer.offerer_address,
+        listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
+        offer.offer_price, listing.coin_data, 'waiting_deposits', depositDeadline
+      ], async function(err) {
         if (err) {
-          console.error('❌ Error updating listing:', err)
+          console.error('❌ Error creating game:', err)
           return res.status(500).json({ error: 'Database error' })
         }
-        console.log(`✅ Offer accepted: ${offerId}`)
         
-        // Broadcast offer acceptance to all users subscribed to this listing
-        console.log(`📡 Broadcasting offer_updated (accepted) to listing ${offer.listing_id}`)
-        broadcastToGame(offer.listing_id, {
-          type: 'offer_updated',
-          offerId,
-          listingId: offer.listing_id,
-          status: 'accepted'
+        // Initialize game on blockchain
+        const chainSuccess = await initializeGameOnChain(
+          gameId,
+          listing.creator,
+          offer.offerer_address,
+          listing.nft_contract,
+          listing.nft_token_id,
+          offer.offer_price
+        )
+        
+        if (!chainSuccess) {
+          // Rollback if blockchain fails
+          db.run('DELETE FROM games WHERE id = ?', [gameId])
+          db.run('UPDATE offers SET status = "pending" WHERE id = ?', [offerId])
+          db.run('UPDATE listings SET status = "active" WHERE id = ?', [offer.listing_id])
+          return res.status(500).json({ error: 'Blockchain initialization failed' })
+        }
+        
+        // Notify both players
+        sendToUser(listing.creator, {
+          type: 'offer_accepted',
+          gameId,
+          depositDeadline
         })
         
-        // Only return success, never a gameId
-        res.json({ success: true, message: 'Offer accepted successfully' })
+        sendToUser(offer.offerer_address, {
+          type: 'offer_accepted',
+          gameId,
+          depositDeadline
+        })
+        
+        // Broadcast to listing room
+        broadcastToRoom(offer.listing_id, {
+          type: 'listing_converted_to_game',
+          listingId: offer.listing_id,
+          gameId
+        })
+        
+        res.json({ success: true, gameId })
       })
     })
   })
@@ -939,49 +668,193 @@ app.post('/api/offers/:offerId/accept', (req, res) => {
 // Reject offer
 app.post('/api/offers/:offerId/reject', (req, res) => {
   const { offerId } = req.params
-  console.log(`❌ Rejecting offer: ${offerId}`)
   
   db.run('UPDATE offers SET status = "rejected" WHERE id = ?', [offerId], function(err) {
     if (err) {
-      console.error('❌ Error rejecting offer:', err)
       return res.status(500).json({ error: 'Database error' })
     }
     
-    // Get the listing ID from the offer
-    db.get('SELECT listing_id FROM offers WHERE id = ?', [offerId], (err, offer) => {
-      if (err || !offer) {
-        console.error('❌ Error fetching offer:', err)
-        return res.status(500).json({ error: 'Database error' })
-      }
-      
-      console.log(`✅ Offer rejected: ${offerId}`)
-      
-              // Broadcast offer rejection to all users subscribed to this listing
-        console.log(`📡 Broadcasting offer_updated (rejected) to listing ${offer.listing_id}`)
-        broadcastToGame(offer.listing_id, {
-          type: 'offer_updated',
-          offerId,
-          listingId: offer.listing_id,
-          status: 'rejected'
+    // Notify offerer
+    db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, offer) => {
+      if (offer) {
+        sendToUser(offer.offerer_address, {
+          type: 'offer_rejected',
+          offerId
         })
+      }
+    })
+    
+    res.json({ success: true })
+  })
+})
+
+// Get game
+app.get('/api/games/:gameId', (req, res) => {
+  const { gameId } = req.params
+  
+  db.get('SELECT * FROM games WHERE id = ? OR blockchain_game_id = ?', [gameId, gameId], (err, game) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    if (!game) {
+      // Check if it's a listing
+      db.get('SELECT * FROM listings WHERE id = ?', [gameId], (err, listing) => {
+        if (err || !listing) {
+          return res.status(404).json({ error: 'Game/Listing not found' })
+        }
+        // Return listing as game-like structure
+        res.json({
+          id: listing.id,
+          type: 'listing',
+          creator: listing.creator,
+          nft_contract: listing.nft_contract,
+          nft_token_id: listing.nft_token_id,
+          nft_name: listing.nft_name,
+          nft_image: listing.nft_image,
+          nft_collection: listing.nft_collection,
+          asking_price: listing.asking_price,
+          coin_data: listing.coin_data,
+          status: listing.status
+        })
+      })
+      return
+    }
+    
+    // Get round information
+    db.all('SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number', [gameId], (err, rounds) => {
+      game.rounds = rounds || []
       
-      res.json({ success: true, message: 'Offer rejected successfully' })
+      // Calculate wins
+      game.creator_wins = rounds.filter(r => r.round_winner === game.creator).length
+      game.challenger_wins = rounds.filter(r => r.round_winner === game.challenger).length
+      
+      res.json(game)
     })
   })
 })
 
-// ===== SERVER STARTUP =====
-console.log('🚀 Starting server...')
+// Confirm deposit
+app.post('/api/games/:gameId/deposit-confirmed', (req, res) => {
+  const { gameId } = req.params
+  const { player, assetType } = req.body // assetType: 'nft' or 'eth'
+  
+  db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+    if (err || !game) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    const isCreator = player === game.creator
+    const column = isCreator ? 'creator_deposited' : 'challenger_deposited'
+    
+    db.run(`UPDATE games SET ${column} = true WHERE id = ?`, [gameId], (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      // Check if both deposited
+      db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
+        if (updatedGame.creator_deposited && updatedGame.challenger_deposited) {
+          // Start game
+          db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
+          
+          // Notify players
+          broadcastToRoom(gameId, {
+            type: 'game_started',
+            gameId
+          })
+        } else {
+          // Notify deposit confirmed
+          broadcastToRoom(gameId, {
+            type: 'deposit_confirmed',
+            player,
+            assetType
+          })
+        }
+        
+        res.json({ success: true })
+      })
+    })
+  })
+})
 
+// Check deposit timeout
+setInterval(() => {
+  const now = new Date().toISOString()
+  
+  db.all(
+    'SELECT * FROM games WHERE status = "waiting_deposits" AND deposit_deadline < ?',
+    [now],
+    (err, games) => {
+      if (err || !games) return
+      
+      games.forEach(game => {
+        // Cancel game
+        db.run('UPDATE games SET status = "cancelled" WHERE id = ?', [game.id])
+        
+        // Notify players
+        broadcastToRoom(game.id, {
+          type: 'game_cancelled',
+          reason: 'deposit_timeout'
+        })
+        
+        // Update listing back to active if neither deposited
+        if (!game.creator_deposited && !game.challenger_deposited) {
+          db.run('UPDATE listings SET status = "active" WHERE id = ?', [game.listing_id])
+        }
+      })
+    }
+  )
+}, 10000) // Check every 10 seconds
+
+// Get user games
+app.get('/api/users/:address/games', (req, res) => {
+  const { address } = req.params
+  
+  db.all(
+    'SELECT * FROM games WHERE creator = ? OR challenger = ? ORDER BY created_at DESC',
+    [address, address],
+    (err, games) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      res.json(games)
+    }
+  )
+})
+
+// Get user listings
+app.get('/api/users/:address/listings', (req, res) => {
+  const { address } = req.params
+  
+  db.all(
+    'SELECT * FROM listings WHERE creator = ? ORDER BY created_at DESC',
+    [address],
+    (err, listings) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      res.json(listings)
+    }
+  )
+})
+
+// ===== STATIC FILE FALLBACK =====
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'))
+})
+
+// ===== SERVER STARTUP =====
 initializeDatabase()
   .then((database) => {
     db = database
     console.log('✅ Database initialized')
     
     server.listen(PORT, () => {
-      console.log(`🎮 CryptoFlipz V2 Server running on port ${PORT}`)
+      console.log(`🎮 CryptoFlipz Clean Server running on port ${PORT}`)
       console.log(`🌐 WebSocket server ready`)
       console.log(`📊 Database: ${DATABASE_PATH}`)
+      console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
+      console.log(`🔑 Contract owner: ${contractOwnerWallet ? 'Configured' : 'Not configured'}`)
     })
   })
   .catch((error) => {

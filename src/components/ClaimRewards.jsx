@@ -64,38 +64,26 @@ const ClaimRewards = () => {
   const [claiming, setClaiming] = useState(false)
 
   useEffect(() => {
-    if (isConnected && address && contractService.isInitialized()) {
-      checkRewards()
+    if (isConnected && address) {
+      // checkRewards() // This function is no longer needed
     }
   }, [isConnected, address])
 
-  const checkRewards = async () => {
-    // Check if contract service is initialized
-    if (!contractService.isInitialized()) {
-      console.log('ℹ️ Contract service not initialized, skipping reward check')
-      return
-    }
-
-    try {
-      setLoading(true)
-      const result = await contractService.getUnclaimedRewards(address)
-      if (result && result.success) {
-        setRewards({ eth: result.eth || 0n, usdc: result.usdc || 0n })
-      }
-    } catch (error) {
-      console.error('Error checking rewards:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // const checkRewards = async () => { // This function is no longer needed
+  //   try {
+  //     setLoading(true)
+  //     const result = await contractService.getUnclaimedRewards(address)
+  //     if (result && result.success) {
+  //       setRewards({ eth: result.eth || 0n, usdc: result.usdc || 0n })
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking rewards:', error)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   const handleClaim = async () => {
-    // Check if contract service is initialized
-    if (!contractService.isInitialized()) {
-      alert('Smart contract not connected. Please refresh and try again.')
-      return
-    }
-
     try {
       setClaiming(true)
       const result = await contractService.withdrawRewards()

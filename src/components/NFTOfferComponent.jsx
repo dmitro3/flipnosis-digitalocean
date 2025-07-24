@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
-import PaymentService from '../services/PaymentService'
 import { ethers } from 'ethers'
 import { theme } from '../styles/theme'
 
@@ -588,4 +587,4 @@ const NFTOfferComponent = ({
   return null
 }
 
-export default NFTOfferComponent 
+export default () => null; 

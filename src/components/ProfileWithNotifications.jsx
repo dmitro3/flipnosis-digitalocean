@@ -538,63 +538,40 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
     }
 
     try {
-      // Check if contract service is initialized before calling methods
-      if (!contractService.isInitialized()) {
-        console.log('ℹ️ Contract service not initialized, skipping contract data load')
-        return
-      }
-
       // Load user's created games from contract
-      const gamesResponse = await contractService.getUserActiveGames(address)
-      const games = []
-      
-      // Handle the response properly - it returns { success: true, games: [] }
-      const gameIds = gamesResponse && gamesResponse.success ? gamesResponse.games : []
-      
-      for (const gameId of gameIds) {
-        try {
-          const gameDetails = await contractService.getGameDetails(gameId.toString())
-          if (gameDetails && gameDetails.success) {
-            const { game, nftChallenge } = gameDetails.data
-            // Only include games created by this user
-            if (game.creator.toLowerCase() === address.toLowerCase()) {
-              games.push({
-                id: gameId,
-                creator: game.creator,
-                joiner: game.joiner,
-                core: {
-                  gameId: game.gameId,
-                  state: game.state,
-                  gameType: game.gameType,
-                  priceUSD: game.priceUSD,
-                  paymentToken: game.paymentToken,
-                  totalPaid: game.totalPaid,
-                  winner: game.winner,
-                  createdAt: game.createdAt,
-                  expiresAt: game.expiresAt
-                },
-                nftChallenge: nftChallenge,
-                progress: {
-                  currentRound: 1, // Default values for now
-                  maxRounds: 1
-                },
-                createdAt: new Date(Number(game.createdAt) * 1000).toISOString(),
-                stake: {
-                  nftContract: game.nftContract,
-                  tokenId: game.tokenId.toString(),
-                  amount: game.priceUSD ? (Number(game.priceUSD) / 1e18).toFixed(4) : '0',
-                  token: game.gameType === 0 ? 'ETH' : 'NFT'
-                }
-              })
-            }
-          }
-        } catch (error) {
-          console.warn(`Could not get details for game ${gameId}:`, error)
+      const response = await fetch(`${API_URL}/api/users/${address}/games`);
+      const games = await response.json();
+      const gamesData = games.map(game => ({
+        id: game.id,
+        creator: game.creator,
+        joiner: game.joiner,
+        core: {
+          gameId: game.gameId,
+          state: game.state,
+          gameType: game.gameType,
+          priceUSD: game.priceUSD,
+          paymentToken: game.paymentToken,
+          totalPaid: game.totalPaid,
+          winner: game.winner,
+          createdAt: game.createdAt,
+          expiresAt: game.expiresAt
+        },
+        nftChallenge: game.nftChallenge,
+        progress: {
+          currentRound: 1, // Default values for now
+          maxRounds: 1
+        },
+        createdAt: new Date(Number(game.createdAt) * 1000).toISOString(),
+        stake: {
+          nftContract: game.nftContract,
+          tokenId: game.tokenId.toString(),
+          amount: game.priceUSD ? (Number(game.priceUSD) / 1e18).toFixed(4) : '0',
+          token: game.gameType === 0 ? 'ETH' : 'NFT'
         }
-      }
+      }));
       
-      setActiveGames(games)
-      updateGameBadges(games)
+      setActiveGames(gamesData)
+      updateGameBadges(gamesData)
       
       // Check for game join notifications
       checkGameJoinNotifications()
@@ -840,26 +817,16 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
 
     // Fallback to API call if no cached data
     try {
-      const gamesResponse = await contractService.getUserActiveGames(address)
-      let joinCount = 0
+      const response = await fetch(`${API_URL}/api/users/${address}/games`);
+      const games = await response.json();
+      let joinCount = 0;
       
-      // Handle the response properly - it returns { success: true, games: [] }
-      const gameIds = gamesResponse.success ? gamesResponse.games : []
-      
-      for (const gameId of gameIds) {
-        try {
-          const gameDetails = await contractService.getGameDetails(gameId.toString())
-          if (gameDetails.success) {
-            const { game } = gameDetails.data
-            // Check if user is creator and game has been joined (state 1 or higher)
-            if (game.creator.toLowerCase() === address.toLowerCase() && 
-                game.state >= 1 && 
-                game.joiner !== '0x0000000000000000000000000000000000000000') {
-              joinCount++
-            }
-          }
-        } catch (error) {
-          console.warn(`Could not get details for game ${gameId}:`, error)
+      for (const game of games) {
+        // Check if user is creator and game has been joined (state 1 or higher)
+        if (game.creator.toLowerCase() === address.toLowerCase() && 
+            game.state >= 1 && 
+            game.joiner !== '0x0000000000000000000000000000000000000000') {
+          joinCount++;
         }
       }
       

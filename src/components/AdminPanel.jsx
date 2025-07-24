@@ -194,7 +194,7 @@ const CONTRACT_ABI = [
 
 // Contract addresses for different chains
 const CONTRACT_ADDRESSES = {
-              'base': '0xF5980979c1B0B43f78c8EeAaB697d25C611c0E0a', // Base contract address
+              'base': '0x807885ec42b9A727C4763d8F929f2ac132eDF6F0', // Base contract address
   'ethereum': '0x...',
   'bnb': '0x...',
   'avalanche': '0x...',
@@ -961,11 +961,6 @@ export default function AdminPanel() {
   // Sync individual game status from contract
   const syncGameStatus = async (gameId) => {
     try {
-      if (!contractService.isInitialized()) {
-        addNotification('error', 'Contract service not initialized')
-        return
-      }
-
       addNotification('info', `Syncing game ${gameId} status from contract...`)
       
       // Get game status from contract
