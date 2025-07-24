@@ -733,6 +733,16 @@ app.get('/api/games/:gameId', (req, res) => {
   })
 })
 
+// Get all games
+app.get('/api/games', (req, res) => {
+  db.all('SELECT * FROM games ORDER BY created_at DESC', (err, games) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    res.json(games)
+  })
+})
+
 // Confirm deposit
 app.post('/api/games/:gameId/deposit-confirmed', (req, res) => {
   const { gameId } = req.params

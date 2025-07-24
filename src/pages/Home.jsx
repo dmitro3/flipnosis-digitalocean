@@ -218,16 +218,30 @@ const Home = () => {
       setError(null)
       // Fetch listings
       const listingsResponse = await fetch(getApiUrl('/listings'))
-      const listings = await listingsResponse.json()
+      let listings
+      try {
+        listings = await listingsResponse.json()
+      } catch (e) {
+        const raw = await listingsResponse.text()
+        console.error('Listings response not JSON:', raw)
+        throw new Error('Listings API did not return JSON. See console for details.')
+      }
       // Fetch games
       const gamesResponse = await fetch(getApiUrl('/games'))
-      const games = await gamesResponse.json()
+      let games
+      try {
+        games = await gamesResponse.json()
+      } catch (e) {
+        const raw = await gamesResponse.text()
+        console.error('Games response not JSON:', raw)
+        throw new Error('Games API did not return JSON. See console for details.')
+      }
       setListings(listings)
       setGames(games)
     } catch (error) {
       console.error('Error fetching data:', error)
-      setError('Failed to load games and listings')
-      showError('Failed to load games and listings')
+      setError('Failed to load games and listings: ' + error.message)
+      showError('Failed to load games and listings: ' + error.message)
     } finally {
       setLoading(false)
     }
