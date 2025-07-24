@@ -161,6 +161,20 @@ function initializeDatabase() {
           if (err) console.error('❌ Error creating chat_messages table:', err)
           else console.log('✅ Chat messages table ready')
         })
+
+        // Profiles table
+        database.run(`
+          CREATE TABLE IF NOT EXISTS profiles (
+            address TEXT PRIMARY KEY,
+            name TEXT,
+            avatar TEXT,
+            headsImage TEXT,
+            tailsImage TEXT
+          )
+        `, (err) => {
+          if (err) console.error('❌ Error creating profiles table:', err)
+          else console.log('✅ Profiles table ready')
+        })
       })
       
       resolve(database)
@@ -844,6 +858,43 @@ app.get('/api/users/:address/listings', (req, res) => {
         return res.status(500).json({ error: 'Database error' })
       }
       res.json(listings)
+    }
+  )
+})
+
+// Get user profile
+app.get('/api/profile/:address', (req, res) => {
+  const { address } = req.params
+  db.get('SELECT * FROM profiles WHERE address = ?', [address], (err, profile) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    if (!profile) {
+      // Return empty profile if not found
+      return res.json({
+        address,
+        name: '',
+        avatar: '',
+        headsImage: '',
+        tailsImage: ''
+      })
+    }
+    res.json(profile)
+  })
+})
+// Update user profile
+app.put('/api/profile/:address', (req, res) => {
+  const { address } = req.params
+  const { name, avatar, headsImage, tailsImage } = req.body
+  db.run(
+    `INSERT INTO profiles (address, name, avatar, headsImage, tailsImage) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(address) DO UPDATE SET name=excluded.name, avatar=excluded.avatar, headsImage=excluded.headsImage, tailsImage=excluded.tailsImage`,
+    [address, name || '', avatar || '', headsImage || '', tailsImage || ''],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      res.json({ success: true })
     }
   )
 })
