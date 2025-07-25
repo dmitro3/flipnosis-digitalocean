@@ -494,53 +494,110 @@ function sendToUser(address, message) {
 
 // ===== BLOCKCHAIN INTERACTION =====
 const CONTRACT_ABI = [
-  "function initializeGame(bytes32 gameId, address player1, address player2, address nftContract, uint256 tokenId, uint256 priceUSD)",
+  "function initializeGame(bytes32 gameId, address player1, address player2, address nftContract, uint256 tokenId, uint256 priceUSD, uint8 paymentToken)",
   "function completeGame(bytes32 gameId, address winner)",
   "function cancelGame(bytes32 gameId)"
 ]
 
-async function initializeGameOnChain(gameId, player1, player2, nftContract, tokenId, priceUSD) {
-  console.log('🔗 Initializing game on blockchain:', { gameId, player1, player2, nftContract, tokenId, priceUSD })
-  
-     if (!contractOwnerWallet) {
-     console.error('❌ Contract owner wallet not configured')
-     console.error('❌ Please check CONTRACT_OWNER_KEY or PRIVATE_KEY environment variable')
-     return { success: false, error: 'Contract wallet not configured' }
-  }
-  
-  if (!CONTRACT_ADDRESS) {
-    console.error('❌ Contract address not configured')
-    return { success: false, error: 'Contract address not configured' }
-  }
-  
-  try {
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, contractOwnerWallet)
-    const gameIdBytes32 = ethers.id(gameId)
-    
-    console.log('🔗 Sending transaction to contract:', CONTRACT_ADDRESS)
-    const tx = await contract.initializeGame(
-      gameIdBytes32,
-      player1,
-      player2,
-      nftContract,
-      tokenId,
-      ethers.parseUnits(priceUSD.toString(), 6) // 6 decimals for USD
-    )
-    
-    console.log('⏳ Waiting for transaction confirmation:', tx.hash)
-    await tx.wait()
-    console.log('✅ Game initialized on chain:', gameId)
-    return { success: true }
-  } catch (error) {
-    console.error('❌ Failed to initialize game on chain:', error)
-    console.error('❌ Error details:', {
-      message: error.message,
-      code: error.code,
-      reason: error.reason
-    })
-    return { success: false, error: error.message || 'Blockchain transaction failed' }
-  }
-}
+ async function initializeGameOnChain(gameId, player1, player2, nftContract, tokenId, priceUSD) {
+   console.log('🔗 Initializing game on blockchain:', { gameId, player1, player2, nftContract, tokenId, priceUSD })
+   
+      if (!contractOwnerWallet) {
+      console.error('❌ Contract owner wallet not configured')
+      console.error('❌ Please check CONTRACT_OWNER_KEY or PRIVATE_KEY environment variable')
+      return { success: false, error: 'Contract wallet not configured' }
+   }
+   
+   if (!CONTRACT_ADDRESS) {
+     console.error('❌ Contract address not configured')
+     return { success: false, error: 'Contract address not configured' }
+   }
+   
+   try {
+     // Add network info
+     const network = await provider.getNetwork()
+     console.log('🌐 Connected to network:', {
+       name: network.name,
+       chainId: network.chainId,
+       rpc: RPC_URL
+     })
+     
+     // Check wallet balance
+     const balance = await provider.getBalance(contractOwnerWallet.address)
+     console.log('💰 Contract owner balance:', ethers.formatEther(balance), 'ETH')
+     
+     if (balance === 0n) {
+       return { success: false, error: 'Contract owner wallet has no ETH for gas fees' }
+     }
+     
+     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, contractOwnerWallet)
+     const gameIdBytes32 = ethers.id(gameId)
+     
+     // Verify contract exists
+     try {
+       const code = await provider.getCode(CONTRACT_ADDRESS)
+       if (code === '0x') {
+         console.error('❌ No contract deployed at address:', CONTRACT_ADDRESS)
+         return { success: false, error: 'Contract not found at specified address' }
+       }
+       console.log('✅ Contract found at address:', CONTRACT_ADDRESS)
+     } catch (err) {
+       console.error('❌ Error checking contract:', err)
+       return { success: false, error: 'Failed to verify contract existence' }
+     }
+     
+     console.log('🔗 Sending transaction to contract:', CONTRACT_ADDRESS)
+           console.log('📝 Transaction parameters:', {
+        gameIdBytes32,
+        player1,
+        player2, 
+        nftContract,
+        tokenId,
+        priceUSD: ethers.parseUnits(priceUSD.toString(), 6),
+        paymentToken: 0 // 0 = ETH, 1 = USDC
+      })
+     
+           // Try to estimate gas first
+      try {
+        const gasEstimate = await contract.initializeGame.estimateGas(
+          gameIdBytes32,
+          player1,
+          player2,
+          nftContract,
+          tokenId,
+          ethers.parseUnits(priceUSD.toString(), 6),
+          0 // PaymentToken.ETH = 0, PaymentToken.USDC = 1
+        )
+        console.log('⛽ Gas estimate:', gasEstimate.toString())
+      } catch (gasError) {
+        console.error('❌ Gas estimation failed:', gasError)
+        return { success: false, error: `Gas estimation failed: ${gasError.message}` }
+      }
+      
+      const tx = await contract.initializeGame(
+        gameIdBytes32,
+        player1,
+        player2,
+        nftContract,
+        tokenId,
+        ethers.parseUnits(priceUSD.toString(), 6), // 6 decimals for USD
+        0 // PaymentToken.ETH = 0, PaymentToken.USDC = 1
+      )
+     
+     console.log('⏳ Waiting for transaction confirmation:', tx.hash)
+     await tx.wait()
+     console.log('✅ Game initialized on chain:', gameId)
+     return { success: true }
+   } catch (error) {
+     console.error('❌ Failed to initialize game on chain:', error)
+     console.error('❌ Error details:', {
+       message: error.message,
+       code: error.code,
+       reason: error.reason
+     })
+     return { success: false, error: error.message || 'Blockchain transaction failed' }
+   }
+ }
 
 async function completeGameOnChain(gameIdBytes32, winner) {
   if (!contractOwnerWallet) return

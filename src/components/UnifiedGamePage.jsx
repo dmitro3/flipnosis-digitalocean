@@ -379,15 +379,19 @@ const UnifiedGamePage = () => {
       case 'offer_created':
       case 'offer_updated':
       case 'new_offer':
-        // Reload offers
-        if (gameData?.type === 'listing') {
-          fetch(getApiUrl(`/listings/${gameId}/offers`)).then(async response => {
-            if (response.ok) {
-              const offersData = await response.json()
-              setOffers(offersData)
-            }
-          })
-        }
+        console.log('🔄 Received offer update, reloading offers for gameId:', gameId)
+        // Always reload offers when we get these messages, regardless of gameData state
+        fetch(getApiUrl(`/listings/${gameId}/offers`)).then(async response => {
+          if (response.ok) {
+            const offersData = await response.json()
+            console.log('✅ Loaded offers from API:', offersData)
+            setOffers(offersData)
+          } else {
+            console.log('⚠️ Failed to load offers, might be a game not listing')
+          }
+        }).catch(error => {
+          console.log('⚠️ Error loading offers (expected if this is a game):', error)
+        })
         break
       case 'game_joined':
       case 'game_state_update':
