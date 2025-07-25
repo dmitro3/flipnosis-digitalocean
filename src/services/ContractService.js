@@ -1,5 +1,7 @@
-import { createPublicClient, createWalletClient, custom, http, parseEther, formatEther } from 'viem'
-import { base } from 'viem/chains'
+import { ethers } from 'ethers'
+
+// Contract configuration
+const CONTRACT_ADDRESS = '0x807885ec42b9A727C4763d8F929f2ac132eDF6F0'
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
@@ -70,16 +72,9 @@ const CONTRACT_ABI = [
     inputs: [{ name: 'gameId', type: 'bytes32' }],
     outputs: [{ name: '', type: 'bool' }]
   },
-  {
-    name: 'canStartGame',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'gameId', type: 'bytes32' }],
-    outputs: [{ name: '', type: 'bool' }]
-  }
 ]
 
-// NFT ABI for approvals
+// NFT ABI for approval
 const NFT_ABI = [
   {
     name: 'approve',
@@ -100,84 +95,94 @@ const NFT_ABI = [
   }
 ]
 
-// Events
-const EVENTS = {
-  ListingFeePaid: 'ListingFeePaid',
-  AssetsDeposited: 'AssetsDeposited',
-  GameStarted: 'GameStarted',
-  GameCompleted: 'GameCompleted',
-  GameCancelled: 'GameCancelled',
-  AssetsReclaimed: 'AssetsReclaimed'
-}
-
 class CleanContractService {
   constructor() {
-    this.contractAddress = '0x807885ec42b9A727C4763d8F929f2ac132eDF6F0'
-    this.publicClient = null
-    this.walletClient = null
+    this.contractAddress = CONTRACT_ADDRESS
+    this.provider = null
+    this.signer = null
+    this.contract = null
+    this.account = null
   }
 
-  // Initialize with wallet
-  async initialize(walletClient) {
-    this.walletClient = walletClient
-    this.publicClient = createPublicClient({
-      chain: base,
-      transport: http('https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3')
-    })
-    console.log('✅ Contract service initialized')
-  }
-
-  // Helper to check if clients are ready
-  isReady() {
-    return !!(this.publicClient && this.walletClient);
-  }
-
-  // Convert game ID to bytes32
-  getGameIdBytes32(gameId) {
-    // Use viem's keccak256 to create deterministic bytes32 from string
-    const { keccak256, toHex } = require('viem')
-    return keccak256(toHex(gameId))
-  }
-
-  // Patch all contract methods to check readiness
-  async payListingFee() {
-    if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
-    }
+  // Initialize with wallet connection
+  async initialize(walletProvider) {
     try {
-      // Get listing fee amount
-      const listingFeeUSD = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'listingFeeUSD'
-      })
+      if (!walletProvider) {
+        throw new Error('Wallet provider is required')
+      }
 
-      const listingFeeETH = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'getETHAmount',
-        args: [listingFeeUSD]
-      })
+      // Create ethers provider from wallet
+      this.provider = new ethers.BrowserProvider(walletProvider)
+      this.signer = await this.provider.getSigner()
+      this.account = await this.signer.getAddress()
+      
+      // Create contract instance
+      this.contract = new ethers.Contract(this.contractAddress, CONTRACT_ABI, this.signer)
+      
+      console.log('✅ Contract service initialized with ethers.js')
+      console.log('🔗 Contract address:', this.contractAddress)
+      console.log('👤 Account address:', this.account)
+      
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Error initializing contract service:', error)
+      return { success: false, error: error.message }
+    }
+  }
 
-      console.log('💰 Listing fee:', formatEther(listingFeeETH), 'ETH')
+  // Check if service is ready
+  isReady() {
+    return !!(this.provider && this.signer && this.contract && this.account)
+  }
 
-      // Send transaction
-      const { request } = await this.publicClient.simulateContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'payListingFee',
-        account: this.walletClient.account,
-        value: listingFeeETH
-      })
+  // Get game ID as bytes32
+  getGameIdBytes32(gameId) {
+    return ethers.id(gameId)
+  }
 
-      const hash = await this.walletClient.writeContract(request)
-      console.log('📝 Listing fee tx:', hash)
-
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-
+  // Get listing fee in ETH
+  async getListingFee() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      const listingFeeUSD = await this.contract.listingFeeUSD()
+      const ethAmount = await this.contract.getETHAmount(listingFeeUSD)
+      
       return {
         success: true,
-        transactionHash: hash,
+        fee: ethAmount,
+        feeFormatted: ethers.formatEther(ethAmount)
+      }
+    } catch (error) {
+      console.error('❌ Error getting listing fee:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Pay listing fee
+  async payListingFee() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
+    }
+    
+    try {
+      const feeResult = await this.getListingFee()
+      if (!feeResult.success) {
+        return feeResult
+      }
+
+      console.log('💰 Listing fee:', feeResult.feeFormatted, 'ETH')
+      
+      const tx = await this.contract.payListingFee({ value: feeResult.fee })
+      console.log('📝 Listing fee tx:', tx.hash)
+      
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        transactionHash: tx.hash,
         receipt
       }
     } catch (error) {
@@ -192,39 +197,30 @@ class CleanContractService {
   // Approve NFT for deposit
   async approveNFT(nftContract, tokenId) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
+    
     try {
+      // Create NFT contract instance
+      const nftContractInstance = new ethers.Contract(nftContract, NFT_ABI, this.signer)
+      
       // Check current approval
-      const currentApproval = await this.publicClient.readContract({
-        address: nftContract,
-        abi: NFT_ABI,
-        functionName: 'getApproved',
-        args: [BigInt(tokenId)]
-      })
-
-      if (currentApproval?.toLowerCase() === this.contractAddress.toLowerCase()) {
+      const currentApproval = await nftContractInstance.getApproved(tokenId)
+      
+      if (currentApproval.toLowerCase() === this.contractAddress.toLowerCase()) {
         console.log('✅ NFT already approved')
         return { success: true, alreadyApproved: true }
       }
 
       // Approve
-      const { request } = await this.publicClient.simulateContract({
-        address: nftContract,
-        abi: NFT_ABI,
-        functionName: 'approve',
-        args: [this.contractAddress, BigInt(tokenId)],
-        account: this.walletClient.account
-      })
+      const tx = await nftContractInstance.approve(this.contractAddress, tokenId)
+      console.log('🔐 NFT approval tx:', tx.hash)
 
-      const hash = await this.walletClient.writeContract(request)
-      console.log('🔐 NFT approval tx:', hash)
-
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await tx.wait()
 
       return {
         success: true,
-        transactionHash: hash,
+        transactionHash: tx.hash,
         receipt
       }
     } catch (error) {
@@ -239,8 +235,9 @@ class CleanContractService {
   // Deposit NFT (player 1)
   async depositNFT(gameId, nftContract, tokenId) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
+    
     try {
       // First approve if needed
       const approvalResult = await this.approveNFT(nftContract, tokenId)
@@ -251,34 +248,20 @@ class CleanContractService {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
 
       // Check if can deposit
-      const canDeposit = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'canDeposit',
-        args: [gameIdBytes32]
-      })
-
+      const canDeposit = await this.contract.canDeposit(gameIdBytes32)
       if (!canDeposit) {
         throw new Error('Cannot deposit - game expired or already completed')
       }
 
       // Deposit NFT
-      const { request } = await this.publicClient.simulateContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'depositNFT',
-        args: [gameIdBytes32],
-        account: this.walletClient.account
-      })
+      const tx = await this.contract.depositNFT(gameIdBytes32)
+      console.log('🎮 NFT deposit tx:', tx.hash)
 
-      const hash = await this.walletClient.writeContract(request)
-      console.log('🎮 NFT deposit tx:', hash)
-
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await tx.wait()
 
       return {
         success: true,
-        transactionHash: hash,
+        transactionHash: tx.hash,
         receipt
       }
     } catch (error) {
@@ -293,52 +276,33 @@ class CleanContractService {
   // Deposit ETH (player 2)
   async depositETH(gameId, priceUSD) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
+    
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
 
       // Check if can deposit
-      const canDeposit = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'canDeposit',
-        args: [gameIdBytes32]
-      })
-
+      const canDeposit = await this.contract.canDeposit(gameIdBytes32)
       if (!canDeposit) {
         throw new Error('Cannot deposit - game expired or already completed')
       }
 
       // Get ETH amount
-      const priceIn6Decimals = BigInt(Math.floor(priceUSD * 1000000))
-      const ethAmount = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'getETHAmount',
-        args: [priceIn6Decimals]
-      })
+      const priceIn6Decimals = ethers.parseUnits(priceUSD.toString(), 6)
+      const ethAmount = await this.contract.getETHAmount(priceIn6Decimals)
 
-      console.log('💰 Depositing:', formatEther(ethAmount), 'ETH')
+      console.log('💰 Depositing:', ethers.formatEther(ethAmount), 'ETH')
 
       // Deposit ETH
-      const { request } = await this.publicClient.simulateContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'depositETH',
-        args: [gameIdBytes32],
-        account: this.walletClient.account,
-        value: ethAmount
-      })
+      const tx = await this.contract.depositETH(gameIdBytes32, { value: ethAmount })
+      console.log('💎 ETH deposit tx:', tx.hash)
 
-      const hash = await this.walletClient.writeContract(request)
-      console.log('💎 ETH deposit tx:', hash)
-
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await tx.wait()
 
       return {
         success: true,
-        transactionHash: hash,
+        transactionHash: tx.hash,
         receipt
       }
     } catch (error) {
@@ -353,54 +317,63 @@ class CleanContractService {
   // Deposit USDC (player 2)
   async depositUSDC(gameId, usdcAmount, usdcTokenAddress) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
+    
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
       // Check if can deposit
-      const canDeposit = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'canDeposit',
-        args: [gameIdBytes32]
-      })
+      const canDeposit = await this.contract.canDeposit(gameIdBytes32)
       if (!canDeposit) {
         throw new Error('Cannot deposit - game expired or already completed')
       }
-      // Approve USDC if needed
+
+      // USDC ABI for approval
       const ERC20_ABI = [
-        { name: 'approve', type: 'function', stateMutability: 'nonpayable', inputs: [ { name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' } ], outputs: [] },
-        { name: 'allowance', type: 'function', stateMutability: 'view', inputs: [ { name: 'owner', type: 'address' }, { name: 'spender', type: 'address' } ], outputs: [ { name: '', type: 'uint256' } ] }
+        {
+          name: 'approve',
+          type: 'function',
+          stateMutability: 'nonpayable',
+          inputs: [
+            { name: 'spender', type: 'address' },
+            { name: 'amount', type: 'uint256' }
+          ],
+          outputs: []
+        },
+        {
+          name: 'allowance',
+          type: 'function',
+          stateMutability: 'view',
+          inputs: [
+            { name: 'owner', type: 'address' },
+            { name: 'spender', type: 'address' }
+          ],
+          outputs: [{ name: '', type: 'uint256' }]
+        }
       ]
-      const allowance = await this.publicClient.readContract({
-        address: usdcTokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'allowance',
-        args: [this.walletClient.account.address, this.contractAddress]
-      })
-      if (BigInt(allowance) < BigInt(usdcAmount)) {
-        const { request } = await this.publicClient.simulateContract({
-          address: usdcTokenAddress,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [this.contractAddress, usdcAmount],
-          account: this.walletClient.account
-        })
-        await this.walletClient.writeContract(request)
+
+      // Create USDC contract instance
+      const usdcContract = new ethers.Contract(usdcTokenAddress, ERC20_ABI, this.signer)
+      
+      // Check allowance
+      const allowance = await usdcContract.allowance(this.account, this.contractAddress)
+      
+      if (allowance < usdcAmount) {
+        // Approve USDC
+        const approveTx = await usdcContract.approve(this.contractAddress, usdcAmount)
+        await approveTx.wait()
       }
+
       // Deposit USDC
-      const { request } = await this.publicClient.simulateContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'depositUSDC',
-        args: [gameIdBytes32, usdcAmount],
-        account: this.walletClient.account
-      })
-      const hash = await this.walletClient.writeContract(request)
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const tx = await this.contract.depositUSDC(gameIdBytes32, usdcAmount)
+      console.log('💎 USDC deposit tx:', tx.hash)
+
+      const receipt = await tx.wait()
+
       return {
         success: true,
-        transactionHash: hash,
+        transactionHash: tx.hash,
         receipt
       }
     } catch (error) {
@@ -412,30 +385,23 @@ class CleanContractService {
     }
   }
 
-  // Reclaim assets if timeout
+  // Reclaim assets when game is cancelled or expired
   async reclaimAssets(gameId) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
+    
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const tx = await this.contract.reclaimAssets(gameIdBytes32)
+      console.log('🔄 Reclaim assets tx:', tx.hash)
 
-      const { request } = await this.publicClient.simulateContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'reclaimAssets',
-        args: [gameIdBytes32],
-        account: this.walletClient.account
-      })
-
-      const hash = await this.walletClient.writeContract(request)
-      console.log('♻️ Reclaim assets tx:', hash)
-
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await tx.wait()
 
       return {
         success: true,
-        transactionHash: hash,
+        transactionHash: tx.hash,
         receipt
       }
     } catch (error) {
@@ -447,77 +413,41 @@ class CleanContractService {
     }
   }
 
-  // Get game state
-  async getGameState(gameId) {
+  // Get game info from contract
+  async getGameInfo(gameId) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
+      return { success: false, error: 'Contract service not initialized' }
     }
+    
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
-
-      const game = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'games',
-        args: [gameIdBytes32]
-      })
-
+      const gameInfo = await this.contract.games(gameIdBytes32)
+      
       return {
         success: true,
-        game: {
-          player1: game[0],
-          player2: game[1],
-          nftContract: game[2],
-          tokenId: game[3].toString(),
-          ethAmount: game[4].toString(),
-          depositTime: new Date(Number(game[5]) * 1000),
-          player1Deposited: game[6],
-          player2Deposited: game[7],
-          completed: game[8],
-          winner: game[9]
+        gameInfo: {
+          player1: gameInfo.player1,
+          player2: gameInfo.player2,
+          nftContract: gameInfo.nftContract,
+          tokenId: gameInfo.tokenId.toString(),
+          ethAmount: gameInfo.ethAmount.toString(),
+          depositTime: gameInfo.depositTime.toString(),
+          player1Deposited: gameInfo.player1Deposited,
+          player2Deposited: gameInfo.player2Deposited,
+          completed: gameInfo.completed,
+          winner: gameInfo.winner
         }
       }
     } catch (error) {
-      console.error('❌ Error getting game state:', error)
+      console.error('❌ Error getting game info:', error)
       return {
         success: false,
         error: error.message
       }
     }
   }
-
-  // Get ETH price for USD amount
-  async getETHAmount(usdAmount) {
-    if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' };
-    }
-    try {
-      const priceIn6Decimals = BigInt(Math.floor(usdAmount * 1000000))
-      const ethAmount = await this.publicClient.readContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'getETHAmount',
-        args: [priceIn6Decimals]
-      })
-      
-      return {
-        success: true,
-        ethAmount: formatEther(ethAmount),
-        ethAmountWei: ethAmount
-      }
-    } catch (error) {
-      console.error('❌ Error getting ETH amount:', error)
-      // Fallback calculation
-      const ethPrice = 3000
-      const ethAmount = usdAmount / ethPrice
-      return {
-        success: true,
-        ethAmount: ethAmount.toFixed(18),
-        ethAmountWei: parseEther(ethAmount.toFixed(18)),
-        fallback: true
-      }
-    }
-  }
 }
 
-export default new CleanContractService() 
+// Export singleton instance
+const contractService = new CleanContractService()
+export default contractService 
