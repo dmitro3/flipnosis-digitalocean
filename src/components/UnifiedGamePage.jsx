@@ -417,6 +417,17 @@ const UnifiedGamePage = () => {
         // Reload game data to reflect the accepted offer
         loadGameData()
         break
+      case 'offer_accepted':
+        console.log('✅ Offer accepted! Navigating to asset deposit screen...', data)
+        showSuccess('Offer accepted! Redirecting to game...')
+        // Navigate to the game page with the new game ID
+        if (data.gameId) {
+          navigate(`/game/${data.gameId}`)
+        } else {
+          // Fallback: reload game data if already on the right page
+          loadGameData()
+        }
+        break
       case 'nft_offer_rejected':
         console.log('❌ NFT offer rejected:', data.offer)
         showInfo('NFT offer was rejected')
