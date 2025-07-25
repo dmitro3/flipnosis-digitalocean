@@ -668,23 +668,23 @@ app.get('/health', (req, res) => {
        const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
        const blockchainGameId = ethers.id(gameId)
        
-       // Create game record with creator already deposited
-       await new Promise((resolve, reject) => {
-         db.run(`
-           INSERT INTO games (
-             id, listing_id, blockchain_game_id, creator, challenger,
-             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-             final_price, coin_data, status, creator_deposited, challenger_deposited
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         `, [
-           gameId, listingId, blockchainGameId, creator, '', // No challenger yet
-           nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-           asking_price, JSON.stringify(coin_data), 'awaiting_challenger', true, false // Creator deposited
-         ], function(err) {
-           if (err) reject(err)
-           else resolve()
-         })
-       })
+               // Create game record (NFT will be deposited separately)
+        await new Promise((resolve, reject) => {
+          db.run(`
+            INSERT INTO games (
+              id, listing_id, blockchain_game_id, creator, challenger,
+              nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+              final_price, coin_data, status, creator_deposited, challenger_deposited
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            gameId, listingId, blockchainGameId, creator, '', // No challenger yet
+            nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+            asking_price, JSON.stringify(coin_data), 'awaiting_challenger', false, false // NFT will be deposited after
+          ], function(err) {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
        
        // Initialize game on blockchain
        console.log('🔗 Initializing game on blockchain during listing creation')
@@ -1101,34 +1101,46 @@ app.get('/api/games', (req, res) => {
           return res.status(500).json({ error: 'Database error' })
         }
         
-        // Check if both deposited OR if it's new flow and challenger deposited
-        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
-          const bothDeposited = updatedGame.creator_deposited && updatedGame.challenger_deposited
-          const newFlowChallengerDeposited = updatedGame.status === 'waiting_challenger_deposit' && !isCreator && updatedGame.challenger_deposited
-          
-          if (bothDeposited || newFlowChallengerDeposited) {
-            // Start game
-            db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
-            
-            console.log(`🎮 Game starting: ${gameId} (${bothDeposited ? 'both deposited' : 'new flow - challenger deposited'})`)
-            
-            // Notify players
-            broadcastToRoom(gameId, {
-              type: 'game_started',
-              gameId,
-              message: newFlowChallengerDeposited ? 'Challenger deposit complete - game starting!' : 'Both players deposited - game starting!'
-            })
-          } else {
-            // Notify deposit confirmed
-            broadcastToRoom(gameId, {
-              type: 'deposit_confirmed',
-              player,
-              assetType
-            })
-          }
-          
-          res.json({ success: true })
-        })
+                 // Check if both deposited OR if it's new flow and challenger deposited
+         db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
+           const bothDeposited = updatedGame.creator_deposited && updatedGame.challenger_deposited
+           const newFlowChallengerDeposited = updatedGame.status === 'waiting_challenger_deposit' && !isCreator && updatedGame.challenger_deposited
+           const newFlowCreatorDeposited = updatedGame.status === 'awaiting_challenger' && isCreator && updatedGame.creator_deposited
+           
+           if (bothDeposited || newFlowChallengerDeposited) {
+             // Start game
+             db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
+             
+             console.log(`🎮 Game starting: ${gameId} (${bothDeposited ? 'both deposited' : 'new flow - challenger deposited'})`)
+             
+             // Notify players
+             broadcastToRoom(gameId, {
+               type: 'game_started',
+               gameId,
+               message: newFlowChallengerDeposited ? 'Challenger deposit complete - game starting!' : 'Both players deposited - game starting!'
+             })
+           } else if (newFlowCreatorDeposited) {
+             // Creator deposited in new flow - game is ready for offers
+             console.log(`🎯 Creator deposited NFT - game ready for offers: ${gameId}`)
+             
+             // Notify that deposit was confirmed
+             broadcastToRoom(gameId, {
+               type: 'deposit_confirmed',
+               player,
+               assetType,
+               message: 'NFT deposited! Game is ready for offers.'
+             })
+           } else {
+             // Notify deposit confirmed (old flow)
+             broadcastToRoom(gameId, {
+               type: 'deposit_confirmed',
+               player,
+               assetType
+             })
+           }
+           
+           res.json({ success: true })
+         })
       })
     })
   })

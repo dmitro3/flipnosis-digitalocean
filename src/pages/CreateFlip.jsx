@@ -133,17 +133,8 @@ const CreateFlip = () => {
       const feeResult = await contractService.payListingFee()
       if (!feeResult.success) throw new Error(feeResult.error)
       
-      // Step 2: Deposit NFT into contract (new flow - immediate game creation)
-      showInfo('Depositing NFT into smart contract...')
-      const depositResult = await contractService.depositNFT(
-        selectedNFT.contractAddress, 
-        selectedNFT.tokenId,
-        'temp_game_id' // Temporary - will be replaced by server
-      )
-      if (!depositResult.success) throw new Error(depositResult.error)
-      
-      // Step 3: Create listing in database (which will create game on-chain)
-      showInfo('Creating game on blockchain...')
+      // Step 2: Create listing and game on blockchain (server will handle NFT deposit)
+      showInfo('Creating game and depositing NFT...')
       const response = await fetch(getApiUrl('/listings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,37 +154,35 @@ const CreateFlip = () => {
             isCustom: selectedCoin.isCustom
           },
           immediate_game_creation: true, // Flag for new flow
-          nft_deposited: true // NFT already deposited
+          nft_deposited: false // NFT will be deposited after game creation
         })
       })
       if (!response.ok) throw new Error('Failed to create listing')
       const result = await response.json()
       
-      // Step 4: Pre-load additional NFTs if option selected (for future games)
-      if (preloadNFT) {
-        showInfo('Pre-loading NFT for future instant games...')
-        const preloadResponse = await fetch(getApiUrl('/nft/preload'), {
+      // Step 3: Deposit NFT into the created game
+      if (result.gameId) {
+        showInfo('Depositing NFT into smart contract...')
+        const depositResult = await contractService.depositNFT(
+          selectedNFT.contractAddress, 
+          selectedNFT.tokenId,
+          result.gameId
+        )
+        if (!depositResult.success) throw new Error(depositResult.error)
+        
+        // Notify server that NFT is deposited
+        const confirmResponse = await fetch(getApiUrl(`/games/${result.gameId}/deposit-confirmed`), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            player_address: address,
-            nft_contract: selectedNFT.contractAddress,
-            nft_token_id: selectedNFT.tokenId,
-            nft_name: selectedNFT.name,
-            nft_image: selectedNFT.image,
-            nft_collection: selectedNFT.collection
+            player: address,
+            assetType: 'nft'
           })
         })
-        
-        if (preloadResponse.ok) {
-          showSuccess('Game created with NFT deposited! Additional NFT ready for instant future games!')
-        } else {
-          showSuccess('Game created successfully with NFT deposited!')
-        }
-      } else {
-        showSuccess('Game created successfully with NFT deposited!')
+        if (!confirmResponse.ok) throw new Error('Failed to confirm NFT deposit')
       }
       
+      showSuccess('Game created successfully with NFT deposited!')
       navigate(`/game/${result.listingId}`)
     } catch (error) {
       console.error('Error creating listing:', error)
@@ -231,55 +220,7 @@ const CreateFlip = () => {
                 </NFTPreview>
               </FormGroup>
 
-              {/* Pre-load NFT Option */}
-              {selectedNFT && (
-                <FormGroup>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <input
-                      type="checkbox"
-                      id="preloadNFT"
-                      checked={preloadNFT}
-                      onChange={(e) => setPreloadNFT(e.target.checked)}
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        cursor: 'pointer'
-                      }}
-                    />
-                    <label 
-                      htmlFor="preloadNFT" 
-                      style={{ 
-                        cursor: 'pointer',
-                        color: theme.colors.neonGreen,
-                        fontWeight: 'bold',
-                        fontSize: '1rem'
-                      }}
-                    >
-                      Pre-load NFT for instant games ⚡
-                    </label>
-                    <span 
-                      style={{ 
-                        color: theme.colors.neonBlue,
-                        cursor: 'pointer',
-                        fontSize: '1.2rem',
-                        userSelect: 'none'
-                      }}
-                      title="Pre-loading deposits your NFT ahead of time so when someone accepts an offer, the game starts instantly without waiting for deposits!"
-                    >
-                      ℹ️
-                    </span>
-                  </div>
-                  <p style={{ 
-                    color: theme.colors.textSecondary, 
-                    fontSize: '0.85rem', 
-                    margin: 0,
-                    fontStyle: 'italic',
-                    lineHeight: 1.4
-                  }}>
-                    Deposits your NFT now so when offers are accepted, games start instantly!
-                  </p>
-                </FormGroup>
-              )}
+
 
               {/* Game Type */}
               <FormGroup>
