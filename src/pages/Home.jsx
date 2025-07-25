@@ -253,6 +253,36 @@ const Home = () => {
     return () => clearInterval(interval)
   }, [])
 
+  // Listen for global WebSocket messages for real-time updates
+  useEffect(() => {
+    const handleWebSocketMessage = (event) => {
+      const data = event.detail
+      console.log('🏠 Home page received WebSocket message:', data.type, data)
+      
+      switch (data.type) {
+        case 'new_offer':
+          console.log('🔔 New offer detected, refreshing listings')
+          // Refresh data to show updated offer counts
+          fetchData()
+          break
+        case 'offer_accepted':
+          console.log('✅ Offer accepted, refreshing listings')
+          fetchData()
+          break
+        case 'listing_converted_to_game':
+          console.log('🎮 Listing converted to game, refreshing')
+          fetchData()
+          break
+      }
+    }
+
+    window.addEventListener('websocketMessage', handleWebSocketMessage)
+    
+    return () => {
+      window.removeEventListener('websocketMessage', handleWebSocketMessage)
+    }
+  }, [])
+
   // Combine and filter games/listings
   const getAllItems = () => {
     const allItems = [
@@ -388,6 +418,15 @@ const Home = () => {
         offerData,
         flip
       })
+
+      // Connect to WebSocket and join listing room before making offer
+      if (window.socket && window.socket.readyState === WebSocket.OPEN) {
+        console.log('📡 Joining listing room for real-time updates:', flip.listingId)
+        window.socket.send(JSON.stringify({
+          type: 'join_room',
+          roomId: flip.listingId
+        }))
+      }
 
       const response = await fetch(`${baseUrl}/api/listings/${flip.listingId}/offers`, {
         method: 'POST',

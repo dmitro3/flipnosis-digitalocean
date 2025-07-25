@@ -18,7 +18,7 @@ const wss = new WebSocket.Server({ server })
 const PORT = process.env.PORT || 3001
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, 'flipz-clean.db')
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x807885ec42b9A727C4763d8F929f2ac132eDF6F0'
-const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY // Private key for contract owner
+const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY // Private key for contract owner
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
 // Initialize ethers
@@ -462,14 +462,27 @@ function handleDisconnect(socket) {
 
 function broadcastToRoom(roomId, message) {
   const room = rooms.get(roomId)
-  if (!room) return
+  if (!room) {
+    console.log(`⚠️ No room found for broadcast: ${roomId}`)
+    return
+  }
   
+  console.log(`📢 Broadcasting to room ${roomId}:`, {
+    messageType: message.type,
+    roomSize: room.size,
+    connectedClients: Array.from(wss.clients).length
+  })
+  
+  let successfulBroadcasts = 0
   room.forEach(socketId => {
     const client = Array.from(wss.clients).find(c => c.id === socketId)
     if (client && client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(message))
+      successfulBroadcasts++
     }
   })
+  
+  console.log(`✅ Successfully broadcasted to ${successfulBroadcasts}/${room.size} clients in room ${roomId}`)
 }
 
 function sendToUser(address, message) {
@@ -489,10 +502,10 @@ const CONTRACT_ABI = [
 async function initializeGameOnChain(gameId, player1, player2, nftContract, tokenId, priceUSD) {
   console.log('🔗 Initializing game on blockchain:', { gameId, player1, player2, nftContract, tokenId, priceUSD })
   
-  if (!contractOwnerWallet) {
-    console.error('❌ Contract owner wallet not configured')
-    console.error('❌ Please check WALLET_PRIVATE_KEY environment variable')
-    return { success: false, error: 'Contract wallet not configured' }
+     if (!contractOwnerWallet) {
+     console.error('❌ Contract owner wallet not configured')
+     console.error('❌ Please check CONTRACT_OWNER_KEY or PRIVATE_KEY environment variable')
+     return { success: false, error: 'Contract wallet not configured' }
   }
   
   if (!CONTRACT_ADDRESS) {
