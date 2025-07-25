@@ -6,26 +6,29 @@ import { Button } from '../styles/components'
 
 const DatabaseAdmin = () => {
   const [games, setGames] = useState([])
+  const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(false)
   const [showAdmin, setShowAdmin] = useState(false)
+  const [activeView, setActiveView] = useState('all')
   const { address } = useWallet()
   const { showSuccess, showError } = useToast()
   
   const API_URL = 'https://cryptoflipz2-production.up.railway.app'
   
-  const fetchGames = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true)
       const response = await fetch(`${API_URL}/api/admin/games`)
       if (response.ok) {
         const data = await response.json()
         setGames(data.games || [])
+        setListings(data.listings || [])
       } else {
-        throw new Error('Failed to fetch games')
+        throw new Error('Failed to fetch admin data')
       }
     } catch (error) {
-      console.error('Error fetching games:', error)
-      showError('Failed to load games')
+      console.error('Error fetching admin data:', error)
+      showError('Failed to load admin data')
     } finally {
       setLoading(false)
     }
@@ -91,23 +94,28 @@ const DatabaseAdmin = () => {
     }
   }
   
-  const getMyGames = async () => {
+  const getMyData = async () => {
     if (!address) return
     
     try {
-      const response = await fetch(`${API_URL}/api/games/creator/${address}`)
-      if (response.ok) {
-        const myGames = await response.json()
+      // Get user's games
+      const gamesResponse = await fetch(`${API_URL}/api/users/${address}/games`)
+      const listingsResponse = await fetch(`${API_URL}/api/users/${address}/listings`)
+      
+      if (gamesResponse.ok && listingsResponse.ok) {
+        const myGames = await gamesResponse.json()
+        const myListings = await listingsResponse.json()
         setGames(myGames)
+        setListings(myListings)
       }
     } catch (error) {
-      showError('Failed to load your games')
+      showError('Failed to load your data')
     }
   }
   
   useEffect(() => {
     if (showAdmin) {
-      fetchGames()
+      fetchData()
     }
   }, [showAdmin])
   
@@ -175,9 +183,9 @@ const DatabaseAdmin = () => {
           </Button>
         </div>
         
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <Button 
-            onClick={fetchGames} 
+            onClick={fetchData} 
             disabled={loading}
             style={{ background: '#0088ff' }}
           >
@@ -185,11 +193,11 @@ const DatabaseAdmin = () => {
           </Button>
           
           <Button 
-            onClick={getMyGames}
+            onClick={getMyData}
             disabled={!address}
             style={{ background: '#00cc00' }}
           >
-            👤 My Games Only
+            👤 My Data Only
           </Button>
           
           <Button 
@@ -202,11 +210,30 @@ const DatabaseAdmin = () => {
           <Button 
             onClick={async () => {
               try {
+                const response = await fetch(`${API_URL}/api/admin/listings`, { method: 'DELETE' })
+                if (response.ok) {
+                  showSuccess('All listings cleared!')
+                  fetchData()
+                } else {
+                  showError('Failed to clear listings')
+                }
+              } catch (error) {
+                showError('Error: ' + error.message)
+              }
+            }}
+            style={{ background: '#ff6600' }}
+          >
+            🗑️ Clear All Listings
+          </Button>
+          
+          <Button 
+            onClick={async () => {
+              try {
                 const response = await fetch(`${API_URL}/api/debug/init`, { method: 'POST' })
                 const result = await response.json()
                 if (result.success) {
                   showSuccess('Database reinitialized!')
-                  fetchGames()
+                  fetchData()
                 } else {
                   showError('Failed to reinitialize database')
                 }
@@ -220,26 +247,368 @@ const DatabaseAdmin = () => {
           </Button>
         </div>
         
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+          <Button 
+            onClick={() => setActiveView('all')}
+            style={{ background: activeView === 'all' ? '#00FF41' : '#666' }}
+          >
+            📊 All Data
+          </Button>
+          <Button 
+            onClick={() => setActiveView('listings')}
+            style={{ background: activeView === 'listings' ? '#00FF41' : '#666' }}
+          >
+            📦 Listings ({listings.length})
+          </Button>
+          <Button 
+            onClick={() => setActiveView('games')}
+            style={{ background: activeView === 'games' ? '#00FF41' : '#666' }}
+          >
+            🎮 Games ({games.length})
+          </Button>
+        </div>
+        
         {loading ? (
           <p style={{ color: 'white' }}>Loading...</p>
         ) : (
           <div>
-            <h3 style={{ color: 'white', marginBottom: '1rem' }}>
-              Games in Database ({games.length})
-            </h3>
+            {activeView === 'all' && (
+              <>
+                <h3 style={{ color: 'white', marginBottom: '1rem' }}>
+                  All Database Items (Listings: {listings.length}, Games: {games.length})
+                </h3>
+                
+                <div style={{ 
+                  maxHeight: '60vh', 
+                  overflowY: 'auto',
+                  display: 'grid',
+                  gap: '1rem'
+                }}>
+                  {[...listings.map(l => ({...l, type: 'listing'})), ...games.map(g => ({...g, type: 'game'}))].length === 0 ? (
+                    <p style={{ color: theme.colors.textSecondary, textAlign: 'center', padding: '2rem' }}>
+                      No data found in database
+                    </p>
+                  ) : (
+                    [...listings.map(l => ({...l, type: 'listing'})), ...games.map(g => ({...g, type: 'game'}))].map(item => (
+                      <div key={`${item.type}-${item.id}`} style={{
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        padding: '1rem',
+                        borderRadius: '0.5rem',
+                        border: `1px solid ${item.type === 'listing' ? '#FFD700' : getStatusColor(item.status)}`,
+                        fontSize: '0.875rem'
+                      }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                          <div>
+                            <div style={{ color: 'white', fontWeight: 'bold' }}>
+                              {item.type === 'listing' ? '📦 Listing' : '🎮 Game'} #{item.id}
+                            </div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              Status: <span style={{ color: getStatusColor(item.status) }}>{item.status}</span>
+                            </div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              Created: {new Date(item.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div style={{ color: 'white', fontWeight: 'bold' }}>Players</div>
+                            <div style={{ color: theme.colors.neonPink }}>
+                              Creator: {formatAddress(item.creator)}
+                            </div>
+                            <div style={{ color: theme.colors.neonBlue }}>
+                              {item.type === 'listing' ? 'Waiting for offers' : `Challenger: ${formatAddress(item.challenger || item.joiner)}`}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div style={{ color: 'white', fontWeight: 'bold' }}>Details</div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              NFT: {item.nft_name || 'Unknown'}
+                            </div>
+                            <div style={{ color: theme.colors.neonYellow }}>
+                              Price: ${item.asking_price || item.final_price || item.price_usd}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          {item.type === 'listing' ? (
+                            <>
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    await fetch(`${API_URL}/api/admin/listings/${item.id}`, { method: 'DELETE' })
+                                    showSuccess('Listing deleted!')
+                                    fetchData()
+                                  } catch (error) {
+                                    showError('Error: ' + error.message)
+                                  }
+                                }}
+                                style={{ 
+                                  background: '#ff4444', 
+                                  color: 'white', 
+                                  padding: '0.25rem 0.75rem', 
+                                  border: 'none', 
+                                  borderRadius: '0.25rem', 
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                🗑️ Delete Listing
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    await fetch(`${API_URL}/api/admin/listings/${item.id}`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: 'open' })
+                                    })
+                                    showSuccess('Listing reopened!')
+                                    fetchData()
+                                  } catch (error) {
+                                    showError('Error: ' + error.message)
+                                  }
+                                }}
+                                style={{ 
+                                  background: '#00cc00', 
+                                  color: 'white', 
+                                  padding: '0.25rem 0.75rem', 
+                                  border: 'none', 
+                                  borderRadius: '0.25rem', 
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ↗️ Reopen
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button 
+                                onClick={() => deleteGame(item.id)}
+                                style={{ 
+                                  background: '#ff4444', 
+                                  color: 'white', 
+                                  padding: '0.25rem 0.75rem', 
+                                  border: 'none', 
+                                  borderRadius: '0.25rem', 
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                🗑️ Delete
+                              </button>
+                              
+                              <button 
+                                onClick={() => resetGameStatus(item.id, 'waiting_challenger_deposit')}
+                                style={{ 
+                                  background: '#ff8800', 
+                                  color: 'white', 
+                                  padding: '0.25rem 0.75rem', 
+                                  border: 'none', 
+                                  borderRadius: '0.25rem', 
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ⏳ Reset to Waiting
+                              </button>
+                              
+                              <button 
+                                onClick={() => resetGameStatus(item.id, 'cancelled')}
+                                style={{ 
+                                  background: '#666', 
+                                  color: 'white', 
+                                  padding: '0.25rem 0.75rem', 
+                                  border: 'none', 
+                                  borderRadius: '0.25rem', 
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ❌ Cancel
+                              </button>
+                            </>
+                          )}
+                          
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/game/${item.id}`)
+                              showSuccess(`${item.type === 'listing' ? 'Listing' : 'Game'} URL copied!`)
+                            }}
+                            style={{ 
+                              background: '#0088ff', 
+                              color: 'white', 
+                              padding: '0.25rem 0.75rem', 
+                              border: 'none', 
+                              borderRadius: '0.25rem', 
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🔗 Copy URL
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
             
-            <div style={{ 
-              maxHeight: '60vh', 
-              overflowY: 'auto',
-              display: 'grid',
-              gap: '1rem'
-            }}>
-              {games.length === 0 ? (
-                <p style={{ color: theme.colors.textSecondary, textAlign: 'center', padding: '2rem' }}>
-                  No games found in database
-                </p>
-              ) : (
-                games.map(game => (
+            {activeView === 'listings' && (
+              <>
+                <h3 style={{ color: 'white', marginBottom: '1rem' }}>
+                  Listings in Database ({listings.length})
+                </h3>
+                
+                <div style={{ 
+                  maxHeight: '60vh', 
+                  overflowY: 'auto',
+                  display: 'grid',
+                  gap: '1rem'
+                }}>
+                  {listings.length === 0 ? (
+                    <p style={{ color: theme.colors.textSecondary, textAlign: 'center', padding: '2rem' }}>
+                      No listings found in database
+                    </p>
+                  ) : (
+                    listings.map(listing => (
+                      <div key={listing.id} style={{
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        padding: '1rem',
+                        borderRadius: '0.5rem',
+                        border: `1px solid #FFD700`,
+                        fontSize: '0.875rem'
+                      }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                          <div>
+                            <div style={{ color: 'white', fontWeight: 'bold' }}>📦 Listing #{listing.id}</div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              Status: <span style={{ color: getStatusColor(listing.status) }}>{listing.status}</span>
+                            </div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              Created: {new Date(listing.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div style={{ color: 'white', fontWeight: 'bold' }}>Creator</div>
+                            <div style={{ color: theme.colors.neonPink }}>
+                              {formatAddress(listing.creator)}
+                            </div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              NFT: {listing.nft_name || 'Unknown'}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div style={{ color: 'white', fontWeight: 'bold' }}>Details</div>
+                            <div style={{ color: theme.colors.neonYellow }}>
+                              Price: ${listing.asking_price}
+                            </div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              Collection: {listing.nft_collection || 'Unknown'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button 
+                            onClick={async () => {
+                              if (!confirm('Delete this listing?')) return
+                              try {
+                                await fetch(`${API_URL}/api/admin/listings/${listing.id}`, { method: 'DELETE' })
+                                showSuccess('Listing deleted!')
+                                fetchData()
+                              } catch (error) {
+                                showError('Error: ' + error.message)
+                              }
+                            }}
+                            style={{ 
+                              background: '#ff4444', 
+                              color: 'white', 
+                              padding: '0.25rem 0.75rem', 
+                              border: 'none', 
+                              borderRadius: '0.25rem', 
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🗑️ Delete
+                          </button>
+                          
+                          <button 
+                            onClick={async () => {
+                              try {
+                                await fetch(`${API_URL}/api/admin/listings/${listing.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ status: 'open' })
+                                })
+                                showSuccess('Listing reopened!')
+                                fetchData()
+                              } catch (error) {
+                                showError('Error: ' + error.message)
+                              }
+                            }}
+                            style={{ 
+                              background: '#00cc00', 
+                              color: 'white', 
+                              padding: '0.25rem 0.75rem', 
+                              border: 'none', 
+                              borderRadius: '0.25rem', 
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ↗️ Reopen
+                          </button>
+                          
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/game/${listing.id}`)
+                              showSuccess('Listing URL copied!')
+                            }}
+                            style={{ 
+                              background: '#0088ff', 
+                              color: 'white', 
+                              padding: '0.25rem 0.75rem', 
+                              border: 'none', 
+                              borderRadius: '0.25rem', 
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🔗 Copy URL
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+            
+            {activeView === 'games' && (
+              <>
+                <h3 style={{ color: 'white', marginBottom: '1rem' }}>
+                  Games in Database ({games.length})
+                </h3>
+                
+                <div style={{ 
+                  maxHeight: '60vh', 
+                  overflowY: 'auto',
+                  display: 'grid',
+                  gap: '1rem'
+                }}>
+                  {games.length === 0 ? (
+                    <p style={{ color: theme.colors.textSecondary, textAlign: 'center', padding: '2rem' }}>
+                      No games found in database
+                    </p>
+                  ) : (
+                    games.map(game => (
                   <div key={game.id} style={{
                     background: 'rgba(0, 0, 0, 0.4)',
                     padding: '1rem',
@@ -260,26 +629,26 @@ const DatabaseAdmin = () => {
                       
                       <div>
                         <div style={{ color: 'white', fontWeight: 'bold' }}>Players</div>
-                        <div style={{ color: theme.colors.neonPink }}>
-                          Creator: {formatAddress(game.creator)}
-                        </div>
-                        <div style={{ color: theme.colors.neonBlue }}>
-                          Joiner: {formatAddress(game.joiner)}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div style={{ color: 'white', fontWeight: 'bold' }}>Game Info</div>
-                        <div style={{ color: theme.colors.textSecondary }}>
-                          NFT: {game.nft_name || 'Unknown'}
-                        </div>
-                        <div style={{ color: theme.colors.neonYellow }}>
-                          Price: ${game.price_usd}
-                        </div>
-                        <div style={{ color: theme.colors.textSecondary }}>
-                          Score: {game.creator_wins || 0} - {game.joiner_wins || 0}
-                        </div>
-                      </div>
+                                                    <div style={{ color: theme.colors.neonPink }}>
+                              Creator: {formatAddress(game.creator)}
+                            </div>
+                            <div style={{ color: theme.colors.neonBlue }}>
+                              Challenger: {formatAddress(game.challenger || game.joiner)}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div style={{ color: 'white', fontWeight: 'bold' }}>Game Info</div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              NFT: {game.nft_name || 'Unknown'}
+                            </div>
+                            <div style={{ color: theme.colors.neonYellow }}>
+                              Price: ${game.final_price || game.price_usd}
+                            </div>
+                            <div style={{ color: theme.colors.textSecondary }}>
+                              Deposits: {game.creator_deposited ? '✅' : '❌'} / {game.challenger_deposited ? '✅' : '❌'}
+                            </div>
+                          </div>
                     </div>
                     
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -298,20 +667,20 @@ const DatabaseAdmin = () => {
                         🗑️ Delete
                       </button>
                       
-                      <button 
-                        onClick={() => resetGameStatus(game.id, 'waiting')}
-                        style={{ 
-                          background: '#ff8800', 
-                          color: 'white', 
-                          padding: '0.25rem 0.75rem', 
-                          border: 'none', 
-                          borderRadius: '0.25rem', 
-                          fontSize: '0.75rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ⏳ Reset to Waiting
-                      </button>
+                                              <button 
+                          onClick={() => resetGameStatus(game.id, 'waiting_challenger_deposit')}
+                          style={{ 
+                            background: '#ff8800', 
+                            color: 'white', 
+                            padding: '0.25rem 0.75rem', 
+                            border: 'none', 
+                            borderRadius: '0.25rem', 
+                            fontSize: '0.75rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ⏳ Reset to Waiting
+                        </button>
                       
                       <button 
                         onClick={() => resetGameStatus(game.id, 'cancelled')}
@@ -352,11 +721,13 @@ const DatabaseAdmin = () => {
                 ))
               )}
             </div>
-          </div>
+          </>
         )}
       </div>
-    </div>
-  )
+    )}
+  </div>
+</div>
+)
 }
 
 export default DatabaseAdmin 

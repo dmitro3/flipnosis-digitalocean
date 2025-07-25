@@ -133,7 +133,7 @@ const CreateFlip = () => {
       const feeResult = await contractService.payListingFee()
       if (!feeResult.success) throw new Error(feeResult.error)
       
-      // Step 2: Create listing only (no game creation)
+      // Step 2: Create listing
       showInfo('Creating listing...')
       const response = await fetch(getApiUrl('/listings'), {
         method: 'POST',
@@ -152,13 +152,47 @@ const CreateFlip = () => {
             headsImage: selectedCoin.headsImage,
             tailsImage: selectedCoin.tailsImage,
             isCustom: selectedCoin.isCustom
-          }
+          },
+          with_nft_deposit: true // Flag to indicate we'll deposit NFT
         })
       })
       if (!response.ok) throw new Error('Failed to create listing')
       const result = await response.json()
       
-      showSuccess('Listing created successfully!')
+      // Step 3: Create game and deposit NFT
+      showInfo('Creating game and depositing NFT...')
+      const gameResponse = await fetch(getApiUrl(`/listings/${result.listingId}/create-game-with-nft`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creator: address
+        })
+      })
+      
+      if (!gameResponse.ok) throw new Error('Failed to create game')
+      const gameResult = await gameResponse.json()
+      
+      // Step 4: Deposit NFT into the game contract
+      showInfo('Depositing NFT into smart contract...')
+      const depositResult = await contractService.depositNFT(
+        gameResult.gameId,
+        selectedNFT.contractAddress, 
+        selectedNFT.tokenId
+      )
+      if (!depositResult.success) throw new Error(depositResult.error)
+      
+      // Step 5: Confirm NFT deposit to backend
+      const confirmResponse = await fetch(getApiUrl(`/games/${gameResult.gameId}/deposit-confirmed`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player: address,
+          assetType: 'nft'
+        })
+      })
+      if (!confirmResponse.ok) throw new Error('Failed to confirm NFT deposit')
+      
+      showSuccess('Flip created with NFT deposited!')
       navigate(`/game/${result.listingId}`)
     } catch (error) {
       console.error('Error creating listing:', error)

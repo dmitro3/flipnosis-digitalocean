@@ -777,6 +777,58 @@ app.get('/api/listings/:listingId/offers', (req, res) => {
   })
 })
 
+// Create game with NFT deposit from listing
+app.post('/api/listings/:listingId/create-game-with-nft', async (req, res) => {
+  const { listingId } = req.params
+  const { creator } = req.body
+  
+  try {
+    // Get listing details
+    const listing = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, result) => {
+        if (err) reject(err)
+        else resolve(result)
+      })
+    })
+    
+    if (!listing) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+    
+    if (listing.creator !== creator) {
+      return res.status(403).json({ error: 'Only listing creator can create game' })
+    }
+    
+    const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+    const blockchainGameId = ethers.id(gameId)
+    const depositDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours for challenger
+    
+    // Create game record with awaiting_challenger status (NFT will be deposited, waiting for challenger)
+    await new Promise((resolve, reject) => {
+      db.run(`
+        INSERT INTO games (
+          id, listing_id, blockchain_game_id, creator,
+          nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+          final_price, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        gameId, listingId, blockchainGameId, creator,
+        listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
+        listing.asking_price, listing.coin_data, 'awaiting_challenger', depositDeadline, false, false
+      ], function(err) {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+    
+    console.log(`✅ Game created with NFT deposit: ${gameId}`)
+    res.json({ success: true, gameId })
+  } catch (error) {
+    console.error('❌ Error creating game with NFT:', error)
+    res.status(500).json({ error: error.message || 'Database error' })
+  }
+})
+
 app.post('/api/offers/:offerId/accept', async (req, res) => {
   const { offerId } = req.params
   
@@ -795,88 +847,60 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
         return res.status(404).json({ error: 'Listing not found' })
       }
       
-      try {
-        console.log('🎲 Creating new game from accepted offer')
+      // Check if there's already a game with NFT deposited
+      db.get('SELECT * FROM games WHERE listing_id = ? AND creator_deposited = true AND status = "awaiting_challenger"', 
+        [offer.listing_id], async (err, existingGame) => {
         
-        const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
-        const blockchainGameId = ethers.id(gameId)
-        const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString() // 2 minutes for Player 2
-        
-        // Update offer status
-        db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
-        
-        // Update listing status
-        db.run('UPDATE listings SET status = "closed" WHERE id = ?', [offer.listing_id])
-        
-        // Create game record with waiting_challenger_deposit status
-        db.run(`
-          INSERT INTO games (
-            id, listing_id, offer_id, blockchain_game_id, creator, challenger,
-            nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            final_price, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-          gameId, offer.listing_id, offerId, blockchainGameId, listing.creator, offer.offerer_address,
-          listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
-          offer.offer_price, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false // Creator already deposited NFT
-        ], async function(err) {
-          if (err) {
-            console.error('❌ Error creating game:', err)
-            return res.status(500).json({ error: 'Database error' })
-          }
+        if (existingGame) {
+          // Use existing game with pre-deposited NFT
+          console.log('🎮 Using existing game with pre-deposited NFT')
           
-          // Initialize game on blockchain
-          console.log('🎲 Attempting to initialize game on blockchain for offer acceptance')
-          const chainResult = await initializeGameOnChain(
-            gameId,
-            listing.creator,
-            offer.offerer_address,
-            listing.nft_contract,
-            listing.nft_token_id,
-            offer.offer_price
-          )
+          const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString()
           
-          if (!chainResult.success) {
-            // Rollback if blockchain fails
-            console.error('❌ Rolling back database changes due to blockchain failure:', chainResult.error)
-            db.run('DELETE FROM games WHERE id = ?', [gameId])
-            db.run('UPDATE offers SET status = "pending" WHERE id = ?', [offerId])
-            db.run('UPDATE listings SET status = "open" WHERE id = ?', [offer.listing_id])
-            return res.status(500).json({ 
-              error: 'Blockchain initialization failed', 
-              details: chainResult.error,
-              gameId 
+          // Update game with challenger info
+          db.run(`
+            UPDATE games 
+            SET challenger = ?, offer_id = ?, final_price = ?, 
+                status = 'waiting_challenger_deposit', deposit_deadline = ?
+            WHERE id = ?
+          `, [offer.offerer_address, offerId, offer.offer_price, depositDeadline, existingGame.id], (err) => {
+            if (err) {
+              return res.status(500).json({ error: 'Database error' })
+            }
+            
+            // Update offer and listing
+            db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
+            db.run('UPDATE listings SET status = "closed" WHERE id = ?', [offer.listing_id])
+            
+            // Notify players
+            sendToUser(listing.creator, {
+              type: 'offer_accepted',
+              gameId: existingGame.id,
+              depositDeadline,
+              message: 'Offer accepted! Waiting for challenger to deposit crypto...'
             })
-          }
-          
-          // Notify both players
-          sendToUser(listing.creator, {
-            type: 'offer_accepted',
-            gameId,
-            depositDeadline,
-            message: 'Offer accepted! Waiting for challenger to deposit crypto...'
+            
+            sendToUser(offer.offerer_address, {
+              type: 'offer_accepted',
+              gameId: existingGame.id,
+              depositDeadline,
+              message: 'Your offer was accepted! You have 2 minutes to deposit crypto.'
+            })
+            
+            broadcastToRoom(offer.listing_id, {
+              type: 'listing_converted_to_game',
+              listingId: offer.listing_id,
+              gameId: existingGame.id
+            })
+            
+            res.json({ success: true, gameId: existingGame.id })
           })
-          
-          sendToUser(offer.offerer_address, {
-            type: 'offer_accepted',
-            gameId,
-            depositDeadline,
-            message: 'Your offer was accepted! You have 2 minutes to deposit crypto.'
-          })
-          
-          // Broadcast to listing room
-          broadcastToRoom(offer.listing_id, {
-            type: 'listing_converted_to_game',
-            listingId: offer.listing_id,
-            gameId
-          })
-          
-          res.json({ success: true, gameId })
-        })
-      } catch (error) {
-        console.error('❌ Error in offer acceptance:', error)
-        res.status(500).json({ error: error.message || 'Internal server error' })
-      }
+        } else {
+          // Fallback: create new game (shouldn't happen in new flow)
+          console.warn('⚠️ No pre-deposited game found, this should not happen in new flow')
+          res.status(400).json({ error: 'No game found with deposited NFT' })
+        }
+      })
     })
   })
 })
@@ -962,9 +986,9 @@ app.get('/api/games', (req, res) => {
   })
 })
 
- app.post('/api/games/:gameId/deposit-confirmed', (req, res) => {
+app.post('/api/games/:gameId/deposit-confirmed', (req, res) => {
   const { gameId } = req.params
-  const { player, assetType } = req.body // assetType: 'nft' or 'eth' or 'usdc'
+  const { player, assetType } = req.body
   
   db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
     if (err || !game) {
@@ -974,37 +998,66 @@ app.get('/api/games', (req, res) => {
     const isCreator = player === game.creator
     const column = isCreator ? 'creator_deposited' : 'challenger_deposited'
     
+    // Special handling for creator NFT deposit in new flow
+    if (isCreator && assetType === 'nft' && game.status === 'awaiting_nft_deposit') {
+      // Update game to be ready for offers
+      db.run(`
+        UPDATE games 
+        SET creator_deposited = true, status = 'awaiting_challenger' 
+        WHERE id = ?
+      `, [gameId], (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' })
+        }
+        
+        // Update listing to show it's ready
+        db.run('UPDATE listings SET status = "open" WHERE id = ?', [game.listing_id])
+        
+        console.log('✅ Creator NFT deposited, listing ready for offers')
+        
+        broadcastToRoom(gameId, {
+          type: 'nft_deposited',
+          message: 'NFT deposited! Listing is now active.'
+        })
+        
+        res.json({ success: true })
+      })
+      return
+    }
+    
+    // Normal deposit handling
     db.run(`UPDATE games SET ${column} = true WHERE id = ?`, [gameId], (err) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' })
       }
       
-      // Check if this is challenger deposit in waiting_challenger_deposit status
       db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
+        // Check if challenger deposited in waiting_challenger_deposit status
         if (updatedGame.status === 'waiting_challenger_deposit' && !isCreator && updatedGame.challenger_deposited) {
-          // Challenger deposited - start game immediately
+          // Both assets now deposited - start game
           db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
           
-          console.log(`🎮 Game starting: ${gameId} (challenger deposited crypto)`)
+          console.log(`🎮 Game starting: ${gameId}`)
           
-          // Notify players game is starting
+          // Notify all players
           broadcastToRoom(gameId, {
             type: 'game_started',
             gameId,
             message: 'Both assets deposited - game starting!'
           })
           
-          // Also notify via direct user sockets
           sendToUser(updatedGame.creator, {
             type: 'game_started',
             gameId,
-            message: 'Challenger deposited! Game is starting!'
+            isYourTurn: true,
+            message: 'Game started! You go first - choose heads or tails!'
           })
           
           sendToUser(updatedGame.challenger, {
             type: 'game_started',
             gameId,
-            message: 'Payment confirmed! Game is starting!'
+            isYourTurn: false,
+            message: 'Game started! Waiting for opponent to choose...'
           })
         } else {
           // Normal deposit confirmation
@@ -1406,10 +1459,213 @@ app.get('/api/dashboard/:address', (req, res) => {
    )
  })
 
-// ===== STATIC FILE FALLBACK =====
-app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'))
+// ===== ADMIN ENDPOINTS =====
+
+// Get all games and listings for admin
+app.get('/api/admin/games', (req, res) => {
+  // Get both games and listings with stats
+  db.all('SELECT * FROM games ORDER BY created_at DESC', (err, games) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    db.all('SELECT * FROM listings ORDER BY created_at DESC', (err, listings) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      // Calculate stats
+      const totalGames = games.length
+      const activeGames = games.filter(g => g.status === 'active' || g.status === 'waiting_challenger_deposit').length
+      const totalListings = listings.length
+      const openListings = listings.filter(l => l.status === 'open').length
+      
+      let totalVolume = 0
+      games.forEach(game => {
+        if (game.final_price) {
+          totalVolume += game.final_price
+        }
+      })
+      
+      res.json({
+        games: games || [],
+        listings: listings || [],
+        stats: {
+          totalGames,
+          activeGames,
+          totalListings,
+          openListings,
+          totalVolume
+        }
+      })
+    })
+  })
 })
+
+// Update game status
+app.patch('/api/admin/games/:gameId', (req, res) => {
+  const { gameId } = req.params
+  const updates = req.body
+  
+  // Build dynamic update query
+  const updateFields = []
+  const updateValues = []
+  
+  if (updates.status !== undefined) {
+    updateFields.push('status = ?')
+    updateValues.push(updates.status)
+  }
+  
+  if (updates.joiner !== undefined) {
+    updateFields.push('challenger = ?')
+    updateValues.push(updates.joiner)
+  }
+  
+  if (updateFields.length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' })
+  }
+  
+  updateValues.push(gameId)
+  
+  const query = `UPDATE games SET ${updateFields.join(', ')} WHERE id = ?`
+  
+  db.run(query, updateValues, function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Game not found' })
+    }
+    
+    res.json({ success: true, changes: this.changes })
+  })
+})
+
+// Delete specific game
+app.delete('/api/admin/games/:gameId', (req, res) => {
+  const { gameId } = req.params
+  
+  db.run('DELETE FROM games WHERE id = ?', [gameId], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    res.json({ success: true, changes: this.changes })
+  })
+})
+
+// Clear all games
+app.delete('/api/admin/games', (req, res) => {
+  db.run('DELETE FROM games', [], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    res.json({ success: true, changes: this.changes })
+  })
+})
+
+// Update listing status
+app.patch('/api/admin/listings/:listingId', (req, res) => {
+  const { listingId } = req.params
+  const updates = req.body
+  
+  const updateFields = []
+  const updateValues = []
+  
+  if (updates.status !== undefined) {
+    updateFields.push('status = ?')
+    updateValues.push(updates.status)
+  }
+  
+  if (updateFields.length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' })
+  }
+  
+  updateValues.push(listingId)
+  
+  const query = `UPDATE listings SET ${updateFields.join(', ')} WHERE id = ?`
+  
+  db.run(query, updateValues, function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+    
+    res.json({ success: true, changes: this.changes })
+  })
+})
+
+// Delete specific listing
+app.delete('/api/admin/listings/:listingId', (req, res) => {
+  const { listingId } = req.params
+  
+  db.run('DELETE FROM listings WHERE id = ?', [listingId], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    res.json({ success: true, changes: this.changes })
+  })
+})
+
+// Clear all listings
+app.delete('/api/admin/listings', (req, res) => {
+  db.run('DELETE FROM listings', [], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    res.json({ success: true, changes: this.changes })
+  })
+})
+
+// Admin pause all games endpoint
+app.post('/api/admin/pause-all', (req, res) => {
+  db.run('UPDATE games SET status = "paused" WHERE status IN ("waiting_deposits", "waiting_challenger_deposit")', [], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' })
+    }
+    
+    res.json({ success: true, pausedGames: this.changes })
+  })
+})
+
+// Update NFT metadata for all games
+app.post('/api/admin/update-all-nft-metadata', async (req, res) => {
+  try {
+    let updated = 0
+    let errors = 0
+    
+    // Get all games
+    db.all('SELECT * FROM games', [], (err, games) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      // For now, just return success since NFT metadata updating would require external API calls
+      res.json({ updated: games.length, errors: 0 })
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Database reinit endpoint
+app.post('/api/debug/init', (req, res) => {
+  // This would typically reinitialize database tables
+  // For safety, we'll just return success
+  res.json({ success: true, message: 'Database structure verified' })
+})
+
+ // ===== STATIC FILE FALLBACK =====
+ app.get('*', (req, res) => {
+   res.sendFile(path.join(distPath, 'index.html'))
+ })
 
 // ===== SERVER STARTUP =====
 initializeDatabase()

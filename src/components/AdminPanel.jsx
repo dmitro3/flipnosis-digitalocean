@@ -534,6 +534,8 @@ export default function AdminPanel() {
   const [stats, setStats] = useState({
     totalGames: 0,
     activeGames: 0,
+    totalListings: 0,
+    openListings: 0,
     totalVolume: 0,
     platformFees: 0,
     monthlyFees: 0,
@@ -543,7 +545,9 @@ export default function AdminPanel() {
   })
   
   const [games, setGames] = useState([])
+  const [listings, setListings] = useState([])
   const [filteredGames, setFilteredGames] = useState([])
+  const [filteredListings, setFilteredListings] = useState([])
   const [players, setPlayers] = useState([])
   const [settings, setSettings] = useState({
     platformFeePercent: 3.5,
@@ -590,31 +594,36 @@ export default function AdminPanel() {
   const loadData = async () => {
     setLoading(true)
     try {
-      // Load games from database
-      const gamesResponse = await fetch(`${API_URL}/api/admin/games`)
-      if (!gamesResponse.ok) throw new Error('Failed to load games')
+      // Load games and listings from database
+      const response = await fetch(`${API_URL}/api/admin/games`)
+      if (!response.ok) throw new Error('Failed to load admin data')
       
-      const data = await gamesResponse.json()
+      const data = await response.json()
+      
+      // Set games and listings
       setGames(data.games || [])
+      setListings(data.listings || [])
       
-      // Update stats
+      // Update stats from server response
       setStats(prev => ({
         ...prev,
         totalGames: data.stats?.totalGames || 0,
         activeGames: data.stats?.activeGames || 0,
-        totalVolume: data.stats?.totalVolume || 0
+        totalListings: data.stats?.totalListings || 0,
+        openListings: data.stats?.openListings || 0,
+        totalVolume: data.stats?.totalVolume || 0,
+        platformFees: (data.stats?.totalVolume || 0) * (settings.platformFeePercent / 100),
+        monthlyFees: 0 // Would need date filtering on server
       }))
+      
+      // Calculate player statistics
+      loadPlayerData([...data.games, ...data.listings])
       
       // Load blockchain data if contract service is initialized
       if (contractService.currentChain) {
         try {
-          // Get contract balance (if method exists)
           console.log('Contract service is initialized for:', contractService.currentChain)
-          
-          // Load contract settings
           await loadContractSettings()
-          
-          // You can add more blockchain queries here
         } catch (error) {
           console.error('Error loading blockchain data:', error)
         }
@@ -664,35 +673,53 @@ export default function AdminPanel() {
   }
   
   // Load player data
-  const loadPlayerData = async (gamesData) => {
+  const loadPlayerData = async (allData) => {
     const playerMap = new Map()
     
-    gamesData.forEach(game => {
-      // Process creator
-      if (!playerMap.has(game.creator)) {
-        playerMap.set(game.creator, {
-          address: game.creator,
-          gamesCreated: 0,
-          gamesWon: 0,
-          totalVolume: 0
-        })
-      }
-      const creator = playerMap.get(game.creator)
-      creator.gamesCreated++
-      creator.totalVolume += game.price_usd || 0
+    allData.forEach(item => {
+      // Handle both games and listings
+      const isGame = item.challenger !== undefined || item.joiner !== undefined
+      const price = item.final_price || item.asking_price || item.price_usd || 0
       
-      // Process joiner
-      if (game.joiner && !playerMap.has(game.joiner)) {
-        playerMap.set(game.joiner, {
-          address: game.joiner,
+      // Process creator
+      if (!playerMap.has(item.creator)) {
+        playerMap.set(item.creator, {
+          address: item.creator,
           gamesCreated: 0,
+          listingsCreated: 0,
           gamesWon: 0,
           totalVolume: 0
         })
       }
-      if (game.joiner) {
-        const joiner = playerMap.get(game.joiner)
-        joiner.totalVolume += game.price_usd || 0
+      const creator = playerMap.get(item.creator)
+      
+      if (isGame) {
+        creator.gamesCreated++
+        if (item.winner === item.creator) {
+          creator.gamesWon++
+        }
+      } else {
+        creator.listingsCreated++
+      }
+      creator.totalVolume += price
+      
+      // Process challenger/joiner for games
+      const participant = item.challenger || item.joiner
+      if (participant && !playerMap.has(participant)) {
+        playerMap.set(participant, {
+          address: participant,
+          gamesCreated: 0,
+          listingsCreated: 0,
+          gamesWon: 0,
+          totalVolume: 0
+        })
+      }
+      if (participant) {
+        const joiner = playerMap.get(participant)
+        joiner.totalVolume += price
+        if (item.winner === participant) {
+          joiner.gamesWon++
+        }
       }
     })
     
@@ -1417,22 +1444,35 @@ export default function AdminPanel() {
   // Get status color
   const getStatusColor = (status) => {
     switch(status) {
+      case 'open': return '#00FF41'
       case 'active': return '#00FF41'
+      case 'waiting_challenger_deposit': return '#FFD700'
+      case 'waiting_deposits': return '#FFA500'
       case 'completed': return '#FF6B35'
       case 'cancelled': return '#FF4444'
+      case 'closed': return '#666'
+      case 'paused': return '#800080'
       default: return '#666'
     }
   }
   
-  // Filter games
+  // Filter games and listings
   useEffect(() => {
-    const filtered = games.filter(game => 
+    const filteredGamesResult = games.filter(game => 
       game.id.toString().includes(searchQuery) ||
       game.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (game.challenger && game.challenger.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (game.joiner && game.joiner.toLowerCase().includes(searchQuery.toLowerCase()))
     )
-    setFilteredGames(filtered)
-  }, [games, searchQuery])
+    setFilteredGames(filteredGamesResult)
+    
+    const filteredListingsResult = listings.filter(listing => 
+      listing.id.toString().includes(searchQuery) ||
+      listing.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (listing.nft_name && listing.nft_name.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    setFilteredListings(filteredListingsResult)
+  }, [games, listings, searchQuery])
   
   // Chain selector component
   const ChainSelector = () => (
@@ -1481,6 +1521,13 @@ export default function AdminPanel() {
               Overview
             </Tab>
             <Tab 
+              active={activeTab === 'listings'} 
+              onClick={() => setActiveTab('listings')}
+            >
+              <Package size={20} />
+              Listings
+            </Tab>
+            <Tab 
               active={activeTab === 'games'} 
               onClick={() => setActiveTab('games')}
             >
@@ -1521,6 +1568,18 @@ export default function AdminPanel() {
             {activeTab === 'overview' && (
               <div>
                 <StatsGrid>
+                  <StatCard>
+                    <StatHeader>
+                      <StatIcon>
+                        <Package size={24} />
+                      </StatIcon>
+                      <div>
+                        <StatValue>{stats.totalListings}</StatValue>
+                        <StatLabel>Total Listings</StatLabel>
+                      </div>
+                    </StatHeader>
+                  </StatCard>
+                  
                   <StatCard>
                     <StatHeader>
                       <StatIcon>
@@ -1568,26 +1627,182 @@ export default function AdminPanel() {
                       </div>
                     </StatHeader>
                   </StatCard>
+                  
+                  <StatCard>
+                    <StatHeader>
+                      <StatIcon>
+                        <Zap size={24} />
+                      </StatIcon>
+                      <div>
+                        <StatValue>{stats.openListings}</StatValue>
+                        <StatLabel>Open Listings</StatLabel>
+                      </div>
+                    </StatHeader>
+                  </StatCard>
                 </StatsGrid>
                 
                 <div style={{ marginTop: '2rem' }}>
                   <h3>Recent Activity</h3>
-                  {games.slice(0, 5).map(game => (
-                    <GameCard key={game.id}>
-                      <GameHeader>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                    <div>
+                      <h4>Recent Listings</h4>
+                      {listings.slice(0, 3).map(listing => (
+                        <GameCard key={`listing-${listing.id}`}>
+                          <GameHeader>
+                            <div>
+                              <strong>Listing #{listing.id}</strong>
+                              <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                                {listing.nft_name} - ${listing.asking_price}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                                {formatAddress(listing.creator)}
+                              </div>
+                            </div>
+                            <GameStatus status={listing.status}>
+                              {listing.status}
+                            </GameStatus>
+                          </GameHeader>
+                        </GameCard>
+                      ))}
+                    </div>
+                    <div>
+                      <h4>Recent Games</h4>
+                      {games.slice(0, 3).map(game => (
+                        <GameCard key={`game-${game.id}`}>
+                          <GameHeader>
+                            <div>
+                              <strong>Game #{game.id}</strong>
+                              <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                                {game.nft_name} - ${game.final_price}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                                {formatAddress(game.creator)} vs {formatAddress(game.challenger)}
+                              </div>
+                            </div>
+                            <GameStatus status={game.status}>
+                              {game.status}
+                            </GameStatus>
+                          </GameHeader>
+                        </GameCard>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'listings' && (
+              <div>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  <SearchBar>
+                    <Search size={20} />
+                    <input
+                      type="text"
+                      placeholder="Search by listing ID, NFT name, or address..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </SearchBar>
+                  
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`${API_URL}/api/admin/listings`, {
+                          method: 'DELETE'
+                        })
+                        if (response.ok) {
+                          addNotification('success', 'All listings cleared!')
+                          loadData()
+                        }
+                      } catch (error) {
+                        addNotification('error', 'Failed to clear listings')
+                      }
+                    }}
+                    style={{ background: '#ff4444', whiteSpace: 'nowrap' }}
+                  >
+                    🗑️ Clear All Listings
+                  </Button>
+                </div>
+                
+                <GameList>
+                  {filteredListings.map(listing => (
+                    <GameCard key={listing.id}>
+                      <GameHeader onClick={() => setExpandedGame(expandedGame === listing.id ? null : listing.id)}>
                         <div>
-                          <strong>Game #{game.id}</strong>
-                          <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-                            Created by {formatAddress(game.creator)}
-                          </div>
+                          <h4>Listing #{listing.id}</h4>
+                          <p>NFT: {listing.nft_name}</p>
+                          <p>Price: ${listing.asking_price}</p>
+                          <p>Status: <span style={{ color: getStatusColor(listing.status) }}>{listing.status}</span></p>
                         </div>
-                        <GameStatus status={game.status}>
-                          {game.status}
-                        </GameStatus>
+                        <ChevronDown style={{ transform: expandedGame === listing.id ? 'rotate(180deg)' : 'none' }} />
                       </GameHeader>
+                      
+                      {expandedGame === listing.id && (
+                        <GameDetails>
+                          <p><strong>Creator:</strong> {formatAddress(listing.creator)}</p>
+                          <p><strong>NFT Contract:</strong> {formatAddress(listing.nft_contract)}</p>
+                          <p><strong>Token ID:</strong> {listing.nft_token_id}</p>
+                          <p><strong>Collection:</strong> {listing.nft_collection}</p>
+                          <p><strong>Created:</strong> {formatDate(listing.created_at)}</p>
+                          
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                            <Button 
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`${API_URL}/api/admin/listings/${listing.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ status: 'open' })
+                                  })
+                                  if (response.ok) {
+                                    addNotification('success', 'Listing reopened!')
+                                    loadData()
+                                  }
+                                } catch (error) {
+                                  addNotification('error', 'Failed to reopen listing')
+                                }
+                              }}
+                              style={{ background: '#00cc00' }}
+                            >
+                              ↗️ Reopen Listing
+                            </Button>
+                            
+                            <Button 
+                              onClick={async () => {
+                                if (confirm('Delete this listing?')) {
+                                  try {
+                                    const response = await fetch(`${API_URL}/api/admin/listings/${listing.id}`, {
+                                      method: 'DELETE'
+                                    })
+                                    if (response.ok) {
+                                      addNotification('success', 'Listing deleted!')
+                                      loadData()
+                                    }
+                                  } catch (error) {
+                                    addNotification('error', 'Failed to delete listing')
+                                  }
+                                }
+                              }}
+                              style={{ background: '#ff4444' }}
+                            >
+                              🗑️ Delete Listing
+                            </Button>
+                            
+                            <Button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/game/${listing.id}`)
+                                addNotification('success', 'Listing URL copied!')
+                              }}
+                              style={{ background: '#0088ff' }}
+                            >
+                              🔗 Copy URL
+                            </Button>
+                          </div>
+                        </GameDetails>
+                      )}
                     </GameCard>
                   ))}
-                </div>
+                </GameList>
               </div>
             )}
 
@@ -1639,10 +1854,15 @@ export default function AdminPanel() {
                       {expandedGame === game.id && (
                         <GameDetails>
                           <p><strong>Creator:</strong> {formatAddress(game.creator)}</p>
-                          <p><strong>Joiner:</strong> {formatAddress(game.joiner)}</p>
-                          <p><strong>Price:</strong> ${game.price_usd} USD</p>
-                          <p><strong>Contract Game ID:</strong> {game.contract_game_id || 'N/A'}</p>
+                          <p><strong>Challenger:</strong> {formatAddress(game.challenger || game.joiner)}</p>
+                          <p><strong>Price:</strong> ${game.final_price || game.price_usd} USD</p>
+                          <p><strong>Contract Game ID:</strong> {game.blockchain_game_id || game.contract_game_id || 'N/A'}</p>
+                          <p><strong>Creator Deposited:</strong> {game.creator_deposited ? '✅' : '❌'}</p>
+                          <p><strong>Challenger Deposited:</strong> {game.challenger_deposited ? '✅' : '❌'}</p>
                           <p><strong>Created:</strong> {formatDate(game.created_at)}</p>
+                          {game.deposit_deadline && (
+                            <p><strong>Deposit Deadline:</strong> {formatDate(game.deposit_deadline)}</p>
+                          )}
                           
                           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
                             {game.status === 'waiting' && (
@@ -1727,12 +1947,15 @@ export default function AdminPanel() {
                       </div>
                     </GameHeader>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
                       <div>
-                        <strong>Games Created:</strong> {player.gamesCreated}
+                        <strong>Listings Created:</strong> {player.listingsCreated || 0}
                       </div>
                       <div>
-                        <strong>Games Won:</strong> {player.gamesWon}
+                        <strong>Games Created:</strong> {player.gamesCreated || 0}
+                      </div>
+                      <div>
+                        <strong>Games Won:</strong> {player.gamesWon || 0}
                       </div>
                       <div>
                         <strong>Total Volume:</strong> ${player.totalVolume.toFixed(2)}

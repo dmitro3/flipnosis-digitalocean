@@ -5,7 +5,6 @@ import { useToast } from '../contexts/ToastContext'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import contractService from '../services/ContractService'
 import OptimizedGoldCoin from './OptimizedGoldCoin'
-import MobileOptimizedCoin from './MobileOptimizedCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import GameResultPopup from './GameResultPopup'
 import ProfilePicture from './ProfilePicture'
@@ -319,6 +318,28 @@ const UnifiedGamePage = () => {
     }
   }
 
+  // Auto-start game when both players have deposited
+  useEffect(() => {
+    if (gameData?.status === 'active' && gameState.phase === 'waiting') {
+      // Game just became active, initialize first round
+      console.log('🎮 Game active, starting first round')
+      setGameState(prev => ({
+        ...prev,
+        phase: 'choosing',
+        currentRound: 1,
+        creatorWins: 0,
+        joinerWins: 0
+      }))
+      
+      // Show instructions to creator
+      if (isCreator) {
+        showInfo('Game started! You go first - choose heads or tails!')
+      } else if (isJoiner) {
+        showInfo('Game started! Waiting for opponent to choose...')
+      }
+    }
+  }, [gameData?.status, isCreator, isJoiner])
+
   // Setup WebSocket with proper game subscription
   useEffect(() => {
     if (!gameId) return
@@ -466,6 +487,12 @@ case 'offer_accepted':
         showSuccess('Both players deposited! Game starting...')
         // Reload game data to transition to active game
         loadGameData()
+        // Set game phase to choosing for first round
+        setGameState(prev => ({
+          ...prev,
+          phase: 'choosing',
+          currentRound: 1
+        }))
         break
       case 'game_cancelled':
         console.log('❌ Game cancelled:', data.reason)
@@ -502,6 +529,41 @@ case 'offer_accepted':
         console.log('⏰ Challenger deposit timeout:', data)
         showInfo(data.message)
         loadGameData()
+        break
+      case 'player_choice':
+        console.log('👤 Player made choice:', data)
+        if (data.player === getGameCreator()) {
+          setGameState(prev => ({ ...prev, creatorChoice: 'made' }))
+          if (isJoiner) {
+            showInfo('Opponent chose - now make your choice!')
+          }
+        } else {
+          setGameState(prev => ({ ...prev, joinerChoice: 'made' }))
+        }
+        
+        // Check if both players have chosen
+        if (gameState.creatorChoice && gameState.joinerChoice) {
+          showInfo('Both players ready! Starting power charge phase...')
+          setGameState(prev => ({ ...prev, phase: 'charging' }))
+        }
+        break
+      case 'flip_result':
+        console.log('🎲 Flip result:', data)
+        handleFlipResult({
+          outcome: data.result,
+          winner: data.roundWinner,
+          creatorWins: data.creatorWins,
+          challengerWins: data.challengerWins,
+          currentRound: data.roundNumber + 1,
+          isComplete: data.gameComplete
+        })
+        
+        if (data.gameComplete) {
+          handleGameCompleted({
+            winner: data.gameWinner,
+            gameData: gameData
+          })
+        }
         break
       case 'chat_message':
         // Chat messages are handled by the GameChatBox component
@@ -571,6 +633,51 @@ case 'offer_accepted':
             Game cancelled. Assets can be reclaimed.
           </p>
         )}
+      </div>
+    )
+  }
+
+  // Round Timer Component
+  const RoundTimer = ({ isActive, onTimeout }) => {
+    const [timeLeft, setTimeLeft] = useState(20)
+    
+    useEffect(() => {
+      if (!isActive) {
+        setTimeLeft(20)
+        return
+      }
+      
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            onTimeout?.()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      
+      return () => clearInterval(timer)
+    }, [isActive, onTimeout])
+    
+    if (!isActive) return null
+    
+    return (
+      <div style={{
+        position: 'absolute',
+        top: '-50px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: timeLeft <= 5 ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 65, 0.1)',
+        border: `2px solid ${timeLeft <= 5 ? theme.colors.neonPink : theme.colors.neonGreen}`,
+        borderRadius: '0.5rem',
+        padding: '0.5rem 1rem',
+        fontSize: '1.5rem',
+        fontWeight: 'bold',
+        color: timeLeft <= 5 ? theme.colors.neonPink : theme.colors.neonGreen
+      }}>
+        {timeLeft}s
       </div>
     )
   }
@@ -1410,45 +1517,33 @@ case 'offer_accepted':
             )}
             
             {/* Coin */}
-            <CoinSection>
-              {isMobile ? (
-                <MobileOptimizedCoin
-                  isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result}
-                  onPowerCharge={handlePowerChargeStart}
-                  onPowerRelease={handlePowerChargeStop}
-                  isPlayerTurn={gameActive && isPlayer && gameState.phase === 'charging'}
-                  isCharging={gameState.chargingPlayer === address}
-                  chargingPlayer={gameState.chargingPlayer}
-                  creatorPower={gameState.creatorPower}
-                  joinerPower={gameState.joinerPower}
-                  creatorChoice={gameState.creatorChoice}
-                  joinerChoice={gameState.joinerChoice}
-                  isCreator={isCreator}
-                  customHeadsImage={customHeadsImage}
-                  customTailsImage={customTailsImage}
-                  size={250}
-                />
-              ) : (
-                <OptimizedGoldCoin
-                  isFlipping={!!flipAnimation}
-                  flipResult={flipAnimation?.result}
-                  onPowerCharge={handlePowerChargeStart}
-                  onPowerRelease={handlePowerChargeStop}
-                  isPlayerTurn={gameActive && isPlayer && gameState.phase === 'charging'}
-                  isCharging={gameState.chargingPlayer === address}
-                  chargingPlayer={gameState.chargingPlayer}
-                  creatorPower={gameState.creatorPower}
-                  joinerPower={gameState.joinerPower}
-                  creatorChoice={gameState.creatorChoice}
-                  joinerChoice={gameState.joinerChoice}
-                  isCreator={isCreator}
-                  customHeadsImage={customHeadsImage}
-                  customTailsImage={customTailsImage}
-                  gamePhase={gameState.phase}
-                  size={400}
-                />
-              )}
+            <CoinSection style={{ position: 'relative' }}>
+              <RoundTimer 
+                isActive={gameActive && gameState.phase === 'charging'}
+                onTimeout={() => {
+                  if (gameState.chargingPlayer === address) {
+                    handlePowerChargeStop()
+                  }
+                }}
+              />
+              <OptimizedGoldCoin
+                isFlipping={!!flipAnimation}
+                flipResult={flipAnimation?.result}
+                onPowerCharge={handlePowerChargeStart}
+                onPowerRelease={handlePowerChargeStop}
+                isPlayerTurn={gameActive && isPlayer && gameState.phase === 'charging'}
+                isCharging={gameState.chargingPlayer === address}
+                chargingPlayer={gameState.chargingPlayer}
+                creatorPower={gameState.creatorPower}
+                joinerPower={gameState.joinerPower}
+                creatorChoice={gameState.creatorChoice}
+                joinerChoice={gameState.joinerChoice}
+                isCreator={isCreator}
+                customHeadsImage={customHeadsImage}
+                customTailsImage={customTailsImage}
+                gamePhase={gameState.phase}
+                size={isMobile ? 250 : 400} // Smaller size for mobile
+              />
             </CoinSection>
             
             {/* Power Display */}
