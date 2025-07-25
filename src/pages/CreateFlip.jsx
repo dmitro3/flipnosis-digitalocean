@@ -164,9 +164,9 @@ const CreateFlip = () => {
       if (result.gameId) {
         showInfo('Depositing NFT into smart contract...')
         const depositResult = await contractService.depositNFT(
+          result.gameId,
           selectedNFT.contractAddress, 
-          selectedNFT.tokenId,
-          result.gameId
+          selectedNFT.tokenId
         )
         if (!depositResult.success) throw new Error(depositResult.error)
         
