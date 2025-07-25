@@ -69,7 +69,7 @@ function initializeDatabase() {
             nft_collection TEXT,
             nft_chain TEXT DEFAULT 'base',
             asking_price REAL NOT NULL,
-            status TEXT DEFAULT 'active',
+            status TEXT DEFAULT 'open',
             coin_data TEXT,
             listing_fee_paid BOOLEAN DEFAULT false,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -547,7 +547,7 @@ app.post('/api/listings', (req, res) => {
   
   db.run(`
     INSERT INTO listings (id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
   `, [listingId, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, JSON.stringify(coin_data)], function(err) {
     if (err) {
       console.error('❌ Error creating listing:', err)
@@ -580,7 +580,7 @@ app.get('/api/listings/:listingId', (req, res) => {
 
 // Get all active listings
 app.get('/api/listings', (req, res) => {
-  db.all('SELECT * FROM listings WHERE status = "active" ORDER BY created_at DESC', (err, listings) => {
+  db.all('SELECT * FROM listings WHERE status = "open" ORDER BY created_at DESC', (err, listings) => {
     if (err) {
       return res.status(500).json({ error: 'Database error' })
     }
@@ -592,32 +592,41 @@ app.get('/api/listings', (req, res) => {
 app.post('/api/listings/:listingId/offers', (req, res) => {
   const { listingId } = req.params
   const { offerer_address, offer_price, message } = req.body
-  
-  const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
-  
-  db.run(`
-    INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status)
-    VALUES (?, ?, ?, ?, ?, 'pending')
-  `, [offerId, listingId, offerer_address, offer_price, message], function(err) {
-    if (err) {
-      console.error('❌ Error creating offer:', err)
-      return res.status(500).json({ error: 'Database error' })
+
+  // Allow offers for listings that are not completed/cancelled
+  db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, listing) => {
+    if (err || !listing) {
+      return res.status(404).json({ error: 'Listing not found' })
     }
-    
-    // Notify listing creator
-    db.get('SELECT creator FROM listings WHERE id = ?', [listingId], (err, listing) => {
-      if (listing) {
-        sendToUser(listing.creator, {
-          type: 'new_offer',
-          listingId,
-          offerId,
-          offer_price,
-          message
-        })
+    // Only block offers if the listing is cancelled or completed
+    if (listing.status === 'closed' || listing.status === 'completed') {
+      return res.status(400).json({ error: 'Cannot make offers on cancelled or completed listings' })
+    }
+    // Optionally, block offers if there is already a joiner/challenger (if you track that on the listing)
+    // Otherwise, allow offers
+    const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+    db.run(`
+      INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status)
+      VALUES (?, ?, ?, ?, ?, 'pending')
+    `, [offerId, listingId, offerer_address, offer_price, message], function(err) {
+      if (err) {
+        console.error('❌ Error creating offer:', err)
+        return res.status(500).json({ error: 'Database error' })
       }
+      // Notify listing creator
+      db.get('SELECT creator FROM listings WHERE id = ?', [listingId], (err, listing) => {
+        if (listing) {
+          sendToUser(listing.creator, {
+            type: 'new_offer',
+            listingId,
+            offerId,
+            offer_price,
+            message
+          })
+        }
+      })
+      res.json({ success: true, offerId })
     })
-    
-    res.json({ success: true, offerId })
   })
 })
 
@@ -661,7 +670,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
       db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
       
       // Update listing status
-      db.run('UPDATE listings SET status = "offer_accepted" WHERE id = ?', [offer.listing_id])
+      db.run('UPDATE listings SET status = "pending" WHERE id = ?', [offer.listing_id])
       
       // Create game record
       db.run(`
@@ -694,7 +703,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
           // Rollback if blockchain fails
           db.run('DELETE FROM games WHERE id = ?', [gameId])
           db.run('UPDATE offers SET status = "pending" WHERE id = ?', [offerId])
-          db.run('UPDATE listings SET status = "active" WHERE id = ?', [offer.listing_id])
+          db.run('UPDATE listings SET status = "open" WHERE id = ?', [offer.listing_id])
           return res.status(500).json({ error: 'Blockchain initialization failed' })
         }
         
@@ -869,9 +878,9 @@ setInterval(() => {
           reason: 'deposit_timeout'
         })
         
-        // Update listing back to active if neither deposited
+        // Update listing back to open if neither deposited
         if (!game.creator_deposited && !game.challenger_deposited) {
-          db.run('UPDATE listings SET status = "active" WHERE id = ?', [game.listing_id])
+          db.run('UPDATE listings SET status = "open" WHERE id = ?', [game.listing_id])
         }
       })
     }

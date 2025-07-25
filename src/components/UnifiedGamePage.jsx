@@ -485,6 +485,9 @@ const UnifiedGamePage = () => {
   
   const canMakeOffer = isListing && !isCreator && address && !gameData?.joiner && !gameData?.challenger
   
+  // Show offer form for player 2 only if status is 'open', not the creator, and no joiner/challenger
+  const canShowOfferForm = gameData?.status === 'open' && !isCreator && address && !gameData?.joiner && !gameData?.challenger;
+  
   // Debug logging
   useEffect(() => {
     if (gameData) {
@@ -1260,7 +1263,7 @@ const UnifiedGamePage = () => {
                 {isListing && !gameData?.joiner && (
                   <>
                     {/* For NFT vs Crypto games - show price offer form */}
-                    {gameData?.game_type !== 'nft-vs-nft' && canMakeOffer && (
+                    {canShowOfferForm && gameData?.game_type !== 'nft-vs-nft' && (
                       <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255, 20, 147, 0.1)', borderRadius: '0.5rem' }}>
                         <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
                         <input
