@@ -487,15 +487,24 @@ const CONTRACT_ABI = [
 ]
 
 async function initializeGameOnChain(gameId, player1, player2, nftContract, tokenId, priceUSD) {
+  console.log('🔗 Initializing game on blockchain:', { gameId, player1, player2, nftContract, tokenId, priceUSD })
+  
   if (!contractOwnerWallet) {
     console.error('❌ Contract owner wallet not configured')
-    return false
+    console.error('❌ Please check WALLET_PRIVATE_KEY environment variable')
+    return { success: false, error: 'Contract wallet not configured' }
+  }
+  
+  if (!CONTRACT_ADDRESS) {
+    console.error('❌ Contract address not configured')
+    return { success: false, error: 'Contract address not configured' }
   }
   
   try {
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, contractOwnerWallet)
     const gameIdBytes32 = ethers.id(gameId)
     
+    console.log('🔗 Sending transaction to contract:', CONTRACT_ADDRESS)
     const tx = await contract.initializeGame(
       gameIdBytes32,
       player1,
@@ -505,12 +514,18 @@ async function initializeGameOnChain(gameId, player1, player2, nftContract, toke
       ethers.parseUnits(priceUSD.toString(), 6) // 6 decimals for USD
     )
     
+    console.log('⏳ Waiting for transaction confirmation:', tx.hash)
     await tx.wait()
     console.log('✅ Game initialized on chain:', gameId)
-    return true
+    return { success: true }
   } catch (error) {
     console.error('❌ Failed to initialize game on chain:', error)
-    return false
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      reason: error.reason
+    })
+    return { success: false, error: error.message || 'Blockchain transaction failed' }
   }
 }
 
@@ -593,29 +608,42 @@ app.post('/api/listings/:listingId/offers', (req, res) => {
   const { listingId } = req.params
   const { offerer_address, offer_price, message } = req.body
 
+  console.log('💡 New offer request:', { listingId, offerer_address, offer_price, message })
+
   // Allow offers for listings that are not completed/cancelled
   db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, listing) => {
     if (err || !listing) {
+      console.error('❌ Listing not found for offer:', listingId, err)
       return res.status(404).json({ error: 'Listing not found' })
     }
+    
+    console.log('✅ Found listing for offer:', { id: listing.id, status: listing.status, creator: listing.creator })
+    
     // Only block offers if the listing is cancelled or completed
     if (listing.status === 'closed' || listing.status === 'completed') {
+      console.warn('⚠️ Attempted offer on closed/completed listing:', listing.status)
       return res.status(400).json({ error: 'Cannot make offers on cancelled or completed listings' })
     }
     // Optionally, block offers if there is already a joiner/challenger (if you track that on the listing)
     // Otherwise, allow offers
     const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+    
+    console.log('💾 Creating offer in database:', { offerId, listingId, offerer_address, offer_price })
+    
     db.run(`
       INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status)
       VALUES (?, ?, ?, ?, ?, 'pending')
     `, [offerId, listingId, offerer_address, offer_price, message], function(err) {
       if (err) {
-        console.error('❌ Error creating offer:', err)
+        console.error('❌ Error creating offer in database:', err)
         return res.status(500).json({ error: 'Database error' })
       }
-      // Notify listing creator
+      
+      console.log('✅ Offer created successfully:', offerId)
+      // Notify listing creator and broadcast to room
       db.get('SELECT creator FROM listings WHERE id = ?', [listingId], (err, listing) => {
         if (listing) {
+          // Send direct notification to listing creator
           sendToUser(listing.creator, {
             type: 'new_offer',
             listingId,
@@ -623,6 +651,18 @@ app.post('/api/listings/:listingId/offers', (req, res) => {
             offer_price,
             message
           })
+          
+          // Broadcast to all users in the listing room for real-time updates
+          broadcastToRoom(listingId, {
+            type: 'new_offer',
+            listingId,
+            offerId,
+            offer_price,
+            message,
+            offerer_address
+          })
+          
+          console.log('📢 Broadcasted new offer to room:', listingId)
         }
       })
       res.json({ success: true, offerId })
@@ -690,7 +730,8 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
         }
         
         // Initialize game on blockchain
-        const chainSuccess = await initializeGameOnChain(
+        console.log('🎲 Attempting to initialize game on blockchain for offer acceptance')
+        const chainResult = await initializeGameOnChain(
           gameId,
           listing.creator,
           offer.offerer_address,
@@ -699,12 +740,17 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
           offer.offer_price
         )
         
-        if (!chainSuccess) {
+        if (!chainResult.success) {
           // Rollback if blockchain fails
+          console.error('❌ Rolling back database changes due to blockchain failure:', chainResult.error)
           db.run('DELETE FROM games WHERE id = ?', [gameId])
           db.run('UPDATE offers SET status = "pending" WHERE id = ?', [offerId])
           db.run('UPDATE listings SET status = "open" WHERE id = ?', [offer.listing_id])
-          return res.status(500).json({ error: 'Blockchain initialization failed' })
+          return res.status(500).json({ 
+            error: 'Blockchain initialization failed', 
+            details: chainResult.error,
+            gameId 
+          })
         }
         
         // Notify both players

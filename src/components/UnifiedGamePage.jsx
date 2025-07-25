@@ -378,6 +378,7 @@ const UnifiedGamePage = () => {
         break
       case 'offer_created':
       case 'offer_updated':
+      case 'new_offer':
         // Reload offers
         if (gameData?.type === 'listing') {
           fetch(getApiUrl(`/listings/${gameId}/offers`)).then(async response => {
@@ -832,27 +833,40 @@ const UnifiedGamePage = () => {
   
   const acceptOffer = async (offerId, offerPrice) => {
     try {
+      console.log('🎯 Accepting offer:', { offerId, offerPrice })
+      showInfo('Accepting offer...')
+      
       const response = await fetch(getApiUrl(`/offers/${offerId}/accept`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ final_price: offerPrice })
       })
       
+      const result = await response.json()
+      console.log('✅ Offer acceptance response:', result)
+      
       if (response.ok) {
-        showSuccess('Offer accepted!')
-        await fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
-          if (response.ok) {
-            const offersData = await response.json()
-            setOffers(offersData)
-          }
-        })
-        await loadGameData() // Refresh game/listing data
+        showSuccess('Offer accepted! Game created successfully.')
+        // Refresh offers and game data
+        await Promise.all([
+          fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
+            if (response.ok) {
+              const offersData = await response.json()
+              setOffers(offersData)
+            }
+          }),
+          loadGameData() // Refresh game/listing data
+        ])
       } else {
-        showError('Failed to accept offer')
+        console.error('❌ Offer acceptance failed:', result)
+        const errorMessage = result.details 
+          ? `${result.error}: ${result.details}` 
+          : result.error || 'Failed to accept offer'
+        showError(errorMessage)
       }
     } catch (error) {
-      console.error('Error accepting offer:', error)
-      showError('Failed to accept offer')
+      console.error('❌ Error accepting offer:', error)
+      showError(`Failed to accept offer: ${error.message}`)
     }
   }
   
