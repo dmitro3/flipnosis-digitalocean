@@ -133,8 +133,8 @@ const CreateFlip = () => {
       const feeResult = await contractService.payListingFee()
       if (!feeResult.success) throw new Error(feeResult.error)
       
-      // Step 2: Create listing and game on blockchain (server will handle NFT deposit)
-      showInfo('Creating game and depositing NFT...')
+      // Step 2: Create listing only (no game creation)
+      showInfo('Creating listing...')
       const response = await fetch(getApiUrl('/listings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,37 +152,13 @@ const CreateFlip = () => {
             headsImage: selectedCoin.headsImage,
             tailsImage: selectedCoin.tailsImage,
             isCustom: selectedCoin.isCustom
-          },
-          immediate_game_creation: true, // Flag for new flow
-          nft_deposited: false // NFT will be deposited after game creation
+          }
         })
       })
       if (!response.ok) throw new Error('Failed to create listing')
       const result = await response.json()
       
-      // Step 3: Deposit NFT into the created game
-      if (result.gameId) {
-        showInfo('Depositing NFT into smart contract...')
-        const depositResult = await contractService.depositNFT(
-          result.gameId,
-          selectedNFT.contractAddress, 
-          selectedNFT.tokenId
-        )
-        if (!depositResult.success) throw new Error(depositResult.error)
-        
-        // Notify server that NFT is deposited
-        const confirmResponse = await fetch(getApiUrl(`/games/${result.gameId}/deposit-confirmed`), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            player: address,
-            assetType: 'nft'
-          })
-        })
-        if (!confirmResponse.ok) throw new Error('Failed to confirm NFT deposit')
-      }
-      
-      showSuccess('Game created successfully with NFT deposited!')
+      showSuccess('Listing created successfully!')
       navigate(`/game/${result.listingId}`)
     } catch (error) {
       console.error('Error creating listing:', error)

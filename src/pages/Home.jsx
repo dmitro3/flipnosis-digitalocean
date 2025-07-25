@@ -283,33 +283,38 @@ const Home = () => {
     }
   }, [])
 
-  // Combine and filter games/listings
-  const getAllItems = () => {
-    const allItems = [
-      ...listings.map(l => ({ 
-        ...l, 
-        isListing: true,
-        nft: {
-          name: l.nft_name || 'Unknown NFT',
-          image: l.nft_image || '/placeholder-nft.svg',
-          collection: l.nft_collection || 'Unknown Collection',
-          chain: l.nft_chain || 'base'
-        },
-        gameType: 'nft-vs-crypto',
-        priceUSD: l.asking_price || 0
-      })),
-      ...games.filter(g => g.status !== 'cancelled').map(g => ({ 
-        ...g, 
-        isListing: false,
-        nft: {
-          name: g.nft_name || 'Unknown NFT',
-          image: g.nft_image || '/placeholder-nft.svg',
-          collection: g.nft_collection || 'Unknown Collection',
-          chain: 'base'
-        },
-        gameType: 'nft-vs-nft',
-        priceUSD: g.final_price || 0
-      }))
+const getAllItems = () => {
+  const allItems = [
+    ...listings.map(l => ({ 
+      ...l, 
+      isListing: true,
+      nft: {
+        name: l.nft_name || 'Unknown NFT',
+        image: l.nft_image || '/placeholder-nft.svg',
+        collection: l.nft_collection || 'Unknown Collection',
+        chain: l.nft_chain || 'base'
+      },
+      gameType: 'nft-vs-crypto',
+      priceUSD: l.asking_price || 0
+    })),
+    // Only show games that are NOT waiting for deposits or waiting for challenger
+    ...games.filter(g => 
+      g.status !== 'cancelled' && 
+      g.status !== 'waiting_deposits' && 
+      g.status !== 'waiting_challenger_deposit' &&
+      g.status !== 'awaiting_challenger'
+    ).map(g => ({ 
+      ...g, 
+      isListing: false,
+      nft: {
+        name: g.nft_name || 'Unknown NFT',
+        image: g.nft_image || '/placeholder-nft.svg',
+        collection: g.nft_collection || 'Unknown Collection',
+        chain: 'base'
+      },
+      gameType: 'nft-vs-nft',
+      priceUSD: g.final_price || 0
+    }))
     ]
     return allItems.filter(item => {
       const matchesFilter = activeFilter === 'all' || 

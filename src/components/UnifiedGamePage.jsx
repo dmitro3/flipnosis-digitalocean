@@ -425,17 +425,25 @@ const UnifiedGamePage = () => {
         // Reload game data to reflect the accepted offer
         loadGameData()
         break
-      case 'offer_accepted':
-        console.log('✅ Offer accepted! Navigating to asset deposit screen...', data)
-        showSuccess('Offer accepted! Redirecting to game...')
-        // Navigate to the game page with the new game ID
-        if (data.gameId) {
-          navigate(`/game/${data.gameId}`)
-        } else {
-          // Fallback: reload game data if already on the right page
-          loadGameData()
-        }
-        break
+case 'offer_accepted':
+  console.log('✅ Offer accepted! Details:', data)
+  
+  // If we're the offerer, show payment UI immediately
+  if (data.gameId && address === gameData?.challenger) {
+    showSuccess('Your offer was accepted! Please deposit payment.')
+  }
+  
+  // Navigate to game page if we have a gameId and it's different from current
+  if (data.gameId && gameId !== data.gameId) {
+    // Small delay to let the success message show
+    setTimeout(() => {
+      navigate(`/game/${data.gameId}`)
+    }, 1000)
+  } else {
+    // We're already on the right page, just reload the data
+    loadGameData()
+  }
+  break
       case 'nft_offer_rejected':
         console.log('❌ NFT offer rejected:', data.offer)
         showInfo('NFT offer was rejected')
@@ -533,7 +541,7 @@ const UnifiedGamePage = () => {
       return `${minutes}:${seconds.toString().padStart(2, '0')}`
     }
     
-    const isUrgent = timeLeft < 60000 // Less than 1 minute
+    const isUrgent = timeLeft < 30000 // Less than 30 seconds
     const isExpired = timeLeft <= 0
     
     return (
@@ -1602,12 +1610,110 @@ const UnifiedGamePage = () => {
                 />
               </ChatSection>
               
-              {/* Offers Section */}
-              <OffersSection>
-                <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonPink }}>Offers</h4>
-                
-                {/* NFT Battle Offers - Show for listings, not active games */}
-                {isListing && !gameData?.joiner && (
+{/* Offers Section */}
+<OffersSection>
+  <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonPink }}>
+    {gameData?.status === 'waiting_challenger_deposit' && isJoiner ? 'Payment Required' : 'Offers'}
+  </h4>
+  
+  {/* Show payment UI for Player 2 whose offer was accepted */}
+  {gameData?.status === 'waiting_challenger_deposit' && isJoiner && (
+    <div style={{
+      background: 'rgba(0, 255, 65, 0.1)',
+      border: `2px solid ${theme.colors.neonGreen}`,
+      borderRadius: '0.5rem',
+      padding: '1rem',
+      marginBottom: '1rem',
+      animation: 'pulse 2s infinite'
+    }}>
+      <h5 style={{ 
+        margin: '0 0 0.5rem 0', 
+        color: theme.colors.neonGreen,
+        textAlign: 'center'
+      }}>
+        🎉 Your Offer Was Accepted!
+      </h5>
+      
+      {/* Countdown Timer */}
+      <DepositTimer gameData={gameData} />
+      
+      <div style={{ 
+        textAlign: 'center',
+        marginBottom: '1rem'
+      }}>
+        <p style={{ 
+          fontSize: '1.2rem', 
+          fontWeight: 'bold',
+          color: theme.colors.neonYellow,
+          margin: '0.5rem 0'
+        }}>
+          Deposit ${getGamePrice()} {gameData.payment_token || 'ETH'}
+        </p>
+        <p style={{ 
+          fontSize: '0.9rem',
+          color: theme.colors.textSecondary
+        }}>
+          to start the game
+        </p>
+      </div>
+      
+      <PayButton 
+        onClick={gameData.payment_token === 'USDC' ? handleDepositUSDC : handleDepositETH} 
+        disabled={paymentLoading}
+        style={{ 
+          width: '100%',
+          background: 'linear-gradient(45deg, #00FF41, #39FF14)',
+          animation: 'pulse 1.5s infinite'
+        }}
+      >
+        {paymentLoading ? (
+          <>
+            <LoadingSpinner /> Processing...
+          </>
+        ) : (
+          `Pay $${getGamePrice()} ${gameData.payment_token || 'ETH'}`
+        )}
+      </PayButton>
+    </div>
+  )}
+  
+  {/* Show countdown for other viewers and Player 1 */}
+  {gameData?.status === 'waiting_challenger_deposit' && !isJoiner && (
+    <div style={{
+      background: 'rgba(255, 165, 0, 0.1)',
+      border: `2px solid #FFA500`,
+      borderRadius: '0.5rem',
+      padding: '1rem',
+      marginBottom: '1rem'
+    }}>
+      <h5 style={{ 
+        margin: '0 0 0.5rem 0', 
+        color: '#FFA500',
+        textAlign: 'center'
+      }}>
+        ⏳ Offer Accepted - Waiting for Payment
+      </h5>
+      
+      <DepositTimer gameData={gameData} />
+      
+      <p style={{ 
+        textAlign: 'center',
+        color: theme.colors.textSecondary,
+        fontSize: '0.9rem',
+        margin: '0.5rem 0 0 0'
+      }}>
+        {isCreator ? 
+          'Waiting for challenger to deposit crypto...' : 
+          'Another player is depositing crypto to start the game...'
+        }
+      </p>
+    </div>
+  )}
+  
+  {/* Normal offers display for listings */}
+  {isListing && !gameData?.joiner && gameData?.status !== 'waiting_challenger_deposit' && (
+    <>
+      {/* NFT Battle Offers - Show for listings, not active games */}
                   <>
                     {/* For NFT vs Crypto games - show price offer form */}
                     {canShowOfferForm && gameData?.game_type !== 'nft-vs-nft' && (
@@ -1681,9 +1787,13 @@ const UnifiedGamePage = () => {
                       />
                     )}
                   </>
+                    )}
+                    
+                    {/* ... rest of existing offer list code ... */}
+                  </>
                 )}
                 
-                {!isListing && (
+                {!isListing && gameData?.status !== 'waiting_challenger_deposit' && (
                   <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
                     Game in progress - no offers available
                   </p>
