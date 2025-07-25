@@ -162,19 +162,38 @@ function initializeDatabase() {
           else console.log('✅ Chat messages table ready')
         })
 
-        // Profiles table
-        database.run(`
-          CREATE TABLE IF NOT EXISTS profiles (
-            address TEXT PRIMARY KEY,
-            name TEXT,
-            avatar TEXT,
-            headsImage TEXT,
-            tailsImage TEXT
-          )
-        `, (err) => {
-          if (err) console.error('❌ Error creating profiles table:', err)
-          else console.log('✅ Profiles table ready')
-        })
+                 // Profiles table
+         database.run(`
+           CREATE TABLE IF NOT EXISTS profiles (
+             address TEXT PRIMARY KEY,
+             name TEXT,
+             avatar TEXT,
+             headsImage TEXT,
+             tailsImage TEXT
+           )
+         `, (err) => {
+           if (err) console.error('❌ Error creating profiles table:', err)
+           else console.log('✅ Profiles table ready')
+         })
+
+         // Ready NFTs table - for pre-loaded and retained NFTs
+         database.run(`
+           CREATE TABLE IF NOT EXISTS ready_nfts (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             player_address TEXT NOT NULL,
+             nft_contract TEXT NOT NULL,
+             nft_token_id TEXT NOT NULL,
+             nft_name TEXT,
+             nft_image TEXT,
+             nft_collection TEXT,
+             deposited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+             source TEXT DEFAULT 'preload',
+             UNIQUE(player_address, nft_contract, nft_token_id)
+           )
+         `, (err) => {
+           if (err) console.error('❌ Error creating ready_nfts table:', err)
+           else console.log('✅ Ready NFTs table ready')
+         })
       })
       
       resolve(database)
@@ -774,7 +793,7 @@ app.post('/api/offers/:offerId/accept', async (req, res) => {
       // Create game
       const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
       const blockchainGameId = ethers.id(gameId)
-      const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString() // 2 minutes
+      const depositDeadline = new Date(Date.now() + 3 * 60 * 1000).toISOString() // 3 minutes total
       
       // Update offer status
       db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
@@ -930,78 +949,187 @@ app.get('/api/games', (req, res) => {
   })
 })
 
-// Confirm deposit
-app.post('/api/games/:gameId/deposit-confirmed', (req, res) => {
-  const { gameId } = req.params
-  const { player, assetType } = req.body // assetType: 'nft' or 'eth'
-  
-  db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
-    if (err || !game) {
-      return res.status(404).json({ error: 'Game not found' })
-    }
-    
-    const isCreator = player === game.creator
-    const column = isCreator ? 'creator_deposited' : 'challenger_deposited'
-    
-    db.run(`UPDATE games SET ${column} = true WHERE id = ?`, [gameId], (err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' })
-      }
-      
-      // Check if both deposited
-      db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
-        if (updatedGame.creator_deposited && updatedGame.challenger_deposited) {
-          // Start game
-          db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
-          
-          // Notify players
-          broadcastToRoom(gameId, {
-            type: 'game_started',
-            gameId
-          })
-        } else {
-          // Notify deposit confirmed
-          broadcastToRoom(gameId, {
-            type: 'deposit_confirmed',
-            player,
-            assetType
-          })
-        }
-        
-        res.json({ success: true })
-      })
-    })
-  })
-})
+ // Confirm deposit
+ app.post('/api/games/:gameId/deposit-confirmed', (req, res) => {
+   const { gameId } = req.params
+   const { player, assetType } = req.body // assetType: 'nft' or 'eth'
+   
+   db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+     if (err || !game) {
+       return res.status(404).json({ error: 'Game not found' })
+     }
+     
+     const isCreator = player === game.creator
+     const column = isCreator ? 'creator_deposited' : 'challenger_deposited'
+     
+     // If it's an NFT deposit, remove from ready_nfts table (it's now in active game)
+     if (isCreator && assetType === 'nft') {
+       db.run(
+         'DELETE FROM ready_nfts WHERE player_address = ? AND nft_contract = ? AND nft_token_id = ?',
+         [player, game.nft_contract, game.nft_token_id],
+         (err) => {
+           if (err) {
+             console.error('❌ Error removing NFT from ready state:', err)
+           } else {
+             console.log('✅ NFT moved from ready state to active game')
+           }
+         }
+       )
+     }
+     
+     db.run(`UPDATE games SET ${column} = true WHERE id = ?`, [gameId], (err) => {
+       if (err) {
+         return res.status(500).json({ error: 'Database error' })
+       }
+       
+       // Check if both deposited
+       db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
+         if (updatedGame.creator_deposited && updatedGame.challenger_deposited) {
+           // Start game
+           db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
+           
+           // Notify players
+           broadcastToRoom(gameId, {
+             type: 'game_started',
+             gameId
+           })
+         } else {
+           // Notify deposit confirmed
+           broadcastToRoom(gameId, {
+             type: 'deposit_confirmed',
+             player,
+             assetType
+           })
+         }
+         
+         res.json({ success: true })
+       })
+     })
+   })
+ })
 
-// Check deposit timeout
-setInterval(() => {
-  const now = new Date().toISOString()
-  
-  db.all(
-    'SELECT * FROM games WHERE status = "waiting_deposits" AND deposit_deadline < ?',
-    [now],
-    (err, games) => {
-      if (err || !games) return
-      
-      games.forEach(game => {
-        // Cancel game
-        db.run('UPDATE games SET status = "cancelled" WHERE id = ?', [game.id])
-        
-        // Notify players
-        broadcastToRoom(game.id, {
-          type: 'game_cancelled',
-          reason: 'deposit_timeout'
-        })
-        
-        // Update listing back to open if neither deposited
-        if (!game.creator_deposited && !game.challenger_deposited) {
-          db.run('UPDATE listings SET status = "open" WHERE id = ?', [game.listing_id])
-        }
-      })
-    }
-  )
-}, 10000) // Check every 10 seconds
+ // Auto-confirm NFT deposit if already ready
+ app.post('/api/games/:gameId/use-ready-nft', (req, res) => {
+   const { gameId } = req.params
+   const { player } = req.body
+   
+   db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+     if (err || !game) {
+       return res.status(404).json({ error: 'Game not found' })
+     }
+     
+     if (player !== game.creator) {
+       return res.status(400).json({ error: 'Only creator can use ready NFT' })
+     }
+     
+     // Check if the game's NFT is ready for this player
+     db.get(
+       'SELECT * FROM ready_nfts WHERE player_address = ? AND nft_contract = ? AND nft_token_id = ?',
+       [player, game.nft_contract, game.nft_token_id],
+       (err, readyNft) => {
+         if (err || !readyNft) {
+           return res.status(404).json({ error: 'Ready NFT not found' })
+         }
+         
+         // Remove from ready_nfts (now in active use)
+         db.run(
+           'DELETE FROM ready_nfts WHERE id = ?',
+           [readyNft.id],
+           (err) => {
+             if (err) {
+               console.error('❌ Error removing ready NFT:', err)
+               return res.status(500).json({ error: 'Database error' })
+             }
+             
+             // Mark creator as deposited
+             db.run('UPDATE games SET creator_deposited = true WHERE id = ?', [gameId], (err) => {
+               if (err) {
+                 return res.status(500).json({ error: 'Database error' })
+               }
+               
+               console.log('⚡ Ready NFT used for instant game start:', game.nft_name)
+               
+               // Notify players
+               broadcastToRoom(gameId, {
+                 type: 'ready_nft_used',
+                 player,
+                 nft_name: game.nft_name,
+                 message: 'Pre-loaded NFT used - waiting for challenger deposit'
+               })
+               
+               broadcastToRoom(gameId, {
+                 type: 'deposit_confirmed',
+                 player,
+                 assetType: 'nft'
+               })
+               
+               res.json({ success: true, message: 'Ready NFT used successfully!' })
+             })
+           }
+         )
+       }
+     )
+   })
+ })
+
+ // Check deposit timeout
+ setInterval(() => {
+   const now = new Date().toISOString()
+   
+   db.all(
+     'SELECT * FROM games WHERE status = "waiting_deposits" AND deposit_deadline < ?',
+     [now],
+     (err, games) => {
+       if (err || !games) return
+       
+       games.forEach(game => {
+         // If creator deposited NFT but challenger didn't show, move NFT to ready state
+         if (game.creator_deposited && !game.challenger_deposited) {
+           console.log('🎯 Moving timed-out NFT to ready state for future games:', game.nft_name)
+           
+           // Move NFT to ready state instead of forcing withdrawal
+           db.run(`
+             INSERT OR REPLACE INTO ready_nfts (
+               player_address, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, source
+             ) VALUES (?, ?, ?, ?, ?, ?, 'timeout_retention')
+           `, [
+             game.creator, game.nft_contract, game.nft_token_id, 
+             game.nft_name, game.nft_image, game.nft_collection
+           ], (err) => {
+             if (err) {
+               console.error('❌ Error moving NFT to ready state:', err)
+             } else {
+               console.log('✅ NFT moved to ready state for', game.creator)
+               
+               // Notify player their NFT is ready for next game
+               sendToUser(game.creator, {
+                 type: 'nft_moved_to_ready',
+                 nft_name: game.nft_name,
+                 message: 'Your NFT is ready for the next game - no need to deposit again!'
+               })
+             }
+           })
+         }
+         
+         // Cancel game
+         db.run('UPDATE games SET status = "cancelled" WHERE id = ?', [game.id])
+         
+         // Notify players
+         broadcastToRoom(game.id, {
+           type: 'game_cancelled',
+           reason: 'deposit_timeout',
+           creator_deposited: game.creator_deposited,
+           nft_moved_to_ready: game.creator_deposited && !game.challenger_deposited
+         })
+         
+         // Update listing back to open if neither deposited
+         if (!game.creator_deposited && !game.challenger_deposited) {
+           db.run('UPDATE listings SET status = "open" WHERE id = ?', [game.listing_id])
+         }
+       })
+     }
+   )
+ }, 10000) // Check every 10 seconds
 
 // Get user games
 app.get('/api/users/:address/games', (req, res) => {
@@ -1094,22 +1222,117 @@ app.get('/api/dashboard/:address', (req, res) => {
   })
 })
 
-// Update user profile
-app.put('/api/profile/:address', (req, res) => {
-  const { address } = req.params
-  const { name, avatar, headsImage, tailsImage } = req.body
-  db.run(
-    `INSERT INTO profiles (address, name, avatar, headsImage, tailsImage) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(address) DO UPDATE SET name=excluded.name, avatar=excluded.avatar, headsImage=excluded.headsImage, tailsImage=excluded.tailsImage`,
-    [address, name || '', avatar || '', headsImage || '', tailsImage || ''],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' })
-      }
-      res.json({ success: true })
-    }
-  )
-})
+ // Update user profile
+ app.put('/api/profile/:address', (req, res) => {
+   const { address } = req.params
+   const { name, avatar, headsImage, tailsImage } = req.body
+   db.run(
+     `INSERT INTO profiles (address, name, avatar, headsImage, tailsImage) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(address) DO UPDATE SET name=excluded.name, avatar=excluded.avatar, headsImage=excluded.headsImage, tailsImage=excluded.tailsImage`,
+     [address, name || '', avatar || '', headsImage || '', tailsImage || ''],
+     function(err) {
+       if (err) {
+         return res.status(500).json({ error: 'Database error' })
+       }
+       res.json({ success: true })
+     }
+   )
+ })
+
+ // ===== READY NFT SYSTEM =====
+
+ // Pre-load NFT during listing creation
+ app.post('/api/nft/preload', async (req, res) => {
+   const { player_address, nft_contract, nft_token_id, nft_name, nft_image, nft_collection } = req.body
+   
+   console.log('🎯 Pre-loading NFT:', { player_address, nft_contract, nft_token_id })
+   
+   // Check if NFT already ready
+   db.get(
+     'SELECT * FROM ready_nfts WHERE player_address = ? AND nft_contract = ? AND nft_token_id = ?',
+     [player_address, nft_contract, nft_token_id],
+     (err, existing) => {
+       if (existing) {
+         return res.status(400).json({ error: 'NFT already pre-loaded' })
+       }
+       
+       // Store in ready_nfts table
+       db.run(`
+         INSERT INTO ready_nfts (player_address, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, source)
+         VALUES (?, ?, ?, ?, ?, ?, 'preload')
+       `, [player_address, nft_contract, nft_token_id, nft_name, nft_image, nft_collection], function(err) {
+         if (err) {
+           console.error('❌ Error pre-loading NFT:', err)
+           return res.status(500).json({ error: 'Database error' })
+         }
+         
+         console.log('✅ NFT pre-loaded successfully:', nft_contract, nft_token_id)
+         res.json({ success: true, message: 'NFT pre-loaded for instant games!' })
+       })
+     }
+   )
+ })
+
+ // Withdraw ready NFT
+ app.post('/api/nft/withdraw', async (req, res) => {
+   const { player_address, nft_contract, nft_token_id } = req.body
+   
+   console.log('💎 Withdrawing ready NFT:', { player_address, nft_contract, nft_token_id })
+   
+   // Remove from ready_nfts table
+   db.run(
+     'DELETE FROM ready_nfts WHERE player_address = ? AND nft_contract = ? AND nft_token_id = ?',
+     [player_address, nft_contract, nft_token_id],
+     function(err) {
+       if (err) {
+         console.error('❌ Error withdrawing NFT:', err)
+         return res.status(500).json({ error: 'Database error' })
+       }
+       
+       if (this.changes === 0) {
+         return res.status(404).json({ error: 'Ready NFT not found' })
+       }
+       
+       console.log('✅ Ready NFT withdrawn successfully')
+       res.json({ success: true, message: 'NFT withdrawn from ready state' })
+     }
+   )
+ })
+
+ // Get user's ready NFTs
+ app.get('/api/users/:address/ready-nfts', (req, res) => {
+   const { address } = req.params
+   
+   db.all(
+     'SELECT * FROM ready_nfts WHERE player_address = ? ORDER BY deposited_at DESC',
+     [address],
+     (err, readyNfts) => {
+       if (err) {
+         return res.status(500).json({ error: 'Database error' })
+       }
+       res.json(readyNfts || [])
+     }
+   )
+ })
+
+ // Check if specific NFT is ready for user
+ app.get('/api/nft/ready-status/:address/:contract/:tokenId', (req, res) => {
+   const { address, contract, tokenId } = req.params
+   
+   db.get(
+     'SELECT * FROM ready_nfts WHERE player_address = ? AND nft_contract = ? AND nft_token_id = ?',
+     [address, contract, tokenId],
+     (err, readyNft) => {
+       if (err) {
+         return res.status(500).json({ error: 'Database error' })
+       }
+       res.json({ 
+         ready: !!readyNft,
+         nft: readyNft || null
+       })
+     }
+   )
+ })
 
 // ===== STATIC FILE FALLBACK =====
 app.get('*', (req, res) => {

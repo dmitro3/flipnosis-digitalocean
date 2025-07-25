@@ -93,6 +93,7 @@ const CreateFlip = () => {
   const [loading, setLoading] = useState(false)
   const [gameType, setGameType] = useState('nft-vs-crypto')
   const [acceptsOffers, setAcceptsOffers] = useState(true)
+  const [preloadNFT, setPreloadNFT] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [selectedCoin, setSelectedCoin] = useState({
     type: 'default',
@@ -155,7 +156,32 @@ const CreateFlip = () => {
       })
       if (!response.ok) throw new Error('Failed to create listing')
       const result = await response.json()
-      showSuccess('Listing created successfully!')
+      
+      // Step 3: Pre-load NFT if option selected
+      if (preloadNFT) {
+        showInfo('Pre-loading NFT for instant games...')
+        const preloadResponse = await fetch(getApiUrl('/nft/preload'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player_address: address,
+            nft_contract: selectedNFT.contractAddress,
+            nft_token_id: selectedNFT.tokenId,
+            nft_name: selectedNFT.name,
+            nft_image: selectedNFT.image,
+            nft_collection: selectedNFT.collection
+          })
+        })
+        
+        if (preloadResponse.ok) {
+          showSuccess('Listing created and NFT pre-loaded for instant games!')
+        } else {
+          showSuccess('Listing created successfully! (NFT pre-load failed)')
+        }
+      } else {
+        showSuccess('Listing created successfully!')
+      }
+      
       navigate(`/game/${result.listingId}`)
     } catch (error) {
       console.error('Error creating listing:', error)
@@ -192,6 +218,56 @@ const CreateFlip = () => {
                   )}
                 </NFTPreview>
               </FormGroup>
+
+              {/* Pre-load NFT Option */}
+              {selectedNFT && (
+                <FormGroup>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                    <input
+                      type="checkbox"
+                      id="preloadNFT"
+                      checked={preloadNFT}
+                      onChange={(e) => setPreloadNFT(e.target.checked)}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <label 
+                      htmlFor="preloadNFT" 
+                      style={{ 
+                        cursor: 'pointer',
+                        color: theme.colors.neonGreen,
+                        fontWeight: 'bold',
+                        fontSize: '1rem'
+                      }}
+                    >
+                      Pre-load NFT for instant games ⚡
+                    </label>
+                    <span 
+                      style={{ 
+                        color: theme.colors.neonBlue,
+                        cursor: 'pointer',
+                        fontSize: '1.2rem',
+                        userSelect: 'none'
+                      }}
+                      title="Pre-loading deposits your NFT ahead of time so when someone accepts an offer, the game starts instantly without waiting for deposits!"
+                    >
+                      ℹ️
+                    </span>
+                  </div>
+                  <p style={{ 
+                    color: theme.colors.textSecondary, 
+                    fontSize: '0.85rem', 
+                    margin: 0,
+                    fontStyle: 'italic',
+                    lineHeight: 1.4
+                  }}>
+                    Deposits your NFT now so when offers are accepted, games start instantly!
+                  </p>
+                </FormGroup>
+              )}
 
               {/* Game Type */}
               <FormGroup>

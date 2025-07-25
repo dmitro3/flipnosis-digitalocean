@@ -257,6 +257,7 @@ const Dashboard = () => {
   const [listings, setListings] = useState([])
   const [outgoingOffers, setOutgoingOffers] = useState([])
   const [incomingOffers, setIncomingOffers] = useState([])
+  const [readyNFTs, setReadyNFTs] = useState([])
   const [loading, setLoading] = useState(true)
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [socket, setSocket] = useState(null)
@@ -369,6 +370,13 @@ const Dashboard = () => {
       setListings(data.listings || [])
       setOutgoingOffers(data.outgoingOffers || [])
       setIncomingOffers(data.incomingOffers || [])
+      
+      // Fetch ready NFTs separately
+      const readyNFTsResponse = await fetch(`${baseUrl}/api/users/${address}/ready-nfts`)
+      if (readyNFTsResponse.ok) {
+        const readyNFTsData = await readyNFTsResponse.json()
+        setReadyNFTs(readyNFTsData || [])
+      }
     } catch (error) {
       console.error('Error fetching dashboard:', error)
       showError('Failed to load dashboard data')
@@ -377,6 +385,7 @@ const Dashboard = () => {
       setListings([])
       setOutgoingOffers([])
       setIncomingOffers([])
+      setReadyNFTs([])
     } finally {
       setLoading(false)
     }
@@ -547,6 +556,33 @@ const Dashboard = () => {
     )
   }
   
+  const handleWithdrawNFT = async (readyNFT) => {
+    try {
+      showInfo('Withdrawing NFT from ready state...')
+      
+      const baseUrl = getApiUrl('')
+      const response = await fetch(`${baseUrl}/api/nft/withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_address: address,
+          nft_contract: readyNFT.nft_contract,
+          nft_token_id: readyNFT.nft_token_id
+        })
+      })
+      
+      if (response.ok) {
+        showSuccess('NFT withdrawn successfully!')
+        fetchDashboardData() // Refresh data
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to withdraw NFT')
+      }
+    } catch (error) {
+      showError(error.message || 'Failed to withdraw NFT')
+    }
+  }
+
   const renderOutgoingOffers = () => {
     const activeOffers = outgoingOffers.filter(o => o.status === 'pending')
     
@@ -584,9 +620,84 @@ const Dashboard = () => {
           </OfferItem>
         ))}
       </OffersList>
+        )
+  }
+
+  const renderReadyNFTs = () => {
+    if (readyNFTs.length === 0) {
+      return (
+        <EmptyState>
+          <div style={{ textAlign: 'center' }}>
+            <h3 style={{ color: theme.colors.neonGreen, marginBottom: '1rem' }}>
+              🎯 No Ready NFTs
+            </h3>
+            <p style={{ marginBottom: '1rem' }}>
+              Pre-load NFTs when creating listings for instant games!
+            </p>
+            <Button onClick={() => navigate('/create')}>
+              Create Listing with Pre-load
+            </Button>
+          </div>
+        </EmptyState>
+      )
+    }
+
+    return (
+      <OffersList>
+        {readyNFTs.map(nft => (
+          <OfferItem key={nft.id} style={{ 
+            border: `2px solid ${theme.colors.neonGreen}`,
+            background: 'rgba(0, 255, 65, 0.05)'
+          }}>
+            <OfferInfo>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '1rem',
+                marginBottom: '0.5rem'
+              }}>
+                {nft.nft_image && (
+                  <img 
+                    src={nft.nft_image} 
+                    alt={nft.nft_name}
+                    style={{
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '0.5rem',
+                      objectFit: 'cover'
+                    }}
+                  />
+                )}
+                <div>
+                  <div style={{ fontWeight: 'bold', color: theme.colors.neonGreen }}>
+                    {nft.nft_name}
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                    {nft.nft_collection}
+                  </div>
+                </div>
+              </div>
+              <div style={{ 
+                fontSize: '0.8rem', 
+                color: theme.colors.textSecondary,
+                fontStyle: 'italic'
+              }}>
+                ⚡ Ready since {new Date(nft.deposited_at).toLocaleDateString()} 
+                ({nft.source === 'preload' ? 'Pre-loaded' : 'From timeout'})
+              </div>
+            </OfferInfo>
+            
+            <OfferActions>
+              <RejectButton onClick={() => handleWithdrawNFT(nft)}>
+                Withdraw NFT
+              </RejectButton>
+            </OfferActions>
+          </OfferItem>
+        ))}
+      </OffersList>
     )
   }
-  
+
   if (!isConnected) {
     return (
       <ThemeProvider theme={theme}>
@@ -643,11 +754,18 @@ const Dashboard = () => {
                   >
                     Your Offers ({outgoingOffers.filter(o => o.status === 'pending').length})
                   </Tab>
+                  <Tab 
+                    active={activeTab === 'ready'} 
+                    onClick={() => setActiveTab('ready')}
+                  >
+                    Ready NFTs ({readyNFTs.length})
+                  </Tab>
                 </TabContainer>
                 
                 {activeTab === 'listings' && renderListings()}
                 {activeTab === 'incoming' && renderIncomingOffers()}
                 {activeTab === 'outgoing' && renderOutgoingOffers()}
+                {activeTab === 'ready' && renderReadyNFTs()}
               </div>
             </MainContent>
             
