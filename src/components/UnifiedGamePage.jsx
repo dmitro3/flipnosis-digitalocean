@@ -485,6 +485,16 @@ const UnifiedGamePage = () => {
         loadGameData()
         checkReadyNFTStatus()
         break
+      case 'challenger_timeout':
+        console.log('⏰ Challenger timeout:', data)
+        showSuccess(data.message)
+        loadGameData()
+        break
+      case 'challenger_deposit_timeout':
+        console.log('⏰ Challenger deposit timeout:', data)
+        showInfo(data.message)
+        loadGameData()
+        break
       case 'chat_message':
         // Chat messages are handled by the GameChatBox component
         console.log('💬 Chat message received:', data)
@@ -840,6 +850,12 @@ const UnifiedGamePage = () => {
         })
       })
       showSuccess('ETH deposited!')
+      
+      // In new flow, Player 2 deposit starts the game immediately
+      if (gameData?.status === 'waiting_challenger_deposit') {
+        showSuccess('Game starting! Both assets deposited.')
+      }
+      
       loadGameData()
     } catch (error) {
       showError(error.message || 'Failed to deposit ETH')
@@ -872,6 +888,12 @@ const UnifiedGamePage = () => {
         })
       })
       showSuccess('USDC deposited!')
+      
+      // In new flow, Player 2 deposit starts the game immediately
+      if (gameData?.status === 'waiting_challenger_deposit') {
+        showSuccess('Game starting! Both assets deposited.')
+      }
+      
       loadGameData()
     } catch (error) {
       showError(error.message || 'Failed to deposit USDC')
@@ -1150,10 +1172,13 @@ const UnifiedGamePage = () => {
       <Container>
         <GameContainer>
           {/* Turn-Based Deposit Section */}
-          {gameData?.status === 'waiting_deposits' && (
+          {(gameData?.status === 'waiting_deposits' || gameData?.status === 'waiting_challenger_deposit') && (
             <PaymentSection>
               <h2 style={{ color: theme.colors.neonYellow, marginBottom: '1rem' }}>
-                Turn-Based Asset Deposit
+                {gameData?.status === 'waiting_challenger_deposit' 
+                  ? '💰 Challenger: Deposit Crypto to Start Game' 
+                  : 'Turn-Based Asset Deposit'
+                }
               </h2>
               
               {/* 3-Minute Countdown Timer */}
@@ -1164,20 +1189,27 @@ const UnifiedGamePage = () => {
                 {/* Player 1 (Creator) - NFT Deposit */}
                 <div style={{ 
                   padding: '1.5rem', 
-                  border: `3px solid ${gameData.creator_deposited ? theme.colors.neonGreen : (!gameData.creator_deposited && !gameData.challenger_deposited ? theme.colors.neonPink : theme.colors.textSecondary)}`, 
+                  border: `3px solid ${(gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? theme.colors.neonGreen : (!gameData.creator_deposited && !gameData.challenger_deposited ? theme.colors.neonPink : theme.colors.textSecondary)}`, 
                   borderRadius: '1rem', 
                   textAlign: 'center',
                   opacity: !gameData.creator_deposited && gameData.challenger_deposited ? 0.6 : 1
                 }}>
-                  <h3 style={{ color: !gameData.creator_deposited && !gameData.challenger_deposited ? theme.colors.neonPink : 'inherit' }}>
-                    Player 1 (NFT) {!gameData.creator_deposited && !gameData.challenger_deposited && '- YOUR TURN'}
+                  <h3 style={{ color: (gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? theme.colors.neonGreen : (!gameData.creator_deposited && !gameData.challenger_deposited ? theme.colors.neonPink : 'inherit') }}>
+                    Player 1 (NFT) {gameData?.status === 'waiting_challenger_deposit' ? '✅' : (!gameData.creator_deposited && !gameData.challenger_deposited && '- YOUR TURN')}
                   </h3>
                   <p>{getGameCreator()?.slice(0, 6)}...{getGameCreator()?.slice(-4)}</p>
                   <NFTImage src={getGameNFTImage()} alt={getGameNFTName()} />
                   <h4>{getGameNFTName()}</h4>
                   
-                  {gameData.creator_deposited ? (
-                    <p style={{ color: theme.colors.neonGreen, fontWeight: 'bold' }}>✅ NFT Deposited!</p>
+                  {(gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? (
+                    <div>
+                      <p style={{ color: theme.colors.neonGreen, fontWeight: 'bold' }}>✅ NFT Deposited!</p>
+                      {gameData?.status === 'waiting_challenger_deposit' && (
+                        <p style={{ color: theme.colors.textSecondary, fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                          {isCreator ? 'Waiting for challenger...' : 'Already in smart contract'}
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <>
                       {isCreator ? (
@@ -1228,13 +1260,13 @@ const UnifiedGamePage = () => {
                 {/* Player 2 (Challenger) - Crypto Deposit */}
                 <div style={{ 
                   padding: '1.5rem', 
-                  border: `3px solid ${gameData.challenger_deposited ? theme.colors.neonGreen : (gameData.creator_deposited ? theme.colors.neonBlue : theme.colors.textSecondary)}`, 
+                  border: `3px solid ${gameData.challenger_deposited ? theme.colors.neonGreen : ((gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? theme.colors.neonPink : theme.colors.textSecondary)}`, 
                   borderRadius: '1rem', 
                   textAlign: 'center',
-                  opacity: !gameData.creator_deposited ? 0.6 : 1
+                  opacity: gameData?.status === 'waiting_challenger_deposit' || gameData.creator_deposited ? 1 : 0.6
                 }}>
-                  <h3 style={{ color: gameData.creator_deposited && !gameData.challenger_deposited ? theme.colors.neonBlue : 'inherit' }}>
-                    Player 2 ({gameData.payment_token === 'USDC' ? 'USDC' : 'ETH'}) {gameData.creator_deposited && !gameData.challenger_deposited && '- YOUR TURN'}
+                  <h3 style={{ color: gameData.challenger_deposited ? theme.colors.neonGreen : ((gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') && !gameData.challenger_deposited ? theme.colors.neonPink : 'inherit') }}>
+                    Player 2 ({gameData.payment_token === 'USDC' ? 'USDC' : 'ETH'}) {((gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') && !gameData.challenger_deposited) && '- YOUR TURN'}
                   </h3>
                   <p>{getGameJoiner()?.slice(0, 6)}...{getGameJoiner()?.slice(-4)}</p>
                   <PriceDisplay>${getGamePrice()}</PriceDisplay>
@@ -1246,17 +1278,17 @@ const UnifiedGamePage = () => {
                       {isJoiner ? (
                         <PayButton 
                           onClick={gameData.payment_token === 'USDC' ? handleDepositUSDC : handleDepositETH} 
-                          disabled={loading || !gameData.creator_deposited}
+                          disabled={loading || !(gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit')}
                           style={{ 
-                            background: gameData.creator_deposited ? theme.colors.neonBlue : theme.colors.textSecondary,
-                            animation: gameData.creator_deposited ? 'pulse 2s infinite' : 'none'
+                            background: (gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? theme.colors.neonPink : theme.colors.textSecondary,
+                            animation: (gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? 'pulse 2s infinite' : 'none'
                           }}
                         >
-                          {!gameData.creator_deposited ? 'Waiting for Player 1' : `Deposit ${gameData.payment_token === 'USDC' ? 'USDC' : 'ETH'}`}
+                          {!(gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? 'Waiting for Player 1' : `Deposit $${getGamePrice()} ${gameData.payment_token === 'USDC' ? 'USDC' : 'ETH'}`}
                         </PayButton>
                       ) : (
                         <p style={{ color: theme.colors.textSecondary }}>
-                          {!gameData.creator_deposited ? 'Waiting for Player 1...' : 'Waiting for Player 2...'}
+                          {!(gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? 'Waiting for Player 1...' : 'Waiting for Player 2...'}
                         </p>
                       )}
                     </>
@@ -1270,7 +1302,11 @@ const UnifiedGamePage = () => {
                   <p style={{ color: theme.colors.neonGreen, fontSize: '1.2rem', fontWeight: 'bold' }}>
                     🎮 Both players deposited! Game starting...
                   </p>
-                ) : new Date() > new Date(gameData.deposit_deadline) ? (
+                ) : gameData?.status === 'waiting_challenger_deposit' ? (
+                  <p style={{ color: theme.colors.neonBlue, fontSize: '1.1rem' }}>
+                    💰 NFT deposited! Waiting for ${getGamePrice()} {gameData.payment_token === 'USDC' ? 'USDC' : 'ETH'} deposit...
+                  </p>
+                ) : gameData.deposit_deadline && new Date() > new Date(gameData.deposit_deadline) ? (
                   <div>
                     <p style={{ color: theme.colors.neonPink, fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
                       ⏰ Deposit deadline expired! Game cancelled.
@@ -1289,7 +1325,10 @@ const UnifiedGamePage = () => {
                   </div>
                 ) : (
                   <p style={{ color: theme.colors.textSecondary }}>
-                    Turn Order: Player 1 deposits NFT first → Player 2 deposits crypto → Game starts
+                    {gameData?.status === 'waiting_challenger_deposit' 
+                      ? 'NFT already deposited - challenger needs to add crypto'
+                      : 'Turn Order: Player 1 deposits NFT first → Player 2 deposits crypto → Game starts'
+                    }
                   </p>
                 )}
               </div>

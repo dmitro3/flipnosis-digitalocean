@@ -132,8 +132,18 @@ const CreateFlip = () => {
       showInfo('Paying listing fee...')
       const feeResult = await contractService.payListingFee()
       if (!feeResult.success) throw new Error(feeResult.error)
-      // Step 2: Create listing in database
-      showInfo('Creating listing...')
+      
+      // Step 2: Deposit NFT into contract (new flow - immediate game creation)
+      showInfo('Depositing NFT into smart contract...')
+      const depositResult = await contractService.depositNFT(
+        selectedNFT.contractAddress, 
+        selectedNFT.tokenId,
+        'temp_game_id' // Temporary - will be replaced by server
+      )
+      if (!depositResult.success) throw new Error(depositResult.error)
+      
+      // Step 3: Create listing in database (which will create game on-chain)
+      showInfo('Creating game on blockchain...')
       const response = await fetch(getApiUrl('/listings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,15 +161,17 @@ const CreateFlip = () => {
             headsImage: selectedCoin.headsImage,
             tailsImage: selectedCoin.tailsImage,
             isCustom: selectedCoin.isCustom
-          }
+          },
+          immediate_game_creation: true, // Flag for new flow
+          nft_deposited: true // NFT already deposited
         })
       })
       if (!response.ok) throw new Error('Failed to create listing')
       const result = await response.json()
       
-      // Step 3: Pre-load NFT if option selected
+      // Step 4: Pre-load additional NFTs if option selected (for future games)
       if (preloadNFT) {
-        showInfo('Pre-loading NFT for instant games...')
+        showInfo('Pre-loading NFT for future instant games...')
         const preloadResponse = await fetch(getApiUrl('/nft/preload'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -174,12 +186,12 @@ const CreateFlip = () => {
         })
         
         if (preloadResponse.ok) {
-          showSuccess('Listing created and NFT pre-loaded for instant games!')
+          showSuccess('Game created with NFT deposited! Additional NFT ready for instant future games!')
         } else {
-          showSuccess('Listing created successfully! (NFT pre-load failed)')
+          showSuccess('Game created successfully with NFT deposited!')
         }
       } else {
-        showSuccess('Listing created successfully!')
+        showSuccess('Game created successfully with NFT deposited!')
       }
       
       navigate(`/game/${result.listingId}`)
