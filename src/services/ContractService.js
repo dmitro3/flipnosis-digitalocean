@@ -72,6 +72,16 @@ const CONTRACT_ABI = [
     inputs: [{ name: 'gameId', type: 'bytes32' }],
     outputs: [{ name: '', type: 'bool' }]
   },
+  {
+    name: 'depositUSDC',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'gameId', type: 'bytes32' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    outputs: []
+  },
 ]
 
 // NFT ABI for approval

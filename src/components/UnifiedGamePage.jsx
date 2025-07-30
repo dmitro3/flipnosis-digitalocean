@@ -16,6 +16,7 @@ import hazeVideo from '../../Images/Video/haze.webm'
 import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
 import GameChatBox from './GameChatBox'
 import NFTOfferComponent from './NFTOfferComponent'
+import { LoadingSpinner } from '../styles/components'
 
 // Styled Components
 const Container = styled.div`
@@ -912,6 +913,15 @@ case 'offer_accepted':
   }
   
   const handleDepositNFT = async () => {
+    // Initialize if not ready
+    if (!contractService.isReady() && walletClient) {
+      const initResult = await contractService.initialize(walletClient)
+      if (!initResult.success) {
+        showError('Failed to initialize contract service')
+        return
+      }
+    }
+    
     if (!contractService.isReady()) {
       showError('Wallet not connected or contract service not initialized.')
       return
@@ -943,6 +953,15 @@ case 'offer_accepted':
     }
   }
   const handleDepositETH = async () => {
+    // Initialize if not ready
+    if (!contractService.isReady() && walletClient) {
+      const initResult = await contractService.initialize(walletClient)
+      if (!initResult.success) {
+        showError('Failed to initialize contract service')
+        return
+      }
+    }
+    
     if (!contractService.isReady()) {
       showError('Wallet not connected or contract service not initialized.')
       return
@@ -979,6 +998,15 @@ case 'offer_accepted':
     }
   }
   const handleDepositUSDC = async () => {
+    // Initialize if not ready
+    if (!contractService.isReady() && walletClient) {
+      const initResult = await contractService.initialize(walletClient)
+      if (!initResult.success) {
+        showError('Failed to initialize contract service')
+        return
+      }
+    }
+    
     if (!contractService.isReady()) {
       showError('Wallet not connected or contract service not initialized.')
       return
@@ -1809,90 +1837,87 @@ case 'offer_accepted':
   {isListing && !gameData?.joiner && gameData?.status !== 'waiting_challenger_deposit' && (
     <>
       {/* NFT Battle Offers - Show for listings, not active games */}
-                  <>
-                    {/* For NFT vs Crypto games - show price offer form */}
-                    {canShowOfferForm && gameData?.game_type !== 'nft-vs-nft' && (
-                      <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255, 20, 147, 0.1)', borderRadius: '0.5rem' }}>
-                        <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
-                        <input
-                          type="number"
-                          placeholder="Offer price (USD)"
-                          value={newOffer.price}
-                          onChange={(e) => setNewOffer(prev => ({ ...prev, price: e.target.value }))}
-                          style={{
-                            width: '100%',
-                            marginBottom: '0.5rem',
-                            padding: '0.5rem',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: 'white',
-                            borderRadius: '0.25rem'
-                          }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Message (optional)"
-                          value={newOffer.message}
-                          onChange={(e) => setNewOffer(prev => ({ ...prev, message: e.target.value }))}
-                          style={{
-                            width: '100%',
-                            marginBottom: '0.5rem',
-                            padding: '0.5rem',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            color: 'white',
-                            borderRadius: '0.25rem'
-                          }}
-                        />
-                        <button
-                          onClick={createOffer}
-                          disabled={creatingOffer || !newOffer.price}
-                          style={{
-                            width: '100%',
-                            background: theme.colors.neonPink,
-                            color: '#000',
-                            border: 'none',
-                            padding: '0.5rem',
-                            borderRadius: '0.25rem',
-                            cursor: creatingOffer ? 'not-allowed' : 'pointer',
-                            opacity: creatingOffer ? 0.5 : 1
-                          }}
-                        >
-                          {creatingOffer ? 'Creating...' : 'Submit Offer'}
-                        </button>
-                      </div>
-                    )}
-                    
-                    {/* For NFT vs NFT games - show NFT offer component */}
-                    {gameData?.game_type === 'nft-vs-nft' && (
-                      <NFTOfferComponent
-                        gameId={gameId}
-                        gameData={gameData}
-                        isCreator={isCreator}
-                        socket={socket}
-                        connected={!!socket && socket.readyState === WebSocket.OPEN}
-                        offeredNFTs={offeredNFTs}
-                        onOfferSubmitted={(offerData) => {
-                          console.log('📤 NFT offer submitted:', offerData)
-                        }}
-                        onOfferAccepted={(offer) => {
-                          console.log('✅ NFT offer accepted:', offer)
-                          setOfferedNFTs(prev => prev.filter(o => o !== offer))
-                        }}
-                      />
-                    )}
-                  </>
-                    )}
-                    
-                    {/* ... rest of existing offer list code ... */}
-                  </>
-                )}
-                
-                {!isListing && gameData?.status !== 'waiting_challenger_deposit' && (
-                  <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
-                    Game in progress - no offers available
-                  </p>
-                )}
+      <>
+        {/* For NFT vs Crypto games - show price offer form */}
+        {canShowOfferForm && gameData?.game_type !== 'nft-vs-nft' && (
+          <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255, 20, 147, 0.1)', borderRadius: '0.5rem' }}>
+            <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
+            <input
+              type="number"
+              placeholder="Offer price (USD)"
+              value={newOffer.price}
+              onChange={(e) => setNewOffer(prev => ({ ...prev, price: e.target.value }))}
+              style={{
+                width: '100%',
+                marginBottom: '0.5rem',
+                padding: '0.5rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                borderRadius: '0.25rem'
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Message (optional)"
+              value={newOffer.message}
+              onChange={(e) => setNewOffer(prev => ({ ...prev, message: e.target.value }))}
+              style={{
+                width: '100%',
+                marginBottom: '0.5rem',
+                padding: '0.5rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                borderRadius: '0.25rem'
+              }}
+            />
+            <button
+              onClick={createOffer}
+              disabled={creatingOffer || !newOffer.price}
+              style={{
+                width: '100%',
+                background: theme.colors.neonPink,
+                color: '#000',
+                border: 'none',
+                padding: '0.5rem',
+                borderRadius: '0.25rem',
+                cursor: creatingOffer ? 'not-allowed' : 'pointer',
+                opacity: creatingOffer ? 0.5 : 1
+              }}
+            >
+              {creatingOffer ? 'Creating...' : 'Submit Offer'}
+            </button>
+          </div>
+        )}
+        
+        {/* For NFT vs NFT games - show NFT offer component */}
+        {gameData?.game_type === 'nft-vs-nft' && (
+          <NFTOfferComponent
+            gameId={gameId}
+            gameData={gameData}
+            isCreator={isCreator}
+            socket={socket}
+            connected={!!socket && socket.readyState === WebSocket.OPEN}
+            offeredNFTs={offeredNFTs}
+            onOfferSubmitted={(offerData) => {
+              console.log('📤 NFT offer submitted:', offerData)
+            }}
+            onOfferAccepted={(offer) => {
+              console.log('✅ NFT offer accepted:', offer)
+              setOfferedNFTs(prev => prev.filter(o => o !== offer))
+            }}
+          />
+        )}
+      </>
+      
+      {!isListing && gameData?.status !== 'waiting_challenger_deposit' && (
+        <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
+          Game in progress - no offers available
+        </p>
+      )}
+    </>
+  )}
                 
                 {/* Offers List for NFT vs Crypto games */}
                 {isListing && gameData?.game_type !== 'nft-vs-nft' && (
