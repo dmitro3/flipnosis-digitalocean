@@ -12,7 +12,6 @@ import { theme } from './styles/theme'
 import { RouterProvider } from 'react-router-dom'
 import { config } from './config/rainbowkit'
 import React, { useEffect } from 'react'
-import { useGlobalGameTransport } from './utils/useGlobalGameTransport'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -81,6 +80,29 @@ function App() {
     chainsLength: config?.chains?.length 
   })
 
+  // Add global error handler
+  useEffect(() => {
+    const handleGlobalError = (event) => {
+      console.error('🚨 Global error caught:', event.error)
+      // Prevent the error from showing in console
+      event.preventDefault()
+    }
+
+    const handleUnhandledRejection = (event) => {
+      console.error('🚨 Unhandled promise rejection:', event.reason)
+      // Prevent the error from showing in console
+      event.preventDefault()
+    }
+
+    window.addEventListener('error', handleGlobalError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
   // Add global WebSocket listener for TRANSPORT_TO_GAME messages and offer acceptance
   useEffect(() => {
     const handleGlobalWebSocketMessage = (event) => {
@@ -114,31 +136,26 @@ function App() {
       if (data.type === 'offer_accepted_with_timer') {
         console.log('⏰ GLOBAL: Received offer_accepted_with_timer message:', data)
         
-        // Check if this message is for the current user (Player 2)
-        const { address } = useWallet()
-        if (address && data.offererAddress === address) {
-          console.log('🎯 GLOBAL: Player 2 detected, showing crypto loader')
-          
-          // Dispatch a global event to show the crypto loader
-          window.dispatchEvent(new CustomEvent('showCryptoLoader', {
-            detail: {
-              offerId: data.offerId,
-              listingId: data.listingId,
-              gameId: data.gameId,
-              contract_game_id: data.gameId,
-              offererAddress: data.offererAddress,
-              offerPrice: data.offerPrice,
-              originalPrice: data.originalPrice,
-              nftContract: data.nftContract,
-              nftTokenId: data.nftTokenId,
-              nftName: data.nftName,
-              nftImage: data.nftImage,
-              coin: data.coin,
-              startTime: data.startTime,
-              duration: data.duration
-            }
-          }))
-        }
+        // Dispatch a global event to show the crypto loader
+        // The wallet address check will be handled in the component that listens to this event
+        window.dispatchEvent(new CustomEvent('showCryptoLoader', {
+          detail: {
+            offerId: data.offerId,
+            listingId: data.listingId,
+            gameId: data.gameId,
+            contract_game_id: data.gameId,
+            offererAddress: data.offererAddress,
+            offerPrice: data.offerPrice,
+            originalPrice: data.originalPrice,
+            nftContract: data.nftContract,
+            nftTokenId: data.nftTokenId,
+            nftName: data.nftName,
+            nftImage: data.nftImage,
+            coin: data.coin,
+            startTime: data.startTime,
+            duration: data.duration
+          }
+        }))
       }
     }
     

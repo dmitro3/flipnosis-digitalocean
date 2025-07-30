@@ -249,8 +249,8 @@ export const WalletProvider = ({ children }) => {
 
   // Create a proper signer that works with the new walletClient
   const getSigner = () => {
-    if (!walletClient || !publicClient) {
-      console.warn('⚠️ Wallet client or public client not available')
+    if (!walletClient || !publicClient || !walletClient.account) {
+      console.warn('⚠️ Wallet client, public client, or wallet account not available')
       return null
     }
 
@@ -258,8 +258,11 @@ export const WalletProvider = ({ children }) => {
       // Create a signer that wraps the walletClient for ethers compatibility
       const signer = {
         // Basic signer interface
-        getAddress: async () => walletClient.account.address,
+        getAddress: async () => walletClient.account?.address || null,
         signMessage: async (message) => {
+          if (!walletClient.signMessage) {
+            throw new Error('Sign message not available')
+          }
           return await walletClient.signMessage({ message })
         },
         signTransaction: async (transaction) => {
@@ -269,8 +272,11 @@ export const WalletProvider = ({ children }) => {
         },
         connect: () => signer,
         provider: {
-          getNetwork: async () => ({ chainId: chainId }),
+          getNetwork: async () => ({ chainId: chainId || 1 }),
           getBalance: async (address) => {
+            if (!publicClient.getBalance) {
+              throw new Error('Get balance not available')
+            }
             return await publicClient.getBalance({ address })
           }
         }
@@ -293,14 +299,23 @@ export const WalletProvider = ({ children }) => {
     try {
       // Create a provider that wraps the publicClient for ethers compatibility
       const provider = {
-        getNetwork: async () => ({ chainId: chainId }),
+        getNetwork: async () => ({ chainId: chainId || 1 }),
         getBalance: async (address) => {
+          if (!publicClient.getBalance) {
+            throw new Error('Get balance not available')
+          }
           return await publicClient.getBalance({ address })
         },
         getCode: async (address) => {
+          if (!publicClient.getBytecode) {
+            throw new Error('Get bytecode not available')
+          }
           return await publicClient.getBytecode({ address })
         },
         getStorageAt: async (address, slot) => {
+          if (!publicClient.getStorageAt) {
+            throw new Error('Get storage at not available')
+          }
           return await publicClient.getStorageAt({ address, slot })
         }
       }
@@ -314,30 +329,30 @@ export const WalletProvider = ({ children }) => {
 
   const value = {
     // Connection state - Use Wagmi's state directly
-    isConnected,
-    isConnecting,
+    isConnected: isConnected || false,
+    isConnecting: isConnecting || false,
     loading,
-    address,
+    address: address || null,
     
     // Chain info
-    chainId,
-    chain: chains[chainId] ? { ...chains[chainId], id: chainId } : { name: 'Unknown', symbol: 'ETH', id: chainId },
+    chainId: chainId || null,
+    chain: chainId && chains[chainId] ? { ...chains[chainId], id: chainId } : { name: 'Unknown', symbol: 'ETH', id: chainId || 1 },
     chains,
     
     // Functions
-    switchChain,
+    switchChain: switchChain || (() => Promise.reject(new Error('Switch chain not available'))),
     switchToBase,
     
     // NFTs
-    nfts,
+    nfts: nfts || [],
     loadNFTs,
     
     // Mobile detection
     isMobile,
     
     // New clients for transactions (preferred)
-    walletClient,
-    publicClient,
+    walletClient: walletClient || null,
+    publicClient: publicClient || null,
     
     // Legacy compatibility (for existing code)
     signer: getSigner(),

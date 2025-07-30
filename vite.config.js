@@ -48,6 +48,7 @@ export default defineConfig(({ mode }) => {
         process: resolve(__dirname, 'node_modules/process/browser'),
         zlib: resolve(__dirname, 'node_modules/browserify-zlib'),
         path: resolve(__dirname, 'node_modules/path-browserify'),
+        'use-sync-external-store/shim/with-selector': resolve(__dirname, 'node_modules/use-sync-external-store/shim/with-selector.js'),
         fs: false,
         net: false,
         tls: false,
@@ -62,7 +63,10 @@ export default defineConfig(({ mode }) => {
         'buffer',
         'browserify-zlib',
         'path-browserify',
-        'eventemitter3'
+        'eventemitter3',
+        'use-sync-external-store',
+        'use-sync-external-store/shim',
+        'use-sync-external-store/shim/with-selector'
       ],
       exclude: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi'],
       esbuildOptions: {
