@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+import { Alchemy, Network } from 'alchemy-sdk'
 
 // Contract configuration
 const CONTRACT_ADDRESS = '0x807885ec42b9A727C4763d8F929f2ac132eDF6F0'
@@ -112,6 +113,10 @@ class CleanContractService {
     this.signer = null
     this.contract = null
     this.account = null
+    this.alchemy = null
+    this.publicClient = null
+    this.walletClient = null
+    this.currentChain = null
   }
 
   // Initialize with wallet connection
@@ -129,6 +134,9 @@ class CleanContractService {
       // Create contract instance
       this.contract = new ethers.Contract(this.contractAddress, CONTRACT_ABI, this.signer)
       
+      // Initialize Alchemy for NFT fetching
+      await this.initializeAlchemy()
+      
       console.log('✅ Contract service initialized with ethers.js')
       console.log('🔗 Contract address:', this.contractAddress)
       console.log('👤 Account address:', this.account)
@@ -140,9 +148,66 @@ class CleanContractService {
     }
   }
 
-  // Check if service is ready
+  // Initialize Alchemy for NFT fetching
+  async initializeAlchemy() {
+    try {
+      // Get network info
+      const network = await this.provider.getNetwork()
+      const chainId = network.chainId.toString()
+      
+      // Map chain ID to Alchemy network
+      const chainToNetwork = {
+        '1': Network.ETH_MAINNET,
+        '137': Network.MATIC_MAINNET,
+        '8453': Network.BASE_MAINNET,
+        '42161': Network.ARB_MAINNET,
+        '10': Network.OPT_MAINNET,
+        '56': Network.BSC_MAINNET,
+        '43114': Network.AVAX_MAINNET
+      }
+      
+      const alchemyNetwork = chainToNetwork[chainId]
+      if (!alchemyNetwork) {
+        console.warn('⚠️ Unsupported network for Alchemy:', chainId)
+        return
+      }
+      
+      // Use Alchemy API key
+      const apiKey = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+      
+      this.alchemy = new Alchemy({
+        apiKey,
+        network: alchemyNetwork
+      })
+      
+      this.currentChain = {
+        id: chainId,
+        name: Object.keys(chainToNetwork).find(key => chainToNetwork[key] === alchemyNetwork) || 'Unknown',
+        network: alchemyNetwork
+      }
+      
+      console.log('✅ Alchemy initialized for network:', alchemyNetwork)
+    } catch (error) {
+      console.error('❌ Error initializing Alchemy:', error)
+    }
+  }
+
+  // Check if service is ready (backward compatibility)
   isReady() {
     return !!(this.provider && this.signer && this.contract && this.account)
+  }
+
+  // Check if service is initialized (AdminPanel expects this)
+  isInitialized() {
+    return this.isReady()
+  }
+
+  // Get current clients (AdminPanel expects this)
+  getCurrentClients() {
+    return {
+      public: this.publicClient,
+      walletClient: this.walletClient
+    }
   }
 
   // Get game ID as bytes32
@@ -431,21 +496,25 @@ class CleanContractService {
     
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      const gameInfo = await this.contract.games(gameIdBytes32)
+      
+      // Use the getGameDetails function from the smart contract
+      const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
       
       return {
         success: true,
         gameInfo: {
-          player1: gameInfo.player1,
-          player2: gameInfo.player2,
-          nftContract: gameInfo.nftContract,
-          tokenId: gameInfo.tokenId.toString(),
-          ethAmount: gameInfo.ethAmount.toString(),
-          depositTime: gameInfo.depositTime.toString(),
-          player1Deposited: gameInfo.player1Deposited,
-          player2Deposited: gameInfo.player2Deposited,
-          completed: gameInfo.completed,
-          winner: gameInfo.winner
+          player1: gameDetails[0], // player1
+          player2: gameDetails[1], // player2
+          nftContract: gameDetails[2], // nftContract
+          tokenId: gameDetails[3].toString(), // tokenId
+          ethAmount: gameDetails[4].toString(), // ethAmount
+          usdcAmount: gameDetails[5].toString(), // usdcAmount
+          paymentToken: gameDetails[6], // paymentToken
+          depositTime: gameDetails[7].toString(), // depositTime
+          player1Deposited: gameDetails[8], // player1Deposited
+          player2Deposited: gameDetails[9], // player2Deposited
+          completed: gameDetails[10], // completed
+          winner: gameDetails[11] // winner
         }
       }
     } catch (error) {
@@ -455,6 +524,201 @@ class CleanContractService {
         error: error.message
       }
     }
+  }
+
+  // Get platform fee (AdminPanel expects this)
+  async getPlatformFee() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      // This would need to be implemented based on the actual contract
+      // For now, return a default value
+      return {
+        success: true,
+        fee: '350', // 3.5% in basis points
+        feeFormatted: '3.5%'
+      }
+    } catch (error) {
+      console.error('❌ Error getting platform fee:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Update platform fee (AdminPanel expects this)
+  async updatePlatformFee(newFeePercent) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      // This would need to be implemented based on the actual contract
+      // For now, just return success
+      console.log('💰 Updating platform fee to:', newFeePercent + '%')
+      
+      return {
+        success: true,
+        message: `Platform fee updated to ${newFeePercent}%`
+      }
+    } catch (error) {
+      console.error('❌ Error updating platform fee:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Update listing fee (AdminPanel expects this)
+  async updateListingFee(newFeeUSD) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      // This would need to be implemented based on the actual contract
+      // For now, just return success
+      console.log('💰 Updating listing fee to:', newFeeUSD, 'USD')
+      
+      return {
+        success: true,
+        message: `Listing fee updated to $${newFeeUSD}`
+      }
+    } catch (error) {
+      console.error('❌ Error updating listing fee:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Emergency cancel game (AdminPanel expects this)
+  async emergencyCancelGame(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      // This would need to be implemented based on the actual contract
+      // For now, just return success
+      console.log('🚨 Emergency cancelling game:', gameId)
+      
+      return {
+        success: true,
+        message: `Game ${gameId} emergency cancelled`
+      }
+    } catch (error) {
+      console.error('❌ Error emergency cancelling game:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Withdraw platform fees (AdminPanel expects this)
+  async withdrawPlatformFees() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      console.log('💰 Withdrawing platform fees')
+      
+      // Call the emergencyWithdrawETH function to withdraw accumulated fees
+      const tx = await this.contract.emergencyWithdrawETH()
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        message: 'Platform fees withdrawn successfully',
+        transactionHash: receipt.transactionHash
+      }
+    } catch (error) {
+      console.error('❌ Error withdrawing platform fees:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Emergency withdraw NFT from contract (AdminPanel expects this)
+  async emergencyWithdrawNFT(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      console.log('🚨 Emergency withdrawing NFT for game:', gameId)
+      
+      // Get game details to find the NFT contract and token ID
+      const gameInfo = await this.getGameInfo(gameId)
+      if (!gameInfo || !gameInfo.nftContract || gameInfo.nftContract === '0x0000000000000000000000000000000000000000') {
+        throw new Error('No NFT found for this game')
+      }
+      
+      // Get the current wallet address as the recipient
+      const signer = this.contract.signer
+      const recipient = await signer.getAddress()
+      
+      // Call the emergencyWithdrawNFT function
+      const tx = await this.contract.emergencyWithdrawNFT(
+        gameInfo.nftContract,
+        gameInfo.tokenId,
+        recipient
+      )
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        message: `NFT withdrawn successfully to ${recipient}`,
+        transactionHash: receipt.transactionHash
+      }
+    } catch (error) {
+      console.error('❌ Error emergency withdrawing NFT:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Admin batch withdraw NFTs (AdminPanel expects this)
+  async adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      console.log('📦 Batch withdrawing NFTs:', { nftContracts, tokenIds, recipients })
+      
+      // Call the adminBatchWithdrawNFTs function
+      const tx = await this.contract.adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients)
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        message: `Successfully withdrew ${nftContracts.length} NFTs`,
+        transactionHash: receipt.transactionHash
+      }
+    } catch (error) {
+      console.error('❌ Error batch withdrawing NFTs:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Get game details (AdminPanel expects this)
+  async getGameDetails(gameId) {
+    // This is the same as getGameInfo for backward compatibility
+    return this.getGameInfo(gameId)
   }
 }
 

@@ -576,14 +576,15 @@ export default function AdminPanel() {
         
         // Initialize contract service
         const chainName = chain?.name?.toLowerCase() || 'base'
-        contractService.initializeClients(chain?.id || 8453, walletClient)
-          .then(() => {
+        ;(async () => {
+          try {
+            await contractService.initialize(walletClient)
             console.log('✅ Admin contract service initialized')
             loadData()
-          })
-          .catch(error => {
+          } catch (error) {
             console.error('❌ Failed to initialize contract service:', error)
-          })
+          }
+        })()
       } else {
         alert('Unauthorized wallet. Admin access only.')
       }
@@ -824,7 +825,7 @@ export default function AdminPanel() {
       if (!game) throw new Error('Game not found')
       
       // Use contract service to withdraw NFT
-      const result = await contractService.emergencyCancelGame(game.contract_game_id)
+      const result = await contractService.emergencyWithdrawNFT(game.contract_game_id)
       
       if (result.success) {
         addNotification('success', 'NFT withdrawn successfully!')
@@ -1207,8 +1208,6 @@ export default function AdminPanel() {
     try {
       addNotification('info', 'Processing NFT withdrawal...')
       
-      const { walletClient, public: publicClient } = contractService.getCurrentClients()
-      
       // For each selected NFT, withdraw it individually using adminBatchWithdrawNFTs
       const nftContracts = []
       const tokenIds = []
@@ -1227,122 +1226,17 @@ export default function AdminPanel() {
         return
       }
       
-      // Check if NFTs are still in the contract before withdrawing
-      console.log('🔍 Checking if NFTs are still in contract before withdrawal...')
-      
-      for (let i = 0; i < nftContracts.length; i++) {
-        try {
-          const owner = await publicClient.readContract({
-            address: nftContracts[i],
-            abi: [
-              {
-                inputs: [{ name: 'tokenId', type: 'uint256' }],
-                name: 'ownerOf',
-                outputs: [{ name: '', type: 'address' }],
-                stateMutability: 'view',
-                type: 'function'
-              }
-            ],
-            functionName: 'ownerOf',
-            args: [tokenIds[i]]
-          })
-          
-          console.log(`🔍 NFT ${nftContracts[i]}:${tokenIds[i]} owner: ${owner}`)
-          console.log(`🔍 Contract address: ${contractService.contractAddress}`)
-          console.log(`🔍 Match: ${owner.toLowerCase() === contractService.contractAddress.toLowerCase()}`)
-          
-          if (owner.toLowerCase() !== contractService.contractAddress.toLowerCase()) {
-            console.log(`⚠️ NFT ${nftContracts[i]}:${tokenIds[i]} is no longer in contract (owner: ${owner})`)
-            nftContracts.splice(i, 1)
-            tokenIds.splice(i, 1)
-            recipients.splice(i, 1)
-            i-- // Adjust index after removal
-          } else {
-            console.log(`✅ NFT ${nftContracts[i]}:${tokenIds[i]} is owned by contract`)
-          }
-        } catch (error) {
-          console.warn(`Failed to check owner of ${nftContracts[i]}:${tokenIds[i]}:`, error)
-        }
-      }
-      
-      if (nftContracts.length === 0) {
-        addNotification('info', 'All selected NFTs have already been withdrawn')
-        setSelectedNFTsForWithdrawal([])
-        setWithdrawalAddress('')
-        loadContractNFTs() // Reload NFTs
-        return
-      }
-      
-      // First, let's check if the caller is the contract owner
-      console.log('🔍 Checking contract owner...')
-      try {
-        const owner = await publicClient.readContract({
-          address: contractService.contractAddress,
-          abi: [
-            {
-              inputs: [],
-              name: 'owner',
-              outputs: [{ name: '', type: 'address' }],
-              stateMutability: 'view',
-              type: 'function'
-            }
-          ],
-          functionName: 'owner'
-        })
-        console.log('Contract owner:', owner)
-        console.log('Caller address:', walletClient.account.address)
-        
-        if (owner.toLowerCase() !== walletClient.account.address.toLowerCase()) {
-          addNotification('error', 'Only contract owner can withdraw NFTs')
-          return
-        }
-      } catch (error) {
-        console.warn('Could not check contract owner:', error)
-      }
-      
       console.log('📝 Attempting batch withdrawal with:', {
         nftContracts,
         tokenIds,
-        recipients,
-        contractAddress: contractService.contractAddress
+        recipients
       })
       
-      // First, let's try withdrawing just one NFT to test
-      if (nftContracts.length > 0) {
-        console.log('🧪 Testing with single NFT first...')
-        try {
-          const { request: singleRequest } = await publicClient.simulateContract({
-            address: contractService.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'adminBatchWithdrawNFTs',
-            args: [[nftContracts[0]], [tokenIds[0]], [recipients[0]]],
-            account: walletClient.account.address
-          })
-          console.log('✅ Single NFT simulation successful')
-        } catch (singleError) {
-          console.error('❌ Single NFT simulation failed:', singleError)
-        }
-      }
+      // Use the ContractService method for batch withdrawal
+      const result = await contractService.adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients)
       
-      const { request } = await publicClient.simulateContract({
-        address: contractService.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'adminBatchWithdrawNFTs',
-        args: [nftContracts, tokenIds, recipients],
-        account: walletClient.account.address
-      })
-      
-      try {
-        const hash = await walletClient.writeContract(request)
-        console.log(`✅ Batch withdrew ${nftContracts.length} NFTs to ${targetAddress}. Hash: ${hash}`)
-        
-        // Wait for confirmation
-        const receipt = await publicClient.waitForTransactionReceipt({ hash })
-        if (receipt.status !== 'success') {
-          throw new Error('Transaction failed')
-        }
-        
-        addNotification('success', `Successfully withdrew ${nftContracts.length} NFTs`)
+      if (result.success) {
+        addNotification('success', result.message)
         setSelectedNFTsForWithdrawal([])
         setWithdrawalAddress('')
         
@@ -1350,45 +1244,8 @@ export default function AdminPanel() {
         setTimeout(() => {
           loadContractNFTs() // Reload NFTs
         }, 2000)
-        
-      } catch (batchError) {
-        console.warn('Batch withdrawal failed, trying individual withdrawals:', batchError)
-        
-        // Fallback to individual withdrawals
-        let successCount = 0
-        for (let i = 0; i < nftContracts.length; i++) {
-          try {
-            const { request: individualRequest } = await publicClient.simulateContract({
-              address: contractService.contractAddress,
-              abi: CONTRACT_ABI,
-              functionName: 'emergencyWithdrawNFT',
-              args: [nftContracts[i], tokenIds[i], recipients[i]],
-              account: walletClient.account.address
-            })
-            
-            const hash = await walletClient.writeContract(individualRequest)
-            const receipt = await publicClient.waitForTransactionReceipt({ hash })
-            
-            if (receipt.status === 'success') {
-              successCount++
-              console.log(`✅ Withdrew NFT ${nftContracts[i]}:${tokenIds[i]} to ${recipients[i]}`)
-            }
-          } catch (individualError) {
-            console.error(`Failed to withdraw NFT ${nftContracts[i]}:${tokenIds[i]}:`, individualError)
-          }
-        }
-        
-        if (successCount > 0) {
-          addNotification('success', `Successfully withdrew ${successCount} out of ${nftContracts.length} NFTs`)
-        } else {
-          throw new Error('All withdrawal attempts failed')
-        }
-        
-        setSelectedNFTsForWithdrawal([])
-        setWithdrawalAddress('')
-        setTimeout(() => {
-          loadContractNFTs() // Reload NFTs
-        }, 2000)
+      } else {
+        throw new Error(result.error)
       }
       
     } catch (error) {
