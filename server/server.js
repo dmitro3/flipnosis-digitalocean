@@ -20,7 +20,7 @@ const wss = new WebSocket.Server({ server })
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3001
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, 'flipz-clean.db')
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xcB4395C79C80Dc0ebd04a420AaEd705B69B73101'
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x9876c900B6f8B834a25c3DBB06f3cd0292e552f1'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 

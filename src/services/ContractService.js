@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { Alchemy, Network } from 'alchemy-sdk'
 
 // Contract configuration
-const CONTRACT_ADDRESS = '0xcB4395C79C80Dc0ebd04a420AaEd705B69B73101'
+const CONTRACT_ADDRESS = '0x9876c900B6f8B834a25c3DBB06f3cd0292e552f1'
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
@@ -11,6 +11,19 @@ const CONTRACT_ABI = [
     type: 'function',
     stateMutability: 'payable',
     inputs: [],
+    outputs: []
+  },
+  {
+    name: 'payFeeAndCreateGame',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'gameId', type: 'bytes32' },
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'priceUSD', type: 'uint256' },
+      { name: 'paymentToken', type: 'uint8' }
+    ],
     outputs: []
   },
   {
@@ -311,6 +324,57 @@ class CleanContractService {
       }
     } catch (error) {
       console.error('❌ Error paying listing fee:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  // Pay fee and create game in one transaction (simplified 2-step process)
+  async payFeeAndCreateGame(gameId, nftContract, tokenId, priceUSD, paymentToken = 0) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
+    }
+    
+    try {
+      const feeResult = await this.getListingFee()
+      if (!feeResult.success) {
+        return feeResult
+      }
+
+      console.log('💰 Paying fee and creating game:', {
+        gameId,
+        nftContract,
+        tokenId,
+        priceUSD,
+        paymentToken,
+        fee: feeResult.feeFormatted
+      })
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const priceUSDWei = ethers.parseUnits(priceUSD.toString(), 6) // 6 decimals for USD
+      
+      const tx = await this.contract.payFeeAndCreateGame(
+        gameIdBytes32,
+        nftContract,
+        tokenId,
+        priceUSDWei,
+        paymentToken,
+        { value: feeResult.fee }
+      )
+      console.log('📝 Pay fee and create game tx:', tx.hash)
+      
+      const receipt = await tx.wait()
+      
+      return {
+        success: true,
+        transactionHash: tx.hash,
+        receipt,
+        gameId
+      }
+    } catch (error) {
+      console.error('❌ Error paying fee and creating game:', error)
       return {
         success: false,
         error: error.message

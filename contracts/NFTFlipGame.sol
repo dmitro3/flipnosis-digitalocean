@@ -85,6 +85,61 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
+     * @notice Pay fee and create game in one transaction (simplified 2-step process)
+     */
+    function payFeeAndCreateGame(
+        bytes32 gameId,
+        address nftContract,
+        uint256 tokenId,
+        uint256 priceUSD,
+        PaymentToken paymentToken
+    ) external payable nonReentrant whenNotPaused {
+        // First, handle the listing fee payment
+        uint256 requiredFee = getETHAmount(listingFeeUSD);
+        require(msg.value >= requiredFee, "Insufficient listing fee");
+        listingFees[msg.sender] += requiredFee;
+        (bool success,) = platformFeeReceiver.call{value: requiredFee}("");
+        require(success, "Fee transfer failed");
+        
+        // Then create the game
+        require(games[gameId].player1 == address(0), "Game already exists");
+        
+        uint256 ethAmount = 0;
+        uint256 usdcAmount = 0;
+        if (paymentToken == PaymentToken.ETH) {
+            ethAmount = getETHAmount(priceUSD);
+        } else {
+            usdcAmount = priceUSD;
+        }
+        
+        games[gameId] = ActiveGame({
+            player1: msg.sender,
+            player2: address(0), // No player 2 initially
+            nftContract: nftContract,
+            tokenId: tokenId,
+            ethAmount: ethAmount,
+            usdcAmount: usdcAmount,
+            paymentToken: paymentToken,
+            depositTime: block.timestamp,
+            player1Deposited: false,
+            player2Deposited: false,
+            completed: false,
+            winner: address(0)
+        });
+        
+        userGames[msg.sender].push(gameId);
+        
+        // Refund any excess ETH
+        if (msg.value > requiredFee) {
+            (bool refundSuccess,) = msg.sender.call{value: msg.value - requiredFee}("");
+            require(refundSuccess, "Refund failed");
+        }
+        
+        emit ListingFeePaid(msg.sender, requiredFee);
+        emit GameCreated(gameId, msg.sender, address(0), paymentToken);
+    }
+
+    /**
      * @notice Initialize a game when offer is accepted (no deposits yet)
      */
     function initializeGame(

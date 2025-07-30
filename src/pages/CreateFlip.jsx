@@ -156,12 +156,18 @@ const CreateFlip = () => {
       // Generate game ID upfront
       const gameId = `game_${Date.now()}_${Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')}`
       
-      // Step 1: Pay listing fee
-      showInfo('Paying listing fee...')
-      const feeResult = await contractService.payListingFee()
-      if (!feeResult.success) throw new Error(feeResult.error)
+      // Step 1: Pay fee to create game (combines listing fee + game creation)
+      showInfo('Paying fee and creating game...')
+      const createResult = await contractService.payFeeAndCreateGame(
+        gameId,
+        selectedNFT.contractAddress,
+        selectedNFT.tokenId,
+        parseFloat(price),
+        0 // PaymentToken.ETH
+      )
+      if (!createResult.success) throw new Error(createResult.error)
       
-      // Step 2: Create listing ONLY (not game)
+      // Step 2: Create listing in database
       showInfo('Creating listing...')
       const response = await fetch(getApiUrl('/listings'), {
         method: 'POST',
@@ -181,25 +187,17 @@ const CreateFlip = () => {
             headsImage: selectedCoin.headsImage,
             tailsImage: selectedCoin.tailsImage,
             isCustom: selectedCoin.isCustom
-          }
+          },
+          contract_game_id: gameId, // Already created on blockchain
+          transaction_hash: createResult.transactionHash
         })
       })
       
       if (!response.ok) throw new Error('Failed to create listing')
       const result = await response.json()
       
-      // Step 3: Initialize game on blockchain
-      showInfo('Initializing game on blockchain...')
-      const initResponse = await fetch(getApiUrl(`/listings/${result.listingId}/initialize-blockchain`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId })
-      })
-      
-      if (!initResponse.ok) throw new Error('Failed to initialize on blockchain')
-      
-      // Step 4: Deposit NFT
-      showInfo('Depositing NFT...')
+      // Step 3: Load NFT (deposit NFT)
+      showInfo('Loading NFT...')
       const depositResult = await contractService.depositNFT(
         gameId,
         selectedNFT.contractAddress, 
@@ -208,7 +206,7 @@ const CreateFlip = () => {
       
       if (!depositResult.success) throw new Error(depositResult.error)
       
-      // Step 5: Confirm NFT deposit
+      // Step 4: Confirm NFT deposit
       const confirmResponse = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -220,12 +218,12 @@ const CreateFlip = () => {
       
       if (!confirmResponse.ok) throw new Error('Failed to confirm NFT deposit')
       
-      showSuccess('Listing created with NFT deposited! Ready for offers.')
-      // Navigate to the listing, not the game
+      showSuccess('Game created and NFT loaded! Ready for offers.')
+      // Navigate to the listing
       navigate(`/game/${result.listingId}`)
     } catch (error) {
-      console.error('Error creating listing:', error)
-      showError(error.message || 'Failed to create listing')
+      console.error('Error creating game:', error)
+      showError(error.message || 'Failed to create game')
     } finally {
       setLoading(false)
     }
@@ -237,8 +235,36 @@ const CreateFlip = () => {
         <ContentWrapper>
           <GlassCard>
             <NeonText style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              Create Your Flip
+              Create Your Flip (2-Step Process)
             </NeonText>
+            
+            {/* Step Indicator */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginBottom: '2rem',
+              gap: '1rem'
+            }}>
+              <div style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #00bfff 0%, #ff1493 100%)',
+                borderRadius: '0.5rem',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '0.9rem'
+              }}>
+                Step 1: Pay Fee & Create Game
+              </div>
+              <div style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(0, 191, 255, 0.2)',
+                borderRadius: '0.5rem',
+                color: theme.colors.textSecondary,
+                fontSize: '0.9rem'
+              }}>
+                Step 2: Load NFT
+              </div>
+            </div>
 
             <form onSubmit={handleSubmit}>
               {/* NFT Selection */}
@@ -327,10 +353,10 @@ const CreateFlip = () => {
               <SubmitButton type="submit" disabled={loading || !isFullyConnected}>
                 {loading ? (
                   <>
-                    <LoadingSpinner /> Creating Flip...
+                    <LoadingSpinner /> Creating Game...
                   </>
                 ) : (
-                  'Create Flip'
+                  'Pay Fee & Create Game'
                 )}
               </SubmitButton>
             </form>
