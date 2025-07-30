@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { Alchemy, Network } from 'alchemy-sdk'
 
 // Contract configuration
-const CONTRACT_ADDRESS = '0x3b9233b59204D2a7Ef3E36DA9ab1cB93cD0b71fC'
+const CONTRACT_ADDRESS = '0xcB4395C79C80Dc0ebd04a420AaEd705B69B73101'
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [

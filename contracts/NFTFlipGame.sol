@@ -90,24 +90,26 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     function initializeGame(
         bytes32 gameId,
         address player1,
-        address player2,
+        address player2, // Can be address(0) initially
         address nftContract,
         uint256 tokenId,
         uint256 priceUSD,
         PaymentToken paymentToken
     ) external onlyOwner {
         require(games[gameId].player1 == address(0), "Game already exists");
-        require(player1 != player2, "Cannot play against yourself");
+        // Remove this line: require(player1 != player2, "Cannot play against yourself");
+        
         uint256 ethAmount = 0;
         uint256 usdcAmount = 0;
         if (paymentToken == PaymentToken.ETH) {
             ethAmount = getETHAmount(priceUSD);
         } else {
-            usdcAmount = priceUSD; // USDC is 6 decimals, priceUSD is 6 decimals
+            usdcAmount = priceUSD;
         }
+        
         games[gameId] = ActiveGame({
             player1: player1,
-            player2: player2,
+            player2: player2, // Can be address(0)
             nftContract: nftContract,
             tokenId: tokenId,
             ethAmount: ethAmount,
@@ -119,9 +121,42 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             completed: false,
             winner: address(0)
         });
+        
         userGames[player1].push(gameId);
-        userGames[player2].push(gameId);
+        if (player2 != address(0)) {
+            userGames[player2].push(gameId);
+        }
+        
         emit GameCreated(gameId, player1, player2, paymentToken);
+    }
+
+    /**
+     * @notice Update game with player 2 details when offer is accepted
+     */
+    function updateGameWithPlayer2(
+        bytes32 gameId,
+        address player2,
+        uint256 priceUSD,
+        PaymentToken paymentToken
+    ) external onlyOwner {
+        ActiveGame storage game = games[gameId];
+        require(game.player1 != address(0), "Game does not exist");
+        require(game.player2 == address(0), "Player 2 already set");
+        require(!game.completed, "Game completed");
+        
+        game.player2 = player2;
+        game.depositTime = block.timestamp; // Reset deposit timer for player 2
+        
+        if (paymentToken == PaymentToken.ETH) {
+            game.ethAmount = getETHAmount(priceUSD);
+            game.paymentToken = PaymentToken.ETH;
+        } else {
+            game.usdcAmount = priceUSD;
+            game.paymentToken = PaymentToken.USDC;
+        }
+        
+        userGames[player2].push(gameId);
+        emit GameCreated(gameId, game.player1, player2, paymentToken);
     }
 
     /**

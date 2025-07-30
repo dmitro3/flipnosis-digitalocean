@@ -131,6 +131,48 @@ class BlockchainService {
       console.error('❌ Failed to complete game on chain:', error)
     }
   }
+
+  async updateGameWithPlayer2(gameId, player2, priceUSD, paymentToken = 0) {
+    console.log('🔗 Updating game with player 2 on blockchain:', { gameId, player2, priceUSD, paymentToken })
+    
+    if (!this.contractOwnerWallet) {
+      console.error('❌ Contract owner wallet not configured')
+      return { success: false, error: 'Contract wallet not configured' }
+    }
+    
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
+      const gameIdBytes32 = ethers.id(gameId)
+      
+      // Add the ABI for the new function
+      const updateABI = [
+        "function updateGameWithPlayer2(bytes32 gameId, address player2, uint256 priceUSD, uint8 paymentToken)"
+      ]
+      const contractWithUpdate = new ethers.Contract(this.contractAddress, updateABI, this.contractOwnerWallet)
+      
+      console.log('🔗 Calling updateGameWithPlayer2:', {
+        gameIdBytes32,
+        player2,
+        priceUSD: ethers.parseUnits(priceUSD.toString(), 6),
+        paymentToken
+      })
+      
+      const tx = await contractWithUpdate.updateGameWithPlayer2(
+        gameIdBytes32,
+        player2,
+        ethers.parseUnits(priceUSD.toString(), 6),
+        paymentToken
+      )
+      
+      console.log('⏳ Waiting for transaction confirmation:', tx.hash)
+      await tx.wait()
+      console.log('✅ Game updated with player 2 on chain')
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Failed to update game on chain:', error)
+      return { success: false, error: error.message || 'Blockchain transaction failed' }
+    }
+  }
 }
 
 module.exports = { BlockchainService } 

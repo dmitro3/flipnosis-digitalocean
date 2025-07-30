@@ -20,7 +20,7 @@ const wss = new WebSocket.Server({ server })
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3001
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, 'flipz-clean.db')
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3b9233b59204D2a7Ef3E36DA9ab1cB93cD0b71fC'
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xcB4395C79C80Dc0ebd04a420AaEd705B69B73101'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
@@ -98,6 +98,15 @@ function startTimeoutChecker(dbService, wsHandlers) {
       const newFlowGames = await dbService.getTimedOutGames('waiting_challenger_deposit', now)
       for (const game of newFlowGames) {
         await handleNewFlowTimeout(game, dbService, wsHandlers)
+      }
+      
+      // Handle listings that timeout (awaiting_offer status)
+      const awaitingOfferGames = await dbService.getTimedOutGames('awaiting_offer', now)
+      for (const game of awaitingOfferGames) {
+        // These are listings where NFT was deposited but no offer came in reasonable time
+        // You might want to allow creator to reclaim NFT after 24 hours
+        console.log('⏰ Listing timeout check:', game.id)
+        // Optionally implement a longer timeout for these
       }
     } catch (error) {
       console.error('❌ Error in timeout checker:', error)

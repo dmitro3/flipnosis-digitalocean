@@ -22,6 +22,7 @@ class DatabaseService {
           database.run(`
             CREATE TABLE IF NOT EXISTS listings (
               id TEXT PRIMARY KEY,
+              game_id TEXT UNIQUE,
               creator TEXT NOT NULL,
               nft_contract TEXT NOT NULL,
               nft_token_id TEXT NOT NULL,
@@ -34,7 +35,8 @@ class DatabaseService {
               coin_data TEXT,
               listing_fee_paid BOOLEAN DEFAULT false,
               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (game_id) REFERENCES games(id)
             )
           `, (err) => {
             if (err) console.error('❌ Error creating listings table:', err)

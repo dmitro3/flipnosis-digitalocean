@@ -4,7 +4,7 @@ async function main() {
   console.log("🔧 Setting platform fee receiver...");
 
   // Contract address on Base
-  const contractAddress = "0x3b9233b59204D2a7Ef3E36DA9ab1cB93cD0b71fC";
+  const contractAddress = "0xcB4395C79C80Dc0ebd04a420AaEd705B69B73101";
   
   // Admin wallet address (same as deployer)
   const adminWallet = "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28";

@@ -289,6 +289,7 @@ const UnifiedGamePage = () => {
       if (!response.ok) throw new Error('Failed to load game')
       const data = await response.json()
       setGameData(data)
+      
       // Handle deposit phase
       if (data.status === 'waiting_deposits') {
         setGameState(prev => ({ ...prev, phase: 'deposits' }))
@@ -302,12 +303,26 @@ const UnifiedGamePage = () => {
       } else if (data.status === 'completed') {
         setGameState(prev => ({ ...prev, phase: 'completed' }))
       }
+      
       // Load offers if it's a listing
       if (data.type === 'listing') {
         const offersResponse = await fetch(getApiUrl(`/listings/${gameId}/offers`))
         if (offersResponse.ok) {
           const offersData = await offersResponse.json()
           setOffers(offersData)
+        }
+      }
+      
+      // If it's a listing with a game_id, also load the game data
+      if (data.type === 'listing' && data.game_id) {
+        const gameResponse = await fetch(getApiUrl(`/games/${data.game_id}`))
+        if (gameResponse.ok) {
+          const gameDetails = await gameResponse.json()
+          setGameData({
+            ...data,
+            ...gameDetails,
+            isListing: true
+          })
         }
       }
     } catch (error) {
@@ -1331,71 +1346,28 @@ case 'offer_accepted':
                 {/* Player 1 (Creator) - NFT Deposit */}
                 <div style={{ 
                   padding: '1.5rem', 
-                  border: `3px solid ${(gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? theme.colors.neonGreen : (!gameData.creator_deposited && !gameData.challenger_deposited ? theme.colors.neonPink : theme.colors.textSecondary)}`, 
+                  border: `3px solid ${gameData.creator_deposited ? theme.colors.neonGreen : theme.colors.textSecondary}`, 
                   borderRadius: '1rem', 
-                  textAlign: 'center',
-                  opacity: !gameData.creator_deposited && gameData.challenger_deposited ? 0.6 : 1
+                  textAlign: 'center'
                 }}>
-                  <h3 style={{ color: (gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? theme.colors.neonGreen : (!gameData.creator_deposited && !gameData.challenger_deposited ? theme.colors.neonPink : 'inherit') }}>
-                    Player 1 (NFT) {gameData?.status === 'waiting_challenger_deposit' ? '✅' : (!gameData.creator_deposited && !gameData.challenger_deposited && '- YOUR TURN')}
+                  <h3 style={{ color: gameData.creator_deposited ? theme.colors.neonGreen : 'inherit' }}>
+                    Player 1 (NFT) {gameData.creator_deposited && '✅'}
                   </h3>
                   <p>{getGameCreator()?.slice(0, 6)}...{getGameCreator()?.slice(-4)}</p>
                   <NFTImage src={getGameNFTImage()} alt={getGameNFTName()} />
                   <h4>{getGameNFTName()}</h4>
                   
-                  {(gameData.creator_deposited || gameData?.status === 'waiting_challenger_deposit') ? (
+                  {gameData.creator_deposited ? (
                     <div>
-                      <p style={{ color: theme.colors.neonGreen, fontWeight: 'bold' }}>✅ NFT Deposited!</p>
-                      {gameData?.status === 'waiting_challenger_deposit' && (
-                        <p style={{ color: theme.colors.textSecondary, fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                          {isCreator ? 'Waiting for challenger...' : 'Already in smart contract'}
-                        </p>
-                      )}
+                      <p style={{ color: theme.colors.neonGreen, fontWeight: 'bold' }}>✅ NFT Already Deposited!</p>
+                      <p style={{ color: theme.colors.textSecondary, fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        Waiting for challenger to deposit crypto...
+                      </p>
                     </div>
                   ) : (
-                    <>
-                      {isCreator ? (
-                        <>
-                          {readyNFTStatus.ready ? (
-                            <PayButton 
-                              onClick={handleUseReadyNFT} 
-                              disabled={loading || gameData.challenger_deposited}
-                              style={{ 
-                                background: !gameData.challenger_deposited ? theme.colors.neonGreen : theme.colors.textSecondary,
-                                animation: !gameData.challenger_deposited ? 'pulse 2s infinite' : 'none'
-                              }}
-                            >
-                              {gameData.challenger_deposited ? 'Missed Turn' : '⚡ Use Ready NFT'}
-                            </PayButton>
-                          ) : (
-                            <PayButton 
-                              onClick={handleDepositNFT} 
-                              disabled={loading || gameData.challenger_deposited}
-                              style={{ 
-                                background: !gameData.challenger_deposited ? theme.colors.neonPink : theme.colors.textSecondary,
-                                animation: !gameData.challenger_deposited ? 'pulse 2s infinite' : 'none'
-                              }}
-                            >
-                              {gameData.challenger_deposited ? 'Missed Turn' : 'Deposit NFT First'}
-                            </PayButton>
-                          )}
-                          {readyNFTStatus.ready && (
-                            <p style={{ 
-                              color: theme.colors.neonGreen, 
-                              fontSize: '0.8rem', 
-                              margin: '0.5rem 0 0 0',
-                              fontStyle: 'italic'
-                            }}>
-                              🎯 NFT ready for instant game!
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        <p style={{ color: theme.colors.textSecondary }}>
-                          {gameData.challenger_deposited ? 'Turn Expired' : 'Waiting for Player 1...'}
-                        </p>
-                      )}
-                    </>
+                    <p style={{ color: theme.colors.textSecondary }}>
+                      Error: NFT should already be deposited
+                    </p>
                   )}
                 </div>
 

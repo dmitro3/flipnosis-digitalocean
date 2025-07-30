@@ -17,24 +17,42 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   })
 
   router.post('/listings', async (req, res) => {
-    const { creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data } = req.body
+    const { creator, game_id, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data } = req.body
     
     const listingId = `listing_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
     
     try {
-      // Create listing in database - NO GAME CREATION HERE
+      // Create listing in database with game_id reference
       await new Promise((resolve, reject) => {
         db.run(`
-          INSERT INTO listings (id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
-        `, [listingId, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, JSON.stringify(coin_data)], function(err) {
+          INSERT INTO listings (id, game_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+        `, [listingId, game_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, JSON.stringify(coin_data)], function(err) {
           if (err) reject(err)
           else resolve()
         })
       })
       
-      console.log(`✅ Listing created: ${listingId}`)
-      res.json({ success: true, listingId })
+      // Also create the game record with status 'awaiting_offer'
+      await new Promise((resolve, reject) => {
+        db.run(`
+          INSERT INTO games (
+            id, listing_id, blockchain_game_id, creator,
+            nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+            final_price, coin_data, status, creator_deposited
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          game_id, listingId, ethers.id(game_id), creator,
+          nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+          asking_price, JSON.stringify(coin_data), 'awaiting_offer', false
+        ], function(err) {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      console.log(`✅ Listing created: ${listingId} with game: ${game_id}`)
+      res.json({ success: true, listingId, gameId: game_id })
     } catch (error) {
       console.error('❌ Error creating listing:', error)
       res.status(500).json({ error: error.message || 'Database error' })
@@ -202,6 +220,50 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     }
   })
 
+  router.post('/listings/:listingId/initialize-blockchain', async (req, res) => {
+    const { listingId } = req.params
+    const { gameId } = req.body
+    
+    try {
+      // Get listing details
+      const listing = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (!listing) {
+        return res.status(404).json({ error: 'Listing not found' })
+      }
+      
+      // Initialize on blockchain with no player 2
+      if (blockchainService.hasOwnerWallet()) {
+        const blockchainResult = await blockchainService.initializeGameOnChain(
+          gameId,
+          listing.creator,
+          '0x0000000000000000000000000000000000000000', // No player 2 yet
+          listing.nft_contract,
+          listing.nft_token_id,
+          listing.asking_price
+        )
+        
+        if (!blockchainResult.success) {
+          console.error('Failed to initialize game on blockchain:', blockchainResult.error)
+          return res.status(500).json({ 
+            error: 'Failed to initialize game on blockchain', 
+            details: blockchainResult.error 
+          })
+        }
+      }
+      
+      res.json({ success: true })
+    } catch (error) {
+      console.error('❌ Error initializing blockchain:', error)
+      res.status(500).json({ error: error.message })
+    }
+  })
+
   router.post('/offers/:offerId/accept', async (req, res) => {
     const { offerId } = req.params
     
@@ -214,64 +276,81 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         return res.status(400).json({ error: 'Offer already processed' })
       }
       
-      // Get listing details
+      // Get listing and game details
       db.get('SELECT * FROM listings WHERE id = ?', [offer.listing_id], async (err, listing) => {
         if (err || !listing) {
           return res.status(404).json({ error: 'Listing not found' })
         }
         
-        // Check if there's already a game with NFT deposited
-        db.get('SELECT * FROM games WHERE listing_id = ? AND creator_deposited = true AND status = "awaiting_challenger"', 
-          [offer.listing_id], async (err, existingGame) => {
+        // Get the associated game
+        db.get('SELECT * FROM games WHERE listing_id = ?', [offer.listing_id], async (err, game) => {
+          if (err || !game) {
+            return res.status(404).json({ error: 'Game not found' })
+          }
           
-          if (existingGame) {
-            // Use existing game with pre-deposited NFT
-            console.log('🎮 Using existing game with pre-deposited NFT')
-            
-            const depositDeadline = new Date(Date.now() + 5 * 60 * 1000).toISOString()
-            
-            // Update game with challenger info
-            db.run(`
-              UPDATE games 
-              SET challenger = ?, offer_id = ?, final_price = ?, 
-                  status = 'waiting_challenger_deposit', deposit_deadline = ?
-              WHERE id = ?
-            `, [offer.offerer_address, offerId, offer.offer_price, depositDeadline, existingGame.id], (err) => {
-              if (err) {
-                return res.status(500).json({ error: 'Database error' })
+          const depositDeadline = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+          
+          try {
+            // Update game on blockchain with player 2
+            if (blockchainService.hasOwnerWallet()) {
+              const updateResult = await blockchainService.updateGameWithPlayer2(
+                game.id,
+                offer.offerer_address,
+                offer.offer_price,
+                0 // ETH by default, modify if supporting USDC
+              )
+              
+              if (!updateResult.success) {
+                console.error('Failed to update game on blockchain:', updateResult.error)
+                return res.status(500).json({ 
+                  error: 'Failed to update game on blockchain', 
+                  details: updateResult.error 
+                })
               }
-              
-              // Update offer and listing
-              db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
-              db.run('UPDATE listings SET status = "closed" WHERE id = ?', [offer.listing_id])
-              
-              // Notify players
-              wsHandlers.sendToUser(listing.creator, {
-                type: 'offer_accepted',
-                gameId: existingGame.id,
-                depositDeadline,
-                message: 'Offer accepted! Waiting for challenger to deposit crypto...'
+            }
+            
+            // Update game in database
+            await new Promise((resolve, reject) => {
+              db.run(`
+                UPDATE games 
+                SET challenger = ?, offer_id = ?, final_price = ?, 
+                    status = 'waiting_challenger_deposit', deposit_deadline = ?
+                WHERE id = ?
+              `, [offer.offerer_address, offerId, offer.offer_price, depositDeadline, game.id], function(err) {
+                if (err) reject(err)
+                else resolve()
               })
-              
-              wsHandlers.sendToUser(offer.offerer_address, {
-                type: 'offer_accepted',
-                gameId: existingGame.id,
-                depositDeadline,
-                message: 'Your offer was accepted! You have 2 minutes to deposit crypto.'
-              })
-              
-              wsHandlers.broadcastToRoom(offer.listing_id, {
-                type: 'listing_converted_to_game',
-                listingId: offer.listing_id,
-                gameId: existingGame.id
-              })
-              
-              res.json({ success: true, gameId: existingGame.id })
             })
-          } else {
-            // Fallback: create new game (shouldn't happen in new flow)
-            console.warn('⚠️ No pre-deposited game found, this should not happen in new flow')
-            res.status(400).json({ error: 'No game found with deposited NFT' })
+            
+            // Update offer and listing status
+            db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
+            db.run('UPDATE listings SET status = "closed" WHERE id = ?', [offer.listing_id])
+            
+            // Notify players
+            wsHandlers.sendToUser(listing.creator, {
+              type: 'offer_accepted',
+              gameId: game.id,
+              depositDeadline,
+              message: 'Offer accepted! Your NFT is already deposited.'
+            })
+            
+            wsHandlers.sendToUser(offer.offerer_address, {
+              type: 'offer_accepted',
+              gameId: game.id,
+              depositDeadline,
+              message: 'Your offer was accepted! You have 5 minutes to deposit crypto.'
+            })
+            
+            wsHandlers.broadcastToRoom(offer.listing_id, {
+              type: 'listing_converted_to_game',
+              listingId: offer.listing_id,
+              gameId: game.id
+            })
+            
+            res.json({ success: true, gameId: game.id })
+          } catch (error) {
+            console.error('Error accepting offer:', error)
+            res.status(500).json({ error: 'Failed to accept offer', details: error.message })
           }
         })
       })
@@ -371,42 +450,23 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       const isCreator = player === game.creator
       const column = isCreator ? 'creator_deposited' : 'challenger_deposited'
       
-      // Special handling for creator NFT deposit in new flow
-      if (isCreator && assetType === 'nft' && game.status === 'awaiting_nft_deposit') {
-        // Update game to be ready for offers
-        db.run(`
-          UPDATE games 
-          SET creator_deposited = true, status = 'awaiting_challenger' 
-          WHERE id = ?
-        `, [gameId], (err) => {
-          if (err) {
-            return res.status(500).json({ error: 'Database error' })
-          }
-          
-          // Update listing to show it's ready
-          db.run('UPDATE listings SET status = "open" WHERE id = ?', [game.listing_id])
-          
-          console.log('✅ Creator NFT deposited, listing ready for offers')
-          
-          wsHandlers.broadcastToRoom(gameId, {
-            type: 'nft_deposited',
-            message: 'NFT deposited! Listing is now active.'
-          })
-          
-          res.json({ success: true })
-        })
-        return
-      }
-      
-      // Normal deposit handling
       db.run(`UPDATE games SET ${column} = true WHERE id = ?`, [gameId], (err) => {
         if (err) {
           return res.status(500).json({ error: 'Database error' })
         }
         
         db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
-          // Check if challenger deposited in waiting_challenger_deposit status
-          if (updatedGame.status === 'waiting_challenger_deposit' && !isCreator && updatedGame.challenger_deposited) {
+          // If NFT just deposited and still awaiting offer
+          if (isCreator && updatedGame.status === 'awaiting_offer') {
+            console.log('✅ Creator NFT deposited, listing ready for offers')
+            
+            wsHandlers.broadcastToRoom(gameId, {
+              type: 'nft_deposited',
+              message: 'NFT deposited! Listing is now active.'
+            })
+          }
+          // If challenger deposited in waiting_challenger_deposit status
+          else if (updatedGame.status === 'waiting_challenger_deposit' && !isCreator && updatedGame.challenger_deposited) {
             // Both assets now deposited - start game
             db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
             
