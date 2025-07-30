@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { Alchemy, Network } from 'alchemy-sdk'
 
 // Contract configuration
-const CONTRACT_ADDRESS = '0x807885ec42b9A727C4763d8F929f2ac132eDF6F0'
+const CONTRACT_ADDRESS = '0x3b9233b59204D2a7Ef3E36DA9ab1cB93cD0b71fC'
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
@@ -83,6 +83,55 @@ const CONTRACT_ABI = [
     ],
     outputs: []
   },
+  {
+    name: 'emergencyWithdrawETH',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: 'emergencyWithdrawNFT',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'to', type: 'address' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'adminBatchWithdrawNFTs',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'nftContracts', type: 'address[]' },
+      { name: 'tokenIds', type: 'uint256[]' },
+      { name: 'recipients', type: 'address[]' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'getGameDetails',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'gameId', type: 'bytes32' }],
+    outputs: [
+      { name: 'player1', type: 'address' },
+      { name: 'player2', type: 'address' },
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'ethAmount', type: 'uint256' },
+      { name: 'usdcAmount', type: 'uint256' },
+      { name: 'paymentToken', type: 'uint8' },
+      { name: 'depositTime', type: 'uint256' },
+      { name: 'player1Deposited', type: 'bool' },
+      { name: 'player2Deposited', type: 'bool' },
+      { name: 'completed', type: 'bool' },
+      { name: 'winner', type: 'address' }
+    ]
+  }
 ]
 
 // NFT ABI for approval
@@ -205,8 +254,8 @@ class CleanContractService {
   // Get current clients (AdminPanel expects this)
   getCurrentClients() {
     return {
-      public: this.publicClient,
-      walletClient: this.walletClient
+      public: this.provider,
+      walletClient: this.signer
     }
   }
 
@@ -324,8 +373,47 @@ class CleanContractService {
 
       // Check if can deposit
       const canDeposit = await this.contract.canDeposit(gameIdBytes32)
+      console.log('🔍 Can deposit check result:', canDeposit)
+      
       if (!canDeposit) {
-        throw new Error('Cannot deposit - game expired or already completed')
+        // Get more detailed game info to help debug
+        try {
+          const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
+          console.log('🔍 Game details for debugging:', gameDetails)
+          
+          // Check if game exists
+          if (gameDetails.player1 === '0x0000000000000000000000000000000000000000') {
+            throw new Error('Game does not exist on blockchain')
+          }
+          
+          // Check if game is completed
+          if (gameDetails.completed) {
+            throw new Error('Game is already completed')
+          }
+          
+          // Check if deposit timeout has expired
+          const currentTime = Math.floor(Date.now() / 1000)
+          const depositTime = Number(gameDetails.depositTime)
+          const timeout = await this.contract.depositTimeout()
+          const timeLeft = (depositTime + Number(timeout)) - currentTime
+          
+          console.log('⏰ Timeout debug:', {
+            currentTime,
+            depositTime,
+            timeout: timeout.toString(),
+            timeLeft,
+            isExpired: timeLeft <= 0
+          })
+          
+          if (timeLeft <= 0) {
+            throw new Error(`Deposit timeout expired. Time left: ${timeLeft} seconds`)
+          }
+          
+          throw new Error('Cannot deposit - game expired or already completed')
+        } catch (detailError) {
+          console.error('🔍 Detailed error info:', detailError)
+          throw new Error(`Cannot deposit - game expired or already completed. Details: ${detailError.message}`)
+        }
       }
 
       // Deposit NFT
@@ -359,8 +447,47 @@ class CleanContractService {
 
       // Check if can deposit
       const canDeposit = await this.contract.canDeposit(gameIdBytes32)
+      console.log('🔍 Can deposit check result (ETH):', canDeposit)
+      
       if (!canDeposit) {
-        throw new Error('Cannot deposit - game expired or already completed')
+        // Get more detailed game info to help debug
+        try {
+          const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
+          console.log('🔍 Game details for debugging (ETH):', gameDetails)
+          
+          // Check if game exists
+          if (gameDetails.player1 === '0x0000000000000000000000000000000000000000') {
+            throw new Error('Game does not exist on blockchain')
+          }
+          
+          // Check if game is completed
+          if (gameDetails.completed) {
+            throw new Error('Game is already completed')
+          }
+          
+          // Check if deposit timeout has expired
+          const currentTime = Math.floor(Date.now() / 1000)
+          const depositTime = Number(gameDetails.depositTime)
+          const timeout = await this.contract.depositTimeout()
+          const timeLeft = (depositTime + Number(timeout)) - currentTime
+          
+          console.log('⏰ Timeout debug (ETH):', {
+            currentTime,
+            depositTime,
+            timeout: timeout.toString(),
+            timeLeft,
+            isExpired: timeLeft <= 0
+          })
+          
+          if (timeLeft <= 0) {
+            throw new Error(`Deposit timeout expired. Time left: ${timeLeft} seconds`)
+          }
+          
+          throw new Error('Cannot deposit - game expired or already completed')
+        } catch (detailError) {
+          console.error('🔍 Detailed error info (ETH):', detailError)
+          throw new Error(`Cannot deposit - game expired or already completed. Details: ${detailError.message}`)
+        }
       }
 
       // Get ETH amount
@@ -400,8 +527,47 @@ class CleanContractService {
       
       // Check if can deposit
       const canDeposit = await this.contract.canDeposit(gameIdBytes32)
+      console.log('🔍 Can deposit check result (USDC):', canDeposit)
+      
       if (!canDeposit) {
-        throw new Error('Cannot deposit - game expired or already completed')
+        // Get more detailed game info to help debug
+        try {
+          const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
+          console.log('🔍 Game details for debugging (USDC):', gameDetails)
+          
+          // Check if game exists
+          if (gameDetails.player1 === '0x0000000000000000000000000000000000000000') {
+            throw new Error('Game does not exist on blockchain')
+          }
+          
+          // Check if game is completed
+          if (gameDetails.completed) {
+            throw new Error('Game is already completed')
+          }
+          
+          // Check if deposit timeout has expired
+          const currentTime = Math.floor(Date.now() / 1000)
+          const depositTime = Number(gameDetails.depositTime)
+          const timeout = await this.contract.depositTimeout()
+          const timeLeft = (depositTime + Number(timeout)) - currentTime
+          
+          console.log('⏰ Timeout debug (USDC):', {
+            currentTime,
+            depositTime,
+            timeout: timeout.toString(),
+            timeLeft,
+            isExpired: timeLeft <= 0
+          })
+          
+          if (timeLeft <= 0) {
+            throw new Error(`Deposit timeout expired. Time left: ${timeLeft} seconds`)
+          }
+          
+          throw new Error('Cannot deposit - game expired or already completed')
+        } catch (detailError) {
+          console.error('🔍 Detailed error info (USDC):', detailError)
+          throw new Error(`Cannot deposit - game expired or already completed. Details: ${detailError.message}`)
+        }
       }
 
       // USDC ABI for approval
@@ -414,31 +580,15 @@ class CleanContractService {
             { name: 'spender', type: 'address' },
             { name: 'amount', type: 'uint256' }
           ],
-          outputs: []
-        },
-        {
-          name: 'allowance',
-          type: 'function',
-          stateMutability: 'view',
-          inputs: [
-            { name: 'owner', type: 'address' },
-            { name: 'spender', type: 'address' }
-          ],
-          outputs: [{ name: '', type: 'uint256' }]
+          outputs: [{ type: 'bool' }]
         }
       ]
 
-      // Create USDC contract instance
-      const usdcContract = new ethers.Contract(usdcTokenAddress, ERC20_ABI, this.signer)
-      
-      // Check allowance
-      const allowance = await usdcContract.allowance(this.account, this.contractAddress)
-      
-      if (allowance < usdcAmount) {
-        // Approve USDC
-        const approveTx = await usdcContract.approve(this.contractAddress, usdcAmount)
-        await approveTx.wait()
-      }
+      // Approve USDC spending
+      const usdcContract = new ethers.Contract(usdcTokenAddress, ERC20_ABI, this.walletClient)
+      const approveTx = await usdcContract.approve(this.contractAddress, usdcAmount)
+      await approveTx.wait()
+      console.log('✅ USDC approval confirmed')
 
       // Deposit USDC
       const tx = await this.contract.depositUSDC(gameIdBytes32, usdcAmount)
@@ -657,8 +807,13 @@ class CleanContractService {
       console.log('🚨 Emergency withdrawing NFT for game:', gameId)
       
       // Get game details to find the NFT contract and token ID
-      const gameInfo = await this.getGameInfo(gameId)
-      if (!gameInfo || !gameInfo.nftContract || gameInfo.nftContract === '0x0000000000000000000000000000000000000000') {
+      const gameResult = await this.getGameInfo(gameId)
+      if (!gameResult.success) {
+        throw new Error(gameResult.error || 'Failed to get game info')
+      }
+      
+      const gameInfo = gameResult.gameInfo
+      if (!gameInfo.nftContract || gameInfo.nftContract === '0x0000000000000000000000000000000000000000') {
         throw new Error('No NFT found for this game')
       }
       

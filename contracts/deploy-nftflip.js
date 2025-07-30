@@ -63,7 +63,6 @@ async function main() {
   // Deploy the contract
   const nftFlipGame = await NFTFlipGame.deploy(
     config.ethUsdFeed,
-    config.usdcUsdFeed,
     config.usdcToken,
     config.platformFeeReceiver
   );
@@ -109,7 +108,6 @@ async function main() {
     deploymentTime: new Date().toISOString(),
     constructorArgs: {
       ethUsdFeed: config.ethUsdFeed,
-      usdcUsdFeed: config.usdcUsdFeed,
       usdcToken: config.usdcToken,
       platformFeeReceiver: config.platformFeeReceiver
     },

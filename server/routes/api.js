@@ -228,7 +228,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             // Use existing game with pre-deposited NFT
             console.log('🎮 Using existing game with pre-deposited NFT')
             
-            const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString()
+            const depositDeadline = new Date(Date.now() + 5 * 60 * 1000).toISOString()
             
             // Update game with challenger info
             db.run(`
