@@ -289,6 +289,12 @@ const Dashboard = () => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
       
+      // Add null check to prevent the error
+      if (!data || !data.type) {
+        console.warn('⚠️ Received invalid WebSocket message in Dashboard:', data)
+        return
+      }
+      
       // Make socket available globally for components
       window.socket = ws
       

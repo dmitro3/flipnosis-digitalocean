@@ -257,6 +257,13 @@ const Home = () => {
   useEffect(() => {
     const handleWebSocketMessage = (event) => {
       const data = event.detail
+      
+      // Add null check to prevent the error
+      if (!data || !data.type) {
+        console.warn('⚠️ Received invalid WebSocket message in Home:', data)
+        return
+      }
+      
       console.log('🏠 Home page received WebSocket message:', data.type, data)
       
       switch (data.type) {
@@ -284,28 +291,45 @@ const Home = () => {
   }, [])
 
 const getAllItems = () => {
-  const allItems = [
-    ...listings.map(l => ({ 
-      ...l, 
-      isListing: true,
-      nft: {
-        name: l.nft_name || 'Unknown NFT',
-        image: l.nft_image || '/placeholder-nft.svg',
-        collection: l.nft_collection || 'Unknown Collection',
-        chain: l.nft_chain || 'base'
-      },
-      gameType: 'nft-vs-crypto',
-      priceUSD: l.asking_price || 0
-    })),
-    // Only show games that are NOT waiting for deposits or waiting for challenger
-    ...games.filter(g => 
-      g.status !== 'cancelled' && 
-      g.status !== 'waiting_deposits' && 
-      g.status !== 'waiting_challenger_deposit' &&
-      g.status !== 'awaiting_challenger'
-    ).map(g => ({ 
-      ...g, 
+  // Create a map to track unique games by their core ID
+  const uniqueItems = new Map()
+  
+  // Process listings
+  listings.forEach(l => {
+    // Skip if this listing has been converted to a game
+    const hasActiveGame = games.some(g => g.listing_id === l.id && g.status !== 'cancelled')
+    if (!hasActiveGame) {
+      uniqueItems.set(l.id, {
+        ...l,
+        isListing: true,
+        displayId: l.id,
+        nft: {
+          name: l.nft_name || 'Unknown NFT',
+          image: l.nft_image || '/placeholder-nft.svg',
+          collection: l.nft_collection || 'Unknown Collection',
+          chain: l.nft_chain || 'base'
+        },
+        gameType: 'nft-vs-crypto',
+        priceUSD: l.asking_price || 0
+      })
+    }
+  })
+  
+  // Process games
+  games.filter(g => 
+    g.status !== 'cancelled' && 
+    g.status !== 'waiting_deposits' && 
+    g.status !== 'waiting_challenger_deposit' &&
+    g.status !== 'awaiting_challenger'
+  ).forEach(g => {
+    // Use the game ID as the key, removing any listing entry
+    if (g.listing_id) {
+      uniqueItems.delete(g.listing_id)
+    }
+    uniqueItems.set(g.id, {
+      ...g,
       isListing: false,
+      displayId: g.id,
       nft: {
         name: g.nft_name || 'Unknown NFT',
         image: g.nft_image || '/placeholder-nft.svg',
@@ -314,22 +338,24 @@ const getAllItems = () => {
       },
       gameType: 'nft-vs-nft',
       priceUSD: g.final_price || 0
-    }))
-    ]
-    return allItems.filter(item => {
-      const matchesFilter = activeFilter === 'all' || 
-        (activeFilter === 'listings' && item.isListing) ||
-        (activeFilter === 'games' && !item.isListing) ||
-        (activeFilter === item.nft?.chain)
-      const matchesSearch = !searchQuery || 
-        (item.nft?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (item.nft?.collection?.toLowerCase().includes(searchQuery.toLowerCase()))
-      return matchesFilter && matchesSearch
     })
-  }
+  })
+  
+  // Convert map to array and filter
+  return Array.from(uniqueItems.values()).filter(item => {
+    const matchesFilter = activeFilter === 'all' || 
+      (activeFilter === 'listings' && item.isListing) ||
+      (activeFilter === 'games' && !item.isListing) ||
+      (activeFilter === item.nft?.chain)
+    const matchesSearch = !searchQuery || 
+      (item.nft?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.nft?.collection?.toLowerCase().includes(searchQuery.toLowerCase()))
+    return matchesFilter && matchesSearch
+  })
+}
 
   const handleItemClick = (item) => {
-    navigate(`/game/${item.id}`)
+    navigate(`/game/${item.displayId}`)
   }
 
   const filteredItems = getAllItems()

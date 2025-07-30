@@ -285,44 +285,43 @@ const UnifiedGamePage = () => {
   const loadGameData = async () => {
     try {
       setLoading(true)
-      const response = await fetch(getApiUrl(`/games/${gameId}`))
-      if (!response.ok) throw new Error('Failed to load game')
-      const data = await response.json()
-      setGameData(data)
       
-      // Handle deposit phase
-      if (data.status === 'waiting_deposits') {
-        setGameState(prev => ({ ...prev, phase: 'deposits' }))
-        // Check deposit deadline
-        const deadline = new Date(data.deposit_deadline)
-        if (new Date() > deadline) {
-          setGameState(prev => ({ ...prev, phase: 'expired' }))
-        }
-      } else if (data.status === 'active') {
-        setGameState(prev => ({ ...prev, phase: 'playing' }))
-      } else if (data.status === 'completed') {
-        setGameState(prev => ({ ...prev, phase: 'completed' }))
+      // First try to load as a game
+      let response = await fetch(getApiUrl(`/games/${gameId}`))
+      if (!response.ok) {
+        // If not found as game, try as listing
+        response = await fetch(getApiUrl(`/listings/${gameId}`))
       }
       
+      if (!response.ok) throw new Error('Failed to load game/listing')
+      const data = await response.json()
+      
+      // Normalize the data structure
+      const normalizedData = {
+        ...data,
+        id: data.id,
+        type: data.type || (data.listing_id ? 'game' : 'listing'),
+        creator: data.creator || data.creator_address,
+        creator_address: data.creator || data.creator_address,
+        nft_contract: data.nft_contract,
+        nft_token_id: data.nft_token_id,
+        nft_name: data.nft_name,
+        nft_image: data.nft_image,
+        nft_collection: data.nft_collection,
+        asking_price: data.asking_price || data.final_price,
+        coin_data: data.coin_data,
+        status: data.status,
+        game_type: data.game_type || 'nft-vs-crypto'
+      }
+      
+      setGameData(normalizedData)
+      
       // Load offers if it's a listing
-      if (data.type === 'listing') {
+      if (normalizedData.type === 'listing' && normalizedData.status === 'open') {
         const offersResponse = await fetch(getApiUrl(`/listings/${gameId}/offers`))
         if (offersResponse.ok) {
           const offersData = await offersResponse.json()
           setOffers(offersData)
-        }
-      }
-      
-      // If it's a listing with a game_id, also load the game data
-      if (data.type === 'listing' && data.game_id) {
-        const gameResponse = await fetch(getApiUrl(`/games/${data.game_id}`))
-        if (gameResponse.ok) {
-          const gameDetails = await gameResponse.json()
-          setGameData({
-            ...data,
-            ...gameDetails,
-            isListing: true
-          })
         }
       }
     } catch (error) {
@@ -385,6 +384,13 @@ const UnifiedGamePage = () => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
+        
+        // Add null check to prevent the error
+        if (!data || !data.type) {
+          console.warn('⚠️ Received invalid WebSocket message in UnifiedGamePage:', data)
+          return
+        }
+        
         handleWebSocketMessage(data)
       } catch (error) {
         console.error('WebSocket message error:', error)

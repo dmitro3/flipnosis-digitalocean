@@ -22,7 +22,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     const listingId = `listing_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
     
     try {
-      // Create listing in database with game_id reference
+      // Create ONLY listing, NOT game
       await new Promise((resolve, reject) => {
         db.run(`
           INSERT INTO listings (id, game_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data, status)
@@ -33,7 +33,45 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         })
       })
       
-      // Also create the game record with status 'awaiting_offer'
+      console.log(`✅ Listing created: ${listingId} for future game: ${game_id}`)
+      res.json({ success: true, listingId, gameId: game_id })
+    } catch (error) {
+      console.error('❌ Error creating listing:', error)
+      res.status(500).json({ error: error.message || 'Database error' })
+    }
+  })
+
+  // Add a new endpoint to create game when NFT is deposited:
+  router.post('/games/:gameId/create-from-listing', async (req, res) => {
+    const { gameId } = req.params
+    const { listingId } = req.body
+    
+    try {
+      // Get listing details
+      const listing = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM listings WHERE game_id = ?', [gameId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (!listing) {
+        return res.status(404).json({ error: 'Listing not found' })
+      }
+      
+      // Check if game already exists
+      const existingGame = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (existingGame) {
+        return res.json({ success: true, gameId, already_exists: true })
+      }
+      
+      // Create game record
       await new Promise((resolve, reject) => {
         db.run(`
           INSERT INTO games (
@@ -42,19 +80,20 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             final_price, coin_data, status, creator_deposited
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          game_id, listingId, ethers.id(game_id), creator,
-          nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-          asking_price, JSON.stringify(coin_data), 'awaiting_offer', false
+          gameId, listingId, ethers.id(gameId), listing.creator,
+          listing.nft_contract, listing.nft_token_id, listing.nft_name, 
+          listing.nft_image, listing.nft_collection,
+          listing.asking_price, listing.coin_data, 'awaiting_offer', true
         ], function(err) {
           if (err) reject(err)
           else resolve()
         })
       })
       
-      console.log(`✅ Listing created: ${listingId} with game: ${game_id}`)
-      res.json({ success: true, listingId, gameId: game_id })
+      console.log(`✅ Game created from listing: ${gameId}`)
+      res.json({ success: true, gameId })
     } catch (error) {
-      console.error('❌ Error creating listing:', error)
+      console.error('❌ Error creating game from listing:', error)
       res.status(500).json({ error: error.message || 'Database error' })
     }
   })
@@ -438,72 +477,117 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     })
   })
 
+  // Update the deposit-confirmed endpoint to create game if needed:
   router.post('/games/:gameId/deposit-confirmed', (req, res) => {
     const { gameId } = req.params
     const { player, assetType } = req.body
     
-    db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
-      if (err || !game) {
-        return res.status(404).json({ error: 'Game not found' })
+    // First check if game exists
+    db.get('SELECT * FROM games WHERE id = ?', [gameId], async (err, game) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
       }
       
-      const isCreator = player === game.creator
-      const column = isCreator ? 'creator_deposited' : 'challenger_deposited'
-      
-      db.run(`UPDATE games SET ${column} = true WHERE id = ?`, [gameId], (err) => {
-        if (err) {
-          return res.status(500).json({ error: 'Database error' })
-        }
-        
-        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
-          // If NFT just deposited and still awaiting offer
-          if (isCreator && updatedGame.status === 'awaiting_offer') {
-            console.log('✅ Creator NFT deposited, listing ready for offers')
-            
-            wsHandlers.broadcastToRoom(gameId, {
-              type: 'nft_deposited',
-              message: 'NFT deposited! Listing is now active.'
-            })
-          }
-          // If challenger deposited in waiting_challenger_deposit status
-          else if (updatedGame.status === 'waiting_challenger_deposit' && !isCreator && updatedGame.challenger_deposited) {
-            // Both assets now deposited - start game
-            db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
-            
-            console.log(`🎮 Game starting: ${gameId}`)
-            
-            // Notify all players
-            wsHandlers.broadcastToRoom(gameId, {
-              type: 'game_started',
-              gameId,
-              message: 'Both assets deposited - game starting!'
-            })
-            
-            wsHandlers.sendToUser(updatedGame.creator, {
-              type: 'game_started',
-              gameId,
-              isYourTurn: true,
-              message: 'Game started! You go first - choose heads or tails!'
-            })
-            
-            wsHandlers.sendToUser(updatedGame.challenger, {
-              type: 'game_started',
-              gameId,
-              isYourTurn: false,
-              message: 'Game started! Waiting for opponent to choose...'
-            })
-          } else {
-            // Normal deposit confirmation
-            wsHandlers.broadcastToRoom(gameId, {
-              type: 'deposit_confirmed',
-              player,
-              assetType
-            })
+      // If game doesn't exist, create it from listing
+      if (!game) {
+        // Find listing with this game_id
+        db.get('SELECT * FROM listings WHERE game_id = ?', [gameId], async (err, listing) => {
+          if (err || !listing) {
+            return res.status(404).json({ error: 'Listing not found' })
           }
           
-          res.json({ success: true })
+          // Create game
+          await new Promise((resolve, reject) => {
+            db.run(`
+              INSERT INTO games (
+                id, listing_id, blockchain_game_id, creator,
+                nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+                final_price, coin_data, status, creator_deposited
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              gameId, listing.id, ethers.id(gameId), listing.creator,
+              listing.nft_contract, listing.nft_token_id, listing.nft_name, 
+              listing.nft_image, listing.nft_collection,
+              listing.asking_price, listing.coin_data, 'awaiting_offer', true
+            ], function(err) {
+              if (err) {
+                console.error('❌ Error creating game:', err)
+                return res.status(500).json({ error: 'Failed to create game' })
+              }
+              
+              console.log(`✅ Game created on NFT deposit: ${gameId}`)
+              
+              // Broadcast NFT deposited
+              wsHandlers.broadcastToRoom(gameId, {
+                type: 'nft_deposited',
+                message: 'NFT deposited! Listing is now active.'
+              })
+              
+              res.json({ success: true })
+            })
+          })
+          return
         })
-      })
+      } else {
+        // Game exists, update it normally
+        const isCreator = player === game.creator
+        const column = isCreator ? 'creator_deposited' : 'challenger_deposited'
+        
+        db.run(`UPDATE games SET ${column} = true WHERE id = ?`, [gameId], (err) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' })
+          }
+          
+          db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, updatedGame) => {
+            // If NFT just deposited and still awaiting offer
+            if (isCreator && updatedGame.status === 'awaiting_offer') {
+              console.log('✅ Creator NFT deposited, listing ready for offers')
+              
+              wsHandlers.broadcastToRoom(gameId, {
+                type: 'nft_deposited',
+                message: 'NFT deposited! Listing is now active.'
+              })
+            }
+            // If challenger deposited in waiting_challenger_deposit status
+            else if (updatedGame.status === 'waiting_challenger_deposit' && !isCreator && updatedGame.challenger_deposited) {
+              // Both assets now deposited - start game
+              db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId])
+              
+              console.log(`🎮 Game starting: ${gameId}`)
+              
+              // Notify all players
+              wsHandlers.broadcastToRoom(gameId, {
+                type: 'game_started',
+                gameId,
+                message: 'Both assets deposited - game starting!'
+              })
+              
+              wsHandlers.sendToUser(updatedGame.creator, {
+                type: 'game_started',
+                gameId,
+                isYourTurn: true,
+                message: 'Game started! You go first - choose heads or tails!'
+              })
+              
+              wsHandlers.sendToUser(updatedGame.challenger, {
+                type: 'game_started',
+                gameId,
+                isYourTurn: false,
+                message: 'Game started! Waiting for opponent to choose...'
+              })
+            } else {
+              // Normal deposit confirmation
+              wsHandlers.broadcastToRoom(gameId, {
+                type: 'deposit_confirmed',
+                player,
+                assetType
+              })
+            }
+            
+            res.json({ success: true })
+          })
+        })
+      }
     })
   })
 

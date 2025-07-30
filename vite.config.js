@@ -60,10 +60,11 @@ export default defineConfig(({ mode }) => {
         'crypto-browserify',
         'util',
         'buffer',
-        'process/browser',
         'browserify-zlib',
         'path-browserify',
+        'eventemitter3'
       ],
+      exclude: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi'],
       esbuildOptions: {
         target: 'esnext',
         define: {
@@ -74,15 +75,23 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'esnext',
       rollupOptions: {
-        external: ['fsevents'],
+        external: ['fsevents']
       },
       commonjsOptions: {
-        transformMixedEsModules: true
+        transformMixedEsModules: true,
+        include: [/node_modules/],
+        requireReturnsDefault: 'auto',
+        defaultIsModuleExports: 'auto'
       }
     },
     define: {
       'process.env': safeEnv,
       global: 'globalThis',
     },
+    server: {
+      fs: {
+        allow: ['..']
+      }
+    }
   }
 }) 

@@ -86,6 +86,12 @@ function App() {
     const handleGlobalWebSocketMessage = (event) => {
       const data = event.detail
       
+      // Add null check to prevent the error
+      if (!data || !data.type) {
+        console.warn('⚠️ Received invalid WebSocket message:', data)
+        return
+      }
+      
       // Handle TRANSPORT_TO_GAME message globally
       if (data.type === 'TRANSPORT_TO_GAME' && data.forceTransport) {
         console.log('🚀 GLOBAL: Received TRANSPORT_TO_GAME message:', data)

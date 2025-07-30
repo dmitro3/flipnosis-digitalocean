@@ -8,6 +8,12 @@ export function useGlobalGameTransport() {
     const handleTransport = (event) => {
       const data = event.detail
       
+      // Add null check to prevent the error
+      if (!data || !data.type) {
+        console.warn('⚠️ Received invalid WebSocket message in useGlobalGameTransport:', data)
+        return
+      }
+      
       if (data.type === 'TRANSPORT_TO_GAME' && data.forceTransport) {
         console.log('🚀 Force transporting to game:', data.gameId)
         
