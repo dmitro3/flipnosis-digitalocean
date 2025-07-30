@@ -561,7 +561,7 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
           currentRound: 1, // Default values for now
           maxRounds: 1
         },
-        createdAt: new Date(Number(game.createdAt) * 1000).toISOString(),
+        createdAt: game.createdAt && !isNaN(Number(game.createdAt)) ? new Date(Number(game.createdAt) * 1000).toISOString() : new Date().toISOString(),
         stake: {
           nftContract: game.nftContract,
           tokenId: game.tokenId.toString(),
