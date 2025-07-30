@@ -584,24 +584,35 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
         
         // Transform the data to match frontend expectations
-        const transformedGames = games.map(game => ({
-          ...game,
-          createdAt: game.created_at,
-          updatedAt: game.updated_at,
-          gameId: game.id,
-          nftContract: game.nft_contract,
-          tokenId: game.nft_token_id,
-          priceUSD: game.final_price,
-          gameType: 0, // Default to ETH for now
-          paymentToken: 0, // Default to ETH
-          totalPaid: '0',
-          winner: game.winner || '0x0000000000000000000000000000000000000000',
-          expiresAt: game.deposit_deadline ? Math.floor(new Date(game.deposit_deadline).getTime() / 1000) : Math.floor(Date.now() / 1000) + 3600,
-          nftChallenge: {
-            challengerNFTContract: '0x0000000000000000000000000000000000000000',
-            challengerTokenId: '0'
+        const transformedGames = games.map(game => {
+          // Ensure createdAt is a valid timestamp
+          let createdAt = Date.now() / 1000 // Default to current time
+          if (game.created_at) {
+            const parsedDate = new Date(game.created_at)
+            if (!isNaN(parsedDate.getTime())) {
+              createdAt = Math.floor(parsedDate.getTime() / 1000)
+            }
           }
-        }))
+          
+          return {
+            ...game,
+            createdAt: createdAt,
+            updatedAt: game.updated_at ? Math.floor(new Date(game.updated_at).getTime() / 1000) : createdAt,
+            gameId: game.id,
+            nftContract: game.nft_contract,
+            tokenId: game.nft_token_id,
+            priceUSD: game.final_price,
+            gameType: 0, // Default to ETH for now
+            paymentToken: 0, // Default to ETH
+            totalPaid: '0',
+            winner: game.winner || '0x0000000000000000000000000000000000000000',
+            expiresAt: game.deposit_deadline ? Math.floor(new Date(game.deposit_deadline).getTime() / 1000) : Math.floor(Date.now() / 1000) + 3600,
+            nftChallenge: {
+              challengerNFTContract: '0x0000000000000000000000000000000000000000',
+              challengerTokenId: '0'
+            }
+          }
+        })
         
         res.json(transformedGames)
       }
