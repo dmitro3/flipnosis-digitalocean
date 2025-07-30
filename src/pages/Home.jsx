@@ -16,6 +16,7 @@ import contractService from '../services/ContractService'
 
 // 5. Component imports
 import ClaimRewards from '../components/ClaimRewards'
+import TestComponent from '../components/TestComponent'
 
 // 6. Style imports
 import { theme } from '../styles/theme'
@@ -592,6 +593,7 @@ const getAllItems = () => {
         <ContentWrapper>
           {/* Add ClaimRewards component */}
           <ClaimRewards />
+        <TestComponent />
           
           {/* Chain Filters */}
           <TransparentCard style={{ background: theme.colors.bgDark }}>

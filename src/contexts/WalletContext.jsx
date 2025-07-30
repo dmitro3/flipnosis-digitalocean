@@ -3,7 +3,6 @@ import { useAccount, useChainId, useSwitchChain, useWalletClient, usePublicClien
 import { useToast } from './ToastContext'
 import { Alchemy, Network } from 'alchemy-sdk'
 import { ethers } from 'ethers'
-import contractService from '../services/ContractService'
 
 const WalletContext = createContext()
 
@@ -239,13 +238,7 @@ export const WalletProvider = ({ children }) => {
     })
   }, [isConnected, address, chainId, walletClient, publicClient])
 
-  // Automatically initialize contractService with walletClient after wallet connects
-  useEffect(() => {
-    if (walletClient) {
-      contractService.initialize(walletClient)
-      console.log('✅ contractService initialized with walletClient')
-    }
-  }, [walletClient])
+
 
   // Create a proper signer that works with the new walletClient
   const getSigner = () => {

@@ -4,6 +4,13 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
+// Add initialization debugging
+console.log('🚀 Application starting...', {
+  timestamp: new Date().toISOString(),
+  userAgent: navigator.userAgent,
+  url: window.location.href
+})
+
 // Error boundary for the root
 class RootErrorBoundary extends React.Component {
   constructor(props) {

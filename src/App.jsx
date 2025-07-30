@@ -37,10 +37,11 @@ console.log('Rainbow Kit Config:', {
 
 function App() {
   // Add debug logging
-  console.log('🔍 App.jsx - Config check:', { 
+  console.log('🔍 App.jsx - Starting render:', { 
     config, 
     hasChains: !!config?.chains,
-    chainsLength: config?.chains?.length 
+    chainsLength: config?.chains?.length,
+    timestamp: new Date().toISOString()
   })
 
   // Add global error handler
