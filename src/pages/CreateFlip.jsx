@@ -145,7 +145,7 @@ const CreateFlip = () => {
     setLoading(true)
     try {
       // Generate game ID upfront
-      const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+      const gameId = `game_${Date.now()}_${Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')}`
       
       // Step 1: Pay listing fee
       showInfo('Paying listing fee...')
