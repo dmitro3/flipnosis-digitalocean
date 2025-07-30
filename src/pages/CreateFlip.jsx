@@ -96,7 +96,7 @@ const SubmitButton = styled(Button)`
 const CreateFlip = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { address, walletClient, nfts, loading: nftsLoading } = useWallet()
+  const { address, walletClient, nfts, loading: nftsLoading, chainId, switchToBase } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [price, setPrice] = useState('')
@@ -114,16 +114,42 @@ const CreateFlip = () => {
 
   // Check if wallet is fully connected and ready
   const isFullyConnected = address && walletClient
+  
+  // Debug wallet connection status
+  useEffect(() => {
+    console.log('🔍 Wallet connection status:', {
+      address,
+      hasWalletClient: !!walletClient,
+      isFullyConnected,
+      isConnected,
+      isConnecting,
+      chainId
+    })
+    
+    // Check if wallet is on Base network
+    if (isConnected && chainId !== 8453) {
+      console.warn('⚠️ Wallet not on Base network. Current chainId:', chainId)
+      showInfo('Please switch to Base network to create games')
+    }
+  }, [address, walletClient, isFullyConnected, isConnected, isConnecting, chainId, showInfo])
 
   // Initialize contract service when wallet is ready
   useEffect(() => {
     const initializeContract = async () => {
-      if (isFullyConnected && walletClient) {
+      if (isFullyConnected && walletClient && address) {
         try {
+          console.log('🔧 Initializing contract service...', {
+            isFullyConnected,
+            hasWalletClient: !!walletClient,
+            address
+          })
+          
           const result = await contractService.initialize(walletClient)
           if (!result.success) {
             console.error('Failed to initialize contract service:', result.error)
             showError('Failed to initialize contract service')
+          } else {
+            console.log('✅ Contract service initialized successfully')
           }
         } catch (error) {
           console.error('Error initializing contract service:', error)
@@ -132,8 +158,11 @@ const CreateFlip = () => {
       }
     }
     
-    initializeContract()
-  }, [isFullyConnected, walletClient, showError])
+    // Add a small delay to ensure wallet is fully ready
+    const timer = setTimeout(initializeContract, 1000)
+    
+    return () => clearTimeout(timer)
+  }, [isFullyConnected, walletClient, address, showError])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -146,8 +175,20 @@ const CreateFlip = () => {
       return
     }
     
+    // Check if wallet is on Base network
+    if (chainId !== 8453) {
+      showError('Please switch to Base network to create games')
+      return
+    }
+    
     if (!contractService.isReady()) {
-      showError('Wallet not connected or contract service not initialized.')
+      console.error('❌ Contract service not ready:', {
+        hasProvider: !!contractService.provider,
+        hasSigner: !!contractService.signer,
+        hasContract: !!contractService.contract,
+        hasAccount: !!contractService.account
+      })
+      showError('Wallet not connected or contract service not initialized. Please try connecting your wallet again.')
       return
     }
     
@@ -158,6 +199,15 @@ const CreateFlip = () => {
       
       // Step 1: Pay fee to create game (combines listing fee + game creation)
       showInfo('Paying fee and creating game...')
+      
+      console.log('🎮 Creating game with params:', {
+        gameId,
+        nftContract: selectedNFT.contractAddress,
+        tokenId: selectedNFT.tokenId,
+        price: parseFloat(price),
+        paymentToken: 0
+      })
+      
       const createResult = await contractService.payFeeAndCreateGame(
         gameId,
         selectedNFT.contractAddress,
@@ -165,7 +215,13 @@ const CreateFlip = () => {
         parseFloat(price),
         0 // PaymentToken.ETH
       )
-      if (!createResult.success) throw new Error(createResult.error)
+      
+      console.log('📝 Create result:', createResult)
+      
+      if (!createResult.success) {
+        console.error('❌ Failed to create game:', createResult.error)
+        throw new Error(`Failed to create game: ${createResult.error}`)
+      }
       
       // Step 2: Create listing in database
       showInfo('Creating listing...')
@@ -237,6 +293,25 @@ const CreateFlip = () => {
             <NeonText style={{ textAlign: 'center', marginBottom: '2rem' }}>
               Create Your Flip (2-Step Process)
             </NeonText>
+            
+            {/* Network Check */}
+            {isConnected && chainId !== 8453 && (
+              <div style={{
+                background: 'rgba(255, 165, 0, 0.1)',
+                border: '2px solid orange',
+                borderRadius: '0.5rem',
+                padding: '1rem',
+                marginBottom: '2rem',
+                textAlign: 'center'
+              }}>
+                <p style={{ color: 'orange', margin: '0 0 1rem 0' }}>
+                  ⚠️ Please switch to Base network to create games
+                </p>
+                <Button onClick={switchToBase} style={{ background: 'orange' }}>
+                  Switch to Base Network
+                </Button>
+              </div>
+            )}
             
             {/* Step Indicator */}
             <div style={{ 

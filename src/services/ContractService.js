@@ -334,12 +334,27 @@ class CleanContractService {
   // Pay fee and create game in one transaction (simplified 2-step process)
   async payFeeAndCreateGame(gameId, nftContract, tokenId, priceUSD, paymentToken = 0) {
     if (!this.isReady()) {
+      console.error('❌ Contract service not ready for payFeeAndCreateGame:', {
+        hasProvider: !!this.provider,
+        hasSigner: !!this.signer,
+        hasContract: !!this.contract,
+        hasAccount: !!this.account
+      })
       return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
     
     try {
+      console.log('🔍 Starting payFeeAndCreateGame with params:', {
+        gameId,
+        nftContract,
+        tokenId,
+        priceUSD,
+        paymentToken
+      })
+      
       const feeResult = await this.getListingFee()
       if (!feeResult.success) {
+        console.error('❌ Failed to get listing fee:', feeResult.error)
         return feeResult
       }
 
@@ -355,6 +370,15 @@ class CleanContractService {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       const priceUSDWei = ethers.parseUnits(priceUSD.toString(), 6) // 6 decimals for USD
       
+      console.log('📝 Contract call params:', {
+        gameIdBytes32,
+        nftContract,
+        tokenId,
+        priceUSDWei: priceUSDWei.toString(),
+        paymentToken,
+        value: feeResult.fee.toString()
+      })
+      
       const tx = await this.contract.payFeeAndCreateGame(
         gameIdBytes32,
         nftContract,
@@ -366,6 +390,7 @@ class CleanContractService {
       console.log('📝 Pay fee and create game tx:', tx.hash)
       
       const receipt = await tx.wait()
+      console.log('✅ Transaction confirmed:', receipt)
       
       return {
         success: true,
@@ -375,6 +400,12 @@ class CleanContractService {
       }
     } catch (error) {
       console.error('❌ Error paying fee and creating game:', error)
+      console.error('🔍 Error details:', {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        data: error.data
+      })
       return {
         success: false,
         error: error.message

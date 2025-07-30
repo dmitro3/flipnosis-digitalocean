@@ -72,9 +72,14 @@ function App() {
     const handleGlobalWebSocketMessage = (event) => {
       const data = event.detail
       
-      // Add null check to prevent the error
-      if (!data || !data.type) {
-        console.warn('⚠️ Received invalid WebSocket message:', data)
+      // Enhanced null check to prevent the error
+      if (!data) {
+        console.warn('⚠️ Received null WebSocket message')
+        return
+      }
+      
+      if (!data.type) {
+        console.warn('⚠️ Received WebSocket message without type:', data)
         return
       }
       
