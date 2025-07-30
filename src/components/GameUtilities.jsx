@@ -1,5 +1,4 @@
 import React from 'react'
-import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import { GlassCard, NeonText } from '../styles/components'
 import styled from '@emotion/styled'

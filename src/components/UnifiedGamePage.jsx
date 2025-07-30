@@ -1,21 +1,35 @@
+// 1. React imports first
 import React, { useState, useEffect, useRef } from 'react'
+
+// 2. Third-party imports
 import { useParams, useNavigate } from 'react-router-dom'
+import { ThemeProvider } from '@emotion/react'
+import styled from '@emotion/styled'
+
+// 3. Context imports
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
+
+// 4. Service imports
 import contractService from '../services/ContractService'
+import { useContractService } from '../utils/useContractService'
+
+// 5. Component imports
 import OptimizedGoldCoin from './OptimizedGoldCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import GameResultPopup from './GameResultPopup'
 import ProfilePicture from './ProfilePicture'
-import { ThemeProvider } from '@emotion/react'
-import { theme } from '../styles/theme'
-import styled from '@emotion/styled'
-import { API_CONFIG, getApiUrl, getWsUrl } from '../config/api'
-import hazeVideo from '../../Images/Video/haze.webm'
-import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
 import GameChatBox from './GameChatBox'
 import NFTOfferComponent from './NFTOfferComponent'
+
+// 6. Style imports
+import { theme } from '../styles/theme'
+import { API_CONFIG, getApiUrl, getWsUrl } from '../config/api'
 import { LoadingSpinner } from '../styles/components'
+
+// 7. Asset imports last
+import hazeVideo from '../../Images/Video/haze.webm'
+import mobileVideo from '../../Images/Video/Mobile/mobile.webm'
 
 // Styled Components
 const Container = styled.div`
@@ -264,6 +278,7 @@ const UnifiedGamePage = () => {
   const navigate = useNavigate()
   const { address, walletClient, isMobile } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
+  const { isInitialized: contractInitialized } = useContractService()
   
   const [gameData, setGameData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -311,7 +326,7 @@ const UnifiedGamePage = () => {
         asking_price: data.asking_price || data.final_price,
         coin_data: data.coin_data,
         status: data.status,
-        game_type: data.game_type || 'nft-vs-crypto'
+        game_type: data.game_type || (data.nft_contract ? 'nft-vs-crypto' : 'crypto-vs-crypto')
       }
       
       setGameData(normalizedData)
@@ -358,56 +373,71 @@ const UnifiedGamePage = () => {
   useEffect(() => {
     if (!gameId) return
     
-    const ws = new WebSocket(getWsUrl())
+    let ws = null
+    let mounted = true
     
-    ws.onopen = () => {
-      console.log('WebSocket connected')
-      setSocket(ws)
+    const connect = () => {
+      ws = new WebSocket(getWsUrl())
       
-      // Join room with the actual gameId (not the type-prefixed one)
-      const roomId = gameId.startsWith('listing_') || gameId.startsWith('game_') ? gameId : gameId
-      
-      ws.send(JSON.stringify({
-        type: 'join_room',
-        roomId: roomId
-      }))
-      
-      // Register user if we have an address
-      if (address) {
-        ws.send(JSON.stringify({
-          type: 'register_user',
-          address: address
-        }))
-      }
-    }
-    
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        
-        // Add null check to prevent the error
-        if (!data || !data.type) {
-          console.warn('⚠️ Received invalid WebSocket message in UnifiedGamePage:', data)
+      ws.onopen = () => {
+        if (!mounted) {
+          ws.close()
           return
         }
+        console.log('WebSocket connected')
+        setSocket(ws)
         
-        handleWebSocketMessage(data)
-      } catch (error) {
-        console.error('WebSocket message error:', error)
+        // Join room with the actual gameId (not the type-prefixed one)
+        const roomId = gameId.startsWith('listing_') || gameId.startsWith('game_') ? gameId : gameId
+        
+        ws.send(JSON.stringify({
+          type: 'join_room',
+          roomId: roomId
+        }))
+        
+        // Register user if we have an address
+        if (address) {
+          ws.send(JSON.stringify({
+            type: 'register_user',
+            address: address
+          }))
+        }
+      }
+      
+      ws.onmessage = (event) => {
+        if (!mounted) return
+        try {
+          const data = JSON.parse(event.data)
+          
+          // Add null check to prevent the error
+          if (!data || !data.type) {
+            console.warn('⚠️ Received invalid WebSocket message in UnifiedGamePage:', data)
+            return
+          }
+          
+          handleWebSocketMessage(data)
+        } catch (error) {
+          console.error('WebSocket message error:', error)
+        }
+      }
+      
+      ws.onerror = (error) => {
+        if (!mounted) return
+        console.error('WebSocket error:', error)
+      }
+      
+      ws.onclose = () => {
+        if (!mounted) return
+        console.log('WebSocket disconnected')
+        setSocket(null)
       }
     }
     
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
-    
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
-      setSocket(null)
-    }
+    connect()
     
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
+      mounted = false
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close()
       }
     }
@@ -780,12 +810,6 @@ case 'offer_accepted':
     }
   }, [gameData, isListing, canMakeOffer, address])
   
-  // Load game data and check ready NFT status
-  useEffect(() => {
-    loadGameData()
-    checkReadyNFTStatus()
-  }, [gameId])
-  
   // Check if NFT is ready for instant use
   const checkReadyNFTStatus = async () => {
     if (!gameData || !address || !isCreator) return
@@ -802,12 +826,16 @@ case 'offer_accepted':
     }
   }
   
-  // Re-check ready status when game data changes
+  // Consolidated effect for loading game data and checking ready NFT status
   useEffect(() => {
-    if (gameData && address && isCreator) {
-      checkReadyNFTStatus()
+    const loadData = async () => {
+      await loadGameData()
+      if (address) {
+        await checkReadyNFTStatus()
+      }
     }
-  }, [gameData, address, isCreator])
+    loadData()
+  }, [gameId, address])
   
   // Set coin images when game loads
   useEffect(() => {
@@ -933,17 +961,8 @@ case 'offer_accepted':
   }
   
   const handleDepositNFT = async () => {
-    // Initialize if not ready
-    if (!contractService.isReady() && walletClient) {
-      const initResult = await contractService.initialize(walletClient)
-      if (!initResult.success) {
-        showError('Failed to initialize contract service')
-        return
-      }
-    }
-    
-    if (!contractService.isReady()) {
-      showError('Wallet not connected or contract service not initialized.')
+    if (!contractInitialized) {
+      showError('Contract service not initialized. Please try again.')
       return
     }
     try {
@@ -973,17 +992,8 @@ case 'offer_accepted':
     }
   }
   const handleDepositETH = async () => {
-    // Initialize if not ready
-    if (!contractService.isReady() && walletClient) {
-      const initResult = await contractService.initialize(walletClient)
-      if (!initResult.success) {
-        showError('Failed to initialize contract service')
-        return
-      }
-    }
-    
-    if (!contractService.isReady()) {
-      showError('Wallet not connected or contract service not initialized.')
+    if (!contractInitialized) {
+      showError('Contract service not initialized. Please try again.')
       return
     }
     try {
@@ -1018,17 +1028,8 @@ case 'offer_accepted':
     }
   }
   const handleDepositUSDC = async () => {
-    // Initialize if not ready
-    if (!contractService.isReady() && walletClient) {
-      const initResult = await contractService.initialize(walletClient)
-      if (!initResult.success) {
-        showError('Failed to initialize contract service')
-        return
-      }
-    }
-    
-    if (!contractService.isReady()) {
-      showError('Wallet not connected or contract service not initialized.')
+    if (!contractInitialized) {
+      showError('Contract service not initialized. Please try again.')
       return
     }
     try {
@@ -1066,8 +1067,8 @@ case 'offer_accepted':
   }
 
   const handleReclaimAssets = async () => {
-    if (!contractService.isReady()) {
-      showError('Wallet not connected or contract service not initialized.')
+    if (!contractInitialized) {
+      showError('Contract service not initialized. Please try again.')
       return
     }
     try {
@@ -1149,7 +1150,7 @@ case 'offer_accepted':
     if (!gameActive || !isPlayer || gameState.phase !== 'charging') return
     
     // For blockchain game, execute flip on-chain
-    if (gameData.blockchain_id && contractService.isInitialized()) {
+    if (gameData.blockchain_id && contractInitialized) {
       try {
         const result = await contractService.playRound(gameData.blockchain_id)
         if (!result.success) throw new Error(result.error)

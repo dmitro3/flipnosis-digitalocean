@@ -1,13 +1,24 @@
+// 1. React imports first
 import React, { useState, useEffect } from 'react'
+
+// 2. Third-party imports
 import { useNavigate } from 'react-router-dom'
+import { ThemeProvider } from '@emotion/react'
+import styled from '@emotion/styled'
+
+// 3. Context imports
 import { useWallet } from '../contexts/WalletContext'
 import { useToast } from '../contexts/ToastContext'
+
+// 4. Service imports
 import contractService from '../services/ContractService'
+
+// 5. Component imports
 import NFTSelector from '../components/NFTSelector'
 import CoinSelector from '../components/CoinSelector'
-import { ThemeProvider } from '@emotion/react'
+
+// 6. Style imports
 import { theme } from '../styles/theme'
-import styled from '@emotion/styled'
 import { API_CONFIG, getApiUrl } from '../config/api'
 import {
   Container,

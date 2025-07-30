@@ -17,9 +17,6 @@ export const ProfileProvider = ({ children }) => {
   const [profiles, setProfiles] = useState({})
   const [loading, setLoading] = useState({})
 
-  // API base URL - getApiUrl already includes /api prefix
-  const API_BASE = getApiUrl('')
-
   const getPlayerName = async (playerAddress) => {
     try {
       const profile = await getProfile(playerAddress)
@@ -184,8 +181,8 @@ export const ProfileProvider = ({ children }) => {
     setLoading(prev => ({ ...prev, [playerAddress]: true }))
 
     try {
-      console.log('🌐 Fetching profile from:', `${API_BASE}/profile/${playerAddress}`)
-      const response = await fetch(`${API_BASE}/profile/${playerAddress}`)
+      console.log('🌐 Fetching profile from:', getApiUrl(`/profile/${playerAddress}`))
+      const response = await fetch(getApiUrl(`/profile/${playerAddress}`))
       console.log('🌐 Profile API response:', { 
         status: response.status, 
         ok: response.ok,
@@ -233,7 +230,7 @@ export const ProfileProvider = ({ children }) => {
 
   const updateProfile = async (playerAddress, profileData) => {
     try {
-      const response = await fetch(`${API_BASE}/profile/${playerAddress}`, {
+      const response = await fetch(getApiUrl(`/profile/${playerAddress}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

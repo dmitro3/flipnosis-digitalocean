@@ -13,6 +13,18 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     socket.on('message', async (message) => {
       try {
         const data = JSON.parse(message)
+        
+        // Ensure type field exists
+        if (!data || typeof data !== 'object') {
+          console.warn('Invalid WebSocket data format')
+          return
+        }
+        
+        // Add type if missing for certain messages
+        if (!data.type && data.message) {
+          data.type = 'chat_message' // or appropriate type
+        }
+        
         console.log('📡 Received WebSocket message:', data)
         
         switch (data.type) {
