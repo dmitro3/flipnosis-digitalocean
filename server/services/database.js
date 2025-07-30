@@ -67,7 +67,7 @@ class DatabaseService {
               offer_id TEXT,
               blockchain_game_id TEXT UNIQUE,
               creator TEXT NOT NULL,
-              challenger TEXT NOT NULL,
+              challenger TEXT,
               nft_contract TEXT NOT NULL,
               nft_token_id TEXT NOT NULL,
               nft_name TEXT,
