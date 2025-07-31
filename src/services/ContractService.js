@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { Alchemy, Network } from 'alchemy-sdk'
 
 // Contract configuration
-const CONTRACT_ADDRESS = '0x1e7E0f0b63AD010081140FC74D3435F00e0Df263'
+const CONTRACT_ADDRESS = '0x3997F4720B3a515e82d54F30d7CF2993B014EeBE'
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
@@ -457,91 +457,76 @@ class CleanContractService {
   // Pay fee and create game in one transaction (simplified 2-step process)
   async payFeeAndCreateGame(gameId, nftContract, tokenId, priceUSD, paymentToken = 0) {
     if (!this.isReady()) {
-      console.error('❌ Contract service not ready for payFeeAndCreateGame:', {
-        hasWalletClient: !!this.walletClient,
-        hasPublicClient: !!this.publicClient,
-        hasContract: !!this.contract,
-        hasAccount: !!this.account
-      })
       return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
     
     try {
-      // Check price feed first
-      const priceFeedCheck = await this.checkPriceFeed()
-      if (!priceFeedCheck.success) {
-        console.error('❌ Price feed not working. This is likely why the transaction is failing.')
-        return { success: false, error: 'Contract price feed not configured properly. Contact admin.' }
-      }
-      
-      console.log('🔍 Starting payFeeAndCreateGame with params:', {
+      console.log('🎮 Creating game with params:', {
         gameId,
         nftContract,
         tokenId,
         priceUSD,
         paymentToken
       })
-      
-      const feeResult = await this.getListingFee()
-      if (!feeResult.success) {
-        console.error('❌ Failed to get listing fee:', feeResult.error)
-        return feeResult
+
+      // Get the ETH amount for the price
+      const ethAmount = await this.contract.getETHAmount(priceUSD)
+      console.log('💰 ETH amount for price:', ethers.formatEther(ethAmount), 'ETH')
+
+      // Convert gameId to bytes32
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      console.log('🆔 Game ID bytes32:', gameIdBytes32)
+
+      // Ensure value is a BigInt
+      let value
+      if (typeof ethAmount === 'object' && ethAmount !== null) {
+        // If it's already a BigInt or similar object, extract the value
+        if (ethAmount.toString) {
+          value = BigInt(ethAmount.toString())
+        } else {
+          throw new Error('Invalid ETH amount format')
+        }
+      } else {
+        // Convert to BigInt
+        value = BigInt(ethAmount)
       }
 
-      console.log('💰 Paying fee and creating game:', {
-        gameId,
-        nftContract,
-        tokenId,
-        priceUSD,
-        paymentToken,
-        fee: feeResult.feeFormatted
-      })
-      
-      const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      const priceUSDWei = ethers.parseUnits(priceUSD.toString(), 6) // 6 decimals for USD
-      
-      console.log('📝 Contract call params:', {
-        gameIdBytes32,
-        nftContract,
-        tokenId,
-        priceUSDWei: priceUSDWei.toString(),
-        paymentToken,
-        value: feeResult.fee.toString()
-      })
-      
+      console.log('💸 Transaction value (BigInt):', value.toString())
+
+      // Call the contract function
       const hash = await this.contract.payFeeAndCreateGame(
         gameIdBytes32,
         nftContract,
         tokenId,
-        priceUSDWei,
+        priceUSD,
         paymentToken,
-        { value: feeResult.fee }
+        value
       )
-      console.log('📝 Pay fee and create game tx:', hash)
-      
+      console.log('📝 Game creation tx hash:', hash)
+
+      // Wait for transaction receipt
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Transaction confirmed:', receipt)
-      
+      console.log('✅ Game creation confirmed:', receipt)
+
       return {
         success: true,
         transactionHash: hash,
         receipt,
-        gameId
+        gameId: gameIdBytes32,
+        ethAmount: value.toString()
       }
     } catch (error) {
-      console.error('❌ Error paying fee and creating game:', error)
+      console.error('❌ Error creating game:', error)
       
-      // Better error messages
-      if (error.message.includes('Insufficient listing fee')) {
-        return { success: false, error: 'Insufficient ETH for listing fee' }
-      }
-      if (error.message.includes('price feed')) {
-        return { success: false, error: 'Contract price feed issue. Please contact support.' }
-      }
-      
-      return {
-        success: false,
-        error: error.reason || error.message || 'Transaction failed'
+      // Provide more specific error messages
+      if (error.message.includes('insufficient funds')) {
+        return { success: false, error: 'Insufficient ETH balance for game creation' }
+      } else if (error.message.includes('user rejected')) {
+        return { success: false, error: 'Transaction was rejected by user' }
+      } else if (error.message.includes('BigInt')) {
+        return { success: false, error: 'Invalid amount format. Please try again.' }
+      } else {
+        return { success: false, error: error.message }
       }
     }
   }
@@ -561,6 +546,11 @@ class CleanContractService {
   // Add this method to check contract deployment
   async checkContractDeployment() {
     try {
+      if (!this.publicClient) {
+        console.error('❌ Public client not available for contract check')
+        return { success: false, error: 'Public client not available' }
+      }
+
       const code = await this.publicClient.getBytecode({ address: this.contractAddress })
       if (!code || code === '0x') {
         console.error('❌ No contract deployed at address:', this.contractAddress)
@@ -568,8 +558,13 @@ class CleanContractService {
       }
       
       // Try to get the listing fee to verify contract is working
-      const listingFeeUSD = await this.contract.listingFeeUSD()
-      console.log('✅ Contract found. Listing fee:', ethers.formatUnits(listingFeeUSD, 6), 'USD')
+      try {
+        const listingFeeUSD = await this.contract.listingFeeUSD()
+        console.log('✅ Contract found. Listing fee:', ethers.formatUnits(listingFeeUSD, 6), 'USD')
+      } catch (feeError) {
+        console.warn('⚠️ Could not fetch listing fee, but contract exists:', feeError.message)
+        // Don't fail the check if we can't get the fee, just warn
+      }
       
       return { success: true }
     } catch (error) {

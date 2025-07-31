@@ -347,6 +347,16 @@ export const WalletProvider = ({ children }) => {
     walletClient: walletClient || null,
     publicClient: publicClient || null,
     
+    // Connection status helpers
+    hasWalletClient: !!walletClient,
+    hasPublicClient: !!publicClient,
+    isFullyConnected: isConnected && walletClient && publicClient ? {
+      address,
+      walletClient,
+      publicClient,
+      chainId
+    } : null,
+    
     // Legacy compatibility (for existing code)
     signer: getSigner(),
     provider: getProvider(),

@@ -175,9 +175,9 @@ const CreateFlip = () => {
       return
     }
     
-    // Add minimum price validation
-    if (parseFloat(price) < 1) {
-      showError('Minimum price is $1.00')
+    // Add minimum price validation (removed hardcoded $1 minimum)
+    if (parseFloat(price) <= 0) {
+      showError('Please enter a valid price greater than $0')
       return
     }
     

@@ -4,7 +4,7 @@ async function main() {
   console.log('🧪 Testing payFeeAndCreateGame function...')
   
   // Contract address
-  const contractAddress = "0x1e7E0f0b63AD010081140FC74D3435F00e0Df263"
+  const contractAddress = "0x3997F4720B3a515e82d54F30d7CF2993B014EeBE"
   
   try {
     // Get the contract
