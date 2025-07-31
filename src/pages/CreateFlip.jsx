@@ -96,7 +96,7 @@ const SubmitButton = styled(Button)`
 const CreateFlip = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { address, walletClient, nfts, loading: nftsLoading, chainId, switchToBase } = useWallet()
+  const { address, walletClient, nfts, loading: nftsLoading, chainId, switchToBase, isConnected, isConnecting } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [price, setPrice] = useState('')
