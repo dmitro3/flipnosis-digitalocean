@@ -96,7 +96,7 @@ const SubmitButton = styled(Button)`
 const CreateFlip = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
-  const { address, walletClient, nfts, loading: nftsLoading, chainId, switchToBase, isConnected, isConnecting } = useWallet()
+  const { address, walletClient, publicClient, nfts, loading: nftsLoading, chainId, switchToBase, isConnected, isConnecting } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [price, setPrice] = useState('')
@@ -144,7 +144,7 @@ const CreateFlip = () => {
             address
           })
           
-          const result = await contractService.initialize(walletClient)
+          const result = await contractService.initialize(walletClient, publicClient)
           if (!result.success) {
             console.error('Failed to initialize contract service:', result.error)
             showError('Failed to initialize contract service')
@@ -162,7 +162,7 @@ const CreateFlip = () => {
     const timer = setTimeout(initializeContract, 1000)
     
     return () => clearTimeout(timer)
-  }, [isFullyConnected, walletClient, address, showError])
+  }, [isFullyConnected, walletClient, address, publicClient, showError])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

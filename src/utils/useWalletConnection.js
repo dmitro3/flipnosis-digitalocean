@@ -45,7 +45,7 @@ export const useWalletConnection = () => {
     const initializeContract = async () => {
       try {
         console.log('🔧 Initializing contract service from useWalletConnection...')
-        await contractService.initialize(walletClient)
+        await contractService.initialize(walletClient, publicClient)
         console.log('✅ Contract service initialized successfully')
         setIsContractInitialized(true)
       } catch (error) {
