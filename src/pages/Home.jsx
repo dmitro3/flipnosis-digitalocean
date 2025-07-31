@@ -333,8 +333,8 @@ const getAllItems = () => {
   games.filter(g => 
     g.status !== 'cancelled' && 
     g.status !== 'waiting_deposits' && 
-    g.status !== 'waiting_challenger_deposit' &&
-    g.status !== 'awaiting_challenger'
+    g.status !== 'waiting_challenger_deposit'
+    // Note: 'awaiting_challenger' games should be shown - they are open for challengers
   ).forEach(g => {
     // Use the game ID as the key, removing any listing entry
     if (g.listing_id) {

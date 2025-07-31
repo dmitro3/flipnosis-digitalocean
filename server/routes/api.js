@@ -85,12 +85,12 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       await new Promise((resolve, reject) => {
         db.run(`
           INSERT INTO games (
-            id, listing_id, blockchain_game_id, creator,
+            id, listing_id, blockchain_game_id, creator, challenger,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
             final_price, coin_data, status, creator_deposited
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          gameId, listing.id, ethers.id(gameId), listing.creator,
+          gameId, listing.id, ethers.id(gameId), listing.creator, '', // challenger is empty initially
           listing.nft_contract, listing.nft_token_id, listing.nft_name, 
           listing.nft_image, listing.nft_collection,
           listing.asking_price, JSON.stringify(coinData), 
