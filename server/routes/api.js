@@ -87,22 +87,22 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            final_price, coin_data, status, creator_deposited,
-            game_type, payment_token, transaction_hash
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            final_price, coin_data, status, creator_deposited
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listing.id, ethers.id(gameId), listing.creator,
           listing.nft_contract, listing.nft_token_id, listing.nft_name, 
           listing.nft_image, listing.nft_collection,
           listing.asking_price, JSON.stringify(coinData), 
           'awaiting_deposit', // Status for game created but NFT not deposited yet
-          false, // creator_deposited
-          listing.game_type || 'nft-vs-crypto',
-          'ETH', // default payment token
-          transactionHash
+          false // creator_deposited
         ], function(err) {
-          if (err) reject(err)
-          else resolve()
+          if (err) {
+            console.error('Database error details:', err)
+            reject(err)
+          } else {
+            resolve()
+          }
         })
       })
       

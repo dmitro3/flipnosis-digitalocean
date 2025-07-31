@@ -236,13 +236,36 @@ const CreateFlip = () => {
       const listingResult = await listingResponse.json()
       console.log('✅ Listing created:', listingResult)
       
-      // Step 2: Pay fee and create game on blockchain
+      // Step 2: Check NFT approval first
+      showInfo('Checking NFT approval...')
+      const approvalResult = await contractService.approveNFT(
+        selectedNFT.contractAddress,
+        selectedNFT.tokenId
+      )
+      
+      if (!approvalResult.success) {
+        throw new Error(approvalResult.error || 'Failed to approve NFT')
+      }
+      
+      // Step 3: Pay fee and create game on blockchain
       showInfo('Paying listing fee and creating game on blockchain...')
+      
+      // Convert price to 6 decimal places (microdollars) for contract
+      const priceInMicrodollars = Math.round(parseFloat(price) * 1000000)
+      
+      // Add 20 cent listing fee to the price
+      const listingFeeMicrodollars = 200000 // 20 cents in microdollars
+      const totalPriceMicrodollars = priceInMicrodollars + listingFeeMicrodollars
+      
+      console.log(`💰 Game price: $${price} (${priceInMicrodollars} microdollars)`)
+      console.log(`💸 Listing fee: $0.20 (${listingFeeMicrodollars} microdollars)`)
+      console.log(`💳 Total price: $${(priceInMicrodollars + listingFeeMicrodollars) / 1000000} (${totalPriceMicrodollars} microdollars)`)
+      
       const createResult = await contractService.payFeeAndCreateGame(
         gameId,
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
-        parseFloat(price),
+        totalPriceMicrodollars,
         0 // ETH payment
       )
       
@@ -252,7 +275,7 @@ const CreateFlip = () => {
         throw new Error(createResult.error || 'Failed to create game on blockchain')
       }
       
-      // Step 3: Create game record in database
+      // Step 4: Create game record in database
       showInfo('Registering game...')
       const gameResponse = await fetch(getApiUrl(`/games/${gameId}/create-from-listing`), {
         method: 'POST',
@@ -264,10 +287,12 @@ const CreateFlip = () => {
       })
       
       if (!gameResponse.ok) {
-        throw new Error('Failed to register game')
+        const errorData = await gameResponse.json().catch(() => ({}))
+        console.error('Server error response:', errorData)
+        throw new Error(errorData.error || 'Failed to register game')
       }
       
-      // Step 4: Deposit NFT
+      // Step 5: Deposit NFT
       showInfo('Depositing NFT...')
       const depositResult = await contractService.depositNFT(
         gameId,
@@ -279,7 +304,7 @@ const CreateFlip = () => {
         throw new Error(depositResult.error || 'Failed to deposit NFT')
       }
       
-      // Step 5: Confirm NFT deposit
+      // Step 6: Confirm NFT deposit
       const confirmResponse = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -311,7 +336,7 @@ const CreateFlip = () => {
         <ContentWrapper>
           <GlassCard>
             <NeonText style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              Create Your Flip (2-Step Process)
+              Create Your Flip (3-Step Process)
             </NeonText>
             
             {/* Network Check */}
@@ -348,7 +373,17 @@ const CreateFlip = () => {
                 fontWeight: 'bold',
                 fontSize: '0.9rem'
               }}>
-                Step 1: Pay Fee & Create Game
+                Step 1: Approve NFT
+              </div>
+              <div style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #00bfff 0%, #ff1493 100%)',
+                borderRadius: '0.5rem',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '0.9rem'
+              }}>
+                Step 2: Pay Fee & Create Game
               </div>
               <div style={{
                 padding: '0.5rem 1rem',
@@ -357,7 +392,7 @@ const CreateFlip = () => {
                 color: theme.colors.textSecondary,
                 fontSize: '0.9rem'
               }}>
-                Step 2: Load NFT
+                Step 3: Load NFT
               </div>
             </div>
 
@@ -396,12 +431,43 @@ const CreateFlip = () => {
                 <Label>Price (USD)</Label>
                 <Input
                   type="number"
-                  placeholder="Enter price in USD"
+                  placeholder="Enter price in USD (e.g., 0.50 for 50 cents)"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   min="0"
                   step="0.01"
                 />
+                <small style={{ 
+                  color: theme.colors.textSecondary, 
+                  fontSize: '0.8rem',
+                  marginTop: '0.5rem',
+                  display: 'block'
+                }}>
+                  💡 You can enter decimal prices (e.g., 0.25 for 25 cents). A $0.20 listing fee will be added.
+                </small>
+                {price && parseFloat(price) > 0 && (
+                  <div style={{ 
+                    background: 'rgba(0, 191, 255, 0.1)',
+                    border: '1px solid rgba(0, 191, 255, 0.3)',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    marginTop: '0.5rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <span>Game Price:</span>
+                      <span>${parseFloat(price).toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <span>Listing Fee:</span>
+                      <span>$0.20</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderTop: '1px solid rgba(0, 191, 255, 0.3)', paddingTop: '0.25rem' }}>
+                      <span>Total:</span>
+                      <span>${(parseFloat(price) + 0.20).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
               </FormGroup>
 
               {/* Accepts Offers Toggle */}

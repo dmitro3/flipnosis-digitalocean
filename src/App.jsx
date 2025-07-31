@@ -29,20 +29,24 @@ const { chains } = config
 
 // Debug config
 console.log('Rainbow Kit Config:', {
-  chains: chains.map(c => c.name),
-  projectId: config.projectId,
+  chains: chains?.map(c => c.name) || [],
+  projectId: config?.projectId,
 })
 
 
 
 function App() {
-  // Add debug logging
-  console.log('🔍 App.jsx - Starting render:', { 
-    config, 
-    hasChains: !!config?.chains,
-    chainsLength: config?.chains?.length,
-    timestamp: new Date().toISOString()
-  })
+  // Add debug logging with error handling
+  try {
+    console.log('🔍 App.jsx - Starting render:', { 
+      config, 
+      hasChains: !!config?.chains,
+      chainsLength: config?.chains?.length,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('🚨 Error in App.jsx debug logging:', error)
+  }
 
   // Add global error handler
   useEffect(() => {
