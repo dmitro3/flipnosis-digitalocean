@@ -17,8 +17,8 @@ import { useContractService } from '../utils/useContractService'
 // 5. Component imports
 import OptimizedGoldCoin from './OptimizedGoldCoin'
 import PowerDisplay from '../components/PowerDisplay'
-// import GameResultPopup from './GameResultPopup'
-// import ProfilePicture from './ProfilePicture'
+import GameResultPopup from './GameResultPopup'
+import ProfilePicture from './ProfilePicture'
 // import GameChatBox from './GameChatBox'
 // import NFTOfferComponent from './NFTOfferComponent'
 
@@ -56,6 +56,28 @@ const GameSection = styled.div`
   margin-top: 2rem;
 `
 
+const PlayerSection = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 800px;
+  gap: 2rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
+`
+
+const PlayerCard = styled.div`
+  background: rgba(0, 0, 0, 0.6);
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 2px solid #FFD700;
+  text-align: center;
+  flex: 1;
+`
+
 const UnifiedGamePage = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
@@ -76,12 +98,16 @@ const UnifiedGamePage = () => {
     chargingPlayer: null
   })
   
+  // Test state for result popup
+  const [showResultPopup, setShowResultPopup] = useState(false)
+  const [testResult, setTestResult] = useState({ isWinner: true, flipResult: 'heads' })
+  
   return (
     <ThemeProvider theme={theme}>
       <Container>
         <GameContainer>
           <h1 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem' }}>
-            Game Page Test - With Components
+            Game Page Test - Full Components
           </h1>
           <div style={{ 
             background: 'rgba(0, 0, 0, 0.8)', 
@@ -122,13 +148,56 @@ const UnifiedGamePage = () => {
                   border: 'none',
                   borderRadius: '0.5rem',
                   cursor: 'pointer',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
+                  marginRight: '1rem'
                 }}
               >
                 Test Toast
               </button>
+              
+              <button 
+                onClick={() => setShowResultPopup(true)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#FFD700',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                Test Result Popup
+              </button>
             </div>
           </div>
+          
+          {/* Player Section */}
+          <PlayerSection>
+            <PlayerCard>
+              <h3 style={{ color: '#FFD700', marginBottom: '1rem' }}>Creator</h3>
+              <ProfilePicture 
+                address={address}
+                size={80}
+                showAddress={true}
+              />
+              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                Power: {gameState.creatorPower}
+              </p>
+            </PlayerCard>
+            
+            <PlayerCard>
+              <h3 style={{ color: '#FFD700', marginBottom: '1rem' }}>Joiner</h3>
+              <ProfilePicture 
+                address={null}
+                size={80}
+                showAddress={true}
+              />
+              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                Power: {gameState.joinerPower}
+              </p>
+            </PlayerCard>
+          </PlayerSection>
           
           {/* Game Components Section */}
           <GameSection>
@@ -177,6 +246,22 @@ const UnifiedGamePage = () => {
             </div>
           </GameSection>
         </GameContainer>
+        
+        {/* Result Popup */}
+        {showResultPopup && (
+          <GameResultPopup
+            isVisible={showResultPopup}
+            isWinner={testResult.isWinner}
+            flipResult={testResult.flipResult}
+            playerChoice="heads"
+            onClose={() => setShowResultPopup(false)}
+            onClaimWinnings={() => {
+              showSuccess('Winnings claimed!')
+              setShowResultPopup(false)
+            }}
+            gameData={null}
+          />
+        )}
       </Container>
     </ThemeProvider>
   )
