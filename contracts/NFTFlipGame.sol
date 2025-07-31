@@ -24,6 +24,10 @@ interface AggregatorV3Interface {
 contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     enum PaymentToken { ETH, USDC }
 
+    // Base Mainnet addresses
+    address constant BASE_ETH_USD_FEED = 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70;
+    address constant BASE_USDC_TOKEN = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+
     struct ActiveGame {
         address player1;
         address player2;

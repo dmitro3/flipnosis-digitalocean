@@ -1229,30 +1229,20 @@ case 'offer_accepted':
       const response = await fetch(getApiUrl(`/offers/${offerId}/accept`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ final_price: offerPrice })
+        body: JSON.stringify({ 
+          final_price: offerPrice,
+          payment_token: 'ETH' // or get from UI
+        })
       })
       
       const result = await response.json()
-      console.log('✅ Offer acceptance response:', result)
       
       if (response.ok) {
-        showSuccess('Offer accepted! Game created successfully.')
-        // Refresh offers and game data
-        await Promise.all([
-          fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
-            if (response.ok) {
-              const offersData = await response.json()
-              setOffers(offersData)
-            }
-          }),
-          loadGameData() // Refresh game/listing data
-        ])
+        showSuccess('Offer accepted! Waiting for challenger to deposit.')
+        // The game should now be in 'waiting_challenger_deposit' status
+        await loadGameData()
       } else {
-        console.error('❌ Offer acceptance failed:', result)
-        const errorMessage = result.details 
-          ? `${result.error}: ${result.details}` 
-          : result.error || 'Failed to accept offer'
-        showError(errorMessage)
+        showError(result.error || 'Failed to accept offer')
       }
     } catch (error) {
       console.error('❌ Error accepting offer:', error)

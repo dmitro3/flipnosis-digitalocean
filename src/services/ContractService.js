@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { Alchemy, Network } from 'alchemy-sdk'
 
 // Contract configuration
-const CONTRACT_ADDRESS = '0x9876c900B6f8B834a25c3DBB06f3cd0292e552f1'
+const CONTRACT_ADDRESS = '0x1e7E0f0b63AD010081140FC74D3435F00e0Df263'
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
@@ -196,6 +196,12 @@ class CleanContractService {
       // Create contract instance
       this.contract = new ethers.Contract(this.contractAddress, CONTRACT_ABI, this.signer)
       
+      // Check contract deployment
+      const deploymentCheck = await this.checkContractDeployment()
+      if (!deploymentCheck.success) {
+        throw new Error('Contract not properly deployed: ' + deploymentCheck.error)
+      }
+      
       // Initialize Alchemy for NFT fetching
       await this.initializeAlchemy()
       
@@ -344,6 +350,13 @@ class CleanContractService {
     }
     
     try {
+      // Check price feed first
+      const priceFeedCheck = await this.checkPriceFeed()
+      if (!priceFeedCheck.success) {
+        console.error('❌ Price feed not working. This is likely why the transaction is failing.')
+        return { success: false, error: 'Contract price feed not configured properly. Contact admin.' }
+      }
+      
       console.log('🔍 Starting payFeeAndCreateGame with params:', {
         gameId,
         nftContract,
@@ -400,16 +413,51 @@ class CleanContractService {
       }
     } catch (error) {
       console.error('❌ Error paying fee and creating game:', error)
-      console.error('🔍 Error details:', {
-        message: error.message,
-        code: error.code,
-        reason: error.reason,
-        data: error.data
-      })
+      
+      // Better error messages
+      if (error.message.includes('Insufficient listing fee')) {
+        return { success: false, error: 'Insufficient ETH for listing fee' }
+      }
+      if (error.message.includes('price feed')) {
+        return { success: false, error: 'Contract price feed issue. Please contact support.' }
+      }
+      
       return {
         success: false,
-        error: error.message
+        error: error.reason || error.message || 'Transaction failed'
       }
+    }
+  }
+
+  // Add this method to check if price feed is working
+  async checkPriceFeed() {
+    try {
+      const ethAmount = await this.contract.getETHAmount(ethers.parseUnits("1", 6)) // $1 USD
+      console.log('✅ Price feed working. 1 USD = ', ethers.formatEther(ethAmount), 'ETH')
+      return { success: true, ethAmount }
+    } catch (error) {
+      console.error('❌ Price feed error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Add this method to check contract deployment
+  async checkContractDeployment() {
+    try {
+      const code = await this.provider.getCode(this.contractAddress)
+      if (code === '0x') {
+        console.error('❌ No contract deployed at address:', this.contractAddress)
+        return { success: false, error: 'Contract not deployed' }
+      }
+      
+      // Try to get the listing fee to verify contract is working
+      const listingFeeUSD = await this.contract.listingFeeUSD()
+      console.log('✅ Contract found. Listing fee:', ethers.formatUnits(listingFeeUSD, 6), 'USD')
+      
+      return { success: true }
+    } catch (error) {
+      console.error('❌ Contract check failed:', error)
+      return { success: false, error: error.message }
     }
   }
 

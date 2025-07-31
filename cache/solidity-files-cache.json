@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\danie\\Desktop\\Flipnosis\\contracts\\NFTFlipGame.sol": {
-      "lastModificationDate": 1753893355572,
-      "contentHash": "9e1ce0111494dcfd109f523402c706d3",
+      "lastModificationDate": 1753961987975,
+      "contentHash": "3649a4ff40dc0d87e366524ea17d6836",
       "sourceName": "contracts/NFTFlipGame.sol",
       "solcConfig": {
         "version": "0.8.20",

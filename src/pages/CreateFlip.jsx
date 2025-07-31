@@ -175,6 +175,12 @@ const CreateFlip = () => {
       return
     }
     
+    // Add minimum price validation
+    if (parseFloat(price) < 1) {
+      showError('Minimum price is $1.00')
+      return
+    }
+    
     // Check if wallet is on Base network
     if (chainId !== 8453) {
       showError('Please switch to Base network to create games')
@@ -197,35 +203,9 @@ const CreateFlip = () => {
       // Generate game ID upfront
       const gameId = `game_${Date.now()}_${Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')}`
       
-      // Step 1: Pay fee to create game (combines listing fee + game creation)
-      showInfo('Paying fee and creating game...')
-      
-      console.log('🎮 Creating game with params:', {
-        gameId,
-        nftContract: selectedNFT.contractAddress,
-        tokenId: selectedNFT.tokenId,
-        price: parseFloat(price),
-        paymentToken: 0
-      })
-      
-      const createResult = await contractService.payFeeAndCreateGame(
-        gameId,
-        selectedNFT.contractAddress,
-        selectedNFT.tokenId,
-        parseFloat(price),
-        0 // PaymentToken.ETH
-      )
-      
-      console.log('📝 Create result:', createResult)
-      
-      if (!createResult.success) {
-        console.error('❌ Failed to create game:', createResult.error)
-        throw new Error(`Failed to create game: ${createResult.error}`)
-      }
-      
-      // Step 2: Create listing in database
+      // Step 1: Create listing in database first (no blockchain yet)
       showInfo('Creating listing...')
-      const response = await fetch(getApiUrl('/listings'), {
+      const listingResponse = await fetch(getApiUrl('/listings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -238,45 +218,85 @@ const CreateFlip = () => {
           nft_collection: selectedNFT.collection,
           nft_chain: 'base',
           asking_price: parseFloat(price),
-          coin_data: {
+          coin_data: JSON.stringify({
             type: selectedCoin.type,
             headsImage: selectedCoin.headsImage,
             tailsImage: selectedCoin.tailsImage,
             isCustom: selectedCoin.isCustom
-          },
-          contract_game_id: gameId, // Already created on blockchain
-          transaction_hash: createResult.transactionHash
+          }),
+          game_type: gameType // Add this
         })
       })
       
-      if (!response.ok) throw new Error('Failed to create listing')
-      const result = await response.json()
+      if (!listingResponse.ok) {
+        const error = await listingResponse.json()
+        throw new Error(error.error || 'Failed to create listing')
+      }
       
-      // Step 3: Load NFT (deposit NFT)
-      showInfo('Loading NFT...')
+      const listingResult = await listingResponse.json()
+      console.log('✅ Listing created:', listingResult)
+      
+      // Step 2: Pay fee and create game on blockchain
+      showInfo('Paying listing fee and creating game on blockchain...')
+      const createResult = await contractService.payFeeAndCreateGame(
+        gameId,
+        selectedNFT.contractAddress,
+        selectedNFT.tokenId,
+        parseFloat(price),
+        0 // ETH payment
+      )
+      
+      if (!createResult.success) {
+        // If blockchain fails, we should probably delete the listing
+        // For now, just throw error
+        throw new Error(createResult.error || 'Failed to create game on blockchain')
+      }
+      
+      // Step 3: Create game record in database
+      showInfo('Registering game...')
+      const gameResponse = await fetch(getApiUrl(`/games/${gameId}/create-from-listing`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: listingResult.listingId,
+          transactionHash: createResult.transactionHash
+        })
+      })
+      
+      if (!gameResponse.ok) {
+        throw new Error('Failed to register game')
+      }
+      
+      // Step 4: Deposit NFT
+      showInfo('Depositing NFT...')
       const depositResult = await contractService.depositNFT(
         gameId,
-        selectedNFT.contractAddress, 
+        selectedNFT.contractAddress,
         selectedNFT.tokenId
       )
       
-      if (!depositResult.success) throw new Error(depositResult.error)
+      if (!depositResult.success) {
+        throw new Error(depositResult.error || 'Failed to deposit NFT')
+      }
       
-      // Step 4: Confirm NFT deposit
+      // Step 5: Confirm NFT deposit
       const confirmResponse = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           player: address,
-          assetType: 'nft'
+          assetType: 'nft',
+          transactionHash: depositResult.transactionHash
         })
       })
       
-      if (!confirmResponse.ok) throw new Error('Failed to confirm NFT deposit')
+      if (!confirmResponse.ok) {
+        throw new Error('Failed to confirm NFT deposit')
+      }
       
-      showSuccess('Game created and NFT loaded! Ready for offers.')
-      // Navigate to the listing
-      navigate(`/game/${result.listingId}`)
+      showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.')
+      navigate(`/game/${gameId}`)
+      
     } catch (error) {
       console.error('Error creating game:', error)
       showError(error.message || 'Failed to create game')

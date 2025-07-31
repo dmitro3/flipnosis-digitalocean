@@ -4,7 +4,7 @@ const { base } = require('viem/chains')
 const path = require('path')
 
 // Contract configuration
-const CONTRACT_ADDRESS = "0x9876c900B6f8B834a25c3DBB06f3cd0292e552f1"
+const CONTRACT_ADDRESS = "0x1e7E0f0b63AD010081140FC74D3435F00e0Df263"
 const CONTRACT_ABI = [
   {
     name: 'getGameDetails',
@@ -21,13 +21,6 @@ const CONTRACT_ABI = [
       { name: 'gameType_', type: 'uint8' },
       { name: 'price_', type: 'uint256' }
     ]
-  },
-  {
-    name: 'nextGameId',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
   },
   {
     name: 'ownerOf',
@@ -378,14 +371,13 @@ class DiagnosticChecker {
     console.log('\n📋 Checking contract state...')
     
     try {
-      const nextGameId = await this.client.readContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'nextGameId',
-        args: []
-      })
-
-      console.log(`🎮 Next game ID on contract: ${nextGameId.toString()}`)
+      // Check if contract is deployed and accessible
+      const code = await this.client.getBytecode({ address: CONTRACT_ADDRESS })
+      if (code) {
+        console.log(`✅ Contract is deployed and accessible at ${CONTRACT_ADDRESS}`)
+      } else {
+        console.log(`❌ Contract not found at ${CONTRACT_ADDRESS}`)
+      }
     } catch (error) {
       console.log(`❌ Error checking contract state:`, error.message)
     }
