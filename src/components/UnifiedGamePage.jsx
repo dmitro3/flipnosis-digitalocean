@@ -19,8 +19,8 @@ import OptimizedGoldCoin from './OptimizedGoldCoin'
 import PowerDisplay from '../components/PowerDisplay'
 import GameResultPopup from './GameResultPopup'
 import ProfilePicture from './ProfilePicture'
-// import GameChatBox from './GameChatBox'
-// import NFTOfferComponent from './NFTOfferComponent'
+import GameChatBox from './GameChatBox'
+import NFTOfferComponent from './NFTOfferComponent'
 
 // 6. Style imports
 import { theme } from '../styles/theme'
@@ -78,6 +78,18 @@ const PlayerCard = styled.div`
   flex: 1;
 `
 
+const ChatSection = styled.div`
+  width: 100%;
+  max-width: 400px;
+  margin-top: 2rem;
+`
+
+const OfferSection = styled.div`
+  width: 100%;
+  max-width: 500px;
+  margin-top: 2rem;
+`
+
 const UnifiedGamePage = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
@@ -102,12 +114,23 @@ const UnifiedGamePage = () => {
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [testResult, setTestResult] = useState({ isWinner: true, flipResult: 'heads' })
   
+  // Test state for chat
+  const [messages, setMessages] = useState([
+    { id: 1, sender: address, message: 'Hello! Ready to flip?', timestamp: Date.now() },
+    { id: 2, sender: '0x123...', message: 'Let\'s do this!', timestamp: Date.now() + 1000 }
+  ])
+  
+  // Test state for offers
+  const [offers, setOffers] = useState([
+    { id: 1, from: '0x123...', amount: '0.1 ETH', timestamp: Date.now() }
+  ])
+  
   return (
     <ThemeProvider theme={theme}>
       <Container>
         <GameContainer>
           <h1 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem' }}>
-            Game Page Test - Full Components
+            Game Page Test - Complete Components
           </h1>
           <div style={{ 
             background: 'rgba(0, 0, 0, 0.8)', 
@@ -245,6 +268,52 @@ const UnifiedGamePage = () => {
               />
             </div>
           </GameSection>
+          
+          {/* Chat and Offer Sections */}
+          <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', justifyContent: 'center' }}>
+            <ChatSection>
+              <h3 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem' }}>Game Chat</h3>
+              <GameChatBox 
+                messages={messages}
+                onSendMessage={(message) => {
+                  const newMessage = {
+                    id: messages.length + 1,
+                    sender: address,
+                    message,
+                    timestamp: Date.now()
+                  }
+                  setMessages([...messages, newMessage])
+                }}
+                gameId={gameId}
+                isMobile={false}
+              />
+            </ChatSection>
+            
+            <OfferSection>
+              <h3 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem' }}>NFT Offers</h3>
+              <NFTOfferComponent 
+                offers={offers}
+                onCreateOffer={(amount) => {
+                  const newOffer = {
+                    id: offers.length + 1,
+                    from: address,
+                    amount,
+                    timestamp: Date.now()
+                  }
+                  setOffers([...offers, newOffer])
+                  showSuccess('Offer created!')
+                }}
+                onAcceptOffer={(offerId) => {
+                  showSuccess('Offer accepted!')
+                }}
+                onRejectOffer={(offerId) => {
+                  showSuccess('Offer rejected!')
+                }}
+                gameId={gameId}
+                isMobile={false}
+              />
+            </OfferSection>
+          </div>
         </GameContainer>
         
         {/* Result Popup */}
