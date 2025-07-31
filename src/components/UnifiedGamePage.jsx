@@ -15,8 +15,8 @@ import contractService from '../services/ContractService'
 import { useContractService } from '../utils/useContractService'
 
 // 5. Component imports
-// import OptimizedGoldCoin from './OptimizedGoldCoin'
-// import PowerDisplay from '../components/PowerDisplay'
+import OptimizedGoldCoin from './OptimizedGoldCoin'
+import PowerDisplay from '../components/PowerDisplay'
 // import GameResultPopup from './GameResultPopup'
 // import ProfilePicture from './ProfilePicture'
 // import GameChatBox from './GameChatBox'
@@ -48,6 +48,14 @@ const GameContainer = styled.div`
   }
 `
 
+const GameSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 2rem;
+`
+
 const UnifiedGamePage = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
@@ -55,12 +63,25 @@ const UnifiedGamePage = () => {
   const { showSuccess, showError } = useToast()
   const { isInitialized: contractInitialized } = useContractService()
   
+  // Game state
+  const [gameState, setGameState] = useState({
+    phase: 'waiting',
+    currentRound: 1,
+    creatorChoice: null,
+    joinerChoice: null,
+    creatorPower: 0,
+    joinerPower: 0,
+    creatorWins: 0,
+    joinerWins: 0,
+    chargingPlayer: null
+  })
+  
   return (
     <ThemeProvider theme={theme}>
       <Container>
         <GameContainer>
           <h1 style={{ color: 'white', textAlign: 'center', marginBottom: '2rem' }}>
-            Game Page Test - Enhanced
+            Game Page Test - With Components
           </h1>
           <div style={{ 
             background: 'rgba(0, 0, 0, 0.8)', 
@@ -108,6 +129,53 @@ const UnifiedGamePage = () => {
               </button>
             </div>
           </div>
+          
+          {/* Game Components Section */}
+          <GameSection>
+            <h2 style={{ color: '#FFD700', textAlign: 'center' }}>Game Components Test</h2>
+            
+            {/* Coin Component */}
+            <div style={{ 
+              background: 'rgba(0, 0, 0, 0.6)', 
+              padding: '1rem', 
+              borderRadius: '1rem',
+              border: '2px solid #FFD700'
+            }}>
+              <h3 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem' }}>Gold Coin</h3>
+              <OptimizedGoldCoin 
+                isFlipping={false}
+                flipResult={null}
+                size={200}
+                isPlayerTurn={false}
+                creatorPower={gameState.creatorPower}
+                joinerPower={gameState.joinerPower}
+              />
+            </div>
+            
+            {/* Power Display Component */}
+            <div style={{ 
+              background: 'rgba(0, 0, 0, 0.6)', 
+              padding: '1rem', 
+              borderRadius: '1rem',
+              border: '2px solid #FFD700',
+              width: '100%',
+              maxWidth: '500px'
+            }}>
+              <h3 style={{ color: '#FFD700', textAlign: 'center', marginBottom: '1rem' }}>Power Display</h3>
+              <PowerDisplay 
+                creatorPower={gameState.creatorPower}
+                joinerPower={gameState.joinerPower}
+                currentPlayer={null}
+                creator={address}
+                joiner={null}
+                chargingPlayer={gameState.chargingPlayer}
+                gamePhase={gameState.phase}
+                isMyTurn={false}
+                playerChoice={null}
+                isMobile={false}
+              />
+            </div>
+          </GameSection>
         </GameContainer>
       </Container>
     </ThemeProvider>
