@@ -296,6 +296,26 @@ const UnifiedGamePage = () => {
   const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
   const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
 
+  // Game state - moved up to avoid initialization error
+  const [gameState, setGameState] = useState({
+    phase: 'waiting', // waiting, choosing, charging, completed
+    currentRound: 1,
+    creatorChoice: null,
+    joinerChoice: null,
+    creatorPower: 0,
+    joinerPower: 0,
+    creatorWins: 0,
+    joinerWins: 0,
+    chargingPlayer: null
+  })
+  
+  const [readyNFTStatus, setReadyNFTStatus] = useState({ ready: false, nft: null })
+  
+  // Coin state
+  const [flipAnimation, setFlipAnimation] = useState(null)
+  const [customHeadsImage, setCustomHeadsImage] = useState(null)
+  const [customTailsImage, setCustomTailsImage] = useState(null)
+
   // Load game data
   const loadGameData = async () => {
     try {
@@ -733,25 +753,7 @@ case 'offer_accepted':
     )
   }
 
-  // State
-  const [gameState, setGameState] = useState({
-    phase: 'waiting', // waiting, choosing, charging, completed
-    currentRound: 1,
-    creatorChoice: null,
-    joinerChoice: null,
-    creatorPower: 0,
-    joinerPower: 0,
-    creatorWins: 0,
-    joinerWins: 0,
-    chargingPlayer: null
-  })
-  
-  const [readyNFTStatus, setReadyNFTStatus] = useState({ ready: false, nft: null })
-  
-  // Coin state
-  const [flipAnimation, setFlipAnimation] = useState(null)
-  const [customHeadsImage, setCustomHeadsImage] = useState(null)
-  const [customTailsImage, setCustomTailsImage] = useState(null)
+
   
   // Helper functions to handle both game and listing data structures
   const getGameCreator = () => gameData?.creator || gameData?.creator_address
