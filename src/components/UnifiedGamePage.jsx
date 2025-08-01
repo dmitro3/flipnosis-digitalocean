@@ -434,15 +434,32 @@ const UnifiedGamePage = () => {
         isReady: contractService.isReady?.() || 'method not available'
       })
       
-      const calculatedEthAmount = await contractService.getETHAmount(finalPrice)
+      // Convert price to microdollars (6 decimal places) for contract
+      const priceInMicrodollars = Math.round(finalPrice * 1000000)
+      console.log('💰 Converting price to microdollars:', finalPrice, 'USD ->', priceInMicrodollars, 'microdollars')
+      
+      const calculatedEthAmount = await contractService.getETHAmount(priceInMicrodollars)
       console.log('💰 Raw ETH amount result:', calculatedEthAmount)
       console.log('💰 Raw ETH amount type:', typeof calculatedEthAmount)
       console.log('💰 Raw ETH amount constructor:', calculatedEthAmount?.constructor?.name)
       console.log('💰 Raw ETH amount toString:', calculatedEthAmount?.toString())
       
       if (calculatedEthAmount) {
-        // Ensure it's a proper BigInt
-        const ethAmountBigInt = BigInt(calculatedEthAmount.toString())
+        // Ensure it's a proper BigInt - handle both BigInt and string inputs
+        let ethAmountBigInt
+        if (typeof calculatedEthAmount === 'bigint') {
+          ethAmountBigInt = calculatedEthAmount
+        } else if (typeof calculatedEthAmount === 'string') {
+          ethAmountBigInt = BigInt(calculatedEthAmount)
+        } else if (typeof calculatedEthAmount === 'number') {
+          ethAmountBigInt = BigInt(calculatedEthAmount)
+        } else {
+          // If it's an object or other type, try to extract the value
+          console.warn('⚠️ Unexpected ETH amount type:', typeof calculatedEthAmount, calculatedEthAmount)
+          const ethString = calculatedEthAmount?.toString?.() || calculatedEthAmount?.value?.toString?.() || '0'
+          ethAmountBigInt = BigInt(ethString)
+        }
+        
         setEthAmount(ethAmountBigInt)
         console.log('💰 Calculated ETH amount:', ethers.formatEther(ethAmountBigInt), 'ETH for price:', finalPrice, 'USD')
       } else {
@@ -465,11 +482,16 @@ const UnifiedGamePage = () => {
           console.log('🔄 Trying fallback ETH calculation...')
           const estimatedEthPrice = 2000 // Rough estimate of ETH price in USD
           const estimatedEthAmount = (finalPrice / estimatedEthPrice) * 1e18 // Convert to wei
-          setEthAmount(BigInt(Math.floor(estimatedEthAmount)))
-          console.log('💰 Using fallback ETH amount:', ethers.formatEther(BigInt(Math.floor(estimatedEthAmount))), 'ETH')
+          const fallbackEthAmount = BigInt(Math.floor(estimatedEthAmount))
+          setEthAmount(fallbackEthAmount)
+          console.log('💰 Using fallback ETH amount:', ethers.formatEther(fallbackEthAmount), 'ETH')
+          
+          // Show warning to user
+          showError('Price feed unavailable. Using estimated ETH amount. Please verify before proceeding.')
         } catch (fallbackError) {
           console.error('❌ Fallback calculation also failed:', fallbackError)
           setEthAmount(null)
+          showError('Unable to calculate ETH amount. Please try again later.')
         }
       }
     }
@@ -1031,8 +1053,16 @@ const UnifiedGamePage = () => {
   const getGameCreator = () => gameData?.creator || gameData?.creator_address
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
   const getGamePrice = () => {
-    const price = gameData?.price || gameData?.priceUSD || gameData?.final_price || gameData?.asking_price || 0
-    console.log('🔍 Game Price Debug:', { price, gameData: gameData?.price, priceUSD: gameData?.priceUSD, final_price: gameData?.final_price, asking_price: gameData?.asking_price })
+    // Prioritize final_price for games, asking_price for listings
+    const price = gameData?.final_price || gameData?.asking_price || gameData?.price || gameData?.priceUSD || 0
+    console.log('🔍 Game Price Debug:', { 
+      price, 
+      final_price: gameData?.final_price, 
+      asking_price: gameData?.asking_price,
+      priceUSD: gameData?.priceUSD, 
+      gameData: gameData?.price,
+      type: gameData?.type // 'listing' or undefined for games
+    })
     return price
   }
   const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
@@ -1079,10 +1109,10 @@ const UnifiedGamePage = () => {
     
     let coinData = null
     
-    // Try to get coin data from normalized structure first
-    if (gameData?.coinData) {
+    // Try to get coin data from normalized structure first (parsed by server)
+    if (gameData?.coinData && typeof gameData.coinData === 'object') {
       coinData = gameData.coinData
-      console.log('✅ Using coinData field:', coinData)
+      console.log('✅ Using parsed coinData field:', coinData)
     } else if (gameData?.coin_data) {
       try {
         // Parse coin_data if it's a string
@@ -1114,6 +1144,12 @@ const UnifiedGamePage = () => {
               } else if (coinId === 'mario') {
                 coinData.headsImage = '/coins/mario.png'
                 coinData.tailsImage = '/coins/luigi.png'
+              } else if (coinId === 'skull') {
+                coinData.headsImage = '/coins/skullh.png'
+                coinData.tailsImage = '/coins/skullt.png'
+              } else if (coinId === 'plain') {
+                coinData.headsImage = '/coins/plainh.png'
+                coinData.tailsImage = '/coins/plaint.png'
               }
               console.log('✅ Created fallback coin data:', coinData)
             }
@@ -1122,7 +1158,7 @@ const UnifiedGamePage = () => {
           }
         }
       }
-    } else if (gameData?.coin) {
+    } else if (gameData?.coin && typeof gameData.coin === 'object') {
       coinData = gameData.coin
       console.log('✅ Using coin field:', coinData)
     }

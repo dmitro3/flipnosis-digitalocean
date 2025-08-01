@@ -237,7 +237,7 @@ class CleanContractService {
             abi: CONTRACT_ABI,
             functionName: 'depositETH',
             args: [gameId],
-            value
+            value: value
           })
         },
         depositUSDC: async (gameId, amount) => {
@@ -779,7 +779,7 @@ class CleanContractService {
       console.log('💰 Depositing:', ethers.formatEther(value), 'ETH')
 
       // Deposit ETH
-      const hash = await this.contract.depositETH(gameIdBytes32, { value })
+      const hash = await this.contract.depositETH(gameIdBytes32, value)
       console.log('💎 ETH deposit tx:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })

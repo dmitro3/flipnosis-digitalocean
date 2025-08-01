@@ -554,10 +554,17 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             return res.status(404).json({ error: 'Game/Listing not found' })
           }
           // Return listing as game-like structure
+          let coinData = null
+          try {
+            coinData = listing.coin_data ? JSON.parse(listing.coin_data) : null
+          } catch (e) {
+            console.warn('Failed to parse coin_data for listing:', listing.id, e)
+          }
+          
           res.json({
             id: listing.id,
             type: 'listing',
-            game_type: 'nft-vs-crypto', // Add this line
+            game_type: 'nft-vs-crypto',
             creator: listing.creator,
             creator_address: listing.creator, // Add for compatibility
             nft_contract: listing.nft_contract,
@@ -566,13 +573,25 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             nft_image: listing.nft_image,
             nft_collection: listing.nft_collection,
             asking_price: listing.asking_price,
+            final_price: listing.asking_price, // Add for consistency
             coin_data: listing.coin_data,
-            status: listing.status,
-            coinData: listing.coin_data ? JSON.parse(listing.coin_data) : null // Parse coin data
+            coinData: coinData, // Parsed coin data
+            status: listing.status
           })
         })
         return
       }
+      
+      // Parse coin_data if it's a string
+      let coinData = null
+      try {
+        coinData = game.coin_data ? JSON.parse(game.coin_data) : null
+      } catch (e) {
+        console.warn('Failed to parse coin_data for game:', gameId, e)
+      }
+      
+      // Add parsed coin data to response
+      game.coinData = coinData
       
       // Get round information
       db.all('SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number', [gameId], (err, rounds) => {
