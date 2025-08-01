@@ -4,6 +4,22 @@ import { Alchemy, Network } from 'alchemy-sdk'
 // Contract configuration
 const CONTRACT_ADDRESS = '0x3997F4720B3a515e82d54F30d7CF2993B014EeBE'
 
+// Multiple RPC endpoints with fallback
+const RPC_ENDPOINTS = [
+  'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5R3', // Primary Alchemy
+  'https://base.blockpi.network/v1/rpc/public', // Fallback 1
+  'https://mainnet.base.org', // Fallback 2
+  'https://base.drpc.org' // Fallback 3
+]
+
+// Rate limiting configuration
+const RATE_LIMIT_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 1000, // 1 second
+  maxDelay: 5000, // 5 seconds
+  rateLimitDelay: 2000 // 2 seconds for rate limit errors
+}
+
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
   {
@@ -177,6 +193,67 @@ class CleanContractService {
     this.account = null
     this.alchemy = null
     this.currentChain = null
+    
+    // Rate limiting state
+    this.currentRpcIndex = 0
+    this.lastRequestTime = 0
+    this.requestCount = 0
+    this.rateLimitResetTime = 0
+  }
+
+  // Rate limiting helper methods
+  async waitForRateLimit() {
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+    
+    // Reset rate limit counter if enough time has passed
+    if (now > this.rateLimitResetTime) {
+      this.requestCount = 0
+      this.rateLimitResetTime = now + 60000 // Reset every minute
+    }
+    
+    // Enforce minimum delay between requests
+    if (timeSinceLastRequest < 200) { // 200ms minimum delay
+      await new Promise(resolve => setTimeout(resolve, 200 - timeSinceLastRequest))
+    }
+    
+    this.lastRequestTime = Date.now()
+    this.requestCount++
+  }
+  
+  switchToNextRpc() {
+    this.currentRpcIndex = (this.currentRpcIndex + 1) % RPC_ENDPOINTS.length
+    console.log(`🔄 Switched to RPC endpoint ${this.currentRpcIndex + 1}/${RPC_ENDPOINTS.length}: ${RPC_ENDPOINTS[this.currentRpcIndex]}`)
+  }
+  
+  async executeWithRetry(operation, maxRetries = RATE_LIMIT_CONFIG.maxRetries) {
+    let lastError = null
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        await this.waitForRateLimit()
+        return await operation()
+      } catch (error) {
+        lastError = error
+        console.warn(`⚠️ Attempt ${attempt + 1} failed:`, error.message)
+        
+        // Check if it's a rate limit error
+        if (error.message.includes('429') || error.message.includes('rate limit') || error.message.includes('over rate limit')) {
+          console.log(`🔄 Rate limit hit, switching RPC endpoint and retrying...`)
+          this.switchToNextRpc()
+          
+          // Wait longer for rate limit errors
+          const delay = Math.min(RATE_LIMIT_CONFIG.rateLimitDelay * (attempt + 1), RATE_LIMIT_CONFIG.maxDelay)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        } else if (attempt < maxRetries) {
+          // For other errors, use exponential backoff
+          const delay = Math.min(RATE_LIMIT_CONFIG.baseDelay * Math.pow(2, attempt), RATE_LIMIT_CONFIG.maxDelay)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+      }
+    }
+    
+    throw lastError
   }
 
   // Initialize with Viem clients (walletClient and publicClient)
@@ -265,11 +342,13 @@ class CleanContractService {
           })
         },
         getETHAmount: async (usdAmount) => {
-          return await this.publicClient.readContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'getETHAmount',
-            args: [usdAmount]
+          return await this.executeWithRetry(async () => {
+            return await this.publicClient.readContract({
+              address: this.contractAddress,
+              abi: CONTRACT_ABI,
+              functionName: 'getETHAmount',
+              args: [usdAmount]
+            })
           })
         },
         canDeposit: async (gameId) => {

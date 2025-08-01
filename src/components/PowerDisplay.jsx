@@ -19,7 +19,9 @@ const PowerDisplay = ({
   const maxTotalPower = 10 // Single player max
   
   // Show choice buttons if it's choosing phase AND player's turn AND no choice made yet
-  const showChoiceButtons = gamePhase === 'choosing' && isMyTurn && !playerChoice && onChoiceSelect
+  // Also show if game is active but phase might not be set correctly (fallback)
+  const showChoiceButtons = (gamePhase === 'choosing' || gamePhase === 'active' || gamePhase === 'waiting') && 
+                           isMyTurn && !playerChoice && onChoiceSelect
   
   // Debug log removed to reduce console spam
   
@@ -27,7 +29,7 @@ const PowerDisplay = ({
   const showPowerBar = gamePhase === 'round_active' || playerChoice
   
   // Always show the power display area when in game
-  if (!showChoiceButtons && !showPowerBar && gamePhase !== 'choosing') {
+  if (!showChoiceButtons && !showPowerBar && gamePhase !== 'choosing' && gamePhase !== 'active' && gamePhase !== 'waiting') {
     return null
   }
 

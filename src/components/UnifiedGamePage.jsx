@@ -377,6 +377,18 @@ const UnifiedGamePage = () => {
         }
       }
       
+      // Set game phase to choosing if both players have deposited and game is active
+      if (data.creator_deposited && data.challenger_deposited && 
+          (data.status === 'active' || data.status === 'waiting_choices')) {
+        console.log('🎮 Both players deposited, setting game phase to choosing')
+        setGameState(prev => ({
+          ...prev,
+          phase: 'choosing',
+          creatorChoice: null,
+          joinerChoice: null
+        }))
+      }
+      
       // Load offers for this listing/game
       const listingId = data?.listing_id || data?.id
       if (listingId) {
@@ -748,6 +760,15 @@ const UnifiedGamePage = () => {
       case 'game_started':
         console.log('🎮 Game started!')
         showSuccess('Game is now active! Both players can start playing.')
+        
+        // Set game phase to choosing so players can make their choices
+        setGameState(prev => ({
+          ...prev,
+          phase: 'choosing',
+          creatorChoice: null,
+          joinerChoice: null
+        }))
+        
         loadGameData()
         break
         
