@@ -357,6 +357,14 @@ const UnifiedGamePage = () => {
         setLoading(false)
         return
       }
+      
+      // Validate data structure
+      if (!data || typeof data !== 'object') {
+        console.error('❌ Invalid data structure:', data)
+        setError('Invalid game data received from server.')
+        setLoading(false)
+        return
+      }
       setGameData(data)
       
       // Calculate ETH amount if we have a final price

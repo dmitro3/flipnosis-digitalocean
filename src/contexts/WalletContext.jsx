@@ -211,10 +211,17 @@ export const WalletProvider = ({ children }) => {
     }
   }
 
-  // Load NFTs when address changes
+  // Load NFTs when address changes (but skip on game pages)
   useEffect(() => {
     console.log('🔄 useEffect triggered:', { address, chainId, isConnected })
     console.log('🔍 loadNFTs function exists:', typeof loadNFTs)
+    
+    // Skip NFT loading if we're on a game page (to prevent spam)
+    const isOnGamePage = window.location.pathname.includes('/game/')
+    if (isOnGamePage) {
+      console.log('🎮 On game page, skipping NFT loading to prevent spam')
+      return
+    }
     
     if (address) {
       console.log('📞 Calling loadNFTs for address:', address)
@@ -228,6 +235,18 @@ export const WalletProvider = ({ children }) => {
       setNfts([])
     }
   }, [address, chainId])
+  
+  // Manual NFT loading function for when needed
+  const loadNFTsManually = async () => {
+    if (address) {
+      console.log('📞 Manually loading NFTs for address:', address)
+      try {
+        await loadNFTs()
+      } catch (error) {
+        console.error('❌ Error manually loading NFTs:', error)
+      }
+    }
+  }
 
   // Show connection success
   useEffect(() => {
@@ -349,6 +368,7 @@ export const WalletProvider = ({ children }) => {
     // NFTs
     nfts: nfts || [],
     loadNFTs,
+    loadNFTsManually,
     
     // Mobile detection
     isMobile,
