@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useWallet } from '../contexts/WalletContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
@@ -15,9 +15,20 @@ import {
 } from '../styles/components'
 
 const NFTSelector = ({ isOpen, onClose, onSelect, nfts = [], loading = false }) => {
-  const { chain, chains } = useWallet()
+  const { chain, chains, loadNFTsManually } = useWallet()
+  const [isLoadingNFTs, setIsLoadingNFTs] = useState(false)
 
   if (!isOpen) return null
+
+  const handleLoadNFTs = async () => {
+    setIsLoadingNFTs(true)
+    try {
+      await loadNFTsManually()
+    } catch (err) {
+      console.error('❌ Error loading NFTs manually:', err)
+    }
+    setIsLoadingNFTs(false)
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -61,12 +72,19 @@ const NFTSelector = ({ isOpen, onClose, onSelect, nfts = [], loading = false }) 
             </Button>
           </div>
 
+          {/* Load NFTs Button */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+            <Button onClick={handleLoadNFTs} disabled={isLoadingNFTs}>
+              {isLoadingNFTs ? 'Loading...' : 'Load My NFTs'}
+            </Button>
+          </div>
+
           <div style={{
             flex: 1,
             overflowY: 'auto',
             paddingRight: '0.5rem'
           }}>
-            {loading ? (
+            {loading || isLoadingNFTs ? (
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',

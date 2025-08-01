@@ -211,45 +211,18 @@ export const WalletProvider = ({ children }) => {
     }
   }
 
-  // Load NFTs when address changes (but skip on game pages)
+  // DISABLED: Automatic NFT loading to prevent spam
+  // NFTs will only be loaded manually when needed
   useEffect(() => {
     console.log('🔄 useEffect triggered:', { address, chainId, isConnected })
-    console.log('🔍 loadNFTs function exists:', typeof loadNFTs)
+    console.log('🚫 Automatic NFT loading is DISABLED to prevent spam')
+    console.log('📱 Current path:', window.location.pathname)
     
-    // Skip NFT loading if we're on a game page (to prevent spam)
-    const isOnGamePage = window.location.pathname.includes('/game/')
-    if (isOnGamePage) {
-      console.log('🎮 On game page, skipping NFT loading to prevent spam')
-      // Clear NFTs when on game page to prevent spam
-      setNfts([])
-      return
-    }
+    // Always clear NFTs to prevent spam
+    setNfts([])
     
-    // Also skip if we're on any page that doesn't need NFTs
-    const currentPath = window.location.pathname
-    const skipNFTLoading = [
-      '/game/',
-      '/admin',
-      '/profile'
-    ].some(path => currentPath.includes(path))
-    
-    if (skipNFTLoading) {
-      console.log('🚫 Skipping NFT loading on path:', currentPath)
-      setNfts([])
-      return
-    }
-    
-    if (address) {
-      console.log('📞 Calling loadNFTs for address:', address)
-      try {
-        loadNFTs()
-      } catch (error) {
-        console.error('❌ Error calling loadNFTs:', error)
-      }
-    } else {
-      console.log('❌ No address, clearing NFTs')
-      setNfts([])
-    }
+    // Only load NFTs manually when explicitly requested
+    console.log('💡 Use loadNFTsManually() to load NFTs when needed')
   }, [address, chainId])
   
   // Manual NFT loading function for when needed

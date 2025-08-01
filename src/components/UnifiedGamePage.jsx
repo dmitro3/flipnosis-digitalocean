@@ -478,7 +478,7 @@ const UnifiedGamePage = () => {
         })
         
         if (response.ok) {
-          const data = await response.json()
+          let data = await response.json()
           // Use a conservative ETH price estimate since we can't get real-time price from this endpoint
           const ethPriceUSD = 3500 // Conservative estimate
           const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
@@ -520,7 +520,7 @@ const UnifiedGamePage = () => {
       const listingId = gameData.listing_id || gameData.id
       const response = await fetch(getApiUrl(`/listings/${listingId}/offers`))
       if (response.ok) {
-        const offersData = await response.json()
+        let offersData = await response.json()
         console.log('✅ Loaded offers:', offersData)
         setOffers(offersData)
       }
@@ -987,7 +987,7 @@ const UnifiedGamePage = () => {
       console.log('📥 Offer creation response:', { status: response.status, ok: response.ok })
       
       if (response.ok) {
-        const result = await response.json()
+        let result = await response.json()
         console.log('✅ Offer created successfully:', result)
         showSuccess('Offer created successfully!')
         setNewOffer({ price: '', message: '' })
@@ -1021,7 +1021,7 @@ const UnifiedGamePage = () => {
         body: JSON.stringify({ final_price: offerPrice })
       })
       
-      const result = await response.json()
+              let result = await response.json()
       console.log('✅ Offer acceptance response:', result)
       
       if (response.ok) {
@@ -1067,7 +1067,7 @@ const UnifiedGamePage = () => {
         const listingId = gameData?.listing_id || gameData?.id
         await fetch(getApiUrl(`/listings/${listingId}/offers`)).then(async response => {
           if (response.ok) {
-            const offersData = await response.json()
+            let offersData = await response.json()
             setOffers(offersData)
           }
         })
