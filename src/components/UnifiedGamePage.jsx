@@ -359,16 +359,14 @@ const UnifiedGamePage = () => {
       }
       setGameData(data)
       
-      // Calculate ETH amount if we have a final price
-      if (data.final_price) {
-        // First check if eth_amount is already available from database
-        if (data.eth_amount) {
-          console.log('💰 Using ETH amount from database:', data.eth_amount)
-          setEthAmount(BigInt(data.eth_amount))
-        } else {
-          // Calculate ETH amount if not available in database
-          await calculateAndSetEthAmount(data.final_price)
-        }
+      // Only calculate ETH amount if we're the challenger (Player 2) and need to deposit
+      if (data.final_price && isJoiner() && !data.challenger_deposited) {
+        console.log('💰 Player 2 needs to calculate ETH amount for deposit')
+        await calculateAndSetEthAmount(data.final_price)
+      } else if (data.eth_amount) {
+        // Use stored ETH amount if available
+        console.log('💰 Using ETH amount from database:', data.eth_amount)
+        setEthAmount(BigInt(data.eth_amount))
       } else {
         setEthAmount(null)
       }
@@ -424,6 +422,13 @@ const UnifiedGamePage = () => {
   }
 
   // Helper function to calculate ETH amount with retry logic
+  // Cache for ETH amounts to reduce RPC calls
+  const ethAmountCache = useRef(new Map())
+  
+  // Rate limiting for RPC calls
+  const lastRpcCall = useRef(0)
+  const RPC_COOLDOWN = 2000 // 2 seconds between RPC calls
+  
   const calculateAndSetEthAmount = async (finalPrice, retryCount = 0) => {
     try {
       console.log('🔍 Starting ETH amount calculation:', {
@@ -432,10 +437,26 @@ const UnifiedGamePage = () => {
         retryCount
       })
       
+      // Check cache first to avoid unnecessary RPC calls
+      const cacheKey = Math.round(finalPrice * 100) // Round to 2 decimal places for caching
+      if (ethAmountCache.current.has(cacheKey) && retryCount === 0) {
+        const cachedAmount = ethAmountCache.current.get(cacheKey)
+        console.log('💰 Using cached ETH amount for price:', finalPrice, 'USD')
+        setEthAmount(cachedAmount)
+        return
+      }
+      
       // If we already have an ETH amount for this price, don't recalculate
       if (ethAmount && retryCount === 0) {
         console.log('💰 ETH amount already calculated, skipping')
         return
+      }
+      
+      // Rate limiting: prevent excessive RPC calls
+      const now = Date.now()
+      if (now - lastRpcCall.current < RPC_COOLDOWN && retryCount === 0) {
+        console.log('⏳ Rate limiting: waiting before making RPC call...')
+        await new Promise(resolve => setTimeout(resolve, RPC_COOLDOWN - (now - lastRpcCall.current)))
       }
       
       // Wait for contract to be initialized, with timeout
@@ -461,6 +482,9 @@ const UnifiedGamePage = () => {
       const priceInMicrodollars = Math.round(finalPrice * 1000000)
       console.log('💰 Converting price to microdollars:', finalPrice, 'USD ->', priceInMicrodollars, 'microdollars')
       
+      // Update RPC call timestamp
+      lastRpcCall.current = Date.now()
+      
       const calculatedEthAmount = await contractService.contract.getETHAmount(priceInMicrodollars)
       console.log('💰 Raw ETH amount result:', calculatedEthAmount)
       console.log('💰 Raw ETH amount type:', typeof calculatedEthAmount)
@@ -484,7 +508,11 @@ const UnifiedGamePage = () => {
         }
         
         setEthAmount(ethAmountBigInt)
-        console.log('💰 Calculated ETH amount:', ethers.formatEther(ethAmountBigInt), 'ETH for price:', finalPrice, 'USD')
+        
+        // Cache the result to avoid future RPC calls for the same price
+        const cacheKey = Math.round(finalPrice * 100)
+        ethAmountCache.current.set(cacheKey, ethAmountBigInt)
+        console.log('💰 Calculated and cached ETH amount:', ethers.formatEther(ethAmountBigInt), 'ETH for price:', finalPrice, 'USD')
       } else {
         console.error('❌ getETHAmount returned null or undefined')
         throw new Error('Contract returned null ETH amount')
@@ -673,11 +701,9 @@ const UnifiedGamePage = () => {
     if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') return obj
     if (Array.isArray(obj)) return obj.map(safeSerialize)
     if (typeof obj === 'object') {
-      // Check for event objects and React components
-      // Only skip if it's actually a DOM event (has nativeEvent) or React synthetic event (has _reactName)
-      // Don't skip objects that just have a 'type' property (like WebSocket messages)
-      if (obj.nativeEvent || obj._reactName || (obj.target && obj.currentTarget)) {
-        console.warn('⚠️ Detected event object, skipping serialization')
+      // Check for event objects and React components/internal objects at the top level
+      if (obj.nativeEvent || obj._reactName || (obj.target && obj.currentTarget) || obj.$$typeof || obj.nodeType || obj.tagName || obj.stateNode || obj._reactInternalInstance || obj.__reactFiber) {
+        console.warn('⚠️ Detected event object or React component/internal object, skipping serialization')
         return null
       }
       
@@ -685,19 +711,15 @@ const UnifiedGamePage = () => {
       if (obj.type && (obj.type === 'your_offer_accepted' || obj.type === 'game_awaiting_challenger_deposit')) {
         console.log('✅ Processing WebSocket message:', obj.type, 'safely')
       }
-      if (obj.$$typeof || obj.nodeType || obj.tagName) {
-        console.warn('⚠️ Detected React component or DOM element, skipping serialization')
-        return null
-      }
       
       const safeObj = {}
       for (const [key, value] of Object.entries(obj)) {
         // Skip React internal properties and functions
-        if (key.startsWith('_') || key.startsWith('__') || typeof value === 'function') {
+        if (key.startsWith('_') || key.startsWith('__') || typeof value === 'function' || key === 'stateNode' || key === '_reactInternalInstance' || key === '__reactFiber') {
           continue
         }
-        // Skip DOM elements and React components
-        if (value && typeof value === 'object' && (value.nodeType || value.$$typeof)) {
+        // Skip DOM elements and React components/internal objects
+        if (value && typeof value === 'object' && (value.nodeType || value.$$typeof || value.stateNode || value._reactInternalInstance || value.__reactFiber)) {
           continue
         }
         try {
@@ -1577,18 +1599,15 @@ const UnifiedGamePage = () => {
     }
   }, [gameData])
   
-  // Recalculate ETH amount when contract becomes initialized
+  // Only calculate ETH amount when contract becomes initialized AND we're Player 2 who needs to deposit
   useEffect(() => {
-    if (gameData?.final_price && contractInitialized) {
-      // First check if eth_amount is already available from database
-      if (gameData.eth_amount) {
-        console.log('💰 Using ETH amount from database:', gameData.eth_amount)
-        setEthAmount(BigInt(gameData.eth_amount))
-      } else if (!ethAmount) {
-        // Only calculate if we don't already have an ETH amount
-        console.log('💰 Calculating ETH amount for price:', gameData.final_price)
-        calculateAndSetEthAmount(gameData.final_price)
-      }
+    if (gameData?.final_price && contractInitialized && isJoiner() && !gameData.challenger_deposited && !ethAmount) {
+      console.log('💰 Player 2 calculating ETH amount for deposit:', gameData.final_price)
+      calculateAndSetEthAmount(gameData.final_price)
+    } else if (gameData?.eth_amount && !ethAmount) {
+      // Use stored ETH amount if available
+      console.log('💰 Using ETH amount from database:', gameData.eth_amount)
+      setEthAmount(BigInt(gameData.eth_amount))
     }
   }, [contractInitialized, gameData?.final_price, gameData?.eth_amount, ethAmount])
   

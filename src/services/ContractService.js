@@ -548,9 +548,10 @@ class CleanContractService {
         paymentToken
       })
 
-      // Get the ETH amount for the price
-      const ethAmount = await this.contract.getETHAmount(priceUSD)
-      console.log('💰 ETH amount for price:', ethers.formatEther(ethAmount), 'ETH')
+      // Get the listing fee amount (this is what Player 1 needs to pay)
+      const listingFeeUSD = await this.contract.listingFeeUSD()
+      const listingFeeEth = await this.contract.getETHAmount(listingFeeUSD)
+      console.log('💸 Listing fee in ETH:', ethers.formatEther(listingFeeEth), 'ETH')
 
       // Convert gameId to bytes32
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
@@ -558,28 +559,28 @@ class CleanContractService {
 
       // Ensure value is a BigInt
       let value
-      if (typeof ethAmount === 'object' && ethAmount !== null) {
+      if (typeof listingFeeEth === 'object' && listingFeeEth !== null) {
         // If it's already a BigInt or similar object, extract the value
-        if (ethAmount.toString) {
-          value = BigInt(ethAmount.toString())
+        if (listingFeeEth.toString) {
+          value = BigInt(listingFeeEth.toString())
         } else {
           throw new Error('Invalid ETH amount format')
         }
       } else {
         // Convert to BigInt
-        value = BigInt(ethAmount)
+        value = BigInt(listingFeeEth)
       }
 
       console.log('💸 Transaction value (BigInt):', value.toString())
 
-      // Call the contract function
+      // Call the contract function - the contract will handle the game price conversion internally
       const hash = await this.contract.payFeeAndCreateGame(
         gameIdBytes32,
         nftContract,
         tokenId,
         priceUSD,
         paymentToken,
-        value
+        { value } // Pass value as options object
       )
       console.log('📝 Game creation tx hash:', hash)
 
@@ -592,7 +593,7 @@ class CleanContractService {
         transactionHash: hash,
         receipt,
         gameId: gameIdBytes32,
-        ethAmount: value.toString()
+        listingFeeEth: value.toString()
       }
     } catch (error) {
       console.error('❌ Error creating game:', error)
