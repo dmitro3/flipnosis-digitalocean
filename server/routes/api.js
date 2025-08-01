@@ -370,21 +370,36 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString() // 2 minutes
       
       if (!game) {
-        // Create new game if it doesn't exist
+        // Create new game if one doesn't exist
         const gameId = listing.game_id || `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
         const blockchainGameId = ethers.id(gameId)
+        
+        // Calculate ETH amount for the final price
+        let ethAmount = null
+        try {
+          // Get ETH price from a simple calculation (this is a fallback)
+          // In a real implementation, you'd use Chainlink price feeds
+          const ethPriceUSD = 2000 // Rough estimate - in production use price feed
+          const ethAmountWei = (offer.offer_price / ethPriceUSD) * 1e18
+          ethAmount = Math.floor(ethAmountWei).toString()
+          
+          console.log(`💰 Calculated ETH amount: ${offer.offer_price} USD = ${ethers.formatEther(ethAmount)} ETH`)
+        } catch (error) {
+          console.error('❌ Error calculating ETH amount:', error)
+          // Continue without ETH amount - frontend will calculate it
+        }
         
         await new Promise((resolve, reject) => {
           db.run(`
             INSERT INTO games (
               id, listing_id, offer_id, blockchain_game_id, creator, challenger,
               nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-              final_price, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              final_price, eth_amount, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, [
             gameId, listing.id, offerId, blockchainGameId, listing.creator, offer.offerer_address,
             listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
-            offer.offer_price, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false
+            offer.offer_price, ethAmount, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false
           ], function(err) {
             if (err) reject(err)
             else resolve()

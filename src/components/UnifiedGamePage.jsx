@@ -354,15 +354,15 @@ const UnifiedGamePage = () => {
       }
       setGameData(data)
       
-      // Calculate ETH amount if we have a final price and contract is initialized
-      if (data.final_price && contractInitialized) {
-        try {
-          const calculatedEthAmount = await contractService.getETHAmount(data.final_price)
-          setEthAmount(calculatedEthAmount)
-          console.log('💰 Calculated ETH amount:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', data.final_price, 'USD')
-        } catch (error) {
-          console.error('❌ Error calculating ETH amount:', error)
-          setEthAmount(null)
+      // Calculate ETH amount if we have a final price
+      if (data.final_price) {
+        // First check if eth_amount is already available from database
+        if (data.eth_amount) {
+          console.log('💰 Using ETH amount from database:', data.eth_amount)
+          setEthAmount(BigInt(data.eth_amount))
+        } else {
+          // Calculate ETH amount if not available in database
+          await calculateAndSetEthAmount(data.final_price)
         }
       } else {
         setEthAmount(null)
@@ -403,6 +403,70 @@ const UnifiedGamePage = () => {
       setError('Failed to load game data. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Helper function to calculate ETH amount with retry logic
+  const calculateAndSetEthAmount = async (finalPrice, retryCount = 0) => {
+    try {
+      console.log('🔍 Starting ETH amount calculation:', {
+        finalPrice,
+        contractInitialized,
+        retryCount
+      })
+      
+      // Wait for contract to be initialized, with timeout
+      let attempts = 0
+      const maxAttempts = 10
+      
+      while (!contractInitialized && attempts < maxAttempts) {
+        console.log(`⏳ Waiting for contract initialization... (attempt ${attempts + 1}/${maxAttempts})`)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        attempts++
+      }
+      
+      if (!contractInitialized) {
+        console.warn('⚠️ Contract not initialized after timeout, trying anyway...')
+      }
+      
+      console.log('🔍 Contract service state:', {
+        isInitialized: contractService.isInitialized?.() || 'method not available',
+        isReady: contractService.isReady?.() || 'method not available'
+      })
+      
+      const calculatedEthAmount = await contractService.getETHAmount(finalPrice)
+      console.log('💰 Raw ETH amount result:', calculatedEthAmount)
+      
+      if (calculatedEthAmount) {
+        setEthAmount(calculatedEthAmount)
+        console.log('💰 Calculated ETH amount:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', finalPrice, 'USD')
+      } else {
+        console.error('❌ getETHAmount returned null or undefined')
+        throw new Error('Contract returned null ETH amount')
+      }
+    } catch (error) {
+      console.error('❌ Error calculating ETH amount:', error)
+      
+      // Retry logic for network issues
+      if (retryCount < 3) {
+        console.log(`🔄 Retrying ETH calculation... (attempt ${retryCount + 1}/3)`)
+        setTimeout(() => calculateAndSetEthAmount(finalPrice, retryCount + 1), 1000)
+      } else {
+        console.error('❌ Failed to calculate ETH amount after 3 attempts')
+        
+        // Fallback: try to estimate ETH amount using a simple calculation
+        // This is a rough estimate based on typical ETH prices
+        try {
+          console.log('🔄 Trying fallback ETH calculation...')
+          const estimatedEthPrice = 2000 // Rough estimate of ETH price in USD
+          const estimatedEthAmount = (finalPrice / estimatedEthPrice) * 1e18 // Convert to wei
+          setEthAmount(BigInt(Math.floor(estimatedEthAmount)))
+          console.log('💰 Using fallback ETH amount:', ethers.formatEther(BigInt(Math.floor(estimatedEthAmount))), 'ETH')
+        } catch (fallbackError) {
+          console.error('❌ Fallback calculation also failed:', fallbackError)
+          setEthAmount(null)
+        }
+      }
     }
   }
   
@@ -607,7 +671,7 @@ const UnifiedGamePage = () => {
         // Reload game data to show the new game state
         loadGameData()
         
-        // If we're the offerer, show payment UI
+        // If we're the offerer, show message about waiting for challenger
         if (data.gameId && address === getGameJoiner()) {
           showInfo('Your offer was accepted! Please deposit payment to start the game.')
         }
@@ -1022,6 +1086,36 @@ const UnifiedGamePage = () => {
         console.log('✅ Parsed coin_data field:', coinData)
       } catch (error) {
         console.error('❌ Error parsing coin data:', error)
+        // Try to extract basic coin info even if parsing fails
+        if (gameData.coin_data && typeof gameData.coin_data === 'string') {
+          try {
+            // Look for coin ID in the string
+            const coinMatch = gameData.coin_data.match(/"id"\s*:\s*"([^"]+)"/)
+            if (coinMatch) {
+              const coinId = coinMatch[1]
+              console.log('🔍 Found coin ID in string:', coinId)
+              // Create basic coin data structure
+              coinData = {
+                id: coinId,
+                type: 'default',
+                name: coinId.charAt(0).toUpperCase() + coinId.slice(1),
+                headsImage: `/coins/${coinId}h.png`,
+                tailsImage: `/coins/${coinId}t.png`
+              }
+              // Handle special cases
+              if (coinId === 'trump') {
+                coinData.headsImage = '/coins/trumpheads.webp'
+                coinData.tailsImage = '/coins/trumptails.webp'
+              } else if (coinId === 'mario') {
+                coinData.headsImage = '/coins/mario.png'
+                coinData.tailsImage = '/coins/luigi.png'
+              }
+              console.log('✅ Created fallback coin data:', coinData)
+            }
+          } catch (fallbackError) {
+            console.error('❌ Error in fallback coin parsing:', fallbackError)
+          }
+        }
       }
     } else if (gameData?.coin) {
       coinData = gameData.coin
@@ -1043,6 +1137,7 @@ const UnifiedGamePage = () => {
       console.log('✅ Setting custom coin images:', coinData)
       setCustomHeadsImage(coinData.headsImage)
       setCustomTailsImage(coinData.tailsImage)
+      setGameCoin(coinData)
     } else {
       console.log('🪙 Using default coin images - no valid coin data found')
       console.log('🔍 Coin data validation failed:', {
@@ -1053,6 +1148,13 @@ const UnifiedGamePage = () => {
       })
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
+      setGameCoin({
+        id: 'plain',
+        type: 'default',
+        name: 'Classic',
+        headsImage: '/coins/plainh.png',
+        tailsImage: '/coins/plaint.png'
+      })
     }
   }, [gameData])
   
@@ -1102,20 +1204,17 @@ const UnifiedGamePage = () => {
   
   // Recalculate ETH amount when contract becomes initialized
   useEffect(() => {
-    if (contractInitialized && gameData?.final_price) {
-      const calculateEthAmount = async () => {
-        try {
-          const calculatedEthAmount = await contractService.getETHAmount(gameData.final_price)
-          setEthAmount(calculatedEthAmount)
-          console.log('💰 Recalculated ETH amount:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', gameData.final_price, 'USD')
-        } catch (error) {
-          console.error('❌ Error recalculating ETH amount:', error)
-          setEthAmount(null)
-        }
+    if (gameData?.final_price) {
+      // First check if eth_amount is already available from database
+      if (gameData.eth_amount) {
+        console.log('💰 Using ETH amount from database:', gameData.eth_amount)
+        setEthAmount(BigInt(gameData.eth_amount))
+      } else {
+        // Calculate ETH amount if not available in database
+        calculateAndSetEthAmount(gameData.final_price)
       }
-      calculateEthAmount()
     }
-  }, [contractInitialized, gameData?.final_price])
+  }, [contractInitialized, gameData?.final_price, gameData?.eth_amount])
   
   // Loading state
   if (loading) {

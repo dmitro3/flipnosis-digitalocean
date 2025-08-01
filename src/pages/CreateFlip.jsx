@@ -219,7 +219,9 @@ const CreateFlip = () => {
           nft_chain: 'base',
           asking_price: parseFloat(price),
           coin_data: JSON.stringify({
+            id: selectedCoin.id,
             type: selectedCoin.type,
+            name: selectedCoin.name,
             headsImage: selectedCoin.headsImage,
             tailsImage: selectedCoin.tailsImage,
             isCustom: selectedCoin.isCustom
