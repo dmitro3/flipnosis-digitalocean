@@ -562,7 +562,7 @@ const UnifiedGamePage = () => {
     
     ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data)
+        let data = JSON.parse(event.data)
         console.log('📨 Raw WebSocket message:', data)
         
         // Handle 'message' wrapper from Socket.IO
@@ -602,7 +602,7 @@ const UnifiedGamePage = () => {
         console.log('📤 Mock WebSocket send:', data)
         // Simulate receiving a response
         setTimeout(() => {
-          const parsedData = JSON.parse(data)
+          let parsedData = JSON.parse(data)
           if (parsedData.type === 'CHAT_MESSAGE') {
             handleWebSocketMessage({
               type: 'CHAT_MESSAGE',
@@ -994,7 +994,7 @@ const UnifiedGamePage = () => {
         // Refresh offers
         const offersResponse = await fetch(getApiUrl(`/listings/${listingId}/offers`))
         if (offersResponse.ok) {
-          const offersData = await offersResponse.json()
+          let offersData = await offersResponse.json()
           setOffers(offersData)
         }
       } else {
