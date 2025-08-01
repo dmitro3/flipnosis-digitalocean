@@ -330,8 +330,16 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   router.post('/offers/:offerId/accept', async (req, res) => {
     const { offerId } = req.params
     
-    db.get('SELECT * FROM offers WHERE id = ?', [offerId], async (err, offer) => {
-      if (err || !offer) {
+    try {
+      // Get offer details
+      const offer = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (!offer) {
         return res.status(404).json({ error: 'Offer not found' })
       }
       
@@ -339,85 +347,158 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         return res.status(400).json({ error: 'Offer already processed' })
       }
       
-      // Get listing and game details
-      db.get('SELECT * FROM listings WHERE id = ?', [offer.listing_id], async (err, listing) => {
-        if (err || !listing) {
-          return res.status(404).json({ error: 'Listing not found' })
-        }
-        
-        // Get the associated game
-        db.get('SELECT * FROM games WHERE listing_id = ?', [offer.listing_id], async (err, game) => {
-          if (err || !game) {
-            return res.status(404).json({ error: 'Game not found' })
-          }
-          
-          const depositDeadline = new Date(Date.now() + 5 * 60 * 1000).toISOString()
-          
-          try {
-            // Update game on blockchain with player 2
-            if (blockchainService.hasOwnerWallet()) {
-              const updateResult = await blockchainService.updateGameWithPlayer2(
-                game.id,
-                offer.offerer_address,
-                offer.offer_price,
-                0 // ETH by default, modify if supporting USDC
-              )
-              
-              if (!updateResult.success) {
-                console.error('Failed to update game on blockchain:', updateResult.error)
-                return res.status(500).json({ 
-                  error: 'Failed to update game on blockchain', 
-                  details: updateResult.error 
-                })
-              }
-            }
-            
-            // Update game in database
-            await new Promise((resolve, reject) => {
-              db.run(`
-                UPDATE games 
-                SET challenger = ?, offer_id = ?, final_price = ?, 
-                    status = 'waiting_challenger_deposit', deposit_deadline = ?
-                WHERE id = ?
-              `, [offer.offerer_address, offerId, offer.offer_price, depositDeadline, game.id], function(err) {
-                if (err) reject(err)
-                else resolve()
-              })
-            })
-            
-            // Update offer and listing status
-            db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId])
-            db.run('UPDATE listings SET status = "closed" WHERE id = ?', [offer.listing_id])
-            
-            // Notify players
-            wsHandlers.sendToUser(listing.creator, {
-              type: 'offer_accepted',
-              gameId: game.id,
-              depositDeadline,
-              message: 'Offer accepted! Your NFT is already deposited.'
-            })
-            
-            wsHandlers.sendToUser(offer.offerer_address, {
-              type: 'offer_accepted',
-              gameId: game.id,
-              depositDeadline,
-              message: 'Your offer was accepted! You have 5 minutes to deposit crypto.'
-            })
-            
-            wsHandlers.broadcastToRoom(offer.listing_id, {
-              type: 'listing_converted_to_game',
-              listingId: offer.listing_id,
-              gameId: game.id
-            })
-            
-            res.json({ success: true, gameId: game.id })
-          } catch (error) {
-            console.error('Error accepting offer:', error)
-            res.status(500).json({ error: 'Failed to accept offer', details: error.message })
-          }
+      // Get listing details
+      const listing = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM listings WHERE id = ?', [offer.listing_id], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
         })
       })
-    })
+      
+      if (!listing) {
+        return res.status(404).json({ error: 'Listing not found' })
+      }
+      
+      // Check if game already exists for this listing
+      let game = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM games WHERE listing_id = ? AND status != "cancelled"', [listing.id], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString() // 2 minutes
+      
+      if (!game) {
+        // Create new game if it doesn't exist
+        const gameId = listing.game_id || `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+        const blockchainGameId = ethers.id(gameId)
+        
+        await new Promise((resolve, reject) => {
+          db.run(`
+            INSERT INTO games (
+              id, listing_id, offer_id, blockchain_game_id, creator, challenger,
+              nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+              final_price, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            gameId, listing.id, offerId, blockchainGameId, listing.creator, offer.offerer_address,
+            listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
+            offer.offer_price, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false
+          ], function(err) {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+        
+        game = { id: gameId }
+      } else {
+        // Update existing game with challenger info
+        await new Promise((resolve, reject) => {
+          db.run(`
+            UPDATE games 
+            SET challenger = ?, offer_id = ?, final_price = ?, 
+                status = 'waiting_challenger_deposit', deposit_deadline = ?,
+                creator_deposited = true
+            WHERE id = ?
+          `, [offer.offerer_address, offerId, offer.offer_price, depositDeadline, game.id], function(err) {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      }
+      
+      // Update blockchain if configured
+      if (blockchainService.hasOwnerWallet()) {
+        const updateResult = await blockchainService.updateGameWithPlayer2(
+          game.id,
+          offer.offerer_address,
+          offer.offer_price,
+          0 // ETH by default
+        )
+        
+        if (!updateResult.success) {
+          console.error('Failed to update game on blockchain:', updateResult.error)
+          // Continue anyway - blockchain update is not critical for game flow
+        }
+      }
+      
+      // Update offer status
+      await new Promise((resolve, reject) => {
+        db.run('UPDATE offers SET status = "accepted" WHERE id = ?', [offerId], function(err) {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      // Update listing status
+      await new Promise((resolve, reject) => {
+        db.run('UPDATE listings SET status = "closed" WHERE id = ?', [offer.listing_id], function(err) {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      // Reject all other pending offers
+      await new Promise((resolve, reject) => {
+        db.run('UPDATE offers SET status = "rejected" WHERE listing_id = ? AND id != ? AND status = "pending"', 
+          [offer.listing_id, offerId], function(err) {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      // Send WebSocket notifications
+      wsHandlers.sendToUser(listing.creator, {
+        type: 'offer_accepted',
+        gameId: game.id,
+        depositDeadline,
+        challenger: offer.offerer_address,
+        finalPrice: offer.offer_price,
+        message: 'Offer accepted! Waiting for challenger to deposit crypto.'
+      })
+      
+      wsHandlers.sendToUser(offer.offerer_address, {
+        type: 'your_offer_accepted',
+        gameId: game.id,
+        depositDeadline,
+        finalPrice: offer.offer_price,
+        message: 'Your offer was accepted! You have 2 minutes to deposit crypto.',
+        requiresDeposit: true
+      })
+      
+      // Broadcast to room
+      wsHandlers.broadcastToRoom(listing.id, {
+        type: 'offer_accepted',
+        listingId: listing.id,
+        gameId: game.id,
+        acceptedOfferId: offerId,
+        challenger: offer.offerer_address,
+        depositDeadline
+      })
+      
+      // Also broadcast to game room
+      wsHandlers.broadcastToRoom(game.id, {
+        type: 'game_awaiting_challenger_deposit',
+        gameId: game.id,
+        challenger: offer.offerer_address,
+        depositDeadline,
+        finalPrice: offer.offer_price
+      })
+      
+      console.log(`✅ Offer accepted: ${offerId}, Game: ${game.id}, Deadline: ${depositDeadline}`)
+      
+      res.json({ 
+        success: true, 
+        gameId: game.id,
+        depositDeadline,
+        message: 'Offer accepted! Challenger has 2 minutes to deposit crypto.'
+      })
+      
+    } catch (error) {
+      console.error('❌ Error accepting offer:', error)
+      res.status(500).json({ error: 'Failed to accept offer', details: error.message })
+    }
   })
 
   // Reject offer

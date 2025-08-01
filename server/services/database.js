@@ -209,11 +209,12 @@ class DatabaseService {
     return new Promise((resolve, reject) => {
       this.db.run(`
         UPDATE games SET 
-          challenger = '', 
+          challenger = NULL, 
           offer_id = NULL, 
           final_price = ?, 
           status = 'awaiting_challenger',
-          deposit_deadline = NULL
+          deposit_deadline = NULL,
+          challenger_deposited = false
         WHERE id = ?
       `, [game.asking_price || game.final_price, game.id], function(err) {
         if (err) reject(err)

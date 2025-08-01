@@ -142,15 +142,37 @@ async function handleOldFlowTimeout(game, dbService, wsHandlers) {
 }
 
 async function handleNewFlowTimeout(game, dbService, wsHandlers) {
-  console.log('⏰ Timeout for new flow game - Player 2 didn\'t deposit crypto:', game.id)
+  console.log('⏰ Timeout for challenger deposit:', game.id)
+  
   try {
+    // Reset game to allow new offers
     await dbService.resetGameForNewOffers(game)
+    
+    // Reopen the listing
     await dbService.updateListingStatus(game.listing_id, 'open')
+    
+    // Reject the timed-out offer
+    if (game.offer_id) {
+      await new Promise((resolve, reject) => {
+        dbService.getDatabase().run(
+          'UPDATE offers SET status = "timeout" WHERE id = ?',
+          [game.offer_id],
+          function(err) {
+            if (err) reject(err)
+            else resolve()
+          }
+        )
+      })
+    }
+    
+    // Notify creator
     wsHandlers.sendToUser(game.creator, {
       type: 'challenger_timeout',
       gameId: game.id,
-      message: 'Challenger didn\'t deposit crypto. You can now accept new offers!'
+      message: 'Challenger didn\'t deposit in time. Your listing is now open for new offers!'
     })
+    
+    // Notify challenger
     if (game.challenger) {
       wsHandlers.sendToUser(game.challenger, {
         type: 'deposit_timeout',
@@ -158,14 +180,23 @@ async function handleNewFlowTimeout(game, dbService, wsHandlers) {
         message: 'You missed the deposit deadline. The offer has expired.'
       })
     }
+    
+    // Broadcast to both rooms
     wsHandlers.broadcastToRoom(game.id, {
-      type: 'challenger_deposit_timeout',
-      reason: 'challenger_timeout',
-      gameId: game.id,
-      message: 'Challenger deposit timeout - listing is open for new offers'
+      type: 'game_timeout',
+      reason: 'challenger_deposit_timeout',
+      gameId: game.id
     })
+    
+    wsHandlers.broadcastToRoom(game.listing_id, {
+      type: 'listing_reopened',
+      listingId: game.listing_id,
+      reason: 'challenger_timeout'
+    })
+    
+    console.log('✅ Game reset for new offers after timeout:', game.id)
   } catch (error) {
-    console.error('❌ Error resetting game for new offers:', error)
+    console.error('❌ Error handling timeout:', error)
   }
 }
 

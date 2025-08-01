@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ThemeProvider } from '@emotion/react'
 import styled from '@emotion/styled'
+import { ethers } from 'ethers'
 
 // 3. Context imports
 import { useWallet } from '../contexts/WalletContext'
@@ -132,6 +133,22 @@ const PayButton = styled.button`
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+`
+
+const DepositCountdown = styled.div`
+  background: ${props => props.isUrgent ? 'rgba(255, 0, 0, 0.2)' : 'rgba(255, 165, 0, 0.2)'};
+  border: 2px solid ${props => props.isUrgent ? '#ff0000' : '#ffa500'};
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  margin: 1rem 0;
+  animation: ${props => props.isUrgent ? 'urgentPulse 1s infinite' : 'none'};
+  
+  @keyframes urgentPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
   }
 `
 
@@ -291,6 +308,10 @@ const UnifiedGamePage = () => {
   const [newOffer, setNewOffer] = useState({ price: '', message: '' })
   const [creatingOffer, setCreatingOffer] = useState(false)
   
+  // Countdown state
+  const [depositTimeLeft, setDepositTimeLeft] = useState(null)
+  const [countdownInterval, setCountdownInterval] = useState(null)
+  
   // Load game data
   const loadGameData = async () => {
     try {
@@ -320,6 +341,15 @@ const UnifiedGamePage = () => {
         return
       }
       setGameData(data)
+      
+      // Start countdown if game is waiting for challenger deposit
+      if (data.status === 'waiting_challenger_deposit' && data.deposit_deadline) {
+        const now = new Date().getTime()
+        const deadline = new Date(data.deposit_deadline).getTime()
+        if (deadline > now) {
+          startDepositCountdown(data.deposit_deadline)
+        }
+      }
       
       // Load offers for this listing/game
       const listingId = data?.listing_id || data?.id
@@ -504,6 +534,38 @@ const UnifiedGamePage = () => {
         loadOffers()
         break
         
+      case 'your_offer_accepted':
+        console.log('🎉 Your offer was accepted!', data)
+        showSuccess(data.message)
+        
+        // Navigate to game page if we're the challenger
+        if (data.gameId && data.requiresDeposit) {
+          // Show payment UI immediately
+          navigate(`/game/${data.gameId}`)
+        }
+        
+        // Reload game data
+        loadGameData()
+        break
+
+      case 'game_awaiting_challenger_deposit':
+        console.log('⏳ Game awaiting challenger deposit:', data)
+        
+        // Update local game state with deposit deadline
+        setGameData(prev => ({
+          ...prev,
+          status: 'waiting_challenger_deposit',
+          deposit_deadline: data.depositDeadline,
+          challenger: data.challenger,
+          final_price: data.finalPrice
+        }))
+        
+        // Start countdown timer if we're involved
+        if (address === data.challenger || address === getGameCreator()) {
+          startDepositCountdown(data.depositDeadline)
+        }
+        break
+
       case 'offer_accepted':
         console.log('✅ Offer accepted! Details:', data)
         
@@ -831,6 +893,39 @@ const UnifiedGamePage = () => {
     }
   }
   
+  // Countdown functions
+  const startDepositCountdown = (deadline) => {
+    // Clear any existing interval
+    if (countdownInterval) {
+      clearInterval(countdownInterval)
+    }
+    
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const deadlineTime = new Date(deadline).getTime()
+      const timeLeft = Math.max(0, deadlineTime - now)
+      
+      if (timeLeft === 0) {
+        clearInterval(interval)
+        setDepositTimeLeft(0)
+        // Reload game data to check timeout status
+        loadGameData()
+      } else {
+        setDepositTimeLeft(Math.floor(timeLeft / 1000))
+      }
+    }, 1000)
+    
+    setCountdownInterval(interval)
+  }
+  
+  // Format time for display
+  const formatTimeLeft = (seconds) => {
+    if (!seconds && seconds !== 0) return ''
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+  
   // Helper functions to handle both game and listing data structures
   const getGameCreator = () => gameData?.creator || gameData?.creator_address
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
@@ -948,6 +1043,15 @@ const UnifiedGamePage = () => {
       loadOffers()
     }
   }, [gameData])
+  
+  // Cleanup countdown interval on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+      }
+    }
+  }, [countdownInterval])
   
   // Loading state
   if (loading) {
@@ -1211,6 +1315,124 @@ const UnifiedGamePage = () => {
             
             {/* Three Column Layout */}
             <BottomSection>
+              {/* Payment Section - Show for challenger who needs to deposit */}
+              {gameData?.status === 'waiting_challenger_deposit' && address === getGameJoiner() && !gameData?.challenger_deposited && (
+                <PaymentSection style={{ animation: 'pulse 2s infinite' }}>
+                  <h2 style={{ color: theme.colors.neonPink, marginBottom: '1rem' }}>
+                    ⏰ Your Offer Was Accepted! Deposit Required
+                  </h2>
+                  
+                  {/* Countdown Timer */}
+                  {depositTimeLeft !== null && (
+                    <DepositCountdown isUrgent={depositTimeLeft < 30}>
+                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: depositTimeLeft < 30 ? '#ff0000' : '#ffa500' }}>
+                        {formatTimeLeft(depositTimeLeft)}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        Time remaining to deposit
+                      </div>
+                    </DepositCountdown>
+                  )}
+                  
+                  <NFTPreview>
+                    <NFTImage src={getGameNFTImage()} alt={getGameNFTName()} />
+                    <NFTInfo>
+                      <h3>{getGameNFTName()}</h3>
+                      <p>{getGameNFTCollection()}</p>
+                      <p style={{ color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
+                        Creator has already deposited this NFT!
+                      </p>
+                    </NFTInfo>
+                  </NFTPreview>
+                  
+                  <PriceDisplay>${(getGamePrice() || 0).toFixed(2)} USD</PriceDisplay>
+                  
+                  <div style={{ 
+                    background: 'rgba(255, 255, 255, 0.1)', 
+                    padding: '1rem', 
+                    borderRadius: '0.5rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>
+                      💎 ETH Amount: {ethers.formatEther(gameData?.eth_amount || '0')} ETH
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: theme.colors.textSecondary }}>
+                      Includes 3.5% platform fee
+                    </p>
+                  </div>
+                  
+                  <PayButton 
+                    onClick={async () => {
+                      try {
+                        showInfo('Depositing ETH...')
+                        const result = await contractService.depositETH(gameId, getGamePrice())
+                        if (result.success) {
+                          showSuccess('ETH deposited successfully!')
+                          
+                          // Confirm deposit to backend
+                          await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              player: address,
+                              assetType: 'eth',
+                              transactionHash: result.transactionHash
+                            })
+                          })
+                          
+                          // Reload game data
+                          loadGameData()
+                        } else {
+                          showError(result.error || 'Failed to deposit ETH')
+                        }
+                      } catch (error) {
+                        console.error('Error depositing ETH:', error)
+                        showError('Failed to deposit ETH')
+                      }
+                    }}
+                    disabled={!contractInitialized || depositTimeLeft === 0}
+                  >
+                    {depositTimeLeft === 0 ? 'Deposit Timeout' : 'Deposit ETH & Start Game'}
+                  </PayButton>
+                  
+                  {depositTimeLeft === 0 && (
+                    <div style={{ 
+                      marginTop: '1rem', 
+                      padding: '1rem', 
+                      background: 'rgba(255, 0, 0, 0.1)', 
+                      border: '1px solid rgba(255, 0, 0, 0.3)',
+                      borderRadius: '0.5rem'
+                    }}>
+                      <p style={{ color: '#ff6666', margin: 0 }}>
+                        ⏰ Deposit timeout! The game has been cancelled and the listing is open for new offers.
+                      </p>
+                    </div>
+                  )}
+                </PaymentSection>
+              )}
+
+              {/* Show countdown in offers section for creator */}
+              {gameData?.status === 'waiting_challenger_deposit' && address === getGameCreator() && depositTimeLeft !== null && (
+                <div style={{
+                  background: 'rgba(255, 165, 0, 0.1)',
+                  border: '2px solid #ffa500',
+                  borderRadius: '0.75rem',
+                  padding: '1rem',
+                  marginBottom: '1rem',
+                  textAlign: 'center'
+                }}>
+                  <h4 style={{ color: '#ffa500', margin: '0 0 0.5rem 0' }}>
+                    Waiting for Challenger to Deposit
+                  </h4>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: depositTimeLeft < 30 ? '#ff0000' : '#ffa500' }}>
+                    {formatTimeLeft(depositTimeLeft)}
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: theme.colors.textSecondary, margin: '0.5rem 0 0 0' }}>
+                    If challenger doesn't deposit, listing will reopen for new offers
+                  </p>
+                </div>
+              )}
+
               {/* NFT Info Section */}
               <InfoSection>
                 <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonYellow }}>NFT Details</h4>
