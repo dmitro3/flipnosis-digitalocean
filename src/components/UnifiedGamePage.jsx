@@ -291,7 +291,10 @@ const UnifiedGamePage = () => {
     creatorWins: 0,
     joinerWins: 0,
     creatorChoice: null,
-    joinerChoice: null
+    joinerChoice: null,
+    chargingPlayer: null,
+    creatorPower: 0,
+    joinerPower: 0
   })
   
   const [readyNFTStatus, setReadyNFTStatus] = useState({ ready: false, nft: null })
@@ -317,6 +320,8 @@ const UnifiedGamePage = () => {
   // Countdown state
   const [depositTimeLeft, setDepositTimeLeft] = useState(null)
   const [countdownInterval, setCountdownInterval] = useState(null)
+  const [roundCountdown, setRoundCountdown] = useState(null)
+  const [roundCountdownInterval, setRoundCountdownInterval] = useState(null)
   
   // Live updates state
   const [offersRefreshInterval, setOffersRefreshInterval] = useState(null)
@@ -629,32 +634,58 @@ const UnifiedGamePage = () => {
   const handleWebSocketMessage = (data) => {
     console.log('📨 WebSocket message received:', data)
     
-    switch (data.type) {
+    // Ensure data is a plain object and doesn't contain circular references
+    let safeData
+    try {
+      safeData = JSON.parse(JSON.stringify(data))
+    } catch (error) {
+      console.error('❌ Error serializing WebSocket data:', error)
+      // Fallback: try to create a safe copy without circular references
+      safeData = {
+        type: data.type,
+        ...Object.fromEntries(
+          Object.entries(data).filter(([key, value]) => {
+            return typeof value !== 'function' && 
+                   typeof value !== 'object' || 
+                   value === null ||
+                   Array.isArray(value)
+          })
+        )
+      }
+    }
+    
+    switch (safeData.type) {
       case 'GAME_UPDATE':
-        setGameData(prev => ({ ...prev, ...data.gameData }))
+        // Only update with primitive values
+        const gameUpdate = { ...safeData.gameData }
+        // Remove any potential circular references
+        delete gameUpdate.__reactFiber
+        delete gameUpdate.stateNode
+        delete gameUpdate._reactInternalInstance
+        setGameData(prev => ({ ...prev, ...gameUpdate }))
         break
         
       case 'GAME_ACTION':
-        handleGameAction(data)
+        handleGameAction(safeData)
         break
         
       case 'PLAYER_CHOICE':
         // Handle player choice updates from other players
-        if (data.player === getGameCreator()) {
-          setPlayerChoices(prev => ({ ...prev, creator: data.choice }))
-          setGameState(prev => ({ ...prev, creatorChoice: data.choice }))
-        } else if (data.player === getGameJoiner()) {
-          setPlayerChoices(prev => ({ ...prev, joiner: data.choice }))
-          setGameState(prev => ({ ...prev, joinerChoice: data.choice }))
+        if (safeData.player === getGameCreator()) {
+          setPlayerChoices(prev => ({ ...prev, creator: safeData.choice }))
+          setGameState(prev => ({ ...prev, creatorChoice: safeData.choice }))
+        } else if (safeData.player === getGameJoiner()) {
+          setPlayerChoices(prev => ({ ...prev, joiner: safeData.choice }))
+          setGameState(prev => ({ ...prev, joinerChoice: safeData.choice }))
         }
         break
         
       case 'FLIP_RESULT':
-        handleFlipResult(data.result)
+        handleFlipResult(safeData.result)
         break
         
       case 'GAME_COMPLETED':
-        handleGameCompleted(data)
+        handleGameCompleted(safeData)
         break
         
       case 'new_offer':
@@ -670,13 +701,13 @@ const UnifiedGamePage = () => {
         break
         
       case 'your_offer_accepted':
-        console.log('🎉 Your offer was accepted!', data)
-        showSuccess(data.message)
+        console.log('🎉 Your offer was accepted!', safeData)
+        showSuccess(safeData.message)
         
         // Navigate to game page if we're the challenger
-        if (data.gameId && data.requiresDeposit) {
+        if (safeData.gameId && safeData.requiresDeposit) {
           // Show payment UI immediately
-          navigate(`/game/${data.gameId}`)
+          navigate(`/game/${safeData.gameId}`)
         }
         
         // Reload game data
@@ -684,25 +715,25 @@ const UnifiedGamePage = () => {
         break
 
       case 'game_awaiting_challenger_deposit':
-        console.log('⏳ Game awaiting challenger deposit:', data)
+        console.log('⏳ Game awaiting challenger deposit:', safeData)
         
         // Update local game state with deposit deadline
         setGameData(prev => ({
           ...prev,
           status: 'waiting_challenger_deposit',
-          deposit_deadline: data.depositDeadline,
-          challenger: data.challenger,
-          final_price: data.finalPrice
+          deposit_deadline: safeData.depositDeadline,
+          challenger: safeData.challenger,
+          final_price: safeData.finalPrice
         }))
         
         // Start countdown timer if we're involved
-        if (address === data.challenger || address === getGameCreator()) {
-          startDepositCountdown(data.depositDeadline)
+        if (address === safeData.challenger || address === getGameCreator()) {
+          startDepositCountdown(safeData.depositDeadline)
         }
         break
 
       case 'offer_accepted':
-        console.log('✅ Offer accepted! Details:', data)
+        console.log('✅ Offer accepted! Details:', safeData)
         
         // Show success message
         showSuccess('Offer accepted! Game created successfully.')
@@ -711,7 +742,7 @@ const UnifiedGamePage = () => {
         loadGameData()
         
         // If we're the offerer, show message about waiting for challenger
-        if (data.gameId && address === getGameJoiner()) {
+        if (safeData.gameId && address === getGameJoiner()) {
           showInfo('Your offer was accepted! Please deposit payment to start the game.')
         }
         break
@@ -725,35 +756,13 @@ const UnifiedGamePage = () => {
       case 'chat_message':
         // Only add the message if it's not from the current user
         // This prevents duplicate messages for the sender
-        if (data.from !== address) {
+        if (safeData.from !== address) {
           setChatMessages(prev => [...prev, {
             id: Date.now(),
-            from: data.from,
-            message: data.message,
-            timestamp: new Date().toISOString()
+            from: safeData.from,
+            message: safeData.message,
+            timestamp: safeData.timestamp || new Date().toISOString()
           }])
-        } else {
-          // If it's from the current user, add it to show their own message
-          setChatMessages(prev => [...prev, {
-            id: Date.now(),
-            from: data.from,
-            message: data.message,
-            timestamp: new Date().toISOString()
-          }])
-        }
-        break
-        
-      case 'deposit_confirmed':
-        console.log('💰 Deposit confirmed:', data)
-        const depositor = data.player === address ? 'You' : 'Opponent'
-        showSuccess(`${depositor} deposited ${data.assetType.toUpperCase()}!`)
-        
-        // Reload game data to update deposit status
-        loadGameData()
-        
-        // If both players have deposited, show game starting message
-        if (gameData?.creator_deposited && gameData?.challenger_deposited) {
-          showSuccess('Both players deposited! Game starting...')
         }
         break
         
@@ -773,23 +782,43 @@ const UnifiedGamePage = () => {
         break
         
       case 'game_completed':
-        console.log('🏁 Game completed:', data)
-        handleGameCompleted(data)
+        console.log('🏁 Game completed:', safeData)
+        handleGameCompleted(safeData)
         break
         
       default:
-        console.log('📨 Unhandled WebSocket message type:', data.type)
+        console.log('📨 Unhandled WebSocket message type:', safeData.type)
     }
   }
   
   // Handle game actions
   const handleGameAction = (data) => {
-    switch (data.action) {
+    // Ensure we only work with primitive values
+    let safeData
+    try {
+      safeData = JSON.parse(JSON.stringify(data))
+    } catch (error) {
+      console.error('❌ Error serializing game action data:', error)
+      safeData = {
+        action: data.action,
+        player: data.player,
+        ...Object.fromEntries(
+          Object.entries(data).filter(([key, value]) => {
+            return typeof value !== 'function' && 
+                   typeof value !== 'object' || 
+                   value === null ||
+                   Array.isArray(value)
+          })
+        )
+      }
+    }
+    
+    switch (safeData.action) {
       case 'CHOICE_MADE':
         setGameState(prev => ({
           ...prev,
           phase: 'charging',
-          chargingPlayer: data.player
+          chargingPlayer: safeData.player
         }))
         break
         
@@ -812,20 +841,33 @@ const UnifiedGamePage = () => {
         break
         
       default:
-        console.log('Unknown game action:', data.action)
+        console.log('Unknown game action:', safeData.action)
     }
   }
   
   // Handle flip result
   const handleFlipResult = (result) => {
-    setFlipAnimation(result)
+    // Ensure result is a plain object
+    let safeResult
+    try {
+      safeResult = JSON.parse(JSON.stringify(result))
+    } catch (error) {
+      console.error('❌ Error serializing flip result:', error)
+      safeResult = {
+        winner: result.winner,
+        result: result.result,
+        playerChoice: result.playerChoice
+      }
+    }
+    
+    setFlipAnimation(safeResult)
     
     setTimeout(() => {
       setFlipAnimation(null)
       setResultData({
-        isWinner: result.winner === address,
-        flipResult: result.result,
-        playerChoice: result.playerChoice
+        isWinner: safeResult.winner === address,
+        flipResult: safeResult.result,
+        playerChoice: safeResult.playerChoice
       })
       setShowResultPopup(true)
     }, 3000)
@@ -833,15 +875,28 @@ const UnifiedGamePage = () => {
   
   // Handle game completed
   const handleGameCompleted = (data) => {
+    // Ensure data is a plain object
+    let safeData
+    try {
+      safeData = JSON.parse(JSON.stringify(data))
+    } catch (error) {
+      console.error('❌ Error serializing game completed data:', error)
+      safeData = {
+        winner: data.winner,
+        finalResult: data.finalResult,
+        playerChoice: data.playerChoice
+      }
+    }
+    
     setGameState(prev => ({
       ...prev,
       phase: 'completed'
     }))
     
     setResultData({
-      isWinner: data.winner === address,
-      flipResult: data.finalResult,
-      playerChoice: data.playerChoice,
+      isWinner: safeData.winner === address,
+      flipResult: safeData.finalResult,
+      playerChoice: safeData.playerChoice,
       isGameComplete: true
     })
     setShowResultPopup(true)
@@ -853,6 +908,9 @@ const UnifiedGamePage = () => {
       showError('Not connected to game server')
       return
     }
+    
+    // Stop any existing countdown
+    stopRoundCountdown()
     
     // Update local state immediately for better UX
     if (address === getGameCreator()) {
@@ -869,6 +927,9 @@ const UnifiedGamePage = () => {
       }))
     }
     
+    // Start countdown for this round
+    startRoundCountdown()
+    
     // Check if this is Round 5 - if so, auto-flip after choice
     if (gameState.currentRound === 5) {
       console.log('🎯 Round 5 detected - auto-flipping after choice')
@@ -877,13 +938,17 @@ const UnifiedGamePage = () => {
       }, 1000) // Small delay for UX
     }
     
-    wsRef.send(JSON.stringify({
+    // Send choice to server
+    const choiceMessage = {
       type: 'GAME_ACTION',
       gameId: gameId,
       action: 'MAKE_CHOICE',
       choice: choice,
       player: address
-    }))
+    }
+    
+    // Ensure the message is serializable
+    wsRef.send(JSON.stringify(choiceMessage))
   }
   
   const handleAutoFlip = () => {
@@ -902,13 +967,16 @@ const UnifiedGamePage = () => {
     
     // Send auto-flip action
     if (wsRef && wsConnected) {
-      wsRef.send(JSON.stringify({
+      const autoFlipMessage = {
         type: 'GAME_ACTION',
         gameId: gameId,
         action: 'AUTO_FLIP',
         choice: autoChoice,
         player: 'system'
-      }))
+      }
+      
+      // Ensure the message is serializable
+      wsRef.send(JSON.stringify(autoFlipMessage))
     }
   }
   
@@ -932,13 +1000,16 @@ const UnifiedGamePage = () => {
       joinerPower: address === getGameJoiner() ? powerLevel : prev.joinerPower
     }))
     
-    wsRef.send(JSON.stringify({
+    const powerMessage = {
       type: 'GAME_ACTION',
       gameId: gameId,
       action: 'POWER_CHARGED',
       powerLevel: powerLevel,
       player: address
-    }))
+    }
+    
+    // Ensure the message is serializable
+    wsRef.send(JSON.stringify(powerMessage))
   }
   
 
@@ -1102,6 +1173,71 @@ const UnifiedGamePage = () => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+  
+  // Start round countdown timer
+  const startRoundCountdown = () => {
+    console.log('⏰ Starting 20-second round countdown')
+    setRoundCountdown(20)
+    
+    const interval = setInterval(() => {
+      setRoundCountdown(prev => {
+        if (prev <= 1) {
+          // Time's up - auto-flip at max power
+          console.log('⏰ Round countdown expired - auto-flipping at max power')
+          clearInterval(interval)
+          setRoundCountdownInterval(null)
+          
+          // Auto-flip at max power
+          if (isMyTurn()) {
+            const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
+            console.log('🎲 Auto-flipping with choice:', autoChoice)
+            
+            // Update state immediately
+            if (address === getGameCreator()) {
+              setPlayerChoices(prev => ({ ...prev, creator: autoChoice }))
+              setGameState(prev => ({
+                ...prev,
+                creatorChoice: autoChoice
+              }))
+            } else if (address === getGameJoiner()) {
+              setPlayerChoices(prev => ({ ...prev, joiner: autoChoice }))
+              setGameState(prev => ({
+                ...prev,
+                joinerChoice: autoChoice
+              }))
+            }
+            
+            // Send auto-flip message
+            if (wsRef && wsConnected) {
+              const autoFlipMessage = {
+                type: 'GAME_ACTION',
+                gameId: gameId,
+                action: 'AUTO_FLIP_TIMEOUT',
+                choice: autoChoice,
+                player: address,
+                powerLevel: 10 // Max power
+              }
+              wsRef.send(JSON.stringify(autoFlipMessage))
+            }
+          }
+          
+          return null
+        }
+        return prev - 1
+      })
+    }, 1000)
+    
+    setRoundCountdownInterval(interval)
+  }
+  
+  // Stop round countdown timer
+  const stopRoundCountdown = () => {
+    if (roundCountdownInterval) {
+      clearInterval(roundCountdownInterval)
+      setRoundCountdownInterval(null)
+    }
+    setRoundCountdown(null)
   }
   
   // Helper functions to handle both game and listing data structures
@@ -1339,6 +1475,21 @@ const UnifiedGamePage = () => {
       }
     }
   }, [contractInitialized, gameData?.final_price, gameData?.eth_amount])
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+      }
+      if (roundCountdownInterval) {
+        clearInterval(roundCountdownInterval)
+      }
+      if (offersRefreshInterval) {
+        clearInterval(offersRefreshInterval)
+      }
+    }
+  }, [countdownInterval, roundCountdownInterval, offersRefreshInterval])
   
   // Loading state
   if (loading) {
@@ -1598,10 +1749,12 @@ const UnifiedGamePage = () => {
               joiner={getGameJoiner()}
               chargingPlayer={gameState.chargingPlayer}
               gamePhase={gameState.phase}
-              isMyTurn={isMyTurn}
+              isMyTurn={isMyTurn()}
               playerChoice={isCreator() ? gameState.creatorChoice : gameState.joinerChoice}
               onChoiceSelect={handlePlayerChoice}
               gameStarted={gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active'}
+              roundCountdown={roundCountdown}
+              isMobile={isMobile}
             />
             
             {/* Three Column Layout */}

@@ -13,7 +13,8 @@ const PowerDisplay = ({
   playerChoice = null,
   onChoiceSelect = null,
   isMobile = false,
-  gameStarted = false // New prop to indicate if game has actually started
+  gameStarted = false, // New prop to indicate if game has actually started
+  roundCountdown = null // New prop for countdown timer
 }) => {
   // Calculate total power for single bar
   const totalPower = creatorPower + joinerPower
@@ -43,14 +44,14 @@ const PowerDisplay = ({
     border: '1px solid rgba(255, 255, 255, 0.1)',
     width: '100%'
   } : {
-    background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(25, 20, 0, 0.8) 100%)',
+    background: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9) 0%, rgba(138, 43, 226, 0.8) 100%)',
     padding: '1.5rem',
     borderRadius: '1rem',
     border: `2px solid #FFD700`,
     backdropFilter: 'blur(10px)',
     maxWidth: '550px',
     margin: '0 auto',
-    boxShadow: '0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1)'
+    boxShadow: '0 0 30px rgba(138, 43, 226, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)'
   }
 
   const headerStyle = isMobile ? {
@@ -85,6 +86,18 @@ const PowerDisplay = ({
       {/* Power Display Header - Always Show */}
       <div style={headerStyle}>
         ⚡ POWER LEVEL ⚡
+        {roundCountdown !== null && (
+          <div style={{
+            fontSize: isMobile ? '0.8rem' : '1rem',
+            color: roundCountdown <= 5 ? '#FF4444' : '#00FF41',
+            fontWeight: 'bold',
+            marginTop: '0.5rem',
+            textShadow: roundCountdown <= 5 ? '0 0 10px rgba(255, 68, 68, 0.8)' : '0 0 10px rgba(0, 255, 65, 0.5)',
+            animation: roundCountdown <= 5 ? 'pulse 1s ease-in-out infinite' : 'none'
+          }}>
+            ⏰ {roundCountdown}s
+          </div>
+        )}
       </div>
       
       {/* Choice Buttons - Show during choosing phase */}
@@ -100,18 +113,17 @@ const PowerDisplay = ({
             🎯 CHOOSE YOUR SIDE
           </div>
           
-          <div style={{ 
-            display: 'flex', 
+          <div style={{
+            display: 'flex',
             gap: isMobile ? '0.75rem' : '1rem',
-            flexDirection: isMobile ? 'column' : 'row'
+            justifyContent: 'center'
           }}>
             <button
-              onClick={() => {
-                console.log('🎯 HEADS clicked by:', currentPlayer, 'gamePhase:', gamePhase)
-                if (onChoiceSelect) {
-                  onChoiceSelect('heads')
-                } else {
-                  console.error('❌ onChoiceSelect is null!')
+              onClick={() => onChoiceSelect('heads')}
+              onMouseDown={() => {
+                // Add haptic feedback for mobile
+                if (navigator.vibrate) {
+                  navigator.vibrate(50)
                 }
               }}
               style={{
@@ -153,12 +165,11 @@ const PowerDisplay = ({
             </button>
             
             <button
-              onClick={() => {
-                console.log('🎯 TAILS clicked by:', currentPlayer, 'gamePhase:', gamePhase)
-                if (onChoiceSelect) {
-                  onChoiceSelect('tails')
-                } else {
-                  console.error('❌ onChoiceSelect is null!')
+              onClick={() => onChoiceSelect('tails')}
+              onMouseDown={() => {
+                // Add haptic feedback for mobile
+                if (navigator.vibrate) {
+                  navigator.vibrate(50)
                 }
               }}
               style={{
@@ -198,6 +209,35 @@ const PowerDisplay = ({
                 zIndex: 1
               }} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Show waiting message for Player 2 when it's not their turn */}
+      {gameStarted && (gamePhase === 'choosing' || gamePhase === 'active' || gamePhase === 'waiting') && 
+       !isMyTurn && !showChoiceButtons && (
+        <div style={{
+          padding: isMobile ? '1rem' : '1.5rem',
+          background: 'linear-gradient(135deg, rgba(75, 0, 130, 0.3) 0%, rgba(138, 43, 226, 0.2) 100%)',
+          border: '2px solid rgba(255, 215, 0, 0.3)',
+          borderRadius: isMobile ? '0.75rem' : '1rem',
+          textAlign: 'center',
+          marginBottom: isMobile ? '1rem' : '1.5rem'
+        }}>
+          <div style={{
+            color: isMobile ? theme.colors.neonYellow : '#FFD700',
+            fontSize: isMobile ? '1rem' : '1.2rem',
+            fontWeight: 'bold',
+            textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+          }}>
+            ⏳ Waiting for opponent's choice...
+          </div>
+          <div style={{
+            color: isMobile ? theme.colors.textSecondary : '#CCCCCC',
+            fontSize: isMobile ? '0.8rem' : '0.9rem',
+            marginTop: '0.5rem'
+          }}>
+            {gamePhase === 'choosing' ? 'Player 1 goes first' : 'Please wait...'}
           </div>
         </div>
       )}
@@ -330,6 +370,11 @@ style.textContent = `
   @keyframes powerPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
 `
 document.head.appendChild(style)
