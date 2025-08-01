@@ -438,7 +438,7 @@ const UnifiedGamePage = () => {
       const priceInMicrodollars = Math.round(finalPrice * 1000000)
       console.log('💰 Converting price to microdollars:', finalPrice, 'USD ->', priceInMicrodollars, 'microdollars')
       
-      const calculatedEthAmount = await contractService.getETHAmount(priceInMicrodollars)
+      const calculatedEthAmount = await contractService.contract.getETHAmount(priceInMicrodollars)
       console.log('💰 Raw ETH amount result:', calculatedEthAmount)
       console.log('💰 Raw ETH amount type:', typeof calculatedEthAmount)
       console.log('💰 Raw ETH amount constructor:', calculatedEthAmount?.constructor?.name)

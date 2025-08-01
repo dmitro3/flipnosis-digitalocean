@@ -27,7 +27,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         db.run(`
           INSERT INTO listings (id, game_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data, status)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
-        `, [listingId, game_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, JSON.stringify(coin_data)], function(err) {
+        `, [listingId, game_id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data], function(err) {
           if (err) reject(err)
           else resolve()
         })

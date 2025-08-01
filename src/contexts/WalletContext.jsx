@@ -135,10 +135,19 @@ export const WalletProvider = ({ children }) => {
       const formattedNFTs = await Promise.all(allNFTs.map(async (nft) => {
         // Enhanced image URL handling
         let imageUrl = ''
+        
+        // Try media first (most reliable)
         if (nft.media && nft.media.length > 0) {
           imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
-        } else if (nft.image) {
-          imageUrl = nft.image.originalUrl || nft.image.cachedUrl || ''
+        }
+        
+        // Try image object if media not available
+        if (!imageUrl && nft.image) {
+          if (typeof nft.image === 'string') {
+            imageUrl = nft.image
+          } else if (typeof nft.image === 'object') {
+            imageUrl = nft.image.originalUrl || nft.image.cachedUrl || nft.image.gateway || ''
+          }
         }
         
         // Fallback to metadata image if available
@@ -158,8 +167,9 @@ export const WalletProvider = ({ children }) => {
 
         console.log('🖼️ NFT Image URL:', {
           name: nft.title || nft.name,
-          originalUrl: imageUrl,
+          finalUrl: imageUrl,
           media: nft.media?.[0]?.gateway,
+          imageObject: nft.image,
           metadata: nft.metadata?.image
         })
 
