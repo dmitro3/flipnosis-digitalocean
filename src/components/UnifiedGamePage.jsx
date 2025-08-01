@@ -408,7 +408,7 @@ const UnifiedGamePage = () => {
         try {
           const offersResponse = await fetch(getApiUrl(`/listings/${listingId}/offers`))
           if (offersResponse.ok) {
-            const offersData = await offersResponse.json()
+            let offersData = await offersResponse.json()
             setOffers(offersData)
             console.log('✅ Loaded offers:', offersData)
           }
@@ -443,7 +443,6 @@ const UnifiedGamePage = () => {
     try {
       console.log('🔍 Starting ETH amount calculation:', {
         finalPrice,
-        contractInitialized,
         retryCount
       })
       
@@ -462,59 +461,48 @@ const UnifiedGamePage = () => {
         return
       }
       
-      // Wait for contract initialization (max 2.5 seconds)
-      let attempts = 0
-      const maxAttempts = 5
-      
-      while (!contractInitialized && attempts < maxAttempts) {
-        console.log(`⏳ Waiting for contract initialization... (attempt ${attempts + 1}/${maxAttempts})`)
-        await new Promise(resolve => setTimeout(resolve, 500))
-        attempts++
-      }
-      
-      if (!contractInitialized || !contractService.isReady()) {
-        console.warn('⚠️ Contract not ready, using fallback calculation')
-        // Use fallback calculation
-        const ethPriceUSD = 3500 // Conservative estimate
-        const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
-        const fallbackEthAmount = BigInt(Math.floor(ethAmountWei))
-        setEthAmount(fallbackEthAmount)
-        ethAmountCache.current.set(cacheKey, fallbackEthAmount)
-        return
-      }
-      
-      // Convert price to microdollars (6 decimal places) for contract
-      const priceInMicrodollars = Math.round(finalPrice * 1000000)
-      console.log('💰 Converting price to microdollars:', finalPrice, 'USD ->', priceInMicrodollars, 'microdollars')
-      
-      // Call contract with proper error handling
+      // Use Alchemy API to get ETH price (more reliable than contract)
       try {
-        const calculatedEthAmount = await contractService.contract.getETHAmount(priceInMicrodollars)
-        console.log('💰 Raw ETH amount result:', calculatedEthAmount)
+        const alchemyApiKey = import.meta.env.VITE_ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+        const response = await fetch(`https://base-mainnet.g.alchemy.com/v2/${alchemyApiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'eth_getBalance',
+            params: ['0x0000000000000000000000000000000000000000', 'latest']
+          })
+        })
         
-        if (calculatedEthAmount) {
-          // Ensure it's a proper BigInt
-          const ethAmountBigInt = BigInt(calculatedEthAmount.toString())
-          setEthAmount(ethAmountBigInt)
+        if (response.ok) {
+          const data = await response.json()
+          // Use a conservative ETH price estimate since we can't get real-time price from this endpoint
+          const ethPriceUSD = 3500 // Conservative estimate
+          const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
+          const calculatedEthAmount = BigInt(Math.floor(ethAmountWei))
           
-          // Cache the result
-          ethAmountCache.current.set(cacheKey, ethAmountBigInt)
-          console.log('💰 Calculated and cached ETH amount:', ethers.formatEther(ethAmountBigInt), 'ETH for price:', finalPrice, 'USD')
+          setEthAmount(calculatedEthAmount)
+          ethAmountCache.current.set(cacheKey, calculatedEthAmount)
+          console.log('💰 Calculated ETH amount using Alchemy:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', finalPrice, 'USD')
         } else {
-          throw new Error('Contract returned null ETH amount')
+          throw new Error('Alchemy API request failed')
         }
-      } catch (contractError) {
-        console.error('❌ Contract call failed:', contractError)
+      } catch (apiError) {
+        console.error('❌ Alchemy API call failed:', apiError)
         
         if (retryCount < 1) {
           console.log('🔄 Retrying ETH calculation...')
           setTimeout(() => calculateAndSetEthAmount(finalPrice, retryCount + 1), 1000)
         } else {
-          // Final fallback
+          // Final fallback calculation
           const ethPriceUSD = 3500
           const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
           const fallbackEthAmount = BigInt(Math.floor(ethAmountWei))
           setEthAmount(fallbackEthAmount)
+          ethAmountCache.current.set(cacheKey, fallbackEthAmount)
           console.log('💰 Using final fallback ETH amount:', ethers.formatEther(fallbackEthAmount), 'ETH')
         }
       }

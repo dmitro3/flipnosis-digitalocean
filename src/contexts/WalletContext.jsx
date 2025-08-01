@@ -220,6 +220,22 @@ export const WalletProvider = ({ children }) => {
     const isOnGamePage = window.location.pathname.includes('/game/')
     if (isOnGamePage) {
       console.log('🎮 On game page, skipping NFT loading to prevent spam')
+      // Clear NFTs when on game page to prevent spam
+      setNfts([])
+      return
+    }
+    
+    // Also skip if we're on any page that doesn't need NFTs
+    const currentPath = window.location.pathname
+    const skipNFTLoading = [
+      '/game/',
+      '/admin',
+      '/profile'
+    ].some(path => currentPath.includes(path))
+    
+    if (skipNFTLoading) {
+      console.log('🚫 Skipping NFT loading on path:', currentPath)
+      setNfts([])
       return
     }
     
