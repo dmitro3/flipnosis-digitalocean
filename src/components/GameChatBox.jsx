@@ -199,7 +199,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
     try {
       const chatMessage = {
         type: 'chat_message',
-        gameId,
+        roomId: gameId, // Use roomId instead of gameId
         message: currentMessage.trim(),
         from: address,
         timestamp: new Date().toISOString()

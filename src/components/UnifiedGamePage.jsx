@@ -360,35 +360,51 @@ const UnifiedGamePage = () => {
   // Initialize WebSocket connection
   const initializeWebSocket = () => {
     try {
+      console.log('🔌 Initializing WebSocket connection to:', getWsUrl())
       const ws = new WebSocket(getWsUrl())
       
       ws.onopen = () => {
-        console.log('🔌 WebSocket connected')
+        console.log('🔌 WebSocket connected successfully')
         setWsConnected(true)
         
-        // Subscribe to game updates
-        ws.send(JSON.stringify({
-          type: 'SUBSCRIBE_TO_GAME',
-          gameId: gameId
-        }))
+        // Join room with the game ID
+        const joinMessage = {
+          type: 'join_room',
+          roomId: gameId
+        }
+        console.log('📤 Sending join room message:', joinMessage)
+        ws.send(JSON.stringify(joinMessage))
+        
+        // Register user if we have an address
+        if (address) {
+          const registerMessage = {
+            type: 'register_user',
+            address: address
+          }
+          console.log('📤 Sending register user message:', registerMessage)
+          ws.send(JSON.stringify(registerMessage))
+        }
       }
       
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
+          console.log('📨 WebSocket message received:', data)
           handleWebSocketMessage(data)
         } catch (err) {
           console.error('Error parsing WebSocket message:', err)
+          console.log('Raw message:', event.data)
         }
       }
       
-      ws.onclose = () => {
-        console.log('🔌 WebSocket disconnected')
+      ws.onclose = (event) => {
+        console.log('🔌 WebSocket disconnected:', event.code, event.reason)
         setWsConnected(false)
         
         // Attempt to reconnect after 3 seconds
         setTimeout(() => {
           if (gameData) {
+            console.log('🔄 Attempting to reconnect WebSocket...')
             initializeWebSocket()
           }
         }, 3000)
@@ -478,12 +494,54 @@ const UnifiedGamePage = () => {
         handleGameCompleted(data)
         break
         
-              case 'CHAT_MESSAGE':
-          setMessages(prev => [...prev, data.message])
-          break
+      case 'CHAT_MESSAGE':
+        // Chat messages are handled by the GameChatBox component
+        console.log('💬 Chat message received:', data)
+        break
         
       case 'NFT_OFFER':
         setOffers(prev => [...prev, data.offer])
+        break
+        
+      case 'new_offer':
+        console.log('🔄 Received new offer, reloading offers for gameId:', gameId)
+        // Reload offers when we get a new offer message
+        const listingId = gameData?.listing_id || gameData?.id
+        if (listingId) {
+          fetch(getApiUrl(`/listings/${listingId}/offers`)).then(async response => {
+            if (response.ok) {
+              const offersData = await response.json()
+              console.log('✅ Loaded offers from API:', offersData)
+              setOffers(offersData)
+            }
+          }).catch(error => {
+            console.log('⚠️ Error loading offers:', error)
+          })
+        }
+        break
+        
+      case 'offer_accepted':
+        console.log('✅ Offer accepted! Details:', data)
+        showSuccess('Offer accepted! Game created successfully.')
+        // Reload game data to reflect the accepted offer
+        loadGameData()
+        break
+        
+      case 'offer_rejected':
+        console.log('❌ Offer rejected:', data)
+        showInfo('Offer was rejected')
+        break
+        
+      case 'game_started':
+        console.log('🎮 Game started!')
+        showSuccess('Both players deposited! Game starting...')
+        loadGameData()
+        break
+        
+      case 'nft_deposited':
+        console.log('💰 NFT deposited:', data)
+        showSuccess('NFT deposited! Waiting for challenger...')
+        loadGameData()
         break
         
       default:
@@ -785,7 +843,10 @@ const UnifiedGamePage = () => {
     console.log('🪙 Loading coin images for game:', {
       hasGame: !!gameData,
       hasCoinData: !!gameData?.coinData,
-      coinData: gameData?.coinData
+      hasCoinDataField: !!gameData?.coin_data,
+      coinData: gameData?.coinData,
+      coin_data: gameData?.coin_data,
+      gameDataKeys: gameData ? Object.keys(gameData) : []
     })
     
     let coinData = null
@@ -793,26 +854,44 @@ const UnifiedGamePage = () => {
     // Try to get coin data from normalized structure first
     if (gameData?.coinData) {
       coinData = gameData.coinData
+      console.log('✅ Using coinData field:', coinData)
     } else if (gameData?.coin_data) {
       try {
         // Parse coin_data if it's a string
         coinData = typeof gameData.coin_data === 'string' ? 
           JSON.parse(gameData.coin_data) : gameData.coin_data
+        console.log('✅ Parsed coin_data field:', coinData)
       } catch (error) {
         console.error('❌ Error parsing coin data:', error)
       }
     } else if (gameData?.coin) {
       coinData = gameData.coin
+      console.log('✅ Using coin field:', coinData)
     }
     
     // Set coin images
-    console.log('🔍 Coin Data Debug:', { coinData, gameData: gameData?.coin_data, coinDataParsed: coinData })
+    console.log('🔍 Coin Data Debug:', { 
+      coinData, 
+      gameData: gameData?.coin_data, 
+      coinDataParsed: coinData,
+      hasHeadsImage: coinData?.headsImage,
+      hasTailsImage: coinData?.tailsImage,
+      headsImage: coinData?.headsImage,
+      tailsImage: coinData?.tailsImage
+    })
+    
     if (coinData && coinData.headsImage && coinData.tailsImage) {
       console.log('✅ Setting custom coin images:', coinData)
       setCustomHeadsImage(coinData.headsImage)
       setCustomTailsImage(coinData.tailsImage)
     } else {
       console.log('🪙 Using default coin images - no valid coin data found')
+      console.log('🔍 Coin data validation failed:', {
+        hasCoinData: !!coinData,
+        hasHeadsImage: !!coinData?.headsImage,
+        hasTailsImage: !!coinData?.tailsImage,
+        coinDataKeys: coinData ? Object.keys(coinData) : []
+      })
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
     }
