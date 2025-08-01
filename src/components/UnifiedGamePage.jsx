@@ -432,9 +432,15 @@ const UnifiedGamePage = () => {
         retryCount
       })
       
+      // If we already have an ETH amount for this price, don't recalculate
+      if (ethAmount && retryCount === 0) {
+        console.log('💰 ETH amount already calculated, skipping')
+        return
+      }
+      
       // Wait for contract to be initialized, with timeout
       let attempts = 0
-      const maxAttempts = 10
+      const maxAttempts = 5 // Reduced from 10 to 5
       
       while (!contractInitialized && attempts < maxAttempts) {
         console.log(`⏳ Waiting for contract initialization... (attempt ${attempts + 1}/${maxAttempts})`)
@@ -486,12 +492,12 @@ const UnifiedGamePage = () => {
     } catch (error) {
       console.error('❌ Error calculating ETH amount:', error)
       
-      // Retry logic for network issues
-      if (retryCount < 3) {
-        console.log(`🔄 Retrying ETH calculation... (attempt ${retryCount + 1}/3)`)
+      // Retry logic for network issues - only retry once
+      if (retryCount < 1) {
+        console.log(`🔄 Retrying ETH calculation... (attempt ${retryCount + 1}/1)`)
         setTimeout(() => calculateAndSetEthAmount(finalPrice, retryCount + 1), 1000)
       } else {
-        console.error('❌ Failed to calculate ETH amount after 3 attempts')
+        console.error('❌ Failed to calculate ETH amount after 1 attempt')
         
         // Fallback: try to estimate ETH amount using a simple calculation
         // This is a rough estimate based on typical ETH prices
@@ -562,13 +568,38 @@ const UnifiedGamePage = () => {
       
       ws.onmessage = (event) => {
         try {
+          // Check if event.data is valid before parsing
+          if (!event.data || typeof event.data !== 'string') {
+            console.warn('⚠️ Invalid WebSocket message data:', event.data)
+            return
+          }
+          
           const data = JSON.parse(event.data)
           console.log('📨 WebSocket message received:', data)
+          
+          // Validate the parsed data before processing
+          if (!data || typeof data !== 'object') {
+            console.warn('⚠️ Invalid WebSocket message format:', data)
+            return
+          }
+          
           // Only pass the parsed data, not the event object
           handleWebSocketMessage(data)
         } catch (err) {
           console.error('Error parsing WebSocket message:', err)
           console.log('Raw message:', event.data)
+          
+          // Try to extract basic information from the raw message
+          try {
+            if (typeof event.data === 'string' && event.data.includes('"type"')) {
+              const typeMatch = event.data.match(/"type"\s*:\s*"([^"]+)"/)
+              if (typeMatch) {
+                console.log('🔍 Extracted message type from raw data:', typeMatch[1])
+              }
+            }
+          } catch (extractError) {
+            console.error('Could not extract message type from raw data:', extractError)
+          }
         }
       }
       
@@ -576,13 +607,18 @@ const UnifiedGamePage = () => {
         console.log('🔌 WebSocket disconnected:', event.code, event.reason)
         setWsConnected(false)
         
-        // Attempt to reconnect after 3 seconds
-        setTimeout(() => {
-          if (gameData) {
-            console.log('🔄 Attempting to reconnect WebSocket...')
-            initializeWebSocket()
-          }
-        }, 3000)
+        // Only attempt to reconnect if the game is still active
+        if (gameData && !gameData.completed && gameData.status !== 'cancelled') {
+          console.log('🔄 Attempting to reconnect WebSocket...')
+          setTimeout(() => {
+            if (gameData && !gameData.completed) {
+              console.log('🔄 Reconnecting WebSocket...')
+              initializeWebSocket()
+            }
+          }, 3000)
+        } else {
+          console.log('🔄 Not reconnecting - game is completed or cancelled')
+        }
       }
       
       ws.onerror = (error) => {
@@ -694,6 +730,18 @@ const UnifiedGamePage = () => {
         message: data?.message,
         gameData: data?.gameData ? safeSerialize(data.gameData) : undefined
       }
+    }
+    
+    // CRITICAL FIX: Check if safeData is null before accessing properties
+    if (!safeData) {
+      console.error('❌ Safe serialization returned null, cannot process message')
+      return
+    }
+    
+    // Ensure safeData has a type property
+    if (!safeData.type) {
+      console.error('❌ Message has no type property:', safeData)
+      return
     }
     
     switch (safeData.type) {
@@ -1281,30 +1329,47 @@ const UnifiedGamePage = () => {
   const getGameCreator = () => gameData?.creator || gameData?.creator_address
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
   const getGamePrice = () => {
-    // Prioritize final_price for games, asking_price for listings
-    const price = gameData?.final_price || gameData?.asking_price || gameData?.price || gameData?.priceUSD || 0
-    console.log('🔍 Game Price Debug:', { 
-      price, 
-      final_price: gameData?.final_price, 
-      asking_price: gameData?.asking_price,
-      priceUSD: gameData?.priceUSD, 
-      gameData: gameData?.price,
-      type: gameData?.type // 'listing' or undefined for games
-    })
-    return price
+    // Only log price debug info once per game load
+    if (!gameData?.price_debug_logged) {
+      console.log('🔍 Game Price Debug:', {
+        price: gameData?.price,
+        final_price: gameData?.final_price,
+        asking_price: gameData?.asking_price,
+        priceUSD: gameData?.priceUSD,
+        gameData: gameData?.game_data,
+        gameDataKeys: gameData ? Object.keys(gameData) : []
+      })
+      // Mark as logged to prevent repeated logging
+      if (gameData) {
+        gameData.price_debug_logged = true
+      }
+    }
+    
+    return gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || 0
   }
   const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
   const getGameNFTName = () => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
   const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
   const getGameNFTContract = () => {
-    const contract = gameData?.nft?.contract || gameData?.nft_contract
-    console.log('🔍 NFT Contract:', { contract })
-    return contract
+    // Only log once per game load
+    if (!gameData?.nft_contract_logged) {
+      console.log('🔍 NFT Contract:', { contract: gameData?.nft_contract })
+      if (gameData) {
+        gameData.nft_contract_logged = true
+      }
+    }
+    return gameData?.nft_contract || gameData?.nft?.contract || gameData?.nftContract
   }
+  
   const getGameNFTTokenId = () => {
-    const tokenId = gameData?.nft?.tokenId || gameData?.nft_token_id
-    console.log('🔍 NFT Token ID:', { tokenId })
-    return tokenId
+    // Only log once per game load
+    if (!gameData?.nft_token_logged) {
+      console.log('🔍 NFT Token ID:', { tokenId: gameData?.nft_token_id })
+      if (gameData) {
+        gameData.nft_token_logged = true
+      }
+    }
+    return gameData?.nft_token_id || gameData?.nft?.tokenId || gameData?.nftTokenId
   }
   
   // Check if user is the creator
@@ -1501,17 +1566,18 @@ const UnifiedGamePage = () => {
   
   // Recalculate ETH amount when contract becomes initialized
   useEffect(() => {
-    if (gameData?.final_price) {
+    if (gameData?.final_price && contractInitialized) {
       // First check if eth_amount is already available from database
       if (gameData.eth_amount) {
         console.log('💰 Using ETH amount from database:', gameData.eth_amount)
         setEthAmount(BigInt(gameData.eth_amount))
-      } else {
-        // Calculate ETH amount if not available in database
+      } else if (!ethAmount) {
+        // Only calculate if we don't already have an ETH amount
+        console.log('💰 Calculating ETH amount for price:', gameData.final_price)
         calculateAndSetEthAmount(gameData.final_price)
       }
     }
-  }, [contractInitialized, gameData?.final_price, gameData?.eth_amount])
+  }, [contractInitialized, gameData?.final_price, gameData?.eth_amount, ethAmount])
   
   // Cleanup on unmount
   useEffect(() => {
