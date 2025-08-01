@@ -699,7 +699,7 @@ class CleanContractService {
   }
 
   // Deposit ETH (player 2)
-  async depositETH(gameId, priceUSD) {
+  async depositETH(gameId, ethAmount) {
     if (!this.isReady()) {
       return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
@@ -752,14 +752,24 @@ class CleanContractService {
         }
       }
 
-      // Get ETH amount
-      const priceIn6Decimals = ethers.parseUnits(priceUSD.toString(), 6)
-      const ethAmount = await this.contract.getETHAmount(priceIn6Decimals)
+      // Ensure ethAmount is a BigInt
+      let value
+      if (typeof ethAmount === 'object' && ethAmount !== null) {
+        // If it's already a BigInt or similar object, extract the value
+        if (ethAmount.toString) {
+          value = BigInt(ethAmount.toString())
+        } else {
+          throw new Error('Invalid ETH amount format')
+        }
+      } else {
+        // Convert to BigInt
+        value = BigInt(ethAmount)
+      }
 
-      console.log('💰 Depositing:', ethers.formatEther(ethAmount), 'ETH')
+      console.log('💰 Depositing:', ethers.formatEther(value), 'ETH')
 
       // Deposit ETH
-      const hash = await this.contract.depositETH(gameIdBytes32, { value: ethAmount })
+      const hash = await this.contract.depositETH(gameIdBytes32, { value })
       console.log('💎 ETH deposit tx:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })

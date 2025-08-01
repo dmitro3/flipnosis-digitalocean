@@ -37,6 +37,12 @@ const Container = styled.div`
   min-height: 100vh;
   position: relative;
   z-index: 1;
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
 `
 
 const BackgroundVideo = styled.video`
@@ -312,6 +318,9 @@ const UnifiedGamePage = () => {
   const [depositTimeLeft, setDepositTimeLeft] = useState(null)
   const [countdownInterval, setCountdownInterval] = useState(null)
   
+  // Live updates state
+  const [offersRefreshInterval, setOffersRefreshInterval] = useState(null)
+  
   // Load game data
   const loadGameData = async () => {
     try {
@@ -531,6 +540,12 @@ const UnifiedGamePage = () => {
       case 'new_offer':
         console.log('🔄 New offer received, reloading offers')
         // Reload offers immediately when a new offer is created
+        loadOffers()
+        break
+        
+      case 'offer_status_changed':
+        console.log('🔄 Offer status changed, reloading offers')
+        // Reload offers when offer status changes
         loadOffers()
         break
         
@@ -1053,6 +1068,21 @@ const UnifiedGamePage = () => {
     }
   }, [countdownInterval])
   
+  // Auto-refresh offers every 5 seconds
+  useEffect(() => {
+    if (gameData && (gameData.listing_id || gameData.id)) {
+      const interval = setInterval(() => {
+        loadOffers()
+      }, 5000)
+      
+      setOffersRefreshInterval(interval)
+      
+      return () => {
+        clearInterval(interval)
+      }
+    }
+  }, [gameData])
+  
   // Loading state
   if (loading) {
     return (
@@ -1365,9 +1395,24 @@ const UnifiedGamePage = () => {
                     onClick={async () => {
                       try {
                         showInfo('Depositing ETH...')
-                        const result = await contractService.depositETH(gameId, getGamePrice())
+                        
+                        // Get ETH amount from gameData
+                        const ethAmount = gameData?.eth_amount
+                        if (!ethAmount) {
+                          showError('ETH amount not available')
+                          return
+                        }
+                        
+                        const result = await contractService.depositETH(gameId, ethAmount)
                         if (result.success) {
                           showSuccess('ETH deposited successfully!')
+                          
+                          // Clear countdown
+                          if (countdownInterval) {
+                            clearInterval(countdownInterval)
+                            setCountdownInterval(null)
+                          }
+                          setDepositTimeLeft(null)
                           
                           // Confirm deposit to backend
                           await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
@@ -1575,7 +1620,38 @@ const UnifiedGamePage = () => {
               
               {/* Offers Section */}
               <OffersSection>
-                <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonPink }}>NFT Offers</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h4 style={{ margin: 0, color: theme.colors.neonPink }}>NFT Offers</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ 
+                      width: '8px', 
+                      height: '8px', 
+                      borderRadius: '50%', 
+                      background: theme.colors.neonGreen,
+                      animation: 'pulse 2s infinite'
+                    }}></div>
+                    <span style={{ color: theme.colors.neonGreen, fontSize: '0.8rem' }}>Live</span>
+                  </div>
+                </div>
+                
+                {/* Creator countdown */}
+                {isCreator() && gameData?.status === 'waiting_challenger_deposit' && depositTimeLeft !== null && (
+                  <div style={{ 
+                    marginBottom: '1rem', 
+                    padding: '1rem', 
+                    background: 'rgba(255, 20, 147, 0.1)', 
+                    borderRadius: '0.5rem',
+                    textAlign: 'center',
+                    border: `1px solid ${theme.colors.neonPink}`
+                  }}>
+                    <p style={{ color: theme.colors.neonPink, margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>
+                      Waiting for challenger to deposit
+                    </p>
+                    <p style={{ color: theme.colors.neonYellow, margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>
+                      {formatTimeLeft(depositTimeLeft)}
+                    </p>
+                  </div>
+                )}
                 
                 {/* Offer Creation Form - Only show for non-creators */}
                 {!isCreator() && (
