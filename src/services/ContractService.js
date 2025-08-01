@@ -754,16 +754,26 @@ class CleanContractService {
 
       // Ensure ethAmount is a BigInt
       let value
+      console.log('🔍 ETH amount before conversion:', ethAmount)
+      console.log('🔍 ETH amount type:', typeof ethAmount)
+      console.log('🔍 ETH amount constructor:', ethAmount?.constructor?.name)
+      
       if (typeof ethAmount === 'object' && ethAmount !== null) {
         // If it's already a BigInt or similar object, extract the value
         if (ethAmount.toString) {
           value = BigInt(ethAmount.toString())
+          console.log('🔍 Converted object to BigInt:', value.toString())
         } else {
-          throw new Error('Invalid ETH amount format')
+          throw new Error('Invalid ETH amount format - object without toString method')
         }
+      } else if (typeof ethAmount === 'bigint') {
+        // Already a BigInt
+        value = ethAmount
+        console.log('🔍 Already BigInt:', value.toString())
       } else {
         // Convert to BigInt
         value = BigInt(ethAmount)
+        console.log('🔍 Converted to BigInt:', value.toString())
       }
 
       console.log('💰 Depositing:', ethers.formatEther(value), 'ETH')

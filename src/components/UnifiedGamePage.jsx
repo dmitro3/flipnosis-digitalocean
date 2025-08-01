@@ -436,10 +436,15 @@ const UnifiedGamePage = () => {
       
       const calculatedEthAmount = await contractService.getETHAmount(finalPrice)
       console.log('💰 Raw ETH amount result:', calculatedEthAmount)
+      console.log('💰 Raw ETH amount type:', typeof calculatedEthAmount)
+      console.log('💰 Raw ETH amount constructor:', calculatedEthAmount?.constructor?.name)
+      console.log('💰 Raw ETH amount toString:', calculatedEthAmount?.toString())
       
       if (calculatedEthAmount) {
-        setEthAmount(calculatedEthAmount)
-        console.log('💰 Calculated ETH amount:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', finalPrice, 'USD')
+        // Ensure it's a proper BigInt
+        const ethAmountBigInt = BigInt(calculatedEthAmount.toString())
+        setEthAmount(ethAmountBigInt)
+        console.log('💰 Calculated ETH amount:', ethers.formatEther(ethAmountBigInt), 'ETH for price:', finalPrice, 'USD')
       } else {
         console.error('❌ getETHAmount returned null or undefined')
         throw new Error('Contract returned null ETH amount')
@@ -1536,6 +1541,9 @@ const UnifiedGamePage = () => {
                         }
                         
                         console.log('💰 Using calculated ETH amount:', ethers.formatEther(ethAmount), 'ETH')
+                        console.log('💰 ETH amount type:', typeof ethAmount)
+                        console.log('💰 ETH amount constructor:', ethAmount?.constructor?.name)
+                        console.log('💰 ETH amount toString:', ethAmount?.toString())
                         
                         const result = await contractService.depositETH(gameId, ethAmount)
                         if (result.success) {
