@@ -328,6 +328,21 @@ const UnifiedGamePage = () => {
       }
       setGameData(data)
       
+      // Load offers for this listing/game
+      const listingId = data?.listing_id || data?.id
+      if (listingId) {
+        try {
+          const offersResponse = await fetch(getApiUrl(`/listings/${listingId}/offers`))
+          if (offersResponse.ok) {
+            const offersData = await offersResponse.json()
+            setOffers(offersData)
+            console.log('✅ Loaded offers:', offersData)
+          }
+        } catch (error) {
+          console.error('❌ Error loading offers:', error)
+        }
+      }
+      
       // Initialize WebSocket connection
       initializeWebSocket()
       
@@ -463,9 +478,9 @@ const UnifiedGamePage = () => {
         handleGameCompleted(data)
         break
         
-      case 'CHAT_MESSAGE':
-        setMessages(prev => [...prev, data.message])
-        break
+              case 'CHAT_MESSAGE':
+          setMessages(prev => [...prev, data.message])
+          break
         
       case 'NFT_OFFER':
         setOffers(prev => [...prev, data.offer])
@@ -605,11 +620,26 @@ const UnifiedGamePage = () => {
   
   // Offer functions
   const createOffer = async () => {
-    if (!newOffer.price || !gameData?.id) return
+    if (!newOffer.price || !gameData?.id) {
+      console.log('❌ Cannot create offer:', { price: newOffer.price, gameId: gameData?.id })
+      showError('Please enter a price and ensure game data is loaded')
+      return
+    }
+    
+    // Check if we have a listing ID (for offers) or game ID
+    const listingId = gameData?.listing_id || gameData?.id
+    console.log('🔍 Using listing ID for offer:', { listingId, gameData: gameData?.id, listing_id: gameData?.listing_id })
     
     try {
       setCreatingOffer(true)
-      const response = await fetch(getApiUrl(`/listings/${gameData.id}/offers`), {
+      console.log('📤 Creating offer:', { 
+        gameId: gameData.id, 
+        price: newOffer.price, 
+        message: newOffer.message,
+        address 
+      })
+      
+      const response = await fetch(getApiUrl(`/listings/${listingId}/offers`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -620,22 +650,27 @@ const UnifiedGamePage = () => {
         })
       })
       
+      console.log('📥 Offer creation response:', { status: response.status, ok: response.ok })
+      
       if (response.ok) {
         const result = await response.json()
+        console.log('✅ Offer created successfully:', result)
         showSuccess('Offer created successfully!')
         setNewOffer({ price: '', message: '' })
         // Refresh offers
-        const offersResponse = await fetch(getApiUrl(`/listings/${gameData.id}/offers`))
+        const offersResponse = await fetch(getApiUrl(`/listings/${listingId}/offers`))
         if (offersResponse.ok) {
           const offersData = await offersResponse.json()
           setOffers(offersData)
         }
       } else {
-        showError('Failed to create offer')
+        const errorData = await response.text()
+        console.error('❌ Offer creation failed:', { status: response.status, error: errorData })
+        showError(`Failed to create offer: ${response.status} ${response.statusText}`)
       }
     } catch (error) {
-      console.error('Error creating offer:', error)
-      showError('Failed to create offer')
+      console.error('❌ Error creating offer:', error)
+      showError(`Failed to create offer: ${error.message}`)
     } finally {
       setCreatingOffer(false)
     }
@@ -658,8 +693,9 @@ const UnifiedGamePage = () => {
       if (response.ok) {
         showSuccess('Offer accepted! Game created successfully.')
         // Refresh offers and game data
+        const listingId = gameData?.listing_id || gameData?.id
         await Promise.all([
-          fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
+          fetch(getApiUrl(`/listings/${listingId}/offers`)).then(async response => {
             if (response.ok) {
               const offersData = await response.json()
               setOffers(offersData)
@@ -689,7 +725,8 @@ const UnifiedGamePage = () => {
       
       if (response.ok) {
         showSuccess('Offer rejected')
-        await fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
+        const listingId = gameData?.listing_id || gameData?.id
+        await fetch(getApiUrl(`/listings/${listingId}/offers`)).then(async response => {
           if (response.ok) {
             const offersData = await response.json()
             setOffers(offersData)
@@ -707,7 +744,11 @@ const UnifiedGamePage = () => {
   // Helper functions to handle both game and listing data structures
   const getGameCreator = () => gameData?.creator || gameData?.creator_address
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
-  const getGamePrice = () => gameData?.price || gameData?.priceUSD || gameData?.final_price || gameData?.asking_price || 0
+  const getGamePrice = () => {
+    const price = gameData?.price || gameData?.priceUSD || gameData?.final_price || gameData?.asking_price || 0
+    console.log('🔍 Game Price Debug:', { price, gameData: gameData?.price, priceUSD: gameData?.priceUSD, final_price: gameData?.final_price, asking_price: gameData?.asking_price })
+    return price
+  }
   const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
   const getGameNFTName = () => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
   const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
@@ -765,12 +806,13 @@ const UnifiedGamePage = () => {
     }
     
     // Set coin images
+    console.log('🔍 Coin Data Debug:', { coinData, gameData: gameData?.coin_data, coinDataParsed: coinData })
     if (coinData && coinData.headsImage && coinData.tailsImage) {
       console.log('✅ Setting custom coin images:', coinData)
       setCustomHeadsImage(coinData.headsImage)
       setCustomTailsImage(coinData.tailsImage)
     } else {
-      console.log('🪙 Using default coin images')
+      console.log('🪙 Using default coin images - no valid coin data found')
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
     }
@@ -889,31 +931,7 @@ const UnifiedGamePage = () => {
         </BackgroundVideo>
         
         <GameContainer>
-          {/* Payment Section (if game is in waiting state) */}
-          {gameState.phase === 'waiting' && !isCreator() && (
-            <PaymentSection>
-              <h2 style={{ color: '#FF1493', marginBottom: '1rem' }}>Join This Game</h2>
-              <NFTPreview>
-                <NFTImage src={getGameNFTImage()} alt={getGameNFTName()} />
-                <NFTInfo>
-                  <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>{getGameNFTName()}</h3>
-                  <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>{getGameNFTCollection()}</p>
-                  <PriceDisplay>
-                    ${(getGamePrice() / 1000000).toFixed(2)}
-                  </PriceDisplay>
-                </NFTInfo>
-              </NFTPreview>
-              
-              <PayButton 
-                onClick={() => {
-                  // Handle join game logic
-                  showInfo('Join game functionality will be implemented')
-                }}
-              >
-                Join Game - ${(getGamePrice() / 1000000).toFixed(2)}
-              </PayButton>
-            </PaymentSection>
-          )}
+          {/* Remove the "Join This Game" section - flow should be offers only */}
           
           {/* Game Section */}
           <GameSection>
