@@ -302,7 +302,7 @@ const UnifiedGamePage = () => {
   const loadGameData = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${getApiUrl()}/api/games/${gameId}`)
+      const response = await fetch(`${getApiUrl()}/games/${gameId}`)
       
       if (!response.ok) {
         // If API is not available, show error
@@ -596,7 +596,7 @@ const UnifiedGamePage = () => {
     
     try {
       setCreatingOffer(true)
-      const response = await fetch(`${getApiUrl()}/api/listings/${gameData.id}/offers`, {
+      const response = await fetch(`${getApiUrl()}/listings/${gameData.id}/offers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -612,7 +612,7 @@ const UnifiedGamePage = () => {
         showSuccess('Offer created successfully!')
         setNewOffer({ price: '', message: '' })
         // Refresh offers
-        const offersResponse = await fetch(`${getApiUrl()}/api/listings/${gameData.id}/offers`)
+        const offersResponse = await fetch(`${getApiUrl()}/listings/${gameData.id}/offers`)
         if (offersResponse.ok) {
           const offersData = await offersResponse.json()
           setOffers(offersData)
@@ -633,7 +633,7 @@ const UnifiedGamePage = () => {
       console.log('🎯 Accepting offer:', { offerId, offerPrice })
       showInfo('Accepting offer...')
       
-      const response = await fetch(`${getApiUrl()}/api/offers/${offerId}/accept`, {
+      const response = await fetch(`${getApiUrl()}/offers/${offerId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ final_price: offerPrice })
@@ -646,7 +646,7 @@ const UnifiedGamePage = () => {
         showSuccess('Offer accepted! Game created successfully.')
         // Refresh offers and game data
         await Promise.all([
-          fetch(`${getApiUrl()}/api/listings/${gameData.id}/offers`).then(async response => {
+          fetch(`${getApiUrl()}/listings/${gameData.id}/offers`).then(async response => {
             if (response.ok) {
               const offersData = await response.json()
               setOffers(offersData)
@@ -669,14 +669,14 @@ const UnifiedGamePage = () => {
   
   const rejectOffer = async (offerId) => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/offers/${offerId}/reject`, {
+      const response = await fetch(`${getApiUrl()}/offers/${offerId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
       
       if (response.ok) {
         showSuccess('Offer rejected')
-        await fetch(`${getApiUrl()}/api/listings/${gameData.id}/offers`).then(async response => {
+        await fetch(`${getApiUrl()}/listings/${gameData.id}/offers`).then(async response => {
           if (response.ok) {
             const offersData = await response.json()
             setOffers(offersData)

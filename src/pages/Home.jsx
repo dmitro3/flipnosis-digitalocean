@@ -16,7 +16,6 @@ import contractService from '../services/ContractService'
 
 // 5. Component imports
 import ClaimRewards from '../components/ClaimRewards'
-import TestComponent from '../components/TestComponent'
 
 // 6. Style imports
 import { theme } from '../styles/theme'
@@ -593,7 +592,6 @@ const getAllItems = () => {
         <ContentWrapper>
           {/* Add ClaimRewards component */}
           <ClaimRewards />
-        <TestComponent />
           
           {/* Chain Filters */}
           <TransparentCard style={{ background: theme.colors.bgDark }}>
@@ -1074,31 +1072,43 @@ const getAllItems = () => {
                     <div
                       key={item.id}
                       onClick={() => {
-                        handleItemClick(item)
+                        handleSelectFlip(item)
                       }}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
+                        background: 'rgba(255, 255, 255, 0.08)',
                         borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
                         padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
                         cursor: isGameJoinable(item.status) ? 'pointer' : 'default',
                         transition: 'all 0.2s ease',
-                        border: `1px solid ${isGameJoinable(item.status) ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'}`,
+                        border: `1px solid ${isGameJoinable(item.status) ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)'}`,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
                         height: window.innerWidth <= 768 ? 'auto' : '210px',
                         width: '100%',
-                        opacity: isGameJoinable(item.status) ? 1 : 0.7
+                        opacity: isGameJoinable(item.status) ? 1 : 0.85
                       }}
                       onMouseEnter={(e) => {
                         if (isGameJoinable(item.status)) {
                           e.currentTarget.style.transform = 'scale(1.02)';
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                          e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.2)';
+                          // Enhance image on hover
+                          const image = e.currentTarget.querySelector('img');
+                          if (image) {
+                            image.style.filter = 'brightness(1.3) contrast(1.2) saturate(1.4)';
+                          }
                         }
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                        e.currentTarget.style.boxShadow = 'none';
+                        // Reset image filter
+                        const image = e.currentTarget.querySelector('img');
+                        if (image) {
+                          image.style.filter = 'brightness(1.1) contrast(1.1) saturate(1.2)';
+                        }
                       }}
                     >
                       <div style={{ 
@@ -1117,7 +1127,9 @@ const getAllItems = () => {
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
-                            objectPosition: 'center'
+                            objectPosition: 'center',
+                            filter: 'brightness(1.1) contrast(1.1) saturate(1.2)',
+                            transition: 'all 0.3s ease'
                           }}
                           onError={(e) => {
                             e.target.src = '/placeholder-nft.svg'
@@ -1240,6 +1252,35 @@ const getAllItems = () => {
                             <span>{getChainName(item.nft?.chain || 'base')}</span>
                           </div>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleItemClick(item);
+                          }}
+                          style={{
+                            background: 'rgba(0, 150, 255, 0.8)',
+                            color: '#fff',
+                            border: 'none',
+                            padding: window.innerWidth <= 768 ? '0.2rem 0.4rem' : '0.3rem 0.6rem',
+                            borderRadius: '0.25rem',
+                            fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            width: '100%',
+                            marginTop: '0.25rem'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 150, 255, 1)';
+                            e.currentTarget.style.transform = 'scale(1.02)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 150, 255, 0.8)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                        >
+                          🔍 View Details
+                        </button>
                       </div>
                     </div>
                   ))) : (
