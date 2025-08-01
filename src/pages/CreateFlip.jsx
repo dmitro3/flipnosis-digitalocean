@@ -255,14 +255,19 @@ const CreateFlip = () => {
       // Convert price to 6 decimal places (microdollars) for contract
       const priceInMicrodollars = Math.round(parseFloat(price) * 1000000)
       
+      // Add 20 cent listing fee to the price
+      const listingFeeMicrodollars = 200000 // 20 cents in microdollars
+      const totalPriceMicrodollars = priceInMicrodollars + listingFeeMicrodollars
+      
       console.log(`💰 Game price: $${price} (${priceInMicrodollars} microdollars)`)
-      console.log(`💸 Listing fee: $0.20 (handled by contract)`)
+      console.log(`💸 Listing fee: $0.20 (${listingFeeMicrodollars} microdollars)`)
+      console.log(`💳 Total price: $${(priceInMicrodollars + listingFeeMicrodollars) / 1000000} (${totalPriceMicrodollars} microdollars)`)
       
       const createResult = await contractService.payFeeAndCreateGame(
         gameId,
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
-        priceInMicrodollars, // Only send the game price, not the total
+        totalPriceMicrodollars,
         0 // ETH payment
       )
       
@@ -457,11 +462,11 @@ const CreateFlip = () => {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Listing Fee:</span>
-                      <span>$0.20 (paid in ETH)</span>
+                      <span>$0.20</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: theme.colors.textSecondary }}>
-                      <span>Note:</span>
-                      <span>You pay listing fee, challenger pays game price</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderTop: '1px solid rgba(0, 191, 255, 0.3)', paddingTop: '0.25rem' }}>
+                      <span>Total:</span>
+                      <span>${(parseFloat(price) + 0.20).toFixed(2)}</span>
                     </div>
                   </div>
                 )}

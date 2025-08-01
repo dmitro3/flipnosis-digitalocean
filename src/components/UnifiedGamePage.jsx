@@ -359,14 +359,16 @@ const UnifiedGamePage = () => {
       }
       setGameData(data)
       
-      // Only calculate ETH amount if we're the challenger (Player 2) and need to deposit
-      if (data.final_price && isJoiner() && !data.challenger_deposited) {
-        console.log('💰 Player 2 needs to calculate ETH amount for deposit')
-        await calculateAndSetEthAmount(data.final_price)
-      } else if (data.eth_amount) {
-        // Use stored ETH amount if available
-        console.log('💰 Using ETH amount from database:', data.eth_amount)
-        setEthAmount(BigInt(data.eth_amount))
+      // Calculate ETH amount if we have a final price
+      if (data.final_price) {
+        // First check if eth_amount is already available from database
+        if (data.eth_amount) {
+          console.log('💰 Using ETH amount from database:', data.eth_amount)
+          setEthAmount(BigInt(data.eth_amount))
+        } else {
+          // Calculate ETH amount if not available in database
+          await calculateAndSetEthAmount(data.final_price)
+        }
       } else {
         setEthAmount(null)
       }
@@ -1599,15 +1601,18 @@ const UnifiedGamePage = () => {
     }
   }, [gameData])
   
-  // Only calculate ETH amount when contract becomes initialized AND we're Player 2 who needs to deposit
+  // Recalculate ETH amount when contract becomes initialized
   useEffect(() => {
-    if (gameData?.final_price && contractInitialized && isJoiner() && !gameData.challenger_deposited && !ethAmount) {
-      console.log('💰 Player 2 calculating ETH amount for deposit:', gameData.final_price)
-      calculateAndSetEthAmount(gameData.final_price)
-    } else if (gameData?.eth_amount && !ethAmount) {
-      // Use stored ETH amount if available
-      console.log('💰 Using ETH amount from database:', gameData.eth_amount)
-      setEthAmount(BigInt(gameData.eth_amount))
+    if (gameData?.final_price && contractInitialized) {
+      // First check if eth_amount is already available from database
+      if (gameData.eth_amount) {
+        console.log('💰 Using ETH amount from database:', gameData.eth_amount)
+        setEthAmount(BigInt(gameData.eth_amount))
+      } else if (!ethAmount) {
+        // Only calculate if we don't already have an ETH amount
+        console.log('💰 Calculating ETH amount for price:', gameData.final_price)
+        calculateAndSetEthAmount(gameData.final_price)
+      }
     }
   }, [contractInitialized, gameData?.final_price, gameData?.eth_amount, ethAmount])
   
