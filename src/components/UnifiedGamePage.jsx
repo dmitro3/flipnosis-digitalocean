@@ -254,22 +254,21 @@ const UnifiedGamePage = () => {
   const { isInitialized: contractInitialized } = useContractService()
   
   // Game state - moved up to avoid initialization error
+  const [gameData, setGameData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [wsConnected, setWsConnected] = useState(false)
+  const [wsRef, setWsRef] = useState(null)
+  const [offers, setOffers] = useState([])
+  const [chatMessages, setChatMessages] = useState([])
+  const [playerChoices, setPlayerChoices] = useState({ creator: null, joiner: null })
   const [gameState, setGameState] = useState({
-    phase: 'waiting', // waiting, choosing, charging, completed
+    phase: 'waiting',
     currentRound: 1,
-    creatorChoice: null,
-    joinerChoice: null,
-    creatorPower: 0,
-    joinerPower: 0,
     creatorWins: 0,
     joinerWins: 0,
-    chargingPlayer: null
-  })
-  
-  // Player choice display state
-  const [playerChoices, setPlayerChoices] = useState({
-    creator: null,
-    joiner: null
+    creatorChoice: null,
+    joinerChoice: null
   })
   
   const [readyNFTStatus, setReadyNFTStatus] = useState({ ready: false, nft: null })
@@ -280,17 +279,11 @@ const UnifiedGamePage = () => {
   const [customTailsImage, setCustomTailsImage] = useState(null)
   const [gameCoin, setGameCoin] = useState(null)
   
-  // Game data and WebSocket state
-  const [gameData, setGameData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [wsConnected, setWsConnected] = useState(false)
-  const [wsRef, setWsRef] = useState(null)
+
   
   // UI state
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
-  const [offers, setOffers] = useState([])
   const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
   const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
   
@@ -357,6 +350,23 @@ const UnifiedGamePage = () => {
     }
   }
   
+  // Load offers for listings
+  const loadOffers = async () => {
+    if (!gameData?.listing_id && !gameData?.id) return
+    
+    try {
+      const listingId = gameData.listing_id || gameData.id
+      const response = await fetch(getApiUrl(`/listings/${listingId}/offers`))
+      if (response.ok) {
+        const offersData = await response.json()
+        console.log('✅ Loaded offers:', offersData)
+        setOffers(offersData)
+      }
+    } catch (error) {
+      console.error('Error loading offers:', error)
+    }
+  }
+
   // Initialize WebSocket connection
   const initializeWebSocket = () => {
     try {
@@ -478,12 +488,6 @@ const UnifiedGamePage = () => {
           setPlayerChoices(prev => ({ ...prev, joiner: data.choice }))
           setGameState(prev => ({ ...prev, joinerChoice: data.choice }))
         }
-        
-        // Check if both players have chosen
-        if (data.choice && ((data.player === getGameCreator() && gameState.joinerChoice) || 
-                           (data.player === getGameJoiner() && gameState.creatorChoice))) {
-          setGameState(prev => ({ ...prev, phase: 'charging' }))
-        }
         break
         
       case 'FLIP_RESULT':
@@ -494,58 +498,81 @@ const UnifiedGamePage = () => {
         handleGameCompleted(data)
         break
         
-      case 'CHAT_MESSAGE':
-        // Chat messages are handled by the GameChatBox component
-        console.log('💬 Chat message received:', data)
-        break
-        
-      case 'NFT_OFFER':
-        setOffers(prev => [...prev, data.offer])
-        break
-        
       case 'new_offer':
-        console.log('🔄 Received new offer, reloading offers for gameId:', gameId)
-        // Reload offers when we get a new offer message
-        const listingId = gameData?.listing_id || gameData?.id
-        if (listingId) {
-          fetch(getApiUrl(`/listings/${listingId}/offers`)).then(async response => {
-            if (response.ok) {
-              const offersData = await response.json()
-              console.log('✅ Loaded offers from API:', offersData)
-              setOffers(offersData)
-            }
-          }).catch(error => {
-            console.log('⚠️ Error loading offers:', error)
-          })
-        }
+        console.log('🔄 New offer received, reloading offers')
+        // Reload offers immediately when a new offer is created
+        loadOffers()
         break
         
       case 'offer_accepted':
         console.log('✅ Offer accepted! Details:', data)
+        
+        // Show success message
         showSuccess('Offer accepted! Game created successfully.')
-        // Reload game data to reflect the accepted offer
+        
+        // Reload game data to show the new game state
         loadGameData()
+        
+        // If we're the offerer, show payment UI
+        if (data.gameId && address === getGameJoiner()) {
+          showInfo('Your offer was accepted! Please deposit payment to start the game.')
+        }
         break
         
       case 'offer_rejected':
-        console.log('❌ Offer rejected:', data)
+        console.log('❌ Offer rejected')
         showInfo('Offer was rejected')
+        loadOffers()
+        break
+        
+      case 'chat_message':
+        // Only add the message if it's not from the current user
+        // This prevents duplicate messages for the sender
+        if (data.from !== address) {
+          setChatMessages(prev => [...prev, {
+            id: Date.now(),
+            from: data.from,
+            message: data.message,
+            timestamp: new Date().toISOString()
+          }])
+        } else {
+          // If it's from the current user, add it to show their own message
+          setChatMessages(prev => [...prev, {
+            id: Date.now(),
+            from: data.from,
+            message: data.message,
+            timestamp: new Date().toISOString()
+          }])
+        }
+        break
+        
+      case 'deposit_confirmed':
+        console.log('💰 Deposit confirmed:', data)
+        const depositor = data.player === address ? 'You' : 'Opponent'
+        showSuccess(`${depositor} deposited ${data.assetType.toUpperCase()}!`)
+        
+        // Reload game data to update deposit status
+        loadGameData()
+        
+        // If both players have deposited, show game starting message
+        if (gameData?.creator_deposited && gameData?.challenger_deposited) {
+          showSuccess('Both players deposited! Game starting...')
+        }
         break
         
       case 'game_started':
         console.log('🎮 Game started!')
-        showSuccess('Both players deposited! Game starting...')
+        showSuccess('Game is now active! Both players can start playing.')
         loadGameData()
         break
         
-      case 'nft_deposited':
-        console.log('💰 NFT deposited:', data)
-        showSuccess('NFT deposited! Waiting for challenger...')
-        loadGameData()
+      case 'game_completed':
+        console.log('🏁 Game completed:', data)
+        handleGameCompleted(data)
         break
         
       default:
-        console.log('Unknown WebSocket message type:', data.type)
+        console.log('📨 Unhandled WebSocket message type:', data.type)
     }
   }
   
@@ -750,17 +777,22 @@ const UnifiedGamePage = () => {
       
       if (response.ok) {
         showSuccess('Offer accepted! Game created successfully.')
-        // Refresh offers and game data
-        const listingId = gameData?.listing_id || gameData?.id
-        await Promise.all([
-          fetch(getApiUrl(`/listings/${listingId}/offers`)).then(async response => {
-            if (response.ok) {
-              const offersData = await response.json()
-              setOffers(offersData)
-            }
-          }),
-          loadGameData() // Refresh game/listing data
-        ])
+        
+        // Reload game data to show the new game state
+        await loadGameData()
+        
+        // Reload offers to update the list
+        await loadOffers()
+        
+        // If we're the creator, show message about waiting for challenger
+        if (isCreator) {
+          showInfo('Offer accepted! Waiting for challenger to deposit payment...')
+        }
+        
+        // If we're the challenger, show payment UI
+        if (address === getGameJoiner()) {
+          showInfo('Your offer was accepted! Please deposit payment to start the game.')
+        }
       } else {
         console.error('❌ Offer acceptance failed:', result)
         const errorMessage = result.details 
@@ -909,6 +941,13 @@ const UnifiedGamePage = () => {
       }
     }
   }, [gameId])
+
+  // Load offers when game data changes
+  useEffect(() => {
+    if (gameData && (gameData.listing_id || gameData.id)) {
+      loadOffers()
+    }
+  }, [gameData])
   
   // Loading state
   if (loading) {

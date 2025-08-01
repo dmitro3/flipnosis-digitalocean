@@ -208,13 +208,8 @@ const GameChatBox = ({ gameId, socket, connected }) => {
       console.log('📤 Sending chat message:', chatMessage)
       socket.send(JSON.stringify(chatMessage))
       
-      // Add message to local state immediately for better UX
-      setMessages(prev => [...prev, {
-        id: Date.now() + Math.random(),
-        address: address,
-        message: currentMessage.trim(),
-        timestamp: new Date().toISOString()
-      }])
+      // Don't add message to local state immediately - wait for WebSocket broadcast
+      // This prevents duplicate messages
       
       setCurrentMessage('')
       
