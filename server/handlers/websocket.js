@@ -1,15 +1,32 @@
 const crypto = require('crypto')
 
-function createWebSocketHandlers(wss, dbService, blockchainService) {
-  // ===== WEBSOCKET MANAGEMENT =====
-  const rooms = new Map() // roomId -> Set of socket IDs
-  const socketRooms = new Map() // socket.id -> roomId
-  const userSockets = new Map() // address -> socket
+// Room management
+const rooms = new Map()
+const socketRooms = new Map()
+const userSockets = new Map()
 
-  wss.on('connection', (socket) => {
+// Create WebSocket handlers
+function createWebSocketHandlers(wss, dbService, blockchainService) {
+  // Handle WebSocket connections
+  wss.on('connection', (socket, req) => {
     socket.id = crypto.randomBytes(16).toString('hex')
-    console.log('🔌 New connection:', socket.id)
+    console.log(`🔌 New WebSocket connection: ${socket.id}`)
     
+    socket.on('close', () => {
+      console.log(`🔌 WebSocket disconnected: ${socket.id}`)
+      
+      // Cleanup
+      const room = socketRooms.get(socket.id)
+      if (room && rooms.has(room)) {
+        rooms.get(room).delete(socket.id)
+      }
+      socketRooms.delete(socket.id)
+      
+      if (socket.address) {
+        userSockets.delete(socket.address)
+      }
+    })
+
     socket.on('message', async (message) => {
       try {
         const data = JSON.parse(message)
@@ -18,11 +35,6 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         if (!data || typeof data !== 'object') {
           console.warn('Invalid WebSocket data format')
           return
-        }
-        
-        // Add type if missing for certain messages
-        if (!data.type && data.message) {
-          data.type = 'chat_message' // or appropriate type
         }
         
         console.log('📡 Received WebSocket message:', data)
@@ -35,21 +47,17 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
             handleRegisterUser(socket, data)
             break
           case 'chat_message':
-            // Ensure roomId is present
-            if (!data.roomId && data.gameId) data.roomId = data.gameId
             handleChatMessage(socket, data)
             break
-          case 'game_choice':
-            handleGameChoice(socket, data)
-            break
-          case 'flip_coin':
-            handleFlipCoin(socket, data)
+          case 'GAME_ACTION':
+            console.log('🎮 Received GAME_ACTION:', data)
+            handleGameAction(socket, data, dbService)
             break
           case 'nft_offer':
             handleNftOffer(socket, data)
             break
-          case 'accept_nft_offer':
-            handleAcceptNftOffer(socket, data)
+          case 'offer_accepted':
+            handleOfferAccepted(socket, data)
             break
           default:
             console.log('⚠️ Unhandled WebSocket message type:', data.type)
@@ -58,11 +66,55 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         console.error('❌ WebSocket error:', error)
       }
     })
-    
-    socket.on('close', () => {
-      handleDisconnect(socket)
-    })
   })
+
+  // Broadcast to room
+  function broadcastToRoom(roomId, message) {
+    if (!rooms.has(roomId)) return
+    
+    const room = rooms.get(roomId)
+    const messageStr = JSON.stringify(message)
+    
+    console.log(`📢 Broadcasting to room ${roomId}:`, {
+      messageType: message.type,
+      roomSize: room.size,
+      connectedClients: wss.clients.size
+    })
+    
+    let successfulBroadcasts = 0
+    room.forEach(socketId => {
+      const client = Array.from(wss.clients).find(s => s.id === socketId)
+      if (client && client.readyState === 1) { // WebSocket.OPEN
+        client.send(messageStr)
+        successfulBroadcasts++
+      }
+    })
+    
+    console.log(`✅ Successfully broadcasted to ${successfulBroadcasts}/${room.size} clients in room ${roomId}`)
+  }
+
+  // Broadcast to all
+  function broadcastToAll(message) {
+    const messageStr = JSON.stringify(message)
+    wss.clients.forEach(client => {
+      if (client.readyState === 1) { // WebSocket.OPEN
+        client.send(messageStr)
+      }
+    })
+  }
+
+  // Get user socket
+  function getUserSocket(address) {
+    return userSockets.get(address)
+  }
+
+  // Send message to specific user
+  function sendToUser(address, message) {
+    const socket = userSockets.get(address)
+    if (socket && socket.readyState === 1) { // WebSocket.OPEN
+      socket.send(JSON.stringify(message))
+    }
+  }
 
   function handleJoinRoom(socket, data) {
     const { roomId } = data
@@ -93,7 +145,6 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   async function handleChatMessage(socket, data) {
     const { roomId, message, from } = data
     
-    // Use the sender's address from the socket or the provided 'from' field
     const senderAddress = socket.address || from || 'anonymous'
     
     // Save to database
@@ -112,106 +163,285 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     })
   }
 
-  async function handleGameChoice(socket, data) {
-    const { gameId, choice } = data
+  async function handleGameAction(socket, data, dbService) {
+    const { gameId, action, choice, player, powerLevel } = data
+    console.log('🎯 Processing game action:', { gameId, action, choice, player })
     
     const db = dbService.getDatabase()
     
-    // Get game from database
-    db.get('SELECT * FROM games WHERE id = ?', [gameId], async (err, game) => {
-      if (err || !game) {
-        console.error('❌ Game not found:', gameId)
-        return
-      }
-      
-      // Get current round
-      db.get(
-        'SELECT COUNT(*) as round FROM game_rounds WHERE game_id = ?',
-        [gameId],
-        (err, result) => {
-          const currentRound = (result?.round || 0) + 1
+    switch (action) {
+      case 'MAKE_CHOICE':
+        // Get game from database
+        db.get('SELECT * FROM games WHERE id = ?', [gameId], async (err, game) => {
+          if (err || !game) {
+            console.error('❌ Game not found:', gameId)
+            return
+          }
           
-          // Store choice
-          const isCreator = socket.address === game.creator
-          db.run(
-            `UPDATE game_rounds 
-             SET ${isCreator ? 'creator_choice' : 'challenger_choice'} = ?
-             WHERE game_id = ? AND round_number = ?`,
-            [choice, gameId, currentRound],
-            (err) => {
-              if (err) {
-                // Create new round if doesn't exist
+          // Get or create current round
+          db.get(
+            'SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number DESC LIMIT 1',
+            [gameId],
+            async (err, currentRound) => {
+              let roundNumber = 1
+              let roundId = null
+              
+              if (currentRound) {
+                // Check if current round is complete
+                if (currentRound.flip_result) {
+                  // Create new round
+                  roundNumber = currentRound.round_number + 1
+                } else {
+                  // Use existing round
+                  roundNumber = currentRound.round_number
+                  roundId = currentRound.id
+                }
+              }
+              
+              const isCreator = player === game.creator
+              const columnName = isCreator ? 'creator_choice' : 'challenger_choice'
+              
+              if (roundId) {
+                // Update existing round
                 db.run(
-                  'INSERT INTO game_rounds (game_id, round_number, ' +
-                  (isCreator ? 'creator_choice' : 'challenger_choice') + 
-                  ') VALUES (?, ?, ?)',
-                  [gameId, currentRound, choice]
+                  `UPDATE game_rounds SET ${columnName} = ? WHERE id = ?`,
+                  [choice, roundId],
+                  (err) => {
+                    if (err) {
+                      console.error('❌ Error updating round:', err)
+                      return
+                    }
+                    console.log('✅ Updated round with choice:', { roundId, player, choice })
+                    
+                    // Check if both players have made choices
+                    checkAndProcessRound(gameId, roundId)
+                  }
+                )
+              } else {
+                // Create new round
+                db.run(
+                  `INSERT INTO game_rounds (game_id, round_number, ${columnName}) VALUES (?, ?, ?)`,
+                  [gameId, roundNumber, choice],
+                  function(err) {
+                    if (err) {
+                      console.error('❌ Error creating round:', err)
+                      return
+                    }
+                    console.log('✅ Created new round with choice:', { roundNumber, player, choice })
+                    
+                    // Check if both players have made choices
+                    checkAndProcessRound(gameId, this.lastID)
+                  }
                 )
               }
             }
           )
-          
-          // Notify room
-          broadcastToRoom(gameId, {
-            type: 'player_choice',
-            player: socket.address,
-            roundNumber: currentRound
-          })
-        }
-      )
-    })
+        })
+        break
+        
+      case 'FLIP_COIN':
+        handleFlipCoin(socket, data, dbService)
+        break
+        
+      default:
+        console.log('⚠️ Unhandled game action:', action)
+    }
   }
 
-  async function handleFlipCoin(socket, data) {
-    const { gameId } = data
-    
+  function checkAndProcessRound(gameId, roundId) {
     const db = dbService.getDatabase()
     
-    // Get game and current round
-    db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
-      if (err || !game || game.status !== 'active') {
-        console.error('❌ Invalid game state')
-        return
-      }
-      
-      db.get(
-        'SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number DESC LIMIT 1',
-        [gameId],
-        (err, round) => {
-          if (!round || !round.creator_choice || !round.challenger_choice) {
-            console.error('❌ Both players must choose first')
-            return
-          }
+    db.get(
+      'SELECT * FROM game_rounds WHERE id = ?',
+      [roundId],
+      (err, round) => {
+        if (err || !round) {
+          console.error('❌ Round not found:', roundId)
+          return
+        }
+        
+        // Check if both players have made choices
+        if (round.creator_choice && round.challenger_choice) {
+          console.log('🎯 Both players have chosen, processing round:', round)
           
           // Generate flip result
           const result = Math.random() < 0.5 ? 'heads' : 'tails'
           const creatorWins = round.creator_choice === result
+          
+          // Get game info to determine winner
+          db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+            if (err || !game) {
+              console.error('❌ Game not found for round processing:', gameId)
+              return
+            }
+            
+            const roundWinner = creatorWins ? game.creator : game.challenger
+            
+            // Update round with result
+            db.run(
+              'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
+              [result, roundWinner, roundId],
+              (err) => {
+                if (err) {
+                  console.error('❌ Error updating round result:', err)
+                  return
+                }
+                
+                console.log('✅ Round result updated:', { result, roundWinner })
+                
+                // Broadcast result to room
+                broadcastToRoom(gameId, {
+                  type: 'round_result',
+                  result,
+                  roundWinner,
+                  roundNumber: round.round_number,
+                  creatorChoice: round.creator_choice,
+                  challengerChoice: round.challenger_choice
+                })
+                
+                // Check if game is complete
+                checkGameCompletion(gameId)
+              }
+            )
+          })
+        } else {
+          console.log('⏳ Waiting for both players to choose...')
+          
+          // Broadcast choice made
+          broadcastToRoom(gameId, {
+            type: 'choice_made',
+            roundNumber: round.round_number,
+            player: round.creator_choice ? game.challenger : game.creator
+          })
+        }
+      }
+    )
+  }
+
+  function checkGameCompletion(gameId) {
+    const db = dbService.getDatabase()
+    
+    db.all(
+      'SELECT round_winner, COUNT(*) as wins FROM game_rounds WHERE game_id = ? AND round_winner IS NOT NULL GROUP BY round_winner',
+      [gameId],
+      (err, results) => {
+        if (err) {
+          console.error('❌ Error checking game completion:', err)
+          return
+        }
+        
+        // Get game info
+        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+          if (err || !game) {
+            console.error('❌ Game not found for completion check:', gameId)
+            return
+          }
+          
+          const wins = {}
+          results.forEach(r => wins[r.round_winner] = r.wins)
+          
+          let gameComplete = false
+          let gameWinner = null
+          
+          if (wins[game.creator] >= 3) {
+            gameComplete = true
+            gameWinner = game.creator
+          } else if (wins[game.challenger] >= 3) {
+            gameComplete = true
+            gameWinner = game.challenger
+          }
+          
+          if (gameComplete) {
+            console.log('🏆 Game completed! Winner:', gameWinner)
+            
+            // Update game status
+            db.run(
+              'UPDATE games SET status = ?, winner = ? WHERE id = ?',
+              ['completed', gameWinner, gameId],
+              (err) => {
+                if (err) {
+                  console.error('❌ Error updating game status:', err)
+                  return
+                }
+                
+                // Broadcast game completion
+                broadcastToRoom(gameId, {
+                  type: 'game_completed',
+                  winner: gameWinner,
+                  creatorWins: wins[game.creator] || 0,
+                  challengerWins: wins[game.challenger] || 0
+                })
+                
+                // Complete game on blockchain if available
+                if (blockchainService && blockchainService.hasOwnerWallet() && game.blockchain_game_id) {
+                  blockchainService.completeGameOnChain(game.blockchain_game_id, gameWinner)
+                    .then(() => console.log('✅ Game completed on blockchain'))
+                    .catch(err => console.error('❌ Error completing game on blockchain:', err))
+                }
+              }
+            )
+          } else {
+            // Broadcast current score
+            broadcastToRoom(gameId, {
+              type: 'score_update',
+              creatorWins: wins[game.creator] || 0,
+              challengerWins: wins[game.challenger] || 0
+            })
+          }
+        })
+      }
+    )
+  }
+
+  async function handleFlipCoin(socket, data, dbService) {
+    const { gameId } = data
+    
+    const db = dbService.getDatabase()
+    
+    // Get current round
+    db.get(
+      'SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number DESC LIMIT 1',
+      [gameId],
+      (err, round) => {
+        if (err || !round) {
+          console.error('❌ No active round found for game:', gameId)
+          return
+        }
+        
+        if (!round.creator_choice || !round.challenger_choice) {
+          console.error('❌ Both players must choose before flipping')
+          return
+        }
+        
+        if (round.flip_result) {
+          console.error('❌ Round already has a result')
+          return
+        }
+        
+        // Generate flip result
+        const result = Math.random() < 0.5 ? 'heads' : 'tails'
+        const creatorWins = round.creator_choice === result
+        
+        // Get game info
+        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+          if (err || !game) {
+            console.error('❌ Game not found for flip:', gameId)
+            return
+          }
+          
           const roundWinner = creatorWins ? game.creator : game.challenger
           
           // Update round
           db.run(
             'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
-            [result, roundWinner, round.id]
-          )
-          
-          // Check if game is complete (best of 5)
-          db.all(
-            'SELECT round_winner, COUNT(*) as wins FROM game_rounds WHERE game_id = ? GROUP BY round_winner',
-            [gameId],
-            (err, results) => {
-              const wins = {}
-              results.forEach(r => wins[r.round_winner] = r.wins)
-              
-              let gameComplete = false
-              let gameWinner = null
-              
-              if (wins[game.creator] >= 3) {
-                gameComplete = true
-                gameWinner = game.creator
-              } else if (wins[game.challenger] >= 3) {
-                gameComplete = true
-                gameWinner = game.challenger
+            [result, roundWinner, round.id],
+            (err) => {
+              if (err) {
+                console.error('❌ Error updating flip result:', err)
+                return
               }
+              
+              console.log('✅ Flip result recorded:', { result, roundWinner })
               
               // Broadcast result
               broadcastToRoom(gameId, {
@@ -219,29 +449,17 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                 result,
                 roundWinner,
                 roundNumber: round.round_number,
-                creatorWins: wins[game.creator] || 0,
-                challengerWins: wins[game.challenger] || 0,
-                gameComplete,
-                gameWinner
+                creatorChoice: round.creator_choice,
+                challengerChoice: round.challenger_choice
               })
               
-              // If game complete, update database and blockchain
-              if (gameComplete) {
-                db.run(
-                  'UPDATE games SET status = ?, winner = ? WHERE id = ?',
-                  ['completed', gameWinner, gameId]
-                )
-                
-                // Call smart contract to complete game
-                if (blockchainService.hasOwnerWallet() && game.blockchain_game_id) {
-                  blockchainService.completeGameOnChain(game.blockchain_game_id, gameWinner)
-                }
-              }
+              // Check game completion
+              checkGameCompletion(gameId)
             }
           )
-        }
-      )
-    })
+        })
+      }
+    )
   }
 
   // Handle NFT offer (for NFT-vs-NFT games)
@@ -251,6 +469,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       console.error('❌ Invalid NFT offer data:', data)
       return
     }
+    
     // Broadcast to the game room
     broadcastToRoom(gameId, {
       type: 'nft_offer_received',
@@ -264,12 +483,13 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   }
 
   // Handle NFT offer acceptance (for NFT-vs-NFT games)
-  function handleAcceptNftOffer(socket, data) {
+  function handleOfferAccepted(socket, data) {
     const { gameId, creatorAddress, acceptedOffer, timestamp } = data
     if (!gameId || !creatorAddress || !acceptedOffer) {
       console.error('❌ Invalid accept_nft_offer data:', data)
       return
     }
+    
     // Broadcast acceptance to the game room
     broadcastToRoom(gameId, {
       type: 'nft_offer_accepted',
@@ -280,56 +500,10 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     console.log('📢 Broadcasted nft_offer_accepted to room', gameId)
   }
 
-  function handleDisconnect(socket) {
-    console.log('🔌 Disconnected:', socket.id)
-    
-    // Remove from rooms
-    const roomId = socketRooms.get(socket.id)
-    if (roomId && rooms.has(roomId)) {
-      rooms.get(roomId).delete(socket.id)
-    }
-    socketRooms.delete(socket.id)
-    
-    // Remove from user sockets
-    if (socket.address) {
-      userSockets.delete(socket.address)
-    }
-  }
-
-  function broadcastToRoom(roomId, message) {
-    const room = rooms.get(roomId)
-    if (!room) {
-      console.log(`⚠️ No room found for broadcast: ${roomId}`)
-      return
-    }
-    
-    console.log(`📢 Broadcasting to room ${roomId}:`, {
-      messageType: message.type,
-      roomSize: room.size,
-      connectedClients: Array.from(wss.clients).length
-    })
-    
-    let successfulBroadcasts = 0
-    room.forEach(socketId => {
-      const client = Array.from(wss.clients).find(c => c.id === socketId)
-      if (client && client.readyState === 1) { // WebSocket.OPEN
-        client.send(JSON.stringify(message))
-        successfulBroadcasts++
-      }
-    })
-    
-    console.log(`✅ Successfully broadcasted to ${successfulBroadcasts}/${room.size} clients in room ${roomId}`)
-  }
-
-  function sendToUser(address, message) {
-    const socket = userSockets.get(address)
-    if (socket && socket.readyState === 1) { // WebSocket.OPEN
-      socket.send(JSON.stringify(message))
-    }
-  }
-
   return {
     broadcastToRoom,
+    broadcastToAll,
+    getUserSocket,
     sendToUser
   }
 }

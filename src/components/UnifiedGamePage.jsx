@@ -439,8 +439,8 @@ const UnifiedGamePage = () => {
         retryCount
       })
       
-      // Check cache first to avoid unnecessary RPC calls
-      const cacheKey = Math.round(finalPrice * 100) // Round to 2 decimal places for caching
+      // Check cache first
+      const cacheKey = Math.round(finalPrice * 100)
       if (ethAmountCache.current.has(cacheKey) && retryCount === 0) {
         const cachedAmount = ethAmountCache.current.get(cacheKey)
         console.log('💰 Using cached ETH amount for price:', finalPrice, 'USD')
@@ -448,22 +448,15 @@ const UnifiedGamePage = () => {
         return
       }
       
-      // If we already have an ETH amount for this price, don't recalculate
+      // If we already have an ETH amount, don't recalculate
       if (ethAmount && retryCount === 0) {
         console.log('💰 ETH amount already calculated, skipping')
         return
       }
       
-      // Rate limiting: prevent excessive RPC calls
-      const now = Date.now()
-      if (now - lastRpcCall.current < RPC_COOLDOWN && retryCount === 0) {
-        console.log('⏳ Rate limiting: waiting before making RPC call...')
-        await new Promise(resolve => setTimeout(resolve, RPC_COOLDOWN - (now - lastRpcCall.current)))
-      }
-      
-      // Wait for contract to be initialized, with timeout
+      // Wait for contract initialization (max 2.5 seconds)
       let attempts = 0
-      const maxAttempts = 5 // Reduced from 10 to 5
+      const maxAttempts = 5
       
       while (!contractInitialized && attempts < maxAttempts) {
         console.log(`⏳ Waiting for contract initialization... (attempt ${attempts + 1}/${maxAttempts})`)
@@ -471,82 +464,55 @@ const UnifiedGamePage = () => {
         attempts++
       }
       
-      if (!contractInitialized) {
-        console.warn('⚠️ Contract not initialized after timeout, trying anyway...')
+      if (!contractInitialized || !contractService.isReady()) {
+        console.warn('⚠️ Contract not ready, using fallback calculation')
+        // Use fallback calculation
+        const ethPriceUSD = 3500 // Conservative estimate
+        const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
+        const fallbackEthAmount = BigInt(Math.floor(ethAmountWei))
+        setEthAmount(fallbackEthAmount)
+        ethAmountCache.current.set(cacheKey, fallbackEthAmount)
+        return
       }
-      
-      console.log('🔍 Contract service state:', {
-        isInitialized: contractService.isInitialized?.() || 'method not available',
-        isReady: contractService.isReady?.() || 'method not available'
-      })
       
       // Convert price to microdollars (6 decimal places) for contract
       const priceInMicrodollars = Math.round(finalPrice * 1000000)
       console.log('💰 Converting price to microdollars:', finalPrice, 'USD ->', priceInMicrodollars, 'microdollars')
       
-      // Update RPC call timestamp
-      lastRpcCall.current = Date.now()
-      
-      const calculatedEthAmount = await contractService.contract.getETHAmount(priceInMicrodollars)
-      console.log('💰 Raw ETH amount result:', calculatedEthAmount)
-      console.log('💰 Raw ETH amount type:', typeof calculatedEthAmount)
-      console.log('💰 Raw ETH amount constructor:', calculatedEthAmount?.constructor?.name)
-      console.log('💰 Raw ETH amount toString:', calculatedEthAmount?.toString())
-      
-      if (calculatedEthAmount) {
-        // Ensure it's a proper BigInt - handle both BigInt and string inputs
-        let ethAmountBigInt
-        if (typeof calculatedEthAmount === 'bigint') {
-          ethAmountBigInt = calculatedEthAmount
-        } else if (typeof calculatedEthAmount === 'string') {
-          ethAmountBigInt = BigInt(calculatedEthAmount)
-        } else if (typeof calculatedEthAmount === 'number') {
-          ethAmountBigInt = BigInt(calculatedEthAmount)
+      // Call contract with proper error handling
+      try {
+        const calculatedEthAmount = await contractService.contract.getETHAmount(priceInMicrodollars)
+        console.log('💰 Raw ETH amount result:', calculatedEthAmount)
+        
+        if (calculatedEthAmount) {
+          // Ensure it's a proper BigInt
+          const ethAmountBigInt = BigInt(calculatedEthAmount.toString())
+          setEthAmount(ethAmountBigInt)
+          
+          // Cache the result
+          ethAmountCache.current.set(cacheKey, ethAmountBigInt)
+          console.log('💰 Calculated and cached ETH amount:', ethers.formatEther(ethAmountBigInt), 'ETH for price:', finalPrice, 'USD')
         } else {
-          // If it's an object or other type, try to extract the value
-          console.warn('⚠️ Unexpected ETH amount type:', typeof calculatedEthAmount, calculatedEthAmount)
-          const ethString = calculatedEthAmount?.toString?.() || calculatedEthAmount?.value?.toString?.() || '0'
-          ethAmountBigInt = BigInt(ethString)
+          throw new Error('Contract returned null ETH amount')
         }
+      } catch (contractError) {
+        console.error('❌ Contract call failed:', contractError)
         
-        setEthAmount(ethAmountBigInt)
-        
-        // Cache the result to avoid future RPC calls for the same price
-        const cacheKey = Math.round(finalPrice * 100)
-        ethAmountCache.current.set(cacheKey, ethAmountBigInt)
-        console.log('💰 Calculated and cached ETH amount:', ethers.formatEther(ethAmountBigInt), 'ETH for price:', finalPrice, 'USD')
-      } else {
-        console.error('❌ getETHAmount returned null or undefined')
-        throw new Error('Contract returned null ETH amount')
+        if (retryCount < 1) {
+          console.log('🔄 Retrying ETH calculation...')
+          setTimeout(() => calculateAndSetEthAmount(finalPrice, retryCount + 1), 1000)
+        } else {
+          // Final fallback
+          const ethPriceUSD = 3500
+          const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
+          const fallbackEthAmount = BigInt(Math.floor(ethAmountWei))
+          setEthAmount(fallbackEthAmount)
+          console.log('💰 Using final fallback ETH amount:', ethers.formatEther(fallbackEthAmount), 'ETH')
+        }
       }
     } catch (error) {
       console.error('❌ Error calculating ETH amount:', error)
-      
-      // Retry logic for network issues - only retry once
-      if (retryCount < 1) {
-        console.log(`🔄 Retrying ETH calculation... (attempt ${retryCount + 1}/1)`)
-        setTimeout(() => calculateAndSetEthAmount(finalPrice, retryCount + 1), 1000)
-      } else {
-        console.error('❌ Failed to calculate ETH amount after 1 attempt')
-        
-        // Fallback: try to estimate ETH amount using a simple calculation
-        // This is a rough estimate based on typical ETH prices
-        try {
-          console.log('🔄 Trying fallback ETH calculation...')
-          const estimatedEthPrice = 2000 // Rough estimate of ETH price in USD
-          const estimatedEthAmount = (finalPrice / estimatedEthPrice) * 1e18 // Convert to wei
-          const fallbackEthAmount = BigInt(Math.floor(estimatedEthAmount))
-          setEthAmount(fallbackEthAmount)
-          console.log('💰 Using fallback ETH amount:', ethers.formatEther(fallbackEthAmount), 'ETH')
-          
-          // Show warning to user
-          showError('Price feed unavailable. Using estimated ETH amount. Please verify before proceeding.')
-        } catch (fallbackError) {
-          console.error('❌ Fallback calculation also failed:', fallbackError)
-          setEthAmount(null)
-          showError('Unable to calculate ETH amount. Please try again later.')
-        }
-      }
+      setEthAmount(null)
     }
   }
   
@@ -569,104 +535,67 @@ const UnifiedGamePage = () => {
 
   // Initialize WebSocket connection
   const initializeWebSocket = () => {
-    try {
-      console.log('🔌 Initializing WebSocket connection to:', getWsUrl())
-      const ws = new WebSocket(getWsUrl())
-      
-      ws.onopen = () => {
-        console.log('🔌 WebSocket connected successfully')
-        setWsConnected(true)
-        
-        // Join room with the game ID
-        const joinMessage = {
-          type: 'join_room',
-          roomId: gameId
-        }
-        console.log('📤 Sending join room message:', joinMessage)
-        ws.send(JSON.stringify(joinMessage))
-        
-        // Register user if we have an address
-        if (address) {
-          const registerMessage = {
-            type: 'register_user',
-            address: address
-          }
-          console.log('📤 Sending register user message:', registerMessage)
-          ws.send(JSON.stringify(registerMessage))
-        }
-      }
-      
-      ws.onmessage = (event) => {
-        try {
-          // Check if event.data is valid before parsing
-          if (!event.data || typeof event.data !== 'string') {
-            console.warn('⚠️ Invalid WebSocket message data:', event.data)
-            return
-          }
-          
-          const data = JSON.parse(event.data)
-          console.log('📨 WebSocket message received:', data)
-          
-          // Validate the parsed data before processing
-          if (!data || typeof data !== 'object') {
-            console.warn('⚠️ Invalid WebSocket message format:', data)
-            return
-          }
-          
-          // Only pass the parsed data, not the event object
-          handleWebSocketMessage(data)
-        } catch (err) {
-          console.error('Error parsing WebSocket message:', err)
-          console.log('Raw message:', event.data)
-          
-          // Try to extract basic information from the raw message
-          try {
-            if (typeof event.data === 'string' && event.data.includes('"type"')) {
-              const typeMatch = event.data.match(/"type"\s*:\s*"([^"]+)"/)
-              if (typeMatch) {
-                console.log('🔍 Extracted message type from raw data:', typeMatch[1])
-              }
-            }
-          } catch (extractError) {
-            console.error('Could not extract message type from raw data:', extractError)
-          }
-        }
-      }
-      
-      ws.onclose = (event) => {
-        console.log('🔌 WebSocket disconnected:', event.code, event.reason)
-        setWsConnected(false)
-        
-        // Only attempt to reconnect if the game is still active
-        if (gameData && !gameData.completed && gameData.status !== 'cancelled') {
-          console.log('🔄 Attempting to reconnect WebSocket...')
-          setTimeout(() => {
-            if (gameData && !gameData.completed) {
-              console.log('🔄 Reconnecting WebSocket...')
-              initializeWebSocket()
-            }
-          }, 3000)
-        } else {
-          console.log('🔄 Not reconnecting - game is completed or cancelled')
-        }
-      }
-      
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
-        setWsConnected(false)
-        
-        // Use mock WebSocket for testing
-        console.log('🔄 Using mock WebSocket for testing')
-        setWsConnected(true)
-        setWsRef(createMockWebSocket())
-      }
-      
-      setWsRef(ws)
-    } catch (error) {
-      console.error('Failed to initialize WebSocket:', error)
-      console.log('🔄 Using mock WebSocket for testing')
+    if (wsRef) {
+      wsRef.close()
+    }
+    
+    const wsUrl = getWsUrl()
+    console.log('🔌 Initializing WebSocket connection to:', wsUrl)
+    
+    const ws = new WebSocket(wsUrl)
+    wsRef = ws
+    
+    ws.onopen = () => {
+      console.log('🔌 WebSocket connected successfully')
       setWsConnected(true)
-      setWsRef(createMockWebSocket())
+      
+      // Join game room
+      ws.send(JSON.stringify({
+        type: 'join_room',
+        roomId: gameId
+      }))
+      
+      // Register user
+      if (address) {
+        ws.send(JSON.stringify({
+          type: 'register_user',
+          address: address
+        }))
+      }
+    }
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log('📨 Raw WebSocket message:', data)
+        
+        // Handle 'message' wrapper from Socket.IO
+        if (data.type === 'message' && data.data) {
+          handleWebSocketMessage(data.data)
+        } else {
+          handleWebSocketMessage(data)
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err)
+      }
+    }
+    
+    ws.onerror = (error) => {
+      console.error('🔌 WebSocket error:', error)
+      setWsConnected(false)
+    }
+    
+    ws.onclose = (event) => {
+      console.log('🔌 WebSocket disconnected:', event.code, event.reason)
+      setWsConnected(false)
+      
+      // Reconnect if game is still active
+      if (gameData && !gameData.completed && gameData.status !== 'cancelled') {
+        setTimeout(() => {
+          console.log('🔄 Reconnecting WebSocket...')
+          initializeWebSocket()
+        }, 3000)
+      }
     }
   }
   
@@ -739,182 +668,66 @@ const UnifiedGamePage = () => {
   const handleWebSocketMessage = (data) => {
     console.log('📨 WebSocket message received:', data)
     
-    // Debug: Log the type of data to help identify issues
-    console.log('🔍 Data type:', typeof data, 'Is object:', typeof data === 'object', 'Keys:', data ? Object.keys(data) : 'null')
-    
-    // Use safe serialization to avoid circular references
-    let safeData
-    try {
-      safeData = safeSerialize(data)
-      console.log('✅ Safe serialization successful:', safeData)
-    } catch (error) {
-      console.error('❌ Error in safe serialization:', error)
-      console.error('❌ Error stack:', error.stack)
-      // Fallback: create minimal safe object
-      safeData = {
-        type: data?.type || 'unknown',
-        player: data?.player,
-        choice: data?.choice,
-        gameId: data?.gameId,
-        action: data?.action,
-        result: data?.result,
-        message: data?.message,
-        gameData: data?.gameData ? safeSerialize(data.gameData) : undefined
-      }
-    }
-    
-    // CRITICAL FIX: Check if safeData is null before accessing properties
-    if (!safeData) {
-      console.error('❌ Safe serialization returned null, cannot process message')
+    // Ensure data is valid
+    if (!data || typeof data !== 'object') {
+      console.warn('⚠️ Invalid WebSocket message format:', data)
       return
     }
     
-    // Ensure safeData has a type property
-    if (!safeData.type) {
-      console.error('❌ Message has no type property:', safeData)
-      return
-    }
-    
-    switch (safeData.type) {
-      case 'GAME_UPDATE':
-        // Only update with primitive values
-        const gameUpdate = { ...safeData.gameData }
-        // Remove any potential circular references
-        delete gameUpdate.__reactFiber
-        delete gameUpdate.stateNode
-        delete gameUpdate._reactInternalInstance
-        setGameData(prev => ({ ...prev, ...gameUpdate }))
-        break
-        
-      case 'GAME_ACTION':
-        handleGameAction(safeData)
-        break
-        
+    // Handle different message types
+    switch (data.type) {
       case 'PLAYER_CHOICE':
-        // Handle player choice updates from other players
-        if (safeData.player === getGameCreator()) {
-          setPlayerChoices(prev => ({ ...prev, creator: safeData.choice }))
-          setGameState(prev => ({ ...prev, creatorChoice: safeData.choice }))
-        } else if (safeData.player === getGameJoiner()) {
-          setPlayerChoices(prev => ({ ...prev, joiner: safeData.choice }))
-          setGameState(prev => ({ ...prev, joinerChoice: safeData.choice }))
+        console.log('👤 Player made choice:', data)
+        // Update UI to show player has made their choice
+        if (data.player === getGameCreator()) {
+          setPlayerChoices(prev => ({ ...prev, creator: data.choice }))
+          setGameState(prev => ({ ...prev, creatorChoice: data.choice }))
+        } else if (data.player === getGameJoiner()) {
+          setPlayerChoices(prev => ({ ...prev, joiner: data.choice }))
+          setGameState(prev => ({ ...prev, joinerChoice: data.choice }))
         }
         break
         
       case 'FLIP_RESULT':
-        handleFlipResult(safeData.result)
+        console.log('🎲 Flip result received:', data)
+        handleFlipResult(data)
         break
         
       case 'GAME_COMPLETED':
-        handleGameCompleted(safeData)
-        break
-        
-      case 'new_offer':
-        console.log('🔄 New offer received, reloading offers')
-        // Reload offers immediately when a new offer is created
-        loadOffers()
-        break
-        
-      case 'offer_status_changed':
-        console.log('🔄 Offer status changed, reloading offers')
-        // Reload offers when offer status changes
-        loadOffers()
+        console.log('🏁 Game completed:', data)
+        handleGameCompleted(data)
         break
         
       case 'your_offer_accepted':
-        console.log('🎉 Your offer was accepted!', safeData)
-        console.log('🔍 Processing your_offer_accepted message - gameId:', safeData.gameId, 'requiresDeposit:', safeData.requiresDeposit)
-        showSuccess(safeData.message)
-        
-        // Navigate to game page if we're the challenger
-        if (safeData.gameId && safeData.requiresDeposit) {
-          console.log('🔄 Navigating to game page for deposit')
-          // Show payment UI immediately
-          navigate(`/game/${safeData.gameId}`)
-        }
-        
-        // Reload game data
-        loadGameData()
+        console.log('🎉 Your offer was accepted!')
+        showSuccess('Your offer has been accepted! Waiting for deposit...')
+        setTimeout(() => {
+          window.location.href = `/game/${data.gameId}`
+        }, 2000)
         break
-
+        
       case 'game_awaiting_challenger_deposit':
-        console.log('⏳ Game awaiting challenger deposit:', safeData)
-        console.log('🔍 Processing game_awaiting_challenger_deposit - challenger:', safeData.challenger, 'deadline:', safeData.depositDeadline)
-        
-        // Update local game state with deposit deadline
-        setGameData(prev => ({
-          ...prev,
-          status: 'waiting_challenger_deposit',
-          deposit_deadline: safeData.depositDeadline,
-          challenger: safeData.challenger,
-          final_price: safeData.finalPrice
-        }))
-        
-        // Start countdown timer if we're involved
-        if (address === safeData.challenger || address === getGameCreator()) {
-          console.log('⏰ Starting deposit countdown for address:', address)
-          startDepositCountdown(safeData.depositDeadline)
-        } else {
-          console.log('⏰ Not starting countdown - address:', address, 'challenger:', safeData.challenger, 'creator:', getGameCreator())
-        }
-        break
-
-      case 'offer_accepted':
-        console.log('✅ Offer accepted! Details:', safeData)
-        
-        // Show success message
-        showSuccess('Offer accepted! Game created successfully.')
-        
-        // Reload game data to show the new game state
-        loadGameData()
-        
-        // If we're the offerer, show message about waiting for challenger
-        if (safeData.gameId && address === getGameJoiner()) {
-          showInfo('Your offer was accepted! Please deposit payment to start the game.')
-        }
-        break
-        
-      case 'offer_rejected':
-        console.log('❌ Offer rejected')
-        showInfo('Offer was rejected')
-        loadOffers()
-        break
-        
-      case 'chat_message':
-        // Only add the message if it's not from the current user
-        // This prevents duplicate messages for the sender
-        if (safeData.from !== address) {
-          setChatMessages(prev => [...prev, {
-            id: Date.now(),
-            from: safeData.from,
-            message: safeData.message,
-            timestamp: safeData.timestamp || new Date().toISOString()
-          }])
-        }
-        break
-        
-      case 'game_started':
-        console.log('🎮 Game started!')
-        showSuccess('Game is now active! Both players can start playing.')
-        
-        // Set game phase to choosing so players can make their choices
-        setGameState(prev => ({
-          ...prev,
-          phase: 'choosing',
-          creatorChoice: null,
-          joinerChoice: null
-        }))
-        
+        console.log('💰 Game awaiting your deposit')
+        showInfo('Game is waiting for your ETH deposit')
         loadGameData()
         break
         
-      case 'game_completed':
-        console.log('🏁 Game completed:', safeData)
-        handleGameCompleted(safeData)
+      case 'deposit_received':
+        console.log('✅ Deposit received:', data)
+        if (data.bothDeposited) {
+          showSuccess('Game is now active! Both players can start playing.')
+          setGameState(prev => ({
+            ...prev,
+            phase: 'choosing',
+            creatorChoice: null,
+            joinerChoice: null
+          }))
+        }
+        loadGameData()
         break
         
       default:
-        console.log('📨 Unhandled WebSocket message type:', safeData.type)
+        console.log('📨 Unhandled WebSocket message type:', data.type)
     }
   }
   
@@ -1057,10 +870,10 @@ const UnifiedGamePage = () => {
       console.log('🎯 Round 5 detected - auto-flipping after choice')
       setTimeout(() => {
         handleAutoFlip()
-      }, 1000) // Small delay for UX
+      }, 1000)
     }
     
-    // Send choice to server
+    // Send choice to server - FIXED FORMAT
     const choiceMessage = {
       type: 'GAME_ACTION',
       gameId: gameId,
@@ -1069,8 +882,15 @@ const UnifiedGamePage = () => {
       player: address
     }
     
-    // Ensure the message is serializable
-    wsRef.send(JSON.stringify(choiceMessage))
+    console.log('📤 Sending choice to server:', choiceMessage)
+    
+    // Send as proper WebSocket message
+    if (wsRef.readyState === WebSocket.OPEN) {
+      wsRef.send(JSON.stringify(choiceMessage))
+    } else {
+      console.error('❌ WebSocket not open, state:', wsRef.readyState)
+      showError('Connection lost. Please refresh the page.')
+    }
   }
   
   const handleAutoFlip = () => {

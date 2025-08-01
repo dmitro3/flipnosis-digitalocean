@@ -1,24 +1,13 @@
 import { ethers } from 'ethers'
 import { Alchemy, Network } from 'alchemy-sdk'
+import { createWalletClient, createPublicClient, http, custom } from 'viem'
+import { base } from 'viem/chains'
 
 // Contract configuration
 const CONTRACT_ADDRESS = '0x3997F4720B3a515e82d54F30d7CF2993B014EeBE'
 
-// Multiple RPC endpoints with fallback
-const RPC_ENDPOINTS = [
-  'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5R3', // Primary Alchemy
-  'https://base.blockpi.network/v1/rpc/public', // Fallback 1
-  'https://mainnet.base.org', // Fallback 2
-  'https://base.drpc.org' // Fallback 3
-]
-
-// Rate limiting configuration
-const RATE_LIMIT_CONFIG = {
-  maxRetries: 3,
-  baseDelay: 1000, // 1 second
-  maxDelay: 5000, // 5 seconds
-  rateLimitDelay: 2000 // 2 seconds for rate limit errors
-}
+// Use Alchemy RPC endpoint directly
+const ALCHEMY_RPC_URL = 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
@@ -57,13 +46,6 @@ const CONTRACT_ABI = [
     outputs: []
   },
   {
-    name: 'reclaimAssets',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: 'gameId', type: 'bytes32' }],
-    outputs: []
-  },
-  {
     name: 'games',
     type: 'function',
     stateMutability: 'view',
@@ -96,21 +78,18 @@ const CONTRACT_ABI = [
     outputs: [{ name: '', type: 'uint256' }]
   },
   {
-    name: 'canDeposit',
+    name: 'canStartGame',
     type: 'function',
     stateMutability: 'view',
     inputs: [{ name: 'gameId', type: 'bytes32' }],
     outputs: [{ name: '', type: 'bool' }]
   },
   {
-    name: 'depositUSDC',
+    name: 'canDeposit',
     type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'gameId', type: 'bytes32' },
-      { name: 'amount', type: 'uint256' }
-    ],
-    outputs: []
+    stateMutability: 'view',
+    inputs: [{ name: 'gameId', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'bool' }]
   },
   {
     name: 'emergencyWithdrawETH',
@@ -140,30 +119,10 @@ const CONTRACT_ABI = [
       { name: 'recipients', type: 'address[]' }
     ],
     outputs: []
-  },
-  {
-    name: 'getGameDetails',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'gameId', type: 'bytes32' }],
-    outputs: [
-      { name: 'player1', type: 'address' },
-      { name: 'player2', type: 'address' },
-      { name: 'nftContract', type: 'address' },
-      { name: 'tokenId', type: 'uint256' },
-      { name: 'ethAmount', type: 'uint256' },
-      { name: 'usdcAmount', type: 'uint256' },
-      { name: 'paymentToken', type: 'uint8' },
-      { name: 'depositTime', type: 'uint256' },
-      { name: 'player1Deposited', type: 'bool' },
-      { name: 'player2Deposited', type: 'bool' },
-      { name: 'completed', type: 'bool' },
-      { name: 'winner', type: 'address' }
-    ]
   }
 ]
 
-// NFT ABI for approval
+// NFT Contract ABI for approvals
 const NFT_ABI = [
   {
     name: 'approve',
@@ -181,101 +140,110 @@ const NFT_ABI = [
     stateMutability: 'view',
     inputs: [{ name: 'tokenId', type: 'uint256' }],
     outputs: [{ name: '', type: 'address' }]
+  },
+  {
+    name: 'isApprovedForAll',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'operator', type: 'address' }
+    ],
+    outputs: [{ name: '', type: 'bool' }]
+  },
+  {
+    name: 'setApprovalForAll',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'operator', type: 'address' },
+      { name: 'approved', type: 'bool' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'safeTransferFrom',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'tokenId', type: 'uint256' }
+    ],
+    outputs: []
   }
 ]
 
-class CleanContractService {
+// Cache for ETH prices to reduce RPC calls
+const priceCache = new Map()
+const CACHE_DURATION = 30000 // 30 seconds
+
+class ContractService {
   constructor() {
     this.contractAddress = CONTRACT_ADDRESS
+    this.contract = null
     this.walletClient = null
     this.publicClient = null
-    this.contract = null
     this.account = null
     this.alchemy = null
     this.currentChain = null
-    
-    // Rate limiting state
-    this.currentRpcIndex = 0
-    this.lastRequestTime = 0
-    this.requestCount = 0
-    this.rateLimitResetTime = 0
+    this.initialized = false
   }
 
-  // Rate limiting helper methods
-  async waitForRateLimit() {
-    const now = Date.now()
-    const timeSinceLastRequest = now - this.lastRequestTime
-    
-    // Reset rate limit counter if enough time has passed
-    if (now > this.rateLimitResetTime) {
-      this.requestCount = 0
-      this.rateLimitResetTime = now + 60000 // Reset every minute
-    }
-    
-    // Enforce minimum delay between requests
-    if (timeSinceLastRequest < 200) { // 200ms minimum delay
-      await new Promise(resolve => setTimeout(resolve, 200 - timeSinceLastRequest))
-    }
-    
-    this.lastRequestTime = Date.now()
-    this.requestCount++
-  }
-  
-  switchToNextRpc() {
-    this.currentRpcIndex = (this.currentRpcIndex + 1) % RPC_ENDPOINTS.length
-    console.log(`🔄 Switched to RPC endpoint ${this.currentRpcIndex + 1}/${RPC_ENDPOINTS.length}: ${RPC_ENDPOINTS[this.currentRpcIndex]}`)
-  }
-  
-  async executeWithRetry(operation, maxRetries = RATE_LIMIT_CONFIG.maxRetries) {
-    let lastError = null
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        await this.waitForRateLimit()
-        return await operation()
-      } catch (error) {
-        lastError = error
-        console.warn(`⚠️ Attempt ${attempt + 1} failed:`, error.message)
-        
-        // Check if it's a rate limit error
-        if (error.message.includes('429') || error.message.includes('rate limit') || error.message.includes('over rate limit')) {
-          console.log(`🔄 Rate limit hit, switching RPC endpoint and retrying...`)
-          this.switchToNextRpc()
-          
-          // Wait longer for rate limit errors
-          const delay = Math.min(RATE_LIMIT_CONFIG.rateLimitDelay * (attempt + 1), RATE_LIMIT_CONFIG.maxDelay)
-          await new Promise(resolve => setTimeout(resolve, delay))
-        } else if (attempt < maxRetries) {
-          // For other errors, use exponential backoff
-          const delay = Math.min(RATE_LIMIT_CONFIG.baseDelay * Math.pow(2, attempt), RATE_LIMIT_CONFIG.maxDelay)
-          await new Promise(resolve => setTimeout(resolve, delay))
-        }
-      }
-    }
-    
-    throw lastError
-  }
-
-  // Initialize with Viem clients (walletClient and publicClient)
-  async initialize(walletClient, publicClient) {
+  // Initialize the service with Viem
+  async initialize(walletClient, address) {
     try {
-      if (!walletClient || !publicClient) {
-        throw new Error('Wallet client and public client are required')
+      console.log('🔧 Initializing contract service...', {
+        isFullyConnected: !!walletClient && !!address,
+        hasWalletClient: !!walletClient,
+        address
+      })
+
+      if (!walletClient || !address) {
+        console.error('❌ Missing wallet client or address')
+        return { success: false, error: 'Wallet not connected' }
       }
 
-      // Store the Viem clients directly
+      // Store wallet client and account
       this.walletClient = walletClient
-      this.publicClient = publicClient
-      
-      // Get account address from wallet client
-      this.account = walletClient.account?.address
-      if (!this.account) {
-        throw new Error('No account address available from wallet client')
-      }
-      
-      // Create contract instance using Viem clients
+      this.account = address
+
+      // Create public client with Alchemy RPC
+      this.publicClient = createPublicClient({
+        chain: base,
+        transport: http(ALCHEMY_RPC_URL)
+      })
+
+      // Create contract instance
       this.contract = {
-        // Contract methods that use Viem clients
+        // View functions using public client
+        getETHAmount: async (usdAmount) => {
+          const cacheKey = `eth_price_${Math.round(usdAmount / 1000000)}`
+          const cached = priceCache.get(cacheKey)
+          
+          if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+            console.log('💰 Using cached ETH price')
+            return cached.value
+          }
+
+          try {
+            const result = await this.publicClient.readContract({
+              address: this.contractAddress,
+              abi: CONTRACT_ABI,
+              functionName: 'getETHAmount',
+              args: [usdAmount]
+            })
+            
+            priceCache.set(cacheKey, { value: result, timestamp: Date.now() })
+            return result
+          } catch (error) {
+            console.error('❌ Error getting ETH amount:', error)
+            // Fallback calculation
+            const ethPriceUSD = 3500 // Conservative estimate
+            const ethAmountWei = (Number(usdAmount) / 1000000 * 1e18) / ethPriceUSD
+            return BigInt(Math.floor(ethAmountWei))
+          }
+        },
         listingFeeUSD: async () => {
           return await this.publicClient.readContract({
             address: this.contractAddress,
@@ -283,11 +251,37 @@ class CleanContractService {
             functionName: 'listingFeeUSD'
           })
         },
+        games: async (gameId) => {
+          return await this.publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'games',
+            args: [gameId]
+          })
+        },
+        canStartGame: async (gameId) => {
+          return await this.publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'canStartGame',
+            args: [gameId]
+          })
+        },
+        canDeposit: async (gameId) => {
+          return await this.publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'canDeposit',
+            args: [gameId]
+          })
+        },
+        // Write functions using wallet client
         payListingFee: async (value) => {
           return await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'payListingFee',
+            args: [],
             value
           })
         },
@@ -314,97 +308,25 @@ class CleanContractService {
             abi: CONTRACT_ABI,
             functionName: 'depositETH',
             args: [gameId],
-            value: value
-          })
-        },
-        depositUSDC: async (gameId, amount) => {
-          return await this.walletClient.writeContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'depositUSDC',
-            args: [gameId, amount]
-          })
-        },
-        reclaimAssets: async (gameId) => {
-          return await this.walletClient.writeContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'reclaimAssets',
-            args: [gameId]
-          })
-        },
-        games: async (gameId) => {
-          return await this.publicClient.readContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'games',
-            args: [gameId]
-          })
-        },
-        getETHAmount: async (usdAmount) => {
-          return await this.executeWithRetry(async () => {
-            return await this.publicClient.readContract({
-              address: this.contractAddress,
-              abi: CONTRACT_ABI,
-              functionName: 'getETHAmount',
-              args: [usdAmount]
-            })
-          })
-        },
-        canDeposit: async (gameId) => {
-          return await this.publicClient.readContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'canDeposit',
-            args: [gameId]
-          })
-        },
-        getGameDetails: async (gameId) => {
-          return await this.publicClient.readContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'getGameDetails',
-            args: [gameId]
-          })
-        },
-        emergencyWithdrawETH: async () => {
-          return await this.walletClient.writeContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'emergencyWithdrawETH'
-          })
-        },
-        emergencyWithdrawNFT: async (nftContract, tokenId, to) => {
-          return await this.walletClient.writeContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'emergencyWithdrawNFT',
-            args: [nftContract, tokenId, to]
-          })
-        },
-        adminBatchWithdrawNFTs: async (nftContracts, tokenIds, recipients) => {
-          return await this.walletClient.writeContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'adminBatchWithdrawNFTs',
-            args: [nftContracts, tokenIds, recipients]
+            value
           })
         }
       }
-      
+
       // Check contract deployment
       const deploymentCheck = await this.checkContractDeployment()
       if (!deploymentCheck.success) {
         throw new Error('Contract not properly deployed: ' + deploymentCheck.error)
       }
-      
+
       // Initialize Alchemy for NFT fetching
       await this.initializeAlchemy()
-      
+
       console.log('✅ Contract service initialized with Viem clients')
       console.log('🔗 Contract address:', this.contractAddress)
       console.log('👤 Account address:', this.account)
-      
+
+      this.initialized = true
       return { success: true }
     } catch (error) {
       console.error('❌ Error initializing contract service:', error)
@@ -415,11 +337,9 @@ class CleanContractService {
   // Initialize Alchemy for NFT fetching
   async initializeAlchemy() {
     try {
-      // Get network info from public client
       const chainId = await this.publicClient.getChainId()
       const chainIdStr = chainId.toString()
-      
-      // Map chain ID to Alchemy network
+
       const chainToNetwork = {
         '1': Network.ETH_MAINNET,
         '137': Network.MATIC_MAINNET,
@@ -429,116 +349,75 @@ class CleanContractService {
         '56': Network.BSC_MAINNET,
         '43114': Network.AVAX_MAINNET
       }
-      
+
       const alchemyNetwork = chainToNetwork[chainIdStr]
       if (!alchemyNetwork) {
         console.warn('⚠️ Unsupported network for Alchemy:', chainIdStr)
         return
       }
-      
-      // Use Alchemy API key
+
       const apiKey = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
-      
+
       this.alchemy = new Alchemy({
         apiKey,
         network: alchemyNetwork
       })
-      
+
       this.currentChain = {
         id: chainIdStr,
         name: Object.keys(chainToNetwork).find(key => chainToNetwork[key] === alchemyNetwork) || 'Unknown',
         network: alchemyNetwork
       }
-      
+
       console.log('✅ Alchemy initialized for network:', alchemyNetwork)
     } catch (error) {
       console.error('❌ Error initializing Alchemy:', error)
     }
   }
 
-  // Check if service is ready (backward compatibility)
+  // Check if service is ready
   isReady() {
-    return !!(this.walletClient && this.publicClient && this.contract && this.account)
+    return !!this.walletClient && !!this.publicClient && !!this.account && this.initialized
   }
 
-  // Check if service is initialized (AdminPanel expects this)
   isInitialized() {
-    return this.isReady()
+    return this.initialized
   }
 
-  // Get current clients (AdminPanel expects this)
-  getCurrentClients() {
-    return {
-      public: this.publicClient,
-      walletClient: this.walletClient
-    }
-  }
-
-  // Get game ID as bytes32
-  getGameIdBytes32(gameId) {
-    return ethers.id(gameId)
-  }
-
-  // Get listing fee in ETH
-  async getListingFee() {
-    if (!this.isReady()) {
-      return { success: false, error: 'Contract service not initialized' }
-    }
-    
+  // Check contract deployment
+  async checkContractDeployment() {
     try {
-      const listingFeeUSD = await this.contract.listingFeeUSD()
-      const ethAmount = await this.contract.getETHAmount(listingFeeUSD)
-      
-      return {
-        success: true,
-        fee: ethAmount,
-        feeFormatted: ethers.formatEther(ethAmount)
+      if (!this.publicClient) {
+        console.error('❌ Public client not available for contract check')
+        return { success: false, error: 'Public client not available' }
       }
+
+      const code = await this.publicClient.getBytecode({ address: this.contractAddress })
+      if (!code || code === '0x') {
+        console.error('❌ No contract deployed at address:', this.contractAddress)
+        return { success: false, error: 'Contract not deployed' }
+      }
+
+      try {
+        const listingFeeUSD = await this.contract.listingFeeUSD()
+        console.log('✅ Contract found. Listing fee:', ethers.formatUnits(listingFeeUSD, 6), 'USD')
+      } catch (feeError) {
+        console.warn('⚠️ Could not fetch listing fee, but contract exists:', feeError.message)
+      }
+
+      return { success: true }
     } catch (error) {
-      console.error('❌ Error getting listing fee:', error)
+      console.error('❌ Contract check failed:', error)
       return { success: false, error: error.message }
     }
   }
 
-  // Pay listing fee
-  async payListingFee() {
+  // Create a new game
+  async createGame(gameId, nftContract, tokenId, priceUSD, paymentToken = 0) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
+      return { success: false, error: 'Contract service not initialized' }
     }
-    
-    try {
-      const feeResult = await this.getListingFee()
-      if (!feeResult.success) {
-        return feeResult
-      }
 
-      console.log('💰 Listing fee:', feeResult.feeFormatted, 'ETH')
-      
-      const hash = await this.contract.payListingFee({ value: feeResult.fee })
-      console.log('📝 Listing fee tx:', hash)
-      
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
-      }
-    } catch (error) {
-      console.error('❌ Error paying listing fee:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  // Pay fee and create game in one transaction (simplified 2-step process)
-  async payFeeAndCreateGame(gameId, nftContract, tokenId, priceUSD, paymentToken = 0) {
-    if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
-    }
-    
     try {
       console.log('🎮 Creating game with params:', {
         gameId,
@@ -548,7 +427,7 @@ class CleanContractService {
         paymentToken
       })
 
-      // Get the ETH amount for the price
+      // Get the ETH amount for the price (with caching)
       const ethAmount = await this.contract.getETHAmount(priceUSD)
       console.log('💰 ETH amount for price:', ethers.formatEther(ethAmount), 'ETH')
 
@@ -557,19 +436,7 @@ class CleanContractService {
       console.log('🆔 Game ID bytes32:', gameIdBytes32)
 
       // Ensure value is a BigInt
-      let value
-      if (typeof ethAmount === 'object' && ethAmount !== null) {
-        // If it's already a BigInt or similar object, extract the value
-        if (ethAmount.toString) {
-          value = BigInt(ethAmount.toString())
-        } else {
-          throw new Error('Invalid ETH amount format')
-        }
-      } else {
-        // Convert to BigInt
-        value = BigInt(ethAmount)
-      }
-
+      const value = BigInt(ethAmount.toString())
       console.log('💸 Transaction value (BigInt):', value.toString())
 
       // Call the contract function
@@ -596,60 +463,25 @@ class CleanContractService {
       }
     } catch (error) {
       console.error('❌ Error creating game:', error)
-      
-      // Provide more specific error messages
+
       if (error.message.includes('insufficient funds')) {
         return { success: false, error: 'Insufficient ETH balance for game creation' }
       } else if (error.message.includes('user rejected')) {
         return { success: false, error: 'Transaction was rejected by user' }
-      } else if (error.message.includes('BigInt')) {
-        return { success: false, error: 'Invalid amount format. Please try again.' }
       } else {
         return { success: false, error: error.message }
       }
     }
   }
 
-  // Add this method to check if price feed is working
-  async checkPriceFeed() {
-    try {
-      const ethAmount = await this.contract.getETHAmount(ethers.parseUnits("1", 6)) // $1 USD
-      console.log('✅ Price feed working. 1 USD = ', ethers.formatEther(ethAmount), 'ETH')
-      return { success: true, ethAmount }
-    } catch (error) {
-      console.error('❌ Price feed error:', error)
-      return { success: false, error: error.message }
-    }
+  // Backward compatibility method
+  async payFeeAndCreateGame(gameId, nftContract, tokenId, priceUSD, paymentToken = 0) {
+    return this.createGame(gameId, nftContract, tokenId, priceUSD, paymentToken)
   }
 
-  // Add this method to check contract deployment
-  async checkContractDeployment() {
-    try {
-      if (!this.publicClient) {
-        console.error('❌ Public client not available for contract check')
-        return { success: false, error: 'Public client not available' }
-      }
-
-      const code = await this.publicClient.getBytecode({ address: this.contractAddress })
-      if (!code || code === '0x') {
-        console.error('❌ No contract deployed at address:', this.contractAddress)
-        return { success: false, error: 'Contract not deployed' }
-      }
-      
-      // Try to get the listing fee to verify contract is working
-      try {
-        const listingFeeUSD = await this.contract.listingFeeUSD()
-        console.log('✅ Contract found. Listing fee:', ethers.formatUnits(listingFeeUSD, 6), 'USD')
-      } catch (feeError) {
-        console.warn('⚠️ Could not fetch listing fee, but contract exists:', feeError.message)
-        // Don't fail the check if we can't get the fee, just warn
-      }
-      
-      return { success: true }
-    } catch (error) {
-      console.error('❌ Contract check failed:', error)
-      return { success: false, error: error.message }
-    }
+  // Convert game ID to bytes32
+  getGameIdBytes32(gameId) {
+    return ethers.id(gameId)
   }
 
   // Approve NFT for deposit
@@ -657,391 +489,161 @@ class CleanContractService {
     if (!this.isReady()) {
       return { success: false, error: 'Wallet not connected or contract service not initialized.' }
     }
-    
+
     try {
-      // Check current approval using public client
-      const currentApproval = await this.publicClient.readContract({
+      // Check if already approved
+      const approved = await this.publicClient.readContract({
         address: nftContract,
         abi: NFT_ABI,
         functionName: 'getApproved',
         args: [tokenId]
       })
-      
-      if (currentApproval.toLowerCase() === this.contractAddress.toLowerCase()) {
+
+      if (approved.toLowerCase() === this.contractAddress.toLowerCase()) {
         console.log('✅ NFT already approved')
         return { success: true, alreadyApproved: true }
       }
 
-      // Approve using wallet client
+      // Approve NFT
       const hash = await this.walletClient.writeContract({
         address: nftContract,
         abi: NFT_ABI,
         functionName: 'approve',
         args: [this.contractAddress, tokenId]
       })
+
       console.log('🔐 NFT approval tx:', hash)
 
+      // Wait for confirmation
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ NFT approval confirmed')
 
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
-      }
+      return { success: true, transactionHash: hash, receipt }
     } catch (error) {
       console.error('❌ Error approving NFT:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+      return { success: false, error: error.message }
     }
   }
 
-  // Deposit NFT (player 1)
-  async depositNFT(gameId, nftContract, tokenId) {
+  // Deposit NFT to game
+  async depositNFT(gameId, nftContract = null, tokenId = null) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
+      return { success: false, error: 'Contract service not initialized' }
     }
-    
+
     try {
-      // First approve if needed
-      const approvalResult = await this.approveNFT(nftContract, tokenId)
-      if (!approvalResult.success && !approvalResult.alreadyApproved) {
-        return approvalResult
-      }
-
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
-
-      // Check if can deposit
+      
+      // Check if deposit is allowed
       const canDeposit = await this.contract.canDeposit(gameIdBytes32)
       console.log('🔍 Can deposit check result:', canDeposit)
-      
+
       if (!canDeposit) {
-        // Get more detailed game info to help debug
-        try {
-          const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
-          console.log('🔍 Game details for debugging:', gameDetails)
-          
-          // Check if game exists
-          if (gameDetails.player1 === '0x0000000000000000000000000000000000000000') {
-            throw new Error('Game does not exist on blockchain')
-          }
-          
-          // Check if game is completed
-          if (gameDetails.completed) {
-            throw new Error('Game is already completed')
-          }
-          
-          // Check if deposit timeout has expired
-          const currentTime = Math.floor(Date.now() / 1000)
-          const depositTime = Number(gameDetails.depositTime)
-          const timeout = await this.contract.depositTimeout()
-          const timeLeft = (depositTime + Number(timeout)) - currentTime
-          
-          console.log('⏰ Timeout debug:', {
-            currentTime,
-            depositTime,
-            timeout: timeout.toString(),
-            timeLeft,
-            isExpired: timeLeft <= 0
-          })
-          
-          if (timeLeft <= 0) {
-            throw new Error(`Deposit timeout expired. Time left: ${timeLeft} seconds`)
-          }
-          
-          throw new Error('Cannot deposit - game expired or already completed')
-        } catch (detailError) {
-          console.error('🔍 Detailed error info:', detailError)
-          throw new Error(`Cannot deposit - game expired or already completed. Details: ${detailError.message}`)
+        return { success: false, error: 'Deposit period has expired or game is not active' }
+      }
+
+      // If NFT contract and token ID are provided, approve first
+      if (nftContract && tokenId) {
+        const approvalResult = await this.approveNFT(nftContract, tokenId)
+        if (!approvalResult.success && !approvalResult.alreadyApproved) {
+          return approvalResult
         }
       }
 
-      // Deposit NFT
       const hash = await this.contract.depositNFT(gameIdBytes32)
-      console.log('🎮 NFT deposit tx:', hash)
+      console.log('📦 NFT deposit tx:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ NFT deposit confirmed')
 
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
-      }
+      return { success: true, transactionHash: hash, receipt }
     } catch (error) {
       console.error('❌ Error depositing NFT:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+      return { success: false, error: error.message }
     }
   }
 
-  // Deposit ETH (player 2)
+  // Deposit ETH to game
   async depositETH(gameId, ethAmount) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
+      return { success: false, error: 'Contract service not initialized' }
     }
-    
+
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
 
-      // Check if can deposit
+      // Check if deposit is allowed
       const canDeposit = await this.contract.canDeposit(gameIdBytes32)
-      console.log('🔍 Can deposit check result (ETH):', canDeposit)
-      
       if (!canDeposit) {
-        // Get more detailed game info to help debug
-        try {
-          const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
-          console.log('🔍 Game details for debugging (ETH):', gameDetails)
-          
-          // Check if game exists
-          if (gameDetails.player1 === '0x0000000000000000000000000000000000000000') {
-            throw new Error('Game does not exist on blockchain')
-          }
-          
-          // Check if game is completed
-          if (gameDetails.completed) {
-            throw new Error('Game is already completed')
-          }
-          
-          // Check if deposit timeout has expired
-          const currentTime = Math.floor(Date.now() / 1000)
-          const depositTime = Number(gameDetails.depositTime)
-          const timeout = await this.contract.depositTimeout()
-          const timeLeft = (depositTime + Number(timeout)) - currentTime
-          
-          console.log('⏰ Timeout debug (ETH):', {
-            currentTime,
-            depositTime,
-            timeout: timeout.toString(),
-            timeLeft,
-            isExpired: timeLeft <= 0
-          })
-          
-          if (timeLeft <= 0) {
-            throw new Error(`Deposit timeout expired. Time left: ${timeLeft} seconds`)
-          }
-          
-          throw new Error('Cannot deposit - game expired or already completed')
-        } catch (detailError) {
-          console.error('🔍 Detailed error info (ETH):', detailError)
-          throw new Error(`Cannot deposit - game expired or already completed. Details: ${detailError.message}`)
-        }
+        return { success: false, error: 'Deposit period has expired or game is not active' }
       }
 
-      // Ensure ethAmount is a BigInt
-      let value
-      console.log('🔍 ETH amount before conversion:', ethAmount)
-      console.log('🔍 ETH amount type:', typeof ethAmount)
-      console.log('🔍 ETH amount constructor:', ethAmount?.constructor?.name)
-      
-      if (typeof ethAmount === 'object' && ethAmount !== null) {
-        // If it's already a BigInt or similar object, extract the value
-        if (ethAmount.toString) {
-          value = BigInt(ethAmount.toString())
-          console.log('🔍 Converted object to BigInt:', value.toString())
-        } else {
-          throw new Error('Invalid ETH amount format - object without toString method')
-        }
-      } else if (typeof ethAmount === 'bigint') {
-        // Already a BigInt
-        value = ethAmount
-        console.log('🔍 Already BigInt:', value.toString())
-      } else {
-        // Convert to BigInt
-        value = BigInt(ethAmount)
-        console.log('🔍 Converted to BigInt:', value.toString())
-      }
-
-      console.log('💰 Depositing:', ethers.formatEther(value), 'ETH')
-
-      // Deposit ETH
+      const value = BigInt(ethAmount)
       const hash = await this.contract.depositETH(gameIdBytes32, value)
-      console.log('💎 ETH deposit tx:', hash)
+      console.log('💰 ETH deposit tx:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ ETH deposit confirmed')
 
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
-      }
+      return { success: true, transactionHash: hash, receipt }
     } catch (error) {
       console.error('❌ Error depositing ETH:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+      return { success: false, error: error.message }
     }
   }
 
-  // Deposit USDC (player 2)
-  async depositUSDC(gameId, usdcAmount, usdcTokenAddress) {
+  // Get game details
+  async getGameDetails(gameId) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
+      return { success: false, error: 'Contract service not initialized' }
     }
-    
+
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      
-      // Check if can deposit
-      const canDeposit = await this.contract.canDeposit(gameIdBytes32)
-      console.log('🔍 Can deposit check result (USDC):', canDeposit)
-      
-      if (!canDeposit) {
-        // Get more detailed game info to help debug
-        try {
-          const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
-          console.log('🔍 Game details for debugging (USDC):', gameDetails)
-          
-          // Check if game exists
-          if (gameDetails.player1 === '0x0000000000000000000000000000000000000000') {
-            throw new Error('Game does not exist on blockchain')
-          }
-          
-          // Check if game is completed
-          if (gameDetails.completed) {
-            throw new Error('Game is already completed')
-          }
-          
-          // Check if deposit timeout has expired
-          const currentTime = Math.floor(Date.now() / 1000)
-          const depositTime = Number(gameDetails.depositTime)
-          const timeout = await this.contract.depositTimeout()
-          const timeLeft = (depositTime + Number(timeout)) - currentTime
-          
-          console.log('⏰ Timeout debug (USDC):', {
-            currentTime,
-            depositTime,
-            timeout: timeout.toString(),
-            timeLeft,
-            isExpired: timeLeft <= 0
-          })
-          
-          if (timeLeft <= 0) {
-            throw new Error(`Deposit timeout expired. Time left: ${timeLeft} seconds`)
-          }
-          
-          throw new Error('Cannot deposit - game expired or already completed')
-        } catch (detailError) {
-          console.error('🔍 Detailed error info (USDC):', detailError)
-          throw new Error(`Cannot deposit - game expired or already completed. Details: ${detailError.message}`)
-        }
-      }
-
-      // USDC ABI for approval
-      const ERC20_ABI = [
-        {
-          name: 'approve',
-          type: 'function',
-          stateMutability: 'nonpayable',
-          inputs: [
-            { name: 'spender', type: 'address' },
-            { name: 'amount', type: 'uint256' }
-          ],
-          outputs: [{ type: 'bool' }]
-        }
-      ]
-
-      // Approve USDC spending using Viem clients
-      const approveHash = await this.walletClient.writeContract({
-        address: usdcTokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [this.contractAddress, usdcAmount]
-      })
-      await this.publicClient.waitForTransactionReceipt({ hash: approveHash })
-      console.log('✅ USDC approval confirmed')
-
-      // Deposit USDC
-      const hash = await this.contract.depositUSDC(gameIdBytes32, usdcAmount)
-      console.log('💎 USDC deposit tx:', hash)
-
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const gameData = await this.contract.games(gameIdBytes32)
 
       return {
         success: true,
-        transactionHash: hash,
-        receipt
+        data: {
+          player1: gameData[0],
+          player2: gameData[1],
+          nftContract: gameData[2],
+          tokenId: gameData[3].toString(),
+          ethAmount: gameData[4].toString(),
+          depositTime: gameData[5].toString(),
+          player1Deposited: gameData[6],
+          player2Deposited: gameData[7],
+          completed: gameData[8],
+          winner: gameData[9]
+        }
       }
     } catch (error) {
-      console.error('❌ Error depositing USDC:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+      console.error('❌ Error getting game details:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  // Reclaim assets when game is cancelled or expired
-  async reclaimAssets(gameId) {
-    if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
-    }
-    
-    try {
-      const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      
-      const hash = await this.contract.reclaimAssets(gameIdBytes32)
-      console.log('🔄 Reclaim assets tx:', hash)
-
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-
-      return {
-        success: true,
-        transactionHash: hash,
-        receipt
-      }
-    } catch (error) {
-      console.error('❌ Error reclaiming assets:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  // Get game info from contract
-  async getGameInfo(gameId) {
+  // Admin methods for backward compatibility
+  async getListingFee() {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
     }
     
     try {
-      const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      
-      // Use the getGameDetails function from the smart contract
-      const gameDetails = await this.contract.getGameDetails(gameIdBytes32)
+      const listingFeeUSD = await this.contract.listingFeeUSD()
+      const ethAmount = await this.contract.getETHAmount(listingFeeUSD)
       
       return {
         success: true,
-        gameInfo: {
-          player1: gameDetails[0], // player1
-          player2: gameDetails[1], // player2
-          nftContract: gameDetails[2], // nftContract
-          tokenId: gameDetails[3].toString(), // tokenId
-          ethAmount: gameDetails[4].toString(), // ethAmount
-          usdcAmount: gameDetails[5].toString(), // usdcAmount
-          paymentToken: gameDetails[6], // paymentToken
-          depositTime: gameDetails[7].toString(), // depositTime
-          player1Deposited: gameDetails[8], // player1Deposited
-          player2Deposited: gameDetails[9], // player2Deposited
-          completed: gameDetails[10], // completed
-          winner: gameDetails[11] // winner
-        }
+        fee: ethAmount,
+        feeFormatted: ethers.formatEther(ethAmount)
       }
     } catch (error) {
-      console.error('❌ Error getting game info:', error)
-      return {
-        success: false,
-        error: error.message
-      }
+      console.error('❌ Error getting listing fee:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  // Get platform fee (AdminPanel expects this)
   async getPlatformFee() {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
@@ -1061,7 +663,6 @@ class CleanContractService {
     }
   }
 
-  // Update platform fee (AdminPanel expects this)
   async updatePlatformFee(newFeePercent) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
@@ -1085,7 +686,6 @@ class CleanContractService {
     }
   }
 
-  // Update listing fee (AdminPanel expects this)
   async updateListingFee(newFeeUSD) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
@@ -1109,60 +709,6 @@ class CleanContractService {
     }
   }
 
-  // Emergency cancel game (AdminPanel expects this)
-  async emergencyCancelGame(gameId) {
-    if (!this.isReady()) {
-      return { success: false, error: 'Contract service not initialized' }
-    }
-    
-    try {
-      const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      
-      // This would need to be implemented based on the actual contract
-      // For now, just return success
-      console.log('🚨 Emergency cancelling game:', gameId)
-      
-      return {
-        success: true,
-        message: `Game ${gameId} emergency cancelled`
-      }
-    } catch (error) {
-      console.error('❌ Error emergency cancelling game:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  // Withdraw platform fees (AdminPanel expects this)
-  async withdrawPlatformFees() {
-    if (!this.isReady()) {
-      return { success: false, error: 'Contract service not initialized' }
-    }
-    
-    try {
-      console.log('💰 Withdrawing platform fees')
-      
-      // Call the emergencyWithdrawETH function to withdraw accumulated fees
-      const hash = await this.contract.emergencyWithdrawETH()
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      
-      return {
-        success: true,
-        message: 'Platform fees withdrawn successfully',
-        transactionHash: hash
-      }
-    } catch (error) {
-      console.error('❌ Error withdrawing platform fees:', error)
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-  }
-
-  // Emergency withdraw NFT from contract (AdminPanel expects this)
   async emergencyWithdrawNFT(gameId) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
@@ -1172,12 +718,12 @@ class CleanContractService {
       console.log('🚨 Emergency withdrawing NFT for game:', gameId)
       
       // Get game details to find the NFT contract and token ID
-      const gameResult = await this.getGameInfo(gameId)
+      const gameResult = await this.getGameDetails(gameId)
       if (!gameResult.success) {
         throw new Error(gameResult.error || 'Failed to get game info')
       }
       
-      const gameInfo = gameResult.gameInfo
+      const gameInfo = gameResult.data
       if (!gameInfo.nftContract || gameInfo.nftContract === '0x0000000000000000000000000000000000000000') {
         throw new Error('No NFT found for this game')
       }
@@ -1186,11 +732,12 @@ class CleanContractService {
       const recipient = this.account
       
       // Call the emergencyWithdrawNFT function
-      const hash = await this.contract.emergencyWithdrawNFT(
-        gameInfo.nftContract,
-        gameInfo.tokenId,
-        recipient
-      )
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawNFT',
+        args: [gameInfo.nftContract, gameInfo.tokenId, recipient]
+      })
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
       
       return {
@@ -1207,7 +754,36 @@ class CleanContractService {
     }
   }
 
-  // Admin batch withdraw NFTs (AdminPanel expects this)
+  async withdrawPlatformFees() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      console.log('💰 Withdrawing platform fees')
+      
+      // Call the emergencyWithdrawETH function to withdraw accumulated fees
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawETH'
+      })
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        message: 'Platform fees withdrawn successfully',
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('❌ Error withdrawing platform fees:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
   async adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
@@ -1217,7 +793,12 @@ class CleanContractService {
       console.log('📦 Batch withdrawing NFTs:', { nftContracts, tokenIds, recipients })
       
       // Call the adminBatchWithdrawNFTs function
-      const hash = await this.contract.adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients)
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'adminBatchWithdrawNFTs',
+        args: [nftContracts, tokenIds, recipients]
+      })
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
       
       return {
@@ -1234,13 +815,14 @@ class CleanContractService {
     }
   }
 
-  // Get game details (AdminPanel expects this)
-  async getGameDetails(gameId) {
-    // This is the same as getGameInfo for backward compatibility
-    return this.getGameInfo(gameId)
+  getCurrentClients() {
+    return {
+      public: this.publicClient,
+      walletClient: this.walletClient
+    }
   }
 }
 
 // Export singleton instance
-const contractService = new CleanContractService()
+const contractService = new ContractService()
 export default contractService 
