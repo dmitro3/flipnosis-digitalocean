@@ -266,6 +266,12 @@ const UnifiedGamePage = () => {
     chargingPlayer: null
   })
   
+  // Player choice display state
+  const [playerChoices, setPlayerChoices] = useState({
+    creator: null,
+    joiner: null
+  })
+  
   const [readyNFTStatus, setReadyNFTStatus] = useState({ ready: false, nft: null })
   
   // Coin state
@@ -284,13 +290,11 @@ const UnifiedGamePage = () => {
   // UI state
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
-  const [messages, setMessages] = useState([])
   const [offers, setOffers] = useState([])
   const [showOfferReviewModal, setShowOfferReviewModal] = useState(false)
   const [pendingNFTOffer, setPendingNFTOffer] = useState(null)
   
-  // Chat and offer state
-  const [newMessage, setNewMessage] = useState('')
+  // Offer state
   const [newOffer, setNewOffer] = useState({ price: '', message: '' })
   const [creatingOffer, setCreatingOffer] = useState(false)
   
@@ -301,28 +305,9 @@ const UnifiedGamePage = () => {
       const response = await fetch(`${getApiUrl()}/api/games/${gameId}`)
       
       if (!response.ok) {
-        // If API is not available, use mock data
-        console.log('⚠️ API not available, using mock game data')
-        const mockGameData = {
-          id: gameId,
-          creator: address,
-          joiner: null,
-          price: 150000, // $0.15 in microdollars
-          nft: {
-            name: 'Based Ape 2025 #1271',
-            collection: 'Based Ape 2025',
-            image: 'https://ipfs.io/ipfs/QmT8559uspQQcfsAF2VTd3Um2zLjjjTpa7BUGXaDQybfqy',
-            contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-            tokenId: '1271'
-          },
-          coinData: {
-            headsImage: '/coins/plainh.png',
-            tailsImage: '/coins/plaint.png'
-          },
-          status: 'waiting',
-          created_at: new Date().toISOString()
-        }
-        setGameData(mockGameData)
+        // If API is not available, show error
+        console.log('⚠️ API not available')
+        setError('Game not found or API unavailable')
         setLoading(false)
         return
       }
@@ -336,29 +321,9 @@ const UnifiedGamePage = () => {
     } catch (err) {
       console.error('Error loading game data:', err)
       
-      // Use mock data as fallback
-      console.log('🔄 Using mock game data as fallback')
-      const mockGameData = {
-        id: gameId,
-        creator: address,
-        joiner: null,
-        price: 150000, // $0.15 in microdollars
-        nft: {
-          name: 'Based Ape 2025 #1271',
-          collection: 'Based Ape 2025',
-          image: 'https://ipfs.io/ipfs/QmT8559uspQQcfsAF2VTd3Um2zLjjjTpa7BUGXaDQybfqy',
-          contract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-          tokenId: '1271'
-        },
-        coinData: {
-          headsImage: '/coins/plainh.png',
-          tailsImage: '/coins/plaint.png'
-        },
-        status: 'waiting',
-        created_at: new Date().toISOString()
-      }
-      setGameData(mockGameData)
-      setError(null) // Clear error since we have fallback data
+      // Show error instead of using mock data
+      console.log('🔄 API error, showing error state')
+      setError('Failed to load game data. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -460,6 +425,23 @@ const UnifiedGamePage = () => {
         handleGameAction(data)
         break
         
+      case 'PLAYER_CHOICE':
+        // Handle player choice updates from other players
+        if (data.player === getGameCreator()) {
+          setPlayerChoices(prev => ({ ...prev, creator: data.choice }))
+          setGameState(prev => ({ ...prev, creatorChoice: data.choice }))
+        } else if (data.player === getGameJoiner()) {
+          setPlayerChoices(prev => ({ ...prev, joiner: data.choice }))
+          setGameState(prev => ({ ...prev, joinerChoice: data.choice }))
+        }
+        
+        // Check if both players have chosen
+        if (data.choice && ((data.player === getGameCreator() && gameState.joinerChoice) || 
+                           (data.player === getGameJoiner() && gameState.creatorChoice))) {
+          setGameState(prev => ({ ...prev, phase: 'charging' }))
+        }
+        break
+        
       case 'FLIP_RESULT':
         handleFlipResult(data.result)
         break
@@ -553,12 +535,20 @@ const UnifiedGamePage = () => {
       return
     }
     
-    setGameState(prev => ({
-      ...prev,
-      phase: 'charging',
-      creatorChoice: address === getGameCreator() ? choice : prev.creatorChoice,
-      joinerChoice: address === getGameJoiner() ? choice : prev.joinerChoice
-    }))
+    // Update local state immediately for better UX
+    if (address === getGameCreator()) {
+      setPlayerChoices(prev => ({ ...prev, creator: choice }))
+      setGameState(prev => ({
+        ...prev,
+        creatorChoice: choice
+      }))
+    } else if (address === getGameJoiner()) {
+      setPlayerChoices(prev => ({ ...prev, joiner: choice }))
+      setGameState(prev => ({
+        ...prev,
+        joinerChoice: choice
+      }))
+    }
     
     wsRef.send(JSON.stringify({
       type: 'GAME_ACTION',
@@ -598,25 +588,7 @@ const UnifiedGamePage = () => {
     }))
   }
   
-  // Chat functions
-  const sendMessage = () => {
-    if (!newMessage.trim() || !wsRef || !wsConnected) return
-    
-    const messageData = {
-      type: 'CHAT_MESSAGE',
-      gameId: gameId,
-      message: {
-        id: Date.now(),
-        sender: address,
-        message: newMessage.trim(),
-        timestamp: Date.now()
-      }
-    }
-    
-    console.log('📤 Sending chat message:', messageData)
-    wsRef.send(JSON.stringify(messageData))
-    setNewMessage('')
-  }
+
   
   // Offer functions
   const createOffer = async () => {
@@ -653,6 +625,69 @@ const UnifiedGamePage = () => {
       showError('Failed to create offer')
     } finally {
       setCreatingOffer(false)
+    }
+  }
+  
+  const acceptOffer = async (offerId, offerPrice) => {
+    try {
+      console.log('🎯 Accepting offer:', { offerId, offerPrice })
+      showInfo('Accepting offer...')
+      
+      const response = await fetch(`${getApiUrl()}/api/offers/${offerId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ final_price: offerPrice })
+      })
+      
+      const result = await response.json()
+      console.log('✅ Offer acceptance response:', result)
+      
+      if (response.ok) {
+        showSuccess('Offer accepted! Game created successfully.')
+        // Refresh offers and game data
+        await Promise.all([
+          fetch(`${getApiUrl()}/api/listings/${gameData.id}/offers`).then(async response => {
+            if (response.ok) {
+              const offersData = await response.json()
+              setOffers(offersData)
+            }
+          }),
+          loadGameData() // Refresh game/listing data
+        ])
+      } else {
+        console.error('❌ Offer acceptance failed:', result)
+        const errorMessage = result.details 
+          ? `${result.error}: ${result.details}` 
+          : result.error || 'Failed to accept offer'
+        showError(errorMessage)
+      }
+    } catch (error) {
+      console.error('❌ Error accepting offer:', error)
+      showError(`Failed to accept offer: ${error.message}`)
+    }
+  }
+  
+  const rejectOffer = async (offerId) => {
+    try {
+      const response = await fetch(`${getApiUrl()}/api/offers/${offerId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        showSuccess('Offer rejected')
+        await fetch(`${getApiUrl()}/api/listings/${gameData.id}/offers`).then(async response => {
+          if (response.ok) {
+            const offersData = await response.json()
+            setOffers(offersData)
+          }
+        })
+      } else {
+        showError('Failed to reject offer')
+      }
+    } catch (error) {
+      console.error('Error rejecting offer:', error)
+      showError('Failed to reject offer')
     }
   }
   
@@ -789,6 +824,41 @@ const UnifiedGamePage = () => {
     )
   }
   
+  // No game data state
+  if (!gameData) {
+    return (
+      <ThemeProvider theme={theme}>
+        <Container>
+          <GameContainer>
+            <div style={{ 
+              textAlign: 'center', 
+              color: 'white', 
+              padding: '2rem' 
+            }}>
+              <h2>Game Not Found</h2>
+              <p>The game you're looking for doesn't exist or has been removed.</p>
+              <button 
+                onClick={() => navigate('/')}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#00FF41',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  marginTop: '1rem'
+                }}
+              >
+                Back to Home
+              </button>
+            </div>
+          </GameContainer>
+        </Container>
+      </ThemeProvider>
+    )
+  }
+  
   return (
     <ThemeProvider theme={theme}>
       <Container>
@@ -842,6 +912,21 @@ const UnifiedGamePage = () => {
                   <p style={{ fontSize: '0.8rem', color: '#ccc' }}>
                     Wins: {gameState.creatorWins}
                   </p>
+                  {/* Display player choice */}
+                  {playerChoices.creator && (
+                    <div style={{ 
+                      marginTop: '0.5rem', 
+                      padding: '0.25rem 0.5rem', 
+                      background: playerChoices.creator === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
+                      border: `1px solid ${playerChoices.creator === 'heads' ? '#00FF41' : '#FF1493'}`,
+                      borderRadius: '0.25rem',
+                      fontSize: '0.8rem',
+                      color: 'white',
+                      textAlign: 'center'
+                    }}>
+                      Chose: {playerChoices.creator.toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <RoundIndicators>
                   <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.creatorWins > 0} isLost={gameState.joinerWins > 0}>
@@ -870,6 +955,21 @@ const UnifiedGamePage = () => {
                   <p style={{ fontSize: '0.8rem', color: '#ccc' }}>
                     Wins: {gameState.joinerWins}
                   </p>
+                  {/* Display player choice */}
+                  {playerChoices.joiner && (
+                    <div style={{ 
+                      marginTop: '0.5rem', 
+                      padding: '0.25rem 0.5rem', 
+                      background: playerChoices.joiner === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
+                      border: `1px solid ${playerChoices.joiner === 'heads' ? '#00FF41' : '#FF1493'}`,
+                      borderRadius: '0.25rem',
+                      fontSize: '0.8rem',
+                      color: 'white',
+                      textAlign: 'center'
+                    }}>
+                      Chose: {playerChoices.joiner.toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <RoundIndicators>
                   <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.joinerWins > 0} isLost={gameState.creatorWins > 0}>
@@ -996,42 +1096,44 @@ const UnifiedGamePage = () => {
                 </div>
                 
                 {/* External Links */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <a 
-                      href={`https://basescan.org/token/${getGameNFTContract()}?a=${getGameNFTTokenId()}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        background: theme.colors.neonBlue,
-                        color: '#000',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        textDecoration: 'none',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      Explorer
-                    </a>
-                    <a 
-                      href={`https://opensea.io/assets/base/${getGameNFTContract()}/${getGameNFTTokenId()}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        background: theme.colors.neonGreen,
-                        color: '#000',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        textDecoration: 'none',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      OpenSea
-                    </a>
+                {getGameNFTContract() && getGameNFTTokenId() && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <a 
+                        href={`https://basescan.org/token/${getGameNFTContract()}?a=${getGameNFTTokenId()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: theme.colors.neonBlue,
+                          color: '#000',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          textDecoration: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        Explorer
+                      </a>
+                      <a 
+                        href={`https://opensea.io/assets/base/${getGameNFTContract()}/${getGameNFTTokenId()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: theme.colors.neonGreen,
+                          color: '#000',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          textDecoration: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        OpenSea
+                      </a>
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {/* Coin Display */}
                 <div style={{ marginBottom: '1rem' }}>
@@ -1085,143 +1187,79 @@ const UnifiedGamePage = () => {
               {/* Chat Section */}
               <ChatSection>
                 <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonBlue }}>Game Chat</h4>
-                
-                {/* Messages Container */}
-                <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
-                  {messages.length === 0 ? (
-                    <p style={{ color: theme.colors.textSecondary, textAlign: 'center', marginTop: '2rem' }}>
-                      No messages yet. Start the conversation!
-                    </p>
-                  ) : (
-                    messages.map((message) => (
-                      <div 
-                        key={message.id} 
-                        style={{ 
-                          marginBottom: '0.5rem', 
-                          padding: '0.5rem', 
-                          background: message.sender === address ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
-                          borderRadius: '0.5rem',
-                          border: `1px solid ${message.sender === address ? theme.colors.neonBlue : 'rgba(255, 255, 255, 0.1)'}`
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                          <strong style={{ color: theme.colors.neonBlue, fontSize: '0.8rem' }}>
-                            {message.sender === address ? 'You' : message.sender.slice(0, 6) + '...' + message.sender.slice(-4)}
-                          </strong>
-                          <span style={{ color: theme.colors.textSecondary, fontSize: '0.7rem' }}>
-                            {new Date(message.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <p style={{ margin: 0, color: theme.colors.textPrimary, fontSize: '0.9rem' }}>
-                          {message.message}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-                
-                {/* Chat Input */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type your message..."
-                    style={{
-                      flex: 1,
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      padding: '0.5rem',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9rem'
-                    }}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim() || !wsConnected}
-                    style={{
-                      background: wsConnected ? theme.colors.neonBlue : 'rgba(255, 255, 255, 0.1)',
-                      color: '#000',
-                      border: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '0.5rem',
-                      cursor: wsConnected && newMessage.trim() ? 'pointer' : 'not-allowed',
-                      fontSize: '0.9rem',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Send
-                  </button>
-                </div>
-                
-                {/* Connection Status */}
-                <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                  <span style={{ 
-                    color: wsConnected ? theme.colors.neonGreen : theme.colors.neonPink,
-                    fontSize: '0.8rem'
-                  }}>
-                    {wsConnected ? 'Connected' : 'Disconnected'}
-                  </span>
-                </div>
+                <GameChatBox 
+                  gameId={gameId} 
+                  socket={wsRef} 
+                  connected={wsConnected}
+                />
               </ChatSection>
               
               {/* Offers Section */}
               <OffersSection>
                 <h4 style={{ margin: '0 0 1rem 0', color: theme.colors.neonPink }}>NFT Offers</h4>
                 
-                {/* Offer Creation Form */}
-                <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255, 20, 147, 0.1)', borderRadius: '0.5rem' }}>
-                  <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
-                  <input
-                    type="number"
-                    placeholder="Offer price (USD)"
-                    value={newOffer.price}
-                    onChange={(e) => setNewOffer(prev => ({ ...prev, price: e.target.value }))}
-                    style={{
-                      width: '100%',
-                      marginBottom: '0.5rem',
-                      padding: '0.5rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      borderRadius: '0.25rem'
-                    }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Message (optional)"
-                    value={newOffer.message}
-                    onChange={(e) => setNewOffer(prev => ({ ...prev, message: e.target.value }))}
-                    style={{
-                      width: '100%',
-                      marginBottom: '0.5rem',
-                      padding: '0.5rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      borderRadius: '0.25rem'
-                    }}
-                  />
-                  <button
-                    onClick={createOffer}
-                    disabled={creatingOffer || !newOffer.price}
-                    style={{
-                      width: '100%',
-                      background: theme.colors.neonPink,
-                      color: '#000',
-                      border: 'none',
-                      padding: '0.5rem',
-                      borderRadius: '0.25rem',
-                      cursor: creatingOffer ? 'not-allowed' : 'pointer',
-                      opacity: creatingOffer ? 0.5 : 1,
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {creatingOffer ? 'Creating...' : 'Submit Offer'}
-                  </button>
-                </div>
+                {/* Offer Creation Form - Only show for non-creators */}
+                {!isCreator() && (
+                  <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255, 20, 147, 0.1)', borderRadius: '0.5rem' }}>
+                    <h5 style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonPink }}>Make an Offer</h5>
+                    <input
+                      type="number"
+                      placeholder="Offer price (USD)"
+                      value={newOffer.price}
+                      onChange={(e) => setNewOffer(prev => ({ ...prev, price: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        marginBottom: '0.5rem',
+                        padding: '0.5rem',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        borderRadius: '0.25rem'
+                      }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Message (optional)"
+                      value={newOffer.message}
+                      onChange={(e) => setNewOffer(prev => ({ ...prev, message: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        marginBottom: '0.5rem',
+                        padding: '0.5rem',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        borderRadius: '0.25rem'
+                      }}
+                    />
+                    <button
+                      onClick={createOffer}
+                      disabled={creatingOffer || !newOffer.price}
+                      style={{
+                        width: '100%',
+                        background: theme.colors.neonPink,
+                        color: '#000',
+                        border: 'none',
+                        padding: '0.5rem',
+                        borderRadius: '0.25rem',
+                        cursor: creatingOffer ? 'not-allowed' : 'pointer',
+                        opacity: creatingOffer ? 0.5 : 1,
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {creatingOffer ? 'Creating...' : 'Submit Offer'}
+                    </button>
+                  </div>
+                )}
+                
+                {/* Creator message */}
+                {isCreator() && (
+                  <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(0, 255, 65, 0.1)', borderRadius: '0.5rem', textAlign: 'center' }}>
+                    <p style={{ color: theme.colors.neonGreen, margin: 0, fontSize: '0.9rem' }}>
+                      You are the creator. You can accept or reject offers below.
+                    </p>
+                  </div>
+                )}
                 
                 {/* Offers List */}
                 <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -1266,10 +1304,7 @@ const UnifiedGamePage = () => {
                         {isCreator() && offer.status === 'pending' && (
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button
-                              onClick={() => {
-                                showSuccess('Offer accepted!')
-                                // Here you would call the accept offer API
-                              }}
+                              onClick={() => acceptOffer(offer.id, offer.offer_price)}
                               style={{
                                 flex: 1,
                                 background: theme.colors.neonGreen,
@@ -1285,10 +1320,7 @@ const UnifiedGamePage = () => {
                               Accept
                             </button>
                             <button
-                              onClick={() => {
-                                showSuccess('Offer rejected!')
-                                // Here you would call the reject offer API
-                              }}
+                              onClick={() => rejectOffer(offer.id)}
                               style={{
                                 flex: 1,
                                 background: theme.colors.neonPink,

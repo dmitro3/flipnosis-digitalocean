@@ -587,4 +587,4 @@ const NFTOfferComponent = ({
   return null
 }
 
-export default () => null; 
+export default NFTOfferComponent; 

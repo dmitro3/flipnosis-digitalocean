@@ -143,6 +143,7 @@ const GameChatBox = ({ gameId, socket, connected }) => {
         if (data.type === 'chat_message') {
           console.log('📩 Received chat message:', data)
           setMessages(prev => [...prev, {
+            id: Date.now() + Math.random(),
             address: data.from || data.address,
             message: data.message,
             timestamp: data.timestamp || new Date().toISOString()
@@ -199,11 +200,22 @@ const GameChatBox = ({ gameId, socket, connected }) => {
       const chatMessage = {
         type: 'chat_message',
         gameId,
-        message: currentMessage.trim()
+        message: currentMessage.trim(),
+        from: address,
+        timestamp: new Date().toISOString()
       }
 
       console.log('📤 Sending chat message:', chatMessage)
       socket.send(JSON.stringify(chatMessage))
+      
+      // Add message to local state immediately for better UX
+      setMessages(prev => [...prev, {
+        id: Date.now() + Math.random(),
+        address: address,
+        message: currentMessage.trim(),
+        timestamp: new Date().toISOString()
+      }])
+      
       setCurrentMessage('')
       
       // Focus back to input
