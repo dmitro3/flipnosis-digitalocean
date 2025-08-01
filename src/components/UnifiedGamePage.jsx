@@ -674,9 +674,16 @@ const UnifiedGamePage = () => {
     if (Array.isArray(obj)) return obj.map(safeSerialize)
     if (typeof obj === 'object') {
       // Check for event objects and React components
-      if (obj.nativeEvent || obj.target || obj.currentTarget || obj.type || obj._reactName) {
+      // Only skip if it's actually a DOM event (has nativeEvent) or React synthetic event (has _reactName)
+      // Don't skip objects that just have a 'type' property (like WebSocket messages)
+      if (obj.nativeEvent || obj._reactName || (obj.target && obj.currentTarget)) {
         console.warn('⚠️ Detected event object, skipping serialization')
         return null
+      }
+      
+      // Debug: Log when we're processing WebSocket messages
+      if (obj.type && (obj.type === 'your_offer_accepted' || obj.type === 'game_awaiting_challenger_deposit')) {
+        console.log('✅ Processing WebSocket message:', obj.type, 'safely')
       }
       if (obj.$$typeof || obj.nodeType || obj.tagName) {
         console.warn('⚠️ Detected React component or DOM element, skipping serialization')
@@ -792,10 +799,12 @@ const UnifiedGamePage = () => {
         
       case 'your_offer_accepted':
         console.log('🎉 Your offer was accepted!', safeData)
+        console.log('🔍 Processing your_offer_accepted message - gameId:', safeData.gameId, 'requiresDeposit:', safeData.requiresDeposit)
         showSuccess(safeData.message)
         
         // Navigate to game page if we're the challenger
         if (safeData.gameId && safeData.requiresDeposit) {
+          console.log('🔄 Navigating to game page for deposit')
           // Show payment UI immediately
           navigate(`/game/${safeData.gameId}`)
         }
@@ -806,6 +815,7 @@ const UnifiedGamePage = () => {
 
       case 'game_awaiting_challenger_deposit':
         console.log('⏳ Game awaiting challenger deposit:', safeData)
+        console.log('🔍 Processing game_awaiting_challenger_deposit - challenger:', safeData.challenger, 'deadline:', safeData.depositDeadline)
         
         // Update local game state with deposit deadline
         setGameData(prev => ({
@@ -818,7 +828,10 @@ const UnifiedGamePage = () => {
         
         // Start countdown timer if we're involved
         if (address === safeData.challenger || address === getGameCreator()) {
+          console.log('⏰ Starting deposit countdown for address:', address)
           startDepositCountdown(safeData.depositDeadline)
+        } else {
+          console.log('⏰ Not starting countdown - address:', address, 'challenger:', safeData.challenger, 'creator:', getGameCreator())
         }
         break
 
