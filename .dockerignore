@@ -21,12 +21,28 @@ build/
 .env.production.local
 *.log
 
-# Large asset directories
-Images/
+# Large asset directories (excluding specific needed files)
+Images/*
+!Images/Info/
+!Images/Video/
+!Images/mobile.webp
+!Images/mobile.png
+!Images/baseeth.png
+!Images/baseeth.webp
+!Images/logo.png
+!Images/potion.png
+!Images/tails.png
+!Images/tails.webp
+!Images/Heads.webp
+!Images/Heads0.png
+!Images/opensea.png
+
 Sound/
 Video/
+
+# Public assets (excluding specific needed files)
 public/video/
-public/images/
+public/images/video/
 
 # Development and reference files
 references/
