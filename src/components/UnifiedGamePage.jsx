@@ -869,6 +869,14 @@ const UnifiedGamePage = () => {
       }))
     }
     
+    // Check if this is Round 5 - if so, auto-flip after choice
+    if (gameState.currentRound === 5) {
+      console.log('🎯 Round 5 detected - auto-flipping after choice')
+      setTimeout(() => {
+        handleAutoFlip()
+      }, 1000) // Small delay for UX
+    }
+    
     wsRef.send(JSON.stringify({
       type: 'GAME_ACTION',
       gameId: gameId,
@@ -876,6 +884,32 @@ const UnifiedGamePage = () => {
       choice: choice,
       player: address
     }))
+  }
+  
+  const handleAutoFlip = () => {
+    console.log('🎲 Auto-flipping for Round 5')
+    showInfo('Round 5 - Auto-flipping for fairness!')
+    
+    // Generate a random choice for fairness
+    const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
+    
+    // Update state to show auto-choice
+    setGameState(prev => ({
+      ...prev,
+      creatorChoice: autoChoice,
+      joinerChoice: autoChoice
+    }))
+    
+    // Send auto-flip action
+    if (wsRef && wsConnected) {
+      wsRef.send(JSON.stringify({
+        type: 'GAME_ACTION',
+        gameId: gameId,
+        action: 'AUTO_FLIP',
+        choice: autoChoice,
+        player: 'system'
+      }))
+    }
   }
   
   const handlePowerChargeStart = () => {
@@ -1091,12 +1125,12 @@ const UnifiedGamePage = () => {
   const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
   const getGameNFTContract = () => {
     const contract = gameData?.nft?.contract || gameData?.nft_contract
-    console.log('🔍 NFT Contract:', { contract, gameData: gameData?.nft })
+    console.log('🔍 NFT Contract:', { contract })
     return contract
   }
   const getGameNFTTokenId = () => {
     const tokenId = gameData?.nft?.tokenId || gameData?.nft_token_id
-    console.log('🔍 NFT Token ID:', { tokenId, gameData: gameData?.nft })
+    console.log('🔍 NFT Token ID:', { tokenId })
     return tokenId
   }
   
@@ -1108,12 +1142,40 @@ const UnifiedGamePage = () => {
   
   // Check if it's user's turn
   const isMyTurn = () => {
+    // Don't allow turns if game hasn't started yet
+    if (!gameData?.creator_deposited || !gameData?.challenger_deposited || gameData?.status !== 'active') {
+      return false
+    }
+    
     if (gameState.phase === 'choosing') {
+      // Round 1: Player 1 (creator) goes first
+      if (gameState.currentRound === 1) {
+        return isCreator() && !gameState.creatorChoice
+      }
+      // Round 2: Player 2 (joiner) goes
+      else if (gameState.currentRound === 2) {
+        return isJoiner() && !gameState.joinerChoice
+      }
+      // Round 3: Player 1 goes again
+      else if (gameState.currentRound === 3) {
+        return isCreator() && !gameState.creatorChoice
+      }
+      // Round 4: Player 2 goes again
+      else if (gameState.currentRound === 4) {
+        return isJoiner() && !gameState.joinerChoice
+      }
+      // Round 5: Auto-flip (no player choice needed)
+      else if (gameState.currentRound === 5) {
+        return false
+      }
+      // Default fallback
       return (isCreator() && !gameState.creatorChoice) || (isJoiner() && !gameState.joinerChoice)
     }
+    
     if (gameState.phase === 'charging') {
       return gameState.chargingPlayer === address
     }
+    
     return false
   }
   
@@ -1477,12 +1539,15 @@ const UnifiedGamePage = () => {
                 textAlign: 'center',
                 marginBottom: '1rem',
                 padding: '1rem',
-                background: 'rgba(255, 215, 0, 0.1)',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
+                background: gameState.currentRound === 5 ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 215, 0, 0.1)',
+                border: `1px solid ${gameState.currentRound === 5 ? 'rgba(255, 20, 147, 0.3)' : 'rgba(255, 215, 0, 0.3)'}`,
                 borderRadius: '0.75rem'
               }}>
-                <p style={{ color: theme.colors.neonYellow, margin: 0 }}>
-                  Choose heads or tails below!
+                <p style={{ color: gameState.currentRound === 5 ? theme.colors.neonPink : theme.colors.neonYellow, margin: 0 }}>
+                  {gameState.currentRound === 5 
+                    ? '🎲 FINAL ROUND - Auto-flip for fairness! 🎲' 
+                    : 'Choose heads or tails below!'
+                  }
                 </p>
               </div>
             )}
@@ -1536,6 +1601,7 @@ const UnifiedGamePage = () => {
               isMyTurn={isMyTurn}
               playerChoice={isCreator() ? gameState.creatorChoice : gameState.joinerChoice}
               onChoiceSelect={handlePlayerChoice}
+              gameStarted={gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active'}
             />
             
             {/* Three Column Layout */}
@@ -1711,7 +1777,7 @@ const UnifiedGamePage = () => {
                     </p>
                   )}
                   <p style={{ margin: '0 0 0.5rem 0', color: theme.colors.neonYellow, fontSize: '1.2rem', fontWeight: 'bold' }}>
-                    Price: ${(getGamePrice() / 1000000).toFixed(2)} USD
+                    Price: ${(getGamePrice() || 0).toFixed(2)} USD
                   </p>
                   <p style={{ margin: '0', color: theme.colors.textSecondary, fontSize: '0.9rem' }}>
                     <strong>Chain:</strong> Base (ETH)

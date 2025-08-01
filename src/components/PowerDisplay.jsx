@@ -12,21 +12,24 @@ const PowerDisplay = ({
   isMyTurn = false,
   playerChoice = null,
   onChoiceSelect = null,
-  isMobile = false
+  isMobile = false,
+  gameStarted = false // New prop to indicate if game has actually started
 }) => {
   // Calculate total power for single bar
   const totalPower = creatorPower + joinerPower
   const maxTotalPower = 10 // Single player max
   
-  // Show choice buttons if it's choosing phase AND player's turn AND no choice made yet
-  // Also show if game is active but phase might not be set correctly (fallback)
-  const showChoiceButtons = (gamePhase === 'choosing' || gamePhase === 'active' || gamePhase === 'waiting') && 
+  // Show choice buttons only if game has started AND it's choosing phase AND player's turn AND no choice made yet
+  const showChoiceButtons = gameStarted && (gamePhase === 'choosing' || gamePhase === 'active' || gamePhase === 'waiting') && 
                            isMyTurn && !playerChoice && onChoiceSelect
   
-  // Debug log removed to reduce console spam
+  // Show power bar only if game has started AND choice is made or in active phase
+  const showPowerBar = gameStarted && (gamePhase === 'round_active' || playerChoice)
   
-  // Show power bar if choice is made or in active phase
-  const showPowerBar = gamePhase === 'round_active' || playerChoice
+  // Don't show anything if game hasn't started yet
+  if (!gameStarted) {
+    return null
+  }
   
   // Always show the power display area when in game
   if (!showChoiceButtons && !showPowerBar && gamePhase !== 'choosing' && gamePhase !== 'active' && gamePhase !== 'waiting') {
@@ -113,21 +116,40 @@ const PowerDisplay = ({
               }}
               style={{
                 ...choiceButtonStyle,
-                background: 'linear-gradient(45deg, #00FF41, #00CC33)',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
+                background: 'linear-gradient(45deg, #00FF41, #0080FF, #00FF41)',
+                backgroundSize: '200% 200%',
+                border: '3px solid rgba(255, 255, 255, 0.3)',
                 borderRadius: isMobile ? '0.75rem' : '1rem',
                 color: '#000000',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 20px rgba(0, 255, 65, 0.5)',
-                textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 0 30px rgba(0, 255, 65, 0.7), 0 0 60px rgba(0, 128, 255, 0.5)',
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.8)',
                 position: 'relative',
                 overflow: 'hidden',
-                animation: 'colorPulse 2s ease infinite'
+                animation: 'gradientShift 2s ease infinite, glowPulse 1.5s ease-in-out infinite'
               }}
             >
-              HEADS
+              <span style={{
+                position: 'relative',
+                zIndex: 2,
+                display: 'block',
+                width: '100%',
+                height: '100%'
+              }}>
+                HEADS
+              </span>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%)',
+                animation: 'shimmer 2s ease-in-out infinite',
+                zIndex: 1
+              }} />
             </button>
             
             <button
@@ -141,21 +163,40 @@ const PowerDisplay = ({
               }}
               style={{
                 ...choiceButtonStyle,
-                background: '#FF1493',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
+                background: 'linear-gradient(45deg, #FF1493, #FF6B35, #FF1493)',
+                backgroundSize: '200% 200%',
+                border: '3px solid rgba(255, 255, 255, 0.3)',
                 borderRadius: isMobile ? '0.75rem' : '1rem',
                 color: 'white',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 0 20px rgba(255, 20, 147, 0.5)',
-                textShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 0 30px rgba(255, 20, 147, 0.7), 0 0 60px rgba(255, 107, 53, 0.5)',
+                textShadow: '0 0 10px rgba(255, 255, 255, 0.8)',
                 position: 'relative',
                 overflow: 'hidden',
-                animation: 'colorPulse 2s ease infinite'
+                animation: 'gradientShift 2s ease infinite, glowPulse 1.5s ease-in-out infinite'
               }}
             >
-              TAILS
+              <span style={{
+                position: 'relative',
+                zIndex: 2,
+                display: 'block',
+                width: '100%',
+                height: '100%'
+              }}>
+                TAILS
+              </span>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%)',
+                animation: 'shimmer 2s ease-in-out infinite',
+                zIndex: 1
+              }} />
             </button>
           </div>
         </div>
@@ -257,5 +298,40 @@ const PowerDisplay = ({
     </div>
   )
 }
+
+// Add CSS animations for the button effects
+const style = document.createElement('style')
+style.textContent = `
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes glowPulse {
+    0%, 100% { 
+      box-shadow: 0 0 30px rgba(0, 255, 65, 0.7), 0 0 60px rgba(0, 128, 255, 0.5);
+    }
+    50% { 
+      box-shadow: 0 0 50px rgba(0, 255, 65, 0.9), 0 0 80px rgba(0, 128, 255, 0.7);
+    }
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  @keyframes powerCharge {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  
+  @keyframes powerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+`
+document.head.appendChild(style)
 
 export default PowerDisplay 
