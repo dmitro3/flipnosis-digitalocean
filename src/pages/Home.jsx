@@ -974,47 +974,7 @@ const getAllItems = () => {
                         >
                                                   Enter Flip
                         </Button>
-                        {selectedFlip.gameType === 'nft-vs-nft' && !selectedFlip.challengerNFT && (
-                          <Button 
-                            onClick={() => {
-                              // Safety check for valid ID
-                              if (!selectedFlip.id || selectedFlip.id === 'null') {
-                                console.error('⚠️ Cannot navigate: Invalid flip ID:', selectedFlip.id)
-                                showError('Invalid game ID. Please refresh the page.')
-                                return
-                              }
-                              navigate(`/game/${selectedFlip.id}`)
-                            }}
-                            style={{
-                              flex: 1,
-                              background: 'linear-gradient(45deg, #FF1493, #FF69B4)',
-                              color: '#fff',
-                              border: 'none',
-                              padding: '0.75rem 1.5rem',
-                              borderRadius: '0.5rem',
-                              fontSize: '1rem',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              textShadow: '0 0 10px rgba(255, 20, 147, 0.5)',
-                              boxShadow: '0 0 20px rgba(255, 20, 147, 0.3)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.5rem'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'scale(1.05)';
-                              e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 20, 147, 0.5)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'scale(1)';
-                              e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
-                            }}
-                          >
-                            <span>⚔️</span> Join Battle
-                          </Button>
-                        )}
+
                       </div>
                     </GameInfo>
                   </div>
@@ -1072,7 +1032,7 @@ const getAllItems = () => {
                     <div
                       key={item.id}
                       onClick={() => {
-                        handleSelectFlip(item)
+                        handleItemClick(item)
                       }}
                       style={{
                         background: 'rgba(255, 255, 255, 0.08)',
@@ -1252,35 +1212,7 @@ const getAllItems = () => {
                             <span>{getChainName(item.nft?.chain || 'base')}</span>
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleItemClick(item);
-                          }}
-                          style={{
-                            background: 'rgba(0, 150, 255, 0.8)',
-                            color: '#fff',
-                            border: 'none',
-                            padding: window.innerWidth <= 768 ? '0.2rem 0.4rem' : '0.3rem 0.6rem',
-                            borderRadius: '0.25rem',
-                            fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            width: '100%',
-                            marginTop: '0.25rem'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(0, 150, 255, 1)';
-                            e.currentTarget.style.transform = 'scale(1.02)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(0, 150, 255, 0.8)';
-                            e.currentTarget.style.transform = 'scale(1)';
-                          }}
-                        >
-                          🔍 View Details
-                        </button>
+
                       </div>
                     </div>
                   ))) : (

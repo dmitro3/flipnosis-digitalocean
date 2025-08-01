@@ -302,7 +302,7 @@ const UnifiedGamePage = () => {
   const loadGameData = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${getApiUrl()}/games/${gameId}`)
+      const response = await fetch(getApiUrl(`/games/${gameId}`))
       
       if (!response.ok) {
         // If API is not available, show error
@@ -312,7 +312,20 @@ const UnifiedGamePage = () => {
         return
       }
       
-      const data = await response.json()
+      // Debug: Log the raw response
+      const responseText = await response.text()
+      console.log('🔍 Raw API response:', responseText)
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (err) {
+        console.error('❌ Failed to parse JSON:', err)
+        console.log('🔍 Response was not valid JSON, showing error state')
+        setError('Invalid response from server. Please try again.')
+        setLoading(false)
+        return
+      }
       setGameData(data)
       
       // Initialize WebSocket connection
@@ -596,7 +609,7 @@ const UnifiedGamePage = () => {
     
     try {
       setCreatingOffer(true)
-      const response = await fetch(`${getApiUrl()}/listings/${gameData.id}/offers`, {
+      const response = await fetch(getApiUrl(`/listings/${gameData.id}/offers`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -612,7 +625,7 @@ const UnifiedGamePage = () => {
         showSuccess('Offer created successfully!')
         setNewOffer({ price: '', message: '' })
         // Refresh offers
-        const offersResponse = await fetch(`${getApiUrl()}/listings/${gameData.id}/offers`)
+        const offersResponse = await fetch(getApiUrl(`/listings/${gameData.id}/offers`))
         if (offersResponse.ok) {
           const offersData = await offersResponse.json()
           setOffers(offersData)
@@ -633,7 +646,7 @@ const UnifiedGamePage = () => {
       console.log('🎯 Accepting offer:', { offerId, offerPrice })
       showInfo('Accepting offer...')
       
-      const response = await fetch(`${getApiUrl()}/offers/${offerId}/accept`, {
+      const response = await fetch(getApiUrl(`/offers/${offerId}/accept`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ final_price: offerPrice })
@@ -646,7 +659,7 @@ const UnifiedGamePage = () => {
         showSuccess('Offer accepted! Game created successfully.')
         // Refresh offers and game data
         await Promise.all([
-          fetch(`${getApiUrl()}/listings/${gameData.id}/offers`).then(async response => {
+          fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
             if (response.ok) {
               const offersData = await response.json()
               setOffers(offersData)
@@ -669,14 +682,14 @@ const UnifiedGamePage = () => {
   
   const rejectOffer = async (offerId) => {
     try {
-      const response = await fetch(`${getApiUrl()}/offers/${offerId}/reject`, {
+      const response = await fetch(getApiUrl(`/offers/${offerId}/reject`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
       
       if (response.ok) {
         showSuccess('Offer rejected')
-        await fetch(`${getApiUrl()}/listings/${gameData.id}/offers`).then(async response => {
+        await fetch(getApiUrl(`/listings/${gameData.id}/offers`)).then(async response => {
           if (response.ok) {
             const offersData = await response.json()
             setOffers(offersData)
@@ -698,8 +711,16 @@ const UnifiedGamePage = () => {
   const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
   const getGameNFTName = () => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
   const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
-  const getGameNFTContract = () => gameData?.nft?.contract || gameData?.nft_contract
-  const getGameNFTTokenId = () => gameData?.nft?.tokenId || gameData?.nft_token_id
+  const getGameNFTContract = () => {
+    const contract = gameData?.nft?.contract || gameData?.nft_contract
+    console.log('🔍 NFT Contract:', { contract, gameData: gameData?.nft })
+    return contract
+  }
+  const getGameNFTTokenId = () => {
+    const tokenId = gameData?.nft?.tokenId || gameData?.nft_token_id
+    console.log('🔍 NFT Token ID:', { tokenId, gameData: gameData?.nft })
+    return tokenId
+  }
   
   // Check if user is the creator
   const isCreator = () => address === getGameCreator()

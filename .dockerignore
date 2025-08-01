@@ -1,16 +1,64 @@
-node_modules
-dist
-.git
+# Dependencies
+node_modules/
+server/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.next/
+.nuxt/
+.output/
+
+# Development files
+.git/
+.gitignore
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+
+# Large asset directories
+Images/
+Sound/
+Video/
+public/video/
+public/images/
+
+# Development and reference files
+references/
+contracts/
+cache/
+artifacts/
+scripts/
+deployments/
+
+# IDE and OS files
+.vscode/
+.idea/
 .DS_Store
-.vscode
-.idea
-coverage
-.nyc_output 
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+
+# Railway specific
+.railwayignore
+railway.json 
