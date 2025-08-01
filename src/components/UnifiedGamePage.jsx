@@ -321,6 +321,9 @@ const UnifiedGamePage = () => {
   // Live updates state
   const [offersRefreshInterval, setOffersRefreshInterval] = useState(null)
   
+  // ETH amount state
+  const [ethAmount, setEthAmount] = useState(null)
+  
   // Load game data
   const loadGameData = async () => {
     try {
@@ -350,6 +353,20 @@ const UnifiedGamePage = () => {
         return
       }
       setGameData(data)
+      
+      // Calculate ETH amount if we have a final price and contract is initialized
+      if (data.final_price && contractInitialized) {
+        try {
+          const calculatedEthAmount = await contractService.getETHAmount(data.final_price)
+          setEthAmount(calculatedEthAmount)
+          console.log('💰 Calculated ETH amount:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', data.final_price, 'USD')
+        } catch (error) {
+          console.error('❌ Error calculating ETH amount:', error)
+          setEthAmount(null)
+        }
+      } else {
+        setEthAmount(null)
+      }
       
       // Start countdown if game is waiting for challenger deposit
       if (data.status === 'waiting_challenger_deposit' && data.deposit_deadline) {
@@ -1083,6 +1100,23 @@ const UnifiedGamePage = () => {
     }
   }, [gameData])
   
+  // Recalculate ETH amount when contract becomes initialized
+  useEffect(() => {
+    if (contractInitialized && gameData?.final_price) {
+      const calculateEthAmount = async () => {
+        try {
+          const calculatedEthAmount = await contractService.getETHAmount(gameData.final_price)
+          setEthAmount(calculatedEthAmount)
+          console.log('💰 Recalculated ETH amount:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', gameData.final_price, 'USD')
+        } catch (error) {
+          console.error('❌ Error recalculating ETH amount:', error)
+          setEthAmount(null)
+        }
+      }
+      calculateEthAmount()
+    }
+  }, [contractInitialized, gameData?.final_price])
+  
   // Loading state
   if (loading) {
     return (
@@ -1384,7 +1418,7 @@ const UnifiedGamePage = () => {
                     marginBottom: '1rem'
                   }}>
                     <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>
-                      💎 ETH Amount: {ethers.formatEther(gameData?.eth_amount || '0')} ETH
+                      💎 ETH Amount: {ethAmount ? ethers.formatEther(ethAmount) : 'Calculating...'} ETH
                     </p>
                     <p style={{ margin: 0, fontSize: '0.8rem', color: theme.colors.textSecondary }}>
                       Includes 3.5% platform fee
@@ -1396,12 +1430,13 @@ const UnifiedGamePage = () => {
                       try {
                         showInfo('Depositing ETH...')
                         
-                        // Get ETH amount from gameData
-                        const ethAmount = gameData?.eth_amount
+                        // Use the calculated ETH amount
                         if (!ethAmount) {
-                          showError('ETH amount not available')
+                          showError('ETH amount not available. Please wait for calculation.')
                           return
                         }
+                        
+                        console.log('💰 Using calculated ETH amount:', ethers.formatEther(ethAmount), 'ETH')
                         
                         const result = await contractService.depositETH(gameId, ethAmount)
                         if (result.success) {
