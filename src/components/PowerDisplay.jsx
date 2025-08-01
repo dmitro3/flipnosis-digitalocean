@@ -44,14 +44,14 @@ const PowerDisplay = ({
     border: '1px solid rgba(255, 255, 255, 0.1)',
     width: '100%'
   } : {
-    background: 'linear-gradient(135deg, rgba(75, 0, 130, 0.9) 0%, rgba(138, 43, 226, 0.8) 100%)',
+    background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
     padding: '1.5rem',
     borderRadius: '1rem',
     border: `2px solid #FFD700`,
     backdropFilter: 'blur(10px)',
     maxWidth: '550px',
     margin: '0 auto',
-    boxShadow: '0 0 30px rgba(138, 43, 226, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)'
+    boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)'
   }
 
   const headerStyle = isMobile ? {
@@ -119,8 +119,15 @@ const PowerDisplay = ({
             justifyContent: 'center'
           }}>
             <button
-              onClick={() => onChoiceSelect('heads')}
-              onMouseDown={() => {
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (onChoiceSelect) {
+                  onChoiceSelect('heads')
+                }
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault()
                 // Add haptic feedback for mobile
                 if (navigator.vibrate) {
                   navigator.vibrate(50)
@@ -165,8 +172,15 @@ const PowerDisplay = ({
             </button>
             
             <button
-              onClick={() => onChoiceSelect('tails')}
-              onMouseDown={() => {
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (onChoiceSelect) {
+                  onChoiceSelect('tails')
+                }
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault()
                 // Add haptic feedback for mobile
                 if (navigator.vibrate) {
                   navigator.vibrate(50)
@@ -218,7 +232,7 @@ const PowerDisplay = ({
        !isMyTurn && !showChoiceButtons && (
         <div style={{
           padding: isMobile ? '1rem' : '1.5rem',
-          background: 'linear-gradient(135deg, rgba(75, 0, 130, 0.3) 0%, rgba(138, 43, 226, 0.2) 100%)',
+          background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.3) 0%, rgba(0, 100, 120, 0.2) 100%)',
           border: '2px solid rgba(255, 215, 0, 0.3)',
           borderRadius: isMobile ? '0.75rem' : '1rem',
           textAlign: 'center',

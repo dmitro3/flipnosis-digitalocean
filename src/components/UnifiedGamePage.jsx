@@ -564,6 +564,7 @@ const UnifiedGamePage = () => {
         try {
           const data = JSON.parse(event.data)
           console.log('📨 WebSocket message received:', data)
+          // Only pass the parsed data, not the event object
           handleWebSocketMessage(data)
         } catch (err) {
           console.error('Error parsing WebSocket message:', err)
@@ -630,27 +631,68 @@ const UnifiedGamePage = () => {
     }
   }
   
+  // Safe serialization function to avoid circular references
+  const safeSerialize = (obj) => {
+    if (obj === null || obj === undefined) return obj
+    if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') return obj
+    if (Array.isArray(obj)) return obj.map(safeSerialize)
+    if (typeof obj === 'object') {
+      // Check for event objects and React components
+      if (obj.nativeEvent || obj.target || obj.currentTarget || obj.type || obj._reactName) {
+        console.warn('⚠️ Detected event object, skipping serialization')
+        return null
+      }
+      if (obj.$$typeof || obj.nodeType || obj.tagName) {
+        console.warn('⚠️ Detected React component or DOM element, skipping serialization')
+        return null
+      }
+      
+      const safeObj = {}
+      for (const [key, value] of Object.entries(obj)) {
+        // Skip React internal properties and functions
+        if (key.startsWith('_') || key.startsWith('__') || typeof value === 'function') {
+          continue
+        }
+        // Skip DOM elements and React components
+        if (value && typeof value === 'object' && (value.nodeType || value.$$typeof)) {
+          continue
+        }
+        try {
+          safeObj[key] = safeSerialize(value)
+        } catch (error) {
+          console.warn(`⚠️ Could not serialize property ${key}:`, error)
+        }
+      }
+      return safeObj
+    }
+    return obj
+  }
+
   // Handle WebSocket messages
   const handleWebSocketMessage = (data) => {
     console.log('📨 WebSocket message received:', data)
     
-    // Ensure data is a plain object and doesn't contain circular references
+    // Debug: Log the type of data to help identify issues
+    console.log('🔍 Data type:', typeof data, 'Is object:', typeof data === 'object', 'Keys:', data ? Object.keys(data) : 'null')
+    
+    // Use safe serialization to avoid circular references
     let safeData
     try {
-      safeData = JSON.parse(JSON.stringify(data))
+      safeData = safeSerialize(data)
+      console.log('✅ Safe serialization successful:', safeData)
     } catch (error) {
-      console.error('❌ Error serializing WebSocket data:', error)
-      // Fallback: try to create a safe copy without circular references
+      console.error('❌ Error in safe serialization:', error)
+      console.error('❌ Error stack:', error.stack)
+      // Fallback: create minimal safe object
       safeData = {
-        type: data.type,
-        ...Object.fromEntries(
-          Object.entries(data).filter(([key, value]) => {
-            return typeof value !== 'function' && 
-                   typeof value !== 'object' || 
-                   value === null ||
-                   Array.isArray(value)
-          })
-        )
+        type: data?.type || 'unknown',
+        player: data?.player,
+        choice: data?.choice,
+        gameId: data?.gameId,
+        action: data?.action,
+        result: data?.result,
+        message: data?.message,
+        gameData: data?.gameData ? safeSerialize(data.gameData) : undefined
       }
     }
     
@@ -793,23 +835,18 @@ const UnifiedGamePage = () => {
   
   // Handle game actions
   const handleGameAction = (data) => {
-    // Ensure we only work with primitive values
+    // Use safe serialization to avoid circular references
     let safeData
     try {
-      safeData = JSON.parse(JSON.stringify(data))
+      safeData = safeSerialize(data)
     } catch (error) {
       console.error('❌ Error serializing game action data:', error)
       safeData = {
-        action: data.action,
-        player: data.player,
-        ...Object.fromEntries(
-          Object.entries(data).filter(([key, value]) => {
-            return typeof value !== 'function' && 
-                   typeof value !== 'object' || 
-                   value === null ||
-                   Array.isArray(value)
-          })
-        )
+        action: data?.action,
+        player: data?.player,
+        choice: data?.choice,
+        gameId: data?.gameId,
+        powerLevel: data?.powerLevel
       }
     }
     
@@ -847,16 +884,16 @@ const UnifiedGamePage = () => {
   
   // Handle flip result
   const handleFlipResult = (result) => {
-    // Ensure result is a plain object
+    // Use safe serialization to avoid circular references
     let safeResult
     try {
-      safeResult = JSON.parse(JSON.stringify(result))
+      safeResult = safeSerialize(result)
     } catch (error) {
       console.error('❌ Error serializing flip result:', error)
       safeResult = {
-        winner: result.winner,
-        result: result.result,
-        playerChoice: result.playerChoice
+        winner: result?.winner,
+        result: result?.result,
+        playerChoice: result?.playerChoice
       }
     }
     
@@ -875,16 +912,16 @@ const UnifiedGamePage = () => {
   
   // Handle game completed
   const handleGameCompleted = (data) => {
-    // Ensure data is a plain object
+    // Use safe serialization to avoid circular references
     let safeData
     try {
-      safeData = JSON.parse(JSON.stringify(data))
+      safeData = safeSerialize(data)
     } catch (error) {
       console.error('❌ Error serializing game completed data:', error)
       safeData = {
-        winner: data.winner,
-        finalResult: data.finalResult,
-        playerChoice: data.playerChoice
+        winner: data?.winner,
+        finalResult: data?.finalResult,
+        playerChoice: data?.playerChoice
       }
     }
     
