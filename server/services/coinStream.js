@@ -130,7 +130,7 @@ class CoinStreamService {
       
       // "HEADS" text
       ctx.fillStyle = '#654321'
-      ctx.font = 'bold 92px Hyperwave'
+      ctx.font = 'bold 92px Arial, sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('HEADS', 256, 330)
@@ -161,7 +161,7 @@ class CoinStreamService {
       
       // "TAILS" text
       ctx.fillStyle = '#654321'
-      ctx.font = 'bold 92px Hyperwave'
+      ctx.font = 'bold 92px Arial, sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('TAILS', 256, 330)
@@ -308,17 +308,26 @@ class CoinStreamService {
   getCurrentFrame(gameId) {
     const gameScene = this.scenes.get(gameId)
     if (!gameScene) {
+      console.error('❌ No game scene found for gameId:', gameId)
       return null
     }
 
     const { renderer, scene, camera } = gameScene
     
-    // Render current state
-    renderer.render(scene, camera)
-    
-    // Get canvas data
-    const canvas = renderer.domElement
-    return canvas.toDataURL('image/png')
+    try {
+      // Render current state
+      renderer.render(scene, camera)
+      
+      // Get canvas data
+      const canvas = renderer.domElement
+      const frameData = canvas.toDataURL('image/png')
+      
+      console.log('🎬 Frame rendered successfully for game:', gameId, 'Size:', frameData.length)
+      return frameData
+    } catch (error) {
+      console.error('❌ Error rendering frame for game:', gameId, error)
+      return null
+    }
   }
 
   // Stream animation frames to clients
@@ -327,12 +336,14 @@ class CoinStreamService {
     const animation = this.animations.get(gameId)
     
     if (!gameScene || !animation || !animation.isAnimating) {
+      console.log('⚠️ Cannot stream animation - missing scene or animation not active for game:', gameId)
       return
     }
 
     // Get current frame
     const frameData = this.getCurrentFrame(gameId)
     if (!frameData) {
+      console.log('⚠️ No frame data available for game:', gameId)
       return
     }
 
@@ -344,14 +355,25 @@ class CoinStreamService {
       timestamp: Date.now()
     }
 
+    console.log('📡 Broadcasting COIN_FRAME for game:', gameId, 'Frame size:', frameData.length)
+
     // Broadcast to room (this would need to be implemented based on your WebSocket setup)
     if (wsServer && wsServer.broadcastToRoom) {
-      wsServer.broadcastToRoom(roomId, message)
+      try {
+        wsServer.broadcastToRoom(roomId, message)
+        console.log('✅ COIN_FRAME broadcasted successfully for game:', gameId)
+      } catch (error) {
+        console.error('❌ Error broadcasting COIN_FRAME for game:', gameId, error)
+      }
+    } else {
+      console.error('❌ No broadcastToRoom function available for game:', gameId)
     }
 
     // Continue streaming if animation is still active
     if (animation.isAnimating) {
       setTimeout(() => this.streamAnimation(gameId, wsServer, roomId), 50) // 20 FPS for streaming
+    } else {
+      console.log('🎬 Animation completed, stopping stream for game:', gameId)
     }
   }
 

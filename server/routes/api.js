@@ -231,6 +231,35 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     })
   })
 
+  // Get offers for game (for games created directly without listings)
+  router.get('/games/:gameId/offers', (req, res) => {
+    const { gameId } = req.params
+    
+    // First check if this game has a listing_id
+    db.get('SELECT listing_id FROM games WHERE id = ?', [gameId], (err, game) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' })
+      }
+      
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' })
+      }
+      
+      if (game.listing_id) {
+        // Game has a listing, fetch offers for that listing
+        db.all('SELECT * FROM offers WHERE listing_id = ? ORDER BY created_at DESC', [game.listing_id], (err, offers) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' })
+          }
+          res.json(offers)
+        })
+      } else {
+        // Game created directly, return empty offers array
+        res.json([])
+      }
+    })
+  })
+
   // Create game with NFT deposit from listing
   router.post('/listings/:listingId/create-game-with-nft', async (req, res) => {
     const { listingId } = req.params

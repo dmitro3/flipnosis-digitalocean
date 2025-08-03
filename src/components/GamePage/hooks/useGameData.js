@@ -219,6 +219,17 @@ export const useGameData = (
         }))
         break
 
+      case 'FLIP_RESULT':
+        console.log('🎲 Flip result received:', data)
+        // Stop streaming mode
+        setStreamedCoinState(prev => ({
+          ...prev,
+          isStreaming: false,
+          frameData: null
+        }))
+        handleFlipResult(data)
+        break
+
       case 'GAME_COMPLETED':
         console.log('🏁 Game completed:', data)
         handleGameCompleted(data)

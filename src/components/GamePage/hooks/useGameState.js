@@ -305,17 +305,30 @@ export const useGameState = (gameId, address) => {
 
   // Load offers for listings
   const loadOffers = async () => {
-    if (!gameData?.listing_id && !gameData?.id) return
+    console.log('🔍 loadOffers called with gameData:', gameData)
+    
+    if (!gameData?.id) {
+      console.log('❌ No game ID found in gameData')
+      return
+    }
 
     try {
-      const listingId = gameData.listing_id || gameData.id
-      const response = await fetch(getApiUrl(`/listings/${listingId}/offers`))
+      console.log('📋 Attempting to fetch offers for gameId:', gameData.id)
+      
+      const response = await fetch(getApiUrl(`/games/${gameData.id}/offers`))
+      console.log('📡 Response status:', response.status)
+      
       if (response.ok) {
         let offersData = await response.json()
+        console.log('✅ Fetched offers:', offersData)
         setOffers(offersData)
+      } else {
+        console.log('❌ Response not ok:', response.status, response.statusText)
+        setOffers([])
       }
     } catch (error) {
-      console.error('Error loading offers:', error)
+      console.error('❌ Error loading offers:', error)
+      setOffers([])
     }
   }
 
@@ -671,10 +684,38 @@ export const useGameState = (gameId, address) => {
       return
     }
 
-    const listingId = gameData?.listing_id || gameData?.id
-
     try {
       setCreatingOffer(true)
+
+      // For games created directly, we'll create a listing first, then create the offer
+      let listingId = gameData?.listing_id
+      
+      if (!listingId) {
+        // Create a listing for this game
+        const listingResponse = await fetch(getApiUrl('/listings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            creator: gameData.creator,
+            game_id: gameData.id,
+            nft_contract: gameData.nft_contract,
+            nft_token_id: gameData.nft_token_id,
+            nft_name: gameData.nft_name,
+            nft_image: gameData.nft_image,
+            nft_collection: gameData.nft_collection,
+            asking_price: gameData.final_price,
+            coin_data: gameData.coin_data
+          })
+        })
+        
+        if (listingResponse.ok) {
+          const listingResult = await listingResponse.json()
+          listingId = listingResult.listingId
+          console.log('✅ Created listing for game:', listingId)
+        } else {
+          throw new Error('Failed to create listing for game')
+        }
+      }
 
       const response = await fetch(getApiUrl(`/listings/${listingId}/offers`), {
         method: 'POST',
@@ -692,11 +733,8 @@ export const useGameState = (gameId, address) => {
         showSuccess('Offer created successfully!')
         setNewOffer({ price: '', message: '' })
         
-        const offersResponse = await fetch(getApiUrl(`/listings/${listingId}/offers`))
-        if (offersResponse.ok) {
-          let offersData = await offersResponse.json()
-          setOffers(offersData)
-        }
+        // Reload offers to show the new offer
+        await loadOffers()
       } else {
         const errorData = await response.text()
         showError(`Failed to create offer: ${response.status} ${response.statusText}`)
@@ -754,13 +792,8 @@ export const useGameState = (gameId, address) => {
 
       if (response.ok) {
         showSuccess('Offer rejected')
-        const listingId = gameData?.listing_id || gameData?.id
-        await fetch(getApiUrl(`/listings/${listingId}/offers`)).then(async response => {
-          if (response.ok) {
-            let offersData = await response.json()
-            setOffers(offersData)
-          }
-        })
+        // Reload offers to update the list
+        await loadOffers()
       } else {
         showError('Failed to reject offer')
       }

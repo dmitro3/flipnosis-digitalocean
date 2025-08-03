@@ -406,6 +406,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         }
         
         // Check if both players have charged and trigger flip
+        console.log('🎯 Calling checkAndTriggerFlip for game:', gameId)
         checkAndTriggerFlip(gameId, dbService)
         break
         
@@ -430,6 +431,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
 
   // Check if both players have charged and trigger flip
   function checkAndTriggerFlip(gameId, dbService) {
+    console.log('🎲 checkAndTriggerFlip called for game:', gameId)
     const db = dbService.getDatabase()
     
     // Get game info to identify both players
@@ -511,6 +513,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
             }
             
             // Start server-side flip animation
+            console.log('🎬 Starting server-side flip animation for game:', gameId)
             const animationStarted = coinStreamService.startFlipAnimation(
               gameId, 
               result, 
@@ -534,7 +537,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
               
               // Start streaming animation frames
               setTimeout(() => {
-                coinStreamService.streamAnimation(gameId, { broadcastToRoom }, gameId)
+                coinStreamService.streamAnimation(gameId, { broadcastToRoom: (roomId, message) => broadcastToRoom(roomId, message) }, gameId)
               }, 100)
               
               // Update round with flip result after animation completes
