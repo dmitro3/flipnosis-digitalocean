@@ -959,6 +959,8 @@ export const useGameState = (gameId, address) => {
     // Setters
     setNewOffer,
     setWsRef,
-    setStreamedCoinState
+    setStreamedCoinState,
+    setGameState,
+    setPlayerChoices
   }
 } 

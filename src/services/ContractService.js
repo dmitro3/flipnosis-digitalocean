@@ -240,8 +240,8 @@ class ContractService {
             console.error('❌ Error getting ETH amount:', error)
             // Fallback calculation
             const ethPriceUSD = 3500 // Conservative estimate
-            const ethAmountWei = (Number(usdAmount) / 1000000 * 1e18) / ethPriceUSD
-            return BigInt(Math.floor(ethAmountWei))
+            const ethAmountWei = (BigInt(usdAmount) * BigInt(1e18)) / (BigInt(ethPriceUSD) * BigInt(1000000))
+            return ethAmountWei
           }
         },
         listingFeeUSD: async () => {

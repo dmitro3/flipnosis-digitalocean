@@ -82,6 +82,11 @@ const GamePage = () => {
     formatTimeLeft,
     loadGameData,
     setNewOffer,
+    setGameState,
+    setPlayerChoices,
+    setStreamedCoinState,
+    handleFlipResult,
+    handleGameCompleted,
     isMyTurn,
     isCreator,
     isJoiner,
@@ -99,7 +104,18 @@ const GamePage = () => {
   const { wsConnected, wsRef } = useWebSocket(gameId, address, gameData)
 
   // Game data loading
-  useGameData(gameId, gameData, gameState, address)
+  useGameData(
+    gameId, 
+    gameData, 
+    gameState, 
+    address,
+    wsRef,
+    setGameState,
+    setPlayerChoices,
+    setStreamedCoinState,
+    handleFlipResult,
+    handleGameCompleted
+  )
 
   // Loading state
   if (loading) {

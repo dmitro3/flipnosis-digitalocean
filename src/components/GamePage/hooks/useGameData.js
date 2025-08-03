@@ -1,7 +1,18 @@
 import { useEffect } from 'react'
 import { useToast } from '../../../contexts/ToastContext'
 
-export const useGameData = (gameId, gameData, gameState, address) => {
+export const useGameData = (
+  gameId, 
+  gameData, 
+  gameState, 
+  address,
+  wsRef,
+  setGameState,
+  setPlayerChoices,
+  setStreamedCoinState,
+  handleFlipResult,
+  handleGameCompleted
+) => {
   const { showSuccess, showError, showInfo } = useToast()
 
   // Handle WebSocket messages
