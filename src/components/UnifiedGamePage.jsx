@@ -1303,28 +1303,43 @@ const UnifiedGamePage = () => {
             if (coinMatch) {
               const coinId = coinMatch[1]
               console.log('🔍 Found coin ID in string:', coinId)
-              // Create basic coin data structure - use a new variable to avoid const reassignment
-              const fallbackCoinData = {
+              
+              // Create basic coin data structure - use let instead of const
+              let fallbackCoinData = {
                 id: coinId,
                 type: 'default',
                 name: coinId.charAt(0).toUpperCase() + coinId.slice(1),
                 headsImage: `/coins/${coinId}h.png`,
                 tailsImage: `/coins/${coinId}t.png`
               }
+              
               // Handle special cases
               if (coinId === 'trump') {
-                fallbackCoinData.headsImage = '/coins/trumpheads.webp'
-                fallbackCoinData.tailsImage = '/coins/trumptails.webp'
+                fallbackCoinData = {
+                  ...fallbackCoinData,
+                  headsImage: '/coins/trumpheads.webp',
+                  tailsImage: '/coins/trumptails.webp'
+                }
               } else if (coinId === 'mario') {
-                fallbackCoinData.headsImage = '/coins/mario.png'
-                fallbackCoinData.tailsImage = '/coins/luigi.png'
+                fallbackCoinData = {
+                  ...fallbackCoinData,
+                  headsImage: '/coins/mario.png',
+                  tailsImage: '/coins/luigi.png'
+                }
               } else if (coinId === 'skull') {
-                fallbackCoinData.headsImage = '/coins/skullh.png'
-                fallbackCoinData.tailsImage = '/coins/skullt.png'
+                fallbackCoinData = {
+                  ...fallbackCoinData,
+                  headsImage: '/coins/skullh.png',
+                  tailsImage: '/coins/skullt.png'
+                }
               } else if (coinId === 'plain') {
-                fallbackCoinData.headsImage = '/coins/plainh.png'
-                fallbackCoinData.tailsImage = '/coins/plaint.png'
+                fallbackCoinData = {
+                  ...fallbackCoinData,
+                  headsImage: '/coins/plainh.png',
+                  tailsImage: '/coins/plaint.png'
+                }
               }
+              
               coinData = fallbackCoinData
               console.log('✅ Created fallback coin data:', coinData)
             }
