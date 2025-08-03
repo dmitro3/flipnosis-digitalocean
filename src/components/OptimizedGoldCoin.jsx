@@ -691,23 +691,14 @@ const OptimizedGoldCoin = ({
         touchAction: 'none'
       }}
     >
-      {/* Coin */}
+      {/* Three.js Coin Canvas */}
       <div
         ref={mountRef}
         style={{
           width: `${size}px`,
           height: `${size}px`,
-          borderRadius: '50%',
           position: 'relative',
           cursor: (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) ? 'pointer' : 'default',
-          transition: 'all 0.3s ease',
-          transform: isFlipping ? 'rotateY(1800deg)' : 
-                    isCharging ? 'scale(1.1)' : 
-                    (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) ? 'scale(1.05)' : 'scale(1)',
-          background: getCoinBackground(),
-          border: `4px solid ${getBorderColor()}`,
-          boxShadow: getBoxShadow(),
-          animation: getAnimation(),
           userSelect: 'none',
           WebkitUserSelect: 'none',
           touchAction: 'none'
@@ -718,69 +709,52 @@ const OptimizedGoldCoin = ({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd} // Also release on touch cancel
-      >
-        {/* Coin Face */}
-        <img
-          src={getCurrentCoinImage()}
-          alt="Coin"
+      />
+      
+      {/* Power Level Display */}
+      {(isCharging || currentPower > 0) && (
+        <div
           style={{
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            objectFit: 'cover',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            pointerEvents: 'none',
-            draggable: false
+            position: 'absolute',
+            bottom: '-60px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0, 0, 0, 0.8)',
+            padding: '0.5rem 1rem',
+            borderRadius: '1rem',
+            border: '2px solid #FFD700',
+            textAlign: 'center',
+            minWidth: '120px'
           }}
-          draggable={false}
-        />
-        
-        {/* Power Level Display */}
-        {(isCharging || currentPower > 0) && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '-60px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'rgba(0, 0, 0, 0.8)',
-              padding: '0.5rem 1rem',
-              borderRadius: '1rem',
-              border: '2px solid #FFD700',
-              textAlign: 'center',
-              minWidth: '120px'
-            }}
-          >
-            <div style={{
-              color: '#FFD700',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              marginBottom: '0.5rem'
-            }}>
-              POWER: {currentPower.toFixed(1)}/10
-            </div>
-            
-            <div style={{
-              height: '8px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '4px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${(currentPower / 10) * 100}%`,
-                background: isCharging ? 
-                  'linear-gradient(90deg, #FFD700, #FFA500, #FF6B00)' : 
-                  '#FFD700',
-                borderRadius: '4px',
-                transition: 'width 0.1s ease',
-                animation: isCharging ? 'powerCharge 0.5s linear infinite' : 'none'
-              }} />
-            </div>
+        >
+          <div style={{
+            color: '#FFD700',
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            marginBottom: '0.5rem'
+          }}>
+            POWER: {currentPower.toFixed(1)}/10
           </div>
-        )}
-      </div>
+          
+          <div style={{
+            height: '8px',
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${(currentPower / 10) * 100}%`,
+              background: isCharging ? 
+                'linear-gradient(90deg, #FFD700, #FFA500, #FF6B00)' : 
+                '#FFD700',
+              borderRadius: '4px',
+              transition: 'width 0.1s ease',
+              animation: isCharging ? 'powerCharge 0.5s linear infinite' : 'none'
+            }} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
