@@ -420,6 +420,25 @@ const UnifiedGamePage = () => {
         }
       }
       
+      // Sync player choices from game data if available
+      if (data.game_data && data.game_data.choices) {
+        const { creatorChoice, joinerChoice } = data.game_data.choices
+        if (creatorChoice || joinerChoice) {
+          setPlayerChoices(prev => ({
+            creator: creatorChoice || prev.creator,
+            joiner: joinerChoice || prev.joiner
+          }))
+          
+          setGameState(prev => ({
+            ...prev,
+            creatorChoice: creatorChoice || prev.creatorChoice,
+            joinerChoice: joinerChoice || prev.joinerChoice
+          }))
+          
+          console.log('🔄 Synced choices from game data:', { creatorChoice, joinerChoice })
+        }
+      }
+      
       // Load offers for this listing/game
       const listingId = data?.listing_id || data?.id
       if (listingId) {
@@ -772,6 +791,44 @@ const UnifiedGamePage = () => {
         }, 2000)
         break
         
+      case 'PLAYER_CHOICE_BROADCAST':
+        console.log('🎯 Player choice broadcast received:', data)
+        const { player: broadcastPlayer, choice: broadcastChoice } = data
+        
+        // Only process if it's from the other player
+        if (broadcastPlayer !== address) {
+          setGameState(prev => ({
+            ...prev,
+            creatorChoice: broadcastPlayer === getGameCreator() ? broadcastChoice : prev.creatorChoice,
+            joinerChoice: broadcastPlayer === getGameJoiner() ? broadcastChoice : prev.joinerChoice
+          }))
+          
+          setPlayerChoices(prev => ({
+            ...prev,
+            creator: broadcastPlayer === getGameCreator() ? broadcastChoice : prev.creator,
+            joiner: broadcastPlayer === getGameJoiner() ? broadcastChoice : prev.joiner
+          }))
+          
+          const otherPlayerName = broadcastPlayer === getGameCreator() ? 'Player 1' : 'Player 2'
+          showInfo(`🎯 ${otherPlayerName} chose ${broadcastChoice.toUpperCase()}!`)
+          
+          // Check if both players have chosen
+          const currentChoices = {
+            creator: broadcastPlayer === getGameCreator() ? broadcastChoice : (gameState.creatorChoice || playerChoices.creator),
+            joiner: broadcastPlayer === getGameJoiner() ? broadcastChoice : (gameState.joinerChoice || playerChoices.joiner)
+          }
+          
+          if (currentChoices.creator && currentChoices.joiner) {
+            console.log('🎯 Both players have chosen, transitioning to charging phase')
+            setGameState(prev => ({
+              ...prev,
+              phase: 'charging'
+            }))
+            showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
+          }
+        }
+        break
+        
       case 'player_choice_made':
         console.log('🎯 Player choice received:', data)
         const { player, choice } = data
@@ -791,6 +848,21 @@ const UnifiedGamePage = () => {
         // Show notification
         const playerName = player === getGameCreator() ? 'Player 1' : 'Player 2'
         showInfo(`🎯 ${playerName} chose ${choice.toUpperCase()}!`)
+        
+        // Check if both players have chosen
+        const currentChoices = {
+          creator: player === getGameCreator() ? choice : (gameState.creatorChoice || playerChoices.creator),
+          joiner: player === getGameJoiner() ? choice : (gameState.joinerChoice || playerChoices.joiner)
+        }
+        
+        if (currentChoices.creator && currentChoices.joiner) {
+          console.log('🎯 Both players have chosen, transitioning to charging phase')
+          setGameState(prev => ({
+            ...prev,
+            phase: 'charging'
+          }))
+          showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
+        }
         break
         
       case 'both_choices_made':
@@ -1000,6 +1072,22 @@ const UnifiedGamePage = () => {
     if (wsRef.readyState === WebSocket.OPEN) {
       try {
         wsRef.send(JSON.stringify(choiceMessage))
+        
+        // Also send a broadcast message to ensure other player gets notified
+        const broadcastMessage = {
+          type: 'PLAYER_CHOICE_BROADCAST',
+          gameId: gameId,
+          player: address,
+          choice: choice,
+          timestamp: Date.now()
+        }
+        
+        setTimeout(() => {
+          if (wsRef.readyState === WebSocket.OPEN) {
+            wsRef.send(JSON.stringify(broadcastMessage))
+          }
+        }, 500)
+        
       } catch (error) {
         console.error('❌ Failed to send choice:', error)
         showError('Failed to send choice. Please try again.')
@@ -1060,18 +1148,24 @@ const UnifiedGamePage = () => {
       return
     }
     
+    // Ensure powerLevel is a valid number
+    const validPowerLevel = typeof powerLevel === 'number' ? powerLevel : 
+                           (typeof powerLevel === 'object' && powerLevel !== null) ? 5 : 5
+    
+    console.log('⚡ Power charge stopped:', { powerLevel: validPowerLevel, originalType: typeof powerLevel })
+    
     setGameState(prev => ({
       ...prev,
       chargingPlayer: null,
-      creatorPower: address === getGameCreator() ? powerLevel : prev.creatorPower,
-      joinerPower: address === getGameJoiner() ? powerLevel : prev.joinerPower
+      creatorPower: address === getGameCreator() ? validPowerLevel : prev.creatorPower,
+      joinerPower: address === getGameJoiner() ? validPowerLevel : prev.joinerPower
     }))
     
     const powerMessage = {
       type: 'GAME_ACTION',
       gameId: gameId,
       action: 'POWER_CHARGED',
-      powerLevel: powerLevel,
+      powerLevel: validPowerLevel,
       player: address,
       timestamp: Date.now()
     }
@@ -2060,7 +2154,8 @@ const UnifiedGamePage = () => {
             {/* Choice Buttons - Show when game is active and it's player's turn */}
             {gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active' && 
              (gameState.phase === 'choosing' || gameState.phase === 'active' || gameState.phase === 'waiting') && 
-             isMyTurn() && !(isCreator() ? gameState.creatorChoice : gameState.joinerChoice) && (
+             isMyTurn() && !(isCreator() ? gameState.creatorChoice : gameState.joinerChoice) && 
+             !(isCreator() ? playerChoices.creator : playerChoices.joiner) && (
               <div style={{
                 background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
                 padding: '2rem',
