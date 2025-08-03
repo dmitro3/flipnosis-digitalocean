@@ -4,6 +4,7 @@ import { useToast } from '../../../contexts/ToastContext'
 import { useContractService } from '../../../utils/useContractService'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
+import { useGameData } from './useGameData'
 
 export const useGameState = (gameId, address) => {
   const { showSuccess, showError, showInfo } = useToast()
@@ -936,6 +937,20 @@ export const useGameState = (gameId, address) => {
       }
     }
   }, [countdownInterval, roundCountdownInterval, offersRefreshInterval])
+
+  // Set up WebSocket message handler
+  useGameData(
+    gameId,
+    gameData,
+    gameState,
+    address,
+    wsRef,
+    setGameState,
+    setPlayerChoices,
+    setStreamedCoinState,
+    handleFlipResult,
+    handleGameCompleted
+  )
 
   return {
     // State
