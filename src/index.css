@@ -214,6 +214,17 @@ body {
   50% { transform: scale(1.05); }
 }
 
+@keyframes powerLevelFlash {
+  0%, 100% { 
+    color: #FFD700;
+    textShadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  }
+  50% { 
+    color: #FFA500;
+    textShadow: 0 0 20px rgba(255, 165, 0, 1);
+  }
+}
+
 @keyframes waitingPulse {
   0%, 100% {
     opacity: 0.5;

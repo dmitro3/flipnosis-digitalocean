@@ -394,16 +394,29 @@ const UnifiedGamePage = () => {
       if (data.creator_deposited && data.challenger_deposited && 
           (data.status === 'active' || data.status === 'waiting_choices')) {
         console.log('🎮 Both players deposited, setting game phase to choosing')
-        setGameState(prev => ({
-          ...prev,
-          phase: 'choosing',
-          creatorChoice: null,
-          joinerChoice: null
-        }))
         
-        // Show success message for both players
-        if (address === getGameCreator() || address === getGameJoiner()) {
-          showSuccess('🎮 Game is now active! Choose heads or tails to begin!')
+        // Only show success message if we're transitioning from waiting to active
+        const wasWaiting = gameState.phase !== 'choosing' || !gameState.phase
+        if (wasWaiting) {
+          setGameState(prev => ({
+            ...prev,
+            phase: 'choosing',
+            creatorChoice: null,
+            joinerChoice: null
+          }))
+          
+          // Show success message for both players
+          if (address === getGameCreator() || address === getGameJoiner()) {
+            showSuccess('🎮 Game is now active! Choose heads or tails to begin!')
+          }
+        } else {
+          // Just update the state without showing message again
+          setGameState(prev => ({
+            ...prev,
+            phase: 'choosing',
+            creatorChoice: null,
+            joinerChoice: null
+          }))
         }
       }
       
@@ -723,7 +736,7 @@ const UnifiedGamePage = () => {
       case 'deposit_received':
         console.log('✅ Deposit received:', data)
         if (data.bothDeposited) {
-          showSuccess('Game is now active! Both players can start playing.')
+          showSuccess('🎮 Game is now active! Both players can start playing.')
           // Force reload game data to get updated status
           loadGameData()
           // Set game state to choosing phase immediately
@@ -737,6 +750,18 @@ const UnifiedGamePage = () => {
           // Even if only one deposit, reload to update UI
           loadGameData()
         }
+        break
+        
+      case 'game_started':
+        console.log('🎮 Game started notification:', data)
+        showSuccess('🎮 Game is now active! Choose heads or tails to begin!')
+        loadGameData()
+        setGameState(prev => ({
+          ...prev,
+          phase: 'choosing',
+          creatorChoice: null,
+          joinerChoice: null
+        }))
         break
         
       case 'game_status_changed':
@@ -1634,9 +1659,9 @@ const UnifiedGamePage = () => {
                   </div>
                   <div style={{ flex: '1' }}>
                     <h4 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Creator</h4>
-                    <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
-                      Power: {gameState.creatorPower}
-                    </p>
+                                         <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
+                       Power: {Number(gameState.creatorPower) || 0}
+                     </p>
                     <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
                       Wins: {gameState.creatorWins}
                     </p>
@@ -1688,9 +1713,9 @@ const UnifiedGamePage = () => {
                   </div>
                   <div style={{ flex: '1' }}>
                     <h4 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Joiner</h4>
-                    <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
-                      Power: {gameState.joinerPower}
-                    </p>
+                                         <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
+                       Power: {Number(gameState.joinerPower) || 0}
+                     </p>
                     <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
                       Wins: {gameState.joinerWins}
                     </p>
@@ -1724,22 +1749,29 @@ const UnifiedGamePage = () => {
                 </div>
               </div>
               
-              {/* Power Display - Right Side */}
-              <div style={{
-                flex: '1',
-                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
-                padding: '1.5rem',
-                borderRadius: '1rem',
-                border: '2px solid #FFD700',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}>
-                <h3 style={{ color: '#FFD700', marginBottom: '1rem', textAlign: 'center', fontSize: '1.2rem' }}>
-                  ⚡ POWER LEVEL ⚡
-                </h3>
+                             {/* Power Display - Right Side */}
+               <div style={{
+                 flex: '1',
+                 background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 40, 80, 0.9) 100%)',
+                 padding: '1.5rem',
+                 borderRadius: '1rem',
+                 border: '2px solid #FFD700',
+                 backdropFilter: 'blur(10px)',
+                 boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)',
+                 display: 'flex',
+                 flexDirection: 'column',
+                 justifyContent: 'space-between'
+               }}>
+                 <h3 style={{ 
+                   color: '#FFD700', 
+                   marginBottom: '1rem', 
+                   textAlign: 'center', 
+                   fontSize: '1.2rem',
+                   animation: 'powerLevelFlash 2s ease-in-out infinite',
+                   textShadow: '0 0 10px rgba(255, 215, 0, 0.8)'
+                 }}>
+                   ⚡ POWER LEVEL ⚡
+                 </h3>
                 
                 {/* Power Bar */}
                 <div style={{ flex: '1', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -1754,12 +1786,12 @@ const UnifiedGamePage = () => {
                       alignItems: 'center'
                     }}>
                       <span>Total Power</span>
-                      <span style={{ 
-                        color: '#FFD700',
-                        textShadow: '0 0 5px rgba(255, 215, 0, 0.8)' 
-                      }}>
-                        {(gameState.creatorPower + gameState.joinerPower).toFixed(1)}/10
-                      </span>
+                                             <span style={{ 
+                         color: '#FFD700',
+                         textShadow: '0 0 5px rgba(255, 215, 0, 0.8)' 
+                       }}>
+                         {((Number(gameState.creatorPower) || 0) + (Number(gameState.joinerPower) || 0)).toFixed(1)}/10
+                       </span>
                     </div>
                     
                     <div style={{
@@ -1771,9 +1803,9 @@ const UnifiedGamePage = () => {
                       position: 'relative',
                       boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.5)'
                     }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${((gameState.creatorPower + gameState.joinerPower) / 10) * 100}%`,
+                                             <div style={{
+                         height: '100%',
+                         width: `${(((Number(gameState.creatorPower) || 0) + (Number(gameState.joinerPower) || 0)) / 10) * 100}%`,
                         background: gameState.chargingPlayer ? 
                           `linear-gradient(90deg, #FFD700 0%, #FFA500 30%, #FF6B00 60%, #FF1493 100%)` :
                           `linear-gradient(90deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)`,
@@ -1803,7 +1835,7 @@ const UnifiedGamePage = () => {
                             width: '2px',
                             height: '70%',
                             background: 'rgba(255, 255, 255, 0.4)',
-                            opacity: (gameState.creatorPower + gameState.joinerPower) >= level ? 1 : 0.3
+                            opacity: ((Number(gameState.creatorPower) || 0) + (Number(gameState.joinerPower) || 0)) >= level ? 1 : 0.3
                           }} />
                         ))}
                       </div>
@@ -1849,6 +1881,36 @@ const UnifiedGamePage = () => {
                         animation: roundCountdown <= 5 ? 'pulse 1s ease-in-out infinite' : 'none'
                       }}>
                         ⏰ {roundCountdown}s
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Waiting for Opponent Message */}
+                  {gameData?.status === 'active' && gameState.phase === 'choosing' && 
+                   !isMyTurn() && !(isCreator() ? gameState.creatorChoice : gameState.joinerChoice) && (
+                    <div style={{
+                      padding: '0.75rem',
+                      background: 'rgba(255, 215, 0, 0.1)',
+                      border: '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '0.75rem',
+                      textAlign: 'center',
+                      marginTop: '0.5rem'
+                    }}>
+                      <div style={{
+                        color: '#FFD700',
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        animation: 'pulse 2s ease-in-out infinite',
+                        textShadow: '0 0 5px rgba(255, 215, 0, 0.8)'
+                      }}>
+                        ⏳ Waiting for opponent's choice...
+                      </div>
+                      <div style={{
+                        color: '#CCCCCC',
+                        fontSize: '0.8rem',
+                        marginTop: '0.25rem'
+                      }}>
+                        {gameState.phase === 'choosing' ? 'Player 1 goes first' : 'Please wait...'}
                       </div>
                     </div>
                   )}
@@ -2048,37 +2110,7 @@ const UnifiedGamePage = () => {
               </div>
             )}
             
-            {/* Show waiting message when it's not player's turn */}
-            {gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active' && 
-             (gameState.phase === 'choosing' || gameState.phase === 'active' || gameState.phase === 'waiting') && 
-             !isMyTurn() && (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
-                padding: '2rem',
-                borderRadius: '1rem',
-                border: '2px solid rgba(255, 215, 0, 0.3)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)',
-                marginBottom: '2rem',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  color: '#FFD700',
-                  fontSize: '1.3rem',
-                  fontWeight: 'bold',
-                  textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
-                  marginBottom: '0.5rem'
-                }}>
-                  ⏳ Waiting for opponent's choice...
-                </div>
-                <div style={{
-                  color: '#CCCCCC',
-                  fontSize: '1rem'
-                }}>
-                  {gameState.phase === 'choosing' ? 'Player 1 goes first' : 'Please wait...'}
-                </div>
-              </div>
-            )}
+
             
             
             
