@@ -37,19 +37,15 @@ export const useWalletConnection = () => {
 
   // Initialize contract service when wallet is fully connected
   useEffect(() => {
-    if (!isFullyConnected || !walletClient || !address || !chainId) {
+    if (!isFullyConnected || !walletClient || !chainId) {
       setIsContractInitialized(false)
       return
     }
 
     const initializeContract = async () => {
       try {
-        console.log('🔧 Initializing contract service from useWalletConnection...', {
-          walletClient: !!walletClient,
-          address,
-          chainId
-        })
-        await contractService.initialize(walletClient, address)
+        console.log('🔧 Initializing contract service from useWalletConnection...')
+        await contractService.initialize(walletClient, publicClient)
         console.log('✅ Contract service initialized successfully')
         setIsContractInitialized(true)
       } catch (error) {
@@ -60,7 +56,7 @@ export const useWalletConnection = () => {
     }
 
     initializeContract()
-  }, [isFullyConnected, walletClient, address, chainId])
+  }, [isFullyConnected, walletClient, chainId])
 
   return {
     address,
