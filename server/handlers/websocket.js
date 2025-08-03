@@ -389,34 +389,30 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           hasChallengerChoice: !!round.challenger_choice
         })
         
-        // Check if both players have made choices
-        if (round.creator_choice && round.challenger_choice) {
-          console.log('🎯 Both players have chosen, transitioning to charging phase')
+        // Check if a player has made their choice for this round
+        if (round.creator_choice || round.challenger_choice) {
+          console.log('🎯 Player has chosen, transitioning to charging phase')
           
-          // Broadcast that both players have chosen and game moves to charging phase
+          // Broadcast that a player has chosen and game moves to charging phase
           broadcastToRoom(gameId, {
-            type: 'both_choices_made',
+            type: 'choice_made_ready_to_flip',
             gameId,
             creatorChoice: round.creator_choice,
             challengerChoice: round.challenger_choice,
             roundNumber: round.round_number,
-            message: 'Both players have chosen! Hold the coin to charge power!'
+            message: 'Player has chosen! Hold the coin to charge power and flip!'
           })
           
         } else {
-          // Only one player has chosen, wait for the other
-          const waitingFor = round.creator_choice ? 'challenger' : 'creator'
-          const waitingForPlayer = waitingFor === 'creator' ? game.creator : game.challenger
-          
-          console.log(`⏳ Waiting for ${waitingFor} to choose...`)
+          // No player has chosen yet
+          console.log('⏳ Waiting for player to choose...')
           
           // Broadcast choice update
           broadcastToRoom(gameId, {
             type: 'choice_update',
             gameId,
-            waitingFor: waitingForPlayer,
             roundNumber: round.round_number,
-            message: `Waiting for ${waitingFor} to choose...`
+            message: 'Choose heads or tails to begin!'
           })
         }
       }

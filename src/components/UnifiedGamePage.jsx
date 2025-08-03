@@ -767,8 +767,8 @@ const UnifiedGamePage = () => {
         }
         break
         
-      case 'both_choices_made':
-        console.log('🎯 Both choices received:', data)
+      case 'choice_made_ready_to_flip':
+        console.log('🎯 Choice made, ready to flip:', data)
         const { creatorChoice: cChoice, challengerChoice: jChoice } = data
         
         // Update state to charging phase
@@ -782,6 +782,26 @@ const UnifiedGamePage = () => {
         setPlayerChoices({
           creator: cChoice,
           joiner: jChoice
+        })
+        
+        showSuccess('🎯 Player has chosen! Hold the coin to charge power and flip!')
+        break
+        
+      case 'both_choices_made':
+        console.log('🎯 Both choices received:', data)
+        const { creatorChoice: cChoice2, challengerChoice: jChoice2 } = data
+        
+        // Update state to charging phase
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: cChoice2,
+          joinerChoice: jChoice2,
+          phase: 'charging'
+        }))
+        
+        setPlayerChoices({
+          creator: cChoice2,
+          joiner: jChoice2
         })
         
         showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
@@ -1567,7 +1587,10 @@ const UnifiedGamePage = () => {
       isJoiner: isJoiner(),
       creatorChoice: gameState.creatorChoice,
       joinerChoice: gameState.joinerChoice,
-      address
+      address,
+      gameCreator: getGameCreator(),
+      gameJoiner: getGameJoiner(),
+      hasGameData: !!gameData
     })
     
     if (gameState.phase === 'choosing') {
@@ -1604,6 +1627,16 @@ const UnifiedGamePage = () => {
       const myTurn = (isCreator() && !gameState.creatorChoice) || (isJoiner() && !gameState.joinerChoice)
       console.log('Default fallback turn:', myTurn)
       return myTurn
+    }
+    
+    // After choice is made, allow the player who made the choice to flip
+    if (gameState.phase === 'active' || gameState.phase === 'charging') {
+      // Check if this player has made their choice for this round
+      const hasMadeChoice = (isCreator() && gameState.creatorChoice) || (isJoiner() && gameState.joinerChoice)
+      if (hasMadeChoice) {
+        console.log('🎯 Player has made choice, allowing flip/power charging')
+        return true
+      }
     }
     
     if (gameState.phase === 'charging') {
