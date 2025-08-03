@@ -975,6 +975,7 @@ export const useGameState = (gameId, address) => {
     startRoundCountdown,
     stopRoundCountdown,
     formatTimeLeft,
+    loadOffers,
 
     // Helpers
     isMyTurn,
@@ -991,6 +992,7 @@ export const useGameState = (gameId, address) => {
 
     // Setters
     setNewOffer,
+    setCreatingOffer,
     setWsRef,
     setStreamedCoinState,
     setGameState,

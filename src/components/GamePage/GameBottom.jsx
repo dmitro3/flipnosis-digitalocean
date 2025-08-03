@@ -87,9 +87,11 @@ const GameBottom = ({
   newOffer,
   creatingOffer,
   setNewOffer,
+  setCreatingOffer,
   createOffer,
   acceptOffer,
-  rejectOffer
+  rejectOffer,
+  loadOffers
 }) => {
   const { showInfo, showSuccess, showError } = useToast()
 
@@ -99,15 +101,11 @@ const GameBottom = ({
       return
     }
 
-    setCreatingOffer(true)
     try {
       await createOffer()
       setNewOffer({ price: '', message: '' })
-      showSuccess('Offer created successfully!')
     } catch (error) {
-      showError('Failed to create offer')
-    } finally {
-      setCreatingOffer(false)
+      // Error handling is already done in createOffer
     }
   }
 
@@ -284,6 +282,22 @@ const GameBottom = ({
               animation: 'pulse 2s infinite'
             }}></div>
             <span style={{ color: '#00FF41', fontSize: '0.8rem' }}>Live</span>
+            <button
+              onClick={loadOffers}
+              style={{
+                background: 'transparent',
+                border: '1px solid #FF1493',
+                color: '#FF1493',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                fontSize: '0.7rem',
+                marginLeft: '0.5rem'
+              }}
+              title="Refresh offers"
+            >
+              ↻
+            </button>
           </div>
         </div>
         
@@ -364,6 +378,7 @@ const GameBottom = ({
         
         {/* Offers List */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
+          {console.log('🎯 Current offers in GameBottom:', offers)}
           {offers.length === 0 ? (
             <p style={{ color: '#CCCCCC', textAlign: 'center', marginTop: '2rem' }}>
               No offers yet

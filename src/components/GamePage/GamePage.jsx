@@ -311,9 +311,11 @@ const GamePage = () => {
             newOffer={newOffer}
             creatingOffer={creatingOffer}
             setNewOffer={setNewOffer}
+            setCreatingOffer={setCreatingOffer}
             createOffer={createOffer}
             acceptOffer={acceptOffer}
             rejectOffer={rejectOffer}
+            loadOffers={loadOffers}
           />
         </GameContainer>
 
