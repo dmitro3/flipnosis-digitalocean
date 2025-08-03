@@ -308,15 +308,17 @@ export const useGameState = (gameId, address) => {
   const loadOffers = async () => {
     console.log('🔍 loadOffers called with gameData:', gameData)
     
-    if (!gameData?.id) {
-      console.log('❌ No game ID found in gameData')
+    if (!gameData) {
+      console.log('❌ No game data available')
       return
     }
 
     try {
-      console.log('📋 Attempting to fetch offers for gameId:', gameData.id)
+      // Use the same logic as loadGameData to determine the correct endpoint
+      const listingId = gameData?.listing_id || gameData?.id
+      console.log('📋 Attempting to fetch offers for listingId:', listingId)
       
-      const response = await fetch(getApiUrl(`/games/${gameData.id}/offers`))
+      const response = await fetch(getApiUrl(`/listings/${listingId}/offers`))
       console.log('📡 Response status:', response.status)
       
       if (response.ok) {
