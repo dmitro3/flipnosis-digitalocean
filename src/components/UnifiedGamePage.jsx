@@ -446,9 +446,11 @@ const UnifiedGamePage = () => {
         retryCount
       })
       
+      // Use let instead of const for cacheKey to avoid assignment issues
+      let cacheKey = Math.round(finalPrice * 100)
+      
       // Check cache first
-      const cacheKey = Math.round(finalPrice * 100)
-      if (ethAmountCache.current.has(cacheKey) && retryCount === 0) {
+      if (ethAmountCache.current && ethAmountCache.current.has(cacheKey) && retryCount === 0) {
         const cachedAmount = ethAmountCache.current.get(cacheKey)
         console.log('💰 Using cached ETH amount for price:', finalPrice, 'USD')
         setEthAmount(cachedAmount)
@@ -463,7 +465,7 @@ const UnifiedGamePage = () => {
       
       // Use Alchemy API to get ETH price (more reliable than contract)
       try {
-        const alchemyApiKey = import.meta.env.VITE_ALCHEMY_API_KEY || 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+        const alchemyApiKey = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
         const response = await fetch(`https://base-mainnet.g.alchemy.com/v2/${alchemyApiKey}`, {
           method: 'POST',
           headers: {
@@ -478,15 +480,21 @@ const UnifiedGamePage = () => {
         })
         
         if (response.ok) {
-          let data = await response.json()
+          const data = await response.json()
           // Use a conservative ETH price estimate since we can't get real-time price from this endpoint
           const ethPriceUSD = 3500 // Conservative estimate
           const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
-          const calculatedEthAmount = BigInt(Math.floor(ethAmountWei))
+          const calculatedEthAmountBigInt = BigInt(Math.floor(ethAmountWei))
           
-          setEthAmount(calculatedEthAmount)
-          ethAmountCache.current.set(cacheKey, calculatedEthAmount)
-          console.log('💰 Calculated ETH amount using Alchemy:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', finalPrice, 'USD')
+          setEthAmount(calculatedEthAmountBigInt)
+          
+          // Make sure ethAmountCache.current exists before setting
+          if (!ethAmountCache.current) {
+            ethAmountCache.current = new Map()
+          }
+          ethAmountCache.current.set(cacheKey, calculatedEthAmountBigInt)
+          
+          console.log('💰 Calculated ETH amount using Alchemy:', ethers.formatEther(calculatedEthAmountBigInt), 'ETH for price:', finalPrice, 'USD')
         } else {
           throw new Error('Alchemy API request failed')
         }
@@ -500,10 +508,16 @@ const UnifiedGamePage = () => {
           // Final fallback calculation
           const ethPriceUSD = 3500
           const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
-          const fallbackEthAmount = BigInt(Math.floor(ethAmountWei))
-          setEthAmount(fallbackEthAmount)
-          ethAmountCache.current.set(cacheKey, fallbackEthAmount)
-          console.log('💰 Using final fallback ETH amount:', ethers.formatEther(fallbackEthAmount), 'ETH')
+          const fallbackEthAmountBigInt = BigInt(Math.floor(ethAmountWei))
+          setEthAmount(fallbackEthAmountBigInt)
+          
+          // Make sure ethAmountCache.current exists before setting
+          if (!ethAmountCache.current) {
+            ethAmountCache.current = new Map()
+          }
+          ethAmountCache.current.set(cacheKey, fallbackEthAmountBigInt)
+          
+          console.log('💰 Using final fallback ETH amount:', ethers.formatEther(fallbackEthAmountBigInt), 'ETH')
         }
       }
     } catch (error) {
