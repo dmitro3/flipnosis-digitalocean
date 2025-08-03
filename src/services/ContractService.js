@@ -9,6 +9,15 @@ const CONTRACT_ADDRESS = '0x3997F4720B3a515e82d54F30d7CF2993B014EeBE'
 // Use Alchemy RPC endpoint directly
 const ALCHEMY_RPC_URL = 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
+// Gas optimization settings for Base network
+const GAS_CONFIG = {
+  GAS_BUFFER_PERCENT: 120, // 20% buffer for safety
+  MAX_FEE_BUFFER_PERCENT: 110, // 10% buffer for max fee
+  PRIORITY_FEE_GWEI: 1, // 1 gwei priority fee
+  DEFAULT_GAS_LIMIT: 300000, // Default gas limit if estimation fails
+  DEFAULT_MAX_FEE_GWEI: 2 // Default max fee if estimation fails
+}
+
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
   {
@@ -190,6 +199,44 @@ class ContractService {
     this.initialized = false
   }
 
+  // Utility function for gas optimization on Base network
+  async getOptimizedGasSettings(functionName, args = [], value = 0n) {
+    try {
+      // Get current gas price for Base network optimization
+      const gasPrice = await this.publicClient.getGasPrice()
+      console.log('⛽ Current gas price:', gasPrice.toString())
+      
+      // Estimate gas for the transaction
+      const gasEstimate = await this.publicClient.estimateContractGas({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: functionName,
+        args: args,
+        value: value,
+        account: this.account
+      })
+      
+      console.log(`⛽ Gas estimate for ${functionName}:`, gasEstimate.toString())
+      
+      // Add buffer for safety using config
+      const gasLimit = gasEstimate * BigInt(GAS_CONFIG.GAS_BUFFER_PERCENT) / 100n
+      
+      return {
+        gas: gasLimit,
+        maxFeePerGas: gasPrice * BigInt(GAS_CONFIG.MAX_FEE_BUFFER_PERCENT) / 100n,
+        maxPriorityFeePerGas: BigInt(GAS_CONFIG.PRIORITY_FEE_GWEI) * 1000000000n // Convert gwei to wei
+      }
+    } catch (error) {
+      console.error(`❌ Error estimating gas for ${functionName}:`, error)
+      // Fallback to default settings from config
+      return {
+        gas: BigInt(GAS_CONFIG.DEFAULT_GAS_LIMIT),
+        maxFeePerGas: BigInt(GAS_CONFIG.DEFAULT_MAX_FEE_GWEI) * 1000000000n, // Convert gwei to wei
+        maxPriorityFeePerGas: BigInt(GAS_CONFIG.PRIORITY_FEE_GWEI) * 1000000000n // Convert gwei to wei
+      }
+    }
+  }
+
   // Initialize the service with Viem
   async initialize(walletClient, address) {
     try {
@@ -277,38 +324,50 @@ class ContractService {
         },
         // Write functions using wallet client
         payListingFee: async (value) => {
+          const gasSettings = await this.getOptimizedGasSettings('payListingFee', [], value)
+          
           return await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'payListingFee',
             args: [],
-            value
+            value,
+            ...gasSettings
           })
         },
         payFeeAndCreateGame: async (gameId, nftContract, tokenId, priceUSD, paymentToken, value) => {
+          const gasSettings = await this.getOptimizedGasSettings('payFeeAndCreateGame', [gameId, nftContract, tokenId, priceUSD, paymentToken], value)
+          
           return await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'payFeeAndCreateGame',
             args: [gameId, nftContract, tokenId, priceUSD, paymentToken],
-            value
+            value,
+            ...gasSettings
           })
         },
         depositNFT: async (gameId) => {
+          const gasSettings = await this.getOptimizedGasSettings('depositNFT', [gameId])
+          
           return await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'depositNFT',
-            args: [gameId]
+            args: [gameId],
+            ...gasSettings
           })
         },
         depositETH: async (gameId, value) => {
+          const gasSettings = await this.getOptimizedGasSettings('depositETH', [gameId], value)
+          
           return await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'depositETH',
             args: [gameId],
-            value
+            value,
+            ...gasSettings
           })
         }
       }
@@ -487,7 +546,7 @@ class ContractService {
   // Approve NFT for deposit
   async approveNFT(nftContract, tokenId) {
     if (!this.isReady()) {
-      return { success: false, error: 'Wallet not connected or contract service not initialized.' }
+      return { success: false, error: 'Contract service not initialized' }
     }
 
     try {
@@ -504,12 +563,34 @@ class ContractService {
         return { success: true, alreadyApproved: true }
       }
 
-      // Approve NFT
+      // Get current gas price for Base network optimization
+      const gasPrice = await this.publicClient.getGasPrice()
+      console.log('⛽ Current gas price:', gasPrice.toString())
+      
+      // Estimate gas for the approval transaction
+      const gasEstimate = await this.publicClient.estimateContractGas({
+        address: nftContract,
+        abi: NFT_ABI,
+        functionName: 'approve',
+        args: [this.contractAddress, tokenId],
+        account: this.account
+      })
+      
+      console.log('⛽ Gas estimate:', gasEstimate.toString())
+      
+      // Add 20% buffer for safety
+      const gasLimit = gasEstimate * 120n / 100n
+
+      // Approve NFT with optimized gas settings
       const hash = await this.walletClient.writeContract({
         address: nftContract,
         abi: NFT_ABI,
         functionName: 'approve',
-        args: [this.contractAddress, tokenId]
+        args: [this.contractAddress, tokenId],
+        gas: gasLimit,
+        // Use maxFeePerGas and maxPriorityFeePerGas for EIP-1559
+        maxFeePerGas: gasPrice * 110n / 100n, // 10% buffer
+        maxPriorityFeePerGas: 1000000000n // 1 gwei priority fee
       })
 
       console.log('🔐 NFT approval tx:', hash)
@@ -550,7 +631,18 @@ class ContractService {
         }
       }
 
-      const hash = await this.contract.depositNFT(gameIdBytes32)
+      // Get optimized gas settings
+      const gasSettings = await this.getOptimizedGasSettings('depositNFT', [gameIdBytes32])
+      
+      // For Base network, use optimized gas settings
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'depositNFT',
+        args: [gameIdBytes32],
+        ...gasSettings
+      })
+      
       console.log('📦 NFT deposit tx:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -579,7 +671,20 @@ class ContractService {
       }
 
       const value = BigInt(ethAmount)
-      const hash = await this.contract.depositETH(gameIdBytes32, value)
+      
+      // Get optimized gas settings
+      const gasSettings = await this.getOptimizedGasSettings('depositETH', [gameIdBytes32], value)
+      
+      // For Base network, use optimized gas settings
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'depositETH',
+        args: [gameIdBytes32],
+        value: value,
+        ...gasSettings
+      })
+      
       console.log('💰 ETH deposit tx:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
