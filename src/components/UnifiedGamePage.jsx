@@ -463,61 +463,54 @@ const UnifiedGamePage = () => {
         return
       }
       
-      // Use Alchemy API to get ETH price (more reliable than contract)
+      // Use contract's getETHAmount function (same as create page)
       try {
-        const alchemyApiKey = 'hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
-        const response = await fetch(`https://base-mainnet.g.alchemy.com/v2/${alchemyApiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'eth_getBalance',
-            params: ['0x0000000000000000000000000000000000000000', 'latest']
-          })
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          // Use a conservative ETH price estimate since we can't get real-time price from this endpoint
-          const ethPriceUSD = 3500 // Conservative estimate
-          const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
-          const calculatedEthAmountBigInt = BigInt(Math.floor(ethAmountWei))
-          
-          setEthAmount(calculatedEthAmountBigInt)
-          
-          // Make sure ethAmountCache.current exists before setting
-          if (!ethAmountCache.current) {
-            ethAmountCache.current = new Map()
+        if (!contractService.isReady()) {
+          console.log('⏳ Contract service not ready, waiting...')
+          if (retryCount < 3) {
+            setTimeout(() => calculateAndSetEthAmount(finalPrice, retryCount + 1), 1000)
           }
-          ethAmountCache.current.set(cacheKey, calculatedEthAmountBigInt)
-          
-          console.log('💰 Calculated ETH amount using Alchemy:', ethers.formatEther(calculatedEthAmountBigInt), 'ETH for price:', finalPrice, 'USD')
-        } else {
-          throw new Error('Alchemy API request failed')
+          return
         }
-      } catch (apiError) {
-        console.error('❌ Alchemy API call failed:', apiError)
         
-        if (retryCount < 1) {
+        // Convert finalPrice to microdollars (same as create page)
+        const priceInMicrodollars = Math.round(finalPrice * 1000000)
+        
+        console.log(`💰 Game price: $${finalPrice} (${priceInMicrodollars} microdollars)`)
+        
+        // Use contract's getETHAmount function
+        const calculatedEthAmount = await contractService.contract.getETHAmount(priceInMicrodollars)
+        
+        setEthAmount(calculatedEthAmount)
+        
+        // Make sure ethAmountCache.current exists before setting
+        if (!ethAmountCache.current) {
+          ethAmountCache.current = new Map()
+        }
+        ethAmountCache.current.set(cacheKey, calculatedEthAmount)
+        
+        console.log('💰 Calculated ETH amount using contract:', ethers.formatEther(calculatedEthAmount), 'ETH for price:', finalPrice, 'USD')
+      } catch (contractError) {
+        console.error('❌ Contract getETHAmount call failed:', contractError)
+        
+        if (retryCount < 2) {
           console.log('🔄 Retrying ETH calculation...')
           setTimeout(() => calculateAndSetEthAmount(finalPrice, retryCount + 1), 1000)
         } else {
-          // Final fallback calculation
-          const ethPriceUSD = 3500
-          const ethAmountWei = (finalPrice / ethPriceUSD) * 1e18
-          const fallbackEthAmountBigInt = BigInt(Math.floor(ethAmountWei))
-          setEthAmount(fallbackEthAmountBigInt)
+          // Final fallback - use same method as create page
+          const priceInMicrodollars = Math.round(finalPrice * 1000000)
+          console.log('💰 Using fallback calculation with microdollars:', priceInMicrodollars)
+          
+          // This should match what the contract expects
+          setEthAmount(BigInt(priceInMicrodollars))
           
           // Make sure ethAmountCache.current exists before setting
           if (!ethAmountCache.current) {
             ethAmountCache.current = new Map()
           }
-          ethAmountCache.current.set(cacheKey, fallbackEthAmountBigInt)
+          ethAmountCache.current.set(cacheKey, BigInt(priceInMicrodollars))
           
-          console.log('💰 Using final fallback ETH amount:', ethers.formatEther(fallbackEthAmountBigInt), 'ETH')
+          console.log('💰 Using fallback ETH amount for microdollars:', priceInMicrodollars)
         }
       }
     } catch (error) {
