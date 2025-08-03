@@ -199,7 +199,6 @@ const CreateFlip = () => {
   const [price, setPrice] = useState('')
   const [loading, setLoading] = useState(false)
   const [gameType, setGameType] = useState('nft-vs-crypto')
-  const [acceptsOffers, setAcceptsOffers] = useState(true)
   const [preloadNFT, setPreloadNFT] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [selectedCoin, setSelectedCoin] = useState({
@@ -566,7 +565,6 @@ const CreateFlip = () => {
                 <Label>Game Type</Label>
                 <Select value={gameType} onChange={(e) => setGameType(e.target.value)}>
                   <option value="nft-vs-crypto">NFT vs Crypto</option>
-                  <option value="nft-vs-nft">NFT vs NFT</option>
                 </Select>
               </FormGroup>
 
@@ -614,33 +612,7 @@ const CreateFlip = () => {
                 )}
               </FormGroup>
 
-              {/* Accepts Offers Toggle */}
-              <FormGroup>
-                <Label>Accept Offers</Label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <input
-                    type="checkbox"
-                    id="acceptsOffers"
-                    checked={acceptsOffers}
-                    onChange={(e) => setAcceptsOffers(e.target.checked)}
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      cursor: 'pointer'
-                    }}
-                  />
-                  <label 
-                    htmlFor="acceptsOffers" 
-                    style={{ 
-                      cursor: 'pointer',
-                      color: theme.colors.textSecondary,
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    Allow players to make offers below asking price
-                  </label>
-                </div>
-              </FormGroup>
+
 
               {/* Coin Selection */}
               <FormGroup>
@@ -653,6 +625,58 @@ const CreateFlip = () => {
                   }}
                 />
               </FormGroup>
+
+              {/* Progress Indicator at Bottom */}
+              <div style={{ marginTop: '2rem', marginBottom: '1rem' }}>
+                <ProgressContainer>
+                  <ProgressLine progress={getProgressPercentage()} />
+                  
+                  <ProgressStep>
+                    <StepCircle 
+                      completed={stepStatus.approve}
+                      active={currentStep === 1 && !stepStatus.approve}
+                    >
+                      {stepStatus.approve ? '✓' : '1'}
+                    </StepCircle>
+                    <StepLabel 
+                      completed={stepStatus.approve}
+                      active={currentStep === 1 && !stepStatus.approve}
+                    >
+                      Approve NFT
+                    </StepLabel>
+                  </ProgressStep>
+                  
+                  <ProgressStep>
+                    <StepCircle 
+                      completed={stepStatus.payFee}
+                      active={currentStep === 2 && !stepStatus.payFee}
+                    >
+                      {stepStatus.payFee ? '✓' : '2'}
+                    </StepCircle>
+                    <StepLabel 
+                      completed={stepStatus.payFee}
+                      active={currentStep === 2 && !stepStatus.payFee}
+                    >
+                      Pay Fee & Create
+                    </StepLabel>
+                  </ProgressStep>
+                  
+                  <ProgressStep>
+                    <StepCircle 
+                      completed={stepStatus.depositNFT}
+                      active={currentStep === 3 && !stepStatus.depositNFT}
+                    >
+                      {stepStatus.depositNFT ? '✓' : '3'}
+                    </StepCircle>
+                    <StepLabel 
+                      completed={stepStatus.depositNFT}
+                      active={currentStep === 3 && !stepStatus.depositNFT}
+                    >
+                      Deposit NFT
+                    </StepLabel>
+                  </ProgressStep>
+                </ProgressContainer>
+              </div>
 
               {/* Submit Button */}
               <SubmitButton type="submit" disabled={loading || !isFullyConnected}>
