@@ -553,7 +553,7 @@ const UnifiedGamePage = () => {
     console.log('🔌 Initializing WebSocket connection to:', wsUrl)
     
     const ws = new WebSocket(wsUrl)
-    wsRef = ws
+    setWsRef(ws)
     
     ws.onopen = () => {
       console.log('🔌 WebSocket connected successfully')
