@@ -70,7 +70,10 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
 
   // Broadcast to room
   function broadcastToRoom(roomId, message) {
-    if (!rooms.has(roomId)) return
+    if (!rooms.has(roomId)) {
+      console.log(`⚠️ Room ${roomId} not found, creating it`)
+      rooms.set(roomId, new Set())
+    }
     
     const room = rooms.get(roomId)
     const messageStr = JSON.stringify(message)
@@ -78,19 +81,62 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     console.log(`📢 Broadcasting to room ${roomId}:`, {
       messageType: message.type,
       roomSize: room.size,
-      connectedClients: wss.clients.size
+      connectedClients: wss.clients.size,
+      message: message
     })
     
     let successfulBroadcasts = 0
+    let failedBroadcasts = 0
+    
+    // Get all active WebSocket clients
+    const activeClients = Array.from(wss.clients).filter(client => 
+      client.readyState === 1 // WebSocket.OPEN
+    )
+    
+    console.log(`🔍 Active clients: ${activeClients.length}, Room members: ${room.size}`)
+    
+    // Broadcast to room members
     room.forEach(socketId => {
-      const client = Array.from(wss.clients).find(s => s.id === socketId)
-      if (client && client.readyState === 1) { // WebSocket.OPEN
-        client.send(messageStr)
-        successfulBroadcasts++
+      const client = activeClients.find(s => s.id === socketId)
+      if (client) {
+        try {
+          client.send(messageStr)
+          successfulBroadcasts++
+        } catch (error) {
+          console.error(`❌ Failed to send to client ${socketId}:`, error)
+          failedBroadcasts++
+          // Remove failed client from room
+          room.delete(socketId)
+        }
+      } else {
+        console.log(`⚠️ Client ${socketId} not found or not connected, removing from room`)
+        room.delete(socketId)
+        failedBroadcasts++
       }
     })
     
-    console.log(`✅ Successfully broadcasted to ${successfulBroadcasts}/${room.size} clients in room ${roomId}`)
+    // Also try to broadcast to any clients that might not be in the room but should receive the message
+    // This is a safety net for connection issues
+    if (message.type === 'player_choice_made' || message.type === 'both_choices_made' || message.type === 'power_charged') {
+      activeClients.forEach(client => {
+        if (client.address && !room.has(client.id)) {
+          try {
+            client.send(messageStr)
+            console.log(`📤 Sent message to non-room client: ${client.address}`)
+          } catch (error) {
+            console.error(`❌ Failed to send to non-room client:`, error)
+          }
+        }
+      })
+    }
+    
+    console.log(`✅ Broadcast complete: ${successfulBroadcasts} successful, ${failedBroadcasts} failed`)
+    
+    // Clean up empty rooms
+    if (room.size === 0) {
+      rooms.delete(roomId)
+      console.log(`🧹 Cleaned up empty room: ${roomId}`)
+    }
   }
 
   // Broadcast to all
@@ -116,23 +162,54 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
+  // Add a function to ensure room membership
+  function ensureRoomMembership(socket, roomId) {
+    if (!rooms.has(roomId)) {
+      rooms.set(roomId, new Set())
+    }
+    
+    const room = rooms.get(roomId)
+    if (!room.has(socket.id)) {
+      room.add(socket.id)
+      socketRooms.set(socket.id, roomId)
+      console.log(`✅ Added socket ${socket.id} to room ${roomId}`)
+    }
+  }
+
   function handleJoinRoom(socket, data) {
     const { roomId } = data
+    
+    console.log(`👥 Socket ${socket.id} requesting to join room ${roomId}`)
     
     // Leave previous room if any
     const oldRoom = socketRooms.get(socket.id)
     if (oldRoom && rooms.has(oldRoom)) {
       rooms.get(oldRoom).delete(socket.id)
+      console.log(`👋 Socket ${socket.id} left old room ${oldRoom}`)
     }
     
     // Join new room
     if (!rooms.has(roomId)) {
       rooms.set(roomId, new Set())
+      console.log(`🏠 Created new room: ${roomId}`)
     }
-    rooms.get(roomId).add(socket.id)
+    
+    const room = rooms.get(roomId)
+    room.add(socket.id)
     socketRooms.set(socket.id, roomId)
     
-    console.log(`👥 Socket ${socket.id} joined room ${roomId}`)
+    console.log(`👥 Socket ${socket.id} joined room ${roomId} (${room.size} members total)`)
+    
+    // Send confirmation
+    try {
+      socket.send(JSON.stringify({
+        type: 'room_joined',
+        roomId: roomId,
+        members: room.size
+      }))
+    } catch (error) {
+      console.error('❌ Failed to send room join confirmation:', error)
+    }
   }
 
   function handleRegisterUser(socket, data) {
@@ -171,7 +248,18 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     
     switch (action) {
       case 'MAKE_CHOICE':
-        // Get game from database
+        console.log('🎯 Player making choice:', { player, choice, gameId })
+        
+        // Immediately broadcast the choice to the room so other player sees it
+        broadcastToRoom(gameId, {
+          type: 'player_choice_made',
+          gameId,
+          player,
+          choice,
+          timestamp: Date.now()
+        })
+        
+        // Get game from database to check both players
         db.get('SELECT * FROM games WHERE id = ?', [gameId], async (err, game) => {
           if (err || !game) {
             console.error('❌ Game not found:', gameId)
@@ -214,7 +302,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                     console.log('✅ Updated round with choice:', { roundId, player, choice })
                     
                     // Check if both players have made choices
-                    checkAndProcessRound(gameId, roundId)
+                    checkAndProcessRound(gameId, roundId, game, db)
                   }
                 )
               } else {
@@ -230,7 +318,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                     console.log('✅ Created new round with choice:', { roundNumber, player, choice })
                     
                     // Check if both players have made choices
-                    checkAndProcessRound(gameId, this.lastID)
+                    checkAndProcessRound(gameId, this.lastID, game, db)
                   }
                 )
               }
@@ -239,8 +327,43 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         })
         break
         
-      case 'FLIP_COIN':
-        handleFlipCoin(socket, data, dbService)
+      case 'POWER_CHARGE_START':
+        console.log('⚡ Power charge started:', { player, gameId })
+        
+        // Broadcast power charge start to room
+        broadcastToRoom(gameId, {
+          type: 'power_charge_started',
+          gameId,
+          player,
+          timestamp: Date.now()
+        })
+        break
+        
+      case 'POWER_CHARGED':
+        console.log('⚡ Power charged:', { player, powerLevel, gameId })
+        
+        // Broadcast power charge to room
+        broadcastToRoom(gameId, {
+          type: 'power_charged',
+          gameId,
+          player,
+          powerLevel,
+          timestamp: Date.now()
+        })
+        break
+        
+      case 'AUTO_FLIP':
+      case 'AUTO_FLIP_TIMEOUT':
+        console.log('🎲 Auto flip triggered:', { player, choice, gameId })
+        
+        // Handle auto-flip for Round 5 or timeout
+        broadcastToRoom(gameId, {
+          type: 'auto_flip_triggered',
+          gameId,
+          choice,
+          player,
+          timestamp: Date.now()
+        })
         break
         
       default:
@@ -248,9 +371,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
-  function checkAndProcessRound(gameId, roundId) {
-    const db = dbService.getDatabase()
-    
+  function checkAndProcessRound(gameId, roundId, game, db) {
     db.get(
       'SELECT * FROM game_rounds WHERE id = ?',
       [roundId],
@@ -260,58 +381,42 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           return
         }
         
+        console.log('🔍 Checking round completion:', {
+          roundId,
+          creatorChoice: round.creator_choice,
+          challengerChoice: round.challenger_choice,
+          hasCreatorChoice: !!round.creator_choice,
+          hasChallengerChoice: !!round.challenger_choice
+        })
+        
         // Check if both players have made choices
         if (round.creator_choice && round.challenger_choice) {
-          console.log('🎯 Both players have chosen, processing round:', round)
+          console.log('🎯 Both players have chosen, transitioning to charging phase')
           
-          // Generate flip result
-          const result = Math.random() < 0.5 ? 'heads' : 'tails'
-          const creatorWins = round.creator_choice === result
-          
-          // Get game info to determine winner
-          db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
-            if (err || !game) {
-              console.error('❌ Game not found for round processing:', gameId)
-              return
-            }
-            
-            const roundWinner = creatorWins ? game.creator : game.challenger
-            
-            // Update round with result
-            db.run(
-              'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
-              [result, roundWinner, roundId],
-              (err) => {
-                if (err) {
-                  console.error('❌ Error updating round result:', err)
-                  return
-                }
-                
-                console.log('✅ Round result updated:', { result, roundWinner })
-                
-                // Broadcast result to room
-                broadcastToRoom(gameId, {
-                  type: 'round_result',
-                  result,
-                  roundWinner,
-                  roundNumber: round.round_number,
-                  creatorChoice: round.creator_choice,
-                  challengerChoice: round.challenger_choice
-                })
-                
-                // Check if game is complete
-                checkGameCompletion(gameId)
-              }
-            )
-          })
-        } else {
-          console.log('⏳ Waiting for both players to choose...')
-          
-          // Broadcast choice made
+          // Broadcast that both players have chosen and game moves to charging phase
           broadcastToRoom(gameId, {
-            type: 'choice_made',
+            type: 'both_choices_made',
+            gameId,
+            creatorChoice: round.creator_choice,
+            challengerChoice: round.challenger_choice,
             roundNumber: round.round_number,
-            player: round.creator_choice ? game.challenger : game.creator
+            message: 'Both players have chosen! Hold the coin to charge power!'
+          })
+          
+        } else {
+          // Only one player has chosen, wait for the other
+          const waitingFor = round.creator_choice ? 'challenger' : 'creator'
+          const waitingForPlayer = waitingFor === 'creator' ? game.creator : game.challenger
+          
+          console.log(`⏳ Waiting for ${waitingFor} to choose...`)
+          
+          // Broadcast choice update
+          broadcastToRoom(gameId, {
+            type: 'choice_update',
+            gameId,
+            waitingFor: waitingForPlayer,
+            roundNumber: round.round_number,
+            message: `Waiting for ${waitingFor} to choose...`
           })
         }
       }

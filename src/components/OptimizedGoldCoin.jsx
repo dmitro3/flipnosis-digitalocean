@@ -1,6 +1,28 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 
+// Add CSS animations
+const powerChargeAnimation = `
+  @keyframes powerCharge {
+    0% { background: linear-gradient(90deg, #FFD700, #FFA500, #FF6B00); }
+    50% { background: linear-gradient(90deg, #FFA500, #FF6B00, #FFD700); }
+    100% { background: linear-gradient(90deg, #FF6B00, #FFD700, #FFA500); }
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+`
+
+// Inject the CSS
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = powerChargeAnimation
+  document.head.appendChild(style)
+}
+
 // MODIFICATION 1: Add power configurations array (original durations restored)
 const powerConfigs = [
   { minFlips: 5, duration: 2000, speed: 1 },     // Level 1
@@ -23,7 +45,6 @@ const OptimizedGoldCoin = ({
   onPowerCharge,
   onPowerRelease,
   chargingPlayer = null,
-  isCharging = false,
   creatorPower = 0,
   joinerPower = 0,
   size = 300,
@@ -32,7 +53,12 @@ const OptimizedGoldCoin = ({
   isCreator = false,
   customHeadsImage = null,
   customTailsImage = null,
+  gamePhase = 'choosing',
 }) => {
+  // Add missing state variables
+  const [currentPower, setCurrentPower] = useState(0)
+  const [powerInterval, setPowerInterval] = useState(null)
+  const [isCharging, setIsCharging] = useState(false)
   // Debug logs removed to reduce console spam
   
   const mountRef = useRef(null)
@@ -459,43 +485,303 @@ const OptimizedGoldCoin = ({
     };
   }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower])
 
-  // Touch/mouse handlers
-  const handleInteractionStart = (e) => {
-    if (!isPlayerTurn || !onPowerCharge) return
+  // Mouse Events
+  const handleMouseDown = (e) => {
     e.preventDefault()
-    onPowerCharge(e)
+    e.stopPropagation()
+    
+    console.log('🖱️ Mouse down - checking conditions:', {
+      isPlayerTurn,
+      gamePhase,
+      chargingPlayer,
+      isCharging,
+      canInteract: isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')
+    })
+    
+    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active')) {
+      console.log('❌ Cannot interact with coin - not player turn or wrong phase')
+      return
+    }
+    
+    if (isCharging || chargingPlayer) {
+      console.log('❌ Already charging or someone else is charging')
+      return
+    }
+    
+    setIsCharging(true)
+    setCurrentPower(0)
+    
+    // Start power charging
+    if (onPowerCharge) {
+      console.log('⚡ Starting power charge')
+      onPowerCharge()
+    }
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(50)
+    }
+    
+    const startTime = Date.now()
+    
+    const powerInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const newPower = Math.min(10, (elapsed / 200)) // 2 seconds to reach max power
+      
+      setCurrentPower(newPower)
+      
+      if (newPower >= 10) {
+        clearInterval(powerInterval)
+      }
+    }, 50) // Update every 50ms for smooth animation
+    
+    setPowerInterval(powerInterval)
   }
 
-  const handleInteractionEnd = (e) => {
-    if (!isPlayerTurn || !onPowerRelease) return
+  const handleMouseUp = (e) => {
     e.preventDefault()
-    onPowerRelease(e)
+    e.stopPropagation()
+    
+    if (!isCharging) return
+    
+    console.log('🖱️ Mouse up - releasing power:', currentPower)
+    
+    setIsCharging(false)
+    
+    if (powerInterval) {
+      clearInterval(powerInterval)
+      setPowerInterval(null)
+    }
+    
+    // Send power level
+    if (onPowerRelease && currentPower > 0) {
+      console.log('⚡ Releasing power:', currentPower)
+      onPowerRelease(currentPower)
+    }
+    
+    // Keep the power level visible briefly
+    setTimeout(() => {
+      setCurrentPower(0)
+    }, 1000)
+  }
+
+  // Touch Events (for mobile)
+  const handleTouchStart = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    console.log('📱 Touch start - checking conditions:', {
+      isPlayerTurn,
+      gamePhase,
+      chargingPlayer,
+      isCharging
+    })
+    
+    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active')) {
+      console.log('❌ Cannot interact with coin - not player turn or wrong phase')
+      return
+    }
+    
+    if (isCharging || chargingPlayer) {
+      console.log('❌ Already charging or someone else is charging')
+      return
+    }
+    
+    setIsCharging(true)
+    setCurrentPower(0)
+    
+    // Start power charging
+    if (onPowerCharge) {
+      console.log('⚡ Starting power charge (touch)')
+      onPowerCharge()
+    }
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(50)
+    }
+    
+    const startTime = Date.now()
+    
+    const powerInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const newPower = Math.min(10, (elapsed / 200)) // 2 seconds to reach max power
+      
+      setCurrentPower(newPower)
+      
+      if (newPower >= 10) {
+        clearInterval(powerInterval)
+      }
+    }, 50)
+    
+    setPowerInterval(powerInterval)
+  }
+
+  const handleTouchEnd = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!isCharging) return
+    
+    console.log('📱 Touch end - releasing power:', currentPower)
+    
+    setIsCharging(false)
+    
+    if (powerInterval) {
+      clearInterval(powerInterval)
+      setPowerInterval(null)
+    }
+    
+    // Send power level
+    if (onPowerRelease && currentPower > 0) {
+      console.log('⚡ Releasing power (touch):', currentPower)
+      onPowerRelease(currentPower)
+    }
+    
+    // Keep the power level visible briefly
+    setTimeout(() => {
+      setCurrentPower(0)
+    }, 1000)
+  }
+
+  // Helper functions for styling
+  const getCoinBackground = () => {
+    if (isCharging) {
+      return 'radial-gradient(circle, rgba(255,215,0,0.3) 0%, rgba(255,165,0,0.2) 50%, transparent 100%)'
+    }
+    return 'transparent'
+  }
+
+  const getBorderColor = () => {
+    if (isCharging) return '#FFD700'
+    if (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) return '#FFA500'
+    return '#666'
+  }
+
+  const getBoxShadow = () => {
+    if (isCharging) {
+      return '0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 165, 0, 0.4)'
+    }
+    if (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) {
+      return '0 0 10px rgba(255, 165, 0, 0.5)'
+    }
+    return 'none'
+  }
+
+  const getAnimation = () => {
+    if (isCharging) return 'pulse 0.5s ease-in-out infinite'
+    return 'none'
+  }
+
+  const getCurrentCoinImage = () => {
+    // This would need to be implemented based on your coin image logic
+    // For now, return a default image
+    return customHeadsImage || '/images/Heads.webp'
   }
 
   return (
     <div
-      ref={mountRef}
-      onMouseDown={isPlayerTurn ? handleInteractionStart : undefined}
-      onMouseUp={isPlayerTurn ? handleInteractionEnd : undefined}
-      onMouseLeave={isPlayerTurn ? handleInteractionEnd : undefined}
-      onTouchStart={isPlayerTurn ? handleInteractionStart : undefined}
-      onTouchEnd={isPlayerTurn ? handleInteractionEnd : undefined}
       style={{
-        width: size,
-        height: size,
-        cursor: isPlayerTurn ? 'pointer' : 'default',
-        userSelect: 'none',
-        touchAction: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         position: 'relative',
-        margin: '0 auto',
-        display: 'block',
-        background: isCharging ? 
-          `radial-gradient(circle, rgba(255,20,147,0.1) 0%, transparent 70%)` : 
-          'transparent',
-        transition: 'background 0.3s ease',
-        borderRadius: '50%'
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        touchAction: 'none'
       }}
-    />
+    >
+      {/* Coin */}
+      <div
+        ref={mountRef}
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: '50%',
+          position: 'relative',
+          cursor: (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) ? 'pointer' : 'default',
+          transition: 'all 0.3s ease',
+          transform: isFlipping ? 'rotateY(1800deg)' : 
+                    isCharging ? 'scale(1.1)' : 
+                    (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) ? 'scale(1.05)' : 'scale(1)',
+          background: getCoinBackground(),
+          border: `4px solid ${getBorderColor()}`,
+          boxShadow: getBoxShadow(),
+          animation: getAnimation(),
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          touchAction: 'none'
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp} // Also release on mouse leave
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd} // Also release on touch cancel
+      >
+        {/* Coin Face */}
+        <img
+          src={getCurrentCoinImage()}
+          alt="Coin"
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            pointerEvents: 'none',
+            draggable: false
+          }}
+          draggable={false}
+        />
+        
+        {/* Power Level Display */}
+        {(isCharging || currentPower > 0) && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '-60px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0, 0, 0, 0.8)',
+              padding: '0.5rem 1rem',
+              borderRadius: '1rem',
+              border: '2px solid #FFD700',
+              textAlign: 'center',
+              minWidth: '120px'
+            }}
+          >
+            <div style={{
+              color: '#FFD700',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              marginBottom: '0.5rem'
+            }}>
+              POWER: {currentPower.toFixed(1)}/10
+            </div>
+            
+            <div style={{
+              height: '8px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '4px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${(currentPower / 10) * 100}%`,
+                background: isCharging ? 
+                  'linear-gradient(90deg, #FFD700, #FFA500, #FF6B00)' : 
+                  '#FFD700',
+                borderRadius: '4px',
+                transition: 'width 0.1s ease',
+                animation: isCharging ? 'powerCharge 0.5s linear infinite' : 'none'
+              }} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

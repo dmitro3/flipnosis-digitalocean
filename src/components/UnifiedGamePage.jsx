@@ -576,6 +576,7 @@ const UnifiedGamePage = () => {
   // Initialize WebSocket connection
   const initializeWebSocket = () => {
     if (wsRef) {
+      console.log('🔌 Closing existing WebSocket connection')
       wsRef.close()
     }
     
@@ -585,22 +586,41 @@ const UnifiedGamePage = () => {
     const ws = new WebSocket(wsUrl)
     setWsRef(ws)
     
+    // Add connection timeout
+    const connectionTimeout = setTimeout(() => {
+      if (ws.readyState === WebSocket.CONNECTING) {
+        console.log('⏰ WebSocket connection timeout, closing...')
+        ws.close()
+      }
+    }, 10000) // 10 second timeout
+    
     ws.onopen = () => {
       console.log('🔌 WebSocket connected successfully')
+      clearTimeout(connectionTimeout)
       setWsConnected(true)
       
-      // Join game room
-      ws.send(JSON.stringify({
-        type: 'join_room',
-        roomId: gameId
-      }))
-      
-      // Register user
-      if (address) {
+      // Join game room immediately
+      try {
         ws.send(JSON.stringify({
-          type: 'register_user',
-          address: address
+          type: 'join_room',
+          roomId: gameId
         }))
+        console.log('🏠 Joined game room:', gameId)
+      } catch (error) {
+        console.error('❌ Failed to join room:', error)
+      }
+      
+      // Register user if we have an address
+      if (address) {
+        try {
+          ws.send(JSON.stringify({
+            type: 'register_user',
+            address: address
+          }))
+          console.log('👤 Registered user:', address)
+        } catch (error) {
+          console.error('❌ Failed to register user:', error)
+        }
       }
     }
     
@@ -609,24 +629,30 @@ const UnifiedGamePage = () => {
         let data = JSON.parse(event.data)
         console.log('📨 Raw WebSocket message:', data)
         
-        // Handle 'message' wrapper from Socket.IO
+        // Handle 'message' wrapper from Socket.IO if present
         if (data.type === 'message' && data.data) {
           handleWebSocketMessage(data.data)
         } else {
           handleWebSocketMessage(data)
         }
       } catch (err) {
-        console.error('Error parsing WebSocket message:', err)
+        console.error('❌ Error parsing WebSocket message:', err, 'Raw data:', event.data)
       }
     }
     
     ws.onerror = (error) => {
       console.error('🔌 WebSocket error:', error)
+      clearTimeout(connectionTimeout)
       setWsConnected(false)
     }
     
     ws.onclose = (event) => {
-      console.log('🔌 WebSocket disconnected:', event.code, event.reason)
+      console.log('🔌 WebSocket disconnected:', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean
+      })
+      clearTimeout(connectionTimeout)
       setWsConnected(false)
       
       // Reconnect if game is still active
@@ -716,6 +742,112 @@ const UnifiedGamePage = () => {
     
     // Handle different message types
     switch (data.type) {
+      case 'player_choice_made':
+        console.log('🎯 Player choice received:', data)
+        const { player, choice } = data
+        
+        // Update game state immediately
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: player === getGameCreator() ? choice : prev.creatorChoice,
+          joinerChoice: player === getGameJoiner() ? choice : prev.joinerChoice
+        }))
+        
+        // Update player choices display
+        setPlayerChoices(prev => ({
+          ...prev,
+          creator: player === getGameCreator() ? choice : prev.creator,
+          joiner: player === getGameJoiner() ? choice : prev.joiner
+        }))
+        
+        // Show notification only if it's from the other player
+        if (player !== address) {
+          const playerName = player === getGameCreator() ? 'Player 1' : 'Player 2'
+          showInfo(`🎯 ${playerName} chose ${choice.toUpperCase()}!`)
+        }
+        break
+        
+      case 'both_choices_made':
+        console.log('🎯 Both choices received:', data)
+        const { creatorChoice: cChoice, challengerChoice: jChoice } = data
+        
+        // Update state to charging phase
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: cChoice,
+          joinerChoice: jChoice,
+          phase: 'charging'
+        }))
+        
+        setPlayerChoices({
+          creator: cChoice,
+          joiner: jChoice
+        })
+        
+        showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
+        break
+        
+      case 'power_charge_started':
+        console.log('⚡ Power charge started by:', data.player)
+        const { player: chargingPlayer } = data
+        
+        // Update charging state
+        setGameState(prev => ({
+          ...prev,
+          chargingPlayer: chargingPlayer
+        }))
+        
+        // Show notification if it's the other player
+        if (chargingPlayer !== address) {
+          const playerName = chargingPlayer === getGameCreator() ? 'Player 1' : 'Player 2'
+          showInfo(`⚡ ${playerName} is charging power!`)
+        }
+        break
+        
+      case 'power_charged':
+        console.log('⚡ Power update received:', data)
+        const { player: powerPlayer, powerLevel } = data
+        
+        // Update power levels
+        setGameState(prev => ({
+          ...prev,
+          creatorPower: powerPlayer === getGameCreator() ? powerLevel : prev.creatorPower,
+          joinerPower: powerPlayer === getGameJoiner() ? powerLevel : prev.joinerPower,
+          chargingPlayer: null // Clear charging state when power is set
+        }))
+        
+        // Show notification if it's the other player
+        if (powerPlayer !== address) {
+          const playerName = powerPlayer === getGameCreator() ? 'Player 1' : 'Player 2'
+          showInfo(`⚡ ${playerName} charged power: ${powerLevel.toFixed(1)}/10`)
+        }
+        break
+        
+
+        
+      case 'choice_update':
+        console.log('🔄 Choice update:', data)
+        // Just for logging, main choice handling is in player_choice_made
+        break
+        
+      case 'auto_flip_triggered':
+        console.log('🎲 Auto-flip triggered:', data)
+        const { autoChoice } = data
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: autoChoice,
+          joinerChoice: autoChoice,
+          phase: 'charging'
+        }))
+        
+        setPlayerChoices({
+          creator: autoChoice,
+          joiner: autoChoice
+        })
+        
+        showInfo('🎲 Auto-flip triggered due to time limit!')
+        break
+        
       case 'PLAYER_CHOICE':
         console.log('👤 Player made choice:', data)
         // Update UI to show player has made their choice
@@ -829,76 +961,9 @@ const UnifiedGamePage = () => {
         }
         break
         
-      case 'player_choice_made':
-        console.log('🎯 Player choice received:', data)
-        const { player, choice } = data
-        setGameState(prev => ({
-          ...prev,
-          creatorChoice: player === getGameCreator() ? choice : prev.creatorChoice,
-          joinerChoice: player === getGameJoiner() ? choice : prev.joinerChoice
-        }))
-        
-        // Update player choices display
-        setPlayerChoices(prev => ({
-          ...prev,
-          creator: player === getGameCreator() ? choice : prev.creator,
-          joiner: player === getGameJoiner() ? choice : prev.joiner
-        }))
-        
-        // Show notification
-        const playerName = player === getGameCreator() ? 'Player 1' : 'Player 2'
-        showInfo(`🎯 ${playerName} chose ${choice.toUpperCase()}!`)
-        
-        // Check if both players have chosen
-        const currentChoices = {
-          creator: player === getGameCreator() ? choice : (gameState.creatorChoice || playerChoices.creator),
-          joiner: player === getGameJoiner() ? choice : (gameState.joinerChoice || playerChoices.joiner)
-        }
-        
-        if (currentChoices.creator && currentChoices.joiner) {
-          console.log('🎯 Both players have chosen, transitioning to charging phase')
-          setGameState(prev => ({
-            ...prev,
-            phase: 'charging'
-          }))
-          showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
-        }
-        break
-        
-      case 'both_choices_made':
-        console.log('🎯 Both choices received:', data)
-        const { creatorChoice: cChoice, joinerChoice: jChoice } = data
-        setGameState(prev => ({
-          ...prev,
-          creatorChoice: cChoice,
-          joinerChoice: jChoice,
-          phase: 'charging'
-        }))
-        
-        setPlayerChoices({
-          creator: cChoice,
-          joiner: jChoice
-        })
-        
-        showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
-        break
-        
-      case 'auto_flip_triggered':
-        console.log('🎲 Auto-flip triggered:', data)
-        const { autoChoice } = data
-        setGameState(prev => ({
-          ...prev,
-          creatorChoice: autoChoice,
-          joinerChoice: autoChoice,
-          phase: 'charging'
-        }))
-        
-        setPlayerChoices({
-          creator: autoChoice,
-          joiner: autoChoice
-        })
-        
-        showInfo('🎲 Auto-flip triggered due to time limit!')
+      case 'room_joined':
+        console.log('🏠 Room joined successfully:', data)
+        showInfo(`Connected to game room (${data.members} players)`)
         break
         
       case 'game_status_changed':
@@ -1028,7 +1093,7 @@ const UnifiedGamePage = () => {
   
   // Game actions
   const handlePlayerChoice = (choice) => {
-    if (!wsRef || !wsConnected) {
+    if (!wsRef || wsRef.readyState !== WebSocket.OPEN) {
       showError('Not connected to game server')
       return
     }
@@ -1056,7 +1121,7 @@ const UnifiedGamePage = () => {
     // Show immediate feedback
     showSuccess(`🎯 You chose ${choice.toUpperCase()}!`)
     
-    // Send choice to server - FIXED FORMAT
+    // Send choice to server with proper error handling
     const choiceMessage = {
       type: 'GAME_ACTION',
       gameId: gameId,
@@ -1068,33 +1133,39 @@ const UnifiedGamePage = () => {
     
     console.log('📤 Sending choice to server:', choiceMessage)
     
-    // Send as proper WebSocket message
-    if (wsRef.readyState === WebSocket.OPEN) {
-      try {
-        wsRef.send(JSON.stringify(choiceMessage))
-        
-        // Also send a broadcast message to ensure other player gets notified
-        const broadcastMessage = {
-          type: 'PLAYER_CHOICE_BROADCAST',
-          gameId: gameId,
-          player: address,
-          choice: choice,
-          timestamp: Date.now()
-        }
-        
-        setTimeout(() => {
-          if (wsRef.readyState === WebSocket.OPEN) {
-            wsRef.send(JSON.stringify(broadcastMessage))
-          }
-        }, 500)
-        
-      } catch (error) {
-        console.error('❌ Failed to send choice:', error)
-        showError('Failed to send choice. Please try again.')
+    try {
+      wsRef.send(JSON.stringify(choiceMessage))
+      console.log('✅ Choice sent successfully')
+      
+      // Also send a broadcast message to ensure other player gets notified
+      const broadcastMessage = {
+        type: 'PLAYER_CHOICE_BROADCAST',
+        gameId: gameId,
+        player: address,
+        choice: choice,
+        timestamp: Date.now()
       }
-    } else {
-      console.error('❌ WebSocket not open, state:', wsRef.readyState)
-      showError('Connection lost. Please refresh the page.')
+      
+      // Send broadcast after a small delay
+      setTimeout(() => {
+        if (wsRef && wsRef.readyState === WebSocket.OPEN) {
+          wsRef.send(JSON.stringify(broadcastMessage))
+          console.log('📡 Broadcast message sent')
+        }
+      }, 100)
+      
+    } catch (error) {
+      console.error('❌ Failed to send choice:', error)
+      showError('Failed to send choice. Please try again.')
+      
+      // Revert local state on error
+      if (address === getGameCreator()) {
+        setPlayerChoices(prev => ({ ...prev, creator: null }))
+        setGameState(prev => ({ ...prev, creatorChoice: null }))
+      } else if (address === getGameJoiner()) {
+        setPlayerChoices(prev => ({ ...prev, joiner: null }))
+        setGameState(prev => ({ ...prev, joinerChoice: null }))
+      }
     }
     
     // Check if this is Round 5 - if so, auto-flip after choice
@@ -1143,17 +1214,22 @@ const UnifiedGamePage = () => {
   }
   
   const handlePowerChargeStop = async (powerLevel) => {
-    if (!wsRef || !wsConnected) {
+    if (!wsRef || wsRef.readyState !== WebSocket.OPEN) {
       showError('Not connected to game server')
       return
     }
     
     // Ensure powerLevel is a valid number
-    const validPowerLevel = typeof powerLevel === 'number' ? powerLevel : 
-                           (typeof powerLevel === 'object' && powerLevel !== null) ? 5 : 5
+    const validPowerLevel = typeof powerLevel === 'number' && !isNaN(powerLevel) ? powerLevel : 5
     
-    console.log('⚡ Power charge stopped:', { powerLevel: validPowerLevel, originalType: typeof powerLevel })
+    console.log('⚡ Power charge stopped:', { 
+      powerLevel: validPowerLevel, 
+      originalType: typeof powerLevel,
+      isCreator: isCreator(),
+      address 
+    })
     
+    // Update local state
     setGameState(prev => ({
       ...prev,
       chargingPlayer: null,
@@ -1161,6 +1237,7 @@ const UnifiedGamePage = () => {
       joinerPower: address === getGameJoiner() ? validPowerLevel : prev.joinerPower
     }))
     
+    // Send power data to server
     const powerMessage = {
       type: 'GAME_ACTION',
       gameId: gameId,
@@ -1170,9 +1247,13 @@ const UnifiedGamePage = () => {
       timestamp: Date.now()
     }
     
-    // Ensure the message is serializable
     try {
       wsRef.send(JSON.stringify(powerMessage))
+      console.log('✅ Power level sent to server:', validPowerLevel)
+      
+      // Show success message
+      showSuccess(`⚡ Power charged: ${validPowerLevel.toFixed(1)}/10`)
+      
     } catch (error) {
       console.error('❌ Failed to send power message:', error)
       showError('Failed to send power data. Please try again.')
@@ -1471,38 +1552,68 @@ const UnifiedGamePage = () => {
   const isMyTurn = () => {
     // Don't allow turns if game hasn't started yet
     if (!gameData?.creator_deposited || !gameData?.challenger_deposited || gameData?.status !== 'active') {
+      console.log('❌ Game not ready for turns:', {
+        creatorDeposited: gameData?.creator_deposited,
+        challengerDeposited: gameData?.challenger_deposited,
+        status: gameData?.status
+      })
       return false
     }
+    
+    console.log('🔍 Checking if it\'s my turn:', {
+      gamePhase: gameState.phase,
+      currentRound: gameState.currentRound,
+      isCreator: isCreator(),
+      isJoiner: isJoiner(),
+      creatorChoice: gameState.creatorChoice,
+      joinerChoice: gameState.joinerChoice,
+      address
+    })
     
     if (gameState.phase === 'choosing') {
       // Round 1: Player 1 (creator) goes first
       if (gameState.currentRound === 1) {
-        return isCreator() && !gameState.creatorChoice
+        const myTurn = isCreator() && !gameState.creatorChoice
+        console.log('Round 1 - Creator turn:', myTurn)
+        return myTurn
       }
       // Round 2: Player 2 (joiner) goes
       else if (gameState.currentRound === 2) {
-        return isJoiner() && !gameState.joinerChoice
+        const myTurn = isJoiner() && !gameState.joinerChoice
+        console.log('Round 2 - Joiner turn:', myTurn)
+        return myTurn
       }
       // Round 3: Player 1 goes again
       else if (gameState.currentRound === 3) {
-        return isCreator() && !gameState.creatorChoice
+        const myTurn = isCreator() && !gameState.creatorChoice
+        console.log('Round 3 - Creator turn:', myTurn)
+        return myTurn
       }
       // Round 4: Player 2 goes again
       else if (gameState.currentRound === 4) {
-        return isJoiner() && !gameState.joinerChoice
+        const myTurn = isJoiner() && !gameState.joinerChoice
+        console.log('Round 4 - Joiner turn:', myTurn)
+        return myTurn
       }
       // Round 5: Auto-flip (no player choice needed)
       else if (gameState.currentRound === 5) {
+        console.log('Round 5 - Auto flip')
         return false
       }
-      // Default fallback
-      return (isCreator() && !gameState.creatorChoice) || (isJoiner() && !gameState.joinerChoice)
+      // Default fallback - allow anyone who hasn't chosen yet
+      const myTurn = (isCreator() && !gameState.creatorChoice) || (isJoiner() && !gameState.joinerChoice)
+      console.log('Default fallback turn:', myTurn)
+      return myTurn
     }
     
     if (gameState.phase === 'charging') {
-      return gameState.chargingPlayer === address
+      // In charging phase, both players can charge power
+      const myTurn = isCreator() || isJoiner()
+      console.log('Charging phase - my turn:', myTurn)
+      return myTurn
     }
     
+    console.log('❌ Not my turn - phase:', gameState.phase)
     return false
   }
   
@@ -2096,20 +2207,17 @@ const UnifiedGamePage = () => {
             </PlayerSection>
             
             {/* Game Phase Messages */}
-            {gameState.phase === 'choosing' && (
+            {gameState.phase === 'choosing' && gameState.currentRound === 5 && (
               <div style={{
                 textAlign: 'center',
                 marginBottom: '1rem',
                 padding: '1rem',
-                background: gameState.currentRound === 5 ? 'rgba(255, 20, 147, 0.1)' : 'rgba(255, 215, 0, 0.1)',
-                border: `1px solid ${gameState.currentRound === 5 ? 'rgba(255, 20, 147, 0.3)' : 'rgba(255, 215, 0, 0.3)'}`,
+                background: 'rgba(255, 20, 147, 0.1)',
+                border: '1px solid rgba(255, 20, 147, 0.3)',
                 borderRadius: '0.75rem'
               }}>
-                <p style={{ color: gameState.currentRound === 5 ? theme.colors.neonPink : theme.colors.neonYellow, margin: 0 }}>
-                  {gameState.currentRound === 5 
-                    ? '🎲 FINAL ROUND - Auto-flip for fairness! 🎲' 
-                    : 'Choose heads or tails below!'
-                  }
+                <p style={{ color: theme.colors.neonPink, margin: 0 }}>
+                  🎲 FINAL ROUND - Auto-flip for fairness! 🎲
                 </p>
               </div>
             )}
