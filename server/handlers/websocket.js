@@ -5,6 +5,10 @@ const rooms = new Map()
 const socketRooms = new Map()
 const userSockets = new Map()
 
+// Game state tracking
+const gamePowerCharges = new Map() // Track power charges per game
+const gameTurnState = new Map() // Track whose turn it is
+
 // Create WebSocket handlers
 function createWebSocketHandlers(wss, dbService, blockchainService) {
   // Handle WebSocket connections
@@ -342,6 +346,25 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       case 'POWER_CHARGED':
         console.log('⚡ Power charged:', { player, powerLevel, gameId })
         
+        // Check if it's the player's turn
+        const turnState = gameTurnState.get(gameId)
+        if (!turnState) {
+          console.log('⚠️ No turn state found, allowing power charge')
+        } else if (turnState.currentTurn !== player) {
+          console.log('⚠️ Not player\'s turn, ignoring power charge:', { 
+            currentTurn: turnState.currentTurn, 
+            chargingPlayer: player 
+          })
+          return
+        }
+        
+        // Track power charge for this game
+        if (!gamePowerCharges.has(gameId)) {
+          gamePowerCharges.set(gameId, new Map())
+        }
+        const powerCharges = gamePowerCharges.get(gameId)
+        powerCharges.set(player, powerLevel)
+        
         // Broadcast power charge to room
         broadcastToRoom(gameId, {
           type: 'power_charged',
@@ -350,6 +373,36 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           powerLevel,
           timestamp: Date.now()
         })
+        
+        // Switch turns if both players haven't charged yet
+        if (turnState) {
+          const db = dbService.getDatabase()
+          db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+            if (err || !game) return
+            
+            const otherPlayer = player === game.creator ? game.challenger : game.creator
+            const otherPlayerCharged = powerCharges.has(otherPlayer)
+            
+            if (!otherPlayerCharged) {
+              // Switch to other player's turn
+              turnState.currentTurn = otherPlayer
+              gameTurnState.set(gameId, turnState)
+              
+              console.log('🔄 Switched turn to:', otherPlayer)
+              
+              // Broadcast turn change
+              broadcastToRoom(gameId, {
+                type: 'turn_changed',
+                gameId,
+                currentTurn: otherPlayer,
+                message: `It's ${otherPlayer.slice(0, 6)}...'s turn to charge power!`
+              })
+            }
+          })
+        }
+        
+        // Check if both players have charged and trigger flip
+        checkAndTriggerFlip(gameId, dbService)
         break
         
       case 'AUTO_FLIP':
@@ -371,6 +424,113 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
+  // Check if both players have charged and trigger the flip
+  function checkAndTriggerFlip(gameId, dbService) {
+    const db = dbService.getDatabase()
+    
+    // Get game info to identify both players
+    db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+      if (err || !game) {
+        console.error('❌ Game not found for flip check:', gameId)
+        return
+      }
+      
+      const powerCharges = gamePowerCharges.get(gameId)
+      if (!powerCharges) {
+        console.log('⏳ No power charges tracked yet for game:', gameId)
+        return
+      }
+      
+      const creatorPower = powerCharges.get(game.creator)
+      const challengerPower = powerCharges.get(game.challenger)
+      
+      console.log('🔍 Checking power charges:', {
+        gameId,
+        creator: game.creator,
+        challenger: game.challenger,
+        creatorPower,
+        challengerPower,
+        hasBothCharged: creatorPower && challengerPower
+      })
+      
+      // Check if both players have charged
+      if (creatorPower && challengerPower) {
+        console.log('🎲 Both players have charged! Triggering flip...')
+        
+        // Get current round to ensure both players have made choices
+        db.get(
+          'SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number DESC LIMIT 1',
+          [gameId],
+          (err, round) => {
+            if (err || !round) {
+              console.error('❌ No active round found for flip:', gameId)
+              return
+            }
+            
+            if (!round.creator_choice || !round.challenger_choice) {
+              console.error('❌ Both players must choose before flipping')
+              return
+            }
+            
+            if (round.flip_result) {
+              console.error('❌ Round already has a result')
+              return
+            }
+            
+            // Generate flip result
+            const result = Math.random() < 0.5 ? 'heads' : 'tails'
+            const creatorWins = round.creator_choice === result
+            const roundWinner = creatorWins ? game.creator : game.challenger
+            
+            console.log('🎲 Flip result generated:', {
+              result,
+              creatorChoice: round.creator_choice,
+              challengerChoice: round.challenger_choice,
+              roundWinner,
+              creatorPower,
+              challengerPower
+            })
+            
+            // Update round with flip result
+            db.run(
+              'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
+              [result, roundWinner, round.id],
+              (err) => {
+                if (err) {
+                  console.error('❌ Error updating flip result:', err)
+                  return
+                }
+                
+                console.log('✅ Flip result recorded:', { result, roundWinner })
+                
+                // Broadcast flip result
+                broadcastToRoom(gameId, {
+                  type: 'FLIP_RESULT',
+                  gameId,
+                  result,
+                  roundWinner,
+                  roundNumber: round.round_number,
+                  creatorChoice: round.creator_choice,
+                  challengerChoice: round.challenger_choice,
+                  creatorPower,
+                  challengerPower
+                })
+                
+                // Clear power charges for this round
+                gamePowerCharges.delete(gameId)
+                
+                // Check game completion
+                checkGameCompletion(gameId)
+              }
+            )
+          }
+        )
+      } else {
+        console.log('⏳ Waiting for both players to charge power...')
+      }
+    })
+  }
+
   function checkAndProcessRound(gameId, roundId, game, db) {
     db.get(
       'SELECT * FROM game_rounds WHERE id = ?',
@@ -389,18 +549,43 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           hasChallengerChoice: !!round.challenger_choice
         })
         
-        // Check if a player has made their choice for this round
-        if (round.creator_choice || round.challenger_choice) {
-          console.log('🎯 Player has chosen, transitioning to charging phase')
+        // Check if both players have made choices
+        if (round.creator_choice && round.challenger_choice) {
+          console.log('🎯 Both players have chosen, transitioning to charging phase')
           
-          // Broadcast that a player has chosen and game moves to charging phase
+          // Set turn state - creator goes first
+          gameTurnState.set(gameId, {
+            currentTurn: game.creator,
+            roundNumber: round.round_number,
+            creatorChoice: round.creator_choice,
+            challengerChoice: round.challenger_choice
+          })
+          
+          // Broadcast that both players have chosen and game moves to charging phase
           broadcastToRoom(gameId, {
             type: 'choice_made_ready_to_flip',
             gameId,
             creatorChoice: round.creator_choice,
             challengerChoice: round.challenger_choice,
             roundNumber: round.round_number,
-            message: 'Player has chosen! Hold the coin to charge power and flip!'
+            currentTurn: game.creator,
+            message: 'Both players have chosen! Creator goes first - hold the coin to charge power!'
+          })
+          
+        } else if (round.creator_choice || round.challenger_choice) {
+          // Only one player has chosen
+          const waitingFor = round.creator_choice ? game.challenger : game.creator
+          console.log('🎯 One player has chosen, waiting for:', waitingFor)
+          
+          // Broadcast that a player has chosen and waiting for the other
+          broadcastToRoom(gameId, {
+            type: 'choice_made_ready_to_flip',
+            gameId,
+            creatorChoice: round.creator_choice,
+            challengerChoice: round.challenger_choice,
+            roundNumber: round.round_number,
+            waitingFor,
+            message: 'Player has chosen! Waiting for other player to choose...'
           })
           
         } else {

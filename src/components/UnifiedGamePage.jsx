@@ -769,22 +769,52 @@ const UnifiedGamePage = () => {
         
       case 'choice_made_ready_to_flip':
         console.log('🎯 Choice made, ready to flip:', data)
-        const { creatorChoice: cChoice, challengerChoice: jChoice } = data
+        const { creatorChoice, challengerChoice, roundNumber, currentTurn, waitingFor } = data
         
-        // Update state to charging phase
+        // Update game state to charging phase
         setGameState(prev => ({
           ...prev,
-          creatorChoice: cChoice,
-          joinerChoice: jChoice,
-          phase: 'charging'
+          phase: 'charging',
+          creatorChoice,
+          joinerChoice: challengerChoice,
+          currentRound: roundNumber,
+          currentTurn: currentTurn || null
         }))
         
+        // Update player choices
         setPlayerChoices({
-          creator: cChoice,
-          joiner: jChoice
+          creator: creatorChoice,
+          joiner: challengerChoice
         })
         
-        showSuccess('🎯 Player has chosen! Hold the coin to charge power and flip!')
+        // Show appropriate message
+        if (waitingFor) {
+          showInfo(`Waiting for ${waitingFor.slice(0, 6)}... to choose...`)
+        } else if (currentTurn) {
+          const isMyTurn = currentTurn === address
+          if (isMyTurn) {
+            showSuccess('🎯 Your turn! Hold the coin to charge power!')
+          } else {
+            showInfo(`⚡ ${currentTurn.slice(0, 6)}...'s turn to charge power!`)
+          }
+        }
+        break
+        
+      case 'turn_changed':
+        console.log('🔄 Turn changed:', data)
+        const { currentTurn: newTurn } = data
+        
+        setGameState(prev => ({
+          ...prev,
+          currentTurn: newTurn
+        }))
+        
+        const isMyTurn = newTurn === address
+        if (isMyTurn) {
+          showSuccess('🎯 Your turn! Hold the coin to charge power!')
+        } else {
+          showInfo(`⚡ ${newTurn.slice(0, 6)}...'s turn to charge power!`)
+        }
         break
         
       case 'both_choices_made':
@@ -1063,23 +1093,87 @@ const UnifiedGamePage = () => {
     } catch (error) {
       console.error('❌ Error serializing flip result:', error)
       safeResult = {
-        winner: result?.winner,
+        roundWinner: result?.roundWinner,
         result: result?.result,
-        playerChoice: result?.playerChoice
+        creatorChoice: result?.creatorChoice,
+        challengerChoice: result?.challengerChoice,
+        creatorPower: result?.creatorPower,
+        joinerPower: result?.joinerPower
       }
     }
     
-    setFlipAnimation(safeResult)
+    console.log('🎲 Processing flip result:', safeResult)
     
+    // Update game state with flip result
+    setGameState(prev => ({
+      ...prev,
+      phase: 'flipping',
+      flipResult: safeResult.result,
+      roundWinner: safeResult.roundWinner,
+      creatorPower: safeResult.creatorPower || 0,
+      joinerPower: safeResult.joinerPower || 0
+    }))
+    
+    // Set flip animation data
+    setFlipAnimation({
+      result: safeResult.result,
+      roundWinner: safeResult.roundWinner,
+      creatorChoice: safeResult.creatorChoice,
+      challengerChoice: safeResult.challengerChoice,
+      creatorPower: safeResult.creatorPower,
+      joinerPower: safeResult.joinerPower
+    })
+    
+    // Show result after animation
     setTimeout(() => {
       setFlipAnimation(null)
+      
+      // Determine if current player won this round
+      const isRoundWinner = safeResult.roundWinner === address
+      const myChoice = isCreator() ? safeResult.creatorChoice : safeResult.challengerChoice
+      
       setResultData({
-        isWinner: safeResult.winner === address,
+        isWinner: isRoundWinner,
         flipResult: safeResult.result,
-        playerChoice: safeResult.playerChoice
+        playerChoice: myChoice,
+        roundWinner: safeResult.roundWinner,
+        creatorPower: safeResult.creatorPower,
+        joinerPower: safeResult.joinerPower
       })
       setShowResultPopup(true)
+      
+      // Show appropriate message
+      if (isRoundWinner) {
+        showSuccess(`🎉 You won this round! The coin landed on ${safeResult.result.toUpperCase()}!`)
+      } else {
+        showInfo(`😔 You lost this round. The coin landed on ${safeResult.result.toUpperCase()}.`)
+      }
     }, 3000)
+  }
+  
+  // Reset game state for next round
+  const resetForNextRound = () => {
+    console.log('🔄 Resetting game state for next round')
+    
+    setGameState(prev => ({
+      ...prev,
+      phase: 'choosing',
+      creatorChoice: null,
+      joinerChoice: null,
+      currentTurn: null,
+      creatorPower: 0,
+      joinerPower: 0,
+      chargingPlayer: null
+    }))
+    
+    setPlayerChoices({
+      creator: null,
+      joiner: null
+    })
+    
+    setFlipAnimation(null)
+    setShowResultPopup(false)
+    setResultData(null)
   }
   
   // Handle game completed
@@ -1583,6 +1677,7 @@ const UnifiedGamePage = () => {
     console.log('🔍 Checking if it\'s my turn:', {
       gamePhase: gameState.phase,
       currentRound: gameState.currentRound,
+      currentTurn: gameState.currentTurn,
       isCreator: isCreator(),
       isJoiner: isJoiner(),
       creatorChoice: gameState.creatorChoice,
@@ -1629,25 +1724,22 @@ const UnifiedGamePage = () => {
       return myTurn
     }
     
-    // After choice is made, allow the player who made the choice to flip
-    if (gameState.phase === 'active' || gameState.phase === 'charging') {
-      // Check if this player has made their choice for this round
-      const hasMadeChoice = (isCreator() && gameState.creatorChoice) || (isJoiner() && gameState.joinerChoice)
-      if (hasMadeChoice) {
+    // Charging phase - check if it's this player's turn to charge
+    if (gameState.phase === 'charging') {
+      if (gameState.currentTurn) {
+        const myTurn = gameState.currentTurn === address
+        console.log('Charging phase - my turn:', myTurn)
+        return myTurn
+      } else {
+        // Fallback: allow the player who made their choice to charge
+        const hasMadeChoice = (isCreator() && gameState.creatorChoice) || (isJoiner() && gameState.joinerChoice)
         console.log('🎯 Player has made choice, allowing flip/power charging')
-        return true
+        return hasMadeChoice
       }
     }
     
-    if (gameState.phase === 'charging') {
-      // In charging phase, both players can charge power
-      const myTurn = isCreator() || isJoiner()
-      console.log('Charging phase - my turn:', myTurn)
-      return myTurn
-    }
-    
-    console.log('❌ Not my turn - phase:', gameState.phase)
-    return false
+    // Other phases - no turn restrictions
+    return true
   }
   
   // Update coin images when game state changes
@@ -2902,10 +2994,14 @@ const UnifiedGamePage = () => {
             isWinner={resultData.isWinner}
             flipResult={resultData.flipResult}
             playerChoice={resultData.playerChoice}
-            onClose={() => setShowResultPopup(false)}
+            onClose={() => {
+              setShowResultPopup(false)
+              resetForNextRound()
+            }}
             onClaimWinnings={() => {
               showSuccess('Winnings claimed!')
               setShowResultPopup(false)
+              resetForNextRound()
             }}
             gameData={gameData}
           />
@@ -2913,6 +3009,6 @@ const UnifiedGamePage = () => {
       </Container>
     </ThemeProvider>
   )
-}
-
+  }
+  
 export default UnifiedGamePage
