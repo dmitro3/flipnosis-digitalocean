@@ -9,7 +9,6 @@ import { useToast } from '../../contexts/ToastContext'
 
 // Component imports
 import GameBackground from './GameBackground'
-import GameHeader from './GameHeader'
 import GamePlayers from './GamePlayers'
 import GameCoin from './GameCoin'
 import GameControls from './GameControls'
@@ -157,6 +156,8 @@ const GamePage = () => {
     gameCoin,
     newOffer,
     creatingOffer,
+    wsConnected,
+    wsRef,
     resetForNextRound,
     handlePlayerChoice,
     handlePowerChargeStart,
@@ -304,19 +305,6 @@ const GamePage = () => {
         <GameBackground isMobile={isMobile} />
         
         <GameContainer>
-          <GameHeader 
-            gameData={gameData}
-            gameState={gameState}
-            getGameCreator={getGameCreator}
-            getGameJoiner={getGameJoiner}
-            getGamePrice={getGamePrice}
-            getGameNFTImage={getGameNFTImage}
-            getGameNFTName={getGameNFTName}
-            getGameNFTCollection={getGameNFTCollection}
-            getGameNFTContract={getGameNFTContract}
-            getGameNFTTokenId={getGameNFTTokenId}
-          />
-
           <GameLayout>
             <GameCoin 
               gameId={gameId}
