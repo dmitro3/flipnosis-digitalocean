@@ -1303,8 +1303,8 @@ const UnifiedGamePage = () => {
             if (coinMatch) {
               const coinId = coinMatch[1]
               console.log('🔍 Found coin ID in string:', coinId)
-              // Create basic coin data structure
-              coinData = {
+              // Create basic coin data structure - use a new variable to avoid const reassignment
+              const fallbackCoinData = {
                 id: coinId,
                 type: 'default',
                 name: coinId.charAt(0).toUpperCase() + coinId.slice(1),
@@ -1313,18 +1313,19 @@ const UnifiedGamePage = () => {
               }
               // Handle special cases
               if (coinId === 'trump') {
-                coinData.headsImage = '/coins/trumpheads.webp'
-                coinData.tailsImage = '/coins/trumptails.webp'
+                fallbackCoinData.headsImage = '/coins/trumpheads.webp'
+                fallbackCoinData.tailsImage = '/coins/trumptails.webp'
               } else if (coinId === 'mario') {
-                coinData.headsImage = '/coins/mario.png'
-                coinData.tailsImage = '/coins/luigi.png'
+                fallbackCoinData.headsImage = '/coins/mario.png'
+                fallbackCoinData.tailsImage = '/coins/luigi.png'
               } else if (coinId === 'skull') {
-                coinData.headsImage = '/coins/skullh.png'
-                coinData.tailsImage = '/coins/skullt.png'
+                fallbackCoinData.headsImage = '/coins/skullh.png'
+                fallbackCoinData.tailsImage = '/coins/skullt.png'
               } else if (coinId === 'plain') {
-                coinData.headsImage = '/coins/plainh.png'
-                coinData.tailsImage = '/coins/plaint.png'
+                fallbackCoinData.headsImage = '/coins/plainh.png'
+                fallbackCoinData.tailsImage = '/coins/plaint.png'
               }
+              coinData = fallbackCoinData
               console.log('✅ Created fallback coin data:', coinData)
             }
           } catch (fallbackError) {
