@@ -202,6 +202,12 @@ class ContractService {
   // Utility function for gas optimization on Base network
   async getOptimizedGasSettings(functionName, args = [], value = 0n) {
     try {
+      // Validate that we have an account
+      if (!this.account) {
+        console.warn('⚠️ No account available for gas estimation, using fallback settings')
+        return this.getFallbackGasSettings()
+      }
+
       // Get current gas price for Base network optimization
       const gasPrice = await this.publicClient.getGasPrice()
       console.log('⛽ Current gas price:', gasPrice.toString())
@@ -229,11 +235,16 @@ class ContractService {
     } catch (error) {
       console.error(`❌ Error estimating gas for ${functionName}:`, error)
       // Fallback to default settings from config
-      return {
-        gas: BigInt(GAS_CONFIG.DEFAULT_GAS_LIMIT),
-        maxFeePerGas: BigInt(GAS_CONFIG.DEFAULT_MAX_FEE_GWEI) * 1000000000n, // Convert gwei to wei
-        maxPriorityFeePerGas: BigInt(GAS_CONFIG.PRIORITY_FEE_GWEI) * 1000000000n // Convert gwei to wei
-      }
+      return this.getFallbackGasSettings()
+    }
+  }
+
+  // Fallback gas settings when estimation fails
+  getFallbackGasSettings() {
+    return {
+      gas: BigInt(GAS_CONFIG.DEFAULT_GAS_LIMIT),
+      maxFeePerGas: BigInt(GAS_CONFIG.DEFAULT_MAX_FEE_GWEI) * 1000000000n, // Convert gwei to wei
+      maxPriorityFeePerGas: BigInt(GAS_CONFIG.PRIORITY_FEE_GWEI) * 1000000000n // Convert gwei to wei
     }
   }
 
@@ -550,6 +561,12 @@ class ContractService {
     }
 
     try {
+      // Validate account is available
+      if (!this.account) {
+        console.error('❌ Account is undefined in approveNFT')
+        return { success: false, error: 'Account not available for transaction' }
+      }
+
       // Check if already approved
       const approved = await this.publicClient.readContract({
         address: nftContract,
@@ -567,30 +584,38 @@ class ContractService {
       const gasPrice = await this.publicClient.getGasPrice()
       console.log('⛽ Current gas price:', gasPrice.toString())
       
-      // Estimate gas for the approval transaction
-      const gasEstimate = await this.publicClient.estimateContractGas({
-        address: nftContract,
-        abi: NFT_ABI,
-        functionName: 'approve',
-        args: [this.contractAddress, tokenId],
-        account: this.account
-      })
-      
-      console.log('⛽ Gas estimate:', gasEstimate.toString())
-      
-      // Add 20% buffer for safety
-      const gasLimit = gasEstimate * 120n / 100n
+      // Try to estimate gas, but fallback to default if it fails
+      let gasSettings
+      try {
+        const gasEstimate = await this.publicClient.estimateContractGas({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'approve',
+          args: [this.contractAddress, tokenId],
+          account: this.account
+        })
+        console.log('⛽ Gas estimate:', gasEstimate.toString())
+        
+        // Add 20% buffer for safety
+        const gasLimit = gasEstimate * BigInt(GAS_CONFIG.GAS_BUFFER_PERCENT) / 100n
+        
+        gasSettings = {
+          gas: gasLimit,
+          maxFeePerGas: gasPrice * BigInt(GAS_CONFIG.MAX_FEE_BUFFER_PERCENT) / 100n,
+          maxPriorityFeePerGas: BigInt(GAS_CONFIG.PRIORITY_FEE_GWEI) * 1000000000n
+        }
+      } catch (gasError) {
+        console.warn('⚠️ Gas estimation failed, using fallback settings:', gasError.message)
+        gasSettings = this.getFallbackGasSettings()
+      }
 
-      // Approve NFT with optimized gas settings
+      // Approve NFT with gas settings
       const hash = await this.walletClient.writeContract({
         address: nftContract,
         abi: NFT_ABI,
         functionName: 'approve',
         args: [this.contractAddress, tokenId],
-        gas: gasLimit,
-        // Use maxFeePerGas and maxPriorityFeePerGas for EIP-1559
-        maxFeePerGas: gasPrice * 110n / 100n, // 10% buffer
-        maxPriorityFeePerGas: 1000000000n // 1 gwei priority fee
+        ...gasSettings
       })
 
       console.log('🔐 NFT approval tx:', hash)
