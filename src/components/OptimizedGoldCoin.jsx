@@ -490,15 +490,19 @@ const OptimizedGoldCoin = ({
     e.preventDefault()
     e.stopPropagation()
     
+    // Allow interaction if player has made their choice, even if still in choosing phase
+    const hasMadeChoice = (isCreator && creatorChoice) || (!isCreator && joinerChoice)
+    
     console.log('🖱️ Mouse down - checking conditions:', {
       isPlayerTurn,
       gamePhase,
       chargingPlayer,
       isCharging,
-      canInteract: isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')
+      hasMadeChoice,
+      canInteract: (isPlayerTurn || hasMadeChoice) && (gamePhase === 'charging' || gamePhase === 'active' || hasMadeChoice)
     })
     
-    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active')) {
+    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && !hasMadeChoice)) {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }
@@ -570,14 +574,18 @@ const OptimizedGoldCoin = ({
     e.preventDefault()
     e.stopPropagation()
     
+    // Allow interaction if player has made their choice, even if still in choosing phase
+    const hasMadeChoice = (isCreator && creatorChoice) || (!isCreator && joinerChoice)
+    
     console.log('📱 Touch start - checking conditions:', {
       isPlayerTurn,
       gamePhase,
       chargingPlayer,
-      isCharging
+      isCharging,
+      hasMadeChoice
     })
     
-    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active')) {
+    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && !hasMadeChoice)) {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }
