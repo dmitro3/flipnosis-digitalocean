@@ -17,7 +17,7 @@ import { useContractService } from '../utils/useContractService'
 
 // 5. Component imports
 import OptimizedGoldCoin from './OptimizedGoldCoin'
-import PowerDisplay from '../components/PowerDisplay'
+
 import GameResultPopup from './GameResultPopup'
 import ProfilePicture from './ProfilePicture'
 import GameChatBox from './GameChatBox'
@@ -400,6 +400,11 @@ const UnifiedGamePage = () => {
           creatorChoice: null,
           joinerChoice: null
         }))
+        
+        // Show success message for both players
+        if (address === getGameCreator() || address === getGameJoiner()) {
+          showSuccess('🎮 Game is now active! Choose heads or tails to begin!')
+        }
       }
       
       // Load offers for this listing/game
@@ -636,24 +641,24 @@ const UnifiedGamePage = () => {
     if (Array.isArray(obj)) return obj.map(safeSerialize)
     if (typeof obj === 'object') {
       // Check for event objects and React components/internal objects at the top level
-      if (obj.nativeEvent || obj._reactName || (obj.target && obj.currentTarget) || obj.$$typeof || obj.nodeType || obj.tagName || obj.stateNode || obj._reactInternalInstance || obj.__reactFiber) {
+      if (obj.nativeEvent || obj._reactName || (obj.target && obj.currentTarget) || obj.$$typeof || obj.nodeType || obj.tagName || obj.stateNode || obj._reactInternalInstance || obj.__reactFiber || obj._reactName) {
         console.warn('⚠️ Detected event object or React component/internal object, skipping serialization')
         return null
       }
       
       // Debug: Log when we're processing WebSocket messages
-      if (obj.type && (obj.type === 'your_offer_accepted' || obj.type === 'game_awaiting_challenger_deposit')) {
+      if (obj.type && (obj.type === 'your_offer_accepted' || obj.type === 'game_awaiting_challenger_deposit' || obj.type === 'deposit_received')) {
         console.log('✅ Processing WebSocket message:', obj.type, 'safely')
       }
       
       const safeObj = {}
       for (const [key, value] of Object.entries(obj)) {
         // Skip React internal properties and functions
-        if (key.startsWith('_') || key.startsWith('__') || typeof value === 'function' || key === 'stateNode' || key === '_reactInternalInstance' || key === '__reactFiber') {
+        if (key.startsWith('_') || key.startsWith('__') || typeof value === 'function' || key === 'stateNode' || key === '_reactInternalInstance' || key === '__reactFiber' || key === '_reactName') {
           continue
         }
         // Skip DOM elements and React components/internal objects
-        if (value && typeof value === 'object' && (value.nodeType || value.$$typeof || value.stateNode || value._reactInternalInstance || value.__reactFiber)) {
+        if (value && typeof value === 'object' && (value.nodeType || value.$$typeof || value.stateNode || value._reactInternalInstance || value.__reactFiber || value._reactName)) {
           continue
         }
         try {
@@ -719,6 +724,26 @@ const UnifiedGamePage = () => {
         console.log('✅ Deposit received:', data)
         if (data.bothDeposited) {
           showSuccess('Game is now active! Both players can start playing.')
+          // Force reload game data to get updated status
+          loadGameData()
+          // Set game state to choosing phase immediately
+          setGameState(prev => ({
+            ...prev,
+            phase: 'choosing',
+            creatorChoice: null,
+            joinerChoice: null
+          }))
+        } else {
+          // Even if only one deposit, reload to update UI
+          loadGameData()
+        }
+        break
+        
+      case 'game_status_changed':
+        console.log('🔄 Game status changed:', data)
+        if (data.newStatus === 'active') {
+          showSuccess('🎮 Game is now active! Choose heads or tails to begin!')
+          loadGameData()
           setGameState(prev => ({
             ...prev,
             phase: 'choosing',
@@ -726,7 +751,6 @@ const UnifiedGamePage = () => {
             joinerChoice: null
           }))
         }
-        loadGameData()
         break
         
       default:
@@ -1574,93 +1598,262 @@ const UnifiedGamePage = () => {
           
           {/* Game Section */}
           <GameSection>
-            {/* Player Section */}
-            <PlayerSection>
-              <PlayerBox isActive={isCreator()}>
-                <div>
-                  <h3 style={{ color: '#FFD700', marginBottom: '0.5rem' }}>Creator</h3>
-                  <ProfilePicture 
-                    address={getGameCreator()}
-                    size={60}
-                    showAddress={true}
-                  />
-                  <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'white' }}>
-                    Power: {gameState.creatorPower}
-                  </p>
-                  <p style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                    Wins: {gameState.creatorWins}
-                  </p>
-                  {/* Display player choice */}
-                  {playerChoices.creator && (
-                    <div style={{ 
-                      marginTop: '0.5rem', 
-                      padding: '0.25rem 0.5rem', 
-                      background: playerChoices.creator === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
-                      border: `1px solid ${playerChoices.creator === 'heads' ? '#00FF41' : '#FF1493'}`,
-                      borderRadius: '0.25rem',
-                      fontSize: '0.8rem',
-                      color: 'white',
-                      textAlign: 'center'
-                    }}>
-                      Chose: {playerChoices.creator.toUpperCase()}
-                    </div>
-                  )}
+            {/* Combined Player Section */}
+            <PlayerSection style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between' }}>
+              {/* Combined Player Box - Left Side */}
+              <div style={{
+                flex: '1',
+                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
+                padding: '1.5rem',
+                borderRadius: '1rem',
+                border: '2px solid #FFD700',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)'
+              }}>
+                <h3 style={{ color: '#FFD700', marginBottom: '1rem', textAlign: 'center', fontSize: '1.2rem' }}>
+                  🎮 PLAYERS
+                </h3>
+                
+                {/* Creator */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginBottom: '1rem',
+                  padding: '0.75rem',
+                  background: isCreator() ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '0.5rem',
+                  border: isCreator() ? '1px solid rgba(255, 215, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <div>
+                    <ProfilePicture 
+                      address={getGameCreator()}
+                      size={50}
+                      showAddress={true}
+                    />
+                  </div>
+                  <div style={{ flex: '1' }}>
+                    <h4 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Creator</h4>
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
+                      Power: {gameState.creatorPower}
+                    </p>
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
+                      Wins: {gameState.creatorWins}
+                    </p>
+                    {playerChoices.creator && (
+                      <div style={{ 
+                        marginTop: '0.5rem', 
+                        padding: '0.25rem 0.5rem', 
+                        background: playerChoices.creator === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
+                        border: `1px solid ${playerChoices.creator === 'heads' ? '#00FF41' : '#FF1493'}`,
+                        borderRadius: '0.25rem',
+                        fontSize: '0.8rem',
+                        color: 'white',
+                        textAlign: 'center',
+                        display: 'inline-block'
+                      }}>
+                        Chose: {playerChoices.creator.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <RoundIndicators>
+                    <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.creatorWins > 0} isLost={gameState.joinerWins > 0}>
+                      1
+                    </RoundDot>
+                    <RoundDot isCurrent={gameState.currentRound === 2} isWon={gameState.creatorWins > 1} isLost={gameState.joinerWins > 1}>
+                      2
+                    </RoundDot>
+                    <RoundDot isCurrent={gameState.currentRound === 3} isWon={gameState.creatorWins > 2} isLost={gameState.joinerWins > 2}>
+                      3
+                    </RoundDot>
+                  </RoundIndicators>
                 </div>
-                <RoundIndicators>
-                  <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.creatorWins > 0} isLost={gameState.joinerWins > 0}>
-                    1
-                  </RoundDot>
-                  <RoundDot isCurrent={gameState.currentRound === 2} isWon={gameState.creatorWins > 1} isLost={gameState.joinerWins > 1}>
-                    2
-                  </RoundDot>
-                  <RoundDot isCurrent={gameState.currentRound === 3} isWon={gameState.creatorWins > 2} isLost={gameState.joinerWins > 2}>
-                    3
-                  </RoundDot>
-                </RoundIndicators>
-              </PlayerBox>
+                
+                {/* Joiner */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '0.75rem',
+                  background: isJoiner() ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '0.5rem',
+                  border: isJoiner() ? '1px solid rgba(255, 215, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <div>
+                    <ProfilePicture 
+                      address={getGameJoiner()}
+                      size={50}
+                      showAddress={true}
+                    />
+                  </div>
+                  <div style={{ flex: '1' }}>
+                    <h4 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Joiner</h4>
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
+                      Power: {gameState.joinerPower}
+                    </p>
+                    <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
+                      Wins: {gameState.joinerWins}
+                    </p>
+                    {playerChoices.joiner && (
+                      <div style={{ 
+                        marginTop: '0.5rem', 
+                        padding: '0.25rem 0.5rem', 
+                        background: playerChoices.joiner === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
+                        border: `1px solid ${playerChoices.joiner === 'heads' ? '#00FF41' : '#FF1493'}`,
+                        borderRadius: '0.25rem',
+                        fontSize: '0.8rem',
+                        color: 'white',
+                        textAlign: 'center',
+                        display: 'inline-block'
+                      }}>
+                        Chose: {playerChoices.joiner.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <RoundIndicators>
+                    <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.joinerWins > 0} isLost={gameState.creatorWins > 0}>
+                      1
+                    </RoundDot>
+                    <RoundDot isCurrent={gameState.currentRound === 2} isWon={gameState.joinerWins > 1} isLost={gameState.creatorWins > 1}>
+                      2
+                    </RoundDot>
+                    <RoundDot isCurrent={gameState.currentRound === 3} isWon={gameState.joinerWins > 2} isLost={gameState.creatorWins > 2}>
+                      3
+                    </RoundDot>
+                  </RoundIndicators>
+                </div>
+              </div>
               
-              <PlayerBox isActive={isJoiner()}>
-                <div>
-                  <h3 style={{ color: '#FFD700', marginBottom: '0.5rem' }}>Joiner</h3>
-                  <ProfilePicture 
-                    address={getGameJoiner()}
-                    size={60}
-                    showAddress={true}
-                  />
-                  <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'white' }}>
-                    Power: {gameState.joinerPower}
-                  </p>
-                  <p style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                    Wins: {gameState.joinerWins}
-                  </p>
-                  {/* Display player choice */}
-                  {playerChoices.joiner && (
-                    <div style={{ 
-                      marginTop: '0.5rem', 
-                      padding: '0.25rem 0.5rem', 
-                      background: playerChoices.joiner === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
-                      border: `1px solid ${playerChoices.joiner === 'heads' ? '#00FF41' : '#FF1493'}`,
-                      borderRadius: '0.25rem',
-                      fontSize: '0.8rem',
-                      color: 'white',
+              {/* Power Display - Right Side */}
+              <div style={{
+                flex: '1',
+                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
+                padding: '1.5rem',
+                borderRadius: '1rem',
+                border: '2px solid #FFD700',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <h3 style={{ color: '#FFD700', marginBottom: '1rem', textAlign: 'center', fontSize: '1.2rem' }}>
+                  ⚡ POWER LEVEL ⚡
+                </h3>
+                
+                {/* Power Bar */}
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{
+                      color: '#FFD700',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      marginBottom: '0.5rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span>Total Power</span>
+                      <span style={{ 
+                        color: '#FFD700',
+                        textShadow: '0 0 5px rgba(255, 215, 0, 0.8)' 
+                      }}>
+                        {(gameState.creatorPower + gameState.joinerPower).toFixed(1)}/10
+                      </span>
+                    </div>
+                    
+                    <div style={{
+                      height: '30px',
+                      background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(40, 30, 0, 0.6) 100%)',
+                      borderRadius: '15px',
+                      overflow: 'hidden',
+                      border: '3px solid #FFD700',
+                      position: 'relative',
+                      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.5)'
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${((gameState.creatorPower + gameState.joinerPower) / 10) * 100}%`,
+                        background: gameState.chargingPlayer ? 
+                          `linear-gradient(90deg, #FFD700 0%, #FFA500 30%, #FF6B00 60%, #FF1493 100%)` :
+                          `linear-gradient(90deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%)`,
+                        borderRadius: '12px',
+                        transition: 'width 0.15s ease-out',
+                        backgroundSize: '200% 100%',
+                        animation: gameState.chargingPlayer ? 'powerCharge 0.6s linear infinite' : 'none',
+                        boxShadow: gameState.chargingPlayer ? 
+                          '0 0 15px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3)' :
+                          '0 0 8px rgba(255, 215, 0, 0.6)'
+                      }} />
+                      
+                      {/* Power level markers */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0 0.5rem'
+                      }}>
+                        {[2, 4, 6, 8].map(level => (
+                          <div key={level} style={{
+                            width: '2px',
+                            height: '70%',
+                            background: 'rgba(255, 255, 255, 0.4)',
+                            opacity: (gameState.creatorPower + gameState.joinerPower) >= level ? 1 : 0.3
+                          }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Charging Indicator */}
+                  {gameState.chargingPlayer && (
+                    <div style={{
+                      padding: '0.75rem',
+                      background: 'linear-gradient(90deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.1) 100%)',
+                      border: '1px solid rgba(255, 215, 0, 0.5)',
+                      borderRadius: '0.75rem',
+                      textAlign: 'center',
+                      marginBottom: '1rem'
+                    }}>
+                      <div style={{
+                        color: '#FFD700',
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        animation: 'powerPulse 0.4s ease-in-out infinite',
+                        textShadow: '0 0 10px rgba(255, 215, 0, 0.8)'
+                      }}>
+                        ⚡ {gameState.chargingPlayer === getGameCreator() ? 'PLAYER 1' : 'PLAYER 2'} CHARGING ⚡
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Round Countdown */}
+                  {roundCountdown !== null && (
+                    <div style={{
+                      padding: '0.75rem',
+                      background: 'rgba(255, 215, 0, 0.1)',
+                      border: '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '0.75rem',
                       textAlign: 'center'
                     }}>
-                      Chose: {playerChoices.joiner.toUpperCase()}
+                      <div style={{
+                        fontSize: '1.2rem',
+                        color: roundCountdown <= 5 ? '#FF4444' : '#00FF41',
+                        fontWeight: 'bold',
+                        textShadow: roundCountdown <= 5 ? '0 0 10px rgba(255, 68, 68, 0.8)' : '0 0 10px rgba(0, 255, 65, 0.5)',
+                        animation: roundCountdown <= 5 ? 'pulse 1s ease-in-out infinite' : 'none'
+                      }}>
+                        ⏰ {roundCountdown}s
+                      </div>
                     </div>
                   )}
                 </div>
-                <RoundIndicators>
-                  <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.joinerWins > 0} isLost={gameState.creatorWins > 0}>
-                    1
-                  </RoundDot>
-                  <RoundDot isCurrent={gameState.currentRound === 2} isWon={gameState.joinerWins > 1} isLost={gameState.creatorWins > 1}>
-                    2
-                  </RoundDot>
-                  <RoundDot isCurrent={gameState.currentRound === 3} isWon={gameState.joinerWins > 2} isLost={gameState.creatorWins > 2}>
-                    3
-                  </RoundDot>
-                </RoundIndicators>
-              </PlayerBox>
+              </div>
             </PlayerSection>
             
             {/* Game Phase Messages */}
@@ -1717,24 +1910,177 @@ const UnifiedGamePage = () => {
                 gamePhase={gameState.phase}
                 size={isMobile ? 250 : 400} // Smaller size for mobile
               />
-            </CoinSection>
+                        </CoinSection>
             
-            {/* Power Display */}
-            <PowerDisplay
-              creatorPower={gameState.creatorPower}
-              joinerPower={gameState.joinerPower}
-              currentPlayer={address}
-              creator={getGameCreator()}
-              joiner={getGameJoiner()}
-              chargingPlayer={gameState.chargingPlayer}
-              gamePhase={gameState.phase}
-              isMyTurn={isMyTurn()}
-              playerChoice={isCreator() ? gameState.creatorChoice : gameState.joinerChoice}
-              onChoiceSelect={handlePlayerChoice}
-              gameStarted={gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active'}
-              roundCountdown={roundCountdown}
-              isMobile={isMobile}
-            />
+            {/* Choice Buttons - Show when game is active and it's player's turn */}
+            {gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active' && 
+             (gameState.phase === 'choosing' || gameState.phase === 'active' || gameState.phase === 'waiting') && 
+             isMyTurn() && !(isCreator() ? gameState.creatorChoice : gameState.joinerChoice) && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
+                padding: '2rem',
+                borderRadius: '1rem',
+                border: '2px solid #FFD700',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)',
+                marginBottom: '2rem',
+                textAlign: 'center'
+              }}>
+                <h3 style={{ 
+                  color: '#FFD700', 
+                  marginBottom: '1.5rem', 
+                  fontSize: '1.3rem',
+                  textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+                }}>
+                  🎯 CHOOSE YOUR SIDE
+                </h3>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '2rem',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap'
+                }}>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handlePlayerChoice('heads')
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      if (navigator.vibrate) {
+                        navigator.vibrate(50)
+                      }
+                    }}
+                    style={{
+                      padding: '1.5rem 3rem',
+                      fontSize: '1.5rem',
+                      background: 'linear-gradient(45deg, #00FF41, #0080FF, #00FF41)',
+                      backgroundSize: '200% 200%',
+                      border: '3px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '1rem',
+                      color: '#000000',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 0 30px rgba(0, 255, 65, 0.7), 0 0 60px rgba(0, 128, 255, 0.5)',
+                      textShadow: '0 0 10px rgba(255, 255, 255, 0.8)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      animation: 'gradientShift 2s ease infinite, glowPulse 1.5s ease-in-out infinite',
+                      minWidth: '150px'
+                    }}
+                  >
+                    <span style={{
+                      position: 'relative',
+                      zIndex: 2,
+                      display: 'block',
+                      width: '100%',
+                      height: '100%'
+                    }}>
+                      HEADS
+                    </span>
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%)',
+                      animation: 'shimmer 2s ease-in-out infinite',
+                      zIndex: 1
+                    }} />
+                  </button>
+                  
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handlePlayerChoice('tails')
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      if (navigator.vibrate) {
+                        navigator.vibrate(50)
+                      }
+                    }}
+                    style={{
+                      padding: '1.5rem 3rem',
+                      fontSize: '1.5rem',
+                      background: 'linear-gradient(45deg, #FF1493, #FF6B35, #FF1493)',
+                      backgroundSize: '200% 200%',
+                      border: '3px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '1rem',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 0 30px rgba(255, 20, 147, 0.7), 0 0 60px rgba(255, 107, 53, 0.5)',
+                      textShadow: '0 0 10px rgba(255, 255, 255, 0.8)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      animation: 'gradientShift 2s ease infinite, glowPulse 1.5s ease-in-out infinite',
+                      minWidth: '150px'
+                    }}
+                  >
+                    <span style={{
+                      position: 'relative',
+                      zIndex: 2,
+                      display: 'block',
+                      width: '100%',
+                      height: '100%'
+                    }}>
+                      TAILS
+                    </span>
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%)',
+                      animation: 'shimmer 2s ease-in-out infinite',
+                      zIndex: 1
+                    }} />
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* Show waiting message when it's not player's turn */}
+            {gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active' && 
+             (gameState.phase === 'choosing' || gameState.phase === 'active' || gameState.phase === 'waiting') && 
+             !isMyTurn() && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
+                padding: '2rem',
+                borderRadius: '1rem',
+                border: '2px solid rgba(255, 215, 0, 0.3)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)',
+                marginBottom: '2rem',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  color: '#FFD700',
+                  fontSize: '1.3rem',
+                  fontWeight: 'bold',
+                  textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
+                  marginBottom: '0.5rem'
+                }}>
+                  ⏳ Waiting for opponent's choice...
+                </div>
+                <div style={{
+                  color: '#CCCCCC',
+                  fontSize: '1rem'
+                }}>
+                  {gameState.phase === 'choosing' ? 'Player 1 goes first' : 'Please wait...'}
+                </div>
+              </div>
+            )}
+            
+            
             
             {/* Three Column Layout */}
             <BottomSection>

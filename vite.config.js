@@ -78,6 +78,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'esnext',
+      minify: false, // Disable minification for better error messages
       rollupOptions: {
         external: ['fsevents']
       },

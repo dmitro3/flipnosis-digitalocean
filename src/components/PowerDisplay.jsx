@@ -123,6 +123,7 @@ const PowerDisplay = ({
                 e.preventDefault()
                 e.stopPropagation()
                 if (onChoiceSelect) {
+                  // Only pass the choice string, not the event object
                   onChoiceSelect('heads')
                 }
               }}
@@ -176,6 +177,7 @@ const PowerDisplay = ({
                 e.preventDefault()
                 e.stopPropagation()
                 if (onChoiceSelect) {
+                  // Only pass the choice string, not the event object
                   onChoiceSelect('tails')
                 }
               }}
