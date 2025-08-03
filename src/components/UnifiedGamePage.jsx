@@ -17,7 +17,8 @@ import { useContractService } from '../utils/useContractService'
 
 // 5. Component imports
 import OptimizedGoldCoin from './OptimizedGoldCoin'
-
+import ReliableGoldCoin from './ReliableGoldCoin'
+import StreamedCoin from './StreamedCoin'
 import GameResultPopup from './GameResultPopup'
 import ProfilePicture from './ProfilePicture'
 import GameChatBox from './GameChatBox'
@@ -286,15 +287,16 @@ const UnifiedGamePage = () => {
   const [chatMessages, setChatMessages] = useState([])
   const [playerChoices, setPlayerChoices] = useState({ creator: null, joiner: null })
   const [gameState, setGameState] = useState({
-    phase: 'waiting',
-    currentRound: 1,
-    creatorWins: 0,
-    joinerWins: 0,
+    phase: 'loading', // loading, choosing, charging, flipping, completed
     creatorChoice: null,
     joinerChoice: null,
-    chargingPlayer: null,
+    currentRound: 1,
+    currentTurn: null,
     creatorPower: 0,
-    joinerPower: 0
+    joinerPower: 0,
+    chargingPlayer: null,
+    flipResult: null,
+    roundWinner: null
   })
   
   const [readyNFTStatus, setReadyNFTStatus] = useState({ ready: false, nft: null })
@@ -305,7 +307,13 @@ const UnifiedGamePage = () => {
   const [customTailsImage, setCustomTailsImage] = useState(null)
   const [gameCoin, setGameCoin] = useState(null)
   
-
+  // Streamed coin state
+  const [streamedCoinState, setStreamedCoinState] = useState({
+    isStreaming: false,
+    frameData: null,
+    flipStartTime: null,
+    duration: 3000
+  })
   
   // UI state
   const [showResultPopup, setShowResultPopup] = useState(false)
@@ -915,6 +923,28 @@ const UnifiedGamePage = () => {
         handleFlipResult(data)
         break
         
+      case 'FLIP_STARTED':
+        console.log('🎬 Server-side flip started:', data)
+        setStreamedCoinState(prev => ({
+          ...prev,
+          isStreaming: true,
+          flipStartTime: Date.now(),
+          duration: data.duration || 3000
+        }))
+        setGameState(prev => ({
+          ...prev,
+          phase: 'flipping'
+        }))
+        break
+        
+      case 'COIN_FRAME':
+        console.log('🎬 Received coin frame:', data.timestamp)
+        setStreamedCoinState(prev => ({
+          ...prev,
+          frameData: data.frameData
+        }))
+        break
+        
       case 'GAME_COMPLETED':
         console.log('🏁 Game completed:', data)
         handleGameCompleted(data)
@@ -1174,6 +1204,14 @@ const UnifiedGamePage = () => {
     setFlipAnimation(null)
     setShowResultPopup(false)
     setResultData(null)
+    
+    // Reset streamed coin state
+    setStreamedCoinState({
+      isStreaming: false,
+      frameData: null,
+      flipStartTime: null,
+      duration: 3000
+    })
   }
   
   // Handle game completed
@@ -2364,25 +2402,41 @@ const UnifiedGamePage = () => {
             
             {/* Coin */}
             <CoinSection style={{ position: 'relative' }}>
-              <OptimizedGoldCoin
-                isFlipping={!!flipAnimation}
-                flipResult={flipAnimation?.result}
-                onPowerCharge={handlePowerChargeStart}
-                onPowerRelease={handlePowerChargeStop}
-                isPlayerTurn={isMyTurn()}
-                isCharging={gameState.chargingPlayer === address}
-                chargingPlayer={gameState.chargingPlayer}
-                creatorPower={gameState.creatorPower}
-                joinerPower={gameState.joinerPower}
-                creatorChoice={gameState.creatorChoice}
-                joinerChoice={gameState.joinerChoice}
-                isCreator={isCreator()}
-                customHeadsImage={customHeadsImage}
-                customTailsImage={customTailsImage}
-                gamePhase={gameState.phase}
-                size={isMobile ? 250 : 400} // Smaller size for mobile
-              />
-                        </CoinSection>
+              {streamedCoinState.isStreaming ? (
+                <StreamedCoin
+                  gameId={gameId}
+                  isStreaming={streamedCoinState.isStreaming}
+                  frameData={streamedCoinState.frameData}
+                  onFlipComplete={() => {
+                    setStreamedCoinState(prev => ({
+                      ...prev,
+                      isStreaming: false,
+                      frameData: null
+                    }))
+                  }}
+                  size={isMobile ? 250 : 400}
+                />
+              ) : (
+                <OptimizedGoldCoin
+                  isFlipping={!!flipAnimation}
+                  flipResult={flipAnimation?.result}
+                  onPowerCharge={handlePowerChargeStart}
+                  onPowerRelease={handlePowerChargeStop}
+                  isPlayerTurn={isMyTurn()}
+                  isCharging={gameState.chargingPlayer === address}
+                  chargingPlayer={gameState.chargingPlayer}
+                  creatorPower={gameState.creatorPower}
+                  joinerPower={gameState.joinerPower}
+                  creatorChoice={gameState.creatorChoice}
+                  joinerChoice={gameState.joinerChoice}
+                  isCreator={isCreator()}
+                  customHeadsImage={customHeadsImage}
+                  customTailsImage={customTailsImage}
+                  gamePhase={gameState.phase}
+                  size={isMobile ? 250 : 400} // Smaller size for mobile
+                />
+              )}
+            </CoinSection>
             
             {/* Choice Buttons - Show when game is active and it's player's turn */}
             {gameData?.creator_deposited && gameData?.challenger_deposited && gameData?.status === 'active' && 

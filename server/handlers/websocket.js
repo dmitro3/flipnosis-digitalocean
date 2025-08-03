@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const CoinStreamService = require('../services/coinStream')
 
 // Room management
 const rooms = new Map()
@@ -8,6 +9,9 @@ const userSockets = new Map()
 // Game state tracking
 const gamePowerCharges = new Map() // Track power charges per game
 const gameTurnState = new Map() // Track whose turn it is
+
+// Initialize coin streaming service
+const coinStreamService = new CoinStreamService()
 
 // Create WebSocket handlers
 function createWebSocketHandlers(wss, dbService, blockchainService) {
@@ -424,7 +428,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
-  // Check if both players have charged and trigger the flip
+  // Check if both players have charged and trigger flip
   function checkAndTriggerFlip(gameId, dbService) {
     const db = dbService.getDatabase()
     
@@ -455,7 +459,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       
       // Check if both players have charged
       if (creatorPower && challengerPower) {
-        console.log('🎲 Both players have charged! Triggering flip...')
+        console.log('🎲 Both players have charged! Triggering server-side flip...')
         
         // Get current round to ensure both players have made choices
         db.get(
@@ -491,38 +495,86 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
               challengerPower
             })
             
-            // Update round with flip result
-            db.run(
-              'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
-              [result, roundWinner, round.id],
-              (err) => {
-                if (err) {
-                  console.error('❌ Error updating flip result:', err)
-                  return
+            // Initialize coin scene if not already done
+            if (!coinStreamService.scenes.has(gameId)) {
+              // Parse coin data from game
+              let coinData = {}
+              try {
+                if (game.coin_data) {
+                  coinData = JSON.parse(game.coin_data)
                 }
-                
-                console.log('✅ Flip result recorded:', { result, roundWinner })
-                
-                // Broadcast flip result
-                broadcastToRoom(gameId, {
-                  type: 'FLIP_RESULT',
-                  gameId,
-                  result,
-                  roundWinner,
-                  roundNumber: round.round_number,
-                  creatorChoice: round.creator_choice,
-                  challengerChoice: round.challenger_choice,
-                  creatorPower,
-                  challengerPower
-                })
-                
-                // Clear power charges for this round
-                gamePowerCharges.delete(gameId)
-                
-                // Check game completion
-                checkGameCompletion(gameId)
+              } catch (e) {
+                console.warn('⚠️ Could not parse coin data, using defaults')
               }
+              
+              coinStreamService.initializeGameScene(gameId, coinData)
+            }
+            
+            // Start server-side flip animation
+            const animationStarted = coinStreamService.startFlipAnimation(
+              gameId, 
+              result, 
+              creatorPower, 
+              challengerPower, 
+              3000 // 3 second duration
             )
+            
+            if (animationStarted) {
+              console.log('🎬 Server-side flip animation started')
+              
+              // Broadcast flip start to both players
+              broadcastToRoom(gameId, {
+                type: 'FLIP_STARTED',
+                gameId,
+                result,
+                creatorPower,
+                challengerPower,
+                duration: 3000
+              })
+              
+              // Start streaming animation frames
+              setTimeout(() => {
+                coinStreamService.streamAnimation(gameId, { broadcastToRoom }, gameId)
+              }, 100)
+              
+              // Update round with flip result after animation completes
+              setTimeout(() => {
+                db.run(
+                  'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
+                  [result, roundWinner, round.id],
+                  (err) => {
+                    if (err) {
+                      console.error('❌ Error updating flip result:', err)
+                      return
+                    }
+                    
+                    console.log('✅ Flip result recorded:', { result, roundWinner })
+                    
+                    // Broadcast final result
+                    broadcastToRoom(gameId, {
+                      type: 'FLIP_RESULT',
+                      gameId,
+                      result,
+                      roundWinner,
+                      roundNumber: round.round_number,
+                      creatorChoice: round.creator_choice,
+                      challengerChoice: round.challenger_choice,
+                      creatorPower,
+                      challengerPower
+                    })
+                    
+                    // Clear power charges for this round
+                    gamePowerCharges.delete(gameId)
+                    
+                    // Check game completion
+                    checkGameCompletion(gameId)
+                  }
+                )
+              }, 3000) // Wait for animation to complete
+              
+            } else {
+              console.error('❌ Failed to start flip animation')
+            }
           }
         )
       } else {
@@ -657,6 +709,9 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                   creatorWins: wins[game.creator] || 0,
                   challengerWins: wins[game.challenger] || 0
                 })
+                
+                // Clean up coin streaming resources
+                coinStreamService.cleanupGame(gameId)
                 
                 // Complete game on blockchain if available
                 if (blockchainService && blockchainService.hasOwnerWallet() && game.blockchain_game_id) {
