@@ -4,7 +4,7 @@ import CreateFlip from "./pages/CreateFlip";
 import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
-import UnifiedGamePage from "./components/UnifiedGamePage";
+import GamePage from "./components/GamePage/GamePage";
 
 export const router = createBrowserRouter([
   {
@@ -21,11 +21,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "game/listing_:listingId",
-        element: <UnifiedGamePage />,
+        element: <GamePage />,
       },
       {
         path: "game/:gameId",
-        element: <UnifiedGamePage />,
+        element: <GamePage />,
       },
       {
         path: "admin",
