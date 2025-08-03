@@ -170,6 +170,7 @@ const GamePage = () => {
     formatTimeLeft,
     loadGameData,
     loadOffers,
+    startDepositCountdown,
     setNewOffer,
     setCreatingOffer,
     setGameState,
@@ -190,8 +191,7 @@ const GamePage = () => {
     getGameNFTTokenId
   } = useGameState(gameId, address)
 
-  // WebSocket management
-  const { wsConnected, wsRef } = useWebSocket(gameId, address, gameData)
+  // WebSocket management - using wsConnected and wsRef from useGameState
 
   // Game data loading
   useGameData(
@@ -507,7 +507,7 @@ const GamePage = () => {
               isCreator={isCreator}
               isJoiner={isJoiner}
               formatTimeLeft={formatTimeLeft}
-              startDepositCountdown={() => {}}
+              startDepositCountdown={startDepositCountdown}
               loadGameData={loadGameData}
             />
 

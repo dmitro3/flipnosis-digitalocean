@@ -991,6 +991,7 @@ export const useGameState = (gameId, address) => {
     stopRoundCountdown,
     formatTimeLeft,
     loadOffers,
+    loadGameData,
 
     // Helpers
     isMyTurn,
