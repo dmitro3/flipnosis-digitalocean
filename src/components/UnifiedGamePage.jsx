@@ -654,7 +654,7 @@ const UnifiedGamePage = () => {
     if (Array.isArray(obj)) return obj.map(safeSerialize)
     if (typeof obj === 'object') {
       // Check for event objects and React components/internal objects at the top level
-      if (obj.nativeEvent || obj._reactName || (obj.target && obj.currentTarget) || obj.$$typeof || obj.nodeType || obj.tagName || obj.stateNode || obj._reactInternalInstance || obj.__reactFiber || obj._reactName) {
+      if (obj.nativeEvent || obj._reactName || (obj.target && obj.currentTarget) || obj.$$typeof || obj.nodeType || obj.tagName || obj.stateNode || obj._reactInternalInstance || obj.__reactFiber || obj._reactName || obj.type === 'click' || obj.type === 'mousedown' || obj.type === 'mouseup' || obj.type === 'touchstart' || obj.type === 'touchend') {
         console.warn('⚠️ Detected event object or React component/internal object, skipping serialization')
         return null
       }
@@ -762,6 +762,71 @@ const UnifiedGamePage = () => {
           creatorChoice: null,
           joinerChoice: null
         }))
+        break
+        
+      case 'offer_accepted':
+        console.log('🎉 Offer accepted notification:', data)
+        showSuccess('🎉 Your offer was accepted! Redirecting to game...')
+        setTimeout(() => {
+          window.location.href = `/game/${data.gameId}`
+        }, 2000)
+        break
+        
+      case 'player_choice_made':
+        console.log('🎯 Player choice received:', data)
+        const { player, choice } = data
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: player === getGameCreator() ? choice : prev.creatorChoice,
+          joinerChoice: player === getGameJoiner() ? choice : prev.joinerChoice
+        }))
+        
+        // Update player choices display
+        setPlayerChoices(prev => ({
+          ...prev,
+          creator: player === getGameCreator() ? choice : prev.creator,
+          joiner: player === getGameJoiner() ? choice : prev.joiner
+        }))
+        
+        // Show notification
+        const playerName = player === getGameCreator() ? 'Player 1' : 'Player 2'
+        showInfo(`🎯 ${playerName} chose ${choice.toUpperCase()}!`)
+        break
+        
+      case 'both_choices_made':
+        console.log('🎯 Both choices received:', data)
+        const { creatorChoice: cChoice, joinerChoice: jChoice } = data
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: cChoice,
+          joinerChoice: jChoice,
+          phase: 'charging'
+        }))
+        
+        setPlayerChoices({
+          creator: cChoice,
+          joiner: jChoice
+        })
+        
+        showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
+        break
+        
+      case 'auto_flip_triggered':
+        console.log('🎲 Auto-flip triggered:', data)
+        const { autoChoice } = data
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: autoChoice,
+          joinerChoice: autoChoice,
+          phase: 'charging'
+        }))
+        
+        setPlayerChoices({
+          creator: autoChoice,
+          joiner: autoChoice
+        })
+        
+        showInfo('🎲 Auto-flip triggered due to time limit!')
         break
         
       case 'game_status_changed':
@@ -896,6 +961,8 @@ const UnifiedGamePage = () => {
       return
     }
     
+    console.log('🎯 Player choice:', choice)
+    
     // Stop any existing countdown
     stopRoundCountdown()
     
@@ -914,16 +981,8 @@ const UnifiedGamePage = () => {
       }))
     }
     
-    // Start countdown for this round
-    startRoundCountdown()
-    
-    // Check if this is Round 5 - if so, auto-flip after choice
-    if (gameState.currentRound === 5) {
-      console.log('🎯 Round 5 detected - auto-flipping after choice')
-      setTimeout(() => {
-        handleAutoFlip()
-      }, 1000)
-    }
+    // Show immediate feedback
+    showSuccess(`🎯 You chose ${choice.toUpperCase()}!`)
     
     // Send choice to server - FIXED FORMAT
     const choiceMessage = {
@@ -931,17 +990,31 @@ const UnifiedGamePage = () => {
       gameId: gameId,
       action: 'MAKE_CHOICE',
       choice: choice,
-      player: address
+      player: address,
+      timestamp: Date.now()
     }
     
     console.log('📤 Sending choice to server:', choiceMessage)
     
     // Send as proper WebSocket message
     if (wsRef.readyState === WebSocket.OPEN) {
-      wsRef.send(JSON.stringify(choiceMessage))
+      try {
+        wsRef.send(JSON.stringify(choiceMessage))
+      } catch (error) {
+        console.error('❌ Failed to send choice:', error)
+        showError('Failed to send choice. Please try again.')
+      }
     } else {
       console.error('❌ WebSocket not open, state:', wsRef.readyState)
       showError('Connection lost. Please refresh the page.')
+    }
+    
+    // Check if this is Round 5 - if so, auto-flip after choice
+    if (gameState.currentRound === 5) {
+      console.log('🎯 Round 5 detected - auto-flipping after choice')
+      setTimeout(() => {
+        handleAutoFlip()
+      }, 1000)
     }
   }
   
@@ -999,11 +1072,17 @@ const UnifiedGamePage = () => {
       gameId: gameId,
       action: 'POWER_CHARGED',
       powerLevel: powerLevel,
-      player: address
+      player: address,
+      timestamp: Date.now()
     }
     
     // Ensure the message is serializable
-    wsRef.send(JSON.stringify(powerMessage))
+    try {
+      wsRef.send(JSON.stringify(powerMessage))
+    } catch (error) {
+      console.error('❌ Failed to send power message:', error)
+      showError('Failed to send power data. Please try again.')
+    }
   }
   
 
@@ -1210,9 +1289,16 @@ const UnifiedGamePage = () => {
                 action: 'AUTO_FLIP_TIMEOUT',
                 choice: autoChoice,
                 player: address,
-                powerLevel: 10 // Max power
+                powerLevel: 10, // Max power
+                timestamp: Date.now()
               }
-              wsRef.send(JSON.stringify(autoFlipMessage))
+              
+              try {
+                wsRef.send(JSON.stringify(autoFlipMessage))
+                showInfo('🎲 Auto-flip triggered due to time limit!')
+              } catch (error) {
+                console.error('❌ Failed to send auto-flip:', error)
+              }
             }
           }
           
@@ -1628,16 +1714,13 @@ const UnifiedGamePage = () => {
               {/* Combined Player Box - Left Side */}
               <div style={{
                 flex: '1',
-                background: 'linear-gradient(135deg, rgba(0, 20, 40, 0.95) 0%, rgba(0, 100, 120, 0.9) 100%)',
-                padding: '1.5rem',
+                background: 'linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 65, 0.05) 100%)',
+                padding: '1rem',
                 borderRadius: '1rem',
-                border: '2px solid #FFD700',
+                border: '2px solid #00FF41',
                 backdropFilter: 'blur(10px)',
-                boxShadow: '0 0 30px rgba(0, 100, 120, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1)'
+                boxShadow: '0 0 30px rgba(0, 255, 65, 0.3), inset 0 0 20px rgba(0, 255, 65, 0.1)'
               }}>
-                <h3 style={{ color: '#FFD700', marginBottom: '1rem', textAlign: 'center', fontSize: '1.2rem' }}>
-                  🎮 PLAYERS
-                </h3>
                 
                 {/* Creator */}
                 <div style={{
