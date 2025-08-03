@@ -93,6 +93,103 @@ const SubmitButton = styled(Button)`
   }
 `
 
+// Styled components for progress steps
+const ProgressContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+`
+
+const ProgressStep = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+`
+
+const StepCircle = styled.div`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+  border: 3px solid;
+  
+  ${props => {
+    if (props.completed) {
+      return `
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        border-color: #00ff88;
+        color: white;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+      `
+    } else if (props.active) {
+      return `
+        background: linear-gradient(135deg, ${props.theme.colors.neonBlue} 0%, ${props.theme.colors.neonPurple} 100%);
+        border-color: ${props.theme.colors.neonBlue};
+        color: white;
+        box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+      `
+    } else {
+      return `
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: ${props.theme.colors.textSecondary};
+      `
+    }
+  }}
+`
+
+const StepLabel = styled.div`
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  
+  ${props => {
+    if (props.completed) {
+      return `color: #00ff88;`
+    } else if (props.active) {
+      return `color: ${props.theme.colors.neonBlue};`
+    } else {
+      return `color: ${props.theme.colors.textSecondary};`
+    }
+  }}
+`
+
+const ProgressLine = styled.div`
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  right: 25px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  z-index: 1;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #00ff88 0%, #00cc6a 100%);
+    transition: width 0.5s ease;
+    width: ${props => props.progress}%;
+  }
+`
+
 const CreateFlip = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
@@ -110,6 +207,14 @@ const CreateFlip = () => {
     headsImage: '/coins/plainh.png',
     tailsImage: '/coins/plaint.png',
     isCustom: false
+  })
+
+  // Progress tracking state
+  const [currentStep, setCurrentStep] = useState(0) // 0: not started, 1: approve, 2: pay fee, 3: deposit NFT
+  const [stepStatus, setStepStatus] = useState({
+    approve: false,
+    payFee: false,
+    depositNFT: false
   })
 
   // Check if wallet is fully connected and ready
@@ -199,6 +304,8 @@ const CreateFlip = () => {
     }
     
     setLoading(true)
+    setCurrentStep(1) // Start with step 1
+    
     try {
       // Generate game ID upfront
       const gameId = `game_${Date.now()}_${Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')}`
@@ -239,6 +346,7 @@ const CreateFlip = () => {
       console.log('✅ Listing created:', listingResult)
       
       // Step 2: Check NFT approval first
+      setCurrentStep(1)
       showInfo('Checking NFT approval...')
       const approvalResult = await contractService.approveNFT(
         selectedNFT.contractAddress,
@@ -248,6 +356,10 @@ const CreateFlip = () => {
       if (!approvalResult.success) {
         throw new Error(approvalResult.error || 'Failed to approve NFT')
       }
+      
+      // Mark step 1 as completed
+      setStepStatus(prev => ({ ...prev, approve: true }))
+      setCurrentStep(2)
       
       // Step 3: Pay fee and create game on blockchain
       showInfo('Paying listing fee and creating game on blockchain...')
@@ -276,6 +388,10 @@ const CreateFlip = () => {
         // For now, just throw error
         throw new Error(createResult.error || 'Failed to create game on blockchain')
       }
+      
+      // Mark step 2 as completed
+      setStepStatus(prev => ({ ...prev, payFee: true }))
+      setCurrentStep(3)
       
       // Step 4: Create game record in database
       showInfo('Registering game...')
@@ -306,6 +422,9 @@ const CreateFlip = () => {
         throw new Error(depositResult.error || 'Failed to deposit NFT')
       }
       
+      // Mark step 3 as completed
+      setStepStatus(prev => ({ ...prev, depositNFT: true }))
+      
       // Step 6: Confirm NFT deposit
       const confirmResponse = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
         method: 'POST',
@@ -327,9 +446,20 @@ const CreateFlip = () => {
     } catch (error) {
       console.error('Error creating game:', error)
       showError(error.message || 'Failed to create game')
+      // Reset progress on error
+      setCurrentStep(0)
+      setStepStatus({ approve: false, payFee: false, depositNFT: false })
     } finally {
       setLoading(false)
     }
+  }
+
+  // Calculate progress percentage for the progress line
+  const getProgressPercentage = () => {
+    if (stepStatus.depositNFT) return 100
+    if (stepStatus.payFee) return 66
+    if (stepStatus.approve) return 33
+    return 0
   }
 
   return (
@@ -338,7 +468,7 @@ const CreateFlip = () => {
         <ContentWrapper>
           <GlassCard>
             <NeonText style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              Create Your Flip (3-Step Process)
+              Create Your Flip
             </NeonText>
             
             {/* Network Check */}
@@ -360,43 +490,55 @@ const CreateFlip = () => {
               </div>
             )}
             
-            {/* Step Indicator */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              marginBottom: '2rem',
-              gap: '1rem'
-            }}>
-              <div style={{
-                padding: '0.5rem 1rem',
-                background: 'linear-gradient(135deg, #00bfff 0%, #ff1493 100%)',
-                borderRadius: '0.5rem',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '0.9rem'
-              }}>
-                Step 1: Approve NFT
-              </div>
-              <div style={{
-                padding: '0.5rem 1rem',
-                background: 'linear-gradient(135deg, #00bfff 0%, #ff1493 100%)',
-                borderRadius: '0.5rem',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '0.9rem'
-              }}>
-                Step 2: Pay Fee & Create Game
-              </div>
-              <div style={{
-                padding: '0.5rem 1rem',
-                background: 'rgba(0, 191, 255, 0.2)',
-                borderRadius: '0.5rem',
-                color: theme.colors.textSecondary,
-                fontSize: '0.9rem'
-              }}>
-                Step 3: Load NFT
-              </div>
-            </div>
+            {/* Enhanced Progress Indicator */}
+            <ProgressContainer>
+              <ProgressLine progress={getProgressPercentage()} />
+              
+              <ProgressStep>
+                <StepCircle 
+                  completed={stepStatus.approve}
+                  active={currentStep === 1 && !stepStatus.approve}
+                >
+                  {stepStatus.approve ? '✓' : '1'}
+                </StepCircle>
+                <StepLabel 
+                  completed={stepStatus.approve}
+                  active={currentStep === 1 && !stepStatus.approve}
+                >
+                  Approve NFT
+                </StepLabel>
+              </ProgressStep>
+              
+              <ProgressStep>
+                <StepCircle 
+                  completed={stepStatus.payFee}
+                  active={currentStep === 2 && !stepStatus.payFee}
+                >
+                  {stepStatus.payFee ? '✓' : '2'}
+                </StepCircle>
+                <StepLabel 
+                  completed={stepStatus.payFee}
+                  active={currentStep === 2 && !stepStatus.payFee}
+                >
+                  Pay Fee & Create
+                </StepLabel>
+              </ProgressStep>
+              
+              <ProgressStep>
+                <StepCircle 
+                  completed={stepStatus.depositNFT}
+                  active={currentStep === 3 && !stepStatus.depositNFT}
+                >
+                  {stepStatus.depositNFT ? '✓' : '3'}
+                </StepCircle>
+                <StepLabel 
+                  completed={stepStatus.depositNFT}
+                  active={currentStep === 3 && !stepStatus.depositNFT}
+                >
+                  Deposit NFT
+                </StepLabel>
+              </ProgressStep>
+            </ProgressContainer>
 
             <form onSubmit={handleSubmit}>
               {/* NFT Selection */}
