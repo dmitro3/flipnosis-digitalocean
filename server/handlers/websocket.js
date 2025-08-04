@@ -384,35 +384,9 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           timestamp: Date.now()
         })
         
-        // Switch turns if both players haven't charged yet
-        if (turnState) {
-          const db = dbService.getDatabase()
-          db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
-            if (err || !game) return
-            
-            const otherPlayer = player === game.creator ? game.challenger : game.creator
-            const otherPlayerCharged = powerCharges.has(otherPlayer)
-            
-            if (!otherPlayerCharged) {
-              // Switch to other player's turn
-              turnState.currentTurn = otherPlayer
-              gameTurnState.set(gameId, turnState)
-              
-              console.log('🔄 Switched turn to:', otherPlayer)
-              
-              // Broadcast turn change
-              broadcastToRoom(gameId, {
-                type: 'turn_changed',
-                gameId,
-                currentTurn: otherPlayer,
-                message: `It's ${otherPlayer.slice(0, 6)}...'s turn to charge power!`
-              })
-            }
-          })
-        }
-        
-        // Check if both players have charged and trigger flip
-        console.log('🎯 Calling checkAndTriggerFlip for game:', gameId)
+        // In the new game flow, only one player charges per round
+        // So we don't switch turns, we just trigger the flip
+        console.log('🎯 Player charged power, triggering flip for game:', gameId)
         checkAndTriggerFlip(gameId, dbService)
         break
         
@@ -453,21 +427,26 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         return
       }
       
-      const creatorPower = powerCharges.get(game.creator)
-      const challengerPower = powerCharges.get(game.challenger)
+      // In the new game flow, we only need the current player to have charged
+      const turnState = gameTurnState.get(gameId)
+      if (!turnState) {
+        console.log('⚠️ No turn state found, cannot trigger flip')
+        return
+      }
       
-      console.log('🔍 Checking power charges:', {
+      const currentPlayer = turnState.currentTurn
+      const currentPlayerPower = powerCharges.get(currentPlayer)
+      
+      console.log('🔍 Checking power charge for flip:', {
         gameId,
-        creator: game.creator,
-        challenger: game.challenger,
-        creatorPower,
-        challengerPower,
-        hasBothCharged: creatorPower && challengerPower
+        currentPlayer,
+        currentPlayerPower,
+        hasPower: !!currentPlayerPower
       })
       
-      // Check if both players have charged
-      if (creatorPower && challengerPower) {
-        console.log('🎲 Both players have charged! Triggering server-side flip...')
+      // Check if the current player has charged
+      if (currentPlayerPower) {
+        console.log('🎲 Current player has charged! Triggering server-side flip...')
         
         // Get current round to ensure both players have made choices
         db.get(
@@ -499,8 +478,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
               creatorChoice: round.creator_choice,
               challengerChoice: round.challenger_choice,
               roundWinner,
-              creatorPower,
-              challengerPower
+              currentPlayerPower
             })
             
             // Initialize coin scene if not already done
@@ -523,8 +501,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
             const animationStarted = coinStreamService.startFlipAnimation(
               gameId, 
               result, 
-              creatorPower, 
-              challengerPower, 
+              currentPlayerPower, 
+              0, // No second player power in new flow
               3000 // 3 second duration
             )
             
@@ -536,9 +514,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                 type: 'FLIP_STARTED',
                 gameId,
                 result,
-                creatorPower,
-                challengerPower,
-                duration: 3000
+                duration: 3000,
+                timestamp: Date.now()
               })
               
               // Start streaming animation frames
@@ -546,48 +523,45 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                 coinStreamService.streamAnimation(gameId, { broadcastToRoom: (roomId, message) => broadcastToRoom(roomId, message) }, gameId)
               }, 100)
               
-              // Update round with flip result after animation completes
+              // Update round with result and broadcast after animation completes
               setTimeout(() => {
                 db.run(
                   'UPDATE game_rounds SET flip_result = ?, round_winner = ? WHERE id = ?',
                   [result, roundWinner, round.id],
                   (err) => {
                     if (err) {
-                      console.error('❌ Error updating flip result:', err)
-                      return
+                      console.error('❌ Error updating round with flip result:', err)
+                    } else {
+                      console.log('✅ Updated round with flip result:', { result, roundWinner })
+                      
+                      // Broadcast final result
+                      broadcastToRoom(gameId, {
+                        type: 'FLIP_RESULT',
+                        gameId,
+                        result,
+                        roundWinner,
+                        roundNumber: round.round_number,
+                        creatorChoice: round.creator_choice,
+                        challengerChoice: round.challenger_choice,
+                        currentPlayerPower
+                      })
+                      
+                      // Clear power charges for this round
+                      gamePowerCharges.delete(gameId)
+                      
+                      // Check if game is complete
+                      checkGameCompletion(gameId)
                     }
-                    
-                    console.log('✅ Flip result recorded:', { result, roundWinner })
-                    
-                    // Broadcast final result
-                    broadcastToRoom(gameId, {
-                      type: 'FLIP_RESULT',
-                      gameId,
-                      result,
-                      roundWinner,
-                      roundNumber: round.round_number,
-                      creatorChoice: round.creator_choice,
-                      challengerChoice: round.challenger_choice,
-                      creatorPower,
-                      challengerPower
-                    })
-                    
-                    // Clear power charges for this round
-                    gamePowerCharges.delete(gameId)
-                    
-                    // Check game completion
-                    checkGameCompletion(gameId)
                   }
                 )
               }, 3000) // Wait for animation to complete
-              
             } else {
               console.error('❌ Failed to start flip animation')
             }
           }
         )
       } else {
-        console.log('⏳ Waiting for both players to charge power...')
+        console.log('⏳ Current player has not charged yet')
       }
     })
   }
@@ -610,7 +584,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           hasChallengerChoice: !!round.challenger_choice
         })
         
-        // Check if one player has made a choice
+        // Check if creator (Player 1) has made a choice
         if (round.creator_choice && !round.challenger_choice) {
           // Creator chose, automatically assign opposite choice to challenger
           const challengerChoice = round.creator_choice === 'heads' ? 'tails' : 'heads'
@@ -627,7 +601,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                 return
               }
               
-              // Set turn state - creator goes first
+              // Set turn state - creator goes first (always)
               gameTurnState.set(gameId, {
                 currentTurn: game.creator,
                 roundNumber: round.round_number,
@@ -649,47 +623,22 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           )
           
         } else if (!round.creator_choice && round.challenger_choice) {
-          // Challenger chose, automatically assign opposite choice to creator
-          const creatorChoice = round.challenger_choice === 'heads' ? 'tails' : 'heads'
+          // Challenger tried to choose first - this should not happen!
+          // Only creator can make the first choice
+          console.error('❌ Challenger tried to choose before creator - this should not happen!')
           
-          console.log('🎯 Challenger chose, automatically assigning creator choice:', creatorChoice)
-          
-          // Update the round with the automatic choice
-          db.run(
-            'UPDATE game_rounds SET creator_choice = ? WHERE id = ?',
-            [creatorChoice, roundId],
-            (err) => {
-              if (err) {
-                console.error('❌ Error updating round with automatic choice:', err)
-                return
-              }
-              
-              // Set turn state - challenger goes first
-              gameTurnState.set(gameId, {
-                currentTurn: game.challenger,
-                roundNumber: round.round_number,
-                creatorChoice: creatorChoice,
-                challengerChoice: round.challenger_choice
-              })
-              
-              // Broadcast that both players have chosen and game moves to charging phase
-              broadcastToRoom(gameId, {
-                type: 'choice_made_ready_to_flip',
-                gameId,
-                creatorChoice: creatorChoice,
-                challengerChoice: round.challenger_choice,
-                roundNumber: round.round_number,
-                currentTurn: game.challenger,
-                message: 'Both players have chosen! Challenger goes first - hold the coin to charge power!'
-              })
-            }
-          )
+          // Broadcast error message
+          broadcastToRoom(gameId, {
+            type: 'choice_error',
+            gameId,
+            message: 'Only the creator can make the first choice!'
+          })
           
         } else if (round.creator_choice && round.challenger_choice) {
           // Both players have already chosen (shouldn't happen with new logic, but keeping for safety)
           console.log('🎯 Both players have chosen, transitioning to charging phase')
           
-          // Set turn state - creator goes first
+          // Set turn state - creator goes first (always)
           gameTurnState.set(gameId, {
             currentTurn: game.creator,
             roundNumber: round.round_number,
@@ -710,14 +659,14 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           
         } else {
           // No player has chosen yet
-          console.log('⏳ Waiting for player to choose...')
+          console.log('⏳ Waiting for creator to choose first...')
           
-          // Broadcast choice update
+          // Broadcast choice update - only creator can choose
           broadcastToRoom(gameId, {
             type: 'choice_update',
             gameId,
             roundNumber: round.round_number,
-            message: 'Choose heads or tails to begin!'
+            message: 'Creator must choose heads or tails first!'
           })
         }
       }
