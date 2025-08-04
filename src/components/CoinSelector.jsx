@@ -47,36 +47,36 @@ const CoinSelector = ({
       id: 'clown',
       type: 'default',
       name: 'Clown',
-      headsImage: '/coins/clownh.webp',
-      tailsImage: '/coins/clownt.webp'
+      headsImage: '/coins/clownh.png',
+      tailsImage: '/coins/clownt.png'
     },
     {
       id: 'dragon',
       type: 'default',
       name: 'Dragon',
-      headsImage: '/coins/dragonh.webp',
-      tailsImage: '/coins/dragont.webp'
+      headsImage: '/coins/dragonh.png',
+      tailsImage: '/coins/dragont.png'
     },
     {
       id: 'stinger',
       type: 'default',
       name: 'Stinger',
-      headsImage: '/coins/stingerh.webp',
-      tailsImage: '/coins/stingert.webp'
+      headsImage: '/coins/stingerh.png',
+      tailsImage: '/coins/stingert.png'
     },
     {
       id: 'manga',
       type: 'default',
       name: 'Manga',
-      headsImage: '/coins/mangah.webp',
-      tailsImage: '/coins/mangat.webp'
+      headsImage: '/coins/mangah.png',
+      tailsImage: '/coins/mangat.png'
     },
     {
       id: 'pharaoh',
       type: 'default',
       name: 'Pharaoh',
-      headsImage: '/coins/pharaohh.webp',
-      tailsImage: '/coins/pharaoht.webp'
+      headsImage: '/coins/pharaohh.png',
+      tailsImage: '/coins/pharaoht.png'
     }
   ]
 
