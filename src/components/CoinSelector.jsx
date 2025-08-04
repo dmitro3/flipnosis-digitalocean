@@ -42,6 +42,41 @@ const CoinSelector = ({
       name: 'Mario Bros',
       headsImage: '/coins/mario.png',
       tailsImage: '/coins/luigi.png'
+    },
+    {
+      id: 'clown',
+      type: 'default',
+      name: 'Clown',
+      headsImage: '/coins/clownh.webp',
+      tailsImage: '/coins/clownt.webp'
+    },
+    {
+      id: 'dragon',
+      type: 'default',
+      name: 'Dragon',
+      headsImage: '/coins/dragonh.webp',
+      tailsImage: '/coins/dragont.webp'
+    },
+    {
+      id: 'stinger',
+      type: 'default',
+      name: 'Stinger',
+      headsImage: '/coins/stingerh.webp',
+      tailsImage: '/coins/stingert.webp'
+    },
+    {
+      id: 'manga',
+      type: 'default',
+      name: 'Manga',
+      headsImage: '/coins/mangah.webp',
+      tailsImage: '/coins/mangat.webp'
+    },
+    {
+      id: 'pharaoh',
+      type: 'default',
+      name: 'Pharaoh',
+      headsImage: '/coins/pharaohh.webp',
+      tailsImage: '/coins/pharaoht.webp'
     }
   ]
 
