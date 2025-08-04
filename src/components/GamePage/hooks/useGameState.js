@@ -917,7 +917,8 @@ export const useGameState = (gameId, address) => {
     setPlayerChoices,
     setStreamedCoinState,
     handleFlipResult,
-    handleGameCompleted
+    handleGameCompleted,
+    playerChoices // Added this parameter
   )
 
   return {

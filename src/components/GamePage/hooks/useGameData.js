@@ -12,7 +12,8 @@ export const useGameData = (
   setPlayerChoices,
   setStreamedCoinState,
   handleFlipResult,
-  handleGameCompleted
+  handleGameCompleted,
+  playerChoices // Added this parameter
 ) => {
   const { showSuccess, showError, showInfo } = useToast()
 
