@@ -5,6 +5,7 @@ import { useContractService } from '../../../utils/useContractService'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import { useGameData } from './useGameData'
+import webSocketService from '../../../services/WebSocketService'
 
 export const useGameState = (gameId, address) => {
   const { showSuccess, showError, showInfo } = useToast()
@@ -14,8 +15,6 @@ export const useGameState = (gameId, address) => {
   const [gameData, setGameData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [wsConnected, setWsConnected] = useState(false)
-  const [wsRef, setWsRef] = useState(null)
   const [offers, setOffers] = useState([])
   const [chatMessages, setChatMessages] = useState([])
   const [playerChoices, setPlayerChoices] = useState({ creator: null, joiner: null })
@@ -432,7 +431,7 @@ export const useGameState = (gameId, address) => {
 
   // Game actions
   const handlePlayerChoice = (choice) => {
-    if (!wsRef || wsRef.readyState !== WebSocket.OPEN) {
+    if (!webSocketService.isConnected()) {
       showError('Not connected to game server')
       return
     }
@@ -455,34 +454,11 @@ export const useGameState = (gameId, address) => {
 
     showSuccess(`🎯 You chose ${choice.toUpperCase()}!`)
 
-    const choiceMessage = {
-      type: 'GAME_ACTION',
-      gameId: gameId,
-      action: 'MAKE_CHOICE',
-      choice: choice,
-      player: address,
-      timestamp: Date.now()
-    }
-
-    try {
-      wsRef.send(JSON.stringify(choiceMessage))
-
-      const broadcastMessage = {
-        type: 'PLAYER_CHOICE_BROADCAST',
-        gameId: gameId,
-        player: address,
-        choice: choice,
-        timestamp: Date.now()
-      }
-
-      setTimeout(() => {
-        if (wsRef && wsRef.readyState === WebSocket.OPEN) {
-          wsRef.send(JSON.stringify(broadcastMessage))
-        }
-      }, 100)
-
-    } catch (error) {
-      console.error('❌ Failed to send choice:', error)
+    // Send choice using WebSocket service
+    const success = webSocketService.sendPlayerChoice(gameId, address, choice)
+    
+    if (!success) {
+      console.error('❌ Failed to send choice')
       showError('Failed to send choice. Please try again.')
 
       if (address === getGameCreator()) {
@@ -512,16 +488,8 @@ export const useGameState = (gameId, address) => {
       joinerChoice: autoChoice
     }))
 
-    if (wsRef && wsConnected) {
-      const autoFlipMessage = {
-        type: 'GAME_ACTION',
-        gameId: gameId,
-        action: 'AUTO_FLIP',
-        choice: autoChoice,
-        player: 'system'
-      }
-
-      wsRef.send(JSON.stringify(autoFlipMessage))
+    if (webSocketService.isConnected()) {
+      webSocketService.sendAutoFlip(gameId, 'system', autoChoice)
     }
   }
 
@@ -530,10 +498,15 @@ export const useGameState = (gameId, address) => {
       ...prev,
       chargingPlayer: address
     }))
+    
+    // Send power charge start notification
+    if (webSocketService.isConnected()) {
+      webSocketService.sendPowerChargeStart(gameId, address)
+    }
   }
 
   const handlePowerChargeStop = async (powerLevel) => {
-    if (!wsRef || wsRef.readyState !== WebSocket.OPEN) {
+    if (!webSocketService.isConnected()) {
       showError('Not connected to game server')
       return
     }
@@ -547,20 +520,13 @@ export const useGameState = (gameId, address) => {
       joinerPower: address === getGameJoiner() ? validPowerLevel : prev.joinerPower
     }))
 
-    const powerMessage = {
-      type: 'GAME_ACTION',
-      gameId: gameId,
-      action: 'POWER_CHARGED',
-      powerLevel: validPowerLevel,
-      player: address,
-      timestamp: Date.now()
-    }
-
-    try {
-      wsRef.send(JSON.stringify(powerMessage))
+    // Send power charge using WebSocket service
+    const success = webSocketService.sendPowerCharge(gameId, address, validPowerLevel)
+    
+    if (success) {
       showSuccess(`⚡ Power charged: ${validPowerLevel.toFixed(1)}/10`)
-    } catch (error) {
-      console.error('❌ Failed to send power message:', error)
+    } else {
+      console.error('❌ Failed to send power message')
       showError('Failed to send power data. Please try again.')
     }
   }
@@ -946,7 +912,7 @@ export const useGameState = (gameId, address) => {
     gameData,
     gameState,
     address,
-    wsRef,
+    null, // wsRef is now handled by useWebSocket hook
     setGameState,
     setPlayerChoices,
     setStreamedCoinState,
@@ -975,8 +941,6 @@ export const useGameState = (gameId, address) => {
     gameCoin,
     newOffer,
     creatingOffer,
-    wsConnected,
-    wsRef,
 
     // Actions
     resetForNextRound,
@@ -1011,7 +975,6 @@ export const useGameState = (gameId, address) => {
     // Setters
     setNewOffer,
     setCreatingOffer,
-    setWsRef,
     setStreamedCoinState,
     setGameState,
     setPlayerChoices

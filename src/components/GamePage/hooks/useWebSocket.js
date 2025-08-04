@@ -1,102 +1,71 @@
 import { useState, useEffect } from 'react'
-import { getWsUrl } from '../../../config/api'
+import webSocketService from '../../../services/WebSocketService'
 
 export const useWebSocket = (gameId, address, gameData) => {
   const [wsConnected, setWsConnected] = useState(false)
   const [wsRef, setWsRef] = useState(null)
 
   // Initialize WebSocket connection
-  const initializeWebSocket = () => {
-    if (wsRef) {
-      console.log('🔌 Closing existing WebSocket connection')
-      wsRef.close()
+  const initializeWebSocket = async () => {
+    if (!gameId || !address) {
+      console.log('⚠️ Cannot initialize WebSocket - missing gameId or address')
+      return
     }
 
-    const wsUrl = getWsUrl()
-    console.log('🔌 Initializing WebSocket connection to:', wsUrl)
-
-    const ws = new WebSocket(wsUrl)
-    setWsRef(ws)
-
-    // Add connection timeout
-    const connectionTimeout = setTimeout(() => {
-      if (ws.readyState === WebSocket.CONNECTING) {
-        console.log('⏰ WebSocket connection timeout, closing...')
-        ws.close()
-      }
-    }, 10000) // 10 second timeout
-
-    ws.onopen = () => {
-      console.log('🔌 WebSocket connected successfully')
-      clearTimeout(connectionTimeout)
+    try {
+      console.log('🔌 Initializing WebSocket connection for game:', gameId)
+      
+      // Connect using the WebSocket service
+      const ws = await webSocketService.connect(gameId, address)
+      setWsRef(ws)
       setWsConnected(true)
-
-      // Join game room immediately
-      try {
-        ws.send(JSON.stringify({
-          type: 'join_room',
-          roomId: gameId
-        }))
-        console.log('🏠 Joined game room:', gameId)
-      } catch (error) {
-        console.error('❌ Failed to join room:', error)
-      }
-
-      // Register user if we have an address
-      if (address) {
-        try {
-          ws.send(JSON.stringify({
-            type: 'register_user',
-            address: address
-          }))
-          console.log('👤 Registered user:', address)
-        } catch (error) {
-          console.error('❌ Failed to register user:', error)
-        }
-      }
-    }
-
-    ws.onerror = (error) => {
-      console.error('🔌 WebSocket error:', error)
-      clearTimeout(connectionTimeout)
+      
+      console.log('✅ WebSocket connection established successfully')
+    } catch (error) {
+      console.error('❌ Failed to initialize WebSocket:', error)
       setWsConnected(false)
-    }
-
-    ws.onclose = (event) => {
-      console.log('🔌 WebSocket disconnected:', {
-        code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean
-      })
-      clearTimeout(connectionTimeout)
-      setWsConnected(false)
-
-      // Reconnect if game is still active
-      if (gameData && !gameData.completed && gameData.status !== 'cancelled') {
-        setTimeout(() => {
-          console.log('🔄 Reconnecting WebSocket...')
-          initializeWebSocket()
-        }, 3000)
-      }
     }
   }
 
+  // Set up connection state monitoring
+  useEffect(() => {
+    const checkConnectionState = () => {
+      const isConnected = webSocketService.isConnected()
+      setWsConnected(isConnected)
+    }
+
+    // Check connection state periodically
+    const interval = setInterval(checkConnectionState, 2000)
+    
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
+
   // Initialize WebSocket when game data is available
   useEffect(() => {
-    if (gameId && gameData) {
+    if (gameId && address && gameData) {
       initializeWebSocket()
     }
 
     return () => {
+      // Cleanup will be handled by the WebSocket service
+    }
+  }, [gameId, address, gameData])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
       if (wsRef) {
-        wsRef.close()
+        webSocketService.disconnect()
       }
     }
-  }, [gameId, gameData])
+  }, [wsRef])
 
   return {
     wsConnected,
-    wsRef,
-    setWsRef
+    wsRef: webSocketService.getWebSocket(),
+    setWsRef,
+    webSocketService
   }
 } 

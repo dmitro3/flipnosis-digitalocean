@@ -156,8 +156,6 @@ const GamePage = () => {
     gameCoin,
     newOffer,
     creatingOffer,
-    wsConnected,
-    wsRef,
     resetForNextRound,
     handlePlayerChoice,
     handlePowerChargeStart,
@@ -192,7 +190,8 @@ const GamePage = () => {
     getGameNFTTokenId
   } = useGameState(gameId, address)
 
-  // WebSocket management - using wsConnected and wsRef from useGameState
+  // WebSocket management
+  const { wsConnected, wsRef, webSocketService } = useWebSocket(gameId, address, gameData)
 
   // Game data loading
   useGameData(

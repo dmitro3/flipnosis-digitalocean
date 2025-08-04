@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { useToast } from '../../../contexts/ToastContext'
+import webSocketService from '../../../services/WebSocketService'
 
 export const useGameData = (
   gameId, 
   gameData, 
   gameState, 
   address,
-  wsRef,
+  wsRef, // This is no longer used, kept for compatibility
   setGameState,
   setPlayerChoices,
   setStreamedCoinState,
@@ -16,7 +17,7 @@ export const useGameData = (
   const { showSuccess, showError, showInfo } = useToast()
 
   // Handle WebSocket messages
-  const handleWebSocketMessage = (data, wsRef, setGameState, setPlayerChoices, setStreamedCoinState, handleFlipResult, handleGameCompleted) => {
+  const handleWebSocketMessage = (data) => {
     console.log('📨 WebSocket message received:', data)
 
     // Ensure data is valid
@@ -346,26 +347,59 @@ export const useGameData = (
   const getGameCreator = () => gameData?.creator || gameData?.creator_address
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
 
-  // Set up WebSocket message handler
+  // Set up WebSocket message handlers
   useEffect(() => {
-    if (wsRef && wsRef.readyState === WebSocket.OPEN) {
-      wsRef.onmessage = (event) => {
-        try {
-          let data = JSON.parse(event.data)
-          console.log('📨 Raw WebSocket message:', data)
+    if (gameId && address) {
+      // Register message handlers with the WebSocket service
+      webSocketService.on('player_choice_made', handleWebSocketMessage)
+      webSocketService.on('choice_made_ready_to_flip', handleWebSocketMessage)
+      webSocketService.on('turn_changed', handleWebSocketMessage)
+      webSocketService.on('both_choices_made', handleWebSocketMessage)
+      webSocketService.on('power_charge_started', handleWebSocketMessage)
+      webSocketService.on('power_charged', handleWebSocketMessage)
+      webSocketService.on('choice_update', handleWebSocketMessage)
+      webSocketService.on('auto_flip_triggered', handleWebSocketMessage)
+      webSocketService.on('PLAYER_CHOICE', handleWebSocketMessage)
+      webSocketService.on('FLIP_RESULT', handleWebSocketMessage)
+      webSocketService.on('FLIP_STARTED', handleWebSocketMessage)
+      webSocketService.on('COIN_FRAME', handleWebSocketMessage)
+      webSocketService.on('GAME_COMPLETED', handleWebSocketMessage)
+      webSocketService.on('your_offer_accepted', handleWebSocketMessage)
+      webSocketService.on('game_awaiting_challenger_deposit', handleWebSocketMessage)
+      webSocketService.on('deposit_received', handleWebSocketMessage)
+      webSocketService.on('game_started', handleWebSocketMessage)
+      webSocketService.on('offer_accepted', handleWebSocketMessage)
+      webSocketService.on('PLAYER_CHOICE_BROADCAST', handleWebSocketMessage)
+      webSocketService.on('room_joined', handleWebSocketMessage)
+      webSocketService.on('game_status_changed', handleWebSocketMessage)
 
-          // Handle 'message' wrapper from Socket.IO if present
-          if (data.type === 'message' && data.data) {
-            handleWebSocketMessage(data.data, wsRef, setGameState, setPlayerChoices, setStreamedCoinState, handleFlipResult, handleGameCompleted)
-          } else {
-            handleWebSocketMessage(data, wsRef, setGameState, setPlayerChoices, setStreamedCoinState, handleFlipResult, handleGameCompleted)
-          }
-        } catch (err) {
-          console.error('❌ Error parsing WebSocket message:', err, 'Raw data:', event.data)
-        }
+      // Cleanup function
+      return () => {
+        // Remove all message handlers
+        webSocketService.off('player_choice_made', handleWebSocketMessage)
+        webSocketService.off('choice_made_ready_to_flip', handleWebSocketMessage)
+        webSocketService.off('turn_changed', handleWebSocketMessage)
+        webSocketService.off('both_choices_made', handleWebSocketMessage)
+        webSocketService.off('power_charge_started', handleWebSocketMessage)
+        webSocketService.off('power_charged', handleWebSocketMessage)
+        webSocketService.off('choice_update', handleWebSocketMessage)
+        webSocketService.off('auto_flip_triggered', handleWebSocketMessage)
+        webSocketService.off('PLAYER_CHOICE', handleWebSocketMessage)
+        webSocketService.off('FLIP_RESULT', handleWebSocketMessage)
+        webSocketService.off('FLIP_STARTED', handleWebSocketMessage)
+        webSocketService.off('COIN_FRAME', handleWebSocketMessage)
+        webSocketService.off('GAME_COMPLETED', handleWebSocketMessage)
+        webSocketService.off('your_offer_accepted', handleWebSocketMessage)
+        webSocketService.off('game_awaiting_challenger_deposit', handleWebSocketMessage)
+        webSocketService.off('deposit_received', handleWebSocketMessage)
+        webSocketService.off('game_started', handleWebSocketMessage)
+        webSocketService.off('offer_accepted', handleWebSocketMessage)
+        webSocketService.off('PLAYER_CHOICE_BROADCAST', handleWebSocketMessage)
+        webSocketService.off('room_joined', handleWebSocketMessage)
+        webSocketService.off('game_status_changed', handleWebSocketMessage)
       }
     }
-  }, [wsRef, gameData, address])
+  }, [gameId, address, gameData, gameState, playerChoices])
 
   return {
     handleWebSocketMessage

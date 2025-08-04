@@ -19,6 +19,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   wss.on('connection', (socket, req) => {
     socket.id = crypto.randomBytes(16).toString('hex')
     console.log(`🔌 New WebSocket connection: ${socket.id}`)
+    console.log(`🌐 Connection from: ${req.socket.remoteAddress}`)
+    console.log(`📊 Total connected clients: ${wss.clients.size}`)
     
     socket.on('close', () => {
       console.log(`🔌 WebSocket disconnected: ${socket.id}`)
@@ -37,6 +39,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
 
     socket.on('message', async (message) => {
       try {
+        console.log(`📨 Raw message from ${socket.id}:`, message.toString())
         const data = JSON.parse(message)
         
         // Ensure type field exists
@@ -110,6 +113,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         try {
           client.send(messageStr)
           successfulBroadcasts++
+          console.log(`✅ Sent message to client ${socketId}`)
         } catch (error) {
           console.error(`❌ Failed to send to client ${socketId}:`, error)
           failedBroadcasts++
@@ -188,6 +192,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     const { roomId } = data
     
     console.log(`👥 Socket ${socket.id} requesting to join room ${roomId}`)
+    console.log(`🏠 Current rooms:`, Array.from(rooms.keys()))
+    console.log(`👥 Current room members:`, Array.from(rooms.values()).map(room => room.size))
     
     // Leave previous room if any
     const oldRoom = socketRooms.get(socket.id)
