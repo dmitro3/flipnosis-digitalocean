@@ -196,6 +196,18 @@ export const useGameData = (
 
       case 'FLIP_RESULT':
         console.log('🎲 Flip result received:', data)
+        // Stop streaming mode
+        setStreamedCoinState(prev => ({
+          ...prev,
+          isStreaming: false,
+          frameData: null
+        }))
+        // Reset flip state
+        setGameState(prev => ({
+          ...prev,
+          isFlipping: false, // Stop the flip animation
+          phase: 'choosing' // Return to choosing phase for next round
+        }))
         handleFlipResult(data)
         break
 
@@ -209,7 +221,10 @@ export const useGameData = (
         }))
         setGameState(prev => ({
           ...prev,
-          phase: 'flipping'
+          phase: 'flipping',
+          isFlipping: true, // Add this to trigger coin animation
+          flipResult: data.result, // Add the flip result
+          flipDuration: data.duration || 3000 // Add flip duration
         }))
         break
 
@@ -219,17 +234,6 @@ export const useGameData = (
           ...prev,
           frameData: data.frameData
         }))
-        break
-
-      case 'FLIP_RESULT':
-        console.log('🎲 Flip result received:', data)
-        // Stop streaming mode
-        setStreamedCoinState(prev => ({
-          ...prev,
-          isStreaming: false,
-          frameData: null
-        }))
-        handleFlipResult(data)
         break
 
       case 'GAME_COMPLETED':
@@ -271,8 +275,14 @@ export const useGameData = (
           ...prev,
           phase: 'choosing',
           creatorChoice: null,
-          joinerChoice: null
+          joinerChoice: null,
+          gameStarted: true // Add this to mark game as started
         }))
+        // Also update player choices to reset them
+        setPlayerChoices({
+          creator: null,
+          joiner: null
+        })
         break
 
       case 'offer_accepted':
