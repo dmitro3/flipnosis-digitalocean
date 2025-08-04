@@ -610,8 +610,83 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           hasChallengerChoice: !!round.challenger_choice
         })
         
-        // Check if both players have made choices
-        if (round.creator_choice && round.challenger_choice) {
+        // Check if one player has made a choice
+        if (round.creator_choice && !round.challenger_choice) {
+          // Creator chose, automatically assign opposite choice to challenger
+          const challengerChoice = round.creator_choice === 'heads' ? 'tails' : 'heads'
+          
+          console.log('🎯 Creator chose, automatically assigning challenger choice:', challengerChoice)
+          
+          // Update the round with the automatic choice
+          db.run(
+            'UPDATE game_rounds SET challenger_choice = ? WHERE id = ?',
+            [challengerChoice, roundId],
+            (err) => {
+              if (err) {
+                console.error('❌ Error updating round with automatic choice:', err)
+                return
+              }
+              
+              // Set turn state - creator goes first
+              gameTurnState.set(gameId, {
+                currentTurn: game.creator,
+                roundNumber: round.round_number,
+                creatorChoice: round.creator_choice,
+                challengerChoice: challengerChoice
+              })
+              
+              // Broadcast that both players have chosen and game moves to charging phase
+              broadcastToRoom(gameId, {
+                type: 'choice_made_ready_to_flip',
+                gameId,
+                creatorChoice: round.creator_choice,
+                challengerChoice: challengerChoice,
+                roundNumber: round.round_number,
+                currentTurn: game.creator,
+                message: 'Both players have chosen! Creator goes first - hold the coin to charge power!'
+              })
+            }
+          )
+          
+        } else if (!round.creator_choice && round.challenger_choice) {
+          // Challenger chose, automatically assign opposite choice to creator
+          const creatorChoice = round.challenger_choice === 'heads' ? 'tails' : 'heads'
+          
+          console.log('🎯 Challenger chose, automatically assigning creator choice:', creatorChoice)
+          
+          // Update the round with the automatic choice
+          db.run(
+            'UPDATE game_rounds SET creator_choice = ? WHERE id = ?',
+            [creatorChoice, roundId],
+            (err) => {
+              if (err) {
+                console.error('❌ Error updating round with automatic choice:', err)
+                return
+              }
+              
+              // Set turn state - challenger goes first
+              gameTurnState.set(gameId, {
+                currentTurn: game.challenger,
+                roundNumber: round.round_number,
+                creatorChoice: creatorChoice,
+                challengerChoice: round.challenger_choice
+              })
+              
+              // Broadcast that both players have chosen and game moves to charging phase
+              broadcastToRoom(gameId, {
+                type: 'choice_made_ready_to_flip',
+                gameId,
+                creatorChoice: creatorChoice,
+                challengerChoice: round.challenger_choice,
+                roundNumber: round.round_number,
+                currentTurn: game.challenger,
+                message: 'Both players have chosen! Challenger goes first - hold the coin to charge power!'
+              })
+            }
+          )
+          
+        } else if (round.creator_choice && round.challenger_choice) {
+          // Both players have already chosen (shouldn't happen with new logic, but keeping for safety)
           console.log('🎯 Both players have chosen, transitioning to charging phase')
           
           // Set turn state - creator goes first
@@ -631,22 +706,6 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
             roundNumber: round.round_number,
             currentTurn: game.creator,
             message: 'Both players have chosen! Creator goes first - hold the coin to charge power!'
-          })
-          
-        } else if (round.creator_choice || round.challenger_choice) {
-          // Only one player has chosen
-          const waitingFor = round.creator_choice ? game.challenger : game.creator
-          console.log('🎯 One player has chosen, waiting for:', waitingFor)
-          
-          // Broadcast that a player has chosen and waiting for the other
-          broadcastToRoom(gameId, {
-            type: 'choice_made_ready_to_flip',
-            gameId,
-            creatorChoice: round.creator_choice,
-            challengerChoice: round.challenger_choice,
-            roundNumber: round.round_number,
-            waitingFor,
-            message: 'Player has chosen! Waiting for other player to choose...'
           })
           
         } else {

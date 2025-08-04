@@ -123,13 +123,7 @@ const PowerDisplay = ({
           }}>
             {/* HEADS Button */}
             <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                if (onChoiceSelect) {
-                  onChoiceSelect('heads')
-                }
-              }}
+              onClick={onPlayerChoice}
               onMouseDown={(e) => {
                 e.preventDefault()
                 if (navigator.vibrate) {
@@ -137,10 +131,11 @@ const PowerDisplay = ({
                 }
               }}
               style={{
-                ...choiceButtonStyle,
-                background: 'linear-gradient(135deg, #00FF41 0%, #00CC33 25%, #009926 50%, #006619 75%, #00330C 100%)',
-                border: '3px solid #00FF41',
-                borderRadius: isMobile ? '1rem' : '1.25rem',
+                padding: isMobile ? '1rem 2rem' : '1.5rem 3rem',
+                fontSize: isMobile ? '1.2rem' : '1.5rem',
+                background: 'linear-gradient(135deg, #00FF41 0%, #00CC33 50%, #009925 100%)',
+                border: 'none',
+                borderRadius: '15px',
                 color: '#FFFFFF',
                 fontWeight: 'bold',
                 cursor: 'pointer',
@@ -149,23 +144,20 @@ const PowerDisplay = ({
                   0 0 20px rgba(0, 255, 65, 0.6),
                   0 0 40px rgba(0, 255, 65, 0.4),
                   0 0 60px rgba(0, 255, 65, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
                 `,
-                textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+                letterSpacing: '1px',
                 position: 'relative',
-                overflow: 'hidden',
-                transform: 'translateY(0)',
-                animation: 'headsGlow 2s ease-in-out infinite'
+                overflow: 'hidden'
               }}
               onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px) scale(1.02)'
+                e.target.style.transform = 'translateY(-3px) scale(1.05)'
                 e.target.style.boxShadow = `
                   0 0 30px rgba(0, 255, 65, 0.8),
                   0 0 60px rgba(0, 255, 65, 0.6),
                   0 0 90px rgba(0, 255, 65, 0.4),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
+                  inset 0 1px 0 rgba(255, 255, 255, 0.4)
                 `
               }}
               onMouseLeave={(e) => {
@@ -174,55 +166,16 @@ const PowerDisplay = ({
                   0 0 20px rgba(0, 255, 65, 0.6),
                   0 0 40px rgba(0, 255, 65, 0.4),
                   0 0 60px rgba(0, 255, 65, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
                 `
               }}
             >
-              <span style={{
-                position: 'relative',
-                zIndex: 2,
-                display: 'block',
-                width: '100%',
-                height: '100%',
-                fontSize: isMobile ? '1.1rem' : '1.3rem',
-                letterSpacing: '1px'
-              }}>
-                🪙 HEADS
-              </span>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%)',
-                animation: 'headsShimmer 3s ease-in-out infinite',
-                zIndex: 1
-              }} />
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '60%',
-                height: '60%',
-                background: 'radial-gradient(circle, rgba(0, 255, 65, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                animation: 'headsPulse 2s ease-in-out infinite',
-                zIndex: 0
-              }} />
+              HEADS
             </button>
-            
+
             {/* TAILS Button */}
             <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                if (onChoiceSelect) {
-                  onChoiceSelect('tails')
-                }
-              }}
+              onClick={onPlayerChoice}
               onMouseDown={(e) => {
                 e.preventDefault()
                 if (navigator.vibrate) {
@@ -230,10 +183,11 @@ const PowerDisplay = ({
                 }
               }}
               style={{
-                ...choiceButtonStyle,
-                background: 'linear-gradient(135deg, #FF1493 0%, #CC1175 25%, #990E57 50%, #660B39 75%, #33081C 100%)',
-                border: '3px solid #FF1493',
-                borderRadius: isMobile ? '1rem' : '1.25rem',
+                padding: isMobile ? '1rem 2rem' : '1.5rem 3rem',
+                fontSize: isMobile ? '1.2rem' : '1.5rem',
+                background: 'linear-gradient(135deg, #FF1493 0%, #FF0066 50%, #CC0052 100%)',
+                border: 'none',
+                borderRadius: '15px',
                 color: '#FFFFFF',
                 fontWeight: 'bold',
                 cursor: 'pointer',
@@ -242,23 +196,20 @@ const PowerDisplay = ({
                   0 0 20px rgba(255, 20, 147, 0.6),
                   0 0 40px rgba(255, 20, 147, 0.4),
                   0 0 60px rgba(255, 20, 147, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
                 `,
-                textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
+                letterSpacing: '1px',
                 position: 'relative',
-                overflow: 'hidden',
-                transform: 'translateY(0)',
-                animation: 'tailsGlow 2s ease-in-out infinite'
+                overflow: 'hidden'
               }}
               onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px) scale(1.02)'
+                e.target.style.transform = 'translateY(-3px) scale(1.05)'
                 e.target.style.boxShadow = `
                   0 0 30px rgba(255, 20, 147, 0.8),
                   0 0 60px rgba(255, 20, 147, 0.6),
                   0 0 90px rgba(255, 20, 147, 0.4),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.3)
+                  inset 0 1px 0 rgba(255, 255, 255, 0.4)
                 `
               }}
               onMouseLeave={(e) => {
@@ -267,44 +218,11 @@ const PowerDisplay = ({
                   0 0 20px rgba(255, 20, 147, 0.6),
                   0 0 40px rgba(255, 20, 147, 0.4),
                   0 0 60px rgba(255, 20, 147, 0.2),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                  inset 0 -1px 0 rgba(0, 0, 0, 0.2)
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3)
                 `
               }}
             >
-              <span style={{
-                position: 'relative',
-                zIndex: 2,
-                display: 'block',
-                width: '100%',
-                height: '100%',
-                fontSize: isMobile ? '1.1rem' : '1.3rem',
-                letterSpacing: '1px'
-              }}>
-                🪙 TAILS
-              </span>
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%)',
-                animation: 'tailsShimmer 3s ease-in-out infinite',
-                zIndex: 1
-              }} />
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '60%',
-                height: '60%',
-                background: 'radial-gradient(circle, rgba(255, 20, 147, 0.2) 0%, transparent 70%)',
-                borderRadius: '50%',
-                animation: 'tailsPulse 2s ease-in-out infinite',
-                zIndex: 0
-              }} />
+              TAILS
             </button>
           </div>
           

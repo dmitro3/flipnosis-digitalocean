@@ -58,10 +58,14 @@ export const useGameData = (
         console.log('🎯 Choice made, ready to flip:', data)
         const { creatorChoice, challengerChoice, roundNumber, currentTurn, waitingFor } = data
 
-        // Update game state to charging phase
+        // With the new logic, both players should have choices immediately
+        // since the opposite choice is automatically assigned
+        const shouldTransitionToCharging = creatorChoice && challengerChoice
+        
+        // Update game state
         setGameState(prev => ({
           ...prev,
-          phase: 'charging',
+          phase: 'charging', // Always transition to charging since both choices are set
           creatorChoice,
           joinerChoice: challengerChoice,
           currentRound: roundNumber,
@@ -75,15 +79,15 @@ export const useGameData = (
         })
 
         // Show appropriate message
-        if (waitingFor) {
-          showInfo(`Waiting for ${waitingFor.slice(0, 6)}... to choose...`)
-        } else if (currentTurn) {
+        if (currentTurn) {
           const isMyTurn = currentTurn === address
           if (isMyTurn) {
             showSuccess('🎯 Your turn! Hold the coin to charge power!')
           } else {
             showInfo(`⚡ ${currentTurn.slice(0, 6)}...'s turn to charge power!`)
           }
+        } else {
+          showSuccess('🎯 Both players have chosen! Hold the coin to charge power!')
         }
         break
 
