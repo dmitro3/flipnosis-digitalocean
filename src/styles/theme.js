@@ -14,6 +14,12 @@ export const theme = {
     statusWarning: '#ffde03',
     statusError: '#ff1493',
   },
+  // Add missing properties that are being used in components
+  primary: '#00FF41',
+  secondary: '#00bfff',
+  border: 'rgba(255, 255, 255, 0.2)',
+  background: 'rgba(255, 255, 255, 0.05)',
+  accent: '#ff1493',
   shadows: {
     neon: '0 0 5px #00FF41, 0 0 10px #00FF41, 0 0 20px #00FF41, 0 0 40px #00FF41',
     neonGreen: '0 0 5px #00FF41, 0 0 10px #00FF41, 0 0 20px #00FF41, 0 0 40px #00FF41',

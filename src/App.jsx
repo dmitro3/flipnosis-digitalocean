@@ -9,6 +9,7 @@ import { ProfileProvider } from './contexts/ProfileContext'
 import { router } from './Routes'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from './styles/theme'
+import { createSafeTheme } from './utils/styledComponentsHelper'
 import { RouterProvider } from 'react-router-dom'
 import { config } from './config/rainbowkit'
 import React, { useEffect } from 'react'
@@ -162,7 +163,7 @@ function App() {
             <ToastProvider>
               <WalletProvider>
                 <ProfileProvider>
-                  <ThemeProvider theme={theme}>
+                  <ThemeProvider theme={createSafeTheme(theme)}>
                     <RouterProvider router={router} />
                   </ThemeProvider>
                 </ProfileProvider>

@@ -44,6 +44,22 @@ window.addEventListener('error', (event) => {
     
     // Try to prevent the error from breaking the app
     event.preventDefault()
+    
+    // Additional debugging - try to identify the problematic component
+    if (event.error.stack) {
+      const stackLines = event.error.stack.split('\n')
+      for (const line of stackLines) {
+        if (line.includes('.jsx') || line.includes('.js')) {
+          console.error('🔍 Potential problematic file:', line.trim())
+        }
+      }
+    }
+  }
+  
+  // Handle null reference errors in Chrome extensions
+  if (event.error && event.error.message && event.error.message.includes('Cannot read properties of null') && event.filename && event.filename.includes('inpage.js')) {
+    console.warn('⚠️ Chrome extension error detected, ignoring:', event.error.message)
+    event.preventDefault()
   }
 })
 
