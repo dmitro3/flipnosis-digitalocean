@@ -644,6 +644,31 @@ export const useGameState = (gameId, address) => {
       isGameComplete: true
     })
     setShowResultPopup(true)
+
+    // Award XP based on game result
+    const isWinner = safeData.winner === address
+    const xpAmount = isWinner ? 1000 : 500
+    const xpReason = isWinner ? 'Game Win' : 'Game Loss'
+    
+    // Award XP to the current player
+    fetch(`/api/users/${address}/award-xp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: xpAmount,
+        reason: xpReason
+      })
+    }).then(response => {
+      if (response.ok) {
+        return response.json()
+      }
+    }).then(result => {
+      if (result && result.xpGained) {
+        showSuccess(`+${result.xpGained} XP earned for ${xpReason}!`);
+      }
+    }).catch(error => {
+      console.error('Failed to award XP:', error);
+    })
   }
 
   // Offer functions

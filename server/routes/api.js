@@ -16,6 +16,174 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     })
   })
 
+  // Profile endpoints
+  router.get('/profile/:address', async (req, res) => {
+    const { address } = req.params
+    
+    try {
+      const profile = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM profiles WHERE address = ?', [address.toLowerCase()], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (profile) {
+        res.json(profile)
+      } else {
+        // Return empty profile if not found
+        res.json({
+          address: address.toLowerCase(),
+          name: '',
+          avatar: '',
+          headsImage: '',
+          tailsImage: '',
+          twitter: '',
+          telegram: '',
+          stats: {
+            totalGames: 0,
+            gamesWon: 0,
+            gamesLost: 0,
+            winRate: 0,
+            totalVolume: 0
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+      res.status(500).json({ error: 'Failed to fetch profile' })
+    }
+  })
+
+  router.put('/profile/:address', async (req, res) => {
+    const { address } = req.params
+    const { name, avatar, headsImage, tailsImage, twitter, telegram } = req.body
+    
+    try {
+      // Check if profile exists
+      const existingProfile = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM profiles WHERE address = ?', [address.toLowerCase()], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      let xpGained = 0
+      
+      if (existingProfile) {
+        // Check if name or avatar changed to award XP
+        if (name && name !== existingProfile.name) {
+          xpGained += 500
+        }
+        if (avatar && avatar !== existingProfile.avatar) {
+          xpGained += 500
+        }
+        
+        // Update existing profile
+        await new Promise((resolve, reject) => {
+          db.run(`
+            UPDATE profiles 
+            SET name = ?, avatar = ?, heads_image = ?, tails_image = ?, twitter = ?, telegram = ?, xp = xp + ?, updated_at = ?
+            WHERE address = ?
+          `, [name, avatar, headsImage, tailsImage, twitter, telegram, xpGained, new Date().toISOString(), address.toLowerCase()], function(err) {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      } else {
+        // Create new profile
+        await new Promise((resolve, reject) => {
+          db.run(`
+            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [address.toLowerCase(), name, avatar, headsImage, tailsImage, twitter, telegram, 0, new Date().toISOString(), new Date().toISOString()], function(err) {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      }
+      
+      res.json({ success: true, xpGained })
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      res.status(500).json({ error: 'Failed to update profile' })
+    }
+  })
+
+  // Get user offers
+  router.get('/users/:address/offers', async (req, res) => {
+    const { address } = req.params
+    
+    try {
+      const offers = await new Promise((resolve, reject) => {
+        db.all(`
+          SELECT * FROM offers 
+          WHERE (from_address = ? OR to_address = ?)
+          ORDER BY created_at DESC
+        `, [address.toLowerCase(), address.toLowerCase()], (err, results) => {
+          if (err) reject(err)
+          else resolve(results || [])
+        })
+      })
+      
+      res.json(offers)
+    } catch (error) {
+      console.error('Error fetching user offers:', error)
+      res.status(500).json({ error: 'Failed to fetch offers' })
+    }
+  })
+
+  // Award XP endpoint
+  router.post('/users/:address/award-xp', async (req, res) => {
+    const { address } = req.params
+    const { amount, reason } = req.body
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid XP amount' })
+    }
+    
+    try {
+      // Check if profile exists, create if not
+      const existingProfile = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM profiles WHERE address = ?', [address.toLowerCase()], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (existingProfile) {
+        // Update existing profile with XP
+        await new Promise((resolve, reject) => {
+          db.run(`
+            UPDATE profiles 
+            SET xp = xp + ?, updated_at = ?
+            WHERE address = ?
+          `, [amount, new Date().toISOString(), address.toLowerCase()], function(err) {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      } else {
+        // Create new profile with initial XP
+        await new Promise((resolve, reject) => {
+          db.run(`
+            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [address.toLowerCase(), '', '', '', '', '', '', amount, new Date().toISOString(), new Date().toISOString()], function(err) {
+            if (err) reject(err)
+            else resolve()
+          })
+        })
+      }
+      
+      console.log(`Awarded ${amount} XP to ${address} for: ${reason}`)
+      res.json({ success: true, xpGained: amount })
+    } catch (error) {
+      console.error('Error awarding XP:', error)
+      res.status(500).json({ error: 'Failed to award XP' })
+    }
+  })
+
   router.post('/listings', async (req, res) => {
     const { creator, game_id, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, asking_price, coin_data } = req.body
     

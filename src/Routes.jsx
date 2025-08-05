@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
 import GamePage from "./components/GamePage/GamePage";
+import Profile from "./pages/Profile";
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +35,14 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <Dashboard />,
+      },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
+      {
+        path: "profile/:address",
+        element: <Profile />,
       },
     ],
   },

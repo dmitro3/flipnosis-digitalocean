@@ -5,6 +5,10 @@ import { Link } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useWallet } from '../contexts/WalletContext';
 import ProfileWithNotifications from './ProfileWithNotifications';
+import { 
+  User, Gamepad2, Plus, Store, Palette, Settings, 
+  ExternalLink, Home, Crown, ChevronRight
+} from 'lucide-react';
 
 const MenuOverlay = styled.div`
   position: fixed;
@@ -54,6 +58,9 @@ const MenuItem = styled(Link)`
   background: rgba(0, 255, 65, 0.05);
   border: 2px solid rgba(0, 255, 65, 0.6);
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   
   &:hover {
     background: rgba(0, 255, 65, 0.1);
@@ -62,6 +69,74 @@ const MenuItem = styled(Link)`
     box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
     border-color: rgba(0, 255, 65, 0.8);
   }
+`;
+
+const MenuButtonItem = styled.button`
+  color: ${props => props.theme.colors.textPrimary};
+  text-decoration: none;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  background: rgba(0, 255, 65, 0.05);
+  border: 2px solid rgba(0, 255, 65, 0.6);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  
+  &:hover {
+    background: rgba(0, 255, 65, 0.1);
+    color: #00FF41;
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    border-color: rgba(0, 255, 65, 0.8);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    
+    &:hover {
+      background: rgba(0, 255, 65, 0.05);
+      color: ${props => props.theme.colors.textPrimary};
+      transform: none;
+      box-shadow: none;
+      border-color: rgba(0, 255, 65, 0.6);
+    }
+  }
+`;
+
+const ComingSoonBadge = styled.span`
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  margin-left: auto;
+`;
+
+const MenuSection = styled.div`
+  margin-bottom: 1.5rem;
+`;
+
+const MenuSectionTitle = styled.div`
+  color: rgba(0, 255, 65, 0.7);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+`;
+
+const Divider = styled.div`
+  height: 1px;
+  background: rgba(0, 255, 65, 0.2);
+  margin: 1rem 0;
 `;
 
 const MenuHeader = styled.div`
@@ -132,9 +207,63 @@ const PortalMenu = ({ isOpen, onClose }) => {
           <MenuTitle>Menu</MenuTitle>
         </MenuHeader>
         
-        <MenuItem to="/" onClick={onClose}>Home</MenuItem>
-        <MenuItem to="/create" onClick={onClose}>Create Flip</MenuItem>
-        {isAdmin && <MenuItem to="/admin" onClick={onClose}>Admin Panel</MenuItem>}
+        <MenuSection>
+          <MenuSectionTitle>Navigation</MenuSectionTitle>
+          <MenuItem to="/" onClick={onClose}>
+            <Home size={16} />
+            Home
+          </MenuItem>
+          <MenuItem to="/create" onClick={onClose}>
+            <Plus size={16} />
+            Create Flip
+          </MenuItem>
+          {isConnected && (
+            <MenuItem to="/profile" onClick={onClose}>
+              <User size={16} />
+              My Profile
+            </MenuItem>
+          )}
+        </MenuSection>
+
+        <Divider />
+
+        <MenuSection>
+          <MenuSectionTitle>Features</MenuSectionTitle>
+          <MenuButtonItem disabled>
+            <Palette size={16} />
+            Coin Creator
+            <ComingSoonBadge>Coming Soon</ComingSoonBadge>
+          </MenuButtonItem>
+          <MenuButtonItem disabled>
+            <Store size={16} />
+            Marketplace
+            <ComingSoonBadge>Coming Soon</ComingSoonBadge>
+          </MenuButtonItem>
+        </MenuSection>
+
+        <Divider />
+
+        <MenuSection>
+          <MenuSectionTitle>Account</MenuSectionTitle>
+          {isConnected ? (
+            <>
+              <MenuItem to="/profile" onClick={onClose}>
+                <User size={16} />
+                Profile Settings
+              </MenuItem>
+              <MenuItem to="/profile" onClick={onClose}>
+                <Gamepad2 size={16} />
+                My Games
+              </MenuItem>
+            </>
+          ) : (
+            <MenuButtonItem disabled>
+              <User size={16} />
+              Connect Wallet to Access
+            </MenuButtonItem>
+          )}
+          {isAdmin && <MenuItem to="/admin" onClick={onClose}>Admin Panel</MenuItem>}
+        </MenuSection>
 
         
         <StyledConnectButton>

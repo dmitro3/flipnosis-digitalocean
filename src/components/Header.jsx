@@ -12,6 +12,7 @@ import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 import ProfileWithNotifications from './ProfileWithNotifications'
 import PortalMenu from './PortalMenu'
+import DesktopMenu from './DesktopMenu'
 
 const HeaderContainer = styled.header`
   background-color: ${props => props.theme.colors.bgDark};
@@ -422,23 +423,7 @@ const Header = () => {
         <DesktopNav>
           <MyFlipsDropdown />
           <CreateButton to="/create">Create Flip</CreateButton>
-          {isConnected && (
-            <Link 
-              to="/dashboard" 
-              style={{
-                background: 'linear-gradient(45deg, #FF6B35, #F7931E)',
-                color: '#000000',
-                padding: '0.5rem 1.5rem',
-                borderRadius: '0.75rem',
-                textDecoration: 'none',
-                fontWeight: '600',
-                transition: 'all 0.3s ease',
-                border: '2px solid #FF6B35'
-              }}
-            >
-              Dashboard
-            </Link>
-          )}
+          <DesktopMenu />
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
   
           <ConnectButton 
