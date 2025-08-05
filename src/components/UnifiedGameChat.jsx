@@ -374,16 +374,7 @@ const UnifiedGameChat = ({
             setMessages(historyMessages)
             console.log(`📚 Loaded ${historyMessages.length} chat history messages`)
             
-            // Add a welcome message if there's history
-            if (historyMessages.length > 0) {
-              addMessage({
-                id: Date.now() + Math.random(),
-                type: 'system',
-                address: 'system',
-                message: `📚 Loaded ${historyMessages.length} previous messages. Welcome to the game!`,
-                timestamp: new Date().toISOString()
-              })
-            }
+            // Don't add a welcome message - just load the history silently
           }
         }
       } catch (error) {
@@ -797,37 +788,35 @@ const UnifiedGameChat = ({
           </InputContainer>
         </div>
 
-        {/* Crypto Offer Input - Only for non-creators (joiners and spectators) */}
-        {!isCreator && (
-          <div>
-            <InputLabel>💰 Crypto Offer (USD)</InputLabel>
-            <OfferInputContainer>
-              <OfferInput
-                type="text"
-                value={cryptoOffer}
-                onChange={(e) => {
-                  // Only allow digits and decimal point
-                  const value = e.target.value.replace(/[^0-9.]/g, '')
-                  // Prevent multiple decimal points
-                  const parts = value.split('.')
-                  if (parts.length <= 2) {
-                    setCryptoOffer(value)
-                  }
-                }}
-                placeholder="Enter USD amount (we'll convert to ETH)..."
-                disabled={!connected}
-                onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
-              />
-              <OfferButton
-                onClick={handleSubmitCryptoOffer}
-                disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
-              >
-                {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
-              </OfferButton>
-            </OfferInputContainer>
+        {/* Crypto Offer Input - Available to all users */}
+        <div>
+          <InputLabel>💰 Crypto Offer (USD)</InputLabel>
+          <OfferInputContainer>
+            <OfferInput
+              type="text"
+              value={cryptoOffer}
+              onChange={(e) => {
+                // Only allow digits and decimal point
+                const value = e.target.value.replace(/[^0-9.]/g, '')
+                // Prevent multiple decimal points
+                const parts = value.split('.')
+                if (parts.length <= 2) {
+                  setCryptoOffer(value)
+                }
+              }}
+              placeholder="Enter USD amount (we'll convert to ETH)..."
+              disabled={!connected}
+              onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+            />
+            <OfferButton
+              onClick={handleSubmitCryptoOffer}
+              disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
+            >
+              {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+            </OfferButton>
+          </OfferInputContainer>
 
-          </div>
-        )}
+        </div>
       </DualInputContainer>
 
       {/* Name Modal */}

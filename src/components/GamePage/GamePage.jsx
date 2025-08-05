@@ -590,6 +590,9 @@ const GamePage = () => {
                    <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC', fontSize: '1rem' }}>
                      <strong>Coin:</strong> {gameCoin?.name || 'Classic'}
                    </p>
+                   <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC', fontSize: '1rem' }}>
+                     <strong>Type:</strong> {gameCoin?.material?.name || 'Poker Chip'}
+                   </p>
                  </div>
                  
                  {/* Game Status - Removed Status and Type display */}
