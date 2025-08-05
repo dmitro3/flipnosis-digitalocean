@@ -42,9 +42,15 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         console.log(`📨 Raw message from ${socket.id}:`, message.toString())
         const data = JSON.parse(message)
         
-        // Ensure type field exists
+        // Ensure type field exists with enhanced null checking
         if (!data || typeof data !== 'object') {
           console.warn('Invalid WebSocket data format')
+          return
+        }
+        
+        // Enhanced null check for data.type
+        if (!data.type || typeof data.type !== 'string') {
+          console.warn('WebSocket message missing or invalid type field:', data)
           return
         }
         

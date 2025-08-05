@@ -10,10 +10,15 @@ import {
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'wagmi/chains'
 import { createConfig, http } from 'wagmi'
 
-console.log('Initializing Rainbow Kit with:', {
-  projectId: 'fd95ed98ecab7ef051bdcaa27f9d0547',
-  chains: [base, mainnet, polygon, arbitrum, optimism, bsc, avalanche]
-})
+// Enhanced error handling for chain imports
+try {
+  console.log('Initializing Rainbow Kit with:', {
+    projectId: 'fd95ed98ecab7ef051bdcaa27f9d0547',
+    chains: [base, mainnet, polygon, arbitrum, optimism, bsc, avalanche]
+  })
+} catch (error) {
+  console.error('❌ Error logging Rainbow Kit initialization:', error)
+}
 
 // Define your supported chains - make sure they're properly imported
 export const chains = [

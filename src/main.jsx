@@ -4,12 +4,16 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
-// Add initialization debugging
-console.log('🚀 Application starting...', {
-  timestamp: new Date().toISOString(),
-  userAgent: navigator.userAgent,
-  url: window.location.href
-})
+// Add initialization debugging with error handling
+try {
+  console.log('🚀 Application starting...', {
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    url: window.location.href
+  })
+} catch (error) {
+  console.error('❌ Error in application initialization logging:', error)
+}
 
 // Error boundary for the root
 class RootErrorBoundary extends React.Component {

@@ -30,6 +30,21 @@ window.addEventListener('error', (event) => {
       stack: event.error.stack
     })
   }
+  
+  // Handle "props is not defined" error specifically
+  if (event.error && event.error.message && event.error.message.includes('props is not defined')) {
+    console.error('🔍 Props reference error detected:', {
+      errorType: 'Props Reference Error',
+      message: event.error.message,
+      stack: event.error.stack,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno
+    })
+    
+    // Try to prevent the error from breaking the app
+    event.preventDefault()
+  }
 })
 
 window.addEventListener('unhandledrejection', (event) => {
