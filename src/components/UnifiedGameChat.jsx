@@ -101,38 +101,25 @@ const ActionButton = styled.button`
   padding: 0.5rem;
   border: none;
   border-radius: 0.25rem;
-  font-weight: bold;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-weight: bold;
   transition: all 0.2s ease;
-
+  
   &.accept {
     background: #00FF41;
     color: #000;
+    
     &:hover {
-      background: #39FF14;
-      transform: scale(1.02);
-      box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+      background: #00CC33;
     }
   }
-
+  
   &.reject {
-    background: #FF1493;
-    color: #000;
+    background: #FF4444;
+    color: #fff;
+    
     &:hover {
-      background: #FF69B4;
-      transform: scale(1.02);
-      box-shadow: 0 0 10px rgba(255, 20, 147, 0.3);
-    }
-  }
-
-  &.submit {
-    background: #FFD700;
-    color: #000;
-    &:hover {
-      background: #FFA500;
-      transform: scale(1.02);
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+      background: #CC3333;
     }
   }
 `
@@ -145,80 +132,114 @@ const InputContainer = styled.div`
 
 const Input = styled.input`
   flex: 1;
+  padding: 0.75rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
-  padding: 0.5rem;
   color: #fff;
   font-size: 0.9rem;
-
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
   &:focus {
     outline: none;
-    border-color: rgba(255, 20, 147, 0.5);
-    box-shadow: 0 0 10px rgba(255, 20, 147, 0.2);
+    border-color: #00BFFF;
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `
 
 const SendButton = styled.button`
-  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  padding: 0.75rem 1rem;
+  background: #00BFFF;
+  color: #000;
   border: none;
   border-radius: 0.5rem;
-  padding: 0.5rem 1rem;
-  color: #fff;
-  font-weight: bold;
   cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.4);
+  font-weight: bold;
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background: #0099CC;
   }
-
+  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
   }
 `
 
-const ModeToggle = styled.button`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  padding: 0.5rem;
-  color: #fff;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.02);
-  }
-
-  &.active {
-    background: rgba(255, 20, 147, 0.3);
-    border-color: rgba(255, 20, 147, 0.5);
-    box-shadow: 0 0 10px rgba(255, 20, 147, 0.2);
-  }
-`
-
-const NFTPreview = styled.div`
+const DualInputContainer = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.5rem;
-  margin: 0.5rem 0;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 0.25rem;
 `
 
-const NFTImage = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: 0.25rem;
-  border: 2px solid #FFD700;
+const InputLabel = styled.div`
+  font-size: 0.8rem;
+  color: #FFD700;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
 `
+
+const OfferInputContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+`
+
+const OfferInput = styled.input`
+  flex: 1;
+  padding: 0.75rem;
+  background: rgba(255, 20, 147, 0.1);
+  border: 1px solid rgba(255, 20, 147, 0.3);
+  border-radius: 0.5rem;
+  color: #fff;
+  font-size: 0.9rem;
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: #FF1493;
+    box-shadow: 0 0 10px rgba(255, 20, 147, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
+const OfferButton = styled.button`
+  padding: 0.75rem 1rem;
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  color: #000;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(45deg, #FFA500, #FF8C00);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
+
 
 const UnifiedGameChat = ({ 
   gameId, 
@@ -236,15 +257,12 @@ const UnifiedGameChat = ({
   
   const [messages, setMessages] = useState([])
   const [currentMessage, setCurrentMessage] = useState('')
+  const [cryptoOffer, setCryptoOffer] = useState('')
   const [isNameModalOpen, setIsNameModalOpen] = useState(false)
   const [tempName, setTempName] = useState('')
   const [playerName, setPlayerNameState] = useState('')
   const [playerNames, setPlayerNames] = useState({})
-  const [inputMode, setInputMode] = useState('chat') // 'chat' or 'offer'
-  const [selectedNFT, setSelectedNFT] = useState(null)
-  const [showNFTSelector, setShowNFTSelector] = useState(false)
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
-  const [offerText, setOfferText] = useState('') // New state for offer text input
   
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -293,7 +311,17 @@ const UnifiedGameChat = ({
             offerId: data.offerId,
             offerText: data.offerText // Store offer text
           })
-        } else if (data.type === 'accept_nft_offer') {
+        } else if (data.type === 'crypto_offer') {
+          console.log('💰 Received crypto offer:', data)
+          addMessage({
+            id: Date.now() + Math.random(),
+            type: 'offer',
+            address: data.offererAddress,
+            cryptoAmount: data.cryptoAmount,
+            timestamp: data.timestamp || new Date().toISOString(),
+            offerId: data.offerId
+          })
+        } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
           console.log('✅ Offer accepted:', data)
           addMessage({
             id: Date.now() + Math.random(),
@@ -302,7 +330,7 @@ const UnifiedGameChat = ({
             acceptedOffer: data.acceptedOffer,
             timestamp: data.timestamp || new Date().toISOString()
           })
-        } else if (data.type === 'reject_nft_offer') {
+        } else if (data.type === 'reject_nft_offer' || data.type === 'reject_crypto_offer') {
           console.log('❌ Offer rejected:', data)
           addMessage({
             id: Date.now() + Math.random(),
@@ -383,49 +411,44 @@ const UnifiedGameChat = ({
     }
   }
 
-  const handleSubmitOffer = async () => {
-    if (!selectedNFT || !connected || !socket) {
-      console.error('❌ Cannot submit offer:', { selectedNFT: !!selectedNFT, connected, socket: !!socket })
-      showError('Cannot submit offer: WebSocket not connected')
+  const handleSubmitCryptoOffer = async () => {
+    if (!cryptoOffer.trim() || !connected || !socket) {
+      console.error('❌ Cannot submit crypto offer:', { cryptoOffer: cryptoOffer.trim(), connected, socket: !!socket })
+      showError('Please enter a valid crypto amount')
+      return
+    }
+
+    const offerAmount = parseFloat(cryptoOffer)
+    if (isNaN(offerAmount) || offerAmount <= 0) {
+      showError('Please enter a valid positive number for the crypto offer')
       return
     }
 
     try {
       setIsSubmittingOffer(true)
-      showInfo('Submitting NFT offer...')
+      showInfo('Submitting crypto offer...')
 
       const offerData = {
-        type: 'nft_offer',
+        type: 'crypto_offer',
         gameId,
         offererAddress: address,
-        nft: {
-          contractAddress: selectedNFT.contractAddress,
-          tokenId: selectedNFT.tokenId,
-          name: selectedNFT.name,
-          image: selectedNFT.image,
-          collection: selectedNFT.collection,
-          chain: selectedNFT.chain
-        },
-        offerText: offerText.trim(), // Include the offer text
+        cryptoAmount: offerAmount,
         timestamp: new Date().toISOString()
       }
 
-      console.log('📤 Sending NFT offer:', offerData)
+      console.log('📤 Sending crypto offer:', offerData)
       socket.send(JSON.stringify(offerData))
       
-      showSuccess('NFT offer submitted! Waiting for creator to accept...')
-      setSelectedNFT(null)
-      setShowNFTSelector(false)
-      setInputMode('chat')
-      setOfferText('') // Clear the offer text
+      showSuccess(`Crypto offer of ${offerAmount} ETH submitted! Waiting for creator to accept...`)
+      setCryptoOffer('') // Clear the crypto offer input
       
       if (onOfferSubmitted) {
         onOfferSubmitted(offerData)
       }
       
     } catch (error) {
-      console.error('Error submitting offer:', error)
-      showError('Failed to submit offer: ' + error.message)
+      console.error('Error submitting crypto offer:', error)
+      showError('Failed to submit crypto offer: ' + error.message)
     } finally {
       setIsSubmittingOffer(false)
     }
@@ -435,10 +458,11 @@ const UnifiedGameChat = ({
     if (!isCreator || !connected || !socket) return
 
     try {
-      showInfo('Accepting NFT challenge...')
+      const offerType = offer.type === 'crypto_offer' ? 'crypto' : 'NFT'
+      showInfo(`Accepting ${offerType} challenge...`)
 
       const acceptanceData = {
-        type: 'accept_nft_offer',
+        type: offer.type === 'crypto_offer' ? 'accept_crypto_offer' : 'accept_nft_offer',
         gameId,
         creatorAddress: address,
         acceptedOffer: offer,
@@ -500,32 +524,37 @@ const UnifiedGameChat = ({
         return (
           <div>
             <div style={{ marginBottom: '0.5rem' }}>
-              <strong>💎 NFT Battle Offer</strong>
+              <strong>💎 {message.cryptoAmount ? 'Crypto' : 'NFT'} Battle Offer</strong>
             </div>
-            {message.offerText && (
+            {message.cryptoAmount ? (
               <div style={{ 
                 marginBottom: '0.5rem', 
                 padding: '0.5rem', 
-                background: 'rgba(255, 255, 255, 0.05)', 
+                background: 'rgba(255, 215, 0, 0.1)', 
                 borderRadius: '0.25rem',
-                border: '1px solid rgba(255, 20, 147, 0.2)'
+                border: '1px solid rgba(255, 215, 0, 0.3)'
               }}>
-                <strong style={{ color: '#FFD700' }}>Offer Message:</strong>
-                <div style={{ color: '#fff', marginTop: '0.25rem' }}>{message.offerText}</div>
-              </div>
-            )}
-            {message.nft && (
-              <NFTPreview>
-                <NFTImage src={message.nft.image} alt={message.nft.name} />
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#FFD700' }}>
-                    {message.nft.name}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: '#ccc' }}>
-                    {message.nft.collection}
-                  </div>
+                <strong style={{ color: '#FFD700' }}>Crypto Offer:</strong>
+                <div style={{ color: '#fff', marginTop: '0.25rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                  {message.cryptoAmount} ETH
                 </div>
-              </NFTPreview>
+              </div>
+            ) : (
+              <>
+                {message.offerText && (
+                  <div style={{ 
+                    marginBottom: '0.5rem', 
+                    padding: '0.5rem', 
+                    background: 'rgba(255, 255, 255, 0.05)', 
+                    borderRadius: '0.25rem',
+                    border: '1px solid rgba(255, 20, 147, 0.2)'
+                  }}>
+                    <strong style={{ color: '#FFD700' }}>Offer Message:</strong>
+                    <div style={{ color: '#fff', marginTop: '0.25rem' }}>{message.offerText}</div>
+                  </div>
+                )}
+
+              </>
             )}
             {isCreator && message.offerId && (
               <OfferActions>
@@ -549,9 +578,9 @@ const UnifiedGameChat = ({
       case 'offer_accepted':
         return (
           <div>
-            <strong>✅ NFT Battle Accepted!</strong>
+            <strong>✅ Battle Accepted!</strong>
             <div style={{ fontSize: '0.9rem', color: '#00FF41', marginTop: '0.25rem' }}>
-              The creator has accepted the NFT challenge!
+              The creator has accepted the challenge!
             </div>
           </div>
         )
@@ -559,9 +588,9 @@ const UnifiedGameChat = ({
       case 'offer_rejected':
         return (
           <div>
-            <strong>❌ NFT Battle Declined</strong>
+            <strong>❌ Battle Declined</strong>
             <div style={{ fontSize: '0.9rem', color: '#FF1493', marginTop: '0.25rem' }}>
-              The creator has declined the NFT challenge.
+              The creator has declined the challenge.
             </div>
           </div>
         )
@@ -624,17 +653,13 @@ const UnifiedGameChat = ({
             color: theme.colors.textSecondary,
             padding: '2rem'
           }}>
-            {inputMode === 'offer' ? (
-              <div>
-                <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💎</div>
-                <div style={{ marginBottom: '0.5rem' }}>Ready to make an NFT offer?</div>
-                <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
-                  Click the NFT selection field below to choose your NFT, then add an optional message!
-                </div>
+            <div>
+              <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💬</div>
+              <div style={{ marginBottom: '0.5rem' }}>No messages yet. Start the conversation!</div>
+              <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
+                Use the chat input below to send messages, or make a crypto offer!
               </div>
-            ) : (
-              'No messages yet. Start the conversation!'
-            )}
+            </div>
           </div>
         ) : (
           messages.map((msg, index) => {
@@ -657,26 +682,12 @@ const UnifiedGameChat = ({
         <div ref={messagesEndRef} />
       </MessagesContainer>
 
-      {/* Input Mode Toggle */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <ModeToggle
-          className={inputMode === 'chat' ? 'active' : ''}
-          onClick={() => setInputMode('chat')}
-        >
-          💬 Chat
-        </ModeToggle>
-        <ModeToggle
-          className={inputMode === 'offer' ? 'active' : ''}
-          onClick={() => setInputMode('offer')}
-        >
-          💎 Make Offer
-        </ModeToggle>
-      </div>
-
-      {/* Input Container */}
-      <InputContainer>
-        {inputMode === 'chat' ? (
-          <>
+      {/* Dual Input System */}
+      <DualInputContainer>
+        {/* Chat Input */}
+        <div>
+          <InputLabel>💬 Chat Message</InputLabel>
+          <InputContainer>
             <Input
               ref={inputRef}
               type="text"
@@ -692,51 +703,38 @@ const UnifiedGameChat = ({
             >
               Send
             </SendButton>
-          </>
-        ) : (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-              <div style={{ 
-                padding: '0.5rem', 
-                background: 'rgba(255, 20, 147, 0.1)', 
-                borderRadius: '0.5rem',
-                border: '1px solid rgba(255, 20, 147, 0.3)',
-                marginBottom: '0.25rem'
-              }}>
-                <div style={{ fontSize: '0.8rem', color: '#FFD700', marginBottom: '0.25rem' }}>
-                  💎 NFT Battle Offer Mode
-                </div>
-                <Input
-                  type="text"
-                  value={selectedNFT ? `Selected: ${selectedNFT.name}` : 'Click to select NFT to offer...'}
-                  placeholder="Click to select NFT to offer..."
-                  disabled={true}
-                  onClick={() => setShowNFTSelector(true)}
-                  style={{ cursor: 'pointer', marginBottom: '0.5rem' }}
-                />
-                <Input
-                  type="text"
-                  value={offerText}
-                  onChange={(e) => setOfferText(e.target.value)}
-                  placeholder="Enter your offer message (optional)..."
-                  disabled={!connected}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSubmitOffer()}
-                />
-              </div>
-            </div>
-            <SendButton
-              onClick={handleSubmitOffer}
-              disabled={!connected || !selectedNFT || isSubmittingOffer}
-              style={{ 
-                background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                color: '#000'
+          </InputContainer>
+        </div>
+
+        {/* Crypto Offer Input */}
+        <div>
+          <InputLabel>💰 Crypto Offer (ETH)</InputLabel>
+          <OfferInputContainer>
+            <OfferInput
+              type="text"
+              value={cryptoOffer}
+              onChange={(e) => {
+                // Only allow digits and decimal point
+                const value = e.target.value.replace(/[^0-9.]/g, '')
+                // Prevent multiple decimal points
+                const parts = value.split('.')
+                if (parts.length <= 2) {
+                  setCryptoOffer(value)
+                }
               }}
+              placeholder="Enter crypto amount (digits only)..."
+              disabled={!connected}
+              onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+            />
+            <OfferButton
+              onClick={handleSubmitCryptoOffer}
+              disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
             >
-              {isSubmittingOffer ? 'Submitting...' : 'Submit Offer'}
-            </SendButton>
-          </>
-        )}
-      </InputContainer>
+              {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+            </OfferButton>
+          </OfferInputContainer>
+        </div>
+      </DualInputContainer>
 
       {/* Name Modal */}
       {isNameModalOpen && (
@@ -810,92 +808,7 @@ const UnifiedGameChat = ({
         </div>
       )}
 
-      {/* NFT Selector Modal */}
-      {showNFTSelector && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'rgba(0, 0, 0, 0.9)',
-            padding: '2rem',
-            borderRadius: '1rem',
-            border: '1px solid rgba(255, 20, 147, 0.5)',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '80vh',
-            overflowY: 'auto'
-          }}>
-            <h3 style={{ color: '#FF1493', marginBottom: '1rem' }}>Select NFT to Offer</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
-              {nfts.map((nft, index) => (
-                <div
-                  key={index}
-                  onClick={() => {
-                    setSelectedNFT(nft)
-                    setShowNFTSelector(false)
-                    setOfferText('') // Clear offer text when selecting new NFT
-                  }}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '0.5rem',
-                    padding: '0.5rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.background = 'rgba(255, 20, 147, 0.1)'
-                    e.target.style.borderColor = 'rgba(255, 20, 147, 0.3)'
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.05)'
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-                  }}
-                >
-                  <img
-                    src={nft.image}
-                    alt={nft.name}
-                    style={{
-                      width: '100%',
-                      height: '100px',
-                      objectFit: 'cover',
-                      borderRadius: '0.25rem',
-                      marginBottom: '0.5rem'
-                    }}
-                  />
-                  <div style={{ fontSize: '0.8rem', color: '#fff', textAlign: 'center' }}>
-                    {nft.name}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowNFTSelector(false)}
-              style={{
-                width: '100%',
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#fff',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                padding: '0.5rem',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                marginTop: '1rem'
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+
     </ChatContainer>
   )
 }

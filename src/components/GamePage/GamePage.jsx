@@ -69,7 +69,7 @@ const ThreeContainerLayout = styled.div`
 `
 
 const GameStatusContainer = styled.div`
-  background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 65, 0.05) 100%);
+  background: rgba(0, 0, 40, 0.95);
   padding: 1.5rem;
   border-radius: 1rem;
   border: 2px solid #00FF41;
@@ -100,7 +100,7 @@ const GameStatusContainer = styled.div`
 `
 
 const NFTDetailsContainer = styled.div`
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+  background: rgba(0, 0, 40, 0.95);
   padding: 1.5rem;
   border-radius: 1rem;
   border: 2px solid #FFD700;
@@ -126,7 +126,7 @@ const NFTDetailsContainer = styled.div`
 `
 
 const ChatOffersContainer = styled.div`
-  background: linear-gradient(135deg, rgba(0, 191, 255, 0.1) 0%, rgba(0, 191, 255, 0.05) 100%);
+  background: rgba(0, 0, 40, 0.95);
   padding: 1.5rem;
   border-radius: 1rem;
   border: 2px solid #00BFFF;
@@ -404,35 +404,6 @@ const GamePage = () => {
                  <h4 style={{ color: '#FFD700', margin: '0 0 1rem 0', fontSize: '1.2rem', textAlign: 'center' }}>
                    Game Status
                  </h4>
-                 
-                 {/* Round Status */}
-                 <StatusSection>
-                   <h5 style={{ color: '#FFD700', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
-                     Round {gameState.currentRound || 1}
-                   </h5>
-                   {roundCountdown !== null && (
-                     <div style={{
-                       fontSize: '1.2rem',
-                       color: roundCountdown <= 5 ? '#FF4444' : '#00FF41',
-                       fontWeight: 'bold',
-                       textShadow: roundCountdown <= 5 ? '0 0 10px rgba(255, 68, 68, 0.8)' : '0 0 10px rgba(0, 255, 65, 0.5)',
-                       animation: roundCountdown <= 5 ? 'pulse 1s ease-in-out infinite' : 'none'
-                     }}>
-                       ⏰ {roundCountdown}s
-                     </div>
-                   )}
-                   <RoundIndicator>
-                     <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.creatorWins > 0} isLost={gameState.joinerWins > 0}>
-                       1
-                     </RoundDot>
-                     <RoundDot isCurrent={gameState.currentRound === 2} isWon={gameState.creatorWins > 1} isLost={gameState.joinerWins > 1}>
-                       2
-                     </RoundDot>
-                     <RoundDot isCurrent={gameState.currentRound === 3} isWon={gameState.creatorWins > 2} isLost={gameState.joinerWins > 2}>
-                       3
-                     </RoundDot>
-                   </RoundIndicator>
-                 </StatusSection>
 
                  {/* Game Phase Status */}
                  <StatusSection>
@@ -475,9 +446,6 @@ const GamePage = () => {
                      </div>
                      <div style={{ flex: '1' }}>
                        <h5 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Creator</h5>
-                       <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
-                         Power: {Number(gameState.creatorPower) || 0}
-                       </p>
                        <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
                          Wins: {gameState.creatorWins || 0}
                        </p>
@@ -509,9 +477,6 @@ const GamePage = () => {
                      </div>
                      <div style={{ flex: '1' }}>
                        <h5 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Joiner</h5>
-                       <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
-                         Power: {Number(gameState.joinerPower) || 0}
-                       </p>
                        <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
                          Wins: {gameState.joinerWins || 0}
                        </p>

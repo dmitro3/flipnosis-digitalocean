@@ -16,7 +16,8 @@ const SpriteBasedCoin = ({
   isPlayerTurn = false,
   isCharging = false,
   creatorPower = 0,
-  joinerPower = 0
+  joinerPower = 0,
+  material = null
 }) => {
   const [currentFrame, setCurrentFrame] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -297,6 +298,11 @@ const SpriteBasedCoin = ({
             <div
               key={i}
               className="coin-edge"
+              style={{
+                background: material?.edgeColor ? 
+                  `linear-gradient(to bottom, ${material.edgeColor}, #FFFFFF 50%, ${material.edgeColor})` : 
+                  undefined
+              }}
             />
           ))}
         </div>

@@ -843,7 +843,7 @@ export const useGameState = (gameId, address) => {
         id: 'poker-chip',
         name: 'Poker Chip',
         description: 'Balanced & Classic',
-        edgeColor: '#228B22',
+        edgeColor: '#0066CC',
         physics: {
           weight: 'medium',
           speedMultiplier: 1.0,
@@ -870,7 +870,7 @@ export const useGameState = (gameId, address) => {
           id: 'poker-chip',
           name: 'Poker Chip',
           description: 'Balanced & Classic',
-          edgeColor: '#228B22',
+          edgeColor: '#0066CC',
           physics: {
             weight: 'medium',
             speedMultiplier: 1.0,

@@ -40,7 +40,7 @@ const CoinMaterialSelector = ({
       id: 'poker-chip',
       name: 'Poker Chip',
       description: 'Balanced & Classic',
-      edgeColor: '#228B22', // Green like poker chips
+      edgeColor: '#0066CC', // Blue like poker chips
       physics: {
         weight: 'medium',
         speedMultiplier: 1.0,
@@ -68,7 +68,7 @@ const CoinMaterialSelector = ({
       id: 'titanium',
       name: 'Titanium',
       description: 'Ultra-Heavy & Precise',
-      edgeColor: '#E5E4E2', // Chrome/metallic with rainbow reflections
+      edgeColor: '#2D1B69', // Dark purple
       physics: {
         weight: 'ultra-heavy',
         speedMultiplier: 0.5,
@@ -159,7 +159,7 @@ const CoinMaterialSelector = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: material.id === 'poker-chip' ? '0 0 20px rgba(34, 139, 34, 0.4)' : material.id === 'penny' ? '0 0 20px rgba(205, 127, 50, 0.4)' : `0 0 20px ${material.edgeColor}40`
+                boxShadow: material.id === 'poker-chip' ? '0 0 20px rgba(0, 102, 204, 0.4)' : material.id === 'penny' ? '0 0 20px rgba(205, 127, 50, 0.4)' : `0 0 20px ${material.edgeColor}40`
               }}>
                 {/* Special poker chip edge pattern */}
                 {material.id === 'poker-chip' && (
@@ -170,7 +170,7 @@ const CoinMaterialSelector = ({
                     right: '-4px',
                     bottom: '-4px',
                     borderRadius: '50%',
-                    background: 'conic-gradient(from 0deg, #228B22 0deg, #228B22 18deg, #FFFFFF 18deg, #FFFFFF 36deg, #228B22 36deg, #228B22 54deg, #FFFFFF 54deg, #FFFFFF 72deg, #228B22 72deg, #228B22 90deg, #FFFFFF 90deg, #FFFFFF 108deg, #228B22 108deg, #228B22 126deg, #FFFFFF 126deg, #FFFFFF 144deg, #228B22 144deg, #228B22 162deg, #FFFFFF 162deg, #FFFFFF 180deg, #228B22 180deg, #228B22 198deg, #FFFFFF 198deg, #FFFFFF 216deg, #228B22 216deg, #228B22 234deg, #FFFFFF 234deg, #FFFFFF 252deg, #228B22 252deg, #228B22 270deg, #FFFFFF 270deg, #FFFFFF 288deg, #228B22 288deg, #228B22 306deg, #FFFFFF 306deg, #FFFFFF 324deg, #228B22 324deg, #228B22 342deg, #FFFFFF 342deg, #FFFFFF 360deg)',
+                    background: 'conic-gradient(from 0deg, #0066CC 0deg, #0066CC 18deg, #FFFFFF 18deg, #FFFFFF 36deg, #0066CC 36deg, #0066CC 54deg, #FFFFFF 54deg, #FFFFFF 72deg, #0066CC 72deg, #0066CC 90deg, #FFFFFF 90deg, #FFFFFF 108deg, #0066CC 108deg, #0066CC 126deg, #FFFFFF 126deg, #FFFFFF 144deg, #0066CC 144deg, #0066CC 162deg, #FFFFFF 162deg, #FFFFFF 180deg, #0066CC 180deg, #0066CC 198deg, #FFFFFF 198deg, #FFFFFF 216deg, #0066CC 216deg, #0066CC 234deg, #FFFFFF 234deg, #FFFFFF 252deg, #0066CC 252deg, #0066CC 270deg, #FFFFFF 270deg, #FFFFFF 288deg, #0066CC 288deg, #0066CC 306deg, #FFFFFF 306deg, #FFFFFF 324deg, #0066CC 324deg, #0066CC 342deg, #FFFFFF 342deg, #FFFFFF 360deg)',
                     zIndex: 1
                   }} />
                 )}
@@ -192,12 +192,12 @@ const CoinMaterialSelector = ({
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  background: material.id === 'penny' ? 'linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)' :
-                             material.id === 'graphite' ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)' :
-                             material.id === 'poker-chip' ? 'linear-gradient(135deg, #228B22 0%, #32CD32 100%)' :
-                             material.id === 'silver-dollar' ? 'linear-gradient(135deg, #C0C0C0 0%, #E5E4E2 100%)' :
-                             material.id === 'titanium' ? 'linear-gradient(135deg, #E5E4E2 0%, #F5F5F5 100%)' :
-                             'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                                   background: material.id === 'penny' ? 'linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)' :
+                            material.id === 'graphite' ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)' :
+                            material.id === 'poker-chip' ? 'linear-gradient(135deg, #0066CC 0%, #0099FF 100%)' :
+                            material.id === 'silver-dollar' ? 'linear-gradient(135deg, #C0C0C0 0%, #E5E4E2 100%)' :
+                            material.id === 'titanium' ? 'linear-gradient(135deg, #2D1B69 0%, #4A148C 100%)' :
+                            'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
