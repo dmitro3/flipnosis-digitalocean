@@ -381,19 +381,15 @@ const CreateFlip = () => {
       // Convert price to 6 decimal places (microdollars) for contract
       const priceInMicrodollars = Math.round(parseFloat(price) * 1000000)
       
-      // Add 20 cent listing fee to the price
-      const listingFeeMicrodollars = 200000 // 20 cents in microdollars
-      const totalPriceMicrodollars = priceInMicrodollars + listingFeeMicrodollars
-      
+      // Note: Listing fee is currently $0.00 in the contract, so no additional fee is added
       console.log(`💰 Game price: $${price} (${priceInMicrodollars} microdollars)`)
-      console.log(`💸 Listing fee: $0.20 (${listingFeeMicrodollars} microdollars)`)
-      console.log(`💳 Total price: $${(priceInMicrodollars + listingFeeMicrodollars) / 1000000} (${totalPriceMicrodollars} microdollars)`)
+      console.log(`💸 Listing fee: $0.00 (free)`)
       
       const createResult = await contractService.payFeeAndCreateGame(
         gameId,
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
-        totalPriceMicrodollars,
+        priceInMicrodollars, // Just the game price, no listing fee added
         0 // ETH payment
       )
       
@@ -598,7 +594,7 @@ const CreateFlip = () => {
                   marginTop: '0.5rem',
                   display: 'block'
                 }}>
-                  💡 You can enter decimal prices (e.g., 0.25 for 25 cents). A $0.20 listing fee will be added.
+                  💡 You can enter decimal prices (e.g., 0.25 for 25 cents). This is what Player 2 will pay to join your game.
                 </small>
                 {price && parseFloat(price) > 0 && (
                   <div style={{ 
@@ -610,16 +606,8 @@ const CreateFlip = () => {
                     fontSize: '0.9rem'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Game Price:</span>
+                      <span>Game Price (Player 2 pays):</span>
                       <span>${parseFloat(price).toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Listing Fee:</span>
-                      <span>$0.20</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderTop: '1px solid rgba(0, 191, 255, 0.3)', paddingTop: '0.25rem' }}>
-                      <span>Total:</span>
-                      <span>${(parseFloat(price) + 0.20).toFixed(2)}</span>
                     </div>
                   </div>
                 )}

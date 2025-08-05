@@ -67,8 +67,16 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           case 'nft_offer':
             handleNftOffer(socket, data)
             break
-          case 'offer_accepted':
+          case 'crypto_offer':
+            handleCryptoOffer(socket, data)
+            break
+          case 'accept_nft_offer':
+          case 'accept_crypto_offer':
             handleOfferAccepted(socket, data)
+            break
+          case 'reject_nft_offer':
+          case 'reject_crypto_offer':
+            handleOfferRejected(socket, data)
             break
           default:
             console.log('⚠️ Unhandled WebSocket message type:', data.type)
@@ -830,32 +838,72 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     
     // Broadcast to the game room
     broadcastToRoom(gameId, {
-      type: 'nft_offer_received',
-      offer: {
-        offererAddress,
-        nft,
-        timestamp: timestamp || new Date().toISOString()
-      }
+      type: 'nft_offer',
+      offererAddress,
+      nft,
+      timestamp: timestamp || new Date().toISOString()
     })
-    console.log('📢 Broadcasted nft_offer_received to room', gameId)
+    console.log('📢 Broadcasted nft_offer to room', gameId)
   }
 
-  // Handle NFT offer acceptance (for NFT-vs-NFT games)
-  function handleOfferAccepted(socket, data) {
-    const { gameId, creatorAddress, acceptedOffer, timestamp } = data
-    if (!gameId || !creatorAddress || !acceptedOffer) {
-      console.error('❌ Invalid accept_nft_offer data:', data)
+  // Handle crypto offer (for NFT-vs-crypto games)
+  function handleCryptoOffer(socket, data) {
+    const { gameId, offererAddress, cryptoAmount, timestamp } = data
+    if (!gameId || !offererAddress || !cryptoAmount) {
+      console.error('❌ Invalid crypto offer data:', data)
       return
     }
     
+    // Broadcast to the game room
+    broadcastToRoom(gameId, {
+      type: 'crypto_offer',
+      offererAddress,
+      cryptoAmount,
+      timestamp: timestamp || new Date().toISOString()
+    })
+    console.log('📢 Broadcasted crypto_offer to room', gameId)
+  }
+
+  // Handle offer acceptance (for both NFT and crypto offers)
+  function handleOfferAccepted(socket, data) {
+    const { gameId, creatorAddress, acceptedOffer, timestamp } = data
+    if (!gameId || !creatorAddress || !acceptedOffer) {
+      console.error('❌ Invalid accept offer data:', data)
+      return
+    }
+    
+    // Determine the offer type and broadcast accordingly
+    const offerType = acceptedOffer.cryptoAmount ? 'accept_crypto_offer' : 'accept_nft_offer'
+    
     // Broadcast acceptance to the game room
     broadcastToRoom(gameId, {
-      type: 'nft_offer_accepted',
+      type: offerType,
       acceptedOffer,
       creatorAddress,
       timestamp: timestamp || new Date().toISOString()
     })
-    console.log('📢 Broadcasted nft_offer_accepted to room', gameId)
+    console.log(`📢 Broadcasted ${offerType} to room`, gameId)
+  }
+
+  // Handle offer rejection (for both NFT and crypto offers)
+  function handleOfferRejected(socket, data) {
+    const { gameId, creatorAddress, rejectedOffer, timestamp } = data
+    if (!gameId || !creatorAddress || !rejectedOffer) {
+      console.error('❌ Invalid reject offer data:', data)
+      return
+    }
+    
+    // Determine the offer type and broadcast accordingly
+    const offerType = rejectedOffer.cryptoAmount ? 'reject_crypto_offer' : 'reject_nft_offer'
+    
+    // Broadcast rejection to the game room
+    broadcastToRoom(gameId, {
+      type: offerType,
+      rejectedOffer,
+      creatorAddress,
+      timestamp: timestamp || new Date().toISOString()
+    })
+    console.log(`📢 Broadcasted ${offerType} to room`, gameId)
   }
 
   return {
