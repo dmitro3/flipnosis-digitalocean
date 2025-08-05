@@ -30,37 +30,6 @@ window.addEventListener('error', (event) => {
       stack: event.error.stack
     })
   }
-  
-  // Handle "props is not defined" error specifically
-  if (event.error && event.error.message && event.error.message.includes('props is not defined')) {
-    console.error('🔍 Props reference error detected:', {
-      errorType: 'Props Reference Error',
-      message: event.error.message,
-      stack: event.error.stack,
-      filename: event.filename,
-      lineno: event.lineno,
-      colno: event.colno
-    })
-    
-    // Try to prevent the error from breaking the app
-    event.preventDefault()
-    
-    // Additional debugging - try to identify the problematic component
-    if (event.error.stack) {
-      const stackLines = event.error.stack.split('\n')
-      for (const line of stackLines) {
-        if (line.includes('.jsx') || line.includes('.js')) {
-          console.error('🔍 Potential problematic file:', line.trim())
-        }
-      }
-    }
-  }
-  
-  // Handle null reference errors in Chrome extensions
-  if (event.error && event.error.message && event.error.message.includes('Cannot read properties of null') && event.filename && event.filename.includes('inpage.js')) {
-    console.warn('⚠️ Chrome extension error detected, ignoring:', event.error.message)
-    event.preventDefault()
-  }
 })
 
 window.addEventListener('unhandledrejection', (event) => {

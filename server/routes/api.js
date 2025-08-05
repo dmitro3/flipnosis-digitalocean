@@ -113,12 +113,12 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           })
         })
       } else {
-        // Create new profile (no XP awarded on initial creation for these fields)
+        // Create new profile
         await new Promise((resolve, reject) => {
           db.run(`
-            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at, xp_name_earned, xp_avatar_earned, xp_twitter_earned, xp_telegram_earned, xp_heads_earned, xp_tails_earned)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [address.toLowerCase(), name, avatar, headsImage, tailsImage, twitter, telegram, 0, new Date().toISOString(), new Date().toISOString(), false, false, false, false, false, false], function(err) {
+            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [address.toLowerCase(), name, avatar, headsImage, tailsImage, twitter, telegram, 0, new Date().toISOString(), new Date().toISOString()], function(err) {
             if (err) reject(err)
             else resolve()
           })
@@ -140,9 +140,9 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       const offers = await new Promise((resolve, reject) => {
         db.all(`
           SELECT * FROM offers 
-          WHERE offerer_address = ?
+          WHERE (from_address = ? OR to_address = ?)
           ORDER BY created_at DESC
-        `, [address.toLowerCase()], (err, results) => {
+        `, [address.toLowerCase(), address.toLowerCase()], (err, results) => {
           if (err) reject(err)
           else resolve(results || [])
         })
@@ -189,9 +189,9 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         // Create new profile with initial XP
         await new Promise((resolve, reject) => {
           db.run(`
-            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at, xp_name_earned, xp_avatar_earned, xp_twitter_earned, xp_telegram_earned, xp_heads_earned, xp_tails_earned)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [address.toLowerCase(), '', '', '', '', '', '', amount, new Date().toISOString(), new Date().toISOString(), false, false, false, false, false, false], function(err) {
+            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [address.toLowerCase(), '', '', '', '', '', '', amount, new Date().toISOString(), new Date().toISOString()], function(err) {
             if (err) reject(err)
             else resolve()
           })
@@ -1091,7 +1091,22 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     })
   })
 
-
+  // Update user profile
+  router.put('/profile/:address', (req, res) => {
+    const { address } = req.params
+    const { name, avatar, headsImage, tailsImage } = req.body
+    db.run(
+      `INSERT INTO profiles (address, name, avatar, headsImage, tailsImage) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(address) DO UPDATE SET name=excluded.name, avatar=excluded.avatar, headsImage=excluded.headsImage, tailsImage=excluded.tailsImage`,
+      [address, name || '', avatar || '', headsImage || '', tailsImage || ''],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' })
+        }
+        res.json({ success: true })
+      }
+    )
+  })
 
   // ===== READY NFT SYSTEM =====
 

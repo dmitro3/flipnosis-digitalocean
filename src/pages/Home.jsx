@@ -19,7 +19,6 @@ import ClaimRewards from '../components/ClaimRewards'
 
 // 6. Style imports
 import { theme } from '../styles/theme'
-import { createSafeTheme } from '../utils/styledComponentsHelper'
 import { API_CONFIG, getApiUrl } from '../config/api'
 import {
   Container,
@@ -590,7 +589,7 @@ const getAllItems = () => {
 
   if (loading) {
     return (
-      <ThemeProvider theme={createSafeTheme(theme)}>
+      <ThemeProvider theme={theme}>
         <BackgroundVideo autoPlay loop muted playsInline>
           <source src={hazeVideo} type="video/webm" />
         </BackgroundVideo>
@@ -610,7 +609,7 @@ const getAllItems = () => {
 
   if (error) {
     return (
-      <ThemeProvider theme={createSafeTheme(theme)}>
+      <ThemeProvider theme={theme}>
         <BackgroundVideo autoPlay loop muted playsInline>
           <source src={hazeVideo} type="video/webm" />
         </BackgroundVideo>
@@ -632,7 +631,7 @@ const getAllItems = () => {
   }
 
   return (
-    <ThemeProvider theme={createSafeTheme(theme)}>
+    <ThemeProvider theme={theme}>
       <BackgroundVideo autoPlay loop muted playsInline>
         <source src={hazeVideo} type="video/webm" />
       </BackgroundVideo>

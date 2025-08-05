@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useWallet } from '../contexts/WalletContext'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
-import { createSafeTheme } from '../utils/styledComponentsHelper'
 import {
   Container,
   ContentWrapper,
@@ -32,7 +31,7 @@ const NFTSelector = ({ isOpen, onClose, onSelect, nfts = [], loading = false }) 
   }
 
   return (
-    <ThemeProvider theme={createSafeTheme(theme)}>
+    <ThemeProvider theme={theme}>
       <div style={{
         position: 'fixed',
         inset: 0,

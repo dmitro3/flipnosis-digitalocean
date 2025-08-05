@@ -6,7 +6,6 @@ import { useToast } from '../contexts/ToastContext'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
-import { createSafeTheme } from '../utils/styledComponentsHelper'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 import ProfileWithNotifications from './ProfileWithNotifications'
@@ -315,7 +314,7 @@ const Header = () => {
   }, [])
 
   return (
-    <ThemeProvider theme={createSafeTheme(theme)}>
+    <ThemeProvider theme={theme}>
       <HeaderContainer>
         <LogoContainer>
           <Logo to="/">FLIPNOSIS</Logo>

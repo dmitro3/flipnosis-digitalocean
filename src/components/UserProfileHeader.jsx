@@ -3,11 +3,8 @@ import { useWallet } from '../contexts/WalletContext';
 import { useProfile } from '../contexts/ProfileContext';
 import { useToast } from '../contexts/ToastContext';
 import styled from '@emotion/styled';
-import { ThemeProvider } from '@emotion/react';
 import ProfilePicture from './ProfilePicture';
 import CoinImageCustomizer from './CoinImageCustomizer';
-import { theme } from '../styles/theme';
-import { createSafeTheme } from '../utils/styledComponentsHelper';
 
 const HeaderContainer = styled.div`
   display: flex;
@@ -240,90 +237,88 @@ const UserProfileHeader = ({ isInHeader = false }) => {
   const Container = isInHeader ? HeaderContainer : FloatingHeaderContainer;
 
   return (
-    <ThemeProvider theme={createSafeTheme(theme)}>
-      <>
-        <Container>
-          <ProfileSection onClick={() => setShowModal(true)}>
-            <ProfilePicture 
-              address={address}
-              size={40}
-              isClickable={false}
-              style={{
-                borderRadius: '12px',
-                border: '2px solid rgba(255, 20, 147, 0.5)'
-              }}
-            />
-            <UserInfo>
-              <UserName>
-                {isLoading ? '...' : (playerName || 'Anonymous')}
-              </UserName>
-            </UserInfo>
-          </ProfileSection>
-        </Container>
+    <>
+      <Container>
+        <ProfileSection onClick={() => setShowModal(true)}>
+          <ProfilePicture 
+            address={address}
+            size={40}
+            isClickable={false}
+            style={{
+              borderRadius: '12px',
+              border: '2px solid rgba(255, 20, 147, 0.5)'
+            }}
+          />
+          <UserInfo>
+            <UserName>
+              {isLoading ? '...' : (playerName || 'Anonymous')}
+            </UserName>
+          </UserInfo>
+        </ProfileSection>
+      </Container>
 
-        {showModal && (
-          <Modal>
-            <ModalContent>
-              <CloseButton onClick={() => setShowModal(false)}>×</CloseButton>
-              
-              <TabContainer>
-                <TabButton 
-                  active={activeTab === 'profile'} 
-                  onClick={() => setActiveTab('profile')}
-                >
-                  Profile
-                </TabButton>
-                <TabButton 
-                  active={activeTab === 'coin'} 
-                  onClick={() => setActiveTab('coin')}
-                >
-                  Customize Coin
-                </TabButton>
-              </TabContainer>
+      {showModal && (
+        <Modal>
+          <ModalContent>
+            <CloseButton onClick={() => setShowModal(false)}>×</CloseButton>
+            
+            <TabContainer>
+              <TabButton 
+                active={activeTab === 'profile'} 
+                onClick={() => setActiveTab('profile')}
+              >
+                Profile
+              </TabButton>
+              <TabButton 
+                active={activeTab === 'coin'} 
+                onClick={() => setActiveTab('coin')}
+              >
+                Customize Coin
+              </TabButton>
+            </TabContainer>
 
-              {activeTab === 'profile' ? (
-                <div>
-                  <h2 style={{ color: '#fff', marginBottom: '1.5rem' }}>Edit Profile</h2>
-                  
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <ProfilePicture 
-                      address={address}
-                      size={100}
-                      isClickable={true}
-                      showUploadIcon={true}
-                      style={{
-                        borderRadius: '12px',
-                        border: '2px solid rgba(255, 20, 147, 0.5)'
-                      }}
-                    />
-                  </div>
-
-                  <Input
-                    type="text"
-                    placeholder="Enter your name"
-                    value={playerName}
-                    onChange={(e) => setPlayerNameState(e.target.value)}
-                  />
-
-                  <SaveButton onClick={handleSave}>
-                    Save Profile
-                  </SaveButton>
-                </div>
-              ) : (
-                <div>
-                  <CoinImageCustomizer
-                    onHeadsImageChange={handleHeadsImageChange}
-                    onTailsImageChange={handleTailsImageChange}
-                    currentHeadsImage={currentHeadsImage}
-                    currentTailsImage={currentTailsImage}
+            {activeTab === 'profile' ? (
+              <div>
+                <h2 style={{ color: '#fff', marginBottom: '1.5rem' }}>Edit Profile</h2>
+                
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <ProfilePicture 
+                    address={address}
+                    size={100}
+                    isClickable={true}
+                    showUploadIcon={true}
+                    style={{
+                      borderRadius: '12px',
+                      border: '2px solid rgba(255, 20, 147, 0.5)'
+                    }}
                   />
                 </div>
-              )}
-            </ModalContent>
-          </Modal>
-        )}
-      </>
-    </ThemeProvider>
+
+                <Input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={playerName}
+                  onChange={(e) => setPlayerNameState(e.target.value)}
+                />
+
+                <SaveButton onClick={handleSave}>
+                  Save Profile
+                </SaveButton>
+              </div>
+            ) : (
+              <div>
+                <CoinImageCustomizer
+                  onHeadsImageChange={handleHeadsImageChange}
+                  onTailsImageChange={handleTailsImageChange}
+                  currentHeadsImage={currentHeadsImage}
+                  currentTailsImage={currentTailsImage}
+                />
+              </div>
+            )}
+          </ModalContent>
+        </Modal>
+      )}
+    </>
   );
 };
 

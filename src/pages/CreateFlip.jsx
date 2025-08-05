@@ -21,7 +21,6 @@ import CoinMaterialSelector from '../components/CoinMaterialSelector'
 // 6. Style imports
 import { theme } from '../styles/theme'
 import { API_CONFIG, getApiUrl } from '../config/api'
-import { createSafeTheme } from '../utils/styledComponentsHelper'
 import {
   Container,
   ContentWrapper,
@@ -478,7 +477,7 @@ const CreateFlip = () => {
   }
 
   return (
-    <ThemeProvider theme={createSafeTheme(theme)}>
+    <ThemeProvider theme={theme}>
       <Container>
         <ContentWrapper>
           <GlassCard>

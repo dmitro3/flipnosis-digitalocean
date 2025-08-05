@@ -10,9 +10,6 @@ import {
   Award, Target, Users, Calendar, DollarSign, Shield, Star
 } from 'lucide-react';
 import contractService from '../services/ContractService';
-import ThemeSelector, { themes } from '../components/ThemeSelector';
-import { ThemeProvider } from '@emotion/react';
-import { createSafeTheme } from '../utils/styledComponentsHelper';
 
 // Styled Components
 const ProfileContainer = styled.div`
@@ -23,8 +20,8 @@ const ProfileContainer = styled.div`
 `;
 
 const ProfileHeader = styled.div`
-  background: ${props => props.theme.background};
-  border: 1px solid ${props => props.theme.border};
+  background: linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(255, 105, 180, 0.1));
+  border: 1px solid rgba(255, 20, 147, 0.3);
   border-radius: 1.5rem;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -38,7 +35,7 @@ const ProfileHeader = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, ${props => props.theme.border}20 50%, transparent 70%);
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 20, 147, 0.05) 50%, transparent 70%);
     animation: shimmer 3s infinite;
   }
 
@@ -70,12 +67,12 @@ const Avatar = styled.img`
   width: 8rem;
   height: 8rem;
   border-radius: 50%;
-  border: 4px solid ${props => props.theme.border};
+  border: 4px solid rgba(255, 20, 147, 0.5);
   object-fit: cover;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: ${props => props.theme.primary};
+    border-color: rgba(255, 20, 147, 0.8);
     transform: scale(1.05);
   }
 `;
@@ -85,14 +82,14 @@ const AvatarPlaceholder = styled.div`
   height: 8rem;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
-  border: 4px solid ${props => props.theme.border};
+  border: 4px solid rgba(255, 20, 147, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: ${props => props.theme.primary};
+    border-color: rgba(255, 20, 147, 0.8);
     background: rgba(255, 255, 255, 0.2);
   }
 `;
@@ -103,7 +100,7 @@ const UserDetails = styled.div`
 
 const NameInput = styled.input`
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid ${props => props.theme.border};
+  border: 1px solid rgba(255, 20, 147, 0.5);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   color: #fff;
@@ -115,13 +112,13 @@ const NameInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: ${props => props.theme.primary};
-    box-shadow: 0 0 15px ${props => props.theme.primary}40;
+    border-color: rgba(255, 20, 147, 0.8);
+    box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
   }
 `;
 
 const SaveButton = styled.button`
-  background: linear-gradient(45deg, ${props => props.theme.primary}, ${props => props.theme.secondary});
+  background: linear-gradient(45deg, #00FF41, #39FF14);
   border: none;
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
@@ -133,7 +130,7 @@ const SaveButton = styled.button`
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 15px ${props => props.theme.primary}40;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
   }
 
   &:disabled {
@@ -184,21 +181,21 @@ const StatsGrid = styled.div`
 
 const StatCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid ${props => props.theme.border}40;
+  border: 1px solid rgba(255, 20, 147, 0.2);
   border-radius: 1rem;
   padding: 1.5rem;
   transition: all 0.3s ease;
   text-align: center;
 
   &:hover {
-    border-color: ${props => props.theme.border}80;
-    box-shadow: 0 0 20px ${props => props.theme.primary}20;
+    border-color: rgba(255, 20, 147, 0.4);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
     transform: translateY(-2px);
   }
 `;
 
 const StatIcon = styled.div`
-  color: ${props => props.theme.primary};
+  color: #FF1493;
   margin-bottom: 0.5rem;
 `;
 
@@ -223,7 +220,7 @@ const TabContainer = styled.div`
 `;
 
 const TabButton = styled.button`
-  background: ${props => props.active ? `${props.theme.primary}20` : 'transparent'};
+  background: ${props => props.active ? 'rgba(255, 20, 147, 0.2)' : 'transparent'};
   border: none;
   color: ${props => props.active ? '#fff' : 'rgba(255, 255, 255, 0.7)'};
   font-size: 1rem;
@@ -231,17 +228,17 @@ const TabButton = styled.button`
   cursor: pointer;
   padding: 1rem 1.5rem;
   transition: all 0.3s ease;
-  border-bottom: ${props => props.active ? `2px solid ${props.theme.primary}` : 'none'};
+  border-bottom: ${props => props.active ? '2px solid #FF1493' : 'none'};
   white-space: nowrap;
 
   &:hover {
-    background: ${props.theme.primary}10;
+    background: rgba(255, 20, 147, 0.1);
   }
 `;
 
 const TabContent = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid ${props => props.theme.border}40;
+  border: 1px solid rgba(255, 20, 147, 0.2);
   border-radius: 1rem;
   padding: 2rem;
   min-height: 400px;
@@ -508,8 +505,6 @@ const Profile = () => {
   const [savingTelegram, setSavingTelegram] = useState(false);
   const [savingHeads, setSavingHeads] = useState(false);
   const [savingTails, setSavingTails] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState('purple');
-  const [savingTheme, setSavingTheme] = useState(false);
 
   // Use profile address from URL or current user's address
   const targetAddress = profileAddress || address;
@@ -533,12 +528,11 @@ const Profile = () => {
           tailsImage: data.tailsImage || '',
           twitter: data.twitter || '',
           telegram: data.telegram || '',
-          xp: data.xp || 0,
+          xp: data.xp || 0
         }));
         setTempName(data.name || '');
         setTempTwitter(data.twitter || '');
         setTempTelegram(data.telegram || '');
-        setSelectedTheme(data.theme || 'purple');
       }
     } catch (error) {
       console.error('Failed to load profile data:', error);
@@ -613,7 +607,6 @@ const Profile = () => {
         case 'telegram': setSavingTelegram(state); break;
         case 'heads': setSavingHeads(state); break;
         case 'tails': setSavingTails(state); break;
-        case 'theme': setSavingTheme(state); break;
       }
     };
 
@@ -630,8 +623,7 @@ const Profile = () => {
           headsImage: field === 'heads' ? value : profileData.headsImage,
           tailsImage: field === 'tails' ? value : profileData.tailsImage,
           twitter: field === 'twitter' ? value : profileData.twitter,
-          telegram: field === 'telegram' ? value : profileData.telegram,
-          theme: field === 'theme' ? value : selectedTheme,
+          telegram: field === 'telegram' ? value : profileData.telegram
         })
       });
 
@@ -640,11 +632,9 @@ const Profile = () => {
         setProfileData(prev => ({
           ...prev,
           [field === 'name' ? 'name' : field === 'heads' ? 'headsImage' : field === 'tails' ? 'tailsImage' : field]: value,
-          xp: prev.xp + (result.xpGained || 0),
-          theme: field === 'theme' ? value : prev.theme,
+          xp: prev.xp + (result.xpGained || 0)
         }));
         
-        if (field === 'theme') setSelectedTheme(value);
         if (result.xpGained && result.xpGained > 0) {
           showSuccess(`${field} updated! +${result.xpGained} XP earned!`);
         } else {
@@ -725,208 +715,199 @@ const Profile = () => {
   }
 
   return (
-    <ThemeProvider theme={createSafeTheme(themes[selectedTheme] || themes.purple)}>
-      <ProfileContainer>
-        {/* Theme Selector */}
-        {targetAddress === address && (
-          <ThemeSelector
-            selectedTheme={selectedTheme}
-            onThemeChange={(theme) => saveProfileData('theme', theme)}
-            saving={savingTheme}
-          />
-        )}
-        {/* Profile Header */}
-        <ProfileHeader>
-          <ProfileInfo>
-            <AvatarSection
-              onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => {
-                  if (e.target.files[0]) {
-                    handleImageUpload('avatar', e.target.files[0]);
-                  }
-                };
-                input.click();
-              }}
-            >
-              {profileData.avatar ? (
-                <Avatar src={profileData.avatar} alt="Profile" />
-              ) : (
-                <AvatarPlaceholder>
-                  <User style={{ width: '3rem', height: '3rem', color: '#FF1493' }} />
-                </AvatarPlaceholder>
-              )}
-            </AvatarSection>
+    <ProfileContainer>
+      {/* Profile Header */}
+      <ProfileHeader>
+        <ProfileInfo>
+          <AvatarSection
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = (e) => {
+                if (e.target.files[0]) {
+                  handleImageUpload('avatar', e.target.files[0]);
+                }
+              };
+              input.click();
+            }}
+          >
+            {profileData.avatar ? (
+              <Avatar src={profileData.avatar} alt="Profile" />
+            ) : (
+              <AvatarPlaceholder>
+                <User style={{ width: '3rem', height: '3rem', color: '#FF1493' }} />
+              </AvatarPlaceholder>
+            )}
+          </AvatarSection>
+          
+          <UserDetails>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <NameInput
+                value={tempName}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setTempName(newName);
+                }}
+                placeholder="Enter your nickname"
+              />
+              <SaveButton 
+                onClick={() => saveProfileData('name', tempName)}
+                disabled={savingName || tempName === profileData.name}
+              >
+                {savingName ? 'Saving...' : 'Save'}
+              </SaveButton>
+            </div>
             
-            <UserDetails>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <NameInput
-                  value={tempName}
-                  onChange={(e) => {
-                    const newName = e.target.value;
-                    setTempName(newName);
-                  }}
-                  placeholder="Enter your nickname"
-                />
-                <SaveButton 
-                  onClick={() => saveProfileData('name', tempName)}
-                  disabled={savingName || tempName === profileData.name}
-                >
-                  {savingName ? 'Saving...' : 'Save'}
-                </SaveButton>
-              </div>
-              
-              <AddressDisplay>
-                <AddressCode>{formatAddress(targetAddress)}</AddressCode>
-                <CopyButton onClick={copyAddress}>
-                  {copied ? <CheckCircle style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} /> : <Copy style={{ width: '1rem', height: '1rem' }} />}
-                </CopyButton>
-              </AddressDisplay>
+            <AddressDisplay>
+              <AddressCode>{formatAddress(targetAddress)}</AddressCode>
+              <CopyButton onClick={copyAddress}>
+                {copied ? <CheckCircle style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} /> : <Copy style={{ width: '1rem', height: '1rem' }} />}
+              </CopyButton>
+            </AddressDisplay>
 
-              {/* Wallet Connection Status */}
-              {targetAddress === address && (
-                <WalletSection>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <Wallet style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} />
-                    <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>Wallet Connected</span>
-                  </div>
-                          <DisconnectButton onClick={disconnect}>
-            <LogOut style={{ width: '1rem', height: '1rem' }} />
-            Disconnect Wallet
-          </DisconnectButton>
-                </WalletSection>
-              )}
-            </UserDetails>
-          </ProfileInfo>
-        </ProfileHeader>
+            {/* Wallet Connection Status */}
+            {targetAddress === address && (
+              <WalletSection>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <Wallet style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} />
+                  <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>Wallet Connected</span>
+                </div>
+                        <DisconnectButton onClick={disconnect}>
+          <LogOut style={{ width: '1rem', height: '1rem' }} />
+          Disconnect Wallet
+        </DisconnectButton>
+              </WalletSection>
+            )}
+          </UserDetails>
+        </ProfileInfo>
+      </ProfileHeader>
 
-        {/* Stats Grid */}
-        <StatsGrid>
-          <StatCard>
-            <StatIcon><Trophy style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-            <StatValue>{profileData.stats.gamesWon}</StatValue>
-            <StatLabel>Games Won</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatIcon><Target style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-            <StatValue>{profileData.stats.gamesLost}</StatValue>
-            <StatLabel>Games Lost</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatIcon><TrendingUp style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-            <StatValue>{profileData.stats.winRate}%</StatValue>
-            <StatLabel>Win Rate</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatIcon><Gamepad2 style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-            <StatValue>{profileData.stats.totalGames}</StatValue>
-            <StatLabel>Total Games</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatIcon><DollarSign style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-            <StatValue>{profileData.stats.totalVolume}</StatValue>
-            <StatLabel>Total Volume</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatIcon><Star style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-            <StatValue>{activeGames.length}</StatValue>
-            <StatLabel>Active Games</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatIcon><Zap style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-            <StatValue>{profileData.xp}</StatValue>
-            <StatLabel>Experience Points</StatLabel>
-          </StatCard>
-        </StatsGrid>
+      {/* Stats Grid */}
+      <StatsGrid>
+        <StatCard>
+          <StatIcon><Trophy style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+          <StatValue>{profileData.stats.gamesWon}</StatValue>
+          <StatLabel>Games Won</StatLabel>
+        </StatCard>
+        <StatCard>
+          <StatIcon><Target style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+          <StatValue>{profileData.stats.gamesLost}</StatValue>
+          <StatLabel>Games Lost</StatLabel>
+        </StatCard>
+        <StatCard>
+          <StatIcon><TrendingUp style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+          <StatValue>{profileData.stats.winRate}%</StatValue>
+          <StatLabel>Win Rate</StatLabel>
+        </StatCard>
+        <StatCard>
+          <StatIcon><Gamepad2 style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+          <StatValue>{profileData.stats.totalGames}</StatValue>
+          <StatLabel>Total Games</StatLabel>
+        </StatCard>
+        <StatCard>
+          <StatIcon><DollarSign style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+          <StatValue>{profileData.stats.totalVolume}</StatValue>
+          <StatLabel>Total Volume</StatLabel>
+        </StatCard>
+        <StatCard>
+          <StatIcon><Star style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+          <StatValue>{activeGames.length}</StatValue>
+          <StatLabel>Active Games</StatLabel>
+        </StatCard>
+        <StatCard>
+          <StatIcon><Zap style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+          <StatValue>{profileData.xp}</StatValue>
+          <StatLabel>Experience Points</StatLabel>
+        </StatCard>
+      </StatsGrid>
 
-        {/* Tabs */}
-        <TabContainer>
-          <TabButton 
-            active={activeTab === 'profile'} 
-            onClick={() => setActiveTab('profile')}
-          >
-            Profile
-          </TabButton>
-          <TabButton 
-            active={activeTab === 'games'} 
-            onClick={() => setActiveTab('games')}
-          >
-            My Games ({activeGames.length})
-          </TabButton>
-          <TabButton 
-            active={activeTab === 'offers'} 
-            onClick={() => setActiveTab('offers')}
-          >
-            My Offers ({offers.length})
-          </TabButton>
-        </TabContainer>
+      {/* Tabs */}
+      <TabContainer>
+        <TabButton 
+          active={activeTab === 'profile'} 
+          onClick={() => setActiveTab('profile')}
+        >
+          Profile
+        </TabButton>
+        <TabButton 
+          active={activeTab === 'games'} 
+          onClick={() => setActiveTab('games')}
+        >
+          My Games ({activeGames.length})
+        </TabButton>
+        <TabButton 
+          active={activeTab === 'offers'} 
+          onClick={() => setActiveTab('offers')}
+        >
+          My Offers ({offers.length})
+        </TabButton>
+      </TabContainer>
 
-        {/* Tab Content */}
-        <TabContent>
-          {activeTab === 'profile' && (
-            <>
-              {/* Social Media Links */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                  Social Media Links
-                </h3>
-                                 <SocialLinksSection>
-                   <div>
-                     <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
-                       <Twitter style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
-                       X (Twitter) Username
-                     </label>
-                     <SocialInputContainer>
-                       <SocialInput
-                         value={tempTwitter}
-                         onChange={(e) => {
-                           const newTwitter = e.target.value;
-                           setTempTwitter(newTwitter);
-                         }}
-                         placeholder="@username"
-                       />
-                       <SaveButton 
-                         onClick={() => saveProfileData('twitter', tempTwitter)}
-                         disabled={savingTwitter || tempTwitter === profileData.twitter}
-                       >
-                         {savingTwitter ? 'Saving...' : 'Save'}
-                       </SaveButton>
-                     </SocialInputContainer>
-                   </div>
-                   <div>
-                     <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
-                       <MessageCircle style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
-                       Telegram Username
-                     </label>
-                     <SocialInputContainer>
-                       <SocialInput
-                         value={tempTelegram}
-                         onChange={(e) => {
-                           const newTelegram = e.target.value;
-                           setTempTelegram(newTelegram);
-                         }}
-                         placeholder="@username"
-                       />
-                       <SaveButton 
-                         onClick={() => saveProfileData('telegram', tempTelegram)}
-                         disabled={savingTelegram || tempTelegram === profileData.telegram}
-                       >
-                         {savingTelegram ? 'Saving...' : 'Save'}
-                       </SaveButton>
-                     </SocialInputContainer>
-                   </div>
-                 </SocialLinksSection>
-              </div>
+      {/* Tab Content */}
+      <TabContent>
+        {activeTab === 'profile' && (
+          <>
+            {/* Social Media Links */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                Social Media Links
+              </h3>
+                             <SocialLinksSection>
+                 <div>
+                   <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                     <Twitter style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
+                     X (Twitter) Username
+                   </label>
+                   <SocialInputContainer>
+                     <SocialInput
+                       value={tempTwitter}
+                       onChange={(e) => {
+                         const newTwitter = e.target.value;
+                         setTempTwitter(newTwitter);
+                       }}
+                       placeholder="@username"
+                     />
+                     <SaveButton 
+                       onClick={() => saveProfileData('twitter', tempTwitter)}
+                       disabled={savingTwitter || tempTwitter === profileData.twitter}
+                     >
+                       {savingTwitter ? 'Saving...' : 'Save'}
+                     </SaveButton>
+                   </SocialInputContainer>
+                 </div>
+                 <div>
+                   <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                     <MessageCircle style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
+                     Telegram Username
+                   </label>
+                   <SocialInputContainer>
+                     <SocialInput
+                       value={tempTelegram}
+                       onChange={(e) => {
+                         const newTelegram = e.target.value;
+                         setTempTelegram(newTelegram);
+                       }}
+                       placeholder="@username"
+                     />
+                     <SaveButton 
+                       onClick={() => saveProfileData('telegram', tempTelegram)}
+                       disabled={savingTelegram || tempTelegram === profileData.telegram}
+                     >
+                       {savingTelegram ? 'Saving...' : 'Save'}
+                     </SaveButton>
+                   </SocialInputContainer>
+                 </div>
+               </SocialLinksSection>
+            </div>
 
-              {/* Custom Coin Designs */}
-              <div>
-                <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                  Custom Coin Designs
-                </h3>
-                <CoinImagesGrid>
-                                   <CoinImageCard>
+            {/* Custom Coin Designs */}
+            <div>
+              <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                Custom Coin Designs
+              </h3>
+              <CoinImagesGrid>
+                                 <CoinImageCard>
                    <h4 style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '1rem' }}>Heads</h4>
                    <div
                      onClick={() => {
@@ -959,7 +940,7 @@ const Profile = () => {
                    </SaveButton>
                  </CoinImageCard>
                 
-                                   <CoinImageCard>
+                                 <CoinImageCard>
                    <h4 style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '1rem' }}>Tails</h4>
                    <div
                      onClick={() => {
@@ -1127,7 +1108,6 @@ const Profile = () => {
         )}
       </TabContent>
     </ProfileContainer>
-    </ThemeProvider>
   );
 };
 

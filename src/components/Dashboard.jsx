@@ -5,7 +5,6 @@ import { useToast } from '../contexts/ToastContext'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
-import { createSafeTheme } from '../utils/styledComponentsHelper'
 import DashboardChat from './DashboardChat'
 import { getApiUrl, getWsUrl } from '../config/api'
 import {
@@ -707,7 +706,7 @@ const Dashboard = () => {
 
   if (!isConnected) {
     return (
-      <ThemeProvider theme={createSafeTheme(theme)}>
+      <ThemeProvider theme={theme}>
         <Container>
           <ContentWrapper>
             <GlassCard style={{ textAlign: 'center' }}>
@@ -721,7 +720,7 @@ const Dashboard = () => {
   
   if (loading) {
     return (
-      <ThemeProvider theme={createSafeTheme(theme)}>
+      <ThemeProvider theme={theme}>
         <Container>
           <ContentWrapper>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
@@ -734,7 +733,7 @@ const Dashboard = () => {
   }
   
   return (
-    <ThemeProvider theme={createSafeTheme(theme)}>
+    <ThemeProvider theme={theme}>
       <Container>
         <ContentWrapper>
           <DashboardContainer>

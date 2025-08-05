@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import styled from '@emotion/styled'
-import { ThemeProvider } from '@emotion/react'
 import { useToast } from '../contexts/ToastContext'
 import { GlassCard, Button } from '../styles/components'
-import { theme } from '../styles/theme'
-import { createSafeTheme } from '../utils/styledComponentsHelper'
 
 const ChatContainer = styled(GlassCard)`
   height: 400px;
@@ -142,33 +139,31 @@ const DashboardChat = ({ listingId, socket, currentUser }) => {
   }
   
   return (
-    <ThemeProvider theme={createSafeTheme(theme)}>
-      <ChatContainer>
-        <ChatHeader>Listing Chat</ChatHeader>
-        
-        <MessagesContainer>
-          {messages.map(msg => (
-            <Message key={msg.id} isOwn={msg.address === currentUser}>
-              <MessageAuthor>
-                {msg.address === currentUser ? 'You' : `${msg.address ? msg.address.slice(0, 6) + '...' : 'Unknown'}`}
-              </MessageAuthor>
-              <MessageText>{msg.message}</MessageText>
-            </Message>
-          ))}
-          <div ref={messagesEndRef} />
-        </MessagesContainer>
-        
-        <ChatInput>
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
-          />
-          <SendButton onClick={sendMessage}>Send</SendButton>
-        </ChatInput>
-      </ChatContainer>
-    </ThemeProvider>
+    <ChatContainer>
+      <ChatHeader>Listing Chat</ChatHeader>
+      
+      <MessagesContainer>
+        {messages.map(msg => (
+          <Message key={msg.id} isOwn={msg.address === currentUser}>
+            <MessageAuthor>
+              {msg.address === currentUser ? 'You' : `${msg.address ? msg.address.slice(0, 6) + '...' : 'Unknown'}`}
+            </MessageAuthor>
+            <MessageText>{msg.message}</MessageText>
+          </Message>
+        ))}
+        <div ref={messagesEndRef} />
+      </MessagesContainer>
+      
+      <ChatInput>
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Type a message..."
+        />
+        <SendButton onClick={sendMessage}>Send</SendButton>
+      </ChatInput>
+    </ChatContainer>
   )
 }
 

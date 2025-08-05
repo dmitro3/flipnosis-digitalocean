@@ -3,7 +3,7 @@ import React from 'react'
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null, errorInfo: null }
+    this.state = { hasError: false }
   }
   
   static getDerivedStateFromError(error) {
@@ -11,76 +11,43 @@ class ErrorBoundary extends React.Component {
   }
   
   componentDidCatch(error, errorInfo) {
-    console.error('🚨 Error boundary caught error:', error, errorInfo)
-    
-    // Enhanced error logging for specific error types
-    if (error && error.message) {
-      if (error.message.includes('props is not defined')) {
-        console.error('🔍 Props reference error in React component:', {
-          error: error.message,
-          stack: error.stack,
-          componentStack: errorInfo.componentStack
-        })
-      } else if (error.message.includes('Cannot read properties of null')) {
-        console.error('🔍 Null reference error in React component:', {
-          error: error.message,
-          stack: error.stack,
-          componentStack: errorInfo.componentStack
-        })
-      }
-    }
-    
-    this.setState({
-      error: error,
-      errorInfo: errorInfo
-    })
+    console.error('Error caught by boundary:', error, errorInfo)
   }
   
   render() {
     if (this.state.hasError) {
       return (
         <div style={{
-          padding: '20px',
-          color: '#00FF41',
-          background: '#000',
-          minHeight: '100vh',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          flexDirection: 'column',
-          gap: '20px',
-          fontFamily: 'monospace'
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          textAlign: 'center',
+          padding: '2rem'
         }}>
-          <h1>🚨 Application Error</h1>
-          <p>Something went wrong while loading the application.</p>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
+            Something went wrong
+          </h1>
+          <p style={{ marginBottom: '2rem', opacity: 0.8 }}>
+            Please refresh the page to continue
+          </p>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => window.location.reload()}
             style={{
-              padding: '10px 20px',
-              background: '#00FF41',
-              color: '#000',
-              border: 'none',
-              borderRadius: '5px',
+              padding: '0.75rem 1.5rem',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '0.5rem',
+              color: 'white',
               cursor: 'pointer',
-              fontFamily: 'monospace'
+              fontSize: '1rem'
             }}
           >
-            Reload Page
+            Refresh Page
           </button>
-          <details style={{ marginTop: '20px', color: '#FF6B6B' }}>
-            <summary>Error Details</summary>
-            <pre style={{ marginTop: '10px', fontSize: '12px' }}>
-              {this.state.error?.message}
-            </pre>
-            <pre style={{ fontSize: '10px', color: '#888' }}>
-              {this.state.error?.stack}
-            </pre>
-            {this.state.errorInfo && (
-              <pre style={{ fontSize: '10px', color: '#666' }}>
-                {this.state.errorInfo.componentStack}
-              </pre>
-            )}
-          </details>
         </div>
       )
     }

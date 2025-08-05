@@ -9,7 +9,6 @@ import { ProfileProvider } from './contexts/ProfileContext'
 import { router } from './Routes'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from './styles/theme'
-import { createSafeTheme } from './utils/styledComponentsHelper'
 import { RouterProvider } from 'react-router-dom'
 import { config } from './config/rainbowkit'
 import React, { useEffect } from 'react'
@@ -75,65 +74,61 @@ function App() {
   // Add global WebSocket listener for TRANSPORT_TO_GAME messages and offer acceptance
   useEffect(() => {
     const handleGlobalWebSocketMessage = (event) => {
-      try {
-        const data = event.detail
-        
-        // Enhanced null check to prevent the error
-        if (!data) {
-          console.warn('⚠️ Received null WebSocket message')
-          return
-        }
-        
-        if (!data.type || typeof data.type !== 'string') {
-          console.warn('⚠️ Received WebSocket message without valid type:', data)
-          return
-        }
+      const data = event.detail
       
-              // Handle TRANSPORT_TO_GAME message globally
-        if (data.type === 'TRANSPORT_TO_GAME' && data.forceTransport) {
-          console.log('🚀 GLOBAL: Received TRANSPORT_TO_GAME message:', data)
-          
-          const gameId = data.gameId || data.contract_game_id
-          if (gameId) {
-            console.log('🎮 GLOBAL: Force transporting to game:', gameId)
-            
-            // Close any open modals
-            window.dispatchEvent(new CustomEvent('closeAllModals'))
-            
-            // Navigate to game
-            setTimeout(() => {
-              window.location.href = `/game/${gameId}`
-            }, 100)
-          }
-        }
+      // Enhanced null check to prevent the error
+      if (!data) {
+        console.warn('⚠️ Received null WebSocket message')
+        return
+      }
+      
+      if (!data.type) {
+        console.warn('⚠️ Received WebSocket message without type:', data)
+        return
+      }
+      
+      // Handle TRANSPORT_TO_GAME message globally
+      if (data.type === 'TRANSPORT_TO_GAME' && data.forceTransport) {
+        console.log('🚀 GLOBAL: Received TRANSPORT_TO_GAME message:', data)
         
-        // Handle offer_accepted_with_timer message globally for Player 2
-        if (data.type === 'offer_accepted_with_timer') {
-          console.log('⏰ GLOBAL: Received offer_accepted_with_timer message:', data)
+        const gameId = data.gameId || data.contract_game_id
+        if (gameId) {
+          console.log('🎮 GLOBAL: Force transporting to game:', gameId)
           
-          // Dispatch a global event to show the crypto loader
-          // The wallet address check will be handled in the component that listens to this event
-          window.dispatchEvent(new CustomEvent('showCryptoLoader', {
-            detail: {
-              offerId: data.offerId,
-              listingId: data.listingId,
-              gameId: data.gameId,
-              contract_game_id: data.gameId,
-              offererAddress: data.offererAddress,
-              offerPrice: data.offerPrice,
-              originalPrice: data.originalPrice,
-              nftContract: data.nftContract,
-              nftTokenId: data.nftTokenId,
-              nftName: data.nftName,
-              nftImage: data.nftImage,
-              coin: data.coin,
-              startTime: data.startTime,
-              duration: data.duration
-            }
-          }))
+          // Close any open modals
+          window.dispatchEvent(new CustomEvent('closeAllModals'))
+          
+          // Navigate to game
+          setTimeout(() => {
+            window.location.href = `/game/${gameId}`
+          }, 100)
         }
-      } catch (error) {
-        console.error('🚨 Error handling WebSocket message:', error)
+      }
+      
+      // Handle offer_accepted_with_timer message globally for Player 2
+      if (data.type === 'offer_accepted_with_timer') {
+        console.log('⏰ GLOBAL: Received offer_accepted_with_timer message:', data)
+        
+        // Dispatch a global event to show the crypto loader
+        // The wallet address check will be handled in the component that listens to this event
+        window.dispatchEvent(new CustomEvent('showCryptoLoader', {
+          detail: {
+            offerId: data.offerId,
+            listingId: data.listingId,
+            gameId: data.gameId,
+            contract_game_id: data.gameId,
+            offererAddress: data.offererAddress,
+            offerPrice: data.offerPrice,
+            originalPrice: data.originalPrice,
+            nftContract: data.nftContract,
+            nftTokenId: data.nftTokenId,
+            nftName: data.nftName,
+            nftImage: data.nftImage,
+            coin: data.coin,
+            startTime: data.startTime,
+            duration: data.duration
+          }
+        }))
       }
     }
     
@@ -163,7 +158,7 @@ function App() {
             <ToastProvider>
               <WalletProvider>
                 <ProfileProvider>
-                  <ThemeProvider theme={createSafeTheme(theme)}>
+                  <ThemeProvider theme={theme}>
                     <RouterProvider router={router} />
                   </ThemeProvider>
                 </ProfileProvider>
