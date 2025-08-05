@@ -541,49 +541,49 @@ const GamePage = () => {
                  </h4>
                  
                  {/* NFT Image and Info */}
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
                    <img 
                      src={getGameNFTImage()} 
                      alt={getGameNFTName()} 
                      style={{ 
-                       width: '80px', 
-                       height: '80px', 
-                       borderRadius: '0.5rem',
-                       border: '2px solid #FFD700'
+                       width: '100px', 
+                       height: '100px', 
+                       borderRadius: '0.75rem',
+                       border: '3px solid #FFD700'
                      }} 
                    />
                    <div>
-                     <h5 style={{ margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
+                     <h5 style={{ margin: '0 0 0.75rem 0', color: '#FFFFFF', fontSize: '1.3rem', fontWeight: 'bold' }}>
                        {getGameNFTName()}
                      </h5>
-                     <p style={{ margin: '0', color: '#CCCCCC', fontSize: '0.9rem' }}>
+                     <p style={{ margin: '0', color: '#CCCCCC', fontSize: '1.1rem' }}>
                        {getGameNFTCollection()}
                      </p>
                    </div>
                  </div>
                  
                  {/* Game Details */}
-                 <div style={{ marginBottom: '1rem' }}>
-                   <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC' }}>
+                 <div style={{ marginBottom: '1.5rem' }}>
+                   <p style={{ margin: '0 0 0.75rem 0', color: '#CCCCCC', fontSize: '1.1rem' }}>
                      <strong>Creator:</strong> {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
                    </p>
                    {getGameJoiner() && (
-                     <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC' }}>
+                     <p style={{ margin: '0 0 0.75rem 0', color: '#CCCCCC', fontSize: '1.1rem' }}>
                        <strong>Player:</strong> {getGameJoiner().slice(0, 6)}...{getGameJoiner().slice(-4)}
                      </p>
                    )}
-                   <p style={{ margin: '0 0 0.5rem 0', color: '#FFD700', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                   <p style={{ margin: '0 0 0.75rem 0', color: '#FFD700', fontSize: '1.4rem', fontWeight: 'bold' }}>
                      Price: ${(getGamePrice() || 0).toFixed(2)} USD
                    </p>
-                   <p style={{ margin: '0', color: '#CCCCCC', fontSize: '0.9rem' }}>
+                   <p style={{ margin: '0', color: '#CCCCCC', fontSize: '1.1rem' }}>
                      <strong>Chain:</strong> Base (ETH)
                    </p>
                  </div>
                  
                  {/* External Links */}
                  {getGameNFTContract() && getGameNFTTokenId() && (
-                   <div style={{ marginBottom: '1rem' }}>
-                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                   <div style={{ marginBottom: '1.5rem' }}>
+                     <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
                        <a 
                          href={`https://basescan.org/token/${getGameNFTContract()}?a=${getGameNFTTokenId()}`}
                          target="_blank"
@@ -591,10 +591,10 @@ const GamePage = () => {
                          style={{
                            background: '#00BFFF',
                            color: '#000',
-                           padding: '0.25rem 0.5rem',
-                           borderRadius: '0.25rem',
+                           padding: '0.5rem 1rem',
+                           borderRadius: '0.5rem',
                            textDecoration: 'none',
-                           fontSize: '0.8rem',
+                           fontSize: '1rem',
                            fontWeight: 'bold'
                          }}
                        >
@@ -607,10 +607,10 @@ const GamePage = () => {
                          style={{
                            background: '#00FF41',
                            color: '#000',
-                           padding: '0.25rem 0.5rem',
-                           borderRadius: '0.25rem',
+                           padding: '0.5rem 1rem',
+                           borderRadius: '0.5rem',
                            textDecoration: 'none',
-                           fontSize: '0.8rem',
+                           fontSize: '1rem',
                            fontWeight: 'bold'
                          }}
                        >
@@ -622,41 +622,9 @@ const GamePage = () => {
                  
                  {/* Coin Display */}
                  <div style={{ marginBottom: '1rem' }}>
-                   <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC', fontSize: '0.9rem' }}>
-                     <strong>Coin:</strong>
+                   <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC', fontSize: '1rem' }}>
+                     <strong>Coin:</strong> Custom Design
                    </p>
-                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                     <div style={{ textAlign: 'center' }}>
-                       <img 
-                         src={customHeadsImage} 
-                         alt="Heads" 
-                         style={{ 
-                           width: '40px', 
-                           height: '40px', 
-                           borderRadius: '0.25rem',
-                           border: '2px solid #FFD700'
-                         }} 
-                       />
-                       <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#CCCCCC' }}>
-                         Heads
-                       </p>
-                     </div>
-                     <div style={{ textAlign: 'center' }}>
-                       <img 
-                         src={customTailsImage} 
-                         alt="Tails" 
-                         style={{ 
-                           width: '40px', 
-                           height: '40px', 
-                           borderRadius: '0.25rem',
-                           border: '2px solid #FFD700'
-                         }} 
-                       />
-                       <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#CCCCCC' }}>
-                         Tails
-                       </p>
-                     </div>
-                   </div>
                  </div>
                  
                  {/* Game Status - Removed Status and Type display */}

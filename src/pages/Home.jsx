@@ -320,7 +320,9 @@ const getAllItems = () => {
           name: l.nft_name || 'Unknown NFT',
           image: l.nft_image || '/placeholder-nft.svg',
           collection: l.nft_collection || 'Unknown Collection',
-          chain: l.nft_chain || 'base'
+          chain: l.nft_chain || 'base',
+          contractAddress: l.nft_contract,
+          tokenId: l.nft_token_id
         },
         gameType: 'nft-vs-crypto',
         priceUSD: l.asking_price || 0
@@ -347,7 +349,9 @@ const getAllItems = () => {
         name: g.nft_name || 'Unknown NFT',
         image: g.nft_image || '/placeholder-nft.svg',
         collection: g.nft_collection || 'Unknown Collection',
-        chain: 'base'
+        chain: g.nft_chain || 'base',
+        contractAddress: g.nft_contract,
+        tokenId: g.nft_token_id
       },
       gameType: 'nft-vs-nft',
       priceUSD: g.final_price || 0
@@ -388,6 +392,16 @@ const getAllItems = () => {
       console.error('⚠️ Cannot select flip: Invalid flip data:', flip)
       return
     }
+    
+    // Debug logging to see the NFT data structure
+    console.log('🔍 Selected flip NFT data:', {
+      name: flip.nft?.name,
+      contractAddress: flip.nft?.contractAddress,
+      tokenId: flip.nft?.tokenId,
+      chain: flip.nft?.chain,
+      collection: flip.nft?.collection
+    })
+    
     setSelectedFlip(flip)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -848,9 +862,18 @@ const getAllItems = () => {
                         marginBottom: '1rem'
                       }}>
                         <a
-                          href={`${getExplorerUrl(selectedFlip.nft.chain)}/token/${selectedFlip.nft.contractAddress}?a=${selectedFlip.nft.tokenId}`}
+                          href={selectedFlip.nft?.contractAddress && selectedFlip.nft?.tokenId ? 
+                            `${getExplorerUrl(selectedFlip.nft.chain)}/token/${selectedFlip.nft.contractAddress}?a=${selectedFlip.nft.tokenId}` :
+                            '#'
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => {
+                            if (!selectedFlip.nft?.contractAddress || !selectedFlip.nft?.tokenId) {
+                              e.preventDefault()
+                              showError('NFT contract details not available')
+                            }
+                          }}
                           style={{
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '0.4rem 0.8rem',
@@ -870,9 +893,18 @@ const getAllItems = () => {
                           🔍 Explorer
                         </a>
                         <a
-                          href={`${getMarketplaceUrl(selectedFlip.nft.chain)}/${selectedFlip.nft.contractAddress}/${selectedFlip.nft.tokenId}`}
+                          href={selectedFlip.nft?.contractAddress && selectedFlip.nft?.tokenId ? 
+                            `${getMarketplaceUrl(selectedFlip.nft.chain)}/${selectedFlip.nft.contractAddress}/${selectedFlip.nft.tokenId}` :
+                            '#'
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => {
+                            if (!selectedFlip.nft?.contractAddress || !selectedFlip.nft?.tokenId) {
+                              e.preventDefault()
+                              showError('NFT contract details not available')
+                            }
+                          }}
                           style={{
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '0.4rem 0.8rem',

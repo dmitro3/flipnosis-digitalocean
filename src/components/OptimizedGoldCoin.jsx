@@ -37,6 +37,20 @@ const powerConfigs = [
   { minFlips: 20, duration: 15000, speed: 3.5 }  // Level 10
 ];
 
+// Function to apply material physics to power configurations
+const applyMaterialPhysics = (config, material) => {
+  if (!material || !material.physics) return config
+  
+  const { speedMultiplier = 1.0, durationMultiplier = 1.0, wobbleIntensity = 1.0 } = material.physics
+  
+  return {
+    ...config,
+    duration: Math.round(config.duration * durationMultiplier),
+    speed: config.speed * speedMultiplier,
+    wobbleIntensity: wobbleIntensity
+  }
+}
+
 const OptimizedGoldCoin = ({
   isFlipping = false,
   flipResult = null,
@@ -54,6 +68,7 @@ const OptimizedGoldCoin = ({
   customHeadsImage = null,
   customTailsImage = null,
   gamePhase = 'choosing',
+  material = null,
 }) => {
   // Add missing state variables
   const [currentPower, setCurrentPower] = useState(0)
@@ -188,11 +203,14 @@ const OptimizedGoldCoin = ({
     directionalLight.position.set(5, 5, 5)
     scene.add(directionalLight)
 
-    // Create materials with white color and better reflectivity
+    // Get material edge color or default to white
+    const edgeColor = material?.edgeColor ? parseInt(material.edgeColor.replace('#', '0x')) : 0xFFFFFF
+    
+    // Create materials with material-specific edge color and better reflectivity
     const materials = [
       new THREE.MeshPhongMaterial({ 
         map: createOptimizedTexture('edge'),
-        color: 0xFFFFFF, // WHITE COIN - NO DUPLICATES
+        color: edgeColor, // Use material's edge color
         shininess: 80,
         specular: 0x444444
       }),
@@ -420,9 +438,10 @@ const OptimizedGoldCoin = ({
       const totalPower = (creatorPower || 0) + (joinerPower || 0);
       const powerLevel = Math.max(1, Math.min(10, Math.ceil(totalPower)));
       
-      // Get power configuration based on current power level
-      const config = powerConfigs[Math.max(0, powerLevel - 1)];
-      const { minFlips, duration, speed } = config;
+      // Get power configuration based on current power level and apply material physics
+      const baseConfig = powerConfigs[Math.max(0, powerLevel - 1)];
+      const config = applyMaterialPhysics(baseConfig, material);
+      const { minFlips, duration, speed, wobbleIntensity = 1.0 } = config;
       
       // Calculate total rotation to ensure minimum flips
       const rotationsPerFlip = Math.PI * 2;
@@ -463,9 +482,10 @@ const OptimizedGoldCoin = ({
         // Rotation animation with speed multiplier (X-axis only - like a wheel)
         coin.rotation.x = startRotation.x + (totalRotation * easeOut * spinSpeed);
         
-        // Keep Y and Z rotation stable (no wobble)
-        coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
-        coin.rotation.z = 0;
+        // Apply wobble effects based on material physics
+        const wobbleAmount = wobbleIntensity * 0.1 * Math.sin(elapsed * 0.01) * (1 - progress);
+        coin.rotation.y = Math.PI / 2 + wobbleAmount; // Add wobble to Y rotation
+        coin.rotation.z = wobbleAmount * 0.5; // Add subtle Z wobble
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip);

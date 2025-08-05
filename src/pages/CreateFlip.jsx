@@ -16,6 +16,7 @@ import contractService from '../services/ContractService'
 // 5. Component imports
 import NFTSelector from '../components/NFTSelector'
 import CoinSelector from '../components/CoinSelector'
+import CoinMaterialSelector from '../components/CoinMaterialSelector'
 
 // 6. Style imports
 import { theme } from '../styles/theme'
@@ -207,6 +208,19 @@ const CreateFlip = () => {
     tailsImage: '/coins/plaint.png',
     isCustom: false
   })
+  const [selectedMaterial, setSelectedMaterial] = useState({
+    id: 'poker-chip',
+    name: 'Poker Chip',
+    description: 'Balanced & Classic',
+    edgeColor: '#228B22',
+    physics: {
+      weight: 'medium',
+      speedMultiplier: 1.0,
+      durationMultiplier: 1.0,
+      wobbleIntensity: 1.0,
+      predictability: 'medium'
+    }
+  })
 
   // Progress tracking state
   const [currentStep, setCurrentStep] = useState(0) // 0: not started, 1: approve, 2: pay fee, 3: deposit NFT
@@ -330,7 +344,8 @@ const CreateFlip = () => {
             name: selectedCoin.name,
             headsImage: selectedCoin.headsImage,
             tailsImage: selectedCoin.tailsImage,
-            isCustom: selectedCoin.isCustom
+            isCustom: selectedCoin.isCustom,
+            material: selectedMaterial
           }),
           game_type: gameType // Add this
         })
@@ -616,12 +631,24 @@ const CreateFlip = () => {
 
               {/* Coin Selection */}
               <FormGroup>
-                <Label>Select Your Coin</Label>
+                <Label>Select Your Coin Design</Label>
                 <CoinSelector
                   selectedCoin={selectedCoin}
                   onCoinSelect={(coin) => {
                     console.log('🪙 Coin selected in CreateFlip:', coin)
                     setSelectedCoin(coin)
+                  }}
+                />
+              </FormGroup>
+
+              {/* Coin Material Selection */}
+              <FormGroup>
+                <Label>Select Your Coin Material</Label>
+                <CoinMaterialSelector
+                  selectedMaterial={selectedMaterial}
+                  onMaterialSelect={(material) => {
+                    console.log('🪙 Material selected in CreateFlip:', material)
+                    setSelectedMaterial(material)
                   }}
                 />
               </FormGroup>

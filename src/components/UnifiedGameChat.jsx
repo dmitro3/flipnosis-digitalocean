@@ -624,7 +624,17 @@ const UnifiedGameChat = ({
             color: theme.colors.textSecondary,
             padding: '2rem'
           }}>
-            No messages yet. Start the conversation!
+            {inputMode === 'offer' ? (
+              <div>
+                <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💎</div>
+                <div style={{ marginBottom: '0.5rem' }}>Ready to make an NFT offer?</div>
+                <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
+                  Click the NFT selection field below to choose your NFT, then add an optional message!
+                </div>
+              </div>
+            ) : (
+              'No messages yet. Start the conversation!'
+            )}
           </div>
         ) : (
           messages.map((msg, index) => {
@@ -648,22 +658,20 @@ const UnifiedGameChat = ({
       </MessagesContainer>
 
       {/* Input Mode Toggle */}
-      {!isCreator && (
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <ModeToggle
-            className={inputMode === 'chat' ? 'active' : ''}
-            onClick={() => setInputMode('chat')}
-          >
-            💬 Chat
-          </ModeToggle>
-          <ModeToggle
-            className={inputMode === 'offer' ? 'active' : ''}
-            onClick={() => setInputMode('offer')}
-          >
-            💎 Make Offer
-          </ModeToggle>
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <ModeToggle
+          className={inputMode === 'chat' ? 'active' : ''}
+          onClick={() => setInputMode('chat')}
+        >
+          💬 Chat
+        </ModeToggle>
+        <ModeToggle
+          className={inputMode === 'offer' ? 'active' : ''}
+          onClick={() => setInputMode('offer')}
+        >
+          💎 Make Offer
+        </ModeToggle>
+      </div>
 
       {/* Input Container */}
       <InputContainer>
@@ -688,26 +696,41 @@ const UnifiedGameChat = ({
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-              <Input
-                type="text"
-                value={selectedNFT ? `Selected: ${selectedNFT.name}` : 'Select NFT to offer...'}
-                placeholder="Select NFT to offer..."
-                disabled={true}
-                onClick={() => setShowNFTSelector(true)}
-                style={{ cursor: 'pointer' }}
-              />
-              <Input
-                type="text"
-                value={offerText}
-                onChange={(e) => setOfferText(e.target.value)}
-                placeholder="Enter your offer message (optional)..."
-                disabled={!connected}
-                onKeyPress={(e) => e.key === 'Enter' && handleSubmitOffer()}
-              />
+              <div style={{ 
+                padding: '0.5rem', 
+                background: 'rgba(255, 20, 147, 0.1)', 
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(255, 20, 147, 0.3)',
+                marginBottom: '0.25rem'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: '#FFD700', marginBottom: '0.25rem' }}>
+                  💎 NFT Battle Offer Mode
+                </div>
+                <Input
+                  type="text"
+                  value={selectedNFT ? `Selected: ${selectedNFT.name}` : 'Click to select NFT to offer...'}
+                  placeholder="Click to select NFT to offer..."
+                  disabled={true}
+                  onClick={() => setShowNFTSelector(true)}
+                  style={{ cursor: 'pointer', marginBottom: '0.5rem' }}
+                />
+                <Input
+                  type="text"
+                  value={offerText}
+                  onChange={(e) => setOfferText(e.target.value)}
+                  placeholder="Enter your offer message (optional)..."
+                  disabled={!connected}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSubmitOffer()}
+                />
+              </div>
             </div>
             <SendButton
               onClick={handleSubmitOffer}
               disabled={!connected || !selectedNFT || isSubmittingOffer}
+              style={{ 
+                background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                color: '#000'
+              }}
             >
               {isSubmittingOffer ? 'Submitting...' : 'Submit Offer'}
             </SendButton>

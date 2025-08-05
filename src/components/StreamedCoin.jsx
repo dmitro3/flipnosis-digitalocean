@@ -6,7 +6,8 @@ const StreamedCoin = ({
   isStreaming = false,
   frameData = null,
   onFlipComplete,
-  size = 400
+  size = 400,
+  material = null
 }) => {
   const canvasRef = useRef(null)
   const ctxRef = useRef(null)
@@ -95,8 +96,9 @@ const StreamedCoin = ({
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
     ctx.fill()
 
-    // Draw border
-    ctx.strokeStyle = '#8B7D6B'
+    // Draw border with material edge color
+    const edgeColor = material?.edgeColor || '#8B7D6B'
+    ctx.strokeStyle = edgeColor
     ctx.lineWidth = 3
     ctx.beginPath()
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)

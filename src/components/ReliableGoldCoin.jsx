@@ -23,7 +23,8 @@ const ReliableGoldCoin = ({
   headsImage = null,
   tailsImage = null,
   edgeImage = null,
-  size = 400 // NEW: size prop for responsive coin
+  size = 400, // NEW: size prop for responsive coin
+  material = null // NEW: material physics prop
 }) => {
   const mountRef = useRef(null)
   const coinRef = useRef(null)
@@ -296,12 +297,15 @@ const ReliableGoldCoin = ({
     textureEdge.wrapS = THREE.RepeatWrapping
     textureEdge.repeat.set(isMobile ? 10 : 20, 1) // Less repetition on mobile
 
+    // Get material edge color or default to gold
+    const edgeColor = material?.edgeColor ? parseInt(material.edgeColor.replace('#', '0x')) : 0xFFFFCC
+
     const materials = isMobile ? [
       // Mobile uses MeshBasicMaterial - no lighting calculations needed
       // Circumference (edge)
       new THREE.MeshBasicMaterial({
         map: textureEdge,
-        color: 0xFFFFCC
+        color: edgeColor
       }),
       // Heads side (top)
       new THREE.MeshBasicMaterial({
@@ -320,7 +324,7 @@ const ReliableGoldCoin = ({
         map: textureEdge,
         metalness: metalness,
         roughness: roughness,
-        color: 0xFFFFCC, // Much brighter base color
+        color: edgeColor, // Use material's edge color
         emissive: 0x443300, // Warm glow
         emissiveIntensity: 0.3 // Increased from 0.1
       }),
@@ -571,9 +575,16 @@ const ReliableGoldCoin = ({
       const startRotation = coin.rotation.x
       const myChoice = isCreator ? creatorChoice : joinerChoice
       
-      // Calculate power-based rotations
+      // Calculate power-based rotations with material physics
       const totalPower = creatorPower + joinerPower
-      const powerRatio = Math.min(totalPower / 10, 1)
+      const basePowerRatio = Math.min(totalPower / 10, 1)
+      
+      // Apply material physics multipliers
+      const speedMultiplier = material?.physics?.speedMultiplier || 1.0
+      const durationMultiplier = material?.physics?.durationMultiplier || 1.0
+      const wobbleIntensity = material?.physics?.wobbleIntensity || 1.0
+      
+      const powerRatio = basePowerRatio * speedMultiplier
       
       // Base spins determined by power (5 to 30 full rotations)
       const minSpins = 5
@@ -634,9 +645,10 @@ const ReliableGoldCoin = ({
           const jumpHeight = 0.5 + (powerRatio * 1.0)
           coin.position.y = Math.sin(progress * Math.PI) * jumpHeight
           
-          // Dynamic wobble that increases then decreases
-          const wobbleIntensity = Math.sin(progress * Math.PI) * 0.03
-          coin.rotation.z = Math.sin(elapsed * 0.015) * wobbleIntensity
+          // Dynamic wobble that increases then decreases, modified by material physics
+          const baseWobble = Math.sin(progress * Math.PI) * 0.03
+          const materialWobble = baseWobble * wobbleIntensity
+          coin.rotation.z = Math.sin(elapsed * 0.015) * materialWobble
           
           // Slight forward/backward motion for drama
           coin.position.z = Math.sin(progress * Math.PI * 2) * 0.1

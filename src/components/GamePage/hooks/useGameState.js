@@ -837,7 +837,26 @@ export const useGameState = (gameId, address) => {
     if (coinData && coinData.headsImage && coinData.tailsImage) {
       setCustomHeadsImage(coinData.headsImage)
       setCustomTailsImage(coinData.tailsImage)
-      setGameCoin(coinData)
+      
+      // Process material data if available
+      const materialData = coinData.material || {
+        id: 'poker-chip',
+        name: 'Poker Chip',
+        description: 'Balanced & Classic',
+        edgeColor: '#228B22',
+        physics: {
+          weight: 'medium',
+          speedMultiplier: 1.0,
+          durationMultiplier: 1.0,
+          wobbleIntensity: 1.0,
+          predictability: 'medium'
+        }
+      }
+      
+      setGameCoin({
+        ...coinData,
+        material: materialData
+      })
     } else {
       setCustomHeadsImage('/coins/plainh.png')
       setCustomTailsImage('/coins/plaint.png')
@@ -846,7 +865,20 @@ export const useGameState = (gameId, address) => {
         type: 'default',
         name: 'Classic',
         headsImage: '/coins/plainh.png',
-        tailsImage: '/coins/plaint.png'
+        tailsImage: '/coins/plaint.png',
+        material: {
+          id: 'poker-chip',
+          name: 'Poker Chip',
+          description: 'Balanced & Classic',
+          edgeColor: '#228B22',
+          physics: {
+            weight: 'medium',
+            speedMultiplier: 1.0,
+            durationMultiplier: 1.0,
+            wobbleIntensity: 1.0,
+            predictability: 'medium'
+          }
+        }
       })
     }
   }, [gameData])

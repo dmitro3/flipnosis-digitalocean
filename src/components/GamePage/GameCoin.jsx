@@ -37,6 +37,7 @@ const GameCoin = ({
             // This will be handled by the parent component
           }}
           size={isMobile ? 250 : 400}
+          material={gameCoin?.material}
         />
       ) : (
         <OptimizedGoldCoin
@@ -56,6 +57,7 @@ const GameCoin = ({
           customTailsImage={customTailsImage}
           gamePhase={gameState.phase}
           size={isMobile ? 250 : 400}
+          material={gameCoin?.material}
         />
       )}
     </CoinSection>
