@@ -3,10 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useToast } from '../contexts/ToastContext';
 import styled from '@emotion/styled';
-import { 
-  User, Gamepad2, Trophy, TrendingUp, Image, Coins, Clock, AlertCircle, 
-  ExternalLink, Copy, CheckCircle, X, Bell, BellOff, Settings, Zap, 
-  Edit, Save, Upload, Disconnect, Twitter, MessageCircle, Wallet,
+import {
+  User, Gamepad2, Trophy, TrendingUp, Image, Coins, Clock, AlertCircle,
+  ExternalLink, Copy, CheckCircle, X, Bell, BellOff, Settings, Zap,
+  Edit, Save, Upload, LogOut, Twitter, MessageCircle, Wallet,
   Award, Target, Users, Calendar, DollarSign, Shield, Star
 } from 'lucide-react';
 import contractService from '../services/ContractService';
@@ -756,10 +756,10 @@ const Profile = () => {
                   <Wallet style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} />
                   <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>Wallet Connected</span>
                 </div>
-                <DisconnectButton onClick={disconnect}>
-                  <Disconnect style={{ width: '1rem', height: '1rem' }} />
-                  Disconnect Wallet
-                </DisconnectButton>
+                        <DisconnectButton onClick={disconnect}>
+          <LogOut style={{ width: '1rem', height: '1rem' }} />
+          Disconnect Wallet
+        </DisconnectButton>
               </WalletSection>
             )}
           </UserDetails>
