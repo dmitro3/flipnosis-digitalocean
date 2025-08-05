@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import styled from 'styled-components'
+import styled from '@emotion/styled'
+import { ThemeProvider } from '@emotion/react'
 import { useAccount } from 'wagmi'
 import contractService from '../services/ContractService'
 import { formatEther, formatUnits } from 'viem'
+import { theme } from '../styles/theme'
+import { createSafeTheme } from '../utils/styledComponentsHelper'
 
 const RewardsContainer = styled.div`
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -110,27 +113,34 @@ const ClaimRewards = () => {
   }
 
   return (
-    <RewardsContainer>
-      <RewardsTitle>🎁 Unclaimed Rewards</RewardsTitle>
-      
-      {rewards.eth > 0n && (
-        <RewardItem>
-          <span>ETH</span>
-          <RewardAmount>{formatEther(rewards.eth)} ETH</RewardAmount>
-        </RewardItem>
-      )}
-      
-      {rewards.usdc > 0n && (
-        <RewardItem>
-          <span>USDC</span>
-          <RewardAmount>{formatUnits(rewards.usdc, 6)} USDC</RewardAmount>
-        </RewardItem>
-      )}
-      
-      <ClaimButton onClick={handleClaim} disabled={claiming}>
-        {claiming ? 'Claiming...' : 'Claim All Rewards'}
-      </ClaimButton>
-    </RewardsContainer>
+    <ThemeProvider theme={createSafeTheme(theme)}>
+      <RewardsContainer>
+        <RewardsTitle>Claim Your Rewards</RewardsTitle>
+        
+        {loading ? (
+          <div>Loading rewards...</div>
+        ) : (
+          <>
+            <RewardItem>
+              <span>ETH Rewards:</span>
+              <RewardAmount>{formatEther(rewards.eth)} ETH</RewardAmount>
+            </RewardItem>
+            
+            <RewardItem>
+              <span>USDC Rewards:</span>
+              <RewardAmount>{formatUnits(rewards.usdc, 6)} USDC</RewardAmount>
+            </RewardItem>
+            
+            <ClaimButton 
+              onClick={handleClaim} 
+              disabled={claiming || (rewards.eth === 0n && rewards.usdc === 0n)}
+            >
+              {claiming ? 'Claiming...' : 'Claim All Rewards'}
+            </ClaimButton>
+          </>
+        )}
+      </RewardsContainer>
+    </ThemeProvider>
   )
 }
 

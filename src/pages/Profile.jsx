@@ -12,6 +12,7 @@ import {
 import contractService from '../services/ContractService';
 import ThemeSelector, { themes } from '../components/ThemeSelector';
 import { ThemeProvider } from '@emotion/react';
+import { createSafeTheme } from '../utils/styledComponentsHelper';
 
 // Styled Components
 const ProfileContainer = styled.div`
@@ -724,7 +725,7 @@ const Profile = () => {
   }
 
   return (
-    <ThemeProvider theme={themes[selectedTheme] || themes.purple}>
+    <ThemeProvider theme={createSafeTheme(themes[selectedTheme] || themes.purple)}>
       <ProfileContainer>
         {/* Theme Selector */}
         {targetAddress === address && (

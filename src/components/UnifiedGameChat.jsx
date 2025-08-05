@@ -5,6 +5,8 @@ import { useToast } from '../contexts/ToastContext'
 import { theme } from '../styles/theme'
 import ProfilePicture from './ProfilePicture'
 import styled from '@emotion/styled'
+import { ThemeProvider } from '@emotion/react'
+import { createSafeTheme } from '../utils/styledComponentsHelper'
 
 // Styled Components
 const ChatContainer = styled.div`
@@ -691,208 +693,210 @@ const UnifiedGameChat = ({
   }
 
   return (
-    <ChatContainer>
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-        paddingBottom: '0.5rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        <h4 style={{ margin: 0, color: '#00BFFF' }}>
-          💬 Game Chat & Offers
-        </h4>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ 
-            width: '8px', 
-            height: '8px', 
-            borderRadius: '50%', 
-            background: connected ? '#00FF41' : '#FF1493',
-            animation: connected ? 'pulse 2s infinite' : 'none'
-          }}></div>
-          <span style={{ 
-            color: connected ? '#00FF41' : '#FF1493', 
-            fontSize: '0.8rem' 
-          }}>
-            {connected ? 'Connected' : 'Disconnected'}
-          </span>
-        </div>
-      </div>
-
-      {/* Messages Container */}
-      <MessagesContainer>
-        {messages.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            color: theme.colors.textSecondary,
-            padding: '2rem'
-          }}>
-            <div>
-              <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💬</div>
-              <div style={{ marginBottom: '0.5rem' }}>No messages yet. Start the conversation!</div>
-              <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
-                {isCreator 
-                  ? 'Use the chat input below to send messages. Wait for other players to make crypto offers!'
-                  : 'Use the chat input below to send messages, or make a crypto offer to join the game!'
-                }
-              </div>
-
-            </div>
-          </div>
-        ) : (
-          messages.map((msg, index) => {
-            const isCurrentUser = msg.address === address
-            const displayName = getDisplayName(msg.address)
-            
-
-            
-            return (
-              <Message key={index} isCurrentUser={isCurrentUser} messageType={msg.type}>
-                <MessageHeader isCurrentUser={isCurrentUser} messageType={msg.type}>
-                  <span>
-                    {getMessageIcon(msg.type)} {displayName}
-                  </span>
-                  <span>{formatTimestamp(msg.timestamp)}</span>
-                </MessageHeader>
-                {renderMessageContent(msg)}
-              </Message>
-            )
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </MessagesContainer>
-
-      {/* Dual Input System */}
-      <DualInputContainer>
-        {/* Chat Input */}
-        <div>
-          <InputLabel>💬 Chat Message</InputLabel>
-          <InputContainer>
-            <Input
-              ref={inputRef}
-              type="text"
-              value={currentMessage}
-              onChange={(e) => setCurrentMessage(e.target.value)}
-              placeholder="Type your message..."
-              disabled={!connected}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
-            />
-            <SendButton
-              onClick={sendMessage}
-              disabled={!connected || !currentMessage.trim()}
-            >
-              Send
-            </SendButton>
-          </InputContainer>
-        </div>
-
-        {/* Crypto Offer Input - Available to all users */}
-        <div>
-          <InputLabel>💰 Crypto Offer (USD)</InputLabel>
-          <OfferInputContainer>
-            <OfferInput
-              type="text"
-              value={cryptoOffer}
-              onChange={(e) => {
-                // Only allow digits and decimal point
-                const value = e.target.value.replace(/[^0-9.]/g, '')
-                // Prevent multiple decimal points
-                const parts = value.split('.')
-                if (parts.length <= 2) {
-                  setCryptoOffer(value)
-                }
-              }}
-              placeholder="Enter USD amount (we'll convert to ETH)..."
-              disabled={!connected}
-              onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
-            />
-            <OfferButton
-              onClick={handleSubmitCryptoOffer}
-              disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
-            >
-              {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
-            </OfferButton>
-          </OfferInputContainer>
-
-        </div>
-      </DualInputContainer>
-
-      {/* Name Modal */}
-      {isNameModalOpen && (
+    <ThemeProvider theme={createSafeTheme(theme)}>
+      <ChatContainer>
+        {/* Header */}
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
+          marginBottom: '1rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
-          <div style={{
-            background: 'rgba(0, 0, 0, 0.9)',
-            padding: '2rem',
-            borderRadius: '1rem',
-            border: '1px solid rgba(255, 20, 147, 0.5)',
-            maxWidth: '400px',
-            width: '90%'
-          }}>
-            <h3 style={{ color: '#FF1493', marginBottom: '1rem' }}>Set Your Name</h3>
-            <input
-              type="text"
-              value={tempName}
-              onChange={(e) => setTempName(e.target.value)}
-              placeholder="Enter your display name"
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                marginBottom: '1rem',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '0.5rem',
-                color: '#fff'
-              }}
-            />
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                onClick={handleSaveName}
-                style={{
-                  flex: 1,
-                  background: '#FF1493',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '0.5rem',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setIsNameModalOpen(false)}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  padding: '0.5rem',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+          <h4 style={{ margin: 0, color: '#00BFFF' }}>
+            💬 Game Chat & Offers
+          </h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ 
+              width: '8px', 
+              height: '8px', 
+              borderRadius: '50%', 
+              background: connected ? '#00FF41' : '#FF1493',
+              animation: connected ? 'pulse 2s infinite' : 'none'
+            }}></div>
+            <span style={{ 
+              color: connected ? '#00FF41' : '#FF1493', 
+              fontSize: '0.8rem' 
+            }}>
+              {connected ? 'Connected' : 'Disconnected'}
+            </span>
           </div>
         </div>
-      )}
+
+        {/* Messages Container */}
+        <MessagesContainer>
+          {messages.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              color: theme.colors.textSecondary,
+              padding: '2rem'
+            }}>
+              <div>
+                <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💬</div>
+                <div style={{ marginBottom: '0.5rem' }}>No messages yet. Start the conversation!</div>
+                <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
+                  {isCreator 
+                    ? 'Use the chat input below to send messages. Wait for other players to make crypto offers!'
+                    : 'Use the chat input below to send messages, or make a crypto offer to join the game!'
+                  }
+                </div>
+
+              </div>
+            </div>
+          ) : (
+            messages.map((msg, index) => {
+              const isCurrentUser = msg.address === address
+              const displayName = getDisplayName(msg.address)
+              
+
+              
+              return (
+                <Message key={index} isCurrentUser={isCurrentUser} messageType={msg.type}>
+                  <MessageHeader isCurrentUser={isCurrentUser} messageType={msg.type}>
+                    <span>
+                      {getMessageIcon(msg.type)} {displayName}
+                    </span>
+                    <span>{formatTimestamp(msg.timestamp)}</span>
+                  </MessageHeader>
+                  {renderMessageContent(msg)}
+                </Message>
+              )
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </MessagesContainer>
+
+        {/* Dual Input System */}
+        <DualInputContainer>
+          {/* Chat Input */}
+          <div>
+            <InputLabel>💬 Chat Message</InputLabel>
+            <InputContainer>
+              <Input
+                ref={inputRef}
+                type="text"
+                value={currentMessage}
+                onChange={(e) => setCurrentMessage(e.target.value)}
+                placeholder="Type your message..."
+                disabled={!connected}
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
+              />
+              <SendButton
+                onClick={sendMessage}
+                disabled={!connected || !currentMessage.trim()}
+              >
+                Send
+              </SendButton>
+            </InputContainer>
+          </div>
+
+          {/* Crypto Offer Input - Available to all users */}
+          <div>
+            <InputLabel>💰 Crypto Offer (USD)</InputLabel>
+            <OfferInputContainer>
+              <OfferInput
+                type="text"
+                value={cryptoOffer}
+                onChange={(e) => {
+                  // Only allow digits and decimal point
+                  const value = e.target.value.replace(/[^0-9.]/g, '')
+                  // Prevent multiple decimal points
+                  const parts = value.split('.')
+                  if (parts.length <= 2) {
+                    setCryptoOffer(value)
+                  }
+                }}
+                placeholder="Enter USD amount (we'll convert to ETH)..."
+                disabled={!connected}
+                onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+              />
+              <OfferButton
+                onClick={handleSubmitCryptoOffer}
+                disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
+              >
+                {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+              </OfferButton>
+            </OfferInputContainer>
+
+          </div>
+        </DualInputContainer>
+
+        {/* Name Modal */}
+        {isNameModalOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.9)',
+              padding: '2rem',
+              borderRadius: '1rem',
+              border: '1px solid rgba(255, 20, 147, 0.5)',
+              maxWidth: '400px',
+              width: '90%'
+            }}>
+              <h3 style={{ color: '#FF1493', marginBottom: '1rem' }}>Set Your Name</h3>
+              <input
+                type="text"
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                placeholder="Enter your display name"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  marginBottom: '1rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0.5rem',
+                  color: '#fff'
+                }}
+              />
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={handleSaveName}
+                  style={{
+                    flex: 1,
+                    background: '#FF1493',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsNameModalOpen(false)}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#fff',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
 
-    </ChatContainer>
+      </ChatContainer>
+    </ThemeProvider>
   )
 }
 

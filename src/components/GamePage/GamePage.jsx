@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ThemeProvider } from '@emotion/react'
 import styled from '@emotion/styled'
@@ -26,6 +26,7 @@ import { useGameData } from './hooks/useGameData'
 // Styles
 import { theme } from '../../styles/theme'
 import { LoadingSpinner } from '../../styles/components'
+import { createSafeTheme } from '../../utils/styledComponentsHelper'
 
 const Container = styled.div`
   min-height: 100vh;
@@ -288,7 +289,7 @@ const GamePage = () => {
   // Loading state
   if (loading) {
     return (
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={createSafeTheme(theme)}>
         <Container>
           <GameContainer>
             <div style={{ 
@@ -309,7 +310,7 @@ const GamePage = () => {
   // Error state
   if (error) {
     return (
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={createSafeTheme(theme)}>
         <Container>
           <GameContainer>
             <div style={{ 
@@ -344,7 +345,7 @@ const GamePage = () => {
   // No game data state
   if (!gameData) {
     return (
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={createSafeTheme(theme)}>
         <Container>
           <GameContainer>
             <div style={{ 
@@ -377,7 +378,7 @@ const GamePage = () => {
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={createSafeTheme(theme)}>
       <Container>
         <GameBackground isMobile={isMobile} />
         

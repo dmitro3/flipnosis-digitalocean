@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Calendar, Activity, DollarSign, Users, Shield, Settings, Search, ChevronDown, ChevronUp, Wallet, TrendingUp, AlertCircle, CheckCircle, XCircle, RefreshCw, Send, Eye, User, Coins, Image, BarChart3, Gamepad2, Crown, Zap, Download, Package } from 'lucide-react'
 import styled from '@emotion/styled'
+import { ThemeProvider } from '@emotion/react'
 import { useWalletConnection } from '../utils/useWalletConnection'
 import { useWallet } from '../contexts/WalletContext'
 import contractService from '../services/ContractService'
 import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit'
 import EmergencyRecovery from './EmergencyRecovery'
+import { theme } from '../styles/theme'
+import { createSafeTheme } from '../utils/styledComponentsHelper'
 
 // Contract ABI - Full ABI matching the NFTFlipGame contract
 const CONTRACT_ABI = [
@@ -1347,615 +1350,552 @@ export default function AdminPanel() {
   )
   
   return (
-    <AdminContainer>
-      <Header>
-        <Title>Admin Dashboard</Title>
+    <ThemeProvider theme={createSafeTheme(theme)}>
+      <AdminContainer>
+        <Header>
+          <Title>Admin Dashboard</Title>
+          {!isConnected ? (
+            <RainbowConnectButton />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span>Connected: {formatAddress(walletAddress)}</span>
+              <span>{chain?.name || 'Unknown Chain'}</span>
+            </div>
+          )}
+        </Header>
+
         {!isConnected ? (
-          <RainbowConnectButton />
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span>Connected: {formatAddress(walletAddress)}</span>
-            <span>{chain?.name || 'Unknown Chain'}</span>
-          </div>
-        )}
-      </Header>
-
-      {!isConnected ? (
-        <ContentArea>
-          <div style={{ textAlign: 'center', padding: '4rem' }}>
-            <h2>Connect your admin wallet to access the dashboard</h2>
-            <p>Only authorized wallets can access this panel</p>
-          </div>
-        </ContentArea>
-      ) : (
-        <>
-          <TabContainer>
-            <Tab 
-              active={activeTab === 'overview'} 
-              onClick={() => setActiveTab('overview')}
-            >
-              <BarChart3 size={20} />
-              Overview
-            </Tab>
-            <Tab 
-              active={activeTab === 'listings'} 
-              onClick={() => setActiveTab('listings')}
-            >
-              <Package size={20} />
-              Listings
-            </Tab>
-            <Tab 
-              active={activeTab === 'games'} 
-              onClick={() => setActiveTab('games')}
-            >
-              <Gamepad2 size={20} />
-              Games
-            </Tab>
-            <Tab 
-              active={activeTab === 'players'} 
-              onClick={() => setActiveTab('players')}
-            >
-              <Users size={20} />
-              Players
-            </Tab>
-            <Tab 
-              active={activeTab === 'settings'} 
-              onClick={() => setActiveTab('settings')}
-            >
-              <Settings size={20} />
-              Settings
-            </Tab>
-            <Tab 
-              active={activeTab === 'emergency'} 
-              onClick={() => setActiveTab('emergency')}
-            >
-              <Shield size={20} />
-              Emergency
-            </Tab>
-            <Tab 
-              active={activeTab === 'nftManagement'} 
-              onClick={() => setActiveTab('nftManagement')}
-            >
-              <Download size={20} />
-              NFT Management
-            </Tab>
-          </TabContainer>
-
           <ContentArea>
-            {activeTab === 'overview' && (
-              <div>
-                <StatsGrid>
-                  <StatCard>
-                    <StatHeader>
-                      <StatIcon>
-                        <Package size={24} />
-                      </StatIcon>
-                      <div>
-                        <StatValue>{stats.totalListings}</StatValue>
-                        <StatLabel>Total Listings</StatLabel>
-                      </div>
-                    </StatHeader>
-                  </StatCard>
+            <div style={{ textAlign: 'center', padding: '4rem' }}>
+              <h2>Connect your admin wallet to access the dashboard</h2>
+              <p>Only authorized wallets can access this panel</p>
+            </div>
+          </ContentArea>
+        ) : (
+          <>
+            <TabContainer>
+              <Tab 
+                active={activeTab === 'overview'} 
+                onClick={() => setActiveTab('overview')}
+              >
+                <BarChart3 size={20} />
+                Overview
+              </Tab>
+              <Tab 
+                active={activeTab === 'listings'} 
+                onClick={() => setActiveTab('listings')}
+              >
+                <Package size={20} />
+                Listings
+              </Tab>
+              <Tab 
+                active={activeTab === 'games'} 
+                onClick={() => setActiveTab('games')}
+              >
+                <Gamepad2 size={20} />
+                Games
+              </Tab>
+              <Tab 
+                active={activeTab === 'players'} 
+                onClick={() => setActiveTab('players')}
+              >
+                <Users size={20} />
+                Players
+              </Tab>
+              <Tab 
+                active={activeTab === 'settings'} 
+                onClick={() => setActiveTab('settings')}
+              >
+                <Settings size={20} />
+                Settings
+              </Tab>
+              <Tab 
+                active={activeTab === 'emergency'} 
+                onClick={() => setActiveTab('emergency')}
+              >
+                <Shield size={20} />
+                Emergency
+              </Tab>
+              <Tab 
+                active={activeTab === 'nftManagement'} 
+                onClick={() => setActiveTab('nftManagement')}
+              >
+                <Download size={20} />
+                NFT Management
+              </Tab>
+            </TabContainer>
+
+            <ContentArea>
+              {activeTab === 'overview' && (
+                <div>
+                  <StatsGrid>
+                    <StatCard>
+                      <StatHeader>
+                        <StatIcon>
+                          <Package size={24} />
+                        </StatIcon>
+                        <div>
+                          <StatValue>{stats.totalListings}</StatValue>
+                          <StatLabel>Total Listings</StatLabel>
+                        </div>
+                      </StatHeader>
+                    </StatCard>
+                    
+                    <StatCard>
+                      <StatHeader>
+                        <StatIcon>
+                          <Gamepad2 size={24} />
+                        </StatIcon>
+                        <div>
+                          <StatValue>{stats.totalGames}</StatValue>
+                          <StatLabel>Total Games</StatLabel>
+                        </div>
+                      </StatHeader>
+                    </StatCard>
+                    
+                    <StatCard>
+                      <StatHeader>
+                        <StatIcon>
+                          <Activity size={24} />
+                        </StatIcon>
+                        <div>
+                          <StatValue>{stats.activeGames}</StatValue>
+                          <StatLabel>Active Games</StatLabel>
+                        </div>
+                      </StatHeader>
+                    </StatCard>
+                    
+                    <StatCard>
+                      <StatHeader>
+                        <StatIcon>
+                          <DollarSign size={24} />
+                        </StatIcon>
+                        <div>
+                          <StatValue>${stats.totalVolume.toFixed(2)}</StatValue>
+                          <StatLabel>Total Volume</StatLabel>
+                        </div>
+                      </StatHeader>
+                    </StatCard>
+                    
+                    <StatCard>
+                      <StatHeader>
+                        <StatIcon>
+                          <Crown size={24} />
+                        </StatIcon>
+                        <div>
+                          <StatValue>${stats.platformFees.toFixed(2)}</StatValue>
+                          <StatLabel>Platform Fees</StatLabel>
+                        </div>
+                      </StatHeader>
+                    </StatCard>
+                    
+                    <StatCard>
+                      <StatHeader>
+                        <StatIcon>
+                          <Zap size={24} />
+                        </StatIcon>
+                        <div>
+                          <StatValue>{stats.openListings}</StatValue>
+                          <StatLabel>Open Listings</StatLabel>
+                        </div>
+                      </StatHeader>
+                    </StatCard>
+                  </StatsGrid>
                   
-                  <StatCard>
-                    <StatHeader>
-                      <StatIcon>
-                        <Gamepad2 size={24} />
-                      </StatIcon>
+                  <div style={{ marginTop: '2rem' }}>
+                    <h3>Recent Activity</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                       <div>
-                        <StatValue>{stats.totalGames}</StatValue>
-                        <StatLabel>Total Games</StatLabel>
-                      </div>
-                    </StatHeader>
-                  </StatCard>
-                  
-                  <StatCard>
-                    <StatHeader>
-                      <StatIcon>
-                        <Activity size={24} />
-                      </StatIcon>
-                      <div>
-                        <StatValue>{stats.activeGames}</StatValue>
-                        <StatLabel>Active Games</StatLabel>
-                      </div>
-                    </StatHeader>
-                  </StatCard>
-                  
-                  <StatCard>
-                    <StatHeader>
-                      <StatIcon>
-                        <DollarSign size={24} />
-                      </StatIcon>
-                      <div>
-                        <StatValue>${stats.totalVolume.toFixed(2)}</StatValue>
-                        <StatLabel>Total Volume</StatLabel>
-                      </div>
-                    </StatHeader>
-                  </StatCard>
-                  
-                  <StatCard>
-                    <StatHeader>
-                      <StatIcon>
-                        <Crown size={24} />
-                      </StatIcon>
-                      <div>
-                        <StatValue>${stats.platformFees.toFixed(2)}</StatValue>
-                        <StatLabel>Platform Fees</StatLabel>
-                      </div>
-                    </StatHeader>
-                  </StatCard>
-                  
-                  <StatCard>
-                    <StatHeader>
-                      <StatIcon>
-                        <Zap size={24} />
-                      </StatIcon>
-                      <div>
-                        <StatValue>{stats.openListings}</StatValue>
-                        <StatLabel>Open Listings</StatLabel>
-                      </div>
-                    </StatHeader>
-                  </StatCard>
-                </StatsGrid>
-                
-                <div style={{ marginTop: '2rem' }}>
-                  <h3>Recent Activity</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                    <div>
-                      <h4>Recent Listings</h4>
-                      {listings.slice(0, 3).map(listing => (
-                        <GameCard key={`listing-${listing.id}`}>
-                          <GameHeader>
-                            <div>
-                              <strong>Listing #{listing.id}</strong>
-                              <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-                                {listing.nft_name} - ${listing.asking_price}
+                        <h4>Recent Listings</h4>
+                        {listings.slice(0, 3).map(listing => (
+                          <GameCard key={`listing-${listing.id}`}>
+                            <GameHeader>
+                              <div>
+                                <strong>Listing #{listing.id}</strong>
+                                <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                                  {listing.nft_name} - ${listing.asking_price}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                                  {formatAddress(listing.creator)}
+                                </div>
                               </div>
-                              <div style={{ fontSize: '0.8rem', color: '#888' }}>
-                                {formatAddress(listing.creator)}
+                              <GameStatus status={listing.status}>
+                                {listing.status}
+                              </GameStatus>
+                            </GameHeader>
+                          </GameCard>
+                        ))}
+                      </div>
+                      <div>
+                        <h4>Recent Games</h4>
+                        {games.slice(0, 3).map(game => (
+                          <GameCard key={`game-${game.id}`}>
+                            <GameHeader>
+                              <div>
+                                <strong>Game #{game.id}</strong>
+                                <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                                  {game.nft_name} - ${game.final_price}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                                  {formatAddress(game.creator)} vs {formatAddress(game.challenger)}
+                                </div>
                               </div>
-                            </div>
-                            <GameStatus status={listing.status}>
-                              {listing.status}
-                            </GameStatus>
-                          </GameHeader>
-                        </GameCard>
-                      ))}
-                    </div>
-                    <div>
-                      <h4>Recent Games</h4>
-                      {games.slice(0, 3).map(game => (
-                        <GameCard key={`game-${game.id}`}>
-                          <GameHeader>
-                            <div>
-                              <strong>Game #{game.id}</strong>
-                              <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-                                {game.nft_name} - ${game.final_price}
-                              </div>
-                              <div style={{ fontSize: '0.8rem', color: '#888' }}>
-                                {formatAddress(game.creator)} vs {formatAddress(game.challenger)}
-                              </div>
-                            </div>
-                            <GameStatus status={game.status}>
-                              {game.status}
-                            </GameStatus>
-                          </GameHeader>
-                        </GameCard>
-                      ))}
+                              <GameStatus status={game.status}>
+                                {game.status}
+                              </GameStatus>
+                            </GameHeader>
+                          </GameCard>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'listings' && (
-              <div>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                  <SearchBar>
-                    <Search size={20} />
-                    <input
-                      type="text"
-                      placeholder="Search by listing ID, NFT name, or address..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </SearchBar>
-                  
-                  <Button 
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(`${API_URL}/api/admin/listings`, {
-                          method: 'DELETE'
-                        })
-                        if (response.ok) {
-                          addNotification('success', 'All listings cleared!')
-                          loadData()
+              {activeTab === 'listings' && (
+                <div>
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                    <SearchBar>
+                      <Search size={20} />
+                      <input
+                        type="text"
+                        placeholder="Search by listing ID, NFT name, or address..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </SearchBar>
+                    
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`${API_URL}/api/admin/listings`, {
+                            method: 'DELETE'
+                          })
+                          if (response.ok) {
+                            addNotification('success', 'All listings cleared!')
+                            loadData()
+                          }
+                        } catch (error) {
+                          addNotification('error', 'Failed to clear listings')
                         }
-                      } catch (error) {
-                        addNotification('error', 'Failed to clear listings')
-                      }
-                    }}
-                    style={{ background: '#ff4444', whiteSpace: 'nowrap' }}
-                  >
-                    🗑️ Clear All Listings
-                  </Button>
-                </div>
-                
-                <GameList>
-                  {filteredListings.map(listing => (
-                    <GameCard key={listing.id}>
-                      <GameHeader onClick={() => setExpandedGame(expandedGame === listing.id ? null : listing.id)}>
-                        <div>
-                          <h4>Listing #{listing.id}</h4>
-                          <p>NFT: {listing.nft_name}</p>
-                          <p>Price: ${listing.asking_price}</p>
-                          <p>Status: <span style={{ color: getStatusColor(listing.status) }}>{listing.status}</span></p>
-                        </div>
-                        <ChevronDown style={{ transform: expandedGame === listing.id ? 'rotate(180deg)' : 'none' }} />
-                      </GameHeader>
-                      
-                      {expandedGame === listing.id && (
-                        <GameDetails>
-                          <p><strong>Creator:</strong> {formatAddress(listing.creator)}</p>
-                          <p><strong>NFT Contract:</strong> {formatAddress(listing.nft_contract)}</p>
-                          <p><strong>Token ID:</strong> {listing.nft_token_id}</p>
-                          <p><strong>Collection:</strong> {listing.nft_collection}</p>
-                          <p><strong>Created:</strong> {formatDate(listing.created_at)}</p>
-                          
-                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                            <Button 
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch(`${API_URL}/api/admin/listings/${listing.id}`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ status: 'open' })
-                                  })
-                                  if (response.ok) {
-                                    addNotification('success', 'Listing reopened!')
-                                    loadData()
-                                  }
-                                } catch (error) {
-                                  addNotification('error', 'Failed to reopen listing')
-                                }
-                              }}
-                              style={{ background: '#00cc00' }}
-                            >
-                              ↗️ Reopen Listing
-                            </Button>
+                      }}
+                      style={{ background: '#ff4444', whiteSpace: 'nowrap' }}
+                    >
+                      🗑️ Clear All Listings
+                    </Button>
+                  </div>
+                  
+                  <GameList>
+                    {filteredListings.map(listing => (
+                      <GameCard key={listing.id}>
+                        <GameHeader onClick={() => setExpandedGame(expandedGame === listing.id ? null : listing.id)}>
+                          <div>
+                            <h4>Listing #{listing.id}</h4>
+                            <p>NFT: {listing.nft_name}</p>
+                            <p>Price: ${listing.asking_price}</p>
+                            <p>Status: <span style={{ color: getStatusColor(listing.status) }}>{listing.status}</span></p>
+                          </div>
+                          <ChevronDown style={{ transform: expandedGame === listing.id ? 'rotate(180deg)' : 'none' }} />
+                        </GameHeader>
+                        
+                        {expandedGame === listing.id && (
+                          <GameDetails>
+                            <p><strong>Creator:</strong> {formatAddress(listing.creator)}</p>
+                            <p><strong>NFT Contract:</strong> {formatAddress(listing.nft_contract)}</p>
+                            <p><strong>Token ID:</strong> {listing.nft_token_id}</p>
+                            <p><strong>Collection:</strong> {listing.nft_collection}</p>
+                            <p><strong>Created:</strong> {formatDate(listing.created_at)}</p>
                             
-                            <Button 
-                              onClick={async () => {
-                                if (confirm('Delete this listing?')) {
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                              <Button 
+                                onClick={async () => {
                                   try {
                                     const response = await fetch(`${API_URL}/api/admin/listings/${listing.id}`, {
-                                      method: 'DELETE'
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: 'open' })
                                     })
                                     if (response.ok) {
-                                      addNotification('success', 'Listing deleted!')
+                                      addNotification('success', 'Listing reopened!')
                                       loadData()
                                     }
                                   } catch (error) {
-                                    addNotification('error', 'Failed to delete listing')
+                                    addNotification('error', 'Failed to reopen listing')
                                   }
-                                }
-                              }}
-                              style={{ background: '#ff4444' }}
-                            >
-                              🗑️ Delete Listing
-                            </Button>
-                            
-                            <Button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/game/${listing.id}`)
-                                addNotification('success', 'Listing URL copied!')
-                              }}
-                              style={{ background: '#0088ff' }}
-                            >
-                              🔗 Copy URL
-                            </Button>
-                          </div>
-                        </GameDetails>
-                      )}
-                    </GameCard>
-                  ))}
-                </GameList>
-              </div>
-            )}
-
-            {activeTab === 'games' && (
-              <div>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                  <SearchBar>
-                    <Search size={20} />
-                    <input
-                      type="text"
-                      placeholder="Search by game ID or address..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </SearchBar>
-                  
-                  <Button 
-                    onClick={syncCancelledGames}
-                    style={{ background: '#00cc00', whiteSpace: 'nowrap' }}
-                  >
-                    🔄 Sync Cancelled Games
-                  </Button>
-                  <Button 
-                    onClick={updateAllNFTMetadata}
-                    style={{ background: '#0088ff', whiteSpace: 'nowrap' }}
-                  >
-                    🖼️ Update NFT Metadata
-                  </Button>
-                  <Button 
-                    onClick={clearAllGames}
-                    style={{ background: '#ff4444', whiteSpace: 'nowrap' }}
-                  >
-                    🗑️ Clear All Games
-                  </Button>
-                </div>
-                
-                <GameList>
-                  {filteredGames.map(game => (
-                    <GameCard key={game.id}>
-                      <GameHeader onClick={() => setExpandedGame(expandedGame === game.id ? null : game.id)}>
-                        <div>
-                          <h4>Game #{game.id}</h4>
-                          <p>NFT: {game.nft_name}</p>
-                          <p>Status: <span style={{ color: getStatusColor(game.status) }}>{game.status}</span></p>
-                        </div>
-                        <ChevronDown style={{ transform: expandedGame === game.id ? 'rotate(180deg)' : 'none' }} />
-                      </GameHeader>
-                      
-                      {expandedGame === game.id && (
-                        <GameDetails>
-                          <p><strong>Creator:</strong> {formatAddress(game.creator)}</p>
-                          <p><strong>Challenger:</strong> {formatAddress(game.challenger || game.joiner)}</p>
-                          <p><strong>Price:</strong> ${game.final_price || game.price_usd} USD</p>
-                          <p><strong>Contract Game ID:</strong> {game.blockchain_game_id || game.contract_game_id || 'N/A'}</p>
-                          <p><strong>Creator Deposited:</strong> {game.creator_deposited ? '✅' : '❌'}</p>
-                          <p><strong>Challenger Deposited:</strong> {game.challenger_deposited ? '✅' : '❌'}</p>
-                          <p><strong>Created:</strong> {formatDate(game.created_at)}</p>
-                          {game.deposit_deadline && (
-                            <p><strong>Deposit Deadline:</strong> {formatDate(game.deposit_deadline)}</p>
-                          )}
-                          
-                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                            {game.status === 'waiting' && (
-                              <Button 
-                                onClick={() => cancelGameInDB(game.id)}
-                                style={{ background: '#ff4444' }}
-                              >
-                                Cancel Game
-                              </Button>
-                            )}
-                            
-                            {game.contract_game_id && game.status === 'waiting' && (
-                              <Button 
-                                onClick={() => emergencyWithdrawNFT(game.id)}
-                                style={{ background: '#ff8800' }}
-                              >
-                                Emergency Withdraw NFT
-                              </Button>
-                            )}
-                            
-                            <Button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/game/${game.id}`)
-                                addNotification('success', 'Game URL copied!')
-                              }}
-                              style={{ background: '#0088ff' }}
-                            >
-                              Copy Game URL
-                            </Button>
-                            
-                            {game.contract_game_id && (
-                              <Button 
-                                onClick={() => syncGameStatus(game.id)}
+                                }}
                                 style={{ background: '#00cc00' }}
                               >
-                                🔄 Sync Status
+                                ↗️ Reopen Listing
                               </Button>
+                              
+                              <Button 
+                                onClick={async () => {
+                                  if (confirm('Delete this listing?')) {
+                                    try {
+                                      const response = await fetch(`${API_URL}/api/admin/listings/${listing.id}`, {
+                                        method: 'DELETE'
+                                      })
+                                      if (response.ok) {
+                                        addNotification('success', 'Listing deleted!')
+                                        loadData()
+                                      }
+                                    } catch (error) {
+                                      addNotification('error', 'Failed to delete listing')
+                                    }
+                                  }
+                                }}
+                                style={{ background: '#ff4444' }}
+                              >
+                                🗑️ Delete Listing
+                              </Button>
+                              
+                              <Button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/game/${listing.id}`)
+                                  addNotification('success', 'Listing URL copied!')
+                                }}
+                                style={{ background: '#0088ff' }}
+                              >
+                                🔗 Copy URL
+                              </Button>
+                            </div>
+                          </GameDetails>
+                        )}
+                      </GameCard>
+                    ))}
+                  </GameList>
+                </div>
+              )}
+
+              {activeTab === 'games' && (
+                <div>
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                    <SearchBar>
+                      <Search size={20} />
+                      <input
+                        type="text"
+                        placeholder="Search by game ID or address..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </SearchBar>
+                    
+                    <Button 
+                      onClick={syncCancelledGames}
+                      style={{ background: '#00cc00', whiteSpace: 'nowrap' }}
+                    >
+                      🔄 Sync Cancelled Games
+                    </Button>
+                    <Button 
+                      onClick={updateAllNFTMetadata}
+                      style={{ background: '#0088ff', whiteSpace: 'nowrap' }}
+                    >
+                      🖼️ Update NFT Metadata
+                    </Button>
+                    <Button 
+                      onClick={clearAllGames}
+                      style={{ background: '#ff4444', whiteSpace: 'nowrap' }}
+                    >
+                      🗑️ Clear All Games
+                    </Button>
+                  </div>
+                  
+                  <GameList>
+                    {filteredGames.map(game => (
+                      <GameCard key={game.id}>
+                        <GameHeader onClick={() => setExpandedGame(expandedGame === game.id ? null : game.id)}>
+                          <div>
+                            <h4>Game #{game.id}</h4>
+                            <p>NFT: {game.nft_name}</p>
+                            <p>Status: <span style={{ color: getStatusColor(game.status) }}>{game.status}</span></p>
+                          </div>
+                          <ChevronDown style={{ transform: expandedGame === game.id ? 'rotate(180deg)' : 'none' }} />
+                        </GameHeader>
+                        
+                        {expandedGame === game.id && (
+                          <GameDetails>
+                            <p><strong>Creator:</strong> {formatAddress(game.creator)}</p>
+                            <p><strong>Challenger:</strong> {formatAddress(game.challenger || game.joiner)}</p>
+                            <p><strong>Price:</strong> ${game.final_price || game.price_usd} USD</p>
+                            <p><strong>Contract Game ID:</strong> {game.blockchain_game_id || game.contract_game_id || 'N/A'}</p>
+                            <p><strong>Creator Deposited:</strong> {game.creator_deposited ? '✅' : '❌'}</p>
+                            <p><strong>Challenger Deposited:</strong> {game.challenger_deposited ? '✅' : '❌'}</p>
+                            <p><strong>Created:</strong> {formatDate(game.created_at)}</p>
+                            {game.deposit_deadline && (
+                              <p><strong>Deposit Deadline:</strong> {formatDate(game.deposit_deadline)}</p>
                             )}
                             
-                            <Button 
-                              onClick={async () => {
-                                try {
-                                  addNotification('info', `Updating NFT metadata for game ${game.id}...`)
-                                  const response = await fetch(`${API_URL}/api/games/${game.id}/update-nft-metadata`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' }
-                                  })
-                                  
-                                  if (response.ok) {
-                                    const result = await response.json()
-                                    addNotification('success', `NFT metadata updated for game ${game.id}!`)
-                                    await loadData()
-                                  } else {
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                              {game.status === 'waiting' && (
+                                <Button 
+                                  onClick={() => cancelGameInDB(game.id)}
+                                  style={{ background: '#ff4444' }}
+                                >
+                                  Cancel Game
+                                </Button>
+                              )}
+                              
+                              {game.contract_game_id && game.status === 'waiting' && (
+                                <Button 
+                                  onClick={() => emergencyWithdrawNFT(game.id)}
+                                  style={{ background: '#ff8800' }}
+                                >
+                                  Emergency Withdraw NFT
+                                </Button>
+                              )}
+                              
+                              <Button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/game/${game.id}`)
+                                  addNotification('success', 'Game URL copied!')
+                                }}
+                                style={{ background: '#0088ff' }}
+                              >
+                                Copy Game URL
+                              </Button>
+                              
+                              {game.contract_game_id && (
+                                <Button 
+                                  onClick={() => syncGameStatus(game.id)}
+                                  style={{ background: '#00cc00' }}
+                                >
+                                  🔄 Sync Status
+                                </Button>
+                              )}
+                              
+                              <Button 
+                                onClick={async () => {
+                                  try {
+                                    addNotification('info', `Updating NFT metadata for game ${game.id}...`)
+                                    const response = await fetch(`${API_URL}/api/games/${game.id}/update-nft-metadata`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' }
+                                    })
+                                    
+                                    if (response.ok) {
+                                      const result = await response.json()
+                                      addNotification('success', `NFT metadata updated for game ${game.id}!`)
+                                      await loadData()
+                                    } else {
+                                      addNotification('error', 'Failed to update NFT metadata')
+                                    }
+                                  } catch (error) {
+                                    console.error('Error updating NFT metadata:', error)
                                     addNotification('error', 'Failed to update NFT metadata')
                                   }
-                                } catch (error) {
-                                  console.error('Error updating NFT metadata:', error)
-                                  addNotification('error', 'Failed to update NFT metadata')
-                                }
-                              }}
-                              style={{ background: '#0088ff' }}
-                            >
-                              🖼️ Update NFT
-                            </Button>
-                          </div>
-                        </GameDetails>
-                      )}
+                                }}
+                                style={{ background: '#0088ff' }}
+                              >
+                                🖼️ Update NFT
+                              </Button>
+                            </div>
+                          </GameDetails>
+                        )}
+                      </GameCard>
+                    ))}
+                  </GameList>
+                </div>
+              )}
+
+              {activeTab === 'players' && (
+                <div>
+                  <h3>Player Statistics</h3>
+                  {players.map(player => (
+                    <GameCard key={player.address}>
+                      <GameHeader>
+                        <div>
+                          <strong>{formatAddress(player.address)}</strong>
+                        </div>
+                      </GameHeader>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                        <div>
+                          <strong>Listings Created:</strong> {player.listingsCreated || 0}
+                        </div>
+                        <div>
+                          <strong>Games Created:</strong> {player.gamesCreated || 0}
+                        </div>
+                        <div>
+                          <strong>Games Won:</strong> {player.gamesWon || 0}
+                        </div>
+                        <div>
+                          <strong>Total Volume:</strong> ${player.totalVolume.toFixed(2)}
+                        </div>
+                      </div>
                     </GameCard>
                   ))}
-                </GameList>
-              </div>
-            )}
+                </div>
+              )}
 
-            {activeTab === 'players' && (
-              <div>
-                <h3>Player Statistics</h3>
-                {players.map(player => (
-                  <GameCard key={player.address}>
-                    <GameHeader>
-                      <div>
-                        <strong>{formatAddress(player.address)}</strong>
-                      </div>
-                    </GameHeader>
+              {activeTab === 'settings' && (
+                <div>
+                  <h3>Platform Settings</h3>
+                  <SettingsForm>
+                    <FormGroup>
+                      <Label>Platform Fee Percentage</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={settings.platformFeePercent}
+                        onChange={(e) => setSettings(prev => ({ ...prev, platformFeePercent: parseFloat(e.target.value) }))}
+                      />
+                    </FormGroup>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                      <div>
-                        <strong>Listings Created:</strong> {player.listingsCreated || 0}
-                      </div>
-                      <div>
-                        <strong>Games Created:</strong> {player.gamesCreated || 0}
-                      </div>
-                      <div>
-                        <strong>Games Won:</strong> {player.gamesWon || 0}
-                      </div>
-                      <div>
-                        <strong>Total Volume:</strong> ${player.totalVolume.toFixed(2)}
-                      </div>
-                    </div>
-                  </GameCard>
-                ))}
-              </div>
-            )}
+                    <FormGroup>
+                      <Label>Listing Fee (USD)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={settings.listingFeeUSD}
+                        onChange={(e) => setSettings(prev => ({ ...prev, listingFeeUSD: parseFloat(e.target.value) }))}
+                      />
+                    </FormGroup>
+                    
+                    <Button onClick={updatePlatformFee} disabled={!contractService.currentChain}>
+                      Update Platform Fee
+                    </Button>
+                    
+                    <Button onClick={updateListingFee} disabled={!contractService.currentChain}>
+                      Update Listing Fee
+                    </Button>
+                  </SettingsForm>
+                </div>
+              )}
 
-            {activeTab === 'settings' && (
-              <div>
-                <h3>Platform Settings</h3>
-                <SettingsForm>
-                  <FormGroup>
-                    <Label>Platform Fee Percentage</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={settings.platformFeePercent}
-                      onChange={(e) => setSettings(prev => ({ ...prev, platformFeePercent: parseFloat(e.target.value) }))}
-                    />
-                  </FormGroup>
+              {activeTab === 'emergency' && (
+                <div>
+                  <h3 style={{ color: '#ff4444', marginBottom: '2rem' }}>⚠️ Emergency Controls</h3>
                   
-                  <FormGroup>
-                    <Label>Listing Fee (USD)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.listingFeeUSD}
-                      onChange={(e) => setSettings(prev => ({ ...prev, listingFeeUSD: parseFloat(e.target.value) }))}
-                    />
-                  </FormGroup>
+                  {/* User NFT Recovery Section */}
+                  <div style={{ 
+                    background: 'rgba(255, 68, 68, 0.1)', 
+                    border: '2px solid #ff4444',
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    marginBottom: '2rem'
+                  }}>
+                    <h4 style={{ color: '#ff4444', marginBottom: '1rem' }}>🚨 User NFT Recovery</h4>
+                    <p style={{ marginBottom: '1rem' }}>Help users recover their NFTs if they're stuck in game contracts.</p>
+                    <EmergencyRecovery />
+                  </div>
                   
-                  <Button onClick={updatePlatformFee} disabled={!contractService.currentChain}>
-                    Update Platform Fee
-                  </Button>
+                  <div style={{ 
+                    background: 'rgba(255, 0, 0, 0.1)', 
+                    border: '2px solid #ff4444',
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    marginBottom: '2rem'
+                  }}>
+                    <h4>Pause All Games</h4>
+                    <p>This will prevent any new games from being created or joined.</p>
+                    <Button 
+                      onClick={pauseAllGames}
+                      style={{ background: '#ff4444', marginTop: '1rem' }}
+                    >
+                      🛑 PAUSE ALL GAMES
+                    </Button>
+                  </div>
                   
-                  <Button onClick={updateListingFee} disabled={!contractService.currentChain}>
-                    Update Listing Fee
-                  </Button>
-                </SettingsForm>
-              </div>
-            )}
-
-            {activeTab === 'emergency' && (
-              <div>
-                <h3 style={{ color: '#ff4444', marginBottom: '2rem' }}>⚠️ Emergency Controls</h3>
-                
-                {/* User NFT Recovery Section */}
-                <div style={{ 
-                  background: 'rgba(255, 68, 68, 0.1)', 
-                  border: '2px solid #ff4444',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                  marginBottom: '2rem'
-                }}>
-                  <h4 style={{ color: '#ff4444', marginBottom: '1rem' }}>🚨 User NFT Recovery</h4>
-                  <p style={{ marginBottom: '1rem' }}>Help users recover their NFTs if they're stuck in game contracts.</p>
-                  <EmergencyRecovery />
-                </div>
-                
-                <div style={{ 
-                  background: 'rgba(255, 0, 0, 0.1)', 
-                  border: '2px solid #ff4444',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                  marginBottom: '2rem'
-                }}>
-                  <h4>Pause All Games</h4>
-                  <p>This will prevent any new games from being created or joined.</p>
-                  <Button 
-                    onClick={pauseAllGames}
-                    style={{ background: '#ff4444', marginTop: '1rem' }}
-                  >
-                    🛑 PAUSE ALL GAMES
-                  </Button>
-                </div>
-                
-                <div style={{ 
-                  background: 'rgba(255, 215, 0, 0.1)', 
-                  border: '2px solid #FFD700',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                  marginBottom: '2rem'
-                }}>
-                  <h4>Withdraw Platform Fees</h4>
-                  <p>Withdraw accumulated platform fees from the contract.</p>
-                  <Button 
-                    onClick={withdrawPlatformFees}
-                    style={{ background: '#FFD700', color: '#000', marginTop: '1rem' }}
-                  >
-                    💰 Withdraw Fees
-                  </Button>
-                </div>
-                
-                <div style={{ 
-                  background: 'rgba(0, 0, 0, 0.3)', 
-                  borderRadius: '12px',
-                  padding: '2rem'
-                }}>
-                  <h4>Database Admin</h4>
-                  <p>Direct database management (use with caution).</p>
-                  <Button 
-                    onClick={() => window.open('/database-admin', '_blank')}
-                    style={{ background: '#666', marginTop: '1rem' }}
-                  >
-                    🗄️ Open Database Admin
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'nftManagement' && (
-              <div>
-                <h3 style={{ color: '#00FF41', marginBottom: '2rem' }}>🪙 Contract NFT Management</h3>
-                
-                {/* Load NFTs Section */}
-                <div style={{ 
-                  background: 'rgba(0, 255, 65, 0.1)', 
-                  border: '2px solid #00FF41',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                  marginBottom: '2rem'
-                }}>
-                  <h4 style={{ color: '#00FF41', marginBottom: '1rem' }}>📊 Load Contract NFTs</h4>
-                  <p style={{ marginBottom: '1rem' }}>Load all NFTs currently held in the game contract.</p>
-                  <Button 
-                    onClick={loadContractNFTs}
-                    disabled={isLoadingNFTs}
-                    style={{ background: '#00FF41', color: '#000', marginTop: '1rem' }}
-                  >
-                    {isLoadingNFTs ? '🔄 Loading...' : '📥 Load NFTs'}
-                  </Button>
-                  {contractNFTs.length > 0 && (
-                    <div style={{ marginTop: '1rem', color: '#00FF41' }}>
-                      Loaded {contractNFTs.length} NFTs from contract
-                    </div>
-                  )}
-                </div>
-
-                {/* Withdrawal Section */}
-                {contractNFTs.length > 0 && (
                   <div style={{ 
                     background: 'rgba(255, 215, 0, 0.1)', 
                     border: '2px solid #FFD700',
@@ -1963,178 +1903,243 @@ export default function AdminPanel() {
                     padding: '2rem',
                     marginBottom: '2rem'
                   }}>
-                    <h4 style={{ color: '#FFD700', marginBottom: '1rem' }}>💰 Withdraw NFTs</h4>
-                    <p style={{ marginBottom: '1rem' }}>Select NFTs to withdraw to your wallet.</p>
-                    
-                    <div style={{ marginBottom: '1rem' }}>
-                      <input
-                        type="text"
-                        placeholder={`Enter withdrawal address (default: ${walletAddress})`}
-                        value={withdrawalAddress}
-                        onChange={(e) => setWithdrawalAddress(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '0.75rem',
-                          borderRadius: '8px',
-                          border: '1px solid rgba(255, 215, 0, 0.3)',
-                          background: 'rgba(0, 0, 0, 0.3)',
-                          color: '#fff',
-                          marginBottom: '1rem'
-                        }}
-                      />
-                      <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem' }}>
-                        Leave empty to withdraw to your connected wallet: {formatAddress(walletAddress)}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                      <Button 
-                        onClick={selectAllNFTs}
-                        style={{ background: '#FFD700', color: '#000' }}
-                      >
-                        Select All NFTs ({contractNFTs.filter(nft => nft.nftContract !== '0x0000000000000000000000000000000000000000').length})
-                      </Button>
-                      <Button 
-                        onClick={deselectAllNFTs}
-                        style={{ background: '#666' }}
-                      >
-                        Deselect All
-                      </Button>
-                      <Button 
-                        onClick={withdrawSelectedNFTs}
-                        disabled={selectedNFTsForWithdrawal.length === 0}
-                        style={{ 
-                          background: selectedNFTsForWithdrawal.length > 0 ? '#ff4444' : '#666',
-                          color: '#fff'
-                        }}
-                      >
-                        Withdraw Selected ({selectedNFTsForWithdrawal.length})
-                      </Button>
-                    </div>
+                    <h4>Withdraw Platform Fees</h4>
+                    <p>Withdraw accumulated platform fees from the contract.</p>
+                    <Button 
+                      onClick={withdrawPlatformFees}
+                      style={{ background: '#FFD700', color: '#000', marginTop: '1rem' }}
+                    >
+                      💰 Withdraw Fees
+                    </Button>
                   </div>
-                )}
-
-                {/* NFT List */}
-                {contractNFTs.length > 0 && (
+                  
                   <div style={{ 
-                    background: 'rgba(255, 255, 255, 0.05)', 
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(0, 0, 0, 0.3)', 
                     borderRadius: '12px',
                     padding: '2rem'
                   }}>
-                    <h4 style={{ marginBottom: '1rem' }}>📋 Contract NFTs ({contractNFTs.length})</h4>
-                    
+                    <h4>Database Admin</h4>
+                    <p>Direct database management (use with caution).</p>
+                    <Button 
+                      onClick={() => window.open('/database-admin', '_blank')}
+                      style={{ background: '#666', marginTop: '1rem' }}
+                    >
+                      🗄️ Open Database Admin
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'nftManagement' && (
+                <div>
+                  <h3 style={{ color: '#00FF41', marginBottom: '2rem' }}>🪙 Contract NFT Management</h3>
+                  
+                  {/* Load NFTs Section */}
+                  <div style={{ 
+                    background: 'rgba(0, 255, 65, 0.1)', 
+                    border: '2px solid #00FF41',
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    marginBottom: '2rem'
+                  }}>
+                    <h4 style={{ color: '#00FF41', marginBottom: '1rem' }}>📊 Load Contract NFTs</h4>
+                    <p style={{ marginBottom: '1rem' }}>Load all NFTs currently held in the game contract.</p>
+                    <Button 
+                      onClick={loadContractNFTs}
+                      disabled={isLoadingNFTs}
+                      style={{ background: '#00FF41', color: '#000', marginTop: '1rem' }}
+                    >
+                      {isLoadingNFTs ? '🔄 Loading...' : '📥 Load NFTs'}
+                    </Button>
+                    {contractNFTs.length > 0 && (
+                      <div style={{ marginTop: '1rem', color: '#00FF41' }}>
+                        Loaded {contractNFTs.length} NFTs from contract
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Withdrawal Section */}
+                  {contractNFTs.length > 0 && (
                     <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                      gap: '1rem' 
+                      background: 'rgba(255, 215, 0, 0.1)', 
+                      border: '2px solid #FFD700',
+                      borderRadius: '12px',
+                      padding: '2rem',
+                      marginBottom: '2rem'
                     }}>
-                      {contractNFTs.map((nft, index) => {
-                        const isSelected = selectedNFTsForWithdrawal.some(selected => 
-                          selected.uniqueKey === nft.uniqueKey
-                        )
-                        
-                        return (
-                          <div
-                            key={`${nft.nftContract}-${nft.tokenId}-${index}`}
-                            style={{
-                              background: isSelected ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                              border: isSelected ? '2px solid #FFD700' : '1px solid rgba(255, 255, 255, 0.1)',
-                              borderRadius: '12px',
-                              padding: '1rem',
-                              cursor: 'pointer',
-                              transition: 'all 0.3s ease',
-                              position: 'relative'
-                            }}
-                            onClick={() => toggleNFTSelection(nft)}
-                          >
-                            {/* NFT Image */}
-                            {nft.metadata?.image && nft.metadata.image !== '' ? (
-                              <div style={{ 
-                                width: '100%', 
-                                height: '200px', 
-                                backgroundImage: `url(${nft.metadata.image})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                borderRadius: '8px',
-                                marginBottom: '1rem'
-                              }} />
-                            ) : (
-                              <div style={{ 
-                                width: '100%', 
-                                height: '200px', 
-                                background: 'linear-gradient(45deg, #333, #666)',
-                                borderRadius: '8px',
-                                marginBottom: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#888',
-                                fontSize: '0.9rem'
-                              }}>
-                                {nft.nftContract === '0x0000000000000000000000000000000000000000' ? 'No NFT' : 'No Image'}
+                      <h4 style={{ color: '#FFD700', marginBottom: '1rem' }}>💰 Withdraw NFTs</h4>
+                      <p style={{ marginBottom: '1rem' }}>Select NFTs to withdraw to your wallet.</p>
+                      
+                      <div style={{ marginBottom: '1rem' }}>
+                        <input
+                          type="text"
+                          placeholder={`Enter withdrawal address (default: ${walletAddress})`}
+                          value={withdrawalAddress}
+                          onChange={(e) => setWithdrawalAddress(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            color: '#fff',
+                            marginBottom: '1rem'
+                          }}
+                        />
+                        <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem' }}>
+                          Leave empty to withdraw to your connected wallet: {formatAddress(walletAddress)}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                        <Button 
+                          onClick={selectAllNFTs}
+                          style={{ background: '#FFD700', color: '#000' }}
+                        >
+                          Select All NFTs ({contractNFTs.filter(nft => nft.nftContract !== '0x0000000000000000000000000000000000000000').length})
+                        </Button>
+                        <Button 
+                          onClick={deselectAllNFTs}
+                          style={{ background: '#666' }}
+                        >
+                          Deselect All
+                        </Button>
+                        <Button 
+                          onClick={withdrawSelectedNFTs}
+                          disabled={selectedNFTsForWithdrawal.length === 0}
+                          style={{ 
+                            background: selectedNFTsForWithdrawal.length > 0 ? '#ff4444' : '#666',
+                            color: '#fff'
+                          }}
+                        >
+                          Withdraw Selected ({selectedNFTsForWithdrawal.length})
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NFT List */}
+                  {contractNFTs.length > 0 && (
+                    <div style={{ 
+                      background: 'rgba(255, 255, 255, 0.05)', 
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      padding: '2rem'
+                    }}>
+                      <h4 style={{ marginBottom: '1rem' }}>📋 Contract NFTs ({contractNFTs.length})</h4>
+                      
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+                        gap: '1rem' 
+                      }}>
+                        {contractNFTs.map((nft, index) => {
+                          const isSelected = selectedNFTsForWithdrawal.some(selected => 
+                            selected.uniqueKey === nft.uniqueKey
+                          )
+                          
+                          return (
+                            <div
+                              key={`${nft.nftContract}-${nft.tokenId}-${index}`}
+                              style={{
+                                background: isSelected ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                border: isSelected ? '2px solid #FFD700' : '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '12px',
+                                padding: '1rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease',
+                                position: 'relative'
+                              }}
+                              onClick={() => toggleNFTSelection(nft)}
+                            >
+                              {/* NFT Image */}
+                              {nft.metadata?.image && nft.metadata.image !== '' ? (
+                                <div style={{ 
+                                  width: '100%', 
+                                  height: '200px', 
+                                  backgroundImage: `url(${nft.metadata.image})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  borderRadius: '8px',
+                                  marginBottom: '1rem'
+                                }} />
+                              ) : (
+                                <div style={{ 
+                                  width: '100%', 
+                                  height: '200px', 
+                                  background: 'linear-gradient(45deg, #333, #666)',
+                                  borderRadius: '8px',
+                                  marginBottom: '1rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#888',
+                                  fontSize: '0.9rem'
+                                }}>
+                                  {nft.nftContract === '0x0000000000000000000000000000000000000000' ? 'No NFT' : 'No Image'}
+                                </div>
+                              )}
+                              
+                              {/* NFT Info */}
+                              <div style={{ marginBottom: '0.5rem' }}>
+                                <strong>{nft.name || `NFT #${nft.tokenId}`}</strong>
                               </div>
-                            )}
-                            
-                            {/* NFT Info */}
-                            <div style={{ marginBottom: '0.5rem' }}>
-                              <strong>{nft.name || `NFT #${nft.tokenId}`}</strong>
-                            </div>
-                            <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
-                              {nft.metadata?.name || `NFT #${nft.tokenId}`}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.5rem' }}>
-                              Contract: {formatAddress(nft.nftContract)}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.5rem' }}>
-                              Token ID: {nft.tokenId || 'N/A'}
-                            </div>
-                            <div style={{ 
-                              fontSize: '0.8rem', 
-                              color: '#00FF41',
-                              fontWeight: 'bold'
-                            }}>
-                              ✅ In Contract
-                            </div>
-                            
-                            {/* Selection indicator */}
-                            {isSelected && (
-                              <div style={{
-                                position: 'absolute',
-                                top: '0.5rem',
-                                right: '0.5rem',
-                                background: '#FFD700',
-                                color: '#000',
-                                borderRadius: '50%',
-                                width: '24px',
-                                height: '24px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '12px',
+                              <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
+                                {nft.metadata?.name || `NFT #${nft.tokenId}`}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.5rem' }}>
+                                Contract: {formatAddress(nft.nftContract)}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.5rem' }}>
+                                Token ID: {nft.tokenId || 'N/A'}
+                              </div>
+                              <div style={{ 
+                                fontSize: '0.8rem', 
+                                color: '#00FF41',
                                 fontWeight: 'bold'
                               }}>
-                                ✓
+                                ✅ In Contract
                               </div>
-                            )}
-                          </div>
-                        )
-                      })}
+                              
+                              {/* Selection indicator */}
+                              {isSelected && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: '0.5rem',
+                                  right: '0.5rem',
+                                  background: '#FFD700',
+                                  color: '#000',
+                                  borderRadius: '50%',
+                                  width: '24px',
+                                  height: '24px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '12px',
+                                  fontWeight: 'bold'
+                                }}>
+                                  ✓
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </ContentArea>
-        </>
-      )}
+                  )}
+                </div>
+              )}
+            </ContentArea>
+          </>
+        )}
 
-      {/* Notifications */}
-      {notifications.map(notification => (
-        <Notification key={notification.id} type={notification.type}>
-          {notification.message}
-        </Notification>
-      ))}
-    </AdminContainer>
+        {/* Notifications */}
+        {notifications.map(notification => (
+          <Notification key={notification.id} type={notification.type}>
+            {notification.message}
+          </Notification>
+        ))}
+      </AdminContainer>
+    </ThemeProvider>
   )
 } 
