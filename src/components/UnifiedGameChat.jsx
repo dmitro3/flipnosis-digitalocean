@@ -248,6 +248,8 @@ const UnifiedGameChat = ({
   socket, 
   connected,
   offeredNFTs = [],
+  showChatInput = true,
+  showOffersInput = true,
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
@@ -764,60 +766,65 @@ const UnifiedGameChat = ({
         <div ref={messagesEndRef} />
       </MessagesContainer>
 
-      {/* Dual Input System */}
-      <DualInputContainer>
-        {/* Chat Input */}
-        <div>
-          <InputLabel>💬 Chat Message</InputLabel>
-          <InputContainer>
-            <Input
-              ref={inputRef}
-              type="text"
-              value={currentMessage}
-              onChange={(e) => setCurrentMessage(e.target.value)}
-              placeholder="Type your message..."
-              disabled={!connected}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
-            />
-            <SendButton
-              onClick={sendMessage}
-              disabled={!connected || !currentMessage.trim()}
-            >
-              Send
-            </SendButton>
-          </InputContainer>
-        </div>
+      {/* Conditional Input System */}
+      {(showChatInput || showOffersInput) && (
+        <DualInputContainer>
+          {/* Chat Input */}
+          {showChatInput && (
+            <div>
+              <InputLabel>💬 Chat Message</InputLabel>
+              <InputContainer>
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  disabled={!connected}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
+                />
+                <SendButton
+                  onClick={sendMessage}
+                  disabled={!connected || !currentMessage.trim()}
+                >
+                  Send
+                </SendButton>
+              </InputContainer>
+            </div>
+          )}
 
-        {/* Crypto Offer Input - Available to all users */}
-        <div>
-          <InputLabel>💰 Crypto Offer (USD)</InputLabel>
-          <OfferInputContainer>
-            <OfferInput
-              type="text"
-              value={cryptoOffer}
-              onChange={(e) => {
-                // Only allow digits and decimal point
-                const value = e.target.value.replace(/[^0-9.]/g, '')
-                // Prevent multiple decimal points
-                const parts = value.split('.')
-                if (parts.length <= 2) {
-                  setCryptoOffer(value)
-                }
-              }}
-              placeholder="Enter USD amount (we'll convert to ETH)..."
-              disabled={!connected}
-              onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
-            />
-            <OfferButton
-              onClick={handleSubmitCryptoOffer}
-              disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
-            >
-              {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
-            </OfferButton>
-          </OfferInputContainer>
-
-        </div>
-      </DualInputContainer>
+          {/* Crypto Offer Input - Available to all users */}
+          {showOffersInput && (
+            <div>
+              <InputLabel>💰 Crypto Offer (USD)</InputLabel>
+              <OfferInputContainer>
+                <OfferInput
+                  type="text"
+                  value={cryptoOffer}
+                  onChange={(e) => {
+                    // Only allow digits and decimal point
+                    const value = e.target.value.replace(/[^0-9.]/g, '')
+                    // Prevent multiple decimal points
+                    const parts = value.split('.')
+                    if (parts.length <= 2) {
+                      setCryptoOffer(value)
+                    }
+                  }}
+                  placeholder="Enter USD amount (we'll convert to ETH)..."
+                  disabled={!connected}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+                />
+                <OfferButton
+                  onClick={handleSubmitCryptoOffer}
+                  disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
+                >
+                  {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+                </OfferButton>
+              </OfferInputContainer>
+            </div>
+          )}
+        </DualInputContainer>
+      )}
 
       {/* Name Modal */}
       {isNameModalOpen && (

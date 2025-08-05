@@ -213,6 +213,11 @@ const GamePage = () => {
   const { address, isMobile } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
 
+  // Tab state for chat/offers
+  const [activeTab, setActiveTab] = useState('chat')
+  const [cryptoOffer, setCryptoOffer] = useState('')
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
+
   // Game state management
   const {
     gameData,
@@ -270,6 +275,39 @@ const GamePage = () => {
 
   // WebSocket management
   const { wsConnected, wsRef, webSocketService } = useWebSocket(gameId, address, gameData)
+
+  // Handle crypto offer submission
+  const handleSubmitCryptoOffer = async () => {
+    if (!cryptoOffer.trim() || !wsConnected || isSubmittingOffer) return
+
+    setIsSubmittingOffer(true)
+    try {
+      const offerData = {
+        type: 'crypto_offer',
+        cryptoAmount: parseFloat(cryptoOffer),
+        timestamp: Date.now(),
+        address: address
+      }
+
+      // Send offer through WebSocket
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'offer',
+          gameId: gameId,
+          data: offerData
+        }))
+      }
+
+      // Clear the input
+      setCryptoOffer('')
+      showSuccess('Crypto offer submitted successfully!')
+    } catch (error) {
+      console.error('Error submitting crypto offer:', error)
+      showError('Failed to submit crypto offer. Please try again.')
+    } finally {
+      setIsSubmittingOffer(false)
+    }
+  }
 
   // Game data loading
   useGameData(
@@ -599,29 +637,241 @@ const GamePage = () => {
                  <div style={{ marginTop: 'auto' }}>
                    {/* Status and Type information removed as requested */}
                  </div>
+                 
+                 {/* Share Buttons */}
+                 <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                   <p style={{ margin: '0 0 0.75rem 0', color: '#CCCCCC', fontSize: '1rem', textAlign: 'center' }}>
+                     <strong>Share this game:</strong>
+                   </p>
+                   <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                     <button
+                       onClick={() => {
+                         const gameUrl = `${window.location.origin}/game/${gameId}`
+                         const shareText = `🎮 Check out this epic NFT flip game!\n\n💎 ${getGameNFTName()} vs $${(getGamePrice() || 0).toFixed(2)} USD\n\n🔥 Join the flip battle now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`
+                         const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`
+                         window.open(url, '_blank', 'width=600,height=400')
+                       }}
+                       style={{
+                         background: 'linear-gradient(45deg, #1DA1F2, #0d8bd9)',
+                         color: 'white',
+                         border: 'none',
+                         borderRadius: '0.5rem',
+                         padding: '0.75rem 1rem',
+                         cursor: 'pointer',
+                         fontSize: '0.9rem',
+                         fontWeight: 'bold',
+                         display: 'flex',
+                         alignItems: 'center',
+                         gap: '0.5rem',
+                         transition: 'all 0.2s ease',
+                         minWidth: '120px',
+                         justifyContent: 'center'
+                       }}
+                       onMouseOver={(e) => e.target.style.transform = 'scale(1.02)'}
+                       onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                     >
+                       🐦 Share on X
+                     </button>
+                     
+                     <button
+                       onClick={() => {
+                         const gameUrl = `${window.location.origin}/game/${gameId}`
+                         const shareText = `🎮 Check out this epic NFT flip game!\n\n💎 ${getGameNFTName()} vs $${(getGamePrice() || 0).toFixed(2)} USD\n\n🔥 Join the flip battle now!\n\n${gameUrl}`
+                         const url = `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(shareText)}`
+                         window.open(url, '_blank', 'width=600,height=400')
+                       }}
+                       style={{
+                         background: 'linear-gradient(45deg, #0088cc, #006699)',
+                         color: 'white',
+                         border: 'none',
+                         borderRadius: '0.5rem',
+                         padding: '0.75rem 1rem',
+                         cursor: 'pointer',
+                         fontSize: '0.9rem',
+                         fontWeight: 'bold',
+                         display: 'flex',
+                         alignItems: 'center',
+                         gap: '0.5rem',
+                         transition: 'all 0.2s ease',
+                         minWidth: '120px',
+                         justifyContent: 'center'
+                       }}
+                       onMouseOver={(e) => e.target.style.transform = 'scale(1.02)'}
+                       onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                     >
+                       📱 Share on TG
+                     </button>
+                   </div>
+                 </div>
                </NFTDetailsContainer>
 
                              <ChatOffersContainer>
-                 <h4 style={{ color: '#00BFFF', margin: '0 0 1rem 0', fontSize: '1.2rem', textAlign: 'center' }}>
-                   Chat & Offers
-                 </h4>
+                 {/* Tab Navigation */}
+                 <div style={{ 
+                   display: 'flex', 
+                   marginBottom: '1rem',
+                   borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                 }}>
+                   <button
+                     onClick={() => setActiveTab('chat')}
+                     style={{
+                       flex: 1,
+                       background: activeTab === 'chat' ? 'linear-gradient(45deg, #00BFFF, #0080FF)' : 'transparent',
+                       color: activeTab === 'chat' ? '#000' : '#00BFFF',
+                       border: 'none',
+                       padding: '0.75rem 1rem',
+                       fontSize: '1rem',
+                       fontWeight: 'bold',
+                       cursor: 'pointer',
+                       borderBottom: activeTab === 'chat' ? '3px solid #00BFFF' : '3px solid transparent',
+                       transition: 'all 0.3s ease'
+                     }}
+                   >
+                     💬 Chat
+                   </button>
+                   <button
+                     onClick={() => setActiveTab('offers')}
+                     style={{
+                       flex: 1,
+                       background: activeTab === 'offers' ? 'linear-gradient(45deg, #FF1493, #FF0066)' : 'transparent',
+                       color: activeTab === 'offers' ? '#000' : '#FF1493',
+                       border: 'none',
+                       padding: '0.75rem 1rem',
+                       fontSize: '1rem',
+                       fontWeight: 'bold',
+                       cursor: 'pointer',
+                       borderBottom: activeTab === 'offers' ? '3px solid #FF1493' : '3px solid transparent',
+                       transition: 'all 0.3s ease'
+                     }}
+                   >
+                     💰 Offers
+                   </button>
+                 </div>
+
+                 {/* Tab Content */}
                  <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
-                   <UnifiedGameChat 
-                     gameId={gameId}
-                     gameData={gameData}
-                     isCreator={isCreator}
-                     socket={wsRef}
-                     connected={wsConnected}
-                     offeredNFTs={offers}
-                     onOfferSubmitted={(offerData) => {
-                       console.log('Offer submitted via unified chat:', offerData)
-                       // Handle offer submission if needed
-                     }}
-                     onOfferAccepted={(offer) => {
-                       console.log('Offer accepted via unified chat:', offer)
-                       // Handle offer acceptance if needed
-                     }}
-                   />
+                   {activeTab === 'chat' ? (
+                     <UnifiedGameChat 
+                       gameId={gameId}
+                       gameData={gameData}
+                       isCreator={isCreator}
+                       socket={wsRef}
+                       connected={wsConnected}
+                       offeredNFTs={offers}
+                       showOffersInput={false}
+                       onOfferSubmitted={(offerData) => {
+                         console.log('Offer submitted via unified chat:', offerData)
+                         // Handle offer submission if needed
+                       }}
+                       onOfferAccepted={(offer) => {
+                         console.log('Offer accepted via unified chat:', offer)
+                         // Handle offer acceptance if needed
+                       }}
+                     />
+                   ) : (
+                     <div style={{ 
+                       flex: '1', 
+                       display: 'flex', 
+                       flexDirection: 'column',
+                       height: '100%'
+                     }}>
+                       {/* Offers Messages Display */}
+                       <div style={{ 
+                         flex: '1', 
+                         overflowY: 'auto',
+                         marginBottom: '1rem',
+                         paddingRight: '0.5rem'
+                       }}>
+                         <UnifiedGameChat 
+                           gameId={gameId}
+                           gameData={gameData}
+                           isCreator={isCreator}
+                           socket={wsRef}
+                           connected={wsConnected}
+                           offeredNFTs={offers}
+                           showChatInput={false}
+                           showOffersInput={false}
+                           onOfferSubmitted={(offerData) => {
+                             console.log('Offer submitted via unified chat:', offerData)
+                             // Handle offer submission if needed
+                           }}
+                           onOfferAccepted={(offer) => {
+                             console.log('Offer accepted via unified chat:', offer)
+                             // Handle offer acceptance if needed
+                           }}
+                         />
+                       </div>
+                       
+                       {/* Offers Input Section */}
+                       <div style={{
+                         padding: '1rem',
+                         background: 'rgba(0, 0, 0, 0.3)',
+                         borderRadius: '0.75rem',
+                         border: '1px solid rgba(255, 20, 147, 0.3)'
+                       }}>
+                         <h5 style={{ 
+                           color: '#FF1493', 
+                           margin: '0 0 0.75rem 0', 
+                           fontSize: '1rem',
+                           textAlign: 'center'
+                         }}>
+                           💰 Make a Crypto Offer
+                         </h5>
+                         <div style={{ display: 'flex', gap: '0.75rem' }}>
+                           <input
+                             type="text"
+                             value={cryptoOffer}
+                             onChange={(e) => {
+                               // Only allow digits and decimal point
+                               const value = e.target.value.replace(/[^0-9.]/g, '')
+                               // Prevent multiple decimal points
+                               const parts = value.split('.')
+                               if (parts.length <= 2) {
+                                 setCryptoOffer(value)
+                               }
+                             }}
+                             placeholder="Enter USD amount..."
+                             style={{
+                               flex: 1,
+                               background: 'rgba(255, 255, 255, 0.1)',
+                               border: '1px solid rgba(255, 255, 255, 0.2)',
+                               borderRadius: '0.5rem',
+                               padding: '0.75rem',
+                               color: '#fff',
+                               fontSize: '0.9rem'
+                             }}
+                             onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+                           />
+                           <button
+                             onClick={handleSubmitCryptoOffer}
+                             disabled={!wsConnected || !cryptoOffer.trim() || isSubmittingOffer}
+                             style={{
+                               background: 'linear-gradient(45deg, #FF1493, #FF0066)',
+                               color: 'white',
+                               border: 'none',
+                               borderRadius: '0.5rem',
+                               padding: '0.75rem 1.5rem',
+                               cursor: 'pointer',
+                               fontSize: '0.9rem',
+                               fontWeight: 'bold',
+                               transition: 'all 0.2s ease',
+                               opacity: (!wsConnected || !cryptoOffer.trim() || isSubmittingOffer) ? 0.5 : 1
+                             }}
+                           >
+                             {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+                           </button>
+                         </div>
+                         <p style={{ 
+                           color: '#CCCCCC', 
+                           fontSize: '0.8rem', 
+                           margin: '0.5rem 0 0 0',
+                           textAlign: 'center'
+                         }}>
+                           Enter the USD amount you want to offer. We'll convert it to ETH automatically.
+                         </p>
+                       </div>
+                     </div>
+                   )}
                  </div>
                </ChatOffersContainer>
                          </ThreeContainerLayout>
