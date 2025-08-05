@@ -503,11 +503,9 @@ const GamePage = () => {
               gameId={gameId}
               address={address}
               offers={offers}
-              depositTimeLeft={depositTimeLeft}
               wsRef={wsRef}
               wsConnected={wsConnected}
               isCreator={isCreator}
-              isJoiner={isJoiner}
               getGameCreator={getGameCreator}
               getGameJoiner={getGameJoiner}
               getGamePrice={getGamePrice}
@@ -518,15 +516,6 @@ const GamePage = () => {
               getGameNFTTokenId={getGameNFTTokenId}
               customHeadsImage={customHeadsImage}
               customTailsImage={customTailsImage}
-              formatTimeLeft={formatTimeLeft}
-              newOffer={newOffer}
-              creatingOffer={creatingOffer}
-              setNewOffer={setNewOffer}
-              setCreatingOffer={setCreatingOffer}
-              createOffer={createOffer}
-              acceptOffer={acceptOffer}
-              rejectOffer={rejectOffer}
-              loadOffers={loadOffers}
             />
           </GameLayout>
         </GameContainer>
