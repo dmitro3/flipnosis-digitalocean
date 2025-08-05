@@ -156,52 +156,11 @@ const GameBottom = ({
           </div>
         )}
         
-        {/* Coin Display */}
-        <div style={{ marginBottom: '1rem' }}>
-          <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC', fontSize: '0.9rem' }}>
-            <strong>Coin:</strong>
-          </p>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-              <img 
-                src={customHeadsImage} 
-                alt="Heads" 
-                style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  borderRadius: '0.25rem',
-                  border: '2px solid #FFD700'
-                }} 
-              />
-              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#CCCCCC' }}>
-                Heads
-              </p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <img 
-                src={customTailsImage} 
-                alt="Tails" 
-                style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  borderRadius: '0.25rem',
-                  border: '2px solid #FFD700'
-                }} 
-              />
-              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#CCCCCC' }}>
-                Tails
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Coin Display - Removed as users can see the coin spinning */}
+        {/* Coin displayer section removed as requested */}
         
         <div style={{ marginTop: 'auto' }}>
-          <p style={{ margin: '0', color: '#CCCCCC', fontSize: '0.8rem' }}>
-            Status: {gameData?.status || 'Unknown'}
-          </p>
-          <p style={{ margin: '0.25rem 0 0 0', color: '#CCCCCC', fontSize: '0.8rem' }}>
-            Type: Game
-          </p>
+          {/* Status and Type information removed as requested */}
         </div>
       </InfoSection>
       

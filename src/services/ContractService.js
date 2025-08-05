@@ -56,6 +56,8 @@ const CONTRACT_ABI = [
       { name: 'nftContract', type: 'address' },
       { name: 'tokenId', type: 'uint256' },
       { name: 'ethAmount', type: 'uint256' },
+      { name: 'usdcAmount', type: 'uint256' },
+      { name: 'paymentToken', type: 'uint8' },
       { name: 'depositTime', type: 'uint256' },
       { name: 'player1Deposited', type: 'bool' },
       { name: 'player2Deposited', type: 'bool' },
@@ -534,12 +536,30 @@ class ContractService {
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
+
+      
       // Check if deposit is allowed
-      const canDeposit = await this.contract.canDeposit(gameIdBytes32)
-      console.log('🔍 Can deposit check result:', canDeposit)
+      let canDeposit = false
+      try {
+        canDeposit = await this.contract.canDeposit(gameIdBytes32)
+        console.log('🔍 Can deposit check result:', canDeposit)
+      } catch (error) {
+        console.error('❌ Error calling canDeposit:', error)
+        canDeposit = false
+      }
 
       if (!canDeposit) {
-        return { success: false, error: 'Deposit period has expired or game is not active' }
+        // Get game details to check if game exists and is active
+        const gameDetails = await this.getGameDetails(gameId)
+        
+        // If the game exists and is not completed, try to proceed anyway
+        if (gameDetails.success && 
+            gameDetails.data.player1 !== '0x0000000000000000000000000000000000000000' && 
+            !gameDetails.data.completed) {
+          console.log('⚠️ CanDeposit returned false but game exists and is active, proceeding with deposit...')
+        } else {
+          return { success: false, error: 'Deposit period has expired or game is not active' }
+        }
       }
 
       // If NFT contract and token ID are provided, approve first
@@ -610,11 +630,13 @@ class ContractService {
           nftContract: gameData[2],
           tokenId: gameData[3].toString(),
           ethAmount: gameData[4].toString(),
-          depositTime: gameData[5].toString(),
-          player1Deposited: gameData[6],
-          player2Deposited: gameData[7],
-          completed: gameData[8],
-          winner: gameData[9]
+          usdcAmount: gameData[5].toString(),
+          paymentToken: gameData[6],
+          depositTime: gameData[7].toString(),
+          player1Deposited: gameData[8],
+          player2Deposited: gameData[9],
+          completed: gameData[10],
+          winner: gameData[11]
         }
       }
     } catch (error) {

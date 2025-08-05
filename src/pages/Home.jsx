@@ -357,8 +357,6 @@ const getAllItems = () => {
   // Convert map to array and filter
   return Array.from(uniqueItems.values()).filter(item => {
     const matchesFilter = activeFilter === 'all' || 
-      (activeFilter === 'listings' && item.isListing) ||
-      (activeFilter === 'games' && !item.isListing) ||
       (activeFilter === item.nft?.chain)
     const matchesSearch = !searchQuery || 
       (item.nft?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -368,22 +366,20 @@ const getAllItems = () => {
 }
 
   const handleItemClick = (item) => {
-    navigate(`/game/${item.displayId}`)
+    // Set the selected flip to show details instead of going directly to game page
+    handleSelectFlip(item)
   }
 
   const filteredItems = getAllItems()
 
   const chainFilters = [
     { key: 'all', name: 'ALL', icon: '🌐' },
-    { key: 'listings', name: 'LISTINGS', icon: '💰' },
-    { key: 'games', name: 'GAMES', icon: '⚔️' },
     { key: 'ethereum', name: 'ETH', icon: '💎' },
     { key: 'base', name: 'BASE', icon: '🔵' },
     { key: 'bnb', name: 'BNB', icon: '🟡' },
     { key: 'avalanche', name: 'AVAX', icon: '🔴' },
     { key: 'polygon', name: 'POLY', icon: '🟣' },
-    { key: 'arbitrum', name: 'ARB', icon: '🔷' },
-    { key: 'optimism', name: 'OPT', icon: '🔶' }
+    { key: 'arbitrum', name: 'ARB', icon: '🔷' }
   ]
 
   const handleSelectFlip = (flip) => {
@@ -1018,7 +1014,7 @@ const getAllItems = () => {
 
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))',
                   gap: window.innerWidth <= 768 ? '0.25rem' : '0.75rem',
                   margin: '1rem 0',
                   width: '100%',

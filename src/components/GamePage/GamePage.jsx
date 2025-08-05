@@ -16,6 +16,7 @@ import GamePayment from './GamePayment'
 import GameBottom from './GameBottom'
 import GameResultPopup from '../GameResultPopup'
 import ProfilePicture from '../ProfilePicture'
+import UnifiedGameChat from '../UnifiedGameChat'
 
 // Hooks and services
 import { useGameState } from './hooks/useGameState'
@@ -49,30 +50,34 @@ const GameLayout = styled.div`
   align-items: center;
 `
 
-const PlayersRow = styled.div`
-  display: flex;
+const ThreeContainerLayout = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 2rem;
   width: 100%;
-  max-width: 800px;
+  max-width: 1400px;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
   
   @media (max-width: 768px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
 `
 
-const PlayerContainer = styled.div`
-  flex: 1;
+const GameStatusContainer = styled.div`
   background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 65, 0.05) 100%);
   padding: 1.5rem;
   border-radius: 1rem;
   border: 2px solid #00FF41;
   backdrop-filter: blur(10px);
   box-shadow: 0 0 30px rgba(0, 255, 65, 0.3), inset 0 0 20px rgba(0, 255, 65, 0.1);
-  min-height: 200px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   position: relative;
   overflow: hidden;
   
@@ -94,13 +99,86 @@ const PlayerContainer = styled.div`
   }
 `
 
-const GameStatusContainer = styled.div`
+const NFTDetailsContainer = styled.div`
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 2px solid #FFD700;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.1) 50%, transparent 70%);
+    animation: shimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+`
+
+const ChatOffersContainer = styled.div`
+  background: linear-gradient(135deg, rgba(0, 191, 255, 0.1) 0%, rgba(0, 191, 255, 0.05) 100%);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 2px solid #00BFFF;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(0, 191, 255, 0.3), inset 0 0 20px rgba(0, 191, 255, 0.1);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(0, 191, 255, 0.1) 50%, transparent 70%);
+    animation: shimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  
+  @media (max-width: 1200px) {
+    grid-column: 1 / -1;
+  }
+`
+
+const StatusSection = styled.div`
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
   padding: 1rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 215, 0, 0.3);
   margin-bottom: 1rem;
   text-align: center;
+`
+
+const PlayerSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+`
+
+const PlayerInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: ${props => props.isActive ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+  border-radius: 0.5rem;
+  border: ${props => props.isActive ? '1px solid rgba(255, 215, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'};
 `
 
 const RoundIndicator = styled.div`
@@ -321,202 +399,307 @@ const GamePage = () => {
               isCreator={isCreator}
             />
 
-            <PlayersRow>
-              <PlayerContainer>
-                <GameStatusContainer>
-                  <h4 style={{ color: '#FFD700', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
-                    Round {gameState.currentRound || 1}
-                  </h4>
-                  {roundCountdown !== null && (
-                    <div style={{
-                      fontSize: '1.2rem',
-                      color: roundCountdown <= 5 ? '#FF4444' : '#00FF41',
-                      fontWeight: 'bold',
-                      textShadow: roundCountdown <= 5 ? '0 0 10px rgba(255, 68, 68, 0.8)' : '0 0 10px rgba(0, 255, 65, 0.5)',
-                      animation: roundCountdown <= 5 ? 'pulse 1s ease-in-out infinite' : 'none'
-                    }}>
-                      ⏰ {roundCountdown}s
-                    </div>
-                  )}
-                  <RoundIndicator>
-                    <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.creatorWins > 0} isLost={gameState.joinerWins > 0}>
-                      1
-                    </RoundDot>
-                    <RoundDot isCurrent={gameState.currentRound === 2} isWon={gameState.creatorWins > 1} isLost={gameState.joinerWins > 1}>
-                      2
-                    </RoundDot>
-                    <RoundDot isCurrent={gameState.currentRound === 3} isWon={gameState.creatorWins > 2} isLost={gameState.joinerWins > 2}>
-                      3
-                    </RoundDot>
-                  </RoundIndicator>
-                </GameStatusContainer>
-                
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '0.75rem',
-                  background: isCreator() ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '0.5rem',
-                  border: isCreator() ? '1px solid rgba(255, 215, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
-                  <div>
-                    <ProfilePicture 
-                      address={getGameCreator()}
-                      size={50}
-                      showAddress={true}
-                    />
-                  </div>
-                  <div style={{ flex: '1' }}>
-                    <h4 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Creator</h4>
-                    <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
-                      Power: {Number(gameState.creatorPower) || 0}
-                    </p>
-                    <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
-                      Wins: {gameState.creatorWins || 0}
-                    </p>
-                    {playerChoices.creator && (
-                      <div style={{ 
-                        marginTop: '0.5rem', 
-                        padding: '0.25rem 0.5rem', 
-                        background: playerChoices.creator === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
-                        border: `1px solid ${playerChoices.creator === 'heads' ? '#00FF41' : '#FF1493'}`,
-                        borderRadius: '0.25rem',
-                        fontSize: '0.8rem',
-                        color: 'white',
-                        textAlign: 'center',
-                        display: 'inline-block'
-                      }}>
-                        Chose: {playerChoices.creator.toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </PlayerContainer>
-              <PlayerContainer>
-                <GameStatusContainer>
-                  <h4 style={{ color: '#FFD700', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
-                    Game Status
-                  </h4>
-                  <div style={{
-                    fontSize: '1rem',
-                    color: '#00FF41',
-                    fontWeight: 'bold',
-                    marginBottom: '0.5rem'
-                  }}>
-                    {gameState.phase === 'choosing' ? '🎯 Choosing Phase' : 
-                     gameState.phase === 'charging' ? '⚡ Charging Phase' :
-                     gameState.phase === 'flipping' ? '🪙 Flipping' :
-                     gameState.phase === 'completed' ? '🏁 Game Complete' : '⏳ Waiting...'}
-                  </div>
-                  {gameState.chargingPlayer && (
-                    <div style={{
-                      color: '#FFD700',
-                      fontSize: '0.9rem',
-                      fontWeight: 'bold',
-                      animation: 'powerPulse 0.4s ease-in-out infinite',
-                      textShadow: '0 0 10px rgba(255, 215, 0, 0.8)'
-                    }}>
-                      ⚡ {gameState.chargingPlayer === getGameCreator() ? 'PLAYER 1' : 'PLAYER 2'} CHARGING ⚡
-                    </div>
-                  )}
-                </GameStatusContainer>
-                
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '0.75rem',
-                  background: isJoiner() ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '0.5rem',
-                  border: isJoiner() ? '1px solid rgba(255, 215, 0, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
-                  <div>
-                    <ProfilePicture 
-                      address={getGameJoiner()}
-                      size={50}
-                      showAddress={true}
-                    />
-                  </div>
-                  <div style={{ flex: '1' }}>
-                    <h4 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Joiner</h4>
-                    <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
-                      Power: {Number(gameState.joinerPower) || 0}
-                    </p>
-                    <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
-                      Wins: {gameState.joinerWins || 0}
-                    </p>
-                    {playerChoices.joiner && (
-                      <div style={{ 
-                        marginTop: '0.5rem', 
-                        padding: '0.25rem 0.5rem', 
-                        background: playerChoices.joiner === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
-                        border: `1px solid ${playerChoices.joiner === 'heads' ? '#00FF41' : '#FF1493'}`,
-                        borderRadius: '0.25rem',
-                        fontSize: '0.8rem',
-                        color: 'white',
-                        textAlign: 'center',
-                        display: 'inline-block'
-                      }}>
-                        Chose: {playerChoices.joiner.toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </PlayerContainer>
-            </PlayersRow>
+                         <ThreeContainerLayout>
+               <GameStatusContainer>
+                 <h4 style={{ color: '#FFD700', margin: '0 0 1rem 0', fontSize: '1.2rem', textAlign: 'center' }}>
+                   Game Status
+                 </h4>
+                 
+                 {/* Round Status */}
+                 <StatusSection>
+                   <h5 style={{ color: '#FFD700', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
+                     Round {gameState.currentRound || 1}
+                   </h5>
+                   {roundCountdown !== null && (
+                     <div style={{
+                       fontSize: '1.2rem',
+                       color: roundCountdown <= 5 ? '#FF4444' : '#00FF41',
+                       fontWeight: 'bold',
+                       textShadow: roundCountdown <= 5 ? '0 0 10px rgba(255, 68, 68, 0.8)' : '0 0 10px rgba(0, 255, 65, 0.5)',
+                       animation: roundCountdown <= 5 ? 'pulse 1s ease-in-out infinite' : 'none'
+                     }}>
+                       ⏰ {roundCountdown}s
+                     </div>
+                   )}
+                   <RoundIndicator>
+                     <RoundDot isCurrent={gameState.currentRound === 1} isWon={gameState.creatorWins > 0} isLost={gameState.joinerWins > 0}>
+                       1
+                     </RoundDot>
+                     <RoundDot isCurrent={gameState.currentRound === 2} isWon={gameState.creatorWins > 1} isLost={gameState.joinerWins > 1}>
+                       2
+                     </RoundDot>
+                     <RoundDot isCurrent={gameState.currentRound === 3} isWon={gameState.creatorWins > 2} isLost={gameState.joinerWins > 2}>
+                       3
+                     </RoundDot>
+                   </RoundIndicator>
+                 </StatusSection>
 
-            <GameControls 
-              gameData={gameData}
-              gameState={gameState}
-              playerChoices={playerChoices}
-              isMyTurn={isMyTurn}
-              isCreator={isCreator}
-              isJoiner={isJoiner}
-              onPlayerChoice={handlePlayerChoice}
-              onAutoFlip={handleAutoFlip}
-            />
+                 {/* Game Phase Status */}
+                 <StatusSection>
+                   <h5 style={{ color: '#FFD700', margin: '0 0 0.5rem 0', fontSize: '1rem' }}>
+                     Phase
+                   </h5>
+                   <div style={{
+                     fontSize: '1rem',
+                     color: '#00FF41',
+                     fontWeight: 'bold',
+                     marginBottom: '0.5rem'
+                   }}>
+                     {gameState.phase === 'choosing' ? '🎯 Choosing Phase' : 
+                      gameState.phase === 'charging' ? '⚡ Charging Phase' :
+                      gameState.phase === 'flipping' ? '🪙 Flipping' :
+                      gameState.phase === 'completed' ? '🏁 Game Complete' : '⏳ Waiting...'}
+                   </div>
+                   {gameState.chargingPlayer && (
+                     <div style={{
+                       color: '#FFD700',
+                       fontSize: '0.9rem',
+                       fontWeight: 'bold',
+                       animation: 'powerPulse 0.4s ease-in-out infinite',
+                       textShadow: '0 0 10px rgba(255, 215, 0, 0.8)'
+                     }}>
+                       ⚡ {gameState.chargingPlayer === getGameCreator() ? 'PLAYER 1' : 'PLAYER 2'} CHARGING ⚡
+                     </div>
+                   )}
+                 </StatusSection>
 
-            <GamePayment 
-              gameData={gameData}
-              gameId={gameId}
-              address={address}
-              depositTimeLeft={depositTimeLeft}
-              ethAmount={ethAmount}
-              contractInitialized={true}
-              countdownInterval={null}
-              getGameCreator={getGameCreator}
-              getGameJoiner={getGameJoiner}
-              getGamePrice={getGamePrice}
-              getGameNFTImage={getGameNFTImage}
-              getGameNFTName={getGameNFTName}
-              getGameNFTCollection={getGameNFTCollection}
-              isCreator={isCreator}
-              isJoiner={isJoiner}
-              formatTimeLeft={formatTimeLeft}
-              startDepositCountdown={startDepositCountdown}
-              loadGameData={loadGameData}
-            />
+                 {/* Players Section */}
+                 <PlayerSection>
+                   <PlayerInfo isActive={isCreator()}>
+                     <div>
+                       <ProfilePicture 
+                         address={getGameCreator()}
+                         size={50}
+                         showAddress={true}
+                       />
+                     </div>
+                     <div style={{ flex: '1' }}>
+                       <h5 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Creator</h5>
+                       <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
+                         Power: {Number(gameState.creatorPower) || 0}
+                       </p>
+                       <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
+                         Wins: {gameState.creatorWins || 0}
+                       </p>
+                       {playerChoices.creator && (
+                         <div style={{ 
+                           marginTop: '0.5rem', 
+                           padding: '0.25rem 0.5rem', 
+                           background: playerChoices.creator === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
+                           border: `1px solid ${playerChoices.creator === 'heads' ? '#00FF41' : '#FF1493'}`,
+                           borderRadius: '0.25rem',
+                           fontSize: '0.8rem',
+                           color: 'white',
+                           textAlign: 'center',
+                           display: 'inline-block'
+                         }}>
+                           Chose: {playerChoices.creator.toUpperCase()}
+                         </div>
+                       )}
+                     </div>
+                   </PlayerInfo>
 
-            <GameBottom 
-              gameData={gameData}
-              gameId={gameId}
-              address={address}
-              offers={offers}
-              wsRef={wsRef}
-              wsConnected={wsConnected}
-              isCreator={isCreator}
-              getGameCreator={getGameCreator}
-              getGameJoiner={getGameJoiner}
-              getGamePrice={getGamePrice}
-              getGameNFTImage={getGameNFTImage}
-              getGameNFTName={getGameNFTName}
-              getGameNFTCollection={getGameNFTCollection}
-              getGameNFTContract={getGameNFTContract}
-              getGameNFTTokenId={getGameNFTTokenId}
-              customHeadsImage={customHeadsImage}
-              customTailsImage={customTailsImage}
-            />
+                   <PlayerInfo isActive={isJoiner()}>
+                     <div>
+                       <ProfilePicture 
+                         address={getGameJoiner()}
+                         size={50}
+                         showAddress={true}
+                       />
+                     </div>
+                     <div style={{ flex: '1' }}>
+                       <h5 style={{ color: '#FFD700', margin: '0 0 0.25rem 0', fontSize: '1rem' }}>Joiner</h5>
+                       <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'white' }}>
+                         Power: {Number(gameState.joinerPower) || 0}
+                       </p>
+                       <p style={{ margin: '0.25rem 0', fontSize: '0.8rem', color: '#ccc' }}>
+                         Wins: {gameState.joinerWins || 0}
+                       </p>
+                       {playerChoices.joiner && (
+                         <div style={{ 
+                           marginTop: '0.5rem', 
+                           padding: '0.25rem 0.5rem', 
+                           background: playerChoices.joiner === 'heads' ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 20, 147, 0.2)',
+                           border: `1px solid ${playerChoices.joiner === 'heads' ? '#00FF41' : '#FF1493'}`,
+                           borderRadius: '0.25rem',
+                           fontSize: '0.8rem',
+                           color: 'white',
+                           textAlign: 'center',
+                           display: 'inline-block'
+                         }}>
+                           Chose: {playerChoices.joiner.toUpperCase()}
+                         </div>
+                       )}
+                     </div>
+                   </PlayerInfo>
+                 </PlayerSection>
+               </GameStatusContainer>
+
+                             <NFTDetailsContainer>
+                 <h4 style={{ color: '#FFD700', margin: '0 0 1rem 0', fontSize: '1.2rem', textAlign: 'center' }}>
+                   NFT Details
+                 </h4>
+                 
+                 {/* NFT Image and Info */}
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                   <img 
+                     src={getGameNFTImage()} 
+                     alt={getGameNFTName()} 
+                     style={{ 
+                       width: '80px', 
+                       height: '80px', 
+                       borderRadius: '0.5rem',
+                       border: '2px solid #FFD700'
+                     }} 
+                   />
+                   <div>
+                     <h5 style={{ margin: '0 0 0.5rem 0', color: '#FFFFFF' }}>
+                       {getGameNFTName()}
+                     </h5>
+                     <p style={{ margin: '0', color: '#CCCCCC', fontSize: '0.9rem' }}>
+                       {getGameNFTCollection()}
+                     </p>
+                   </div>
+                 </div>
+                 
+                 {/* Game Details */}
+                 <div style={{ marginBottom: '1rem' }}>
+                   <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC' }}>
+                     <strong>Creator:</strong> {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
+                   </p>
+                   {getGameJoiner() && (
+                     <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC' }}>
+                       <strong>Player:</strong> {getGameJoiner().slice(0, 6)}...{getGameJoiner().slice(-4)}
+                     </p>
+                   )}
+                   <p style={{ margin: '0 0 0.5rem 0', color: '#FFD700', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                     Price: ${(getGamePrice() || 0).toFixed(2)} USD
+                   </p>
+                   <p style={{ margin: '0', color: '#CCCCCC', fontSize: '0.9rem' }}>
+                     <strong>Chain:</strong> Base (ETH)
+                   </p>
+                 </div>
+                 
+                 {/* External Links */}
+                 {getGameNFTContract() && getGameNFTTokenId() && (
+                   <div style={{ marginBottom: '1rem' }}>
+                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                       <a 
+                         href={`https://basescan.org/token/${getGameNFTContract()}?a=${getGameNFTTokenId()}`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         style={{
+                           background: '#00BFFF',
+                           color: '#000',
+                           padding: '0.25rem 0.5rem',
+                           borderRadius: '0.25rem',
+                           textDecoration: 'none',
+                           fontSize: '0.8rem',
+                           fontWeight: 'bold'
+                         }}
+                       >
+                         Explorer
+                       </a>
+                       <a 
+                         href={`https://opensea.io/assets/base/${getGameNFTContract()}/${getGameNFTTokenId()}`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         style={{
+                           background: '#00FF41',
+                           color: '#000',
+                           padding: '0.25rem 0.5rem',
+                           borderRadius: '0.25rem',
+                           textDecoration: 'none',
+                           fontSize: '0.8rem',
+                           fontWeight: 'bold'
+                         }}
+                       >
+                         OpenSea
+                       </a>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {/* Coin Display */}
+                 <div style={{ marginBottom: '1rem' }}>
+                   <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC', fontSize: '0.9rem' }}>
+                     <strong>Coin:</strong>
+                   </p>
+                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                     <div style={{ textAlign: 'center' }}>
+                       <img 
+                         src={customHeadsImage} 
+                         alt="Heads" 
+                         style={{ 
+                           width: '40px', 
+                           height: '40px', 
+                           borderRadius: '0.25rem',
+                           border: '2px solid #FFD700'
+                         }} 
+                       />
+                       <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#CCCCCC' }}>
+                         Heads
+                       </p>
+                     </div>
+                     <div style={{ textAlign: 'center' }}>
+                       <img 
+                         src={customTailsImage} 
+                         alt="Tails" 
+                         style={{ 
+                           width: '40px', 
+                           height: '40px', 
+                           borderRadius: '0.25rem',
+                           border: '2px solid #FFD700'
+                         }} 
+                       />
+                       <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#CCCCCC' }}>
+                         Tails
+                       </p>
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* Game Status - Removed Status and Type display */}
+                 <div style={{ marginTop: 'auto' }}>
+                   {/* Status and Type information removed as requested */}
+                 </div>
+               </NFTDetailsContainer>
+
+                             <ChatOffersContainer>
+                 <h4 style={{ color: '#00BFFF', margin: '0 0 1rem 0', fontSize: '1.2rem', textAlign: 'center' }}>
+                   Chat & Offers
+                 </h4>
+                 <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+                   <UnifiedGameChat 
+                     gameId={gameId}
+                     gameData={gameData}
+                     isCreator={isCreator}
+                     socket={wsRef}
+                     connected={wsConnected}
+                     offeredNFTs={offers}
+                     onOfferSubmitted={(offerData) => {
+                       console.log('Offer submitted via unified chat:', offerData)
+                       // Handle offer submission if needed
+                     }}
+                     onOfferAccepted={(offer) => {
+                       console.log('Offer accepted via unified chat:', offer)
+                       // Handle offer acceptance if needed
+                     }}
+                   />
+                 </div>
+               </ChatOffersContainer>
+                         </ThreeContainerLayout>
+
+             <GameControls 
+               gameData={gameData}
+               gameState={gameState}
+               playerChoices={playerChoices}
+               isMyTurn={isMyTurn}
+               isCreator={isCreator}
+               isJoiner={isJoiner}
+               onPlayerChoice={handlePlayerChoice}
+               onAutoFlip={handleAutoFlip}
+             />
           </GameLayout>
         </GameContainer>
 
