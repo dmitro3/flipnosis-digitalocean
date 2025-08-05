@@ -196,7 +196,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
-  function handleJoinRoom(socket, data) {
+  async function handleJoinRoom(socket, data) {
     const { roomId } = data
     
     console.log(`👥 Socket ${socket.id} requesting to join room ${roomId}`)
@@ -229,6 +229,25 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         roomId: roomId,
         members: room.size
       }))
+      
+      // Load and send chat history to the new player
+      try {
+        const chatHistory = await dbService.getChatHistory(roomId, 50) // Load last 50 messages
+        console.log(`📚 Loading chat history for room ${roomId}: ${chatHistory.length} messages`)
+        
+        if (chatHistory.length > 0) {
+          // Send chat history to the new player
+          socket.send(JSON.stringify({
+            type: 'chat_history',
+            roomId: roomId,
+            messages: chatHistory
+          }))
+          console.log(`📤 Sent chat history to new player in room ${roomId}`)
+        }
+      } catch (error) {
+        console.error('❌ Error loading chat history:', error)
+      }
+      
     } catch (error) {
       console.error('❌ Failed to send room join confirmation:', error)
     }
@@ -246,20 +265,20 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     
     const senderAddress = socket.address || from || 'anonymous'
     
-    // Save to database
-    const db = dbService.getDatabase()
-    db.run(
-      'INSERT INTO chat_messages (room_id, sender_address, message) VALUES (?, ?, ?)',
-      [roomId, senderAddress, message]
-    )
-    
-    // Broadcast to room
-    broadcastToRoom(roomId, {
-      type: 'chat_message',
-      message,
-      from: senderAddress,
-      timestamp: new Date().toISOString()
-    })
+    try {
+      // Save to database
+      await dbService.saveChatMessage(roomId, senderAddress, message, 'chat')
+      
+      // Broadcast to room
+      broadcastToRoom(roomId, {
+        type: 'chat_message',
+        message,
+        from: senderAddress,
+        timestamp: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('❌ Error saving chat message:', error)
+    }
   }
 
   async function handleGameAction(socket, data, dbService) {
@@ -829,81 +848,157 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   }
 
   // Handle NFT offer (for NFT-vs-NFT games)
-  function handleNftOffer(socket, data) {
+  async function handleNftOffer(socket, data) {
     const { gameId, offererAddress, nft, timestamp } = data
     if (!gameId || !offererAddress || !nft) {
       console.error('❌ Invalid NFT offer data:', data)
       return
     }
     
-    // Broadcast to the game room
-    broadcastToRoom(gameId, {
-      type: 'nft_offer',
-      offererAddress,
-      nft,
-      timestamp: timestamp || new Date().toISOString()
-    })
-    console.log('📢 Broadcasted nft_offer to room', gameId)
+    try {
+      // Save to database
+      await dbService.saveChatMessage(
+        gameId, 
+        offererAddress, 
+        `NFT offer submitted`, 
+        'offer', 
+        { nft, offerType: 'nft' }
+      )
+      
+      // Broadcast to the game room
+      broadcastToRoom(gameId, {
+        type: 'nft_offer',
+        offererAddress,
+        nft,
+        timestamp: timestamp || new Date().toISOString()
+      })
+      console.log('📢 Broadcasted nft_offer to room', gameId)
+    } catch (error) {
+      console.error('❌ Error saving NFT offer:', error)
+    }
   }
 
   // Handle crypto offer (for NFT-vs-crypto games)
-  function handleCryptoOffer(socket, data) {
+  async function handleCryptoOffer(socket, data) {
     const { gameId, offererAddress, cryptoAmount, timestamp } = data
     if (!gameId || !offererAddress || !cryptoAmount) {
       console.error('❌ Invalid crypto offer data:', data)
       return
     }
     
-    // Broadcast to the game room
-    broadcastToRoom(gameId, {
-      type: 'crypto_offer',
-      offererAddress,
-      cryptoAmount,
-      timestamp: timestamp || new Date().toISOString()
-    })
-    console.log('📢 Broadcasted crypto_offer to room', gameId)
+    try {
+      // Save to database
+      await dbService.saveChatMessage(
+        gameId, 
+        offererAddress, 
+        `Crypto offer of ${cryptoAmount} ETH`, 
+        'offer', 
+        { cryptoAmount, offerType: 'crypto' }
+      )
+      
+      // Broadcast to the game room
+      broadcastToRoom(gameId, {
+        type: 'crypto_offer',
+        offererAddress,
+        cryptoAmount,
+        timestamp: timestamp || new Date().toISOString()
+      })
+      console.log('📢 Broadcasted crypto_offer to room', gameId)
+    } catch (error) {
+      console.error('❌ Error saving crypto offer:', error)
+    }
   }
 
   // Handle offer acceptance (for both NFT and crypto offers)
-  function handleOfferAccepted(socket, data) {
+  async function handleOfferAccepted(socket, data) {
     const { gameId, creatorAddress, acceptedOffer, timestamp } = data
     if (!gameId || !creatorAddress || !acceptedOffer) {
       console.error('❌ Invalid accept offer data:', data)
       return
     }
     
-    // Determine the offer type and broadcast accordingly
-    const offerType = acceptedOffer.cryptoAmount ? 'accept_crypto_offer' : 'accept_nft_offer'
-    
-    // Broadcast acceptance to the game room
-    broadcastToRoom(gameId, {
-      type: offerType,
-      acceptedOffer,
-      creatorAddress,
-      timestamp: timestamp || new Date().toISOString()
-    })
-    console.log(`📢 Broadcasted ${offerType} to room`, gameId)
+    try {
+      // Determine the offer type and broadcast accordingly
+      const offerType = acceptedOffer.cryptoAmount ? 'accept_crypto_offer' : 'accept_nft_offer'
+      
+      // Save acceptance to database
+      await dbService.saveChatMessage(
+        gameId, 
+        creatorAddress, 
+        `Offer accepted`, 
+        'offer_accepted', 
+        { acceptedOffer, offerType }
+      )
+      
+      // Broadcast acceptance to the game room
+      broadcastToRoom(gameId, {
+        type: offerType,
+        acceptedOffer,
+        creatorAddress,
+        timestamp: timestamp || new Date().toISOString()
+      })
+      console.log(`📢 Broadcasted ${offerType} to room`, gameId)
+      
+      // If this is a crypto offer acceptance, trigger the game start process
+      if (acceptedOffer.cryptoAmount) {
+        console.log('🎮 Crypto offer accepted, triggering game start process for game:', gameId)
+        
+        // Save system message to database
+        await dbService.saveChatMessage(
+          gameId, 
+          'system', 
+          `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} ETH to start the battle!`, 
+          'system'
+        )
+        
+        // Broadcast a system message to prompt the joiner to load their crypto
+        broadcastToRoom(gameId, {
+          type: 'chat_message',
+          message: `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} ETH to start the battle!`,
+          from: 'system',
+          timestamp: new Date().toISOString()
+        })
+        
+        // You can add additional logic here to update the game state
+        // For example, setting the game status to 'pending_joiner_deposit'
+      }
+    } catch (error) {
+      console.error('❌ Error saving offer acceptance:', error)
+    }
   }
 
   // Handle offer rejection (for both NFT and crypto offers)
-  function handleOfferRejected(socket, data) {
+  async function handleOfferRejected(socket, data) {
     const { gameId, creatorAddress, rejectedOffer, timestamp } = data
     if (!gameId || !creatorAddress || !rejectedOffer) {
       console.error('❌ Invalid reject offer data:', data)
       return
     }
     
-    // Determine the offer type and broadcast accordingly
-    const offerType = rejectedOffer.cryptoAmount ? 'reject_crypto_offer' : 'reject_nft_offer'
-    
-    // Broadcast rejection to the game room
-    broadcastToRoom(gameId, {
-      type: offerType,
-      rejectedOffer,
-      creatorAddress,
-      timestamp: timestamp || new Date().toISOString()
-    })
-    console.log(`📢 Broadcasted ${offerType} to room`, gameId)
+    try {
+      // Determine the offer type and broadcast accordingly
+      const offerType = rejectedOffer.cryptoAmount ? 'reject_crypto_offer' : 'reject_nft_offer'
+      
+      // Save rejection to database
+      await dbService.saveChatMessage(
+        gameId, 
+        creatorAddress, 
+        `Offer rejected`, 
+        'offer_rejected', 
+        { rejectedOffer, offerType }
+      )
+      
+      // Broadcast rejection to the game room
+      broadcastToRoom(gameId, {
+        type: offerType,
+        rejectedOffer,
+        creatorAddress,
+        timestamp: timestamp || new Date().toISOString()
+      })
+      console.log(`📢 Broadcasted ${offerType} to room`, gameId)
+    } catch (error) {
+      console.error('❌ Error saving offer rejection:', error)
+    }
   }
 
   return {

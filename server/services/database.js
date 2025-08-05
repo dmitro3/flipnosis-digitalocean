@@ -119,6 +119,8 @@ class DatabaseService {
               room_id TEXT NOT NULL,
               sender_address TEXT NOT NULL,
               message TEXT NOT NULL,
+              message_type TEXT DEFAULT 'chat',
+              message_data TEXT,
               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `, (err) => {
@@ -228,6 +230,40 @@ class DatabaseService {
       this.db.run('UPDATE listings SET status = ? WHERE id = ?', [status, listingId], function(err) {
         if (err) reject(err)
         else resolve()
+      })
+    })
+  }
+
+  // Chat history methods
+  async saveChatMessage(roomId, senderAddress, message, messageType = 'chat', messageData = null) {
+    return new Promise((resolve, reject) => {
+      this.db.run(`
+        INSERT INTO chat_messages (room_id, sender_address, message, message_type, message_data)
+        VALUES (?, ?, ?, ?, ?)
+      `, [roomId, senderAddress, message, messageType, messageData ? JSON.stringify(messageData) : null], function(err) {
+        if (err) reject(err)
+        else resolve(this.lastID)
+      })
+    })
+  }
+
+  async getChatHistory(roomId, limit = 100) {
+    return new Promise((resolve, reject) => {
+      this.db.all(`
+        SELECT * FROM chat_messages 
+        WHERE room_id = ? 
+        ORDER BY created_at ASC 
+        LIMIT ?
+      `, [roomId, limit], (err, messages) => {
+        if (err) reject(err)
+        else {
+          // Parse message_data JSON for each message
+          const parsedMessages = messages.map(msg => ({
+            ...msg,
+            message_data: msg.message_data ? JSON.parse(msg.message_data) : null
+          }))
+          resolve(parsedMessages)
+        }
       })
     })
   }

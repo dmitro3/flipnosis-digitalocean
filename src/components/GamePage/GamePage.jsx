@@ -588,7 +588,7 @@ const GamePage = () => {
                  {/* Coin Display */}
                  <div style={{ marginBottom: '1rem' }}>
                    <p style={{ margin: '0 0 0.5rem 0', color: '#CCCCCC', fontSize: '1rem' }}>
-                     <strong>Coin:</strong> Custom Design
+                     <strong>Coin:</strong> {gameCoin?.name || 'Classic'}
                    </p>
                  </div>
                  

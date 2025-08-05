@@ -290,6 +290,7 @@ const UnifiedGameChat = ({
     const handleMessage = (event) => {
       try {
         const data = JSON.parse(event.data)
+        console.log('📨 Raw WebSocket message received:', data)
         
         if (data.type === 'chat_message') {
           console.log('📩 Received chat message:', data)
@@ -319,7 +320,8 @@ const UnifiedGameChat = ({
             address: data.offererAddress,
             cryptoAmount: data.cryptoAmount,
             timestamp: data.timestamp || new Date().toISOString(),
-            offerId: data.offerId
+            offerId: data.offerId,
+            message: `Crypto offer of ${data.cryptoAmount} ETH`
           })
         } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
           console.log('✅ Offer accepted:', data)
@@ -330,6 +332,17 @@ const UnifiedGameChat = ({
             acceptedOffer: data.acceptedOffer,
             timestamp: data.timestamp || new Date().toISOString()
           })
+          
+          // Add a system message to prompt the joiner to load their crypto
+          if (data.type === 'accept_crypto_offer' && data.acceptedOffer?.cryptoAmount) {
+            addMessage({
+              id: Date.now() + Math.random() + 1,
+              type: 'system',
+              address: 'system',
+              message: `🎮 Game accepted! Player 2, please load your ${data.acceptedOffer.cryptoAmount} ETH to start the battle!`,
+              timestamp: new Date().toISOString()
+            })
+          }
         } else if (data.type === 'reject_nft_offer' || data.type === 'reject_crypto_offer') {
           console.log('❌ Offer rejected:', data)
           addMessage({
@@ -339,6 +352,39 @@ const UnifiedGameChat = ({
             rejectedOffer: data.rejectedOffer,
             timestamp: data.timestamp || new Date().toISOString()
           })
+        } else if (data.type === 'chat_history') {
+          console.log('📚 Received chat history:', data)
+          // Load chat history messages
+          if (data.messages && Array.isArray(data.messages)) {
+            const historyMessages = data.messages.map(msg => ({
+              id: msg.id || Date.now() + Math.random(),
+              type: msg.message_type || 'chat',
+              address: msg.sender_address,
+              message: msg.message,
+              timestamp: msg.created_at,
+              // Parse additional data for offers
+              cryptoAmount: msg.message_data?.cryptoAmount,
+              nft: msg.message_data?.nft,
+              offerType: msg.message_data?.offerType,
+              acceptedOffer: msg.message_data?.acceptedOffer,
+              rejectedOffer: msg.message_data?.rejectedOffer
+            }))
+            
+            // Replace current messages with history
+            setMessages(historyMessages)
+            console.log(`📚 Loaded ${historyMessages.length} chat history messages`)
+            
+            // Add a welcome message if there's history
+            if (historyMessages.length > 0) {
+              addMessage({
+                id: Date.now() + Math.random(),
+                type: 'system',
+                address: 'system',
+                message: `📚 Loaded ${historyMessages.length} previous messages. Welcome to the game!`,
+                timestamp: new Date().toISOString()
+              })
+            }
+          }
         }
       } catch (error) {
         console.error('Error parsing message:', error)
@@ -413,7 +459,14 @@ const UnifiedGameChat = ({
 
   const handleSubmitCryptoOffer = async () => {
     if (!cryptoOffer.trim() || !connected || !socket) {
-      console.error('❌ Cannot submit crypto offer:', { cryptoOffer: cryptoOffer.trim(), connected, socket: !!socket })
+      console.error('❌ Cannot submit crypto offer:', { 
+        cryptoOffer: cryptoOffer.trim(), 
+        connected, 
+        socket: !!socket,
+        socketState: socket?.readyState,
+        gameId,
+        address
+      })
       showError('Please enter a valid crypto amount')
       return
     }
@@ -437,9 +490,10 @@ const UnifiedGameChat = ({
       }
 
       console.log('📤 Sending crypto offer:', offerData)
+      console.log('📡 WebSocket state:', socket.readyState)
       socket.send(JSON.stringify(offerData))
       
-      showSuccess(`Crypto offer of ${offerAmount} ETH submitted! Waiting for creator to accept...`)
+      showSuccess(`Crypto offer of $${offerAmount} USD submitted! Waiting for creator to accept...`)
       setCryptoOffer('') // Clear the crypto offer input
       
       if (onOfferSubmitted) {
@@ -455,20 +509,24 @@ const UnifiedGameChat = ({
   }
 
   const handleAcceptOffer = async (offer) => {
-    if (!isCreator || !connected || !socket) return
+    if (!isCreator || !connected || !socket) {
+      console.log('❌ Cannot accept offer:', { isCreator, connected, hasSocket: !!socket })
+      return
+    }
 
     try {
-      const offerType = offer.type === 'crypto_offer' ? 'crypto' : 'NFT'
+      const offerType = offer.cryptoAmount ? 'crypto' : 'NFT'
       showInfo(`Accepting ${offerType} challenge...`)
 
       const acceptanceData = {
-        type: offer.type === 'crypto_offer' ? 'accept_crypto_offer' : 'accept_nft_offer',
+        type: offer.cryptoAmount ? 'accept_crypto_offer' : 'accept_nft_offer',
         gameId,
         creatorAddress: address,
         acceptedOffer: offer,
         timestamp: new Date().toISOString()
       }
 
+      console.log('📤 Sending offer acceptance:', acceptanceData)
       socket.send(JSON.stringify(acceptanceData))
       
       if (onOfferAccepted) {
@@ -478,6 +536,33 @@ const UnifiedGameChat = ({
     } catch (error) {
       console.error('Error accepting offer:', error)
       showError('Failed to accept offer: ' + error.message)
+    }
+  }
+
+  const handleRejectOffer = async (offer) => {
+    if (!isCreator || !connected || !socket) {
+      console.log('❌ Cannot reject offer:', { isCreator, connected, hasSocket: !!socket })
+      return
+    }
+
+    try {
+      const offerType = offer.cryptoAmount ? 'crypto' : 'NFT'
+      showInfo(`Rejecting ${offerType} challenge...`)
+
+      const rejectionData = {
+        type: offer.cryptoAmount ? 'reject_crypto_offer' : 'reject_nft_offer',
+        gameId,
+        creatorAddress: address,
+        rejectedOffer: offer,
+        timestamp: new Date().toISOString()
+      }
+
+      console.log('📤 Sending offer rejection:', rejectionData)
+      socket.send(JSON.stringify(rejectionData))
+      
+    } catch (error) {
+      console.error('Error rejecting offer:', error)
+      showError('Failed to reject offer: ' + error.message)
     }
   }
 
@@ -536,7 +621,7 @@ const UnifiedGameChat = ({
               }}>
                 <strong style={{ color: '#FFD700' }}>Crypto Offer:</strong>
                 <div style={{ color: '#fff', marginTop: '0.25rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
-                  {message.cryptoAmount} ETH
+                  ${message.cryptoAmount} USD
                 </div>
               </div>
             ) : (
@@ -562,11 +647,11 @@ const UnifiedGameChat = ({
                   className="accept"
                   onClick={() => handleAcceptOffer(message)}
                 >
-                  ⚔️ Accept Battle
+                  ✅ Accept
                 </ActionButton>
                 <ActionButton 
                   className="reject"
-                  onClick={() => {/* Handle reject */}}
+                  onClick={() => handleRejectOffer(message)}
                 >
                   ❌ Decline
                 </ActionButton>
@@ -658,16 +743,19 @@ const UnifiedGameChat = ({
               <div style={{ marginBottom: '0.5rem' }}>No messages yet. Start the conversation!</div>
               <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
                 {isCreator 
-                  ? 'Use the chat input below to send messages. Wait for the joiner to make a crypto offer!'
-                  : 'Use the chat input below to send messages, or make a crypto offer!'
+                  ? 'Use the chat input below to send messages. Wait for other players to make crypto offers!'
+                  : 'Use the chat input below to send messages, or make a crypto offer to join the game!'
                 }
               </div>
+
             </div>
           </div>
         ) : (
           messages.map((msg, index) => {
             const isCurrentUser = msg.address === address
             const displayName = getDisplayName(msg.address)
+            
+
             
             return (
               <Message key={index} isCurrentUser={isCurrentUser} messageType={msg.type}>
@@ -709,10 +797,10 @@ const UnifiedGameChat = ({
           </InputContainer>
         </div>
 
-        {/* Crypto Offer Input - Only for Joiners */}
+        {/* Crypto Offer Input - Only for non-creators (joiners and spectators) */}
         {!isCreator && (
           <div>
-            <InputLabel>💰 Crypto Offer (ETH)</InputLabel>
+            <InputLabel>💰 Crypto Offer (USD)</InputLabel>
             <OfferInputContainer>
               <OfferInput
                 type="text"
@@ -726,7 +814,7 @@ const UnifiedGameChat = ({
                     setCryptoOffer(value)
                   }
                 }}
-                placeholder="Enter crypto amount (digits only)..."
+                placeholder="Enter USD amount (we'll convert to ETH)..."
                 disabled={!connected}
                 onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
               />
@@ -737,6 +825,7 @@ const UnifiedGameChat = ({
                 {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
               </OfferButton>
             </OfferInputContainer>
+
           </div>
         )}
       </DualInputContainer>
