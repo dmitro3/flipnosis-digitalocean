@@ -10,6 +10,8 @@ import {
   Award, Target, Users, Calendar, DollarSign, Shield, Star
 } from 'lucide-react';
 import contractService from '../services/ContractService';
+import ThemeSelector, { themes } from '../components/ThemeSelector';
+import { ThemeProvider } from '@emotion/react';
 
 // Styled Components
 const ProfileContainer = styled.div`
@@ -20,8 +22,8 @@ const ProfileContainer = styled.div`
 `;
 
 const ProfileHeader = styled.div`
-  background: linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(255, 105, 180, 0.1));
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  background: ${props => props.theme.background};
+  border: 1px solid ${props => props.theme.border};
   border-radius: 1.5rem;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -35,7 +37,7 @@ const ProfileHeader = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 20, 147, 0.05) 50%, transparent 70%);
+    background: linear-gradient(45deg, transparent 30%, ${props => props.theme.border}20 50%, transparent 70%);
     animation: shimmer 3s infinite;
   }
 
@@ -67,12 +69,12 @@ const Avatar = styled.img`
   width: 8rem;
   height: 8rem;
   border-radius: 50%;
-  border: 4px solid rgba(255, 20, 147, 0.5);
+  border: 4px solid ${props => props.theme.border};
   object-fit: cover;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.8);
+    border-color: ${props => props.theme.primary};
     transform: scale(1.05);
   }
 `;
@@ -82,14 +84,14 @@ const AvatarPlaceholder = styled.div`
   height: 8rem;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
-  border: 4px solid rgba(255, 20, 147, 0.5);
+  border: 4px solid ${props => props.theme.border};
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.8);
+    border-color: ${props => props.theme.primary};
     background: rgba(255, 255, 255, 0.2);
   }
 `;
@@ -100,7 +102,7 @@ const UserDetails = styled.div`
 
 const NameInput = styled.input`
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 20, 147, 0.5);
+  border: 1px solid ${props => props.theme.border};
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   color: #fff;
@@ -112,8 +114,33 @@ const NameInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: rgba(255, 20, 147, 0.8);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+    border-color: ${props => props.theme.primary};
+    box-shadow: 0 0 15px ${props => props.theme.primary}40;
+  }
+`;
+
+const SaveButton = styled.button`
+  background: linear-gradient(45deg, ${props => props.theme.primary}, ${props => props.theme.secondary});
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 0.5rem;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px ${props => props.theme.primary}40;
+  }
+
+  &:disabled {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -156,21 +183,21 @@ const StatsGrid = styled.div`
 
 const StatCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid ${props => props.theme.border}40;
   border-radius: 1rem;
   padding: 1.5rem;
   transition: all 0.3s ease;
   text-align: center;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.4);
-    box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
+    border-color: ${props => props.theme.border}80;
+    box-shadow: 0 0 20px ${props => props.theme.primary}20;
     transform: translateY(-2px);
   }
 `;
 
 const StatIcon = styled.div`
-  color: #FF1493;
+  color: ${props => props.theme.primary};
   margin-bottom: 0.5rem;
 `;
 
@@ -195,7 +222,7 @@ const TabContainer = styled.div`
 `;
 
 const TabButton = styled.button`
-  background: ${props => props.active ? 'rgba(255, 20, 147, 0.2)' : 'transparent'};
+  background: ${props => props.active ? `${props.theme.primary}20` : 'transparent'};
   border: none;
   color: ${props => props.active ? '#fff' : 'rgba(255, 255, 255, 0.7)'};
   font-size: 1rem;
@@ -203,17 +230,17 @@ const TabButton = styled.button`
   cursor: pointer;
   padding: 1rem 1.5rem;
   transition: all 0.3s ease;
-  border-bottom: ${props => props.active ? '2px solid #FF1493' : 'none'};
+  border-bottom: ${props => props.active ? `2px solid ${props.theme.primary}` : 'none'};
   white-space: nowrap;
 
   &:hover {
-    background: rgba(255, 20, 147, 0.1);
+    background: ${props.theme.primary}10;
   }
 `;
 
 const TabContent = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid ${props => props.theme.border}40;
   border-radius: 1rem;
   padding: 2rem;
   min-height: 400px;
@@ -391,6 +418,12 @@ const SocialInput = styled.input`
   }
 `;
 
+const SocialInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
 const WalletSection = styled.div`
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 20, 147, 0.2);
@@ -469,6 +502,13 @@ const Profile = () => {
   const [tempName, setTempName] = useState('');
   const [tempTwitter, setTempTwitter] = useState('');
   const [tempTelegram, setTempTelegram] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [savingTwitter, setSavingTwitter] = useState(false);
+  const [savingTelegram, setSavingTelegram] = useState(false);
+  const [savingHeads, setSavingHeads] = useState(false);
+  const [savingTails, setSavingTails] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState('purple');
+  const [savingTheme, setSavingTheme] = useState(false);
 
   // Use profile address from URL or current user's address
   const targetAddress = profileAddress || address;
@@ -492,11 +532,12 @@ const Profile = () => {
           tailsImage: data.tailsImage || '',
           twitter: data.twitter || '',
           telegram: data.telegram || '',
-          xp: data.xp || 0
+          xp: data.xp || 0,
         }));
         setTempName(data.name || '');
         setTempTwitter(data.twitter || '');
         setTempTelegram(data.telegram || '');
+        setSelectedTheme(data.theme || 'purple');
       }
     } catch (error) {
       console.error('Failed to load profile data:', error);
@@ -556,48 +597,26 @@ const Profile = () => {
         [type === 'avatar' ? 'avatar' : type === 'heads' ? 'headsImage' : 'tailsImage']: imageData
       }));
       
-      // Save to database
-      try {
-        const response = await fetch(`/api/profile/${targetAddress}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: profileData.name,
-            avatar: type === 'avatar' ? imageData : profileData.avatar,
-            headsImage: type === 'heads' ? imageData : profileData.headsImage,
-            tailsImage: type === 'tails' ? imageData : profileData.tailsImage,
-            twitter: profileData.twitter,
-            telegram: profileData.telegram
-          })
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          setProfileData(prev => ({
-            ...prev,
-            xp: prev.xp + (result.xpGained || 0)
-          }));
-          
-          if (result.xpGained && result.xpGained > 0) {
-            showSuccess(`${type} image updated! +${result.xpGained} XP earned!`);
-          } else {
-            showSuccess(`${type} image updated!`);
-          }
-        } else {
-          showError('Failed to save image');
-        }
-      } catch (error) {
-        console.error('Error saving image:', error);
-        showError('Failed to save image');
-      }
+      // Save to database using the new save system
+      await saveProfileData(type, imageData);
     };
     reader.readAsDataURL(file);
   };
 
   // Save profile data
   const saveProfileData = async (field, value) => {
+    const setSavingState = (state) => {
+      switch (field) {
+        case 'name': setSavingName(state); break;
+        case 'twitter': setSavingTwitter(state); break;
+        case 'telegram': setSavingTelegram(state); break;
+        case 'heads': setSavingHeads(state); break;
+        case 'tails': setSavingTails(state); break;
+        case 'theme': setSavingTheme(state); break;
+      }
+    };
+
+    setSavingState(true);
     try {
       const response = await fetch(`/api/profile/${targetAddress}`, {
         method: 'PUT',
@@ -607,10 +626,11 @@ const Profile = () => {
         body: JSON.stringify({
           name: field === 'name' ? value : profileData.name,
           avatar: profileData.avatar,
-          headsImage: profileData.headsImage,
-          tailsImage: profileData.tailsImage,
+          headsImage: field === 'heads' ? value : profileData.headsImage,
+          tailsImage: field === 'tails' ? value : profileData.tailsImage,
           twitter: field === 'twitter' ? value : profileData.twitter,
-          telegram: field === 'telegram' ? value : profileData.telegram
+          telegram: field === 'telegram' ? value : profileData.telegram,
+          theme: field === 'theme' ? value : selectedTheme,
         })
       });
 
@@ -618,14 +638,16 @@ const Profile = () => {
         const result = await response.json();
         setProfileData(prev => ({
           ...prev,
-          [field]: value,
-          xp: prev.xp + (result.xpGained || 0)
+          [field === 'name' ? 'name' : field === 'heads' ? 'headsImage' : field === 'tails' ? 'tailsImage' : field]: value,
+          xp: prev.xp + (result.xpGained || 0),
+          theme: field === 'theme' ? value : prev.theme,
         }));
         
+        if (field === 'theme') setSelectedTheme(value);
         if (result.xpGained && result.xpGained > 0) {
-          showSuccess(`Profile updated! +${result.xpGained} XP earned!`);
+          showSuccess(`${field} updated! +${result.xpGained} XP earned!`);
         } else {
-          showSuccess('Profile updated!');
+          showSuccess(`${field} updated!`);
         }
       } else {
         showError('Failed to save profile');
@@ -633,6 +655,8 @@ const Profile = () => {
     } catch (error) {
       console.error('Failed to save profile data:', error);
       showError('Failed to save profile');
+    } finally {
+      setSavingState(false);
     }
   };
 
@@ -700,241 +724,272 @@ const Profile = () => {
   }
 
   return (
-    <ProfileContainer>
-      {/* Profile Header */}
-      <ProfileHeader>
-        <ProfileInfo>
-          <AvatarSection
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = (e) => {
-                if (e.target.files[0]) {
-                  handleImageUpload('avatar', e.target.files[0]);
-                }
-              };
-              input.click();
-            }}
-          >
-            {profileData.avatar ? (
-              <Avatar src={profileData.avatar} alt="Profile" />
-            ) : (
-              <AvatarPlaceholder>
-                <User style={{ width: '3rem', height: '3rem', color: '#FF1493' }} />
-              </AvatarPlaceholder>
-            )}
-          </AvatarSection>
-          
-          <UserDetails>
-            <NameInput
-              value={profileData.name || ''}
-              onChange={(e) => {
-                const newName = e.target.value;
-                setProfileData(prev => ({ ...prev, name: newName }));
-                setTempName(newName);
-                // Auto-save after delay
-                clearTimeout(window.nameSaveTimeout);
-                window.nameSaveTimeout = setTimeout(() => {
-                  saveProfileData('name', newName);
-                }, 1000);
+    <ThemeProvider theme={themes[selectedTheme] || themes.purple}>
+      <ProfileContainer>
+        {/* Theme Selector */}
+        {targetAddress === address && (
+          <ThemeSelector
+            selectedTheme={selectedTheme}
+            onThemeChange={(theme) => saveProfileData('theme', theme)}
+            saving={savingTheme}
+          />
+        )}
+        {/* Profile Header */}
+        <ProfileHeader>
+          <ProfileInfo>
+            <AvatarSection
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                  if (e.target.files[0]) {
+                    handleImageUpload('avatar', e.target.files[0]);
+                  }
+                };
+                input.click();
               }}
-              placeholder="Enter your nickname"
-            />
+            >
+              {profileData.avatar ? (
+                <Avatar src={profileData.avatar} alt="Profile" />
+              ) : (
+                <AvatarPlaceholder>
+                  <User style={{ width: '3rem', height: '3rem', color: '#FF1493' }} />
+                </AvatarPlaceholder>
+              )}
+            </AvatarSection>
             
-            <AddressDisplay>
-              <AddressCode>{formatAddress(targetAddress)}</AddressCode>
-              <CopyButton onClick={copyAddress}>
-                {copied ? <CheckCircle style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} /> : <Copy style={{ width: '1rem', height: '1rem' }} />}
-              </CopyButton>
-            </AddressDisplay>
+            <UserDetails>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <NameInput
+                  value={tempName}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    setTempName(newName);
+                  }}
+                  placeholder="Enter your nickname"
+                />
+                <SaveButton 
+                  onClick={() => saveProfileData('name', tempName)}
+                  disabled={savingName || tempName === profileData.name}
+                >
+                  {savingName ? 'Saving...' : 'Save'}
+                </SaveButton>
+              </div>
+              
+              <AddressDisplay>
+                <AddressCode>{formatAddress(targetAddress)}</AddressCode>
+                <CopyButton onClick={copyAddress}>
+                  {copied ? <CheckCircle style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} /> : <Copy style={{ width: '1rem', height: '1rem' }} />}
+                </CopyButton>
+              </AddressDisplay>
 
-            {/* Wallet Connection Status */}
-            {targetAddress === address && (
-              <WalletSection>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                  <Wallet style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} />
-                  <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>Wallet Connected</span>
-                </div>
-                        <DisconnectButton onClick={disconnect}>
-          <LogOut style={{ width: '1rem', height: '1rem' }} />
-          Disconnect Wallet
-        </DisconnectButton>
-              </WalletSection>
-            )}
-          </UserDetails>
-        </ProfileInfo>
-      </ProfileHeader>
-
-      {/* Stats Grid */}
-      <StatsGrid>
-        <StatCard>
-          <StatIcon><Trophy style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{profileData.stats.gamesWon}</StatValue>
-          <StatLabel>Games Won</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatIcon><Target style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{profileData.stats.gamesLost}</StatValue>
-          <StatLabel>Games Lost</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatIcon><TrendingUp style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{profileData.stats.winRate}%</StatValue>
-          <StatLabel>Win Rate</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatIcon><Gamepad2 style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{profileData.stats.totalGames}</StatValue>
-          <StatLabel>Total Games</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatIcon><DollarSign style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{profileData.stats.totalVolume}</StatValue>
-          <StatLabel>Total Volume</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatIcon><Star style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{activeGames.length}</StatValue>
-          <StatLabel>Active Games</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatIcon><Zap style={{ width: '2rem', height: '2rem' }} /></StatIcon>
-          <StatValue>{profileData.xp}</StatValue>
-          <StatLabel>Experience Points</StatLabel>
-        </StatCard>
-      </StatsGrid>
-
-      {/* Tabs */}
-      <TabContainer>
-        <TabButton 
-          active={activeTab === 'profile'} 
-          onClick={() => setActiveTab('profile')}
-        >
-          Profile
-        </TabButton>
-        <TabButton 
-          active={activeTab === 'games'} 
-          onClick={() => setActiveTab('games')}
-        >
-          My Games ({activeGames.length})
-        </TabButton>
-        <TabButton 
-          active={activeTab === 'offers'} 
-          onClick={() => setActiveTab('offers')}
-        >
-          My Offers ({offers.length})
-        </TabButton>
-      </TabContainer>
-
-      {/* Tab Content */}
-      <TabContent>
-        {activeTab === 'profile' && (
-          <>
-            {/* Social Media Links */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                Social Media Links
-              </h3>
-              <SocialLinksSection>
-                <div>
-                  <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
-                    <Twitter style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
-                    X (Twitter) Username
-                  </label>
-                  <SocialInput
-                    value={profileData.twitter || ''}
-                    onChange={(e) => {
-                      const newTwitter = e.target.value;
-                      setProfileData(prev => ({ ...prev, twitter: newTwitter }));
-                      setTempTwitter(newTwitter);
-                      clearTimeout(window.twitterSaveTimeout);
-                      window.twitterSaveTimeout = setTimeout(() => {
-                        saveProfileData('twitter', newTwitter);
-                      }, 1000);
-                    }}
-                    placeholder="@username"
-                  />
-                </div>
-                <div>
-                  <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
-                    <MessageCircle style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
-                    Telegram Username
-                  </label>
-                  <SocialInput
-                    value={profileData.telegram || ''}
-                    onChange={(e) => {
-                      const newTelegram = e.target.value;
-                      setProfileData(prev => ({ ...prev, telegram: newTelegram }));
-                      setTempTelegram(newTelegram);
-                      clearTimeout(window.telegramSaveTimeout);
-                      window.telegramSaveTimeout = setTimeout(() => {
-                        saveProfileData('telegram', newTelegram);
-                      }, 1000);
-                    }}
-                    placeholder="@username"
-                  />
-                </div>
-              </SocialLinksSection>
-            </div>
-
-            {/* Custom Coin Designs */}
-            <div>
-              <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                Custom Coin Designs
-              </h3>
-              <CoinImagesGrid>
-                <CoinImageCard>
-                  <h4 style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '1rem' }}>Heads</h4>
-                  <div
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = 'image/*';
-                      input.onchange = (e) => {
-                        if (e.target.files[0]) {
-                          handleImageUpload('heads', e.target.files[0]);
-                        }
-                      };
-                      input.click();
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {profileData.headsImage ? (
-                      <CoinImage src={profileData.headsImage} alt="Heads" />
-                    ) : (
-                      <CoinImagePlaceholder>
-                        <Image style={{ width: '3rem', height: '3rem' }} />
-                      </CoinImagePlaceholder>
-                    )}
+              {/* Wallet Connection Status */}
+              {targetAddress === address && (
+                <WalletSection>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <Wallet style={{ width: '1rem', height: '1rem', color: '#4CAF50' }} />
+                    <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>Wallet Connected</span>
                   </div>
-                </CoinImageCard>
+                          <DisconnectButton onClick={disconnect}>
+            <LogOut style={{ width: '1rem', height: '1rem' }} />
+            Disconnect Wallet
+          </DisconnectButton>
+                </WalletSection>
+              )}
+            </UserDetails>
+          </ProfileInfo>
+        </ProfileHeader>
+
+        {/* Stats Grid */}
+        <StatsGrid>
+          <StatCard>
+            <StatIcon><Trophy style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+            <StatValue>{profileData.stats.gamesWon}</StatValue>
+            <StatLabel>Games Won</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatIcon><Target style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+            <StatValue>{profileData.stats.gamesLost}</StatValue>
+            <StatLabel>Games Lost</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatIcon><TrendingUp style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+            <StatValue>{profileData.stats.winRate}%</StatValue>
+            <StatLabel>Win Rate</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatIcon><Gamepad2 style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+            <StatValue>{profileData.stats.totalGames}</StatValue>
+            <StatLabel>Total Games</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatIcon><DollarSign style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+            <StatValue>{profileData.stats.totalVolume}</StatValue>
+            <StatLabel>Total Volume</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatIcon><Star style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+            <StatValue>{activeGames.length}</StatValue>
+            <StatLabel>Active Games</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatIcon><Zap style={{ width: '2rem', height: '2rem' }} /></StatIcon>
+            <StatValue>{profileData.xp}</StatValue>
+            <StatLabel>Experience Points</StatLabel>
+          </StatCard>
+        </StatsGrid>
+
+        {/* Tabs */}
+        <TabContainer>
+          <TabButton 
+            active={activeTab === 'profile'} 
+            onClick={() => setActiveTab('profile')}
+          >
+            Profile
+          </TabButton>
+          <TabButton 
+            active={activeTab === 'games'} 
+            onClick={() => setActiveTab('games')}
+          >
+            My Games ({activeGames.length})
+          </TabButton>
+          <TabButton 
+            active={activeTab === 'offers'} 
+            onClick={() => setActiveTab('offers')}
+          >
+            My Offers ({offers.length})
+          </TabButton>
+        </TabContainer>
+
+        {/* Tab Content */}
+        <TabContent>
+          {activeTab === 'profile' && (
+            <>
+              {/* Social Media Links */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                  Social Media Links
+                </h3>
+                                 <SocialLinksSection>
+                   <div>
+                     <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                       <Twitter style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
+                       X (Twitter) Username
+                     </label>
+                     <SocialInputContainer>
+                       <SocialInput
+                         value={tempTwitter}
+                         onChange={(e) => {
+                           const newTwitter = e.target.value;
+                           setTempTwitter(newTwitter);
+                         }}
+                         placeholder="@username"
+                       />
+                       <SaveButton 
+                         onClick={() => saveProfileData('twitter', tempTwitter)}
+                         disabled={savingTwitter || tempTwitter === profileData.twitter}
+                       >
+                         {savingTwitter ? 'Saving...' : 'Save'}
+                       </SaveButton>
+                     </SocialInputContainer>
+                   </div>
+                   <div>
+                     <label style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                       <MessageCircle style={{ width: '1rem', height: '1rem', display: 'inline', marginRight: '0.5rem' }} />
+                       Telegram Username
+                     </label>
+                     <SocialInputContainer>
+                       <SocialInput
+                         value={tempTelegram}
+                         onChange={(e) => {
+                           const newTelegram = e.target.value;
+                           setTempTelegram(newTelegram);
+                         }}
+                         placeholder="@username"
+                       />
+                       <SaveButton 
+                         onClick={() => saveProfileData('telegram', tempTelegram)}
+                         disabled={savingTelegram || tempTelegram === profileData.telegram}
+                       >
+                         {savingTelegram ? 'Saving...' : 'Save'}
+                       </SaveButton>
+                     </SocialInputContainer>
+                   </div>
+                 </SocialLinksSection>
+              </div>
+
+              {/* Custom Coin Designs */}
+              <div>
+                <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                  Custom Coin Designs
+                </h3>
+                <CoinImagesGrid>
+                                   <CoinImageCard>
+                   <h4 style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '1rem' }}>Heads</h4>
+                   <div
+                     onClick={() => {
+                       const input = document.createElement('input');
+                       input.type = 'file';
+                       input.accept = 'image/*';
+                       input.onchange = (e) => {
+                         if (e.target.files[0]) {
+                           handleImageUpload('heads', e.target.files[0]);
+                         }
+                       };
+                       input.click();
+                     }}
+                     style={{ cursor: 'pointer' }}
+                   >
+                     {profileData.headsImage ? (
+                       <CoinImage src={profileData.headsImage} alt="Heads" />
+                     ) : (
+                       <CoinImagePlaceholder>
+                         <Image style={{ width: '3rem', height: '3rem' }} />
+                       </CoinImagePlaceholder>
+                     )}
+                   </div>
+                   <SaveButton 
+                     onClick={() => saveProfileData('heads', profileData.headsImage)}
+                     disabled={savingHeads || !profileData.headsImage}
+                     style={{ marginTop: '1rem', width: '100%' }}
+                   >
+                     {savingHeads ? 'Saving...' : 'Save Heads Design'}
+                   </SaveButton>
+                 </CoinImageCard>
                 
-                <CoinImageCard>
-                  <h4 style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '1rem' }}>Tails</h4>
-                  <div
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = 'image/*';
-                      input.onchange = (e) => {
-                        if (e.target.files[0]) {
-                          handleImageUpload('tails', e.target.files[0]);
-                        }
-                      };
-                      input.click();
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {profileData.tailsImage ? (
-                      <CoinImage src={profileData.tailsImage} alt="Tails" />
-                    ) : (
-                      <CoinImagePlaceholder>
-                        <Image style={{ width: '3rem', height: '3rem' }} />
-                      </CoinImagePlaceholder>
-                    )}
-                  </div>
-                </CoinImageCard>
+                                   <CoinImageCard>
+                   <h4 style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '1rem' }}>Tails</h4>
+                   <div
+                     onClick={() => {
+                       const input = document.createElement('input');
+                       input.type = 'file';
+                       input.accept = 'image/*';
+                       input.onchange = (e) => {
+                         if (e.target.files[0]) {
+                           handleImageUpload('tails', e.target.files[0]);
+                         }
+                       };
+                       input.click();
+                     }}
+                     style={{ cursor: 'pointer' }}
+                   >
+                     {profileData.tailsImage ? (
+                       <CoinImage src={profileData.tailsImage} alt="Tails" />
+                     ) : (
+                       <CoinImagePlaceholder>
+                         <Image style={{ width: '3rem', height: '3rem' }} />
+                       </CoinImagePlaceholder>
+                     )}
+                   </div>
+                   <SaveButton 
+                     onClick={() => saveProfileData('tails', profileData.tailsImage)}
+                     disabled={savingTails || !profileData.tailsImage}
+                     style={{ marginTop: '1rem', width: '100%' }}
+                   >
+                     {savingTails ? 'Saving...' : 'Save Tails Design'}
+                   </SaveButton>
+                 </CoinImageCard>
               </CoinImagesGrid>
             </div>
           </>
@@ -1071,6 +1126,7 @@ const Profile = () => {
         )}
       </TabContent>
     </ProfileContainer>
+    </ThemeProvider>
   );
 };
 

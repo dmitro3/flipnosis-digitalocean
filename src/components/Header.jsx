@@ -6,13 +6,11 @@ import { useToast } from '../contexts/ToastContext'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
-import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp'
-import MobileInfoImg from '../../Images/mobile.webp'
 import { keyframes } from '@emotion/react'
 import MyFlipsDropdown from './MyFlipsDropdown'
 import ProfileWithNotifications from './ProfileWithNotifications'
 import PortalMenu from './PortalMenu'
-import DesktopMenu from './DesktopMenu'
+import PopupMenu from './PopupMenu'
 
 const HeaderContainer = styled.header`
   background-color: ${props => props.theme.colors.bgDark};
@@ -293,110 +291,12 @@ const ChainDot = styled.div`
   };
 `
 
-const infoPulse = keyframes`
-  0%, 100% {
-    box-shadow: 0 0 0px #00FF41, 0 0 0px #00FF41;
-    border-color: #00FF41;
-  }
-  50% {
-    box-shadow: 0 0 16px #00FF41, 0 0 32px #00FF41;
-    border-color: #baffc9;
-  }
-`;
 
-const InfoButton = styled.button`
-  background: rgba(0,255,65,0.12);
-  border: 2px solid #00FF41;
-  color: #00FF41;
-  border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-size: 1.5rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  animation: ${infoPulse} 1.2s infinite;
-  &:hover {
-    background: rgba(0,255,65,0.25);
-  }
-
-  @media (max-width: 768px) {
-    display: none;
-  }
-`
-
-const MobileInfoButton = styled(InfoButton)`
-  display: none;
-
-  @media (max-width: 768px) {
-    display: flex;
-    margin: 0;
-    width: 100%;
-    border-radius: 0.5rem;
-    height: auto;
-    padding: 0.75rem;
-    font-size: 1rem;
-  }
-`
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-const ModalContent = styled.div`
-  background: #181c1b;
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 0 32px #00FF41;
-  max-width: 95vw;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 90vw;
-`;
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: #00FF41;
-  font-size: 2rem;
-  position: absolute;
-  top: 2rem;
-  right: 2rem;
-  cursor: pointer;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 1rem;
-`;
-
-const ModalBody = styled.div`
-  max-width: 90vw;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-`;
 
 const Header = () => {
   const { isConnected, address, chainId, chain } = useWallet()
   const { showInfo } = useToast()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [showInfoModal, setShowInfoModal] = useState(false)
 
   // Admin wallet address
   const ADMIN_WALLET = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
@@ -423,7 +323,7 @@ const Header = () => {
         <DesktopNav>
           <MyFlipsDropdown />
           <CreateButton to="/create">Create Flip</CreateButton>
-          <DesktopMenu />
+          <PopupMenu />
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
   
           <ConnectButton 
@@ -440,36 +340,6 @@ const Header = () => {
         </MenuButton>
 
         <PortalMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-
-        <InfoButton 
-          onClick={() => setShowInfoModal(true)} 
-          title="About FLIPNOSIS"
-        >
-          i
-        </InfoButton>
-
-        {showInfoModal && (
-          <ModalOverlay onClick={() => setShowInfoModal(false)}>
-            <ModalContent onClick={e => e.stopPropagation()}>
-              <CloseButton onClick={() => setShowInfoModal(false)}>×</CloseButton>
-              <ModalHeader>
-                <h2 style={{ color: '#00FF41', margin: 0 }}>About FLIPNOSIS</h2>
-              </ModalHeader>
-              <ModalBody>
-                <img 
-                  src={window.innerWidth <= 768 ? MobileInfoImg : FlipnosisInfoImg} 
-                  alt="FLIPNOSIS Info" 
-                  style={{ 
-                    maxWidth: '100%', 
-                    height: 'auto',
-                    borderRadius: '1rem',
-                    objectFit: 'contain'
-                  }} 
-                />
-              </ModalBody>
-            </ModalContent>
-          </ModalOverlay>
-        )}
       </HeaderContainer>
     </ThemeProvider>
   )

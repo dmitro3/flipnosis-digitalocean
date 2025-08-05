@@ -7,7 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import ProfileWithNotifications from './ProfileWithNotifications';
 import { 
   User, Gamepad2, Plus, Store, Palette, Settings, 
-  ExternalLink, Home, Crown, ChevronRight
+  ExternalLink, Home, Crown, ChevronRight, Info
 } from 'lucide-react';
 
 const MenuOverlay = styled.div`
@@ -197,6 +197,12 @@ const PortalMenu = ({ isOpen, onClose }) => {
   const ADMIN_WALLET = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
   const isAdmin = isConnected && address && address.toLowerCase() === ADMIN_WALLET.toLowerCase()
 
+  const handleInfoClick = () => {
+    // For mobile, we'll show a simple alert for now
+    // In a full implementation, you might want to show a modal
+    alert('About FLIPNOSIS\n\nFLIPNOSIS is a revolutionary NFT flipping game where players can create and participate in coin flip games with their NFTs and cryptocurrency.');
+  };
+
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
@@ -223,6 +229,10 @@ const PortalMenu = ({ isOpen, onClose }) => {
               My Profile
             </MenuItem>
           )}
+          <MenuButtonItem onClick={handleInfoClick}>
+            <Info size={16} />
+            About FLIPNOSIS
+          </MenuButtonItem>
         </MenuSection>
 
         <Divider />

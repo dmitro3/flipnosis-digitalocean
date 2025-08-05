@@ -34,140 +34,58 @@ import {
   LoadingSpinner
 } from '../styles/components'
 
-// Bright theme styled components
-const BrightContainer = styled(Container)`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  padding: 2rem 1rem;
-`
-
-const BrightGlassCard = styled(GlassCard)`
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  color: #2d3748;
-  
-  h1 {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 2.5rem;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 2rem;
-    text-shadow: none;
-  }
-`
-
-const BrightLabel = styled(Label)`
-  color: #4a5568;
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 0.75rem;
-`
-
-const BrightInput = styled(Input)`
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid #e2e8f0;
-  color: #2d3748;
-  
-  &:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-  
-  &::placeholder {
-    color: #a0aec0;
-  }
-`
-
-const BrightButton = styled(Button)`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  font-weight: 600;
-  font-size: 1.1rem;
-  padding: 1rem 2rem;
-  border-radius: 0.75rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-  }
-  
-  &:disabled {
-    opacity: 0.6;
-    transform: none;
-    cursor: not-allowed;
-  }
-`
-
 // Styled components for NFT preview
 const NFTPreview = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem;
-  border: 2px dashed #667eea;
-  border-radius: 1rem;
+  padding: 1rem;
+  border: 2px dashed ${props => props.theme.colors.neonBlue};
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(0, 191, 255, 0.05);
 
   &:hover {
-    border-color: #764ba2;
-    background: rgba(118, 75, 162, 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+    border-color: ${props => props.theme.colors.neonPink};
+    background: rgba(255, 20, 147, 0.05);
   }
 
   img {
-    width: 70px;
-    height: 70px;
-    border-radius: 0.75rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 0.5rem;
     object-fit: cover;
-    border: 2px solid #e2e8f0;
   }
 
   div {
     flex: 1;
     
     h4 {
-      color: #2d3748;
+      color: ${props => props.theme.colors.textPrimary};
       margin: 0 0 0.25rem 0;
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1rem;
     }
     
     p {
-      color: #4a5568;
+      color: ${props => props.theme.colors.textSecondary};
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
   }
 `
 
 const PlaceholderText = styled.div`
-  color: #a0aec0;
+  color: ${props => props.theme.colors.textSecondary};
   font-style: italic;
   text-align: center;
   width: 100%;
-  font-size: 1rem;
 `
 
-const SubmitButton = styled(BrightButton)`
+const SubmitButton = styled(Button)`
   margin-top: 2rem;
   width: 100%;
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
-  
-  &:hover {
-    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
-  }
+  background: linear-gradient(135deg, ${props => props.theme.colors.neonBlue} 0%, ${props => props.theme.colors.neonPurple} 100%);
   
   &:disabled {
     opacity: 0.5;
@@ -198,38 +116,38 @@ const ProgressStep = styled.div`
 `
 
 const StepCircle = styled.div`
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 1.3rem;
-  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
   transition: all 0.3s ease;
   border: 3px solid;
   
   ${props => {
     if (props.completed) {
       return `
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        border-color: #48bb78;
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        border-color: #00ff88;
         color: white;
-        box-shadow: 0 0 20px rgba(72, 187, 120, 0.5);
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
       `
     } else if (props.active) {
       return `
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
+        background: linear-gradient(135deg, ${props.theme.colors.neonBlue} 0%, ${props.theme.colors.neonPurple} 100%);
+        border-color: ${props.theme.colors.neonBlue};
         color: white;
-        box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
       `
     } else {
       return `
-        background: rgba(255, 255, 255, 0.8);
-        border-color: #e2e8f0;
-        color: #a0aec0;
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: ${props.theme.colors.textSecondary};
       `
     }
   }}
@@ -237,30 +155,29 @@ const StepCircle = styled.div`
 
 const StepLabel = styled.div`
   text-align: center;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
   transition: all 0.3s ease;
   
   ${props => {
     if (props.completed) {
-      return `color: #48bb78;`
+      return `color: #00ff88;`
     } else if (props.active) {
-      return `color: #667eea;`
+      return `color: ${props.theme.colors.neonBlue};`
     } else {
-      return `color: #a0aec0;`
+      return `color: ${props.theme.colors.textSecondary};`
     }
   }}
 `
 
 const ProgressLine = styled.div`
   position: absolute;
-  top: 30px;
-  left: 30px;
-  right: 30px;
-  height: 4px;
-  background: rgba(226, 232, 240, 0.8);
+  top: 25px;
+  left: 25px;
+  right: 25px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
   z-index: 1;
-  border-radius: 2px;
   
   &::after {
     content: '';
@@ -268,41 +185,9 @@ const ProgressLine = styled.div`
     top: 0;
     left: 0;
     height: 100%;
-    background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+    background: linear-gradient(90deg, #00ff88 0%, #00cc6a 100%);
     transition: width 0.5s ease;
     width: ${props => props.progress}%;
-    border-radius: 2px;
-  }
-`
-
-const InfoBox = styled.div`
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  margin-top: 0.75rem;
-  font-size: 0.9rem;
-  color: #4a5568;
-`
-
-const PriceDisplay = styled.div`
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  margin-top: 0.75rem;
-  font-size: 0.95rem;
-  color: #2d3748;
-  
-  div {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.25rem;
-    font-weight: 500;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
   }
 `
 
@@ -569,28 +454,7 @@ const CreateFlip = () => {
         throw new Error('Failed to confirm NFT deposit')
       }
       
-      // Award XP for creating a game
-      try {
-        const xpResponse = await fetch(`/api/users/${address}/award-xp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: 500,
-            reason: 'Game Creation'
-          })
-        });
-        
-        if (xpResponse.ok) {
-          const xpResult = await xpResponse.json();
-          showSuccess(`Game created successfully! Your NFT is deposited and waiting for a challenger. +${xpResult.xpGained} XP earned!`);
-        } else {
-          showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.');
-        }
-      } catch (xpError) {
-        console.error('Failed to award XP:', xpError);
-        showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.');
-      }
-      
+      showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.')
       navigate(`/game/${gameId}`)
       
     } catch (error) {
@@ -614,10 +478,12 @@ const CreateFlip = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <BrightContainer>
+      <Container>
         <ContentWrapper>
-          <BrightGlassCard>
-                          <h1>Create Your Flip</h1>
+          <GlassCard>
+            <NeonText style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              Create Your Flip
+            </NeonText>
             
             {/* Network Check */}
             {isConnected && chainId !== 8453 && (
@@ -632,9 +498,9 @@ const CreateFlip = () => {
                 <p style={{ color: 'orange', margin: '0 0 1rem 0' }}>
                   ⚠️ Please switch to Base network to create games
                 </p>
-                <BrightButton onClick={switchToBase} style={{ background: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)' }}>
+                <Button onClick={switchToBase} style={{ background: 'orange' }}>
                   Switch to Base Network
-                </BrightButton>
+                </Button>
               </div>
             )}
             
@@ -691,7 +557,7 @@ const CreateFlip = () => {
             <form onSubmit={handleSubmit}>
               {/* NFT Selection */}
               <FormGroup>
-                <BrightLabel>Select Your NFT</BrightLabel>
+                <Label>Select Your NFT</Label>
                 <NFTPreview onClick={() => setIsNFTSelectorOpen(true)}>
                   {selectedNFT ? (
                     <>
@@ -713,8 +579,8 @@ const CreateFlip = () => {
 
               {/* Price */}
               <FormGroup>
-                <BrightLabel>Price (USD)</BrightLabel>
-                <BrightInput
+                <Label>Price (USD)</Label>
+                <Input
                   type="number"
                   placeholder="Enter price in USD (e.g., 0.50 for 50 cents)"
                   value={price}
@@ -722,16 +588,28 @@ const CreateFlip = () => {
                   min="0"
                   step="0.01"
                 />
-                <InfoBox>
+                <small style={{ 
+                  color: theme.colors.textSecondary, 
+                  fontSize: '0.8rem',
+                  marginTop: '0.5rem',
+                  display: 'block'
+                }}>
                   💡 You can enter decimal prices (e.g., 0.25 for 25 cents). This is what Player 2 will pay to join your game.
-                </InfoBox>
+                </small>
                 {price && parseFloat(price) > 0 && (
-                  <PriceDisplay>
-                    <div>
+                  <div style={{ 
+                    background: 'rgba(0, 191, 255, 0.1)',
+                    border: '1px solid rgba(0, 191, 255, 0.3)',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    marginTop: '0.5rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Game Price (Player 2 pays):</span>
                       <span>${parseFloat(price).toFixed(2)}</span>
                     </div>
-                  </PriceDisplay>
+                  </div>
                 )}
               </FormGroup>
 
@@ -739,7 +617,7 @@ const CreateFlip = () => {
 
               {/* Coin Selection */}
               <FormGroup>
-                <BrightLabel>Select Your Coin Design</BrightLabel>
+                <Label>Select Your Coin Design</Label>
                 <CoinSelector
                   selectedCoin={selectedCoin}
                   onCoinSelect={(coin) => {
@@ -751,7 +629,7 @@ const CreateFlip = () => {
 
               {/* Coin Material Selection */}
               <FormGroup>
-                <BrightLabel>Select Your Coin Material</BrightLabel>
+                <Label>Select Your Coin Material</Label>
                 <CoinMaterialSelector
                   selectedMaterial={selectedMaterial}
                   onMaterialSelect={(material) => {
@@ -824,7 +702,7 @@ const CreateFlip = () => {
                 )}
               </SubmitButton>
             </form>
-          </BrightGlassCard>
+          </GlassCard>
         </ContentWrapper>
 
         <NFTSelector
@@ -838,7 +716,7 @@ const CreateFlip = () => {
           loading={nftsLoading}
           selectedNFT={selectedNFT}
         />
-      </BrightContainer>
+      </Container>
     </ThemeProvider>
   )
 }
