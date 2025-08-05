@@ -536,28 +536,72 @@ class ContractService {
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
-
-      
-      // Check if deposit is allowed
+      // Add retry mechanism for canDeposit check due to potential race conditions
       let canDeposit = false
-      try {
-        canDeposit = await this.contract.canDeposit(gameIdBytes32)
-        console.log('🔍 Can deposit check result:', canDeposit)
-      } catch (error) {
-        console.error('❌ Error calling canDeposit:', error)
-        canDeposit = false
+      let retryCount = 0
+      const maxRetries = 3
+      
+      while (!canDeposit && retryCount < maxRetries) {
+        try {
+          canDeposit = await this.contract.canDeposit(gameIdBytes32)
+          console.log(`🔍 Can deposit check result (attempt ${retryCount + 1}):`, canDeposit)
+          
+          if (!canDeposit && retryCount < maxRetries - 1) {
+            console.log(`⏳ CanDeposit returned false, waiting 2 seconds before retry...`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
+          }
+        } catch (error) {
+          console.error(`❌ Error calling canDeposit (attempt ${retryCount + 1}):`, error)
+          canDeposit = false
+          
+          if (retryCount < maxRetries - 1) {
+            console.log(`⏳ Error occurred, waiting 2 seconds before retry...`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
+          }
+        }
+        retryCount++
       }
 
       if (!canDeposit) {
         // Get game details to check if game exists and is active
         const gameDetails = await this.getGameDetails(gameId)
+        console.log('🔍 Game details when canDeposit is false:', gameDetails)
         
         // If the game exists and is not completed, try to proceed anyway
         if (gameDetails.success && 
             gameDetails.data.player1 !== '0x0000000000000000000000000000000000000000' && 
             !gameDetails.data.completed) {
           console.log('⚠️ CanDeposit returned false but game exists and is active, proceeding with deposit...')
+          console.log('📊 Game state:', {
+            player1: gameDetails.data.player1,
+            player2: gameDetails.data.player2,
+            completed: gameDetails.data.completed,
+            depositTime: gameDetails.data.depositTime,
+            player1Deposited: gameDetails.data.player1Deposited,
+            player2Deposited: gameDetails.data.player2Deposited
+          })
+          
+          // Check if deposit timeout has actually expired
+          const currentBlock = await this.publicClient.getBlock()
+          const currentTimestamp = currentBlock.timestamp
+          const depositTime = BigInt(gameDetails.data.depositTime)
+          const depositTimeout = BigInt(300) // 5 minutes in seconds
+          const timeRemaining = depositTime + depositTimeout - BigInt(currentTimestamp)
+          
+          console.log('⏰ Time check:', {
+            currentTimestamp: currentTimestamp.toString(),
+            depositTime: depositTime.toString(),
+            depositTimeout: depositTimeout.toString(),
+            timeRemaining: timeRemaining.toString(),
+            timeRemainingMinutes: (Number(timeRemaining) / 60).toFixed(2)
+          })
+          
+          if (timeRemaining <= 0) {
+            console.error('❌ Deposit timeout has actually expired')
+            return { success: false, error: 'Deposit period has expired' }
+          }
         } else {
+          console.error('❌ Game details indicate deposit should not be allowed:', gameDetails)
           return { success: false, error: 'Deposit period has expired or game is not active' }
         }
       }
@@ -570,6 +614,14 @@ class ContractService {
         }
       }
 
+      // Final check: verify game exists before attempting deposit
+      const finalGameCheck = await this.getGameDetails(gameId)
+      if (!finalGameCheck.success || finalGameCheck.data.player1 === '0x0000000000000000000000000000000000000000') {
+        console.error('❌ Final game check failed - game does not exist in contract')
+        return { success: false, error: 'Game not found in contract' }
+      }
+
+      console.log('✅ Proceeding with NFT deposit...')
       const hash = await this.contract.depositNFT(gameIdBytes32)
       console.log('📦 NFT deposit tx:', hash)
 
@@ -592,10 +644,67 @@ class ContractService {
     try {
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
 
-      // Check if deposit is allowed
-      const canDeposit = await this.contract.canDeposit(gameIdBytes32)
+      // Add retry mechanism for canDeposit check due to potential race conditions
+      let canDeposit = false
+      let retryCount = 0
+      const maxRetries = 3
+      
+      while (!canDeposit && retryCount < maxRetries) {
+        try {
+          canDeposit = await this.contract.canDeposit(gameIdBytes32)
+          console.log(`🔍 Can deposit check result (attempt ${retryCount + 1}):`, canDeposit)
+          
+          if (!canDeposit && retryCount < maxRetries - 1) {
+            console.log(`⏳ CanDeposit returned false, waiting 2 seconds before retry...`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
+          }
+        } catch (error) {
+          console.error(`❌ Error calling canDeposit (attempt ${retryCount + 1}):`, error)
+          canDeposit = false
+          
+          if (retryCount < maxRetries - 1) {
+            console.log(`⏳ Error occurred, waiting 2 seconds before retry...`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
+          }
+        }
+        retryCount++
+      }
+      
       if (!canDeposit) {
-        return { success: false, error: 'Deposit period has expired or game is not active' }
+        // Get game details to check if game exists and is active
+        const gameDetails = await this.getGameDetails(gameId)
+        console.log('🔍 Game details when canDeposit is false (ETH):', gameDetails)
+        
+        // If the game exists and is not completed, check timeout manually
+        if (gameDetails.success && 
+            gameDetails.data.player1 !== '0x0000000000000000000000000000000000000000' && 
+            !gameDetails.data.completed) {
+          
+          // Check if deposit timeout has actually expired
+          const currentBlock = await this.publicClient.getBlock()
+          const currentTimestamp = currentBlock.timestamp
+          const depositTime = BigInt(gameDetails.data.depositTime)
+          const depositTimeout = BigInt(300) // 5 minutes in seconds
+          const timeRemaining = depositTime + depositTimeout - BigInt(currentTimestamp)
+          
+          console.log('⏰ Time check (ETH):', {
+            currentTimestamp: currentTimestamp.toString(),
+            depositTime: depositTime.toString(),
+            depositTimeout: depositTimeout.toString(),
+            timeRemaining: timeRemaining.toString(),
+            timeRemainingMinutes: (Number(timeRemaining) / 60).toFixed(2)
+          })
+          
+          if (timeRemaining <= 0) {
+            console.error('❌ Deposit timeout has actually expired (ETH)')
+            return { success: false, error: 'Deposit period has expired' }
+          }
+          
+          console.log('⚠️ CanDeposit returned false but timeout not expired, proceeding with ETH deposit...')
+        } else {
+          console.error('❌ Game details indicate ETH deposit should not be allowed:', gameDetails)
+          return { success: false, error: 'Deposit period has expired or game is not active' }
+        }
       }
 
       const value = BigInt(ethAmount)

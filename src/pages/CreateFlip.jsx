@@ -199,7 +199,7 @@ const CreateFlip = () => {
   const [selectedNFT, setSelectedNFT] = useState(null)
   const [price, setPrice] = useState('')
   const [loading, setLoading] = useState(false)
-  const [gameType, setGameType] = useState('nft-vs-crypto')
+
   const [preloadNFT, setPreloadNFT] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
   const [selectedCoin, setSelectedCoin] = useState({
@@ -347,7 +347,7 @@ const CreateFlip = () => {
             isCustom: selectedCoin.isCustom,
             material: selectedMaterial
           }),
-          game_type: gameType // Add this
+          game_type: 'nft-vs-crypto' // Hardcoded since there's only one option
         })
       })
       
@@ -423,6 +423,10 @@ const CreateFlip = () => {
         console.error('Server error response:', errorData)
         throw new Error(errorData.error || 'Failed to register game')
       }
+      
+      // Add a small delay to ensure blockchain state is fully updated
+      showInfo('Waiting for blockchain confirmation...')
+      await new Promise(resolve => setTimeout(resolve, 3000))
       
       // Step 5: Deposit NFT
       showInfo('Depositing NFT...')
@@ -575,13 +579,7 @@ const CreateFlip = () => {
 
 
 
-              {/* Game Type */}
-              <FormGroup>
-                <Label>Game Type</Label>
-                <Select value={gameType} onChange={(e) => setGameType(e.target.value)}>
-                  <option value="nft-vs-crypto">NFT vs Crypto</option>
-                </Select>
-              </FormGroup>
+
 
               {/* Price */}
               <FormGroup>

@@ -225,6 +225,17 @@ body {
   }
 }
 
+@keyframes flash {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 5px rgba(255, 105, 180, 0.5);
+  }
+  50% {
+    opacity: 0.6;
+    text-shadow: 0 0 15px rgba(255, 105, 180, 0.8), 0 0 25px rgba(255, 20, 147, 0.6);
+  }
+}
+
 @keyframes waitingPulse {
   0%, 100% {
     opacity: 0.5;

@@ -415,23 +415,25 @@ const CoinSelector = ({
           
           <div style={{
             padding: '1.5rem',
-            background: 'rgba(255, 215, 0, 0.1)',
-            border: '1px solid rgba(255, 215, 0, 0.3)',
+            background: 'rgba(255, 192, 203, 0.1)',
+            border: '1px solid rgba(255, 192, 203, 0.3)',
             borderRadius: '1rem',
             textAlign: 'center'
           }}>
             <div style={{
-              color: '#FFD700',
+              color: '#FF69B4',
               fontSize: '1rem',
               fontWeight: 'bold',
-              marginBottom: '0.5rem'
+              marginBottom: '0.5rem',
+              animation: 'flash 2s infinite'
             }}>
               💡 Want to use a custom coin?
             </div>
             <div style={{
-              color: '#fff',
+              color: '#FF69B4',
               fontSize: '0.9rem',
-              opacity: 0.8
+              opacity: 0.9,
+              animation: 'flash 2s infinite 0.5s'
             }}>
               Go to your profile and upload custom heads & tails images to unlock this option!
             </div>
