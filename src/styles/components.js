@@ -69,27 +69,10 @@ export const Button = styled.button`
   cursor: pointer;
   transition: ${props => props.theme.transitions.default};
   position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: translateX(-100%);
-    transition: ${props => props.theme.transitions.default};
-  }
   
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${props => props.theme.shadows.neon};
-    
-    &::before {
-      transform: translateX(100%);
-    }
   }
 `
 
@@ -591,27 +574,10 @@ export const GameFlipButton = styled(Button)`
   cursor: pointer;
   transition: ${props => props.theme.transitions.default};
   position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: translateX(-100%);
-    transition: ${props => props.theme.transitions.default};
-  }
   
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${props => props.theme.shadows.neon};
-    
-    &::before {
-      transform: translateX(100%);
-    }
   }
 `
 

@@ -132,6 +132,7 @@ const FilterContainer = styled.div`
   gap: 0.5rem;
   flex-wrap: wrap;
   align-items: center;
+  width: 100%;
 
   @media (max-width: 768px) {
     flex-wrap: nowrap;
@@ -140,9 +141,14 @@ const FilterContainer = styled.div`
 `
 
 const DesktopFilters = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 0.5rem;
-  flex-wrap: wrap;
+  width: 100%;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  }
 
   @media (max-width: 768px) {
     display: none;
@@ -152,9 +158,12 @@ const DesktopFilters = styled.div`
 const FilterButton = styled(Button)`
   background: ${props => props.active ? props.theme.colors.neonGreen : 'transparent'};
   border: 1px solid ${props => props.theme.colors.neonGreen};
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   color: ${props => props.active ? '#000B1A' : props.theme.colors.textPrimary};
   white-space: nowrap;
+  width: 100%;
+  text-align: center;
+  font-size: 0.85rem;
 
   @media (max-width: 768px) {
     padding: 0.5rem;
@@ -265,6 +274,34 @@ const Home = () => {
     const interval = setInterval(fetchData, 10000) // Refresh every 10 seconds
     return () => clearInterval(interval)
   }, [])
+
+  // Auto-select the most recent flip when no flip is selected but flips are available
+  useEffect(() => {
+    const filteredItems = getAllItems()
+    
+    // If no flip is selected but flips are available, select the most recent one
+    if (!selectedFlip && filteredItems.length > 0) {
+      const mostRecentFlip = filteredItems[0]
+      console.log('🔄 Auto-selecting most recent flip:', mostRecentFlip.nft?.name)
+      setSelectedFlip(mostRecentFlip)
+    }
+    
+    // If a flip is selected but it's no longer in the filtered items, select the most recent available
+    if (selectedFlip && filteredItems.length > 0) {
+      const isSelectedFlipStillAvailable = filteredItems.some(item => item.id === selectedFlip.id)
+      if (!isSelectedFlipStillAvailable) {
+        const mostRecentFlip = filteredItems[0]
+        console.log('🔄 Selected flip no longer available, switching to most recent:', mostRecentFlip.nft?.name)
+        setSelectedFlip(mostRecentFlip)
+      }
+    }
+    
+    // If there are no flips available and a flip is selected, clear the selection
+    if (filteredItems.length === 0 && selectedFlip) {
+      console.log('🔄 No flips available, clearing selected flip')
+      setSelectedFlip(null)
+    }
+  }, [listings, games, selectedFlip, activeFilter, searchQuery])
 
   // Listen for global WebSocket messages for real-time updates
   useEffect(() => {

@@ -556,7 +556,7 @@ const UnifiedGameChat = ({
 
               </>
             )}
-            {isCreator && message.offerId && (
+            {isCreator && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -657,7 +657,10 @@ const UnifiedGameChat = ({
               <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💬</div>
               <div style={{ marginBottom: '0.5rem' }}>No messages yet. Start the conversation!</div>
               <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
-                Use the chat input below to send messages, or make a crypto offer!
+                {isCreator 
+                  ? 'Use the chat input below to send messages. Wait for the joiner to make a crypto offer!'
+                  : 'Use the chat input below to send messages, or make a crypto offer!'
+                }
               </div>
             </div>
           </div>
@@ -706,34 +709,36 @@ const UnifiedGameChat = ({
           </InputContainer>
         </div>
 
-        {/* Crypto Offer Input */}
-        <div>
-          <InputLabel>💰 Crypto Offer (ETH)</InputLabel>
-          <OfferInputContainer>
-            <OfferInput
-              type="text"
-              value={cryptoOffer}
-              onChange={(e) => {
-                // Only allow digits and decimal point
-                const value = e.target.value.replace(/[^0-9.]/g, '')
-                // Prevent multiple decimal points
-                const parts = value.split('.')
-                if (parts.length <= 2) {
-                  setCryptoOffer(value)
-                }
-              }}
-              placeholder="Enter crypto amount (digits only)..."
-              disabled={!connected}
-              onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
-            />
-            <OfferButton
-              onClick={handleSubmitCryptoOffer}
-              disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
-            >
-              {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
-            </OfferButton>
-          </OfferInputContainer>
-        </div>
+        {/* Crypto Offer Input - Only for Joiners */}
+        {!isCreator && (
+          <div>
+            <InputLabel>💰 Crypto Offer (ETH)</InputLabel>
+            <OfferInputContainer>
+              <OfferInput
+                type="text"
+                value={cryptoOffer}
+                onChange={(e) => {
+                  // Only allow digits and decimal point
+                  const value = e.target.value.replace(/[^0-9.]/g, '')
+                  // Prevent multiple decimal points
+                  const parts = value.split('.')
+                  if (parts.length <= 2) {
+                    setCryptoOffer(value)
+                  }
+                }}
+                placeholder="Enter crypto amount (digits only)..."
+                disabled={!connected}
+                onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+              />
+              <OfferButton
+                onClick={handleSubmitCryptoOffer}
+                disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
+              >
+                {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+              </OfferButton>
+            </OfferInputContainer>
+          </div>
+        )}
       </DualInputContainer>
 
       {/* Name Modal */}
