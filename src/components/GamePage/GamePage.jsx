@@ -16,8 +16,7 @@ import GamePayment from './GamePayment'
 import GameBottom from './GameBottom'
 import GameResultPopup from '../GameResultPopup'
 import ProfilePicture from '../ProfilePicture'
-import GameStatusContainer from './GameStatusContainer'
-import NFTDetailsContainer from './NFTDetailsContainer'
+import GameStatusAndNFTContainer from './GameStatusAndNFTContainer'
 import ChatContainer from './ChatContainer'
 import OffersContainer from './OffersContainer'
 
@@ -55,15 +54,10 @@ const GameLayout = styled.div`
 
 const ThreeContainerLayout = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 2rem;
   width: 100%;
   max-width: 1400px;
-  
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-  }
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -277,16 +271,11 @@ const GamePage = () => {
             />
 
                          <ThreeContainerLayout>
-               {/* Game Status Container */}
-               <GameStatusContainer 
+               {/* Combined Game Status & NFT Details Container */}
+               <GameStatusAndNFTContainer 
                  gameData={gameData}
                  isCreator={isCreator}
                  currentTurn={gameState.currentTurn}
-               />
-
-               {/* NFT Details Container */}
-               <NFTDetailsContainer 
-                 gameData={gameData}
                  nftData={{
                    name: getGameNFTName(),
                    image: getGameNFTImage(),

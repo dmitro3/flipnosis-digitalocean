@@ -6,13 +6,13 @@ import styled from '@emotion/styled'
 
 const OffersContainerStyled = styled.div`
   background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  border: 1px solid rgba(0, 255, 65, 0.3);
   border-radius: 1rem;
   padding: 1rem;
   height: 400px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
 `
 
 const OffersHeader = styled.div`
@@ -21,12 +21,12 @@ const OffersHeader = styled.div`
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 20, 147, 0.3);
+  border-bottom: 1px solid rgba(0, 255, 65, 0.3);
 `
 
 const OffersTitle = styled.h3`
   margin: 0;
-  color: #FF1493;
+  color: #00FF41;
   font-size: 1.2rem;
   font-weight: bold;
 `
@@ -66,7 +66,7 @@ const OffersList = styled.div`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 20, 147, 0.3);
+    background: rgba(0, 255, 65, 0.3);
     border-radius: 3px;
   }
 `
@@ -75,8 +75,8 @@ const OfferItem = styled.div`
   margin-bottom: 0.75rem;
   padding: 0.75rem;
   border-radius: 0.5rem;
-  background: rgba(255, 20, 147, 0.15);
-  border: 1px solid rgba(255, 20, 147, 0.4);
+  background: rgba(0, 255, 65, 0.15);
+  border: 1px solid rgba(0, 255, 65, 0.4);
   animation: slideIn 0.3s ease-out;
   
   @keyframes slideIn {
@@ -97,7 +97,7 @@ const OfferHeader = styled.div`
   align-items: center;
   margin-bottom: 0.5rem;
   font-size: 0.8rem;
-  color: #FF1493;
+  color: #00FF41;
 `
 
 const OfferContent = styled.div`
@@ -165,8 +165,8 @@ const OfferInputContainer = styled.div`
 const OfferInput = styled.input`
   flex: 1;
   padding: 0.75rem;
-  background: rgba(255, 20, 147, 0.1);
-  border: 1px solid rgba(255, 20, 147, 0.3);
+      background: rgba(0, 255, 65, 0.1);
+    border: 1px solid rgba(0, 255, 65, 0.3);
   border-radius: 0.5rem;
   color: #fff;
   font-size: 0.9rem;
@@ -177,8 +177,8 @@ const OfferInput = styled.input`
   
   &:focus {
     outline: none;
-    border-color: #FF1493;
-    box-shadow: 0 0 10px rgba(255, 20, 147, 0.3);
+            border-color: #00FF41;
+          box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
   }
   
   &:disabled {
@@ -484,7 +484,7 @@ const OffersContainer = ({
                 padding: '0.5rem', 
                 background: 'rgba(255, 255, 255, 0.05)', 
                 borderRadius: '0.25rem',
-                border: '1px solid rgba(255, 20, 147, 0.2)'
+                border: '1px solid rgba(0, 255, 65, 0.2)'
               }}>
                 <strong style={{ color: '#FFD700' }}>Offer Message:</strong>
                 <div style={{ color: '#fff', marginTop: '0.25rem' }}>{offer.offerText}</div>
@@ -529,7 +529,7 @@ const OffersContainer = ({
     return (
       <OffersContainerStyled>
         <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p style={{ color: '#FF1493' }}>Please connect your wallet to view offers</p>
+                          <p style={{ color: '#00FF41' }}>Please connect your wallet to view offers</p>
         </div>
       </OffersContainerStyled>
     )
@@ -556,7 +556,7 @@ const OffersContainer = ({
           }}>
             <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💰</div>
             <div style={{ marginBottom: '0.5rem' }}>No offers yet.</div>
-            <div style={{ fontSize: '0.9rem', color: '#FF1493' }}>
+                            <div style={{ fontSize: '0.9rem', color: '#00FF41' }}>
               {isCreator 
                 ? 'Wait for other players to make crypto offers!'
                 : 'Make a crypto offer to join the game!'
