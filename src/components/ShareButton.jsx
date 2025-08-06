@@ -13,8 +13,8 @@ const ShareButton = ({ gameId, gameData }) => {
   const priceUSD = gameData?.priceUSD || '0'
   
   const shareTexts = {
-    twitter: `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${nftName} vs $${priceUSD} USD\n\n🔥 Bidding Live! Click to join now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`,
-    telegram: `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${nftName} vs $${priceUSD} USD\n\n🔥 Bidding Live! Click to join now!\n\n${gameUrl}`
+    twitter: `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${nftName} vs $${priceUSD} USD\n\n🔥 Bidding is live! Click to join now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`,
+    telegram: `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${nftName} vs $${priceUSD} USD\n\n🔥 Bidding is live! Click to join now!\n\n${gameUrl}`
   }
   
   const handleShare = async (platform) => {

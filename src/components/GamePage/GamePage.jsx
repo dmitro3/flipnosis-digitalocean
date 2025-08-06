@@ -647,7 +647,7 @@ const GamePage = () => {
                      <button
                        onClick={() => {
                          const gameUrl = `${window.location.origin}/game/${gameId}`
-                         const shareText = `🎮 Check out this epic NFT flip game!\n\n💎 ${getGameNFTName()} vs $${(getGamePrice() || 0).toFixed(2)} USD\n\n🔥 Join the flip battle now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`
+                         const shareText = `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${getGameNFTName()} vs $${(getGamePrice() || 0).toFixed(2)} USD\n\n🔥 Bidding is live! Click to join now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`
                          const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`
                          window.open(url, '_blank', 'width=600,height=400')
                        }}
@@ -676,7 +676,7 @@ const GamePage = () => {
                      <button
                        onClick={() => {
                          const gameUrl = `${window.location.origin}/game/${gameId}`
-                         const shareText = `🎮 Check out this epic NFT flip game!\n\n💎 ${getGameNFTName()} vs $${(getGamePrice() || 0).toFixed(2)} USD\n\n🔥 Join the flip battle now!\n\n${gameUrl}`
+                         const shareText = `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${getGameNFTName()} vs $${(getGamePrice() || 0).toFixed(2)} USD\n\n🔥 Bidding is live! Click to join now!\n\n${gameUrl}`
                          const url = `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(shareText)}`
                          window.open(url, '_blank', 'width=600,height=400')
                        }}
@@ -758,6 +758,7 @@ const GamePage = () => {
                        socket={wsRef}
                        connected={wsConnected}
                        offeredNFTs={offers}
+                       showChatInput={true}
                        showOffersInput={false}
                        onOfferSubmitted={(offerData) => {
                          console.log('Offer submitted via unified chat:', offerData)

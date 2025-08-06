@@ -45,14 +45,12 @@ const Message = styled.div`
   background: ${props => {
     if (props.messageType === 'offer') return 'rgba(255, 20, 147, 0.15)'
     if (props.messageType === 'offer_accepted') return 'rgba(0, 255, 65, 0.15)'
-    if (props.messageType === 'offer_rejected') return 'rgba(255, 0, 0, 0.15)'
     if (props.messageType === 'system') return 'rgba(255, 215, 0, 0.15)'
     return props.isCurrentUser ? 'rgba(255, 20, 147, 0.2)' : 'rgba(255, 255, 255, 0.1)'
   }};
   border: 1px solid ${props => {
     if (props.messageType === 'offer') return 'rgba(255, 20, 147, 0.4)'
     if (props.messageType === 'offer_accepted') return 'rgba(0, 255, 65, 0.4)'
-    if (props.messageType === 'offer_rejected') return 'rgba(255, 0, 0, 0.4)'
     if (props.messageType === 'system') return 'rgba(255, 215, 0, 0.4)'
     return props.isCurrentUser ? 'rgba(255, 20, 147, 0.3)' : 'rgba(255, 255, 255, 0.2)'
   }};
@@ -79,7 +77,6 @@ const MessageHeader = styled.div`
   color: ${props => {
     if (props.messageType === 'offer') return '#FF1493'
     if (props.messageType === 'offer_accepted') return '#00FF41'
-    if (props.messageType === 'offer_rejected') return '#FF0000'
     if (props.messageType === 'system') return '#FFD700'
     return props.isCurrentUser ? '#FF1493' : '#00BFFF'
   }};
@@ -111,15 +108,6 @@ const ActionButton = styled.button`
     
     &:hover {
       background: #00CC33;
-    }
-  }
-  
-  &.reject {
-    background: #FF4444;
-    color: #fff;
-    
-    &:hover {
-      background: #CC3333;
     }
   }
 `
@@ -323,7 +311,7 @@ const UnifiedGameChat = ({
             cryptoAmount: data.cryptoAmount,
             timestamp: data.timestamp || new Date().toISOString(),
             offerId: data.offerId,
-            message: `Crypto offer of ${data.cryptoAmount} ETH`
+            message: `Crypto offer of $${data.cryptoAmount} USD`
           })
         } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
           console.log('✅ Offer accepted:', data)
@@ -345,15 +333,6 @@ const UnifiedGameChat = ({
               timestamp: new Date().toISOString()
             })
           }
-        } else if (data.type === 'reject_nft_offer' || data.type === 'reject_crypto_offer') {
-          console.log('❌ Offer rejected:', data)
-          addMessage({
-            id: Date.now() + Math.random(),
-            type: 'offer_rejected',
-            address: data.creatorAddress,
-            rejectedOffer: data.rejectedOffer,
-            timestamp: data.timestamp || new Date().toISOString()
-          })
         } else if (data.type === 'chat_history') {
           console.log('📚 Received chat history:', data)
           // Load chat history messages
@@ -410,6 +389,17 @@ const UnifiedGameChat = ({
       loadPlayerNames()
     }
   }, [messages, getPlayerName])
+
+  // Debug logging for messages
+  useEffect(() => {
+    console.log('📨 Messages updated:', {
+      totalMessages: messages.length,
+      filteredMessages: filteredMessages.length,
+      showChatInput,
+      showOffersInput,
+      messageTypes: messages.map(m => m.type)
+    })
+  }, [messages, filteredMessages, showChatInput, showOffersInput])
 
   const addMessage = (message) => {
     setMessages(prev => [...prev, message])
@@ -532,33 +522,6 @@ const UnifiedGameChat = ({
     }
   }
 
-  const handleRejectOffer = async (offer) => {
-    if (!isCreator || !connected || !socket) {
-      console.log('❌ Cannot reject offer:', { isCreator, connected, hasSocket: !!socket })
-      return
-    }
-
-    try {
-      const offerType = offer.cryptoAmount ? 'crypto' : 'NFT'
-      showInfo(`Rejecting ${offerType} challenge...`)
-
-      const rejectionData = {
-        type: offer.cryptoAmount ? 'reject_crypto_offer' : 'reject_nft_offer',
-        gameId,
-        creatorAddress: address,
-        rejectedOffer: offer,
-        timestamp: new Date().toISOString()
-      }
-
-      console.log('📤 Sending offer rejection:', rejectionData)
-      socket.send(JSON.stringify(rejectionData))
-      
-    } catch (error) {
-      console.error('Error rejecting offer:', error)
-      showError('Failed to reject offer: ' + error.message)
-    }
-  }
-
   const handleSaveName = async () => {
     if (!tempName.trim()) {
       showError('Please enter a valid name')
@@ -590,7 +553,6 @@ const UnifiedGameChat = ({
     switch (messageType) {
       case 'offer': return '💎'
       case 'offer_accepted': return '✅'
-      case 'offer_rejected': return '❌'
       case 'system': return '⚡'
       default: return '💬'
     }
@@ -642,12 +604,6 @@ const UnifiedGameChat = ({
                 >
                   ✅ Accept
                 </ActionButton>
-                <ActionButton 
-                  className="reject"
-                  onClick={() => handleRejectOffer(message)}
-                >
-                  ❌ Decline
-                </ActionButton>
               </OfferActions>
             )}
           </div>
@@ -663,20 +619,26 @@ const UnifiedGameChat = ({
           </div>
         )
       
-      case 'offer_rejected':
-        return (
-          <div>
-            <strong>❌ Battle Declined</strong>
-            <div style={{ fontSize: '0.9rem', color: '#FF1493', marginTop: '0.25rem' }}>
-              The creator has declined the challenge.
-            </div>
-          </div>
-        )
-      
       default:
         return <MessageContent>{message.message}</MessageContent>
     }
   }
+
+  // Filter messages based on display mode
+  const getFilteredMessages = () => {
+    if (showChatInput === false && showOffersInput === false) {
+      // Offers tab mode - only show offer-related messages and system messages
+      return messages.filter(msg => 
+        msg.type === 'offer' || 
+        msg.type === 'offer_accepted' || 
+        msg.type === 'system'
+      )
+    }
+    // Chat tab mode - show all messages
+    return messages
+  }
+
+  const filteredMessages = getFilteredMessages()
 
   if (!isConnected) {
     return (
@@ -704,7 +666,7 @@ const UnifiedGameChat = ({
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
         <h4 style={{ margin: 0, color: '#00BFFF' }}>
-          💬 Game Chat & Offers
+          {showChatInput === false && showOffersInput === false ? '💰 Offers & System Messages' : '💬 Game Chat & Offers'}
         </h4>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <div style={{ 
@@ -725,26 +687,35 @@ const UnifiedGameChat = ({
 
       {/* Messages Container */}
       <MessagesContainer>
-        {messages.length === 0 ? (
+        {filteredMessages.length === 0 ? (
           <div style={{
             textAlign: 'center',
             color: theme.colors.textSecondary,
             padding: '2rem'
           }}>
             <div>
-              <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💬</div>
-              <div style={{ marginBottom: '0.5rem' }}>No messages yet. Start the conversation!</div>
+              <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>
+                {showChatInput === false && showOffersInput === false ? '💰' : '💬'}
+              </div>
+              <div style={{ marginBottom: '0.5rem' }}>
+                {showChatInput === false && showOffersInput === false 
+                  ? 'No offers yet.'
+                  : 'No messages yet. Start the conversation!'
+                }
+              </div>
               <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
-                {isCreator 
-                  ? 'Use the chat input below to send messages. Wait for other players to make crypto offers!'
-                  : 'Use the chat input below to send messages, or make a crypto offer to join the game!'
+                {showChatInput === false && showOffersInput === false
+                  ? 'Use the offer input below to make a crypto offer to join the game!'
+                  : isCreator 
+                    ? 'Use the chat input below to send messages. Wait for other players to make crypto offers!'
+                    : 'Use the chat input below to send messages, or make a crypto offer to join the game!'
                 }
               </div>
 
             </div>
           </div>
         ) : (
-          messages.map((msg, index) => {
+          filteredMessages.map((msg, index) => {
             const isCurrentUser = msg.address === address
             const displayName = getDisplayName(msg.address)
             

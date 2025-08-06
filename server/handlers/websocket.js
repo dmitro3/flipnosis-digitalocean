@@ -74,10 +74,6 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
           case 'accept_crypto_offer':
             handleOfferAccepted(socket, data)
             break
-          case 'reject_nft_offer':
-          case 'reject_crypto_offer':
-            handleOfferRejected(socket, data)
-            break
           default:
             console.log('⚠️ Unhandled WebSocket message type:', data.type)
         }
@@ -964,40 +960,6 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       }
     } catch (error) {
       console.error('❌ Error saving offer acceptance:', error)
-    }
-  }
-
-  // Handle offer rejection (for both NFT and crypto offers)
-  async function handleOfferRejected(socket, data) {
-    const { gameId, creatorAddress, rejectedOffer, timestamp } = data
-    if (!gameId || !creatorAddress || !rejectedOffer) {
-      console.error('❌ Invalid reject offer data:', data)
-      return
-    }
-    
-    try {
-      // Determine the offer type and broadcast accordingly
-      const offerType = rejectedOffer.cryptoAmount ? 'reject_crypto_offer' : 'reject_nft_offer'
-      
-      // Save rejection to database
-      await dbService.saveChatMessage(
-        gameId, 
-        creatorAddress, 
-        `Offer rejected`, 
-        'offer_rejected', 
-        { rejectedOffer, offerType }
-      )
-      
-      // Broadcast rejection to the game room
-      broadcastToRoom(gameId, {
-        type: offerType,
-        rejectedOffer,
-        creatorAddress,
-        timestamp: timestamp || new Date().toISOString()
-      })
-      console.log(`📢 Broadcasted ${offerType} to room`, gameId)
-    } catch (error) {
-      console.error('❌ Error saving offer rejection:', error)
     }
   }
 
