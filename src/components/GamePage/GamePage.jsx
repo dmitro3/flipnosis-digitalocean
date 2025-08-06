@@ -162,6 +162,21 @@ const GamePage = () => {
     playerChoices
   )
 
+  // Debug logging
+  useEffect(() => {
+    if (gameData) {
+      console.log('🎮 Game Data Loaded:', {
+        status: gameData.status,
+        challenger: gameData.challenger,
+        creator: gameData.creator,
+        currentUser: address,
+        isChallenger: gameData.challenger?.toLowerCase() === address?.toLowerCase(),
+        depositTimeLeft,
+        ethAmount
+      })
+    }
+  }, [gameData, address, depositTimeLeft, ethAmount])
+
   // Loading state
   if (loading) {
     return (
@@ -277,15 +292,25 @@ const GamePage = () => {
             />
 
             {/* Payment Section - Show prominently when deposit is needed */}
-            {gameData?.status === 'waiting_challenger_deposit' && (
-              <div style={{ marginBottom: '2rem' }}>
+            {gameData?.status === 'waiting_challenger_deposit' && 
+             gameData?.challenger && 
+             address && 
+             gameData.challenger.toLowerCase() === address.toLowerCase() && (
+              <div style={{ 
+                marginBottom: '2rem',
+                padding: '1.5rem',
+                background: 'rgba(255, 20, 147, 0.1)',
+                border: '2px solid #FF1493',
+                borderRadius: '1rem',
+                animation: 'pulse 2s infinite'
+              }}>
                 <GamePayment 
                   gameData={gameData}
                   gameId={gameId}
                   address={address}
                   depositTimeLeft={depositTimeLeft}
                   ethAmount={ethAmount}
-                  contractInitialized={true}  // Set to true to enable button
+                  contractInitialized={true}
                   countdownInterval={countdownInterval}
                   getGameCreator={getGameCreator}
                   getGameJoiner={getGameJoiner}
@@ -294,11 +319,37 @@ const GamePage = () => {
                   getGameNFTName={getGameNFTName}
                   getGameNFTCollection={getGameNFTCollection}
                   isCreator={isCreator}
-                  isJoiner={isJoiner}
+                  isJoiner={() => gameData?.challenger && address && 
+                    gameData.challenger.toLowerCase() === address.toLowerCase()}
                   formatTimeLeft={formatTimeLeft}
                   startDepositCountdown={startDepositCountdown}
                   loadGameData={loadGameData}
                 />
+              </div>
+            )}
+
+            {/* Show countdown for creator */}
+            {gameData?.status === 'waiting_challenger_deposit' && 
+             gameData?.creator && 
+             address && 
+             gameData.creator.toLowerCase() === address.toLowerCase() && 
+             depositTimeLeft !== null && (
+              <div style={{
+                marginBottom: '2rem',
+                padding: '1rem',
+                background: 'rgba(255, 165, 0, 0.1)',
+                border: '2px solid #ffa500',
+                borderRadius: '1rem'
+              }}>
+                <h4 style={{ color: '#ffa500', margin: '0 0 0.5rem 0' }}>
+                  ⏰ Waiting for Challenger to Deposit
+                </h4>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: depositTimeLeft < 30 ? '#ff0000' : '#ffa500' }}>
+                  {formatTimeLeft(depositTimeLeft)}
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#CCCCCC', margin: '0.5rem 0 0 0' }}>
+                  If challenger doesn't deposit, listing will reopen for new offers
+                </p>
               </div>
             )}
 

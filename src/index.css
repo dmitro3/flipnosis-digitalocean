@@ -214,6 +214,21 @@ body {
   50% { transform: scale(1.05); }
 }
 
+@keyframes pulse {
+  0% { 
+    transform: scale(1); 
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.5); 
+  }
+  50% { 
+    transform: scale(1.02); 
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.8); 
+  }
+  100% { 
+    transform: scale(1); 
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.5); 
+  }
+}
+
 @keyframes powerLevelFlash {
   0%, 100% { 
     color: #FFD700;

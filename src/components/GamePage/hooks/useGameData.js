@@ -361,6 +361,21 @@ export const useGameData = (
         }
         break
 
+      case 'game_status_update':
+        console.log('🔄 Game status updated:', data)
+        if (data.status === 'waiting_challenger_deposit') {
+          // Force reload to ensure all data is fresh
+          loadGameData()
+          
+          // Show appropriate message
+          if (data.challenger === address) {
+            showInfo('Your offer was accepted! Please deposit ETH to start the game.')
+          } else {
+            showInfo('Offer accepted! Waiting for challenger to deposit.')
+          }
+        }
+        break
+
       case 'game_awaiting_challenger_deposit':
         console.log('💰 Game awaiting challenger deposit')
         showInfo('Game is waiting for challenger deposit')

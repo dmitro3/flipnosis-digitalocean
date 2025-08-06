@@ -319,6 +319,13 @@ const OffersContainer = ({
             timestamp: data.timestamp || new Date().toISOString()
           })
           
+          // Force reload game data to get updated status
+          if (window.location.pathname.includes('/game/')) {
+            setTimeout(() => {
+              window.location.reload() // Force page reload to ensure fresh data
+            }, 500)
+          }
+          
           // Add a system message to prompt the joiner to load their crypto
           if (data.type === 'accept_crypto_offer' && data.acceptedOffer?.cryptoAmount) {
             addOffer({
@@ -476,6 +483,13 @@ const OffersContainer = ({
 
       console.log('📤 Offers: Sending offer acceptance:', acceptanceData)
       socket.send(JSON.stringify(acceptanceData))
+      
+      // Reload game data after a short delay to get updated status
+      setTimeout(() => {
+        if (window.location.pathname.includes('/game/')) {
+          window.location.reload() // Force reload to get updated game status
+        }
+      }, 1000)
       
       if (onOfferAccepted) {
         onOfferAccepted(offer)
