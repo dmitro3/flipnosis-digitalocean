@@ -1,10 +1,15 @@
 const express = require('express')
 const crypto = require('crypto')
 const ethers = require('ethers')
+const { XPService } = require('../services/xpService')
 
 function createApiRoutes(dbService, blockchainService, wsHandlers) {
   const router = express.Router()
   const db = dbService.getDatabase()
+  
+  // Initialize XP Service
+  const xpService = new XPService(dbService.databasePath)
+  xpService.initialize().catch(console.error)
 
   // Health check
   router.get('/health', (req, res) => {
@@ -60,72 +65,118 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     const { name, avatar, headsImage, tailsImage, twitter, telegram } = req.body
     
     try {
-      // Check if profile exists
-      const existingProfile = await new Promise((resolve, reject) => {
+      let totalXPGained = 0
+      let xpMessages = []
+      
+      // Award XP for each field that's being set for the first time
+      if (name) {
+        try {
+          const result = await xpService.awardProfileXP(address, 'name', name)
+          if (result.xpGained > 0) {
+            totalXPGained += result.xpGained
+            xpMessages.push(result.message)
+          }
+        } catch (error) {
+          console.error('Error awarding name XP:', error)
+        }
+      }
+      
+      if (avatar) {
+        try {
+          const result = await xpService.awardProfileXP(address, 'avatar', avatar)
+          if (result.xpGained > 0) {
+            totalXPGained += result.xpGained
+            xpMessages.push(result.message)
+          }
+        } catch (error) {
+          console.error('Error awarding avatar XP:', error)
+        }
+      }
+      
+      if (twitter) {
+        try {
+          const result = await xpService.awardProfileXP(address, 'twitter', twitter)
+          if (result.xpGained > 0) {
+            totalXPGained += result.xpGained
+            xpMessages.push(result.message)
+          }
+        } catch (error) {
+          console.error('Error awarding twitter XP:', error)
+        }
+      }
+      
+      if (telegram) {
+        try {
+          const result = await xpService.awardProfileXP(address, 'telegram', telegram)
+          if (result.xpGained > 0) {
+            totalXPGained += result.xpGained
+            xpMessages.push(result.message)
+          }
+        } catch (error) {
+          console.error('Error awarding telegram XP:', error)
+        }
+      }
+      
+      if (headsImage) {
+        try {
+          const result = await xpService.awardProfileXP(address, 'heads_image', headsImage)
+          if (result.xpGained > 0) {
+            totalXPGained += result.xpGained
+            xpMessages.push(result.message)
+          }
+        } catch (error) {
+          console.error('Error awarding heads XP:', error)
+        }
+      }
+      
+      if (tailsImage) {
+        try {
+          const result = await xpService.awardProfileXP(address, 'tails_image', tailsImage)
+          if (result.xpGained > 0) {
+            totalXPGained += result.xpGained
+            xpMessages.push(result.message)
+          }
+        } catch (error) {
+          console.error('Error awarding tails XP:', error)
+        }
+      }
+        
+      // Update or create profile with all fields
+      const updateQuery = `
+        INSERT OR REPLACE INTO profiles (
+          address, name, avatar, heads_image, tails_image, twitter, telegram, 
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `
+      await new Promise((resolve, reject) => {
+        db.run(updateQuery, [
+          address.toLowerCase(), 
+          name || '', 
+          avatar || '', 
+          headsImage || '', 
+          tailsImage || '', 
+          twitter || '', 
+          telegram || ''
+        ], function(err) {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      // Get updated profile with XP info
+      const updatedProfile = await new Promise((resolve, reject) => {
         db.get('SELECT * FROM profiles WHERE address = ?', [address.toLowerCase()], (err, result) => {
           if (err) reject(err)
           else resolve(result)
         })
       })
       
-      let xpGained = 0
-      let updateFields = []
-      let updateValues = []
-      
-      if (existingProfile) {
-        // Check each field for XP awards (only once per field)
-        if (name && name !== existingProfile.name && !existingProfile.xp_name_earned) {
-          xpGained += 250
-          updateFields.push('xp_name_earned = TRUE')
-        }
-        if (avatar && avatar !== existingProfile.avatar && !existingProfile.xp_avatar_earned) {
-          xpGained += 250
-          updateFields.push('xp_avatar_earned = TRUE')
-        }
-        if (twitter && twitter !== existingProfile.twitter && !existingProfile.xp_twitter_earned) {
-          xpGained += 250
-          updateFields.push('xp_twitter_earned = TRUE')
-        }
-        if (telegram && telegram !== existingProfile.telegram && !existingProfile.xp_telegram_earned) {
-          xpGained += 250
-          updateFields.push('xp_telegram_earned = TRUE')
-        }
-        if (headsImage && headsImage !== existingProfile.heads_image && !existingProfile.xp_heads_earned) {
-          xpGained += 250
-          updateFields.push('xp_heads_earned = TRUE')
-        }
-        if (tailsImage && tailsImage !== existingProfile.tails_image && !existingProfile.xp_tails_earned) {
-          xpGained += 250
-          updateFields.push('xp_tails_earned = TRUE')
-        }
-        
-        // Update existing profile
-        const updateQuery = `
-          UPDATE profiles 
-          SET name = ?, avatar = ?, heads_image = ?, tails_image = ?, twitter = ?, telegram = ?, 
-              xp = xp + ?, updated_at = ?${updateFields.length > 0 ? ', ' + updateFields.join(', ') : ''}
-          WHERE address = ?
-        `
-        await new Promise((resolve, reject) => {
-          db.run(updateQuery, [name, avatar, headsImage, tailsImage, twitter, telegram, xpGained, new Date().toISOString(), address.toLowerCase()], function(err) {
-            if (err) reject(err)
-            else resolve()
-          })
-        })
-      } else {
-        // Create new profile
-        await new Promise((resolve, reject) => {
-          db.run(`
-            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [address.toLowerCase(), name, avatar, headsImage, tailsImage, twitter, telegram, 0, new Date().toISOString(), new Date().toISOString()], function(err) {
-            if (err) reject(err)
-            else resolve()
-          })
-        })
-      }
-      
-      res.json({ success: true, xpGained })
+      res.json({ 
+        success: true, 
+        xpGained: totalXPGained,
+        xpMessages,
+        profile: updatedProfile
+      })
     } catch (error) {
       console.error('Error updating profile:', error)
       res.status(500).json({ error: 'Failed to update profile' })
@@ -158,51 +209,93 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   // Award XP endpoint
   router.post('/users/:address/award-xp', async (req, res) => {
     const { address } = req.params
-    const { amount, reason } = req.body
+    const { amount, reason, gameId } = req.body
     
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid XP amount' })
     }
     
     try {
-      // Check if profile exists, create if not
-      const existingProfile = await new Promise((resolve, reject) => {
-        db.get('SELECT * FROM profiles WHERE address = ?', [address.toLowerCase()], (err, result) => {
-          if (err) reject(err)
-          else resolve(result)
-        })
+      const result = await xpService.awardSpecialXP(address, reason, amount, gameId)
+      res.json({ 
+        success: true, 
+        xpAwarded: result.xpGained,
+        message: result.message,
+        totalXP: result.totalXP
       })
-      
-      if (existingProfile) {
-        // Update existing profile with XP
-        await new Promise((resolve, reject) => {
-          db.run(`
-            UPDATE profiles 
-            SET xp = xp + ?, updated_at = ?
-            WHERE address = ?
-          `, [amount, new Date().toISOString(), address.toLowerCase()], function(err) {
-            if (err) reject(err)
-            else resolve()
-          })
-        })
-      } else {
-        // Create new profile with initial XP
-        await new Promise((resolve, reject) => {
-          db.run(`
-            INSERT INTO profiles (address, name, avatar, heads_image, tails_image, twitter, telegram, xp, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [address.toLowerCase(), '', '', '', '', '', '', amount, new Date().toISOString(), new Date().toISOString()], function(err) {
-            if (err) reject(err)
-            else resolve()
-          })
-        })
-      }
-      
-      console.log(`Awarded ${amount} XP to ${address} for: ${reason}`)
-      res.json({ success: true, xpGained: amount })
     } catch (error) {
       console.error('Error awarding XP:', error)
       res.status(500).json({ error: 'Failed to award XP' })
+    }
+  })
+
+  // Award game XP endpoint
+  router.post('/users/:address/game-xp', async (req, res) => {
+    const { address } = req.params
+    const { gameResult, gameId } = req.body
+    
+    if (!gameResult || !['won', 'lost'].includes(gameResult)) {
+      return res.status(400).json({ error: 'Invalid game result' })
+    }
+    
+    try {
+      const result = await xpService.awardGameXP(address, gameResult, gameId)
+      res.json({ 
+        success: true, 
+        xpAwarded: result.xpGained,
+        message: result.message,
+        totalXP: result.totalXP,
+        gameResult: result.gameResult
+      })
+    } catch (error) {
+      console.error('Error awarding game XP:', error)
+      res.status(500).json({ error: 'Failed to award game XP' })
+    }
+  })
+
+  // Get user XP and level
+  router.get('/users/:address/xp', async (req, res) => {
+    const { address } = req.params
+    
+    try {
+      const result = await xpService.getUserXP(address)
+      const xpForNextLevel = xpService.getXPForNextLevel(result.level)
+      
+      res.json({
+        xp: result.xp,
+        level: result.level,
+        xpForNextLevel,
+        progress: result.xp / xpForNextLevel * 100
+      })
+    } catch (error) {
+      console.error('Error fetching user XP:', error)
+      res.status(500).json({ error: 'Failed to fetch user XP' })
+    }
+  })
+
+  // Get XP leaderboard
+  router.get('/leaderboard/xp', async (req, res) => {
+    const { limit = 10 } = req.query
+    
+    try {
+      const leaderboard = await xpService.getLeaderboard(parseInt(limit))
+      res.json(leaderboard)
+    } catch (error) {
+      console.error('Error fetching XP leaderboard:', error)
+      res.status(500).json({ error: 'Failed to fetch leaderboard' })
+    }
+  })
+
+  // Get user achievements
+  router.get('/users/:address/achievements', async (req, res) => {
+    const { address } = req.params
+    
+    try {
+      const achievements = await xpService.getUserAchievements(address)
+      res.json(achievements)
+    } catch (error) {
+      console.error('Error fetching user achievements:', error)
+      res.status(500).json({ error: 'Failed to fetch achievements' })
     }
   })
 

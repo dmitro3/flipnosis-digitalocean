@@ -7,7 +7,6 @@ import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import { theme } from '../styles/theme'
 import { keyframes } from '@emotion/react'
-import MyFlipsDropdown from './MyFlipsDropdown'
 import ProfileWithNotifications from './ProfileWithNotifications'
 import PortalMenu from './PortalMenu'
 import PopupMenu from './PopupMenu'
@@ -70,6 +69,12 @@ const DesktopNav = styled.div`
   @media (max-width: 768px) {
     display: none;
   }
+`
+
+const RightSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 `
 
 const CreateButton = styled(Link)`
@@ -321,7 +326,6 @@ const Header = () => {
         </LogoContainer>
 
         <DesktopNav>
-          <MyFlipsDropdown />
           <CreateButton to="/create">Create Flip</CreateButton>
           <PopupMenu />
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
@@ -335,9 +339,11 @@ const Header = () => {
           {isConnected && <ProfileWithNotifications address={address} isConnected={isConnected} currentChain={chain?.name?.toLowerCase() || 'base'} />}
         </DesktopNav>
 
-        <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? '✕' : '☰'}
-        </MenuButton>
+        <RightSection>
+          <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? '✕' : '☰'}
+          </MenuButton>
+        </RightSection>
 
         <PortalMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       </HeaderContainer>
