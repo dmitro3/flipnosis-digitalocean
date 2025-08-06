@@ -1041,7 +1041,9 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             final_price: listing.asking_price, // Add for consistency
             coin_data: listing.coin_data,
             coinData: coinData, // Parsed coin data
-            status: listing.status
+            status: listing.status === 'open' ? 'awaiting_challenger' : listing.status, // Map 'open' to 'awaiting_challenger'
+            creator_deposited: true, // Assume NFT is deposited if listing exists
+            challenger_deposited: false
           })
         })
         return

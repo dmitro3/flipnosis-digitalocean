@@ -315,6 +315,28 @@ const GamePage = () => {
                />
                          </ThreeContainerLayout>
 
+             {/* Payment Section - Show when challenger needs to deposit */}
+             <GamePayment 
+               gameData={gameData}
+               gameId={gameId}
+               address={address}
+               depositTimeLeft={depositTimeLeft}
+               ethAmount={ethAmount}
+               contractInitialized={contractInitialized}
+               countdownInterval={countdownInterval}
+               getGameCreator={getGameCreator}
+               getGameJoiner={getGameJoiner}
+               getGamePrice={getGamePrice}
+               getGameNFTImage={getGameNFTImage}
+               getGameNFTName={getGameNFTName}
+               getGameNFTCollection={getGameNFTCollection}
+               isCreator={isCreator}
+               isJoiner={isJoiner}
+               formatTimeLeft={formatTimeLeft}
+               startDepositCountdown={startDepositCountdown}
+               loadGameData={loadGameData}
+             />
+
              <GameControls 
                gameData={gameData}
                gameState={gameState}

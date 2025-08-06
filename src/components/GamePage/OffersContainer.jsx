@@ -264,6 +264,16 @@ const OffersContainer = ({
     offersEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [offers])
 
+  const isCreator = () => {
+    if (!gameData || !address) return false
+    
+    // Check both possible creator field names
+    const creatorAddress = gameData.creator || gameData.creator_address
+    if (!creatorAddress) return false
+    
+    return address.toLowerCase() === creatorAddress.toLowerCase()
+  }
+
   // Listen for offers from socket
   useEffect(() => {
     if (!socket) return
@@ -448,8 +458,8 @@ const OffersContainer = ({
   }
 
   const handleAcceptOffer = async (offer) => {
-    if (!isCreator || !connected || !socket) {
-      console.log('❌ Offers: Cannot accept offer:', { isCreator, connected, hasSocket: !!socket })
+    if (!isCreator() || !connected || !socket) {
+      console.log('❌ Offers: Cannot accept offer:', { isCreator: isCreator(), connected, hasSocket: !!socket })
       return
     }
 
@@ -497,7 +507,7 @@ const OffersContainer = ({
               <OfferAmountLabel>💰 Offer Amount:</OfferAmountLabel>
               <OfferAmountValue>${offer.cryptoAmount} USD</OfferAmountValue>
             </OfferAmount>
-            {isCreator && gameData?.status !== 'waiting_challenger_deposit' && (
+            {isCreator() && gameData?.status !== 'waiting_challenger_deposit' && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -528,7 +538,7 @@ const OffersContainer = ({
                 <div style={{ color: '#fff', marginTop: '0.25rem' }}>{offer.offerText}</div>
               </div>
             )}
-            {isCreator && gameData?.status !== 'waiting_challenger_deposit' && (
+            {isCreator() && gameData?.status !== 'waiting_challenger_deposit' && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -566,11 +576,16 @@ const OffersContainer = ({
   // Check if offer input should be shown
   const shouldShowOfferInput = () => {
     // Show for non-creators when game is waiting for challenger
-    if (isCreator) return false
+    if (isCreator()) return false
     
     // Check if game is in a state where offers are accepted
-    const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger']
-    return validStatuses.includes(gameData?.status)
+    const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger', 'open']
+    
+    // Also check if listing status allows offers (for games that are listings)
+    const gameStatus = gameData?.status
+    const listingStatus = gameData?.type === 'listing' ? gameData?.status : null
+    
+    return validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
   }
 
   if (!isConnected) {
@@ -585,7 +600,7 @@ const OffersContainer = ({
 
   // Debug logging
   console.log('🔍 OffersContainer Debug:', {
-    isCreator,
+    isCreator: isCreator(),
     gameStatus: gameData?.status,
     gamePrice,
     minOfferAmount,
@@ -625,7 +640,7 @@ const OffersContainer = ({
             <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💰</div>
             <div style={{ marginBottom: '0.5rem' }}>No offers yet.</div>
             <div style={{ fontSize: '0.9rem', color: '#00FF41' }}>
-              {isCreator 
+              {isCreator() 
                 ? 'Wait for other players to make offers!'
                 : 'Make an offer to join the game!'
               }

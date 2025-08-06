@@ -295,6 +295,11 @@ export const useGameData = (
       case 'offer_accepted':
         console.log('🎉 Offer accepted notification:', data)
         showSuccess('🎉 Your offer was accepted! Redirecting to game...')
+        // Update local state to show deposit UI immediately
+        setGameState(prev => ({
+          ...prev,
+          phase: 'waiting_deposit'
+        }))
         setTimeout(() => {
           window.location.href = `/game/${data.gameId}`
         }, 2000)
