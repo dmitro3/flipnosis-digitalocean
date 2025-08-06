@@ -9,7 +9,7 @@ const OffersContainerStyled = styled.div`
   border: 1px solid rgba(0, 255, 65, 0.3);
   border-radius: 1rem;
   padding: 1rem;
-  height: 400px;
+  height: 500px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
@@ -165,8 +165,8 @@ const OfferInputContainer = styled.div`
 const OfferInput = styled.input`
   flex: 1;
   padding: 0.75rem;
-      background: rgba(0, 255, 65, 0.1);
-    border: 1px solid rgba(0, 255, 65, 0.3);
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid rgba(0, 255, 65, 0.3);
   border-radius: 0.5rem;
   color: #fff;
   font-size: 0.9rem;
@@ -177,8 +177,8 @@ const OfferInput = styled.input`
   
   &:focus {
     outline: none;
-            border-color: #00FF41;
-          box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+    border-color: #00FF41;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
   }
   
   &:disabled {
@@ -207,6 +207,34 @@ const OfferButton = styled.button`
   }
 `
 
+const PriceInfo = styled.div`
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  text-align: center;
+`
+
+const PriceLabel = styled.div`
+  color: #FFD700;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+`
+
+const PriceValue = styled.div`
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: bold;
+`
+
+const MinOfferInfo = styled.div`
+  color: #00FF41;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+`
+
 const OffersContainer = ({ 
   gameId, 
   gameData, 
@@ -226,6 +254,10 @@ const OffersContainer = ({
   const [playerNames, setPlayerNames] = useState({})
   
   const offersEndRef = useRef(null)
+  
+  // Get game price for validation
+  const gamePrice = gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || 0
+  const minOfferAmount = gamePrice * 0.8 // 80% of the game price
   
   // Auto scroll to bottom when new offers arrive
   useEffect(() => {
@@ -368,6 +400,12 @@ const OffersContainer = ({
     const offerAmount = parseFloat(cryptoOffer)
     if (isNaN(offerAmount) || offerAmount <= 0) {
       showError('Please enter a valid positive number for the offer')
+      return
+    }
+
+    // Check 20% price restriction
+    if (offerAmount < minOfferAmount) {
+      showError(`Offer must be at least $${minOfferAmount.toFixed(2)} USD (80% of game price $${gamePrice.toFixed(2)})`)
       return
     }
 
@@ -525,11 +563,21 @@ const OffersContainer = ({
     }
   }
 
+  // Check if offer input should be shown
+  const shouldShowOfferInput = () => {
+    // Show for non-creators when game is waiting for challenger
+    if (isCreator) return false
+    
+    // Check if game is in a state where offers are accepted
+    const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger']
+    return validStatuses.includes(gameData?.status)
+  }
+
   if (!isConnected) {
     return (
       <OffersContainerStyled>
         <div style={{ textAlign: 'center', padding: '2rem' }}>
-                          <p style={{ color: '#00FF41' }}>Please connect your wallet to view offers</p>
+          <p style={{ color: '#00FF41' }}>Please connect your wallet to view offers</p>
         </div>
       </OffersContainerStyled>
     )
@@ -539,9 +587,11 @@ const OffersContainer = ({
   console.log('🔍 OffersContainer Debug:', {
     isCreator,
     gameStatus: gameData?.status,
+    gamePrice,
+    minOfferAmount,
+    shouldShowInput: shouldShowOfferInput(),
     isConnected,
-    connected,
-    shouldShowInput: !isCreator && (gameData?.status === 'waiting_challenger' || gameData?.status === 'awaiting_challenger')
+    connected
   })
 
   return (
@@ -556,6 +606,15 @@ const OffersContainer = ({
         </ConnectionStatus>
       </OffersHeader>
 
+      {/* Game Price Info */}
+      {gamePrice > 0 && (
+        <PriceInfo>
+          <PriceLabel>🎯 Game Price:</PriceLabel>
+          <PriceValue>${gamePrice.toFixed(2)} USD</PriceValue>
+          <MinOfferInfo>Minimum offer: ${minOfferAmount.toFixed(2)} USD (80%)</MinOfferInfo>
+        </PriceInfo>
+      )}
+
       <OffersList>
         {offers.length === 0 ? (
           <div style={{
@@ -565,7 +624,7 @@ const OffersContainer = ({
           }}>
             <div style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>💰</div>
             <div style={{ marginBottom: '0.5rem' }}>No offers yet.</div>
-                            <div style={{ fontSize: '0.9rem', color: '#00FF41' }}>
+            <div style={{ fontSize: '0.9rem', color: '#00FF41' }}>
               {isCreator 
                 ? 'Wait for other players to make offers!'
                 : 'Make an offer to join the game!'
@@ -595,7 +654,7 @@ const OffersContainer = ({
       </OffersList>
 
       {/* Offer Input - Available to non-creators when game is waiting for challenger */}
-      {!isCreator && (
+      {shouldShowOfferInput() && (
         <OfferInputContainer>
           <OfferInput
             type="text"
@@ -609,7 +668,7 @@ const OffersContainer = ({
                 setCryptoOffer(value)
               }
             }}
-            placeholder="Enter USD amount..."
+            placeholder={`Min $${minOfferAmount.toFixed(2)} USD...`}
             disabled={!connected}
             onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
           />

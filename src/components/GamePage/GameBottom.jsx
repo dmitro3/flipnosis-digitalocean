@@ -1,19 +1,25 @@
 import React from 'react'
 import styled from '@emotion/styled'
 import { useToast } from '../../contexts/ToastContext'
-import UnifiedGameChat from '../UnifiedGameChat'
+import ChatContainer from './ChatContainer'
+import OffersContainer from './OffersContainer'
 
 // Styled Components
 const BottomSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 2rem;
   margin-top: 2rem;
   background: rgba(0, 0, 20, 0.95);
   border-radius: 1rem;
   padding: 2rem;
   
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
@@ -30,7 +36,7 @@ const InfoSection = styled.div`
   box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
 `
 
-const UnifiedChatSection = styled.div`
+const ChatSection = styled.div`
   background: rgba(0, 0, 20, 0.95);
   border: 2px solid ${props => props.theme.colors.neonBlue};
   border-radius: 1rem;
@@ -39,6 +45,17 @@ const UnifiedChatSection = styled.div`
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 30px rgba(0, 191, 255, 0.3);
+`
+
+const OffersSection = styled.div`
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid ${props => props.theme.colors.neonGreen};
+  border-radius: 1rem;
+  padding: 1rem;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
 `
 
 const CreatorCountdown = styled.div`
@@ -70,8 +87,6 @@ const GameBottom = ({
   customTailsImage
 }) => {
   const { showInfo, showSuccess, showError } = useToast()
-
-
 
   return (
     <BottomSection>
@@ -156,33 +171,38 @@ const GameBottom = ({
           </div>
         )}
         
-        {/* Coin Display - Removed as users can see the coin spinning */}
-        {/* Coin displayer section removed as requested */}
-        
         <div style={{ marginTop: 'auto' }}>
           {/* Status and Type information removed as requested */}
         </div>
       </InfoSection>
       
-      {/* Unified Chat & Offers Section */}
-      <UnifiedChatSection>
-        <UnifiedGameChat 
+      {/* Chat Section */}
+      <ChatSection>
+        <ChatContainer 
           gameId={gameId}
           gameData={gameData}
           isCreator={isCreator}
           socket={wsRef}
           connected={wsConnected}
-          offeredNFTs={offers}
+        />
+      </ChatSection>
+
+      {/* Offers Section */}
+      <OffersSection>
+        <OffersContainer 
+          gameId={gameId}
+          gameData={gameData}
+          isCreator={isCreator}
+          socket={wsRef}
+          connected={wsConnected}
           onOfferSubmitted={(offerData) => {
-            console.log('Offer submitted via unified chat:', offerData)
-            // Handle offer submission if needed
+            console.log('Offer submitted via offers container:', offerData)
           }}
           onOfferAccepted={(offer) => {
-            console.log('Offer accepted via unified chat:', offer)
-            // Handle offer acceptance if needed
+            console.log('Offer accepted via offers container:', offer)
           }}
         />
-      </UnifiedChatSection>
+      </OffersSection>
     </BottomSection>
   )
 }

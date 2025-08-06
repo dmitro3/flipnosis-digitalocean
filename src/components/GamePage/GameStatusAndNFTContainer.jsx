@@ -10,11 +10,12 @@ const CombinedContainer = styled.div`
   border: 2px solid #FF1493;
   backdrop-filter: blur(10px);
   box-shadow: 0 0 30px rgba(255, 20, 147, 0.3), inset 0 0 20px rgba(255, 20, 147, 0.1);
-  min-height: 200px;
+  height: 500px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+`
   
   &::before {
     content: '';
