@@ -155,8 +155,9 @@ const WalletSection = styled.div`
   }
 `
 
+
+
 const MenuButton = styled.button`
-  display: none;
   background: none;
   border: none;
   color: #00FF41;
@@ -164,24 +165,11 @@ const MenuButton = styled.button`
   cursor: pointer;
   padding: 0.5rem;
   z-index: 100000;
-
-  @media (min-width: 769px) {
-    display: block;
-  }
-`
-
-const MobileMenuButton = styled.button`
-  display: none;
-  background: none;
-  border: none;
-  color: #00FF41;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  z-index: 100000;
-
-  @media (max-width: 768px) {
-    display: block;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #00CC33;
+    transform: scale(1.1);
   }
 `
 
@@ -352,15 +340,12 @@ const Header = () => {
             }}
           />
           {isConnected && <ProfileWithNotifications address={address} isConnected={isConnected} currentChain={chain?.name?.toLowerCase() || 'base'} />}
-          <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? '✕' : '☰'}
-          </MenuButton>
         </DesktopNav>
 
         <RightSection>
-          <MobileMenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? '✕' : '☰'}
-          </MobileMenuButton>
+          </MenuButton>
         </RightSection>
 
         <PortalMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
