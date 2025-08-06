@@ -189,6 +189,32 @@ class DatabaseService {
             if (err) console.error('❌ Error creating game_shares table:', err)
             else console.log('✅ Game shares table ready')
           })
+
+          // Player stats table - for leaderboard tracking
+          database.run(`
+            CREATE TABLE IF NOT EXISTS player_stats (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_address TEXT NOT NULL,
+              chain TEXT DEFAULT 'base',
+              total_games INTEGER DEFAULT 0,
+              games_won INTEGER DEFAULT 0,
+              games_lost INTEGER DEFAULT 0,
+              total_volume DECIMAL(20, 8) DEFAULT 0,
+              total_fees_paid DECIMAL(20, 8) DEFAULT 0,
+              total_rewards_earned DECIMAL(20, 8) DEFAULT 0,
+              nfts_in_contract INTEGER DEFAULT 0,
+              unclaimed_eth DECIMAL(20, 8) DEFAULT 0,
+              unclaimed_usdc DECIMAL(20, 8) DEFAULT 0,
+              unclaimed_nfts TEXT,
+              last_activity TIMESTAMP,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(user_address, chain)
+            )
+          `, (err) => {
+            if (err) console.error('❌ Error creating player_stats table:', err)
+            else console.log('✅ Player stats table ready')
+          })
         })
         
         this.db = database

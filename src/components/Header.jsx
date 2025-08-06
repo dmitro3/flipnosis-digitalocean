@@ -327,6 +327,7 @@ const Header = () => {
 
         <DesktopNav>
           <CreateButton to="/create">Create Flip</CreateButton>
+          <CreateButton to="/leaderboard" style={{ background: 'linear-gradient(45deg, #00d4ff, #0099cc)', borderColor: '#00d4ff' }}>Leaderboard</CreateButton>
           <PopupMenu />
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
   
@@ -337,6 +338,9 @@ const Header = () => {
             }}
           />
           {isConnected && <ProfileWithNotifications address={address} isConnected={isConnected} currentChain={chain?.name?.toLowerCase() || 'base'} />}
+          <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? '✕' : '☰'}
+          </MenuButton>
         </DesktopNav>
 
         <RightSection>

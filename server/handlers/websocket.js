@@ -952,24 +952,47 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       if (acceptedOffer.cryptoAmount) {
         console.log('🎮 Crypto offer accepted, triggering game start process for game:', gameId)
         
-        // Save system message to database
-        await dbService.saveChatMessage(
-          gameId, 
-          'system', 
-          `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} ETH to start the battle!`, 
-          'system'
+        // Update game status to waiting for challenger deposit
+        const depositDeadline = new Date(Date.now() + 2 * 60 * 1000) // 2 minutes from now
+        const db = dbService.getDatabase()
+        
+        db.run(
+          'UPDATE games SET status = ?, deposit_deadline = ?, challenger = ? WHERE id = ?',
+          ['waiting_challenger_deposit', depositDeadline.toISOString(), acceptedOffer.offererAddress, gameId],
+          async (err) => {
+            if (err) {
+              console.error('❌ Error updating game status:', err)
+            } else {
+              console.log('✅ Game status updated to waiting_challenger_deposit')
+              
+              // Save system message to database
+              await dbService.saveChatMessage(
+                gameId, 
+                'system', 
+                `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`, 
+                'system'
+              )
+              
+              // Broadcast game status update to trigger countdown
+              broadcastToRoom(gameId, {
+                type: 'game_awaiting_challenger_deposit',
+                gameId,
+                status: 'waiting_challenger_deposit',
+                deposit_deadline: depositDeadline.toISOString(),
+                challenger: acceptedOffer.offererAddress,
+                cryptoAmount: acceptedOffer.cryptoAmount
+              })
+              
+              // Broadcast a system message to prompt the joiner to load their crypto
+              broadcastToRoom(gameId, {
+                type: 'chat_message',
+                message: `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`,
+                from: 'system',
+                timestamp: new Date().toISOString()
+              })
+            }
+          }
         )
-        
-        // Broadcast a system message to prompt the joiner to load their crypto
-        broadcastToRoom(gameId, {
-          type: 'chat_message',
-          message: `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} ETH to start the battle!`,
-          from: 'system',
-          timestamp: new Date().toISOString()
-        })
-        
-        // You can add additional logic here to update the game state
-        // For example, setting the game status to 'pending_joiner_deposit'
       }
     } catch (error) {
       console.error('❌ Error saving offer acceptance:', error)

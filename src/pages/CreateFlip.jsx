@@ -617,7 +617,6 @@ const CreateFlip = () => {
 
               {/* Coin Selection */}
               <FormGroup>
-                <Label>Select Your Coin Design</Label>
                 <CoinSelector
                   selectedCoin={selectedCoin}
                   onCoinSelect={(coin) => {
@@ -629,7 +628,6 @@ const CreateFlip = () => {
 
               {/* Coin Material Selection */}
               <FormGroup>
-                <Label>Select Your Coin Material</Label>
                 <CoinMaterialSelector
                   selectedMaterial={selectedMaterial}
                   onMaterialSelect={(material) => {

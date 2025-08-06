@@ -13,7 +13,7 @@ export const useGameData = (
   setStreamedCoinState,
   handleFlipResult,
   handleGameCompleted,
-  playerChoices // Added this parameter
+  loadGameData // Added this parameter
 ) => {
   const { showSuccess, showError, showInfo } = useToast()
 
@@ -256,6 +256,8 @@ export const useGameData = (
       case 'game_awaiting_challenger_deposit':
         console.log('💰 Game awaiting your deposit')
         showInfo('Game is waiting for your ETH deposit')
+        // Reload game data to trigger countdown
+        loadGameData()
         break
 
       case 'deposit_received':

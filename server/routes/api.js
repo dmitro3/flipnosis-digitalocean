@@ -911,6 +911,99 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     })
   })
 
+  // Leaderboard endpoints
+  router.get('/leaderboard/all-time', (req, res) => {
+    const query = `
+      SELECT 
+        user_address as address,
+        total_rewards_earned as totalWinnings,
+        games_won as gamesWon,
+        total_games as totalGames
+      FROM player_stats 
+      WHERE total_rewards_earned > 0
+      ORDER BY totalWinnings DESC
+      LIMIT 50
+    `;
+    
+    db.all(query, [], (err, rows) => {
+      if (err) {
+        console.error('Error fetching all-time leaderboard:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(rows || []);
+    });
+  });
+
+  router.get('/leaderboard/weekly', (req, res) => {
+    // Get current week (Sunday to Sunday)
+    const now = new Date();
+    const currentWeekStart = new Date(now);
+    currentWeekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+    currentWeekStart.setHours(0, 0, 0, 0);
+    
+    const currentWeekEnd = new Date(currentWeekStart);
+    currentWeekEnd.setDate(currentWeekStart.getDate() + 7);
+    
+    const query = `
+      SELECT 
+        g.winner as address,
+        SUM(g.price_usd) as totalWinnings,
+        COUNT(*) as gamesWon
+      FROM games g
+      WHERE g.status = 'completed' 
+        AND g.winner IS NOT NULL
+        AND g.winner != ''
+        AND g.updated_at >= ?
+        AND g.updated_at < ?
+      GROUP BY g.winner
+      ORDER BY totalWinnings DESC
+      LIMIT 50
+    `;
+    
+    db.all(query, [currentWeekStart.toISOString(), currentWeekEnd.toISOString()], (err, rows) => {
+      if (err) {
+        console.error('Error fetching weekly leaderboard:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(rows || []);
+    });
+  });
+
+  router.get('/leaderboard/last-week-winner', (req, res) => {
+    // Get last week (Sunday to Sunday)
+    const now = new Date();
+    const lastWeekStart = new Date(now);
+    lastWeekStart.setDate(now.getDate() - now.getDay() - 7); // Start of last week (Sunday)
+    lastWeekStart.setHours(0, 0, 0, 0);
+    
+    const lastWeekEnd = new Date(lastWeekStart);
+    lastWeekEnd.setDate(lastWeekStart.getDate() + 7);
+    
+    const query = `
+      SELECT 
+        g.winner as address,
+        SUM(g.price_usd) as totalWinnings,
+        COUNT(*) as gamesWon
+      FROM games g
+      WHERE g.status = 'completed' 
+        AND g.winner IS NOT NULL
+        AND g.winner != ''
+        AND g.updated_at >= ?
+        AND g.updated_at < ?
+      GROUP BY g.winner
+      ORDER BY totalWinnings DESC
+      LIMIT 1
+    `;
+    
+    db.get(query, [lastWeekStart.toISOString(), lastWeekEnd.toISOString()], (err, row) => {
+      if (err) {
+        console.error('Error fetching last week winner:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(row || {});
+    });
+  });
+
   // Get game
   router.get('/games/:gameId', (req, res) => {
     const { gameId } = req.params

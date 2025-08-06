@@ -6,6 +6,7 @@ import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
 import GamePage from "./components/GamePage/GamePage";
 import Profile from "./pages/Profile";
+import Leaderboard from "./pages/Leaderboard";
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +44,10 @@ export const router = createBrowserRouter([
       {
         path: "profile/:address",
         element: <Profile />,
+      },
+      {
+        path: "leaderboard",
+        element: <Leaderboard />,
       },
     ],
   },

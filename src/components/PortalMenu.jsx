@@ -7,7 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import ProfileWithNotifications from './ProfileWithNotifications';
 import { 
   User, Gamepad2, Plus, Store, Palette, Settings, 
-  ExternalLink, Home, Crown, ChevronRight, Info
+  ExternalLink, Home, Crown, ChevronRight, Info, Trophy
 } from 'lucide-react';
 
 const MenuOverlay = styled.div`
@@ -222,6 +222,10 @@ const PortalMenu = ({ isOpen, onClose }) => {
           <MenuItem to="/create" onClick={onClose}>
             <Plus size={16} />
             Create Flip
+          </MenuItem>
+          <MenuItem to="/leaderboard" onClick={onClose}>
+            <Trophy size={16} />
+            Leaderboard
           </MenuItem>
           {isConnected && (
             <MenuItem to="/profile" onClick={onClose}>

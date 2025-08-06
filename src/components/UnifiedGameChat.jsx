@@ -343,7 +343,7 @@ const UnifiedGameChat = ({
               id: Date.now() + Math.random() + 1,
               type: 'system',
               address: 'system',
-              message: `🎮 Game accepted! Player 2, please load your ${data.acceptedOffer.cryptoAmount} ETH to start the battle!`,
+              message: `🎮 Game accepted! Player 2, please load your ${data.acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`,
               timestamp: new Date().toISOString()
             })
           }
@@ -580,7 +580,7 @@ const UnifiedGameChat = ({
         return (
           <div>
             <div style={{ marginBottom: '0.5rem' }}>
-              <strong>💎 {message.cryptoAmount ? 'Crypto' : 'NFT'} Battle Offer</strong>
+              <strong>💎 {message.cryptoAmount ? 'Crypto' : 'NFT'} Offer</strong>
             </div>
             {message.cryptoAmount ? (
               <div style={{ 
@@ -590,7 +590,7 @@ const UnifiedGameChat = ({
                 borderRadius: '0.25rem',
                 border: '1px solid rgba(255, 215, 0, 0.3)'
               }}>
-                <strong style={{ color: '#FFD700' }}>Crypto Offer:</strong>
+                <strong style={{ color: '#FFD700' }}>Offer Amount:</strong>
                 <div style={{ color: '#fff', marginTop: '0.25rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
                   ${message.cryptoAmount} USD
                 </div>
@@ -612,7 +612,7 @@ const UnifiedGameChat = ({
 
               </>
             )}
-            {isCreator && (
+            {isCreator && gameData?.status !== 'waiting_challenger_deposit' && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -628,9 +628,9 @@ const UnifiedGameChat = ({
       case 'offer_accepted':
         return (
           <div>
-            <strong>✅ Battle Accepted!</strong>
+            <strong>✅ Offer Accepted!</strong>
             <div style={{ fontSize: '0.9rem', color: '#00FF41', marginTop: '0.25rem' }}>
-              The creator has accepted the challenge!
+              The creator has accepted the offer!
             </div>
           </div>
         )
@@ -802,8 +802,8 @@ const UnifiedGameChat = ({
             </div>
           )}
 
-          {/* Crypto Offer Input - Available to all users */}
-          {showOffersInput && (
+          {/* Crypto Offer Input - Available to non-creators only */}
+          {showOffersInput && !isCreator && (
             <div>
               <InputLabel>💰 Crypto Offer (USD)</InputLabel>
               <OfferInputContainer>
