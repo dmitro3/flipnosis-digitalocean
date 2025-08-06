@@ -119,7 +119,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       
       if (headsImage) {
         try {
-          const result = await xpService.awardProfileXP(address, 'heads_image', headsImage)
+          const result = await xpService.awardProfileXP(address, 'headsImage', headsImage)
           if (result.xpGained > 0) {
             totalXPGained += result.xpGained
             xpMessages.push(result.message)
@@ -131,7 +131,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       
       if (tailsImage) {
         try {
-          const result = await xpService.awardProfileXP(address, 'tails_image', tailsImage)
+          const result = await xpService.awardProfileXP(address, 'tailsImage', tailsImage)
           if (result.xpGained > 0) {
             totalXPGained += result.xpGained
             xpMessages.push(result.message)
@@ -144,7 +144,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       // Update or create profile with all fields
       const updateQuery = `
         INSERT OR REPLACE INTO profiles (
-          address, name, avatar, heads_image, tails_image, twitter, telegram, 
+          address, name, avatar, headsImage, tailsImage, twitter, telegram, 
           updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `
@@ -1125,26 +1125,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     )
   })
 
-  // Get user profile
-  router.get('/profile/:address', (req, res) => {
-    const { address } = req.params
-    db.get('SELECT * FROM profiles WHERE address = ?', [address], (err, profile) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' })
-      }
-      if (!profile) {
-        // Return empty profile if not found
-        return res.json({
-          address,
-          name: '',
-          avatar: '',
-          headsImage: '',
-          tailsImage: ''
-        })
-      }
-      res.json(profile)
-    })
-  })
+
 
   // Get dashboard data for user
   router.get('/dashboard/:address', (req, res) => {
@@ -1184,22 +1165,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     })
   })
 
-  // Update user profile
-  router.put('/profile/:address', (req, res) => {
-    const { address } = req.params
-    const { name, avatar, headsImage, tailsImage } = req.body
-    db.run(
-      `INSERT INTO profiles (address, name, avatar, headsImage, tailsImage) VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(address) DO UPDATE SET name=excluded.name, avatar=excluded.avatar, headsImage=excluded.headsImage, tailsImage=excluded.tailsImage`,
-      [address, name || '', avatar || '', headsImage || '', tailsImage || ''],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ error: 'Database error' })
-        }
-        res.json({ success: true })
-      }
-    )
-  })
+
 
   // ===== READY NFT SYSTEM =====
 

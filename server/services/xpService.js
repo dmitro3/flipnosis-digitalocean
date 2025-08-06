@@ -64,8 +64,8 @@ class XPService {
         'avatar': 'avatar_set', 
         'twitter': 'twitter_added',
         'telegram': 'telegram_added',
-        'heads_image': 'heads_customized',
-        'tails_image': 'tails_customized'
+        'headsImage': 'heads_customized',
+        'tailsImage': 'tails_customized'
       };
 
       const reason = fieldMap[field];
@@ -75,7 +75,9 @@ class XPService {
       }
 
       // Check if XP was already earned for this field
-      const earnedField = `xp_${field}_earned`;
+      const earnedField = field === 'headsImage' ? 'xp_heads_earned' : 
+                         field === 'tailsImage' ? 'xp_tails_earned' : 
+                         `xp_${field}_earned`;
       
       this.db.get(
         `SELECT ${earnedField}, xp FROM profiles WHERE address = ?`,
@@ -88,8 +90,10 @@ class XPService {
 
           if (!profile) {
             // Create new profile with XP
+            const insertField = field === 'headsImage' ? 'headsImage' : 
+                               field === 'tailsImage' ? 'tailsImage' : field;
             this.db.run(
-              `INSERT INTO profiles (address, ${field}, ${earnedField}, xp, created_at, updated_at)
+              `INSERT INTO profiles (address, ${insertField}, ${earnedField}, xp, created_at, updated_at)
                VALUES (?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
               [userAddress.toLowerCase(), value, xpAmount],
               function(err) {
@@ -103,9 +107,11 @@ class XPService {
             );
           } else if (!profile[earnedField] && value && value.trim() !== '') {
             // Award XP for first time setting this field
+            const updateField = field === 'headsImage' ? 'headsImage' : 
+                               field === 'tailsImage' ? 'tailsImage' : field;
             this.db.run(
               `UPDATE profiles 
-               SET ${field} = ?, ${earnedField} = TRUE, xp = xp + ?, updated_at = CURRENT_TIMESTAMP
+               SET ${updateField} = ?, ${earnedField} = TRUE, xp = xp + ?, updated_at = CURRENT_TIMESTAMP
                WHERE address = ?`,
               [value, xpAmount, userAddress.toLowerCase()],
               function(err) {
