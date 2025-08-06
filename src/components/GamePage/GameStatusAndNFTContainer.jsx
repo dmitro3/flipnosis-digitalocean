@@ -221,9 +221,22 @@ const ShareButton = styled.button`
   }
 `
 
-const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }) => {
+const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, currentChain }) => {
   const { address } = useWallet()
   const { showSuccess, showError } = useToast()
+  
+  const handleCopyContract = async () => {
+    const contractAddress = getNFTContract()
+    if (contractAddress && contractAddress !== 'N/A') {
+      try {
+        await navigator.clipboard.writeText(contractAddress)
+        showSuccess('Contract address copied to clipboard!')
+      } catch (error) {
+        console.error('Failed to copy contract address:', error)
+        showError('Failed to copy contract address')
+      }
+    }
+  }
   
   // Helper functions for chain URLs
   const getExplorerUrl = (chain) => {
@@ -259,7 +272,7 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
       case 'waiting_challenger_deposit': return 'Waiting for Deposit'
       case 'active': return 'Game Active'
       case 'completed': return 'Game Completed'
-      default: return 'Unknown Status'
+      default: return ''
     }
   }
 
@@ -434,12 +447,29 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
               <Value>{getNFTName()}</Value>
             </Item>
             
-            <Item>
-              <Label>Contract:</Label>
-              <Value style={{ fontSize: '0.8rem' }}>
-                {getNFTContract().slice(0, 8)}...{getNFTContract().slice(-6)}
-              </Value>
-            </Item>
+                         <Item>
+               <Label>Contract:</Label>
+               <Value 
+                 style={{ 
+                   fontSize: '0.8rem',
+                   cursor: getNFTContract() !== 'N/A' ? 'pointer' : 'default',
+                   color: getNFTContract() !== 'N/A' ? '#00FF41' : '#fff',
+                   textDecoration: getNFTContract() !== 'N/A' ? 'underline' : 'none',
+                   transition: 'all 0.2s ease'
+                 }}
+                 onClick={handleCopyContract}
+                 title={getNFTContract() !== 'N/A' ? 'Click to copy contract address' : ''}
+               >
+                 {getNFTContract() !== 'N/A' ? (
+                   <>
+                     {getNFTContract().slice(0, 8)}...{getNFTContract().slice(-6)}
+                     <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem' }}>📋</span>
+                   </>
+                 ) : (
+                   'N/A'
+                 )}
+               </Value>
+             </Item>
             
             <Item>
               <Label>Token ID:</Label>
@@ -466,7 +496,7 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
             }}>
               <a
                 href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
-                  `${getExplorerUrl(gameData?.chain)}/token/${getNFTContract()}?a=${getNFTTokenId()}` :
+                  `${getExplorerUrl(currentChain)}/token/${getNFTContract()}?a=${getNFTTokenId()}` :
                   '#'
                 }
                 target="_blank"
@@ -497,7 +527,7 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
               </a>
               <a
                 href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
-                  `${getMarketplaceUrl(gameData?.chain)}/${getNFTContract()}/${getNFTTokenId()}` :
+                  `${getMarketplaceUrl(currentChain)}/${getNFTContract()}/${getNFTTokenId()}` :
                   '#'
                 }
                 target="_blank"
@@ -560,15 +590,20 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
                 className="twitter"
                 onClick={() => handleShare('twitter')}
                 disabled={!address}
+                style={{
+                  background: '#000000',
+                  color: '#ffffff',
+                  border: '1px solid #333333'
+                }}
               >
-                🐦 Share on X
+                Share on X
               </ShareButton>
               <ShareButton 
                 className="telegram"
                 onClick={() => handleShare('telegram')}
                 disabled={!address}
               >
-                📱 Share on TG
+                Share on TG
               </ShareButton>
             </ShareButtonsContainer>
           </>

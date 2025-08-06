@@ -79,7 +79,7 @@ const ThreeContainerLayout = styled.div`
 const GamePage = () => {
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { address, isMobile } = useWallet()
+  const { address, isMobile, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
 
   // Tab state for chat/offers
@@ -288,6 +288,7 @@ const GamePage = () => {
                    token_id: getGameNFTTokenId(),
                    verified: gameData?.nft_verified
                  }}
+                 currentChain={chain?.name?.toLowerCase() || 'base'}
                />
 
                {/* Chat Container */}

@@ -535,6 +535,15 @@ const OffersContainer = ({
     )
   }
 
+  // Debug logging
+  console.log('🔍 OffersContainer Debug:', {
+    isCreator,
+    gameStatus: gameData?.status,
+    isConnected,
+    connected,
+    shouldShowInput: !isCreator && (gameData?.status === 'waiting_challenger' || gameData?.status === 'awaiting_challenger')
+  })
+
   return (
     <OffersContainerStyled>
       <OffersHeader>
@@ -586,7 +595,7 @@ const OffersContainer = ({
       </OffersList>
 
       {/* Offer Input - Available to non-creators when game is waiting for challenger */}
-      {!isCreator && gameData?.status === 'awaiting_challenger' && (
+      {!isCreator && (
         <OfferInputContainer>
           <OfferInput
             type="text"
