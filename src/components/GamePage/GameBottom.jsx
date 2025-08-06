@@ -192,7 +192,6 @@ const GameBottom = ({
         <OffersContainer 
           gameId={gameId}
           gameData={gameData}
-          isCreator={isCreator}
           socket={wsRef}
           connected={wsConnected}
           onOfferSubmitted={(offerData) => {

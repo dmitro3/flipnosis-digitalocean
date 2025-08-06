@@ -238,7 +238,6 @@ const MinOfferInfo = styled.div`
 const OffersContainer = ({ 
   gameId, 
   gameData, 
-  isCreator, 
   socket, 
   connected,
   onOfferSubmitted,
