@@ -20,10 +20,10 @@ This is the **MASTER DATABASE REFERENCE** for the NFT Flip Game Platform. This d
 - **Performance Optimization**: Added all necessary indexes
 
 ### 📊 **FINAL DATABASE STRUCTURE:**
-- **17 Tables** with complete schema
+- **18 Tables** with complete schema
 - **All Missing Fields** added and standardized
 - **Performance Indexes** implemented
-- **XP System** fully integrated
+- **XP System** fully integrated with sharing rewards
 - **Data Migration** completed successfully
 
 ---
@@ -368,7 +368,20 @@ CREATE TABLE nft_tracking (
 )
 ```
 
-### 17. **ADMIN_ACTIONS TABLE** (Admin Audit Trail)
+### 17. **GAME_SHARES TABLE** (Game Sharing XP Tracking)
+```sql
+CREATE TABLE game_shares (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,   -- Auto-incrementing ID
+  game_id TEXT NOT NULL,                  -- Game being shared
+  player_address TEXT NOT NULL,           -- Player who shared
+  share_platform TEXT NOT NULL,           -- Platform (twitter, telegram)
+  xp_awarded BOOLEAN DEFAULT FALSE,       -- Whether XP was awarded
+  shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(game_id, player_address, share_platform)
+)
+```
+
+### 18. **ADMIN_ACTIONS TABLE** (Admin Audit Trail)
 ```sql
 CREATE TABLE admin_actions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,   -- Auto-incrementing ID
@@ -391,6 +404,7 @@ CREATE TABLE admin_actions (
 ### **XP Award Structure:**
 - **Profile Completion**: 250 XP each (name, avatar, twitter, telegram, custom heads, custom tails)
 - **Game Outcomes**: 750 XP for winning, 250 XP for losing
+- **Game Sharing**: 100 XP per game shared (Twitter/Telegram only, once per game per platform)
 - **Special Achievements**: 250 XP each (first game, winning streak, etc.)
 
 ### **XP Award Messages:**
@@ -406,6 +420,9 @@ Profile Completion:
 Game Outcomes:
 +750 XP! VICTORY!
 +250 XP! Courage rewarded! Keep flipping!
+
+Game Sharing:
++100 XP! Game shared! Spreading the Flipnosis love!
 ```
 
 ### **XP System Features:**
@@ -484,6 +501,7 @@ CREATE INDEX idx_admin_actions_created ON admin_actions(created_at);
 ### **XP Management:**
 - `POST /api/users/:address/award-xp` - Award special XP
 - `POST /api/users/:address/game-xp` - Award game outcome XP
+- `POST /api/games/:gameId/share` - Award XP for sharing game
 - `GET /api/users/:address/xp` - Get user XP and level
 - `GET /api/leaderboard/xp` - Get XP leaderboard
 - `GET /api/users/:address/achievements` - Get user achievements

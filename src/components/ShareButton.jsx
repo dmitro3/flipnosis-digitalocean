@@ -1,42 +1,81 @@
 import React, { useState } from 'react'
 import { theme } from '../styles/theme'
+import { useWallet } from '../contexts/WalletContext'
+import { useToast } from '../contexts/ToastContext'
 
 const ShareButton = ({ gameId, gameData }) => {
   const [showDropdown, setShowDropdown] = useState(false)
+  const { address } = useWallet()
+  const { showSuccess, showError } = useToast()
   
   const gameUrl = `${window.location.origin}/game/${gameId}`
-  const gameTitle = `Check out this epic NFT flip game!`
-  const gameDescription = `${gameData?.nft?.name || 'NFT'} vs ${gameData?.priceUSD || '0'} USD - Best of ${gameData?.rounds || 5} rounds!`
+  const nftName = gameData?.nft?.name || 'NFT'
+  const priceUSD = gameData?.priceUSD || '0'
   
   const shareTexts = {
-    twitter: `🎮 ${gameTitle}\n\n💎 ${gameDescription}\n\n🔥 Join the flip battle now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`,
-    telegram: `🎮 ${gameTitle}\n\n💎 ${gameDescription}\n\n🔥 Join the flip battle now!\n\n${gameUrl}`
+    twitter: `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${nftName} vs $${priceUSD} USD\n\n🔥 Bidding Live! Click to join now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`,
+    telegram: `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${nftName} vs $${priceUSD} USD\n\n🔥 Bidding Live! Click to join now!\n\n${gameUrl}`
   }
   
-  const handleShare = (platform) => {
-    let url = ''
-    
-    switch (platform) {
-      case 'twitter':
-        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTexts.twitter)}`
-        break
-      case 'telegram':
-        url = `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(shareTexts.telegram)}`
-        break
-      case 'copy':
-        navigator.clipboard.writeText(gameUrl).then(() => {
-          alert('Link copied to clipboard!')
-        }).catch(() => {
-          alert('Failed to copy link')
-        })
-        return
+  const handleShare = async (platform) => {
+    try {
+      let url = ''
+      
+      switch (platform) {
+        case 'twitter':
+          url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTexts.twitter)}`
+          break
+        case 'telegram':
+          url = `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(shareTexts.telegram)}`
+          break
+        case 'copy':
+          navigator.clipboard.writeText(gameUrl).then(() => {
+            showSuccess('Link copied to clipboard!')
+          }).catch(() => {
+            showError('Failed to copy link')
+          })
+          setShowDropdown(false)
+          return
+      }
+      
+      if (url) {
+        // Open the share URL
+        window.open(url, '_blank', 'width=600,height=400')
+        
+        // Award XP for sharing (only for Twitter and Telegram)
+        if (address && (platform === 'twitter' || platform === 'telegram')) {
+          try {
+            const response = await fetch(`/api/games/${gameId}/share`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                address: address,
+                platform: platform
+              })
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              if (result.xpGained > 0) {
+                showSuccess(result.message || `+${result.xpGained} XP for sharing!`)
+              } else if (result.alreadyAwarded) {
+                showSuccess('Game already shared! Thanks for spreading the word!')
+              }
+            }
+          } catch (error) {
+            console.error('Error awarding share XP:', error)
+            // Don't show error to user as sharing still worked
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error sharing game:', error)
+      showError('Failed to share game')
+    } finally {
+      setShowDropdown(false)
     }
-    
-    if (url) {
-      window.open(url, '_blank', 'width=600,height=400')
-    }
-    
-    setShowDropdown(false)
   }
   
   return (

@@ -183,6 +183,35 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     }
   })
 
+  // Game sharing endpoint
+  router.post('/games/:gameId/share', async (req, res) => {
+    const { gameId } = req.params
+    const { address, platform } = req.body
+    
+    if (!address || !platform) {
+      return res.status(400).json({ error: 'Address and platform are required' })
+    }
+    
+    try {
+      // Record the share
+      await dbService.recordGameShare(gameId, address, platform)
+      
+      // Award XP for sharing
+      const result = await xpService.awardShareXP(address, gameId, platform)
+      
+      res.json({
+        success: true,
+        xpGained: result.xpGained,
+        message: result.message,
+        totalXP: result.totalXP,
+        alreadyAwarded: result.alreadyAwarded || false
+      })
+    } catch (error) {
+      console.error('Error recording game share:', error)
+      res.status(500).json({ error: 'Failed to record game share' })
+    }
+  })
+
   // Get user offers
   router.get('/users/:address/offers', async (req, res) => {
     const { address } = req.params

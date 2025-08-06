@@ -135,7 +135,20 @@ class DatabaseService {
               name TEXT,
               avatar TEXT,
               headsImage TEXT,
-              tailsImage TEXT
+              tailsImage TEXT,
+              twitter TEXT,
+              telegram TEXT,
+              xp INTEGER DEFAULT 0,
+              heads_image TEXT,
+              tails_image TEXT,
+              xp_name_earned BOOLEAN DEFAULT FALSE,
+              xp_avatar_earned BOOLEAN DEFAULT FALSE,
+              xp_twitter_earned BOOLEAN DEFAULT FALSE,
+              xp_telegram_earned BOOLEAN DEFAULT FALSE,
+              xp_heads_earned BOOLEAN DEFAULT FALSE,
+              xp_tails_earned BOOLEAN DEFAULT FALSE,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `, (err) => {
             if (err) console.error('❌ Error creating profiles table:', err)
@@ -159,6 +172,22 @@ class DatabaseService {
           `, (err) => {
             if (err) console.error('❌ Error creating ready_nfts table:', err)
             else console.log('✅ Ready NFTs table ready')
+          })
+
+          // Game shares tracking table - for XP rewards
+          database.run(`
+            CREATE TABLE IF NOT EXISTS game_shares (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              game_id TEXT NOT NULL,
+              player_address TEXT NOT NULL,
+              share_platform TEXT NOT NULL,
+              xp_awarded BOOLEAN DEFAULT FALSE,
+              shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(game_id, player_address, share_platform)
+            )
+          `, (err) => {
+            if (err) console.error('❌ Error creating game_shares table:', err)
+            else console.log('✅ Game shares table ready')
           })
         })
         
@@ -265,6 +294,50 @@ class DatabaseService {
           resolve(parsedMessages)
         }
       })
+    })
+  }
+
+  // Game sharing methods
+  async recordGameShare(gameId, playerAddress, platform) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `INSERT OR IGNORE INTO game_shares (game_id, player_address, share_platform)
+         VALUES (?, ?, ?)`,
+        [gameId, playerAddress.toLowerCase(), platform],
+        function(err) {
+          if (err) reject(err)
+          else resolve(this.changes > 0)
+        }
+      )
+    })
+  }
+
+  async hasSharedGame(gameId, playerAddress, platform) {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        `SELECT xp_awarded FROM game_shares 
+         WHERE game_id = ? AND player_address = ? AND share_platform = ?`,
+        [gameId, playerAddress.toLowerCase(), platform],
+        (err, result) => {
+          if (err) reject(err)
+          else resolve(result ? result.xp_awarded : false)
+        }
+      )
+    })
+  }
+
+  async markShareAsRewarded(gameId, playerAddress, platform) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `UPDATE game_shares 
+         SET xp_awarded = TRUE 
+         WHERE game_id = ? AND player_address = ? AND share_platform = ?`,
+        [gameId, playerAddress.toLowerCase(), platform],
+        function(err) {
+          if (err) reject(err)
+          else resolve(this.changes > 0)
+        }
+      )
     })
   }
 

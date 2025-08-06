@@ -46,6 +46,9 @@ class XPService {
       'offer_accepted': `**+${xpAmount} XP!** Offer accepted! Your negotiation skills are legendary.`,
       'community_help': `**+${xpAmount} XP!** Community helper! You're making Flipnosis better.`,
       
+      // Sharing achievements
+      'game_shared': `**+${xpAmount} XP!** Game shared! Spreading the Flipnosis love!`,
+      
       // Milestone achievements
       'level_up': `**+${xpAmount} XP!** LEVEL UP! You've reached new heights!`,
       'milestone_reached': `**+${xpAmount} XP!** MILESTONE! You're hitting all the right notes!`,
@@ -214,6 +217,84 @@ class XPService {
             }
           );
         }.bind(this)
+      );
+    });
+  }
+
+  // Award XP for sharing games
+  async awardShareXP(userAddress, gameId, platform) {
+    return new Promise((resolve, reject) => {
+      const xpAmount = 100;
+      const reason = 'game_shared';
+
+      // Check if XP was already awarded for this game share
+      this.db.get(
+        `SELECT xp_awarded FROM game_shares 
+         WHERE game_id = ? AND player_address = ? AND share_platform = ?`,
+        [gameId, userAddress.toLowerCase(), platform],
+        (err, share) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          if (share && share.xp_awarded) {
+            // XP already awarded for this share
+            resolve({ xpGained: 0, message: null, totalXP: 0, alreadyAwarded: true });
+            return;
+          }
+
+          // Award XP
+          this.db.run(
+            `UPDATE profiles 
+             SET xp = xp + ?, updated_at = CURRENT_TIMESTAMP
+             WHERE address = ?`,
+            [xpAmount, userAddress.toLowerCase()],
+            function(err) {
+              if (err) {
+                reject(err);
+                return;
+              }
+
+              // Mark share as rewarded
+              this.db.run(
+                `UPDATE game_shares 
+                 SET xp_awarded = TRUE 
+                 WHERE game_id = ? AND player_address = ? AND share_platform = ?`,
+                [gameId, userAddress.toLowerCase(), platform],
+                (err) => {
+                  if (err) {
+                    console.error('Error marking share as rewarded:', err);
+                  }
+                }
+              );
+
+              // Log the XP award
+              this.logXPAward(userAddress, xpAmount, reason, gameId);
+
+              const message = this.getXPMessage(xpAmount, reason);
+              
+              // Get updated total XP
+              this.db.get(
+                'SELECT xp FROM profiles WHERE address = ?',
+                [userAddress.toLowerCase()],
+                (err, profile) => {
+                  if (err) {
+                    reject(err);
+                  } else {
+                    resolve({ 
+                      xpGained: xpAmount, 
+                      message, 
+                      totalXP: profile.xp,
+                      reason,
+                      platform 
+                    });
+                  }
+                }
+              );
+            }.bind(this)
+          );
+        }
       );
     });
   }
