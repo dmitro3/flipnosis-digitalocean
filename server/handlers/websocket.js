@@ -958,7 +958,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         
         db.run(
           'UPDATE games SET status = ?, deposit_deadline = ?, challenger = ? WHERE id = ?',
-          ['waiting_challenger_deposit', depositDeadline.toISOString(), acceptedOffer.offererAddress, gameId],
+          ['waiting_challenger_deposit', depositDeadline.toISOString(), acceptedOffer.address, gameId],
           async (err) => {
             if (err) {
               console.error('❌ Error updating game status:', err)
@@ -979,7 +979,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                 gameId,
                 status: 'waiting_challenger_deposit',
                 deposit_deadline: depositDeadline.toISOString(),
-                challenger: acceptedOffer.offererAddress,
+                challenger: acceptedOffer.address,
                 cryptoAmount: acceptedOffer.cryptoAmount
               })
               
