@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { 
   User, Gamepad2, Plus, Store, Palette, Settings, 
-  ExternalLink, ChevronDown, ChevronUp, Home, Crown
+  ExternalLink, ChevronDown, ChevronUp, Home, Crown, Trophy
 } from 'lucide-react';
 
 const MenuContainer = styled.div`
@@ -165,6 +165,10 @@ const DesktopMenu = () => {
           <MenuItem to="/create" onClick={closeMenu}>
             <Plus size={16} />
             Create Flip
+          </MenuItem>
+          <MenuItem to="/leaderboard" onClick={closeMenu}>
+            <Trophy size={16} />
+            Leaderboard
           </MenuItem>
           {isConnected && (
             <MenuItem to="/profile" onClick={closeMenu}>

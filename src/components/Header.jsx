@@ -165,6 +165,21 @@ const MenuButton = styled.button`
   padding: 0.5rem;
   z-index: 100000;
 
+  @media (min-width: 769px) {
+    display: block;
+  }
+`
+
+const MobileMenuButton = styled.button`
+  display: none;
+  background: none;
+  border: none;
+  color: #00FF41;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 100000;
+
   @media (max-width: 768px) {
     display: block;
   }
@@ -327,7 +342,6 @@ const Header = () => {
 
         <DesktopNav>
           <CreateButton to="/create">Create Flip</CreateButton>
-          <CreateButton to="/leaderboard" style={{ background: 'linear-gradient(45deg, #00d4ff, #0099cc)', borderColor: '#00d4ff' }}>Leaderboard</CreateButton>
           <PopupMenu />
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
   
@@ -344,9 +358,9 @@ const Header = () => {
         </DesktopNav>
 
         <RightSection>
-          <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <MobileMenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? '✕' : '☰'}
-          </MenuButton>
+          </MobileMenuButton>
         </RightSection>
 
         <PortalMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />

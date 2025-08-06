@@ -352,7 +352,8 @@ const GamePage = () => {
     setStreamedCoinState,
     handleFlipResult,
     handleGameCompleted,
-    loadGameData
+    loadGameData,
+    playerChoices
   )
 
   // Loading state

@@ -10,7 +10,8 @@ import {
   Coins, 
   ShoppingCart, 
   X,
-  Menu
+  Menu,
+  Trophy
 } from 'lucide-react';
 import FlipnosisInfoImg from '../../Images/Info/FLIPNOSIS.webp';
 import MobileInfoImg from '../../Images/mobile.webp';
@@ -247,6 +248,10 @@ const PopupMenu = () => {
                 <MenuItem to="/create" onClick={handleClose}>
                   <Plus size={20} />
                   Create Flip
+                </MenuItem>
+                <MenuItem to="/leaderboard" onClick={handleClose}>
+                  <Trophy size={20} />
+                  Leaderboard
                 </MenuItem>
                 {isConnected && (
                   <MenuItem to={`/profile/${address}`} onClick={handleClose}>

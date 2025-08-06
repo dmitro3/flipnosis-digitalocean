@@ -13,7 +13,8 @@ export const useGameData = (
   setStreamedCoinState,
   handleFlipResult,
   handleGameCompleted,
-  loadGameData // Added this parameter
+  loadGameData, // Added this parameter
+  playerChoices // Added this parameter
 ) => {
   const { showSuccess, showError, showInfo } = useToast()
 
@@ -322,8 +323,8 @@ export const useGameData = (
 
           // Check if both players have chosen
           const currentChoices = {
-            creator: broadcastPlayer === getGameCreator() ? broadcastChoice : (gameState.creatorChoice || playerChoices.creator),
-            joiner: broadcastPlayer === getGameJoiner() ? broadcastChoice : (gameState.joinerChoice || playerChoices.joiner)
+            creator: broadcastPlayer === getGameCreator() ? broadcastChoice : (gameState.creatorChoice || (playerChoices && playerChoices.creator)),
+            joiner: broadcastPlayer === getGameJoiner() ? broadcastChoice : (gameState.joinerChoice || (playerChoices && playerChoices.joiner))
           }
 
           if (currentChoices.creator && currentChoices.joiner) {
@@ -416,7 +417,7 @@ export const useGameData = (
         webSocketService.off('game_status_changed', handleWebSocketMessage)
       }
     }
-  }, [gameId, address, gameData, gameState, playerChoices])
+  }, [gameId, address, gameData, gameState, playerChoices, setGameState, setPlayerChoices, setStreamedCoinState, handleFlipResult, handleGameCompleted, loadGameData])
 
   return {
     handleWebSocketMessage
