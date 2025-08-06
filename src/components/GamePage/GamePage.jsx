@@ -294,7 +294,7 @@ const GamePage = () => {
       }
 
       // Send offer through WebSocket with correct structure
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      if (wsRef && wsRef.readyState === WebSocket.OPEN) {
         const offerMessage = {
           type: 'crypto_offer',
           gameId: gameId,
@@ -304,14 +304,29 @@ const GamePage = () => {
         }
         
         console.log('📤 Sending crypto offer:', offerMessage)
-        console.log('🔌 WebSocket state:', wsRef.current.readyState)
-        wsRef.current.send(JSON.stringify(offerMessage))
+        console.log('🔌 WebSocket state:', wsRef.readyState)
+        console.log('🔌 WebSocket connected:', wsRef.readyState === WebSocket.OPEN)
+        
+        // First send a test message to verify connection
+        const testMessage = {
+          type: 'chat_message',
+          roomId: gameId,
+          message: 'Test message from offer submission',
+          from: address,
+          timestamp: new Date().toISOString()
+        }
+        console.log('📤 Sending test message:', testMessage)
+        wsRef.send(JSON.stringify(testMessage))
+        
+        // Then send the actual offer
+        wsRef.send(JSON.stringify(offerMessage))
         console.log('✅ Offer sent successfully')
       } else {
         console.log('❌ WebSocket not ready:', { 
-          hasRef: !!wsRef.current, 
-          readyState: wsRef.current?.readyState 
+          hasRef: !!wsRef, 
+          readyState: wsRef?.readyState 
         })
+        showError('WebSocket not connected. Please refresh the page.')
       }
 
       // Clear the input

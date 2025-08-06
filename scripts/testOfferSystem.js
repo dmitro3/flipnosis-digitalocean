@@ -14,113 +14,84 @@ const WebSocket = require('ws');
 const DB_PATH = './server/games.db';
 const WS_URL = 'ws://localhost:3001'; // Adjust port as needed
 
+// Test WebSocket connection and offer system
 async function testOfferSystem() {
-  console.log('🧪 Testing Offer System...\n');
+  console.log('🧪 Testing WebSocket offer system...')
   
-  const db = new sqlite3.Database(DB_PATH);
+  const wsUrl = 'wss://cryptoflipz2-production.up.railway.app'
+  const gameId = 'game_1754483423647_89ddb40e590678a8' // Use the game ID from the console logs
+  const testAddress = '0x93277281Fd256D0601Ce86Cdb1D5c00a97b59839'
   
-  // Test 1: Check if offers table exists and has data
-  console.log('📋 Test 1: Checking offers table...');
+  console.log('🔌 Connecting to WebSocket:', wsUrl)
+  console.log('🎮 Game ID:', gameId)
+  console.log('👤 Test Address:', testAddress)
   
-  db.all('SELECT * FROM offers ORDER BY created_at DESC LIMIT 5', (err, offers) => {
-    if (err) {
-      console.error('❌ Error fetching offers:', err);
-    } else {
-      console.log(`✅ Found ${offers.length} recent offers`);
-      offers.forEach((offer, index) => {
-        console.log(`  ${index + 1}. ID: ${offer.id}`);
-        console.log(`     Listing: ${offer.listing_id}`);
-        console.log(`     Offerer: ${offer.offerer_address}`);
-        console.log(`     Price: $${offer.offer_price}`);
-        console.log(`     Status: ${offer.status}`);
-        console.log('');
-      });
-    }
-  });
+  const ws = new WebSocket(wsUrl)
   
-  // Test 2: Check if games table exists and has data
-  console.log('🎮 Test 2: Checking games table...');
-  
-  db.all('SELECT * FROM games ORDER BY created_at DESC LIMIT 5', (err, games) => {
-    if (err) {
-      console.error('❌ Error fetching games:', err);
-    } else {
-      console.log(`✅ Found ${games.length} recent games`);
-      games.forEach((game, index) => {
-        console.log(`  ${index + 1}. ID: ${game.id}`);
-        console.log(`     Creator: ${game.creator}`);
-        console.log(`     Challenger: ${game.challenger || 'None'}`);
-        console.log(`     Status: ${game.status}`);
-        console.log(`     Creator Deposited: ${game.creator_deposited}`);
-        console.log(`     Challenger Deposited: ${game.challenger_deposited}`);
-        console.log('');
-      });
-    }
-  });
-  
-  // Test 3: Check WebSocket connection
-  console.log('🔌 Test 3: Testing WebSocket connection...');
-  
-  try {
-    const ws = new WebSocket(WS_URL);
+  ws.on('open', () => {
+    console.log('✅ WebSocket connected')
     
-    ws.on('open', () => {
-      console.log('✅ WebSocket connected successfully');
-      
-      // Test joining a room
-      const joinMessage = {
-        type: 'join_room',
-        roomId: 'test_room_123'
-      };
-      
-      console.log('📤 Sending join room message:', joinMessage);
-      ws.send(JSON.stringify(joinMessage));
-      
-      // Test sending a crypto offer
-      setTimeout(() => {
-        const offerMessage = {
-          type: 'crypto_offer',
-          gameId: 'test_game_123',
-          offererAddress: '0x1234567890123456789012345678901234567890',
-          cryptoAmount: 0.1,
-          timestamp: new Date().toISOString()
-        };
-        
-        console.log('📤 Sending crypto offer message:', offerMessage);
-        ws.send(JSON.stringify(offerMessage));
-      }, 1000);
-      
-      // Close connection after 3 seconds
-      setTimeout(() => {
-        console.log('🔌 Closing WebSocket connection');
-        ws.close();
-        db.close();
-      }, 3000);
-    });
+    // Join the game room
+    const joinMessage = {
+      type: 'join_room',
+      roomId: gameId
+    }
+    console.log('🏠 Joining room:', joinMessage)
+    ws.send(JSON.stringify(joinMessage))
     
-    ws.on('message', (data) => {
-      try {
-        const message = JSON.parse(data.toString());
-        console.log('📨 Received WebSocket message:', message);
-      } catch (error) {
-        console.log('📨 Received raw WebSocket message:', data.toString());
+    // Register user
+    const registerMessage = {
+      type: 'register_user',
+      address: testAddress
+    }
+    console.log('👤 Registering user:', registerMessage)
+    ws.send(JSON.stringify(registerMessage))
+    
+    // Wait a bit then send a test offer
+    setTimeout(() => {
+      const offerMessage = {
+        type: 'crypto_offer',
+        gameId: gameId,
+        offererAddress: testAddress,
+        cryptoAmount: 10.5,
+        timestamp: new Date().toISOString()
       }
-    });
-    
-    ws.on('error', (error) => {
-      console.error('❌ WebSocket error:', error);
-      db.close();
-    });
-    
-    ws.on('close', () => {
-      console.log('🔌 WebSocket connection closed');
-    });
-    
-  } catch (error) {
-    console.error('❌ Error creating WebSocket connection:', error);
-    db.close();
-  }
+      console.log('💰 Sending test offer:', offerMessage)
+      ws.send(JSON.stringify(offerMessage))
+    }, 2000)
+  })
+  
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data.toString())
+      console.log('📨 Received message:', message)
+      
+      if (message.type === 'room_joined') {
+        console.log('✅ Successfully joined room')
+      } else if (message.type === 'crypto_offer') {
+        console.log('✅ Received crypto offer broadcast')
+      } else if (message.type === 'chat_history') {
+        console.log('📚 Received chat history')
+      }
+    } catch (error) {
+      console.error('❌ Error parsing message:', error)
+    }
+  })
+  
+  ws.on('error', (error) => {
+    console.error('❌ WebSocket error:', error)
+  })
+  
+  ws.on('close', (code, reason) => {
+    console.log('🔌 WebSocket closed:', { code, reason })
+  })
+  
+  // Close after 10 seconds
+  setTimeout(() => {
+    console.log('🔌 Closing test connection')
+    ws.close()
+    process.exit(0)
+  }, 10000)
 }
 
-// Run the test
-testOfferSystem().catch(console.error); 
+testOfferSystem().catch(console.error) 

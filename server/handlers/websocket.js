@@ -70,7 +70,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
             break
           case 'crypto_offer':
             console.log('🎯 Handling crypto_offer:', data)
-            handleCryptoOffer(socket, data)
+            handleCryptoOffer(socket, data, dbService)
             break
           case 'accept_nft_offer':
           case 'accept_crypto_offer':
@@ -99,7 +99,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       messageType: message.type,
       roomSize: room.size,
       connectedClients: wss.clients.size,
-      message: message
+      message: message,
+      roomMembers: Array.from(room)
     })
     
     let successfulBroadcasts = 0
@@ -219,6 +220,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     socketRooms.set(socket.id, roomId)
     
     console.log(`👥 Socket ${socket.id} joined room ${roomId} (${room.size} members total)`)
+    console.log(`🏠 All rooms after join:`, Array.from(rooms.keys()))
+    console.log(`👥 All room members:`, Array.from(rooms.entries()).map(([roomId, members]) => ({ roomId, memberCount: members.size, members: Array.from(members) })))
     
     // Send confirmation
     try {
@@ -877,31 +880,39 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   }
 
   // Handle crypto offer (for NFT-vs-crypto games)
-  async function handleCryptoOffer(socket, data) {
+  async function handleCryptoOffer(socket, data, dbService) {
     const { gameId, offererAddress, cryptoAmount, timestamp } = data
     if (!gameId || !offererAddress || !cryptoAmount) {
       console.error('❌ Invalid crypto offer data:', data)
       return
     }
     
+    console.log('🎯 Processing crypto offer:', { gameId, offererAddress, cryptoAmount })
+    console.log('🏠 Available rooms:', Array.from(rooms.keys()))
+    console.log('👥 Room members for this game:', rooms.has(gameId) ? Array.from(rooms.get(gameId)) : 'Room not found')
+    
     try {
       // Save to database
       await dbService.saveChatMessage(
         gameId, 
         offererAddress, 
-        `Crypto offer of ${cryptoAmount} ETH`, 
+        `Crypto offer of $${cryptoAmount} USD`, 
         'offer', 
         { cryptoAmount, offerType: 'crypto' }
       )
       
       // Broadcast to the game room
-      broadcastToRoom(gameId, {
+      const broadcastMessage = {
         type: 'crypto_offer',
+        gameId,
         offererAddress,
         cryptoAmount,
         timestamp: timestamp || new Date().toISOString()
-      })
-      console.log('📢 Broadcasted crypto_offer to room', gameId)
+      }
+      
+      console.log('📢 Broadcasting crypto offer:', broadcastMessage)
+      broadcastToRoom(gameId, broadcastMessage)
+      console.log('✅ Crypto offer broadcasted successfully to room', gameId)
     } catch (error) {
       console.error('❌ Error saving crypto offer:', error)
     }

@@ -281,6 +281,10 @@ const UnifiedGameChat = ({
       try {
         const data = JSON.parse(event.data)
         console.log('📨 Raw WebSocket message received:', data)
+        console.log('📨 Message type:', data.type)
+        console.log('📨 Available handlers for this message type:', ['chat_message', 'nft_offer', 'crypto_offer', 'accept_nft_offer', 'accept_crypto_offer', 'chat_history'].includes(data.type))
+        console.log('📨 Current socket state:', socket?.readyState)
+        console.log('📨 Current address:', address)
         
         if (data.type === 'chat_message') {
           console.log('📩 Received chat message:', data)
@@ -304,15 +308,25 @@ const UnifiedGameChat = ({
           })
         } else if (data.type === 'crypto_offer') {
           console.log('💰 Received crypto offer:', data)
-          addMessage({
+          console.log('💰 Adding crypto offer message to state')
+          const newMessage = {
             id: Date.now() + Math.random(),
             type: 'offer',
             address: data.offererAddress,
             cryptoAmount: data.cryptoAmount,
             timestamp: data.timestamp || new Date().toISOString(),
             offerId: data.offerId,
-            message: `Crypto offer of $${data.cryptoAmount} USD`
-          })
+            message: `Crypto offer of $${data.cryptoAmount} USD`,
+            offerText: `Crypto offer of $${data.cryptoAmount} USD`
+          }
+          console.log('💰 New message object:', newMessage)
+          addMessage(newMessage)
+          console.log('💰 Message added to state')
+          
+          // Show success message to the offerer
+          if (data.offererAddress === address) {
+            showSuccess(`Your crypto offer of $${data.cryptoAmount} USD has been submitted!`)
+          }
         } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
           console.log('✅ Offer accepted:', data)
           addMessage({
@@ -335,21 +349,22 @@ const UnifiedGameChat = ({
           }
         } else if (data.type === 'chat_history') {
           console.log('📚 Received chat history:', data)
-          // Load chat history messages
-          if (data.messages && Array.isArray(data.messages)) {
-            const historyMessages = data.messages.map(msg => ({
-              id: msg.id || Date.now() + Math.random(),
-              type: msg.message_type || 'chat',
-              address: msg.sender_address,
-              message: msg.message,
-              timestamp: msg.created_at,
-              // Parse additional data for offers
-              cryptoAmount: msg.message_data?.cryptoAmount,
-              nft: msg.message_data?.nft,
-              offerType: msg.message_data?.offerType,
-              acceptedOffer: msg.message_data?.acceptedOffer,
-              rejectedOffer: msg.message_data?.rejectedOffer
-            }))
+                      // Load chat history messages
+            if (data.messages && Array.isArray(data.messages)) {
+              const historyMessages = data.messages.map(msg => ({
+                id: msg.id || Date.now() + Math.random(),
+                type: msg.message_type || 'chat',
+                address: msg.sender_address,
+                message: msg.message,
+                timestamp: msg.created_at,
+                // Parse additional data for offers
+                cryptoAmount: msg.message_data?.cryptoAmount,
+                nft: msg.message_data?.nft,
+                offerType: msg.message_data?.offerType,
+                acceptedOffer: msg.message_data?.acceptedOffer,
+                rejectedOffer: msg.message_data?.rejectedOffer,
+                offerText: msg.message_data?.cryptoAmount ? `Crypto offer of $${msg.message_data.cryptoAmount} USD` : msg.message
+              }))
             
             // Replace current messages with history
             setMessages(historyMessages)
@@ -391,7 +406,12 @@ const UnifiedGameChat = ({
   }, [messages, getPlayerName])
 
   const addMessage = (message) => {
-    setMessages(prev => [...prev, message])
+    console.log('📝 Adding message to state:', message)
+    setMessages(prev => {
+      const newMessages = [...prev, message]
+      console.log('📝 New messages state:', newMessages.length, 'messages')
+      return newMessages
+    })
   }
 
   const sendMessage = async (e) => {
@@ -463,6 +483,13 @@ const UnifiedGameChat = ({
 
       console.log('📤 Sending crypto offer:', offerData)
       console.log('📡 WebSocket state:', socket.readyState)
+      console.log('📡 WebSocket connected:', socket.readyState === WebSocket.OPEN)
+      
+      if (socket.readyState !== WebSocket.OPEN) {
+        showError('WebSocket not connected. Please refresh the page.')
+        return
+      }
+      
       socket.send(JSON.stringify(offerData))
       
       showSuccess(`Crypto offer of $${offerAmount} USD submitted! Waiting for creator to accept...`)
@@ -615,15 +642,25 @@ const UnifiedGameChat = ({
 
   // Filter messages based on display mode
   const getFilteredMessages = () => {
+    console.log('🔍 Filtering messages:', {
+      totalMessages: messages.length,
+      showChatInput,
+      showOffersInput,
+      messageTypes: messages.map(m => m.type)
+    })
+    
     if (showChatInput === false && showOffersInput === false) {
       // Offers tab mode - only show offer-related messages and system messages
-      return messages.filter(msg => 
+      const filtered = messages.filter(msg => 
         msg.type === 'offer' || 
         msg.type === 'offer_accepted' || 
         msg.type === 'system'
       )
+      console.log('🔍 Offers tab filtered messages:', filtered.length, 'messages')
+      return filtered
     }
     // Chat tab mode - show all messages
+    console.log('🔍 Chat tab showing all messages:', messages.length, 'messages')
     return messages
   }
 
