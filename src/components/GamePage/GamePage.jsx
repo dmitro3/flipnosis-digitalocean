@@ -276,67 +276,71 @@ const GamePage = () => {
               isCreator={isCreator}
             />
 
-                         <ThreeContainerLayout>
-               {/* Combined Game Status & NFT Details Container */}
-               <GameStatusAndNFTContainer 
-                 gameData={gameData}
-                 isCreator={isCreator}
-                 currentTurn={gameState.currentTurn}
-                 nftData={{
-                   name: getGameNFTName(),
-                   image: getGameNFTImage(),
-                   contract_address: getGameNFTContract(),
-                   token_id: getGameNFTTokenId(),
-                   verified: gameData?.nft_verified
-                 }}
-                 currentChain={chain?.name?.toLowerCase() || 'base'}
-               />
+            {/* Payment Section - Show prominently when deposit is needed */}
+            {gameData?.status === 'waiting_challenger_deposit' && (
+              <div style={{ marginBottom: '2rem' }}>
+                <GamePayment 
+                  gameData={gameData}
+                  gameId={gameId}
+                  address={address}
+                  depositTimeLeft={depositTimeLeft}
+                  ethAmount={ethAmount}
+                  contractInitialized={true}  // Set to true to enable button
+                  countdownInterval={countdownInterval}
+                  getGameCreator={getGameCreator}
+                  getGameJoiner={getGameJoiner}
+                  getGamePrice={getGamePrice}
+                  getGameNFTImage={getGameNFTImage}
+                  getGameNFTName={getGameNFTName}
+                  getGameNFTCollection={getGameNFTCollection}
+                  isCreator={isCreator}
+                  isJoiner={isJoiner}
+                  formatTimeLeft={formatTimeLeft}
+                  startDepositCountdown={startDepositCountdown}
+                  loadGameData={loadGameData}
+                />
+              </div>
+            )}
 
-               {/* Chat Container */}
-               <ChatContainer 
-                 gameId={gameId}
-                 gameData={gameData}
-                 isCreator={isCreator}
-                 socket={wsRef}
-                 connected={wsConnected}
-               />
+            <ThreeContainerLayout>
+              {/* Combined Game Status & NFT Details Container */}
+              <GameStatusAndNFTContainer 
+                gameData={gameData}
+                isCreator={isCreator}
+                currentTurn={gameState.currentTurn}
+                nftData={{
+                  name: getGameNFTName(),
+                  image: getGameNFTImage(),
+                  contract_address: getGameNFTContract(),
+                  token_id: getGameNFTTokenId(),
+                  verified: gameData?.nft_verified
+                }}
+                currentChain={chain?.name?.toLowerCase() || 'base'}
+              />
 
-               {/* Offers Container */}
-               <OffersContainer 
-                 gameId={gameId}
-                 gameData={gameData}
-                 socket={wsRef}
-                 connected={wsConnected}
-                 onOfferSubmitted={(offerData) => {
-                   console.log('Offer submitted via offers container:', offerData)
-                 }}
-                 onOfferAccepted={(offer) => {
-                   console.log('Offer accepted via offers container:', offer)
-                 }}
-               />
-                         </ThreeContainerLayout>
+              {/* Chat Container */}
+              <ChatContainer 
+                gameId={gameId}
+                gameData={gameData}
+                isCreator={isCreator}
+                socket={wsRef}
+                connected={wsConnected}
+              />
 
-             {/* Payment Section - Show when challenger needs to deposit */}
-             <GamePayment 
-               gameData={gameData}
-               gameId={gameId}
-               address={address}
-               depositTimeLeft={depositTimeLeft}
-               ethAmount={ethAmount}
-               contractInitialized={contractInitialized}
-               countdownInterval={countdownInterval}
-               getGameCreator={getGameCreator}
-               getGameJoiner={getGameJoiner}
-               getGamePrice={getGamePrice}
-               getGameNFTImage={getGameNFTImage}
-               getGameNFTName={getGameNFTName}
-               getGameNFTCollection={getGameNFTCollection}
-               isCreator={isCreator}
-               isJoiner={isJoiner}
-               formatTimeLeft={formatTimeLeft}
-               startDepositCountdown={startDepositCountdown}
-               loadGameData={loadGameData}
-             />
+              {/* Offers Container */}
+              <OffersContainer 
+                gameId={gameId}
+                gameData={gameData}
+                socket={wsRef}
+                connected={wsConnected}
+                onOfferSubmitted={(offerData) => {
+                  console.log('Offer submitted via offers container:', offerData)
+                }}
+                onOfferAccepted={(offer) => {
+                  console.log('Offer accepted via offers container:', offer)
+                }}
+              />
+            </ThreeContainerLayout>
 
              <GameControls 
                gameData={gameData}

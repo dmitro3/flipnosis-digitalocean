@@ -87,7 +87,17 @@ export const useGameState = (gameId, address) => {
   const getGameNFTTokenId = () => gameData?.nft_token_id || gameData?.nft?.tokenId || gameData?.nftTokenId
 
   const isCreator = () => address === getGameCreator()
-  const isJoiner = () => address === getGameJoiner()
+  const isJoiner = () => {
+    if (!address || !gameData) return false
+    
+    // Check all possible joiner/challenger fields
+    const challengerAddress = gameData?.challenger || gameData?.joiner || 
+      gameData?.joiner_address || gameData?.challenger_address
+    
+    if (!challengerAddress) return false
+    
+    return address.toLowerCase() === challengerAddress.toLowerCase()
+  }
 
   const isMyTurn = () => {
     // Don't allow turns if game hasn't started yet
@@ -231,11 +241,17 @@ export const useGameState = (gameId, address) => {
       }
 
       // Start countdown if game is waiting for challenger deposit
-      if (data.status === 'waiting_challenger_deposit' && data.deposit_deadline) {
-        const now = new Date().getTime()
-        const deadline = new Date(data.deposit_deadline).getTime()
-        if (deadline > now) {
-          startDepositCountdown(data.deposit_deadline)
+      if (data.status === 'waiting_challenger_deposit') {
+        if (data.deposit_deadline) {
+          const now = new Date().getTime()
+          const deadline = new Date(data.deposit_deadline).getTime()
+          if (deadline > now) {
+            startDepositCountdown(data.deposit_deadline)
+          }
+        } else {
+          // If no deadline is set, set it to 2 minutes from now
+          const deadline = new Date(Date.now() + 2 * 60 * 1000).toISOString()
+          startDepositCountdown(deadline)
         }
       }
 
@@ -1022,6 +1038,9 @@ export const useGameState = (gameId, address) => {
     setCreatingOffer,
     setStreamedCoinState,
     setGameState,
-    setPlayerChoices
+    setPlayerChoices,
+    
+    // Contract state
+    contractInitialized
   }
 } 

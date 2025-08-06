@@ -361,6 +361,20 @@ export const useGameData = (
         }
         break
 
+      case 'game_awaiting_challenger_deposit':
+        console.log('💰 Game awaiting challenger deposit')
+        showInfo('Game is waiting for challenger deposit')
+        
+        // Update game state to show deposit UI
+        setGameState(prev => ({
+          ...prev,
+          phase: 'waiting_deposit'
+        }))
+        
+        // Reload game data to get latest status and deadline
+        loadGameData()
+        break
+
       default:
         console.log('📨 Unhandled WebSocket message type:', data.type)
     }

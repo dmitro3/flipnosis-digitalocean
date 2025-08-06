@@ -176,7 +176,13 @@ const GamePayment = ({
   }
 
   // Show payment section for challenger who needs to deposit
-  if (gameData?.status === 'waiting_challenger_deposit' && isJoiner() && !gameData?.challenger_deposited) {
+  // Also check if current user is the challenger from the offer
+  const isChallenger = gameData?.challenger && address && 
+    gameData.challenger.toLowerCase() === address.toLowerCase()
+    
+  if (gameData?.status === 'waiting_challenger_deposit' && 
+      (isJoiner() || isChallenger) && 
+      !gameData?.challenger_deposited) {
     return (
       <PaymentSection style={{ animation: 'pulse 2s infinite' }}>
         <h2 style={{ color: '#FF1493', marginBottom: '1rem' }}>
@@ -251,7 +257,7 @@ const GamePayment = ({
     return (
       <CreatorCountdown>
         <h4 style={{ color: '#ffa500', margin: '0 0 0.5rem 0' }}>
-          Waiting for Challenger to Deposit
+          ⏰ Waiting for Challenger to Deposit
         </h4>
         <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: depositTimeLeft < 30 ? '#ff0000' : '#ffa500' }}>
           {formatTimeLeft(depositTimeLeft)}

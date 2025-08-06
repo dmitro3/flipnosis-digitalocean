@@ -577,6 +577,9 @@ const OffersContainer = ({
     // Show for non-creators when game is waiting for challenger
     if (isCreator()) return false
     
+    // Don't show if game is waiting for deposit
+    if (gameData?.status === 'waiting_challenger_deposit') return false
+    
     // Check if game is in a state where offers are accepted
     const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger', 'open']
     
