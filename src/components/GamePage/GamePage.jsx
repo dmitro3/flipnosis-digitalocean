@@ -54,10 +54,15 @@ const GameLayout = styled.div`
 
 const ThreeContainerLayout = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 2rem;
   width: 100%;
   max-width: 1400px;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;

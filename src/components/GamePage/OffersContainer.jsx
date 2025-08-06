@@ -266,7 +266,7 @@ const OffersContainer = ({
           
           // Show success message to the offerer
           if (data.offererAddress === address) {
-            showSuccess(`Your crypto offer of $${data.cryptoAmount} USD has been submitted!`)
+            showSuccess(`Your offer of $${data.cryptoAmount} USD has been submitted!`)
           }
         } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
           console.log('✅ Offers: Offer accepted:', data)
@@ -361,19 +361,19 @@ const OffersContainer = ({
         gameId,
         address
       })
-      showError('Please enter a valid crypto amount')
+      showError('Please enter a valid amount')
       return
     }
 
     const offerAmount = parseFloat(cryptoOffer)
     if (isNaN(offerAmount) || offerAmount <= 0) {
-      showError('Please enter a valid positive number for the crypto offer')
+      showError('Please enter a valid positive number for the offer')
       return
     }
 
     try {
       setIsSubmittingOffer(true)
-      showInfo('Submitting crypto offer...')
+      showInfo('Submitting offer...')
 
       const offerData = {
         type: 'crypto_offer',
@@ -394,7 +394,7 @@ const OffersContainer = ({
       
       socket.send(JSON.stringify(offerData))
       
-      showSuccess(`Crypto offer of $${offerAmount} USD submitted! Waiting for creator to accept...`)
+      showSuccess(`Offer of $${offerAmount} USD submitted! Waiting for creator to accept...`)
       setCryptoOffer('') // Clear the crypto offer input
       
       if (onOfferSubmitted) {
@@ -403,7 +403,7 @@ const OffersContainer = ({
       
     } catch (error) {
       console.error('Offers: Error submitting crypto offer:', error)
-      showError('Failed to submit crypto offer: ' + error.message)
+      showError('Failed to submit offer: ' + error.message)
     } finally {
       setIsSubmittingOffer(false)
     }
@@ -416,7 +416,7 @@ const OffersContainer = ({
     }
 
     try {
-      const offerType = offer.cryptoAmount ? 'crypto' : 'NFT'
+      const offerType = offer.cryptoAmount ? 'offer' : 'NFT'
       showInfo(`Accepting ${offerType} challenge...`)
 
       const acceptanceData = {
@@ -456,7 +456,7 @@ const OffersContainer = ({
         return (
           <div>
             <OfferAmount>
-              <OfferAmountLabel>💰 Crypto Offer Amount:</OfferAmountLabel>
+              <OfferAmountLabel>💰 Offer Amount:</OfferAmountLabel>
               <OfferAmountValue>${offer.cryptoAmount} USD</OfferAmountValue>
             </OfferAmount>
             {isCreator && gameData?.status !== 'waiting_challenger_deposit' && (
@@ -558,8 +558,8 @@ const OffersContainer = ({
             <div style={{ marginBottom: '0.5rem' }}>No offers yet.</div>
                             <div style={{ fontSize: '0.9rem', color: '#00FF41' }}>
               {isCreator 
-                ? 'Wait for other players to make crypto offers!'
-                : 'Make a crypto offer to join the game!'
+                ? 'Wait for other players to make offers!'
+                : 'Make an offer to join the game!'
               }
             </div>
           </div>
@@ -585,8 +585,8 @@ const OffersContainer = ({
         <div ref={offersEndRef} />
       </OffersList>
 
-      {/* Crypto Offer Input - Available to non-creators only */}
-      {!isCreator && (
+      {/* Offer Input - Available to non-creators when game is waiting for challenger */}
+      {!isCreator && gameData?.status === 'waiting_challenger' && (
         <OfferInputContainer>
           <OfferInput
             type="text"
@@ -600,7 +600,7 @@ const OffersContainer = ({
                 setCryptoOffer(value)
               }
             }}
-            placeholder="Enter USD amount (we'll convert to ETH)..."
+            placeholder="Enter USD amount..."
             disabled={!connected}
             onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
           />

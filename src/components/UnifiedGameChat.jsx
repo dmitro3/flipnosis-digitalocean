@@ -316,8 +316,8 @@ const UnifiedGameChat = ({
             cryptoAmount: data.cryptoAmount,
             timestamp: data.timestamp || new Date().toISOString(),
             offerId: data.offerId,
-            message: `Crypto offer of $${data.cryptoAmount} USD`,
-            offerText: `Crypto offer of $${data.cryptoAmount} USD`
+            message: `Offer of $${data.cryptoAmount} USD`,
+            offerText: `Offer of $${data.cryptoAmount} USD`
           }
           console.log('💰 New message object:', newMessage)
           addMessage(newMessage)
@@ -325,7 +325,7 @@ const UnifiedGameChat = ({
           
           // Show success message to the offerer
           if (data.offererAddress === address) {
-            showSuccess(`Your crypto offer of $${data.cryptoAmount} USD has been submitted!`)
+            showSuccess(`Your offer of $${data.cryptoAmount} USD has been submitted!`)
           }
         } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
           console.log('✅ Offer accepted:', data)
@@ -363,7 +363,7 @@ const UnifiedGameChat = ({
                 offerType: msg.message_data?.offerType,
                 acceptedOffer: msg.message_data?.acceptedOffer,
                 rejectedOffer: msg.message_data?.rejectedOffer,
-                offerText: msg.message_data?.cryptoAmount ? `Crypto offer of $${msg.message_data.cryptoAmount} USD` : msg.message
+                offerText: msg.message_data?.cryptoAmount ? `Offer of $${msg.message_data.cryptoAmount} USD` : msg.message
               }))
             
             // Replace current messages with history
@@ -465,13 +465,13 @@ const UnifiedGameChat = ({
 
     const offerAmount = parseFloat(cryptoOffer)
     if (isNaN(offerAmount) || offerAmount <= 0) {
-      showError('Please enter a valid positive number for the crypto offer')
+      showError('Please enter a valid positive number for the offer')
       return
     }
 
     try {
       setIsSubmittingOffer(true)
-      showInfo('Submitting crypto offer...')
+      showInfo('Submitting offer...')
 
       const offerData = {
         type: 'crypto_offer',
@@ -492,7 +492,7 @@ const UnifiedGameChat = ({
       
       socket.send(JSON.stringify(offerData))
       
-      showSuccess(`Crypto offer of $${offerAmount} USD submitted! Waiting for creator to accept...`)
+      showSuccess(`Offer of $${offerAmount} USD submitted! Waiting for creator to accept...`)
       setCryptoOffer('') // Clear the crypto offer input
       
       if (onOfferSubmitted) {
@@ -501,7 +501,7 @@ const UnifiedGameChat = ({
       
     } catch (error) {
       console.error('Error submitting crypto offer:', error)
-      showError('Failed to submit crypto offer: ' + error.message)
+      showError('Failed to submit offer: ' + error.message)
     } finally {
       setIsSubmittingOffer(false)
     }
@@ -745,8 +745,8 @@ const UnifiedGameChat = ({
                 {showChatInput === false && showOffersInput === false
                   ? ''
                   : isCreator 
-                    ? 'Use the chat input below to send messages. Wait for other players to make crypto offers!'
-                    : 'Use the chat input below to send messages, or make a crypto offer to join the game!'
+                                    ? 'Use the chat input below to send messages. Wait for other players to make offers!'
+                : 'Use the chat input below to send messages, or make an offer to join the game!'
                 }
               </div>
 
@@ -805,7 +805,7 @@ const UnifiedGameChat = ({
           {/* Crypto Offer Input - Available to non-creators only */}
           {showOffersInput && !isCreator && (
             <div>
-              <InputLabel>💰 Crypto Offer (USD)</InputLabel>
+              <InputLabel>💰 Offer (USD)</InputLabel>
               <OfferInputContainer>
                 <OfferInput
                   type="text"
@@ -819,7 +819,7 @@ const UnifiedGameChat = ({
                       setCryptoOffer(value)
                     }
                   }}
-                  placeholder="Enter USD amount (we'll convert to ETH)..."
+                  placeholder="Enter USD amount..."
                   disabled={!connected}
                   onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
                 />

@@ -1,5 +1,7 @@
 import React from 'react'
 import styled from '@emotion/styled'
+import { useWallet } from '../../contexts/WalletContext'
+import { useToast } from '../../contexts/ToastContext'
 
 const CombinedContainer = styled.div`
   background: rgba(0, 0, 40, 0.95);
@@ -176,7 +178,52 @@ const RoundDot = styled.div`
   border: 1px solid ${props => props.won ? '#00FF41' : props => props.played ? '#FF1493' : 'rgba(255, 255, 255, 0.3)'};
 `
 
+const ShareButtonsContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+`
+
+const ShareButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  
+  &.twitter {
+    background: #1DA1F2;
+    color: white;
+    
+    &:hover {
+      background: #0d8bd9;
+    }
+  }
+  
+  &.telegram {
+    background: #0088cc;
+    color: white;
+    
+    &:hover {
+      background: #0077b3;
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
 const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }) => {
+  const { address } = useWallet()
+  const { showSuccess, showError } = useToast()
   const getStatusText = (status) => {
     switch (status) {
       case 'waiting_challenger': return 'Waiting for Challenger'
@@ -243,10 +290,60 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
   const totalRounds = gameData?.rounds?.length || 0
   const isGameActive = gameData?.status === 'active'
 
+  const handleShare = async (platform) => {
+    if (!address || !gameData?.id) {
+      showError('Please connect your wallet to share')
+      return
+    }
+
+    try {
+      // Create share message
+      const nftName = getNFTName()
+      const gameUrl = `${window.location.origin}/game/${gameData.id}`
+      const message = platform === 'twitter' 
+        ? `🎮 Check out this epic NFT flip game on Flipnosis! ${nftName} is up for grabs! Join the action: ${gameUrl} #Flipnosis #NFTGaming #Web3`
+        : `🎮 Check out this epic NFT flip game on Flipnosis! ${nftName} is up for grabs! Join the action: ${gameUrl}`
+
+      // Open share URL
+      const shareUrls = {
+        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`,
+        telegram: `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(message)}`
+      }
+
+      window.open(shareUrls[platform], '_blank', 'width=600,height=400')
+
+      // Award XP for sharing
+      const response = await fetch(`/api/games/${gameData.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: address.toLowerCase(),
+          platform: platform
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.xpGained > 0) {
+          showSuccess(result.message)
+        } else if (result.alreadyAwarded) {
+          showSuccess('Game already shared on this platform!')
+        }
+      } else {
+        console.error('Failed to record share')
+      }
+    } catch (error) {
+      console.error('Error sharing game:', error)
+      showError('Failed to share game')
+    }
+  }
+
   return (
     <CombinedContainer>
       <Header>
-        <Title>🎮 Game Status & NFT Details</Title>
+        <Title>💎 NFT Details</Title>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <StatusBadge status={gameData?.status}>
             {getStatusText(gameData?.status)}
@@ -258,7 +355,7 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
       </Header>
       
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {/* Show round containers when game is active, otherwise show other details */}
+        {/* Show round containers when game is active, otherwise show NFT details */}
         {isGameActive ? (
           <RoundContainer>
             <PlayerRounds>
@@ -296,38 +393,6 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
           </RoundContainer>
         ) : (
           <>
-            {/* Game Status Section */}
-            <div style={{ marginBottom: '1rem' }}>
-              <Item>
-                <Label>Game ID:</Label>
-                <Value>{gameData?.id || 'N/A'}</Value>
-              </Item>
-              
-              <Item>
-                <Label>Current Turn:</Label>
-                <Value>{getCurrentPlayer()}</Value>
-              </Item>
-              
-              <Item>
-                <Label>Created:</Label>
-                <Value>
-                  {gameData?.created_at ? new Date(gameData.created_at).toLocaleDateString() : 'N/A'}
-                </Value>
-              </Item>
-              
-              {gameData?.status === 'completed' && (
-                <Item>
-                  <Label>Winner:</Label>
-                  <Value style={{ color: '#00FF41' }}>
-                    {gameData?.winner_address ? 
-                      (gameData.winner_address === gameData.creator_address ? 'Creator' : 'Challenger') : 
-                      'N/A'
-                    }
-                  </Value>
-                </Item>
-              )}
-            </div>
-
             {/* NFT Details Section */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
               <NFTImage>
@@ -380,6 +445,24 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
                 </div>
               </div>
             )}
+
+            {/* Share Buttons */}
+            <ShareButtonsContainer>
+              <ShareButton 
+                className="twitter"
+                onClick={() => handleShare('twitter')}
+                disabled={!address}
+              >
+                🐦 Share on X
+              </ShareButton>
+              <ShareButton 
+                className="telegram"
+                onClick={() => handleShare('telegram')}
+                disabled={!address}
+              >
+                📱 Share on TG
+              </ShareButton>
+            </ShareButtonsContainer>
           </>
         )}
       </div>
