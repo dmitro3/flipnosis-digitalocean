@@ -390,17 +390,6 @@ const UnifiedGameChat = ({
     }
   }, [messages, getPlayerName])
 
-  // Debug logging for messages
-  useEffect(() => {
-    console.log('📨 Messages updated:', {
-      totalMessages: messages.length,
-      filteredMessages: filteredMessages.length,
-      showChatInput,
-      showOffersInput,
-      messageTypes: messages.map(m => m.type)
-    })
-  }, [messages, filteredMessages, showChatInput, showOffersInput])
-
   const addMessage = (message) => {
     setMessages(prev => [...prev, message])
   }
@@ -638,7 +627,16 @@ const UnifiedGameChat = ({
     return messages
   }
 
-  const filteredMessages = getFilteredMessages()
+  // Debug logging for messages
+  useEffect(() => {
+    console.log('📨 Messages updated:', {
+      totalMessages: messages.length,
+      filteredMessages: getFilteredMessages().length,
+      showChatInput,
+      showOffersInput,
+      messageTypes: messages.map(m => m.type)
+    })
+  }, [messages, showChatInput, showOffersInput])
 
   if (!isConnected) {
     return (
@@ -653,6 +651,9 @@ const UnifiedGameChat = ({
       </div>
     )
   }
+
+  // Calculate filtered messages just before render
+  const filteredMessages = getFilteredMessages()
 
   return (
     <ChatContainer>
