@@ -97,6 +97,7 @@ const GamePage = () => {
     showResultPopup,
     ethAmount,
     depositTimeLeft,
+    countdownInterval,
     roundCountdown,
     offers,
     chatMessages,
@@ -136,7 +137,8 @@ const GamePage = () => {
     getGameNFTName,
     getGameNFTCollection,
     getGameNFTContract,
-    getGameNFTTokenId
+    getGameNFTTokenId,
+    contractInitialized
   } = useGameState(gameId, address)
 
   // WebSocket management
