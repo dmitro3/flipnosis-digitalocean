@@ -224,6 +224,35 @@ const ShareButton = styled.button`
 const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }) => {
   const { address } = useWallet()
   const { showSuccess, showError } = useToast()
+  
+  // Helper functions for chain URLs
+  const getExplorerUrl = (chain) => {
+    if (!chain) return 'https://etherscan.io' // Default to Ethereum explorer
+    
+    const explorers = {
+      ethereum: 'https://etherscan.io',
+      polygon: 'https://polygonscan.com',
+      base: 'https://basescan.org',
+      arbitrum: 'https://arbiscan.io',
+      optimism: 'https://optimistic.etherscan.io',
+      // Add more chains as needed
+    }
+    return explorers[chain.toLowerCase()] || 'https://etherscan.io'
+  }
+
+  const getMarketplaceUrl = (chain) => {
+    if (!chain) return 'https://opensea.io/assets/ethereum' // Default to Ethereum marketplace
+    
+    const marketplaces = {
+      ethereum: 'https://opensea.io/assets/ethereum',
+      polygon: 'https://opensea.io/assets/matic',
+      base: 'https://opensea.io/assets/base',
+      arbitrum: 'https://opensea.io/assets/arbitrum',
+      optimism: 'https://opensea.io/assets/optimism',
+      // Add more chains as needed
+    }
+    return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
+  }
   const getStatusText = (status) => {
     switch (status) {
       case 'waiting_challenger': return 'Waiting for Challenger'
@@ -428,6 +457,85 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData }
                 <Value>{gameData.nft_collection}</Value>
               </Item>
             )}
+            
+            {/* Explorer and OpenSea Links */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '0.5rem', 
+              marginBottom: '1rem'
+            }}>
+              <a
+                href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
+                  `${getExplorerUrl(gameData?.chain)}/token/${getNFTContract()}?a=${getNFTTokenId()}` :
+                  '#'
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
+                    e.preventDefault()
+                    showError('NFT contract details not available')
+                  }
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
+                  textDecoration: 'none',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  transition: 'all 0.3s ease',
+                  flex: 1,
+                  justifyContent: 'center'
+                }}
+              >
+                🔍 Explorer
+              </a>
+              <a
+                href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
+                  `${getMarketplaceUrl(gameData?.chain)}/${getNFTContract()}/${getNFTTokenId()}` :
+                  '#'
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
+                    e.preventDefault()
+                    showError('NFT contract details not available')
+                  }
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
+                  textDecoration: 'none',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  transition: 'all 0.3s ease',
+                  flex: 1,
+                  justifyContent: 'center'
+                }}
+              >
+                <img 
+                  src="/images/opensea.png" 
+                  alt="OpenSea" 
+                  style={{ 
+                    width: '16px', 
+                    height: '16px',
+                    objectFit: 'contain'
+                  }} 
+                />
+                OpenSea
+              </a>
+            </div>
             
             {!isNFTVerified() && (
               <div style={{ 

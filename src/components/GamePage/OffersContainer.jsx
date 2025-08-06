@@ -586,7 +586,7 @@ const OffersContainer = ({
       </OffersList>
 
       {/* Offer Input - Available to non-creators when game is waiting for challenger */}
-      {!isCreator && gameData?.status === 'waiting_challenger' && (
+      {!isCreator && gameData?.status === 'awaiting_challenger' && (
         <OfferInputContainer>
           <OfferInput
             type="text"

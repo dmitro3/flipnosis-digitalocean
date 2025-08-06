@@ -342,11 +342,9 @@ const Header = () => {
           {isConnected && <ProfileWithNotifications address={address} isConnected={isConnected} currentChain={chain?.name?.toLowerCase() || 'base'} />}
         </DesktopNav>
 
-        <RightSection>
-          <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? '✕' : '☰'}
-          </MenuButton>
-        </RightSection>
+        <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? '✕' : '☰'}
+        </MenuButton>
 
         <PortalMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       </HeaderContainer>
