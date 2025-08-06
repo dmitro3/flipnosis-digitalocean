@@ -282,20 +282,24 @@ const GamePage = () => {
 
     setIsSubmittingOffer(true)
     try {
-      const offerData = {
-        type: 'crypto_offer',
-        cryptoAmount: parseFloat(cryptoOffer),
-        timestamp: Date.now(),
-        address: address
+      const offerAmount = parseFloat(cryptoOffer)
+      if (isNaN(offerAmount) || offerAmount <= 0) {
+        showError('Please enter a valid positive number for the crypto offer')
+        return
       }
 
-      // Send offer through WebSocket
+      // Send offer through WebSocket with correct structure
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({
-          type: 'offer',
+        const offerMessage = {
+          type: 'crypto_offer',
           gameId: gameId,
-          data: offerData
-        }))
+          offererAddress: address,
+          cryptoAmount: offerAmount,
+          timestamp: new Date().toISOString()
+        }
+        
+        console.log('📤 Sending crypto offer:', offerMessage)
+        wsRef.current.send(JSON.stringify(offerMessage))
       }
 
       // Clear the input
@@ -729,23 +733,23 @@ const GamePage = () => {
                    >
                      💬 Chat
                    </button>
-                   <button
-                     onClick={() => setActiveTab('offers')}
-                     style={{
-                       flex: 1,
-                       background: activeTab === 'offers' ? 'linear-gradient(45deg, #FF1493, #FF0066)' : 'transparent',
-                       color: activeTab === 'offers' ? '#000' : '#FF1493',
-                       border: 'none',
-                       padding: '0.75rem 1rem',
-                       fontSize: '1rem',
-                       fontWeight: 'bold',
-                       cursor: 'pointer',
-                       borderBottom: activeTab === 'offers' ? '3px solid #FF1493' : '3px solid transparent',
-                       transition: 'all 0.3s ease'
-                     }}
-                   >
-                     💰 Offers
-                   </button>
+                                       <button
+                      onClick={() => setActiveTab('offers')}
+                      style={{
+                        flex: 1,
+                        background: activeTab === 'offers' ? 'linear-gradient(45deg, #00FF41, #00CC33)' : 'transparent',
+                        color: activeTab === 'offers' ? '#000' : '#00FF41',
+                        border: 'none',
+                        padding: '0.75rem 1rem',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        borderBottom: activeTab === 'offers' ? '3px solid #00FF41' : '3px solid transparent',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      💰 Offers
+                    </button>
                  </div>
 
                  {/* Tab Content */}
@@ -803,21 +807,21 @@ const GamePage = () => {
                          />
                        </div>
                        
-                       {/* Offers Input Section */}
-                       <div style={{
-                         padding: '1rem',
-                         background: 'rgba(0, 0, 0, 0.3)',
-                         borderRadius: '0.75rem',
-                         border: '1px solid rgba(255, 20, 147, 0.3)'
-                       }}>
-                         <h5 style={{ 
-                           color: '#FF1493', 
-                           margin: '0 0 0.75rem 0', 
-                           fontSize: '1rem',
-                           textAlign: 'center'
-                         }}>
-                           💰 Make a Crypto Offer
-                         </h5>
+                                               {/* Offers Input Section */}
+                        <div style={{
+                          padding: '1rem',
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          borderRadius: '0.75rem',
+                          border: '1px solid rgba(0, 255, 65, 0.3)'
+                        }}>
+                          <h5 style={{ 
+                            color: '#00FF41', 
+                            margin: '0 0 0.75rem 0', 
+                            fontSize: '1rem',
+                            textAlign: 'center'
+                          }}>
+                            💰 Make a Crypto Offer
+                          </h5>
                          <div style={{ display: 'flex', gap: '0.75rem' }}>
                            <input
                              type="text"
@@ -843,24 +847,24 @@ const GamePage = () => {
                              }}
                              onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
                            />
-                           <button
-                             onClick={handleSubmitCryptoOffer}
-                             disabled={!wsConnected || !cryptoOffer.trim() || isSubmittingOffer}
-                             style={{
-                               background: 'linear-gradient(45deg, #FF1493, #FF0066)',
-                               color: 'white',
-                               border: 'none',
-                               borderRadius: '0.5rem',
-                               padding: '0.75rem 1.5rem',
-                               cursor: 'pointer',
-                               fontSize: '0.9rem',
-                               fontWeight: 'bold',
-                               transition: 'all 0.2s ease',
-                               opacity: (!wsConnected || !cryptoOffer.trim() || isSubmittingOffer) ? 0.5 : 1
-                             }}
-                           >
-                             {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
-                           </button>
+                                                       <button
+                              onClick={handleSubmitCryptoOffer}
+                              disabled={!wsConnected || !cryptoOffer.trim() || isSubmittingOffer}
+                              style={{
+                                background: 'linear-gradient(45deg, #00FF41, #00CC33)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '0.5rem',
+                                padding: '0.75rem 1.5rem',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                transition: 'all 0.2s ease',
+                                opacity: (!wsConnected || !cryptoOffer.trim() || isSubmittingOffer) ? 0.5 : 1
+                              }}
+                            >
+                              {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+                            </button>
                          </div>
                          <p style={{ 
                            color: '#CCCCCC', 

@@ -706,7 +706,7 @@ const UnifiedGameChat = ({
               </div>
               <div style={{ fontSize: '0.9rem', color: '#FFD700' }}>
                 {showChatInput === false && showOffersInput === false
-                  ? 'Use the offer input below to make a crypto offer to join the game!'
+                  ? ''
                   : isCreator 
                     ? 'Use the chat input below to send messages. Wait for other players to make crypto offers!'
                     : 'Use the chat input below to send messages, or make a crypto offer to join the game!'
