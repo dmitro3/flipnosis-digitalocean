@@ -278,7 +278,12 @@ const GamePage = () => {
 
   // Handle crypto offer submission
   const handleSubmitCryptoOffer = async () => {
-    if (!cryptoOffer.trim() || !wsConnected || isSubmittingOffer) return
+    console.log('🔍 handleSubmitCryptoOffer called with:', { cryptoOffer, wsConnected, isSubmittingOffer })
+    
+    if (!cryptoOffer.trim() || !wsConnected || isSubmittingOffer) {
+      console.log('❌ Early return - conditions not met')
+      return
+    }
 
     setIsSubmittingOffer(true)
     try {
@@ -299,7 +304,14 @@ const GamePage = () => {
         }
         
         console.log('📤 Sending crypto offer:', offerMessage)
+        console.log('🔌 WebSocket state:', wsRef.current.readyState)
         wsRef.current.send(JSON.stringify(offerMessage))
+        console.log('✅ Offer sent successfully')
+      } else {
+        console.log('❌ WebSocket not ready:', { 
+          hasRef: !!wsRef.current, 
+          readyState: wsRef.current?.readyState 
+        })
       }
 
       // Clear the input
@@ -814,14 +826,7 @@ const GamePage = () => {
                           borderRadius: '0.75rem',
                           border: '1px solid rgba(0, 255, 65, 0.3)'
                         }}>
-                          <h5 style={{ 
-                            color: '#00FF41', 
-                            margin: '0 0 0.75rem 0', 
-                            fontSize: '1rem',
-                            textAlign: 'center'
-                          }}>
-                            💰 Make a Crypto Offer
-                          </h5>
+
                          <div style={{ display: 'flex', gap: '0.75rem' }}>
                            <input
                              type="text"
@@ -848,7 +853,10 @@ const GamePage = () => {
                              onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
                            />
                                                        <button
-                              onClick={handleSubmitCryptoOffer}
+                              onClick={() => {
+                                console.log('🔘 Make Offer button clicked!')
+                                handleSubmitCryptoOffer()
+                              }}
                               disabled={!wsConnected || !cryptoOffer.trim() || isSubmittingOffer}
                               style={{
                                 background: 'linear-gradient(45deg, #00FF41, #00CC33)',
@@ -866,14 +874,7 @@ const GamePage = () => {
                               {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
                             </button>
                          </div>
-                         <p style={{ 
-                           color: '#CCCCCC', 
-                           fontSize: '0.8rem', 
-                           margin: '0.5rem 0 0 0',
-                           textAlign: 'center'
-                         }}>
-                           Enter the USD amount you want to offer. We'll convert it to ETH automatically.
-                         </p>
+                         
                        </div>
                      </div>
                    )}

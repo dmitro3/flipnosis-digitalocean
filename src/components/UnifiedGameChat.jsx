@@ -667,7 +667,7 @@ const UnifiedGameChat = ({
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
         <h4 style={{ margin: 0, color: '#00BFFF' }}>
-          {showChatInput === false && showOffersInput === false ? '💰 Offers & System Messages' : '💬 Game Chat & Offers'}
+                          {showChatInput === false && showOffersInput === false ? '' : '💬 Game Chat & Offers'}
         </h4>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <div style={{ 

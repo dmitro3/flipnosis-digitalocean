@@ -49,6 +49,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         }
         
         console.log('📡 Received WebSocket message:', data)
+        console.log('🔍 Message type:', data.type)
         
         switch (data.type) {
           case 'join_room':
@@ -68,6 +69,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
             handleNftOffer(socket, data)
             break
           case 'crypto_offer':
+            console.log('🎯 Handling crypto_offer:', data)
             handleCryptoOffer(socket, data)
             break
           case 'accept_nft_offer':
