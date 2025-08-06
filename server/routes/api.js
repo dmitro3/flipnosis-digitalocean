@@ -45,6 +45,13 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           tailsImage: '',
           twitter: '',
           telegram: '',
+          xp: 0,
+          xp_name_earned: false,
+          xp_avatar_earned: false,
+          xp_twitter_earned: false,
+          xp_telegram_earned: false,
+          xp_heads_earned: false,
+          xp_tails_earned: false,
           stats: {
             totalGames: 0,
             gamesWon: 0,
@@ -69,7 +76,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       let xpMessages = []
       
       // Award XP for each field that's being set for the first time
-      if (name) {
+      // Only award XP if the field has a value and is different from current value
+      if (name && name.trim() !== '') {
         try {
           const result = await xpService.awardProfileXP(address, 'name', name)
           if (result.xpGained > 0) {
@@ -81,7 +89,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       }
       
-      if (avatar) {
+      if (avatar && avatar.trim() !== '') {
         try {
           const result = await xpService.awardProfileXP(address, 'avatar', avatar)
           if (result.xpGained > 0) {
@@ -93,7 +101,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       }
       
-      if (twitter) {
+      if (twitter && twitter.trim() !== '') {
         try {
           const result = await xpService.awardProfileXP(address, 'twitter', twitter)
           if (result.xpGained > 0) {
@@ -105,7 +113,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       }
       
-      if (telegram) {
+      if (telegram && telegram.trim() !== '') {
         try {
           const result = await xpService.awardProfileXP(address, 'telegram', telegram)
           if (result.xpGained > 0) {
@@ -117,7 +125,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       }
       
-      if (headsImage) {
+      if (headsImage && headsImage.trim() !== '') {
         try {
           const result = await xpService.awardProfileXP(address, 'headsImage', headsImage)
           if (result.xpGained > 0) {
@@ -129,7 +137,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       }
       
-      if (tailsImage) {
+      if (tailsImage && tailsImage.trim() !== '') {
         try {
           const result = await xpService.awardProfileXP(address, 'tailsImage', tailsImage)
           if (result.xpGained > 0) {
@@ -141,25 +149,48 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       }
         
-      // Update or create profile with all fields
+      // Update profile fields (preserving XP and boolean flags)
       const updateQuery = `
-        INSERT OR REPLACE INTO profiles (
-          address, name, avatar, headsImage, tailsImage, twitter, telegram, 
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        UPDATE profiles 
+        SET name = ?, avatar = ?, headsImage = ?, tailsImage = ?, twitter = ?, telegram = ?, 
+            updated_at = CURRENT_TIMESTAMP
+        WHERE address = ?
       `
       await new Promise((resolve, reject) => {
         db.run(updateQuery, [
-          address.toLowerCase(), 
           name || '', 
           avatar || '', 
           headsImage || '', 
           tailsImage || '', 
           twitter || '', 
-          telegram || ''
+          telegram || '',
+          address.toLowerCase()
         ], function(err) {
-          if (err) reject(err)
-          else resolve()
+          if (err) {
+            // If profile doesn't exist, create it
+            const insertQuery = `
+              INSERT INTO profiles (
+                address, name, avatar, headsImage, tailsImage, twitter, telegram, 
+                xp, xp_name_earned, xp_avatar_earned, xp_twitter_earned, 
+                xp_telegram_earned, xp_heads_earned, xp_tails_earned,
+                created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            `
+            db.run(insertQuery, [
+              address.toLowerCase(),
+              name || '', 
+              avatar || '', 
+              headsImage || '', 
+              tailsImage || '', 
+              twitter || '', 
+              telegram || ''
+            ], function(err2) {
+              if (err2) reject(err2)
+              else resolve()
+            })
+          } else {
+            resolve()
+          }
         })
       })
       

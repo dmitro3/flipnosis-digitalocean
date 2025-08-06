@@ -528,7 +528,13 @@ const Profile = () => {
           tailsImage: data.tailsImage || '',
           twitter: data.twitter || '',
           telegram: data.telegram || '',
-          xp: data.xp || 0
+          xp: data.xp || 0,
+          xp_name_earned: data.xp_name_earned || false,
+          xp_avatar_earned: data.xp_avatar_earned || false,
+          xp_twitter_earned: data.xp_twitter_earned || false,
+          xp_telegram_earned: data.xp_telegram_earned || false,
+          xp_heads_earned: data.xp_heads_earned || false,
+          xp_tails_earned: data.xp_tails_earned || false
         }));
         setTempName(data.name || '');
         setTempTwitter(data.twitter || '');
@@ -632,7 +638,8 @@ const Profile = () => {
         setProfileData(prev => ({
           ...prev,
           [field === 'name' ? 'name' : field === 'heads' ? 'headsImage' : field === 'tails' ? 'tailsImage' : field]: value,
-          xp: prev.xp + (result.xpGained || 0)
+          xp: result.totalXP || prev.xp,
+          [`xp_${field === 'heads' ? 'heads' : field === 'tails' ? 'tails' : field}_earned`]: result.xpGained > 0 ? true : prev[`xp_${field === 'heads' ? 'heads' : field === 'tails' ? 'tails' : field}_earned`]
         }));
         
         if (result.xpGained && result.xpGained > 0) {

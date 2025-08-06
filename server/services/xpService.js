@@ -108,8 +108,8 @@ class XPService {
                 }
               }.bind(this)
             );
-          } else if (!profile[earnedField] && value && value.trim() !== '') {
-            // Award XP for first time setting this field
+          } else if (profile[earnedField] === 0 || profile[earnedField] === false || profile[earnedField] === null) {
+            // Award XP for first time setting this field (check for false, 0, or null)
             const updateField = field === 'headsImage' ? 'headsImage' : 
                                field === 'tailsImage' ? 'tailsImage' : field;
             this.db.run(
@@ -128,7 +128,7 @@ class XPService {
               }.bind(this)
             );
           } else {
-            // No XP awarded (already earned or empty value)
+            // No XP awarded (already earned)
             resolve({ xpGained: 0, message: null, totalXP: profile.xp });
           }
         }
