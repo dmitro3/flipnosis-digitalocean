@@ -15,8 +15,7 @@ const CombinedContainer = styled.div`
   flex-direction: column;
   position: relative;
   overflow: hidden;
-`
-  
+
   &::before {
     content: '';
     position: absolute;
