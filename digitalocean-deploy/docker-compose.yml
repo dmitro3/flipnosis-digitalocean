@@ -21,8 +21,6 @@ services:
       - ./logs:/app/logs
     networks:
       - flipnosis-network
-    depends_on:
-      - nginx
 
   nginx:
     image: nginx:alpine
@@ -37,10 +35,7 @@ services:
       - ./logs/nginx:/var/log/nginx
     networks:
       - flipnosis-network
-    depends_on:
-      - app
 
-  # Optional: Redis for session management and caching
   redis:
     image: redis:alpine
     container_name: flipnosis-redis
