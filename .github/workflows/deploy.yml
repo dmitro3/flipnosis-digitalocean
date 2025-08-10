@@ -5,13 +5,25 @@ on:
     branches: [ main ]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     environment: digitalocean
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build:production
       
     - name: Deploy to DigitalOcean
       uses: appleboy/ssh-action@v1.0.3
@@ -22,6 +34,16 @@ jobs:
         script: |
           cd /root/flipnosis-digitalocean
           git pull origin main
+          
+          # Copy the built files to the digitalocean-deploy directory
+          cp -r dist digitalocean-deploy/
+          cp -r server digitalocean-deploy/
+          cp -r contracts digitalocean-deploy/
+          cp -r public digitalocean-deploy/
+          cp -r scripts digitalocean-deploy/
+          cp package*.json digitalocean-deploy/
+          cp env-template.txt digitalocean-deploy/
+          
           cd digitalocean-deploy
           
           # Make SSL script executable

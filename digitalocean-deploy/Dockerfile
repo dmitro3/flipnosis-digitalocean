@@ -1,31 +1,4 @@
-# Multi-stage build for production
-FROM node:20-alpine AS builder
-
-# Install basic build dependencies (no canvas-related packages)
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/cache/apk/*
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY vite.config.js ./
-COPY tailwind.config.js ./
-
-# Install dependencies (using npm install, not npm ci)
-RUN npm install
-
-# Copy source code
-COPY . .
-
-# Build the React app
-RUN npm run build
-
-# Production stage
+# Production stage - using pre-built application
 FROM node:20-alpine AS production
 
 # Install minimal runtime dependencies
@@ -44,18 +17,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only (using npm install, not npm ci)
+# Install production dependencies only
 RUN npm install --only=production && npm cache clean --force
 
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server ./server
-COPY --from=builder /app/contracts ./contracts
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/scripts ./scripts
-
-# Copy environment template
-COPY env-template.txt ./
+# Copy the entire application (including pre-built dist)
+COPY . .
 
 # Create necessary directories
 RUN mkdir -p /app/uploads /app/logs /app/database

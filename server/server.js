@@ -45,10 +45,17 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))
 } else {
   console.log('⚠️  Dist directory not found at:', distPath)
-  // Fallback to parent directory
-  const fallbackPath = path.join(__dirname, '..')
+  // Fallback to current directory's dist folder
+  const fallbackPath = path.join(__dirname, 'dist')
   console.log('📁 Falling back to:', fallbackPath)
-  app.use(express.static(fallbackPath))
+  if (fs.existsSync(fallbackPath)) {
+    app.use(express.static(fallbackPath))
+  } else {
+    // Final fallback to parent directory
+    const finalFallbackPath = path.join(__dirname, '..')
+    console.log('📁 Final fallback to:', finalFallbackPath)
+    app.use(express.static(finalFallbackPath))
+  }
 }
 
 // ===== SERVICES INITIALIZATION =====
@@ -83,7 +90,13 @@ async function initializeServices() {
 
   // Static file fallback
   app.get('*', (req, res) => {
-    const indexPath = path.join(distPath, 'index.html')
+    let indexPath = path.join(distPath, 'index.html')
+    if (!fs.existsSync(indexPath)) {
+      indexPath = path.join(__dirname, 'dist', 'index.html')
+    }
+    if (!fs.existsSync(indexPath)) {
+      indexPath = path.join(__dirname, '..', 'index.html')
+    }
     console.log('📄 Serving index.html from:', indexPath)
     res.sendFile(indexPath)
   })
