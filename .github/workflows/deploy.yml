@@ -18,12 +18,14 @@ jobs:
       with:
         node-version: '20'
         
-    - name: Install dependencies and build
+    - name: Install dependencies
       run: |
         npm install
-        npm install @rollup/rollup-linux-x64-gnu
-        npm run build:production
+        npm install @rollup/rollup-linux-x64-gnu --force
         
+    - name: Build application
+      run: npm run build:production
+      
     - name: Deploy to DigitalOcean
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -34,41 +36,30 @@ jobs:
           cd /root/flipnosis-digitalocean
           git pull origin main
           
-          # Create the deployment directory structure
-          mkdir -p digitalocean-deploy/dist
-          mkdir -p digitalocean-deploy/server
-          mkdir -p digitalocean-deploy/contracts
-          mkdir -p digitalocean-deploy/public
-          mkdir -p digitalocean-deploy/scripts
-          
-          # Copy built files and other necessary files
-          cp -r dist/* digitalocean-deploy/dist/
-          cp -r server/* digitalocean-deploy/server/
-          cp -r contracts/* digitalocean-deploy/contracts/
-          cp -r public/* digitalocean-deploy/public/
-          cp -r scripts/* digitalocean-deploy/scripts/
-          cp package*.json digitalocean-deploy/
-          cp env-template.txt digitalocean-deploy/
-          
+          # Stop existing containers
           cd digitalocean-deploy
+          docker-compose down || true
           
-          # Make SSL script executable
-          chmod +x scripts/setup-ssl.sh
+          # Copy the built application
+          cp -r ../dist ./dist
+          cp -r ../server ./server
+          cp -r ../contracts ./contracts
+          cp -r ../public ./public
+          cp -r ../scripts ./scripts
+          cp ../package*.json ./
+          cp ../env-template.txt ./
           
-          # Deploy containers
-          docker-compose down
+          # Make scripts executable
+          chmod +x scripts/setup-ssl.sh || true
+          
+          # Build and start containers
           docker-compose build --no-cache
           docker-compose up -d
           
-          # Run database migration
-          docker-compose exec app node scripts/migrate-database-schema.js || true
+          # Wait for containers to be ready
+          sleep 10
           
-          # Check if SSL certificates exist, if not, set them up
-          if [ ! -f /etc/nginx/ssl/cert.pem ]; then
-            echo "🔐 SSL certificates not found. Please run SSL setup manually:"
-            echo "cd digitalocean-deploy && ./scripts/setup-ssl.sh www.flipnosis.fun your-email@example.com"
-          else
-            echo "✅ SSL certificates found, nginx should be running with HTTPS"
-          fi
+          # Run database migration
+          docker-compose exec -T app node scripts/migrate-database-schema.js || true
           
           echo "Deployment completed successfully!"

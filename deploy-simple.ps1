@@ -1,43 +1,42 @@
-# Simple Deployment Script for Flipnosis.fun
-# This script will help you deploy with the fixed Dockerfile
+# Simple Digital Ocean Deployment Script
+Write-Host "🚀 Starting simple Digital Ocean deployment..." -ForegroundColor Green
 
-Write-Host "🚀 Simple Flipnosis Deployment Script" -ForegroundColor Green
-Write-Host "=====================================" -ForegroundColor Green
+# Build the application locally
+Write-Host "📦 Building application..." -ForegroundColor Yellow
+npm run build:production
 
-Write-Host "`n📋 The deployment failed due to canvas dependency issues." -ForegroundColor Yellow
-Write-Host "I've created a simpler Dockerfile that avoids this problem." -ForegroundColor White
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Build failed!" -ForegroundColor Red
+    exit 1
+}
 
-Write-Host "`n📋 Commands to run on your DigitalOcean droplet:" -ForegroundColor Yellow
+Write-Host "✅ Build completed successfully!" -ForegroundColor Green
 
-Write-Host "`n# 1. Navigate to the deployment directory" -ForegroundColor Cyan
-Write-Host "cd /root/flipnosis-digitalocean/digitalocean-deploy" -ForegroundColor White
+# Copy files to deployment directory
+Write-Host "📁 Copying files to deployment directory..." -ForegroundColor Yellow
+if (Test-Path "digitalocean-deploy") {
+    Remove-Item "digitalocean-deploy" -Recurse -Force
+}
+New-Item -ItemType Directory -Path "digitalocean-deploy" -Force
 
-Write-Host "`n# 2. Stop any running containers" -ForegroundColor Cyan
-Write-Host "docker-compose down" -ForegroundColor White
+# Copy necessary files
+Copy-Item "dist" -Destination "digitalocean-deploy/" -Recurse -Force
+Copy-Item "server" -Destination "digitalocean-deploy/" -Recurse -Force
+Copy-Item "contracts" -Destination "digitalocean-deploy/" -Recurse -Force
+Copy-Item "public" -Destination "digitalocean-deploy/" -Recurse -Force
+Copy-Item "scripts" -Destination "digitalocean-deploy/" -Recurse -Force
+Copy-Item "package*.json" -Destination "digitalocean-deploy/" -Force
+Copy-Item "env-template.txt" -Destination "digitalocean-deploy/" -Force
 
-Write-Host "`n# 3. Clean up Docker cache" -ForegroundColor Cyan
-Write-Host "docker system prune -f" -ForegroundColor White
+Write-Host "✅ Files copied successfully!" -ForegroundColor Green
 
-Write-Host "`n# 4. Build and start with the simple Dockerfile" -ForegroundColor Cyan
-Write-Host "docker-compose up -d --build" -ForegroundColor White
+# Instructions for manual deployment
+Write-Host "📋 Manual Deployment Instructions:" -ForegroundColor Cyan
+Write-Host "1. Upload the 'digitalocean-deploy' folder to your Digital Ocean server" -ForegroundColor White
+Write-Host "2. SSH into your server and navigate to the digitalocean-deploy directory" -ForegroundColor White
+Write-Host "3. Run: docker-compose down" -ForegroundColor White
+Write-Host "4. Run: docker-compose build --no-cache" -ForegroundColor White
+Write-Host "5. Run: docker-compose up -d" -ForegroundColor White
+Write-Host "6. Your app will be available at your server IP" -ForegroundColor White
 
-Write-Host "`n# 5. Check if containers are running" -ForegroundColor Cyan
-Write-Host "docker-compose ps" -ForegroundColor White
-
-Write-Host "`n# 6. Check logs if there are issues" -ForegroundColor Cyan
-Write-Host "docker-compose logs app" -ForegroundColor White
-
-Write-Host "`n# 7. Test the application" -ForegroundColor Cyan
-Write-Host "curl http://localhost/health" -ForegroundColor White
-
-Write-Host "`n🎯 Expected Results:" -ForegroundColor Yellow
-Write-Host "After successful deployment:" -ForegroundColor White
-Write-Host "- ✅ http://143.198.166.196 should load your application" -ForegroundColor Green
-Write-Host "- ✅ https://www.flipnosis.fun should load your application" -ForegroundColor Green
-
-Write-Host "`n🔍 If you still have issues:" -ForegroundColor Yellow
-Write-Host "docker-compose logs app" -ForegroundColor White
-Write-Host "docker-compose logs nginx" -ForegroundColor White
-
-Write-Host "`n🎉 Ready to deploy!" -ForegroundColor Green
-Write-Host "Run the commands above on your DigitalOcean droplet." -ForegroundColor White
+Write-Host "🎉 Deployment package ready!" -ForegroundColor Green
