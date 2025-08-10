@@ -167,19 +167,19 @@ export const useGameData = (
 
       case 'power_phase_started':
         console.log('⚡ Power phase started:', data)
-        const { currentTurn } = data
+        const { currentTurn: powerPhaseTurn } = data
         
         setGameState(prev => ({
           ...prev,
           phase: 'power_charging',
-          currentTurn: currentTurn
+          currentTurn: powerPhaseTurn
         }))
         
-        const isMyTurn = currentTurn === address
-        if (isMyTurn) {
+        const isMyTurnForPower = powerPhaseTurn === address
+        if (isMyTurnForPower) {
           showSuccess('🎯 Your turn! Hold the coin to charge power!')
         } else {
-          showInfo(`⚡ ${currentTurn.slice(0, 6)}...'s turn to charge power!`)
+          showInfo(`⚡ ${powerPhaseTurn.slice(0, 6)}...'s turn to charge power!`)
         }
         break
 
@@ -202,12 +202,12 @@ export const useGameData = (
 
       case 'new_round_started':
         console.log('🔄 New round started:', data)
-        const { roundNumber, creatorWins, challengerWins } = data
+        const { roundNumber: newRoundNumber, creatorWins, challengerWins } = data
         
         setGameState(prev => ({
           ...prev,
           phase: 'waiting_for_choices',
-          currentRound: roundNumber,
+          currentRound: newRoundNumber,
           creatorWins: creatorWins,
           challengerWins: challengerWins,
           creatorChoice: null,
@@ -223,7 +223,7 @@ export const useGameData = (
           joiner: null
         })
         
-        showSuccess(`🔄 Round ${roundNumber} started! Choose heads or tails!`)
+        showSuccess(`🔄 Round ${newRoundNumber} started! Choose heads or tails!`)
         break
 
       case 'choice_update':
