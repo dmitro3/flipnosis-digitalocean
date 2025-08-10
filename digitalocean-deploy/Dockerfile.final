@@ -1,7 +1,7 @@
-# Multi-stage build for production
+# Final build for production (no canvas)
 FROM node:20-alpine AS builder
 
-# Install basic build dependencies (no canvas-related packages)
+# Install minimal build dependencies
 RUN apk add --no-cache \
     python3 \
     make \
@@ -11,13 +11,14 @@ RUN apk add --no-cache \
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy the canvas-free package.json first
+COPY digitalocean-deploy/package.json.no-canvas ./package.json
+COPY package-lock.json ./
 COPY vite.config.js ./
 COPY tailwind.config.js ./
 
-# Install dependencies (using npm install, not npm ci)
-RUN npm install
+# Install dependencies without canvas
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
@@ -28,7 +29,7 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine AS production
 
-# Install minimal runtime dependencies
+# Install minimal system dependencies
 RUN apk add --no-cache \
     python3 \
     sqlite \
@@ -41,11 +42,12 @@ RUN adduser -S nodejs -u 1001
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy the canvas-free package.json
+COPY digitalocean-deploy/package.json.no-canvas ./package.json
+COPY package-lock.json ./
 
-# Install production dependencies only (using npm install, not npm ci)
-RUN npm install --only=production && npm cache clean --force
+# Install production dependencies only (no canvas)
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
@@ -55,7 +57,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
 
 # Copy environment template
-COPY env-template.txt ./
+COPY digitalocean-deploy/env-template.txt ./
 
 # Create necessary directories
 RUN mkdir -p /app/uploads /app/logs /app/database

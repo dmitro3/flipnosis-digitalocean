@@ -23,8 +23,24 @@ jobs:
           cd /root/flipnosis-digitalocean
           git pull origin main
           cd digitalocean-deploy
+          
+          # Make SSL script executable
+          chmod +x scripts/setup-ssl.sh
+          
+          # Deploy containers
           docker-compose down
           docker-compose build --no-cache
           docker-compose up -d
+          
+          # Run database migration
           docker-compose exec app node scripts/migrate-database-schema.js || true
+          
+          # Check if SSL certificates exist, if not, set them up
+          if [ ! -f /etc/nginx/ssl/cert.pem ]; then
+            echo "🔐 SSL certificates not found. Please run SSL setup manually:"
+            echo "cd digitalocean-deploy && ./scripts/setup-ssl.sh www.flipnosis.fun your-email@example.com"
+          else
+            echo "✅ SSL certificates found, nginx should be running with HTTPS"
+          fi
+          
           echo "Deployment completed successfully!"

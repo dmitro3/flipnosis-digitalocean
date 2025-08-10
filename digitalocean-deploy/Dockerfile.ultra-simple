@@ -1,7 +1,7 @@
-# Multi-stage build for production
+# Ultra-simple build for production (no canvas)
 FROM node:20-alpine AS builder
 
-# Install basic build dependencies (no canvas-related packages)
+# Install minimal build dependencies
 RUN apk add --no-cache \
     python3 \
     make \
@@ -16,8 +16,11 @@ COPY package*.json ./
 COPY vite.config.js ./
 COPY tailwind.config.js ./
 
-# Install dependencies (using npm install, not npm ci)
-RUN npm install
+# Create a modified package.json without canvas
+RUN npm pkg delete dependencies.canvas
+
+# Install dependencies without canvas
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
@@ -28,7 +31,7 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine AS production
 
-# Install minimal runtime dependencies
+# Install minimal system dependencies
 RUN apk add --no-cache \
     python3 \
     sqlite \
@@ -44,8 +47,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only (using npm install, not npm ci)
-RUN npm install --only=production && npm cache clean --force
+# Remove canvas from production dependencies
+RUN npm pkg delete dependencies.canvas
+
+# Install production dependencies only
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
