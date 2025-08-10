@@ -20,7 +20,7 @@ const wss = new WebSocket.Server({ server })
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3001
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(__dirname, 'flipz-clean.db')
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014EeBE'
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014eeBE'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
@@ -36,19 +36,30 @@ app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ===== STATIC FILES =====
-const distPath = path.join(__dirname, '..', 'dist')
-console.log('🔍 Checking for dist directory at:', distPath)
-console.log('🔍 Current directory (__dirname):', __dirname)
+// Try multiple possible locations for the dist directory
+const possibleDistPaths = [
+  path.join(__dirname, '..', 'dist'),           // ../dist (when running from server/)
+  path.join(__dirname, 'dist'),                 // ./dist (when running from root)
+  path.join(__dirname, '..'),                   // ../ (fallback to parent)
+  path.join(process.cwd(), 'dist'),             // cwd/dist
+  path.join(process.cwd(), '..', 'dist')        // cwd/../dist
+]
 
-if (fs.existsSync(distPath)) {
-  console.log('📁 Serving static files from:', distPath)
+let distPath = null
+for (const testPath of possibleDistPaths) {
+  if (fs.existsSync(testPath)) {
+    distPath = testPath
+    console.log('📁 Found dist directory at:', distPath)
+    break
+  }
+}
+
+if (distPath) {
   app.use(express.static(distPath))
+  console.log('✅ Serving static files from:', distPath)
 } else {
-  console.log('⚠️  Dist directory not found at:', distPath)
-  // Fallback to parent directory
-  const fallbackPath = path.join(__dirname, '..')
-  console.log('📁 Falling back to:', fallbackPath)
-  app.use(express.static(fallbackPath))
+  console.log('⚠️  No dist directory found, serving from current directory')
+  app.use(express.static(__dirname))
 }
 
 // ===== SERVICES INITIALIZATION =====
@@ -81,11 +92,37 @@ async function initializeServices() {
     })
   })
 
-  // Static file fallback
+  // Static file fallback - serve index.html for all non-API routes
   app.get('*', (req, res) => {
-    const indexPath = path.join(distPath, 'index.html')
-    console.log('📄 Serving index.html from:', indexPath)
-    res.sendFile(indexPath)
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' })
+    }
+    
+    // Try to find index.html in various locations
+    const possibleIndexPaths = [
+      path.join(distPath || '', 'index.html'),
+      path.join(__dirname, 'dist', 'index.html'),
+      path.join(__dirname, '..', 'index.html'),
+      path.join(process.cwd(), 'dist', 'index.html'),
+      path.join(process.cwd(), 'index.html')
+    ]
+    
+    let indexPath = null
+    for (const testPath of possibleIndexPaths) {
+      if (fs.existsSync(testPath)) {
+        indexPath = testPath
+        break
+      }
+    }
+    
+    if (indexPath) {
+      console.log('📄 Serving index.html from:', indexPath)
+      res.sendFile(indexPath)
+    } else {
+      console.log('❌ No index.html found, serving 404')
+      res.status(404).send('Not Found')
+    }
   })
 
   // Start timeout checker

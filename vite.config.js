@@ -70,10 +70,7 @@ export default defineConfig(({ mode }) => {
       ],
       exclude: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi'],
       esbuildOptions: {
-        target: 'esnext',
-        define: {
-          global: 'globalThis'
-        }
+        target: 'esnext'
       }
     },
     build: {
@@ -90,8 +87,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     define: {
-      'process.env': safeEnv,
-      global: 'globalThis',
+      'process.env': safeEnv
     },
     server: {
       fs: {
