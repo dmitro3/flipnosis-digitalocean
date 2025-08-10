@@ -454,43 +454,22 @@ export const useGameState = (gameId, address) => {
 
     stopRoundCountdown()
 
-    if (address === getGameCreator()) {
-      setPlayerChoices(prev => ({ ...prev, creator: choice }))
-      setGameState(prev => ({
-        ...prev,
-        creatorChoice: choice
-      }))
-    } else if (address === getGameJoiner()) {
-      setPlayerChoices(prev => ({ ...prev, joiner: choice }))
-      setGameState(prev => ({
-        ...prev,
-        joinerChoice: choice
-      }))
+    // Validate choice
+    if (!['heads', 'tails'].includes(choice)) {
+      console.error('❌ Invalid choice:', choice)
+      return
     }
 
     showSuccess(`🎯 You chose ${choice.toUpperCase()}!`)
 
-    // Send choice using WebSocket service
-    const success = webSocketService.sendPlayerChoice(gameId, address, choice)
-    
-    if (!success) {
-      console.error('❌ Failed to send choice')
-      showError('Failed to send choice. Please try again.')
-
-      if (address === getGameCreator()) {
-        setPlayerChoices(prev => ({ ...prev, creator: null }))
-        setGameState(prev => ({ ...prev, creatorChoice: null }))
-      } else if (address === getGameJoiner()) {
-        setPlayerChoices(prev => ({ ...prev, joiner: null }))
-        setGameState(prev => ({ ...prev, joinerChoice: null }))
-      }
-    }
-
-    if (gameState.currentRound === 5) {
-      setTimeout(() => {
-        handleAutoFlip()
-      }, 1000)
-    }
+    // Send choice to server via WebSocket
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'MAKE_CHOICE',
+      choice,
+      player: address
+    })
   }
 
   const handleAutoFlip = () => {
@@ -510,14 +489,14 @@ export const useGameState = (gameId, address) => {
   }
 
   const handlePowerChargeStart = () => {
-    setGameState(prev => ({
-      ...prev,
-      chargingPlayer: address
-    }))
-    
-    // Send power charge start notification
+    // Send power charge start to server
     if (webSocketService.isConnected()) {
-      webSocketService.sendPowerChargeStart(gameId, address)
+      webSocketService.send({
+        type: 'GAME_ACTION',
+        gameId,
+        action: 'POWER_CHARGE_START',
+        player: address
+      })
     }
   }
 
@@ -529,22 +508,14 @@ export const useGameState = (gameId, address) => {
 
     const validPowerLevel = typeof powerLevel === 'number' && !isNaN(powerLevel) ? powerLevel : 5
 
-    setGameState(prev => ({
-      ...prev,
-      chargingPlayer: null,
-      creatorPower: address === getGameCreator() ? validPowerLevel : prev.creatorPower,
-      joinerPower: address === getGameJoiner() ? validPowerLevel : prev.joinerPower
-    }))
-
-    // Send power charge using WebSocket service
-    const success = webSocketService.sendPowerCharge(gameId, address, validPowerLevel)
-    
-    if (success) {
-      showSuccess(`⚡ Power charged: ${validPowerLevel.toFixed(1)}/10`)
-    } else {
-      console.error('❌ Failed to send power message')
-      showError('Failed to send power data. Please try again.')
-    }
+    // Send power charge completion to server
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'POWER_CHARGED',
+      player: address,
+      powerLevel: validPowerLevel
+    })
   }
 
   // Handle flip result

@@ -36,10 +36,19 @@ app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ===== STATIC FILES =====
-const distPath = path.join(__dirname, '..')
+const distPath = path.join(__dirname, '..', 'dist')
+console.log('🔍 Checking for dist directory at:', distPath)
+console.log('🔍 Current directory (__dirname):', __dirname)
+
 if (fs.existsSync(distPath)) {
   console.log('📁 Serving static files from:', distPath)
   app.use(express.static(distPath))
+} else {
+  console.log('⚠️  Dist directory not found at:', distPath)
+  // Fallback to parent directory
+  const fallbackPath = path.join(__dirname, '..')
+  console.log('📁 Falling back to:', fallbackPath)
+  app.use(express.static(fallbackPath))
 }
 
 // ===== SERVICES INITIALIZATION =====
@@ -74,7 +83,9 @@ async function initializeServices() {
 
   // Static file fallback
   app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'))
+    const indexPath = path.join(distPath, 'index.html')
+    console.log('📄 Serving index.html from:', indexPath)
+    res.sendFile(indexPath)
   })
 
   // Start timeout checker

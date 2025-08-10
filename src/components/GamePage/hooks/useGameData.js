@@ -165,6 +165,67 @@ export const useGameData = (
         }
         break
 
+      case 'power_phase_started':
+        console.log('⚡ Power phase started:', data)
+        const { currentTurn } = data
+        
+        setGameState(prev => ({
+          ...prev,
+          phase: 'power_charging',
+          currentTurn: currentTurn
+        }))
+        
+        const isMyTurn = currentTurn === address
+        if (isMyTurn) {
+          showSuccess('🎯 Your turn! Hold the coin to charge power!')
+        } else {
+          showInfo(`⚡ ${currentTurn.slice(0, 6)}...'s turn to charge power!`)
+        }
+        break
+
+      case 'turn_switched':
+        console.log('🔄 Turn switched:', data)
+        const { currentTurn: newCurrentTurn } = data
+        
+        setGameState(prev => ({
+          ...prev,
+          currentTurn: newCurrentTurn
+        }))
+        
+        const isMyTurnNow = newCurrentTurn === address
+        if (isMyTurnNow) {
+          showSuccess('🎯 Your turn! Hold the coin to charge power!')
+        } else {
+          showInfo(`⚡ ${newCurrentTurn.slice(0, 6)}...'s turn to charge power!`)
+        }
+        break
+
+      case 'new_round_started':
+        console.log('🔄 New round started:', data)
+        const { roundNumber, creatorWins, challengerWins } = data
+        
+        setGameState(prev => ({
+          ...prev,
+          phase: 'waiting_for_choices',
+          currentRound: roundNumber,
+          creatorWins: creatorWins,
+          challengerWins: challengerWins,
+          creatorChoice: null,
+          joinerChoice: null,
+          currentTurn: null,
+          creatorPower: 0,
+          joinerPower: 0,
+          chargingPlayer: null
+        }))
+        
+        setPlayerChoices({
+          creator: null,
+          joiner: null
+        })
+        
+        showSuccess(`🔄 Round ${roundNumber} started! Choose heads or tails!`)
+        break
+
       case 'choice_update':
         console.log('🔄 Choice update:', data)
         break
@@ -409,6 +470,9 @@ export const useGameData = (
       webSocketService.on('both_choices_made', handleWebSocketMessage)
       webSocketService.on('power_charge_started', handleWebSocketMessage)
       webSocketService.on('power_charged', handleWebSocketMessage)
+      webSocketService.on('power_phase_started', handleWebSocketMessage)
+      webSocketService.on('turn_switched', handleWebSocketMessage)
+      webSocketService.on('new_round_started', handleWebSocketMessage)
       webSocketService.on('choice_update', handleWebSocketMessage)
       webSocketService.on('auto_flip_triggered', handleWebSocketMessage)
       webSocketService.on('PLAYER_CHOICE', handleWebSocketMessage)
@@ -434,6 +498,9 @@ export const useGameData = (
         webSocketService.off('both_choices_made', handleWebSocketMessage)
         webSocketService.off('power_charge_started', handleWebSocketMessage)
         webSocketService.off('power_charged', handleWebSocketMessage)
+        webSocketService.off('power_phase_started', handleWebSocketMessage)
+        webSocketService.off('turn_switched', handleWebSocketMessage)
+        webSocketService.off('new_round_started', handleWebSocketMessage)
         webSocketService.off('choice_update', handleWebSocketMessage)
         webSocketService.off('auto_flip_triggered', handleWebSocketMessage)
         webSocketService.off('PLAYER_CHOICE', handleWebSocketMessage)

@@ -1,5 +1,21 @@
 # Multi-stage build for production
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
+
+# Install build dependencies for canvas and other native modules
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    musl-dev \
+    giflib-dev \
+    pixman-dev \
+    pangomm-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    && rm -rf /var/cache/apk/*
 
 # Set working directory
 WORKDIR /app
@@ -10,7 +26,7 @@ COPY vite.config.js ./
 COPY tailwind.config.js ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -19,7 +35,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -27,6 +43,14 @@ RUN apk add --no-cache \
     make \
     g++ \
     sqlite \
+    cairo \
+    jpeg \
+    pango \
+    giflib \
+    pixman \
+    pangomm \
+    libjpeg-turbo \
+    freetype \
     && rm -rf /var/cache/apk/*
 
 # Create app user

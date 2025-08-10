@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
         
     - name: Install dependencies
@@ -37,8 +37,9 @@ jobs:
         key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
         port: ${{ secrets.DIGITALOCEAN_PORT }}
         script: |
-          cd /root/flipnosis
+          cd /root/flipnosis-digitalocean
           git pull origin main
-          docker-compose -f digitalocean-deploy/docker-compose.yml down
-          docker-compose -f digitalocean-deploy/docker-compose.yml up -d --build
+          cd digitalocean-deploy
+          docker-compose down
+          docker-compose up -d --build
           docker system prune -f

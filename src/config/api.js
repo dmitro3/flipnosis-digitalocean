@@ -1,7 +1,7 @@
 // Single source of truth for API configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.DEV ? 'http://localhost:3001' : 'https://cryptoflipz2-production.up.railway.app',
-  WS_URL: import.meta.env.DEV ? 'ws://localhost:3001' : 'wss://cryptoflipz2-production.up.railway.app'
+  BASE_URL: import.meta.env.DEV ? 'http://localhost:3001' : 'http://143.198.166.196',
+  WS_URL: import.meta.env.DEV ? 'ws://localhost:3001' : 'ws://143.198.166.196'
 }
 
 // Helper functions
