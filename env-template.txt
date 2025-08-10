@@ -33,4 +33,23 @@ VITE_ALCHEMY_API_KEY=your_alchemy_api_key_here
 VITE_PLATFORM_FEE_RECEIVER=your_admin_wallet_address_here
 
 # Gas Reporting (Optional)
-VITE_REPORT_GAS=true 
+VITE_REPORT_GAS=true
+
+# ========================================
+# DATABASE & CONTRACT VARIABLES
+# ========================================
+
+# Database URL (REQUIRED for production)
+DATABASE_URL=sqlite:./server/games.db
+
+# Contract Address (REQUIRED)
+CONTRACT_ADDRESS=your_contract_address_here
+
+# Contract Owner Private Key (REQUIRED for admin functions)
+CONTRACT_OWNER_KEY=your_contract_owner_private_key_here
+
+# RPC URL for blockchain interactions
+RPC_URL=https://base-mainnet.g.alchemy.com/v2/your_alchemy_key_here
+
+# Chain ID
+VITE_CHAIN_ID=8453 
