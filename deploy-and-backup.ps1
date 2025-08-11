@@ -58,9 +58,14 @@ rm $deployDir.tar.gz
 echo "Deployment completed!"
 "@
 
-ssh root@$DROPLET_IP $deployCommands
+# Write commands to a temporary file to avoid line ending issues
+$tempScript = "deploy-temp.sh"
+$deployCommands | Out-File -FilePath $tempScript -Encoding ASCII -NoNewline
+scp $tempScript "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
+ssh root@$DROPLET_IP "cd /root/flipnosis-digitalocean && chmod +x deploy-temp.sh && ./deploy-temp.sh && rm deploy-temp.sh"
 
-# Step 5: Cleanup
+# Cleanup
+Remove-Item $tempScript -Force
 Write-Host "Cleaning up..." -ForegroundColor Yellow
 Remove-Item $deployDir -Recurse -Force
 Remove-Item "$deployDir.tar.gz" -Force
