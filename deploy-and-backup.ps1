@@ -42,7 +42,7 @@ Write-Host "Deploying to server..." -ForegroundColor Yellow
 scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/"
 
 # Deploy using direct SSH commands to the correct location
-ssh root@$DROPLET_IP "cd /root && tar -xzf deploy-package.tar.gz && cd deploy-package && npm install --production && cd /root/flipnosis-digitalocean && systemctl stop flipnosis-app 2>/dev/null || true && cp -r /root/deploy-package/dist/* . && cp -r /root/deploy-package/server . && cp /root/deploy-package/package.json . && cp /root/deploy-package/package-lock.json . && npm install --production && systemctl start flipnosis-app && systemctl restart nginx && rm -rf /root/deploy-package && rm /root/deploy-package.tar.gz && echo 'Deployment completed!'"
+ssh root@$DROPLET_IP "cd /root && tar -xzf deploy-package.tar.gz && cd deploy-package && npm install --production && cd /root/flipnosis-digitalocean && pkill -f 'node.*server.js' && sleep 2 && cp -r /root/deploy-package/dist/* . && cp -r /root/deploy-package/server . && cp /root/deploy-package/package.json . && cp /root/deploy-package/package-lock.json . && npm install --production && nohup node server/server.js > server.log 2>&1 & && systemctl restart nginx && rm -rf /root/deploy-package && rm /root/deploy-package.tar.gz && echo 'Deployment completed!'"
 
 # Cleanup
 Write-Host "Cleaning up..." -ForegroundColor Yellow
