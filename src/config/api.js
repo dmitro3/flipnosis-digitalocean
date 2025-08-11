@@ -1,7 +1,7 @@
 // Single source of truth for API configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.DEV ? 'http://localhost:3001' : 'https://www.flipnosis.fun',
-  WS_URL: import.meta.env.DEV ? 'ws://localhost:3001' : 'wss://www.flipnosis.fun'
+  BASE_URL: (import.meta.env.DEV || window.location.hostname === 'localhost') ? 'http://localhost:3001' : 'https://www.flipnosis.fun',
+  WS_URL: (import.meta.env.DEV || window.location.hostname === 'localhost') ? 'ws://localhost:3001' : 'wss://www.flipnosis.fun'
 }
 
 // Helper functions
