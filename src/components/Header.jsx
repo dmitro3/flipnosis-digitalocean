@@ -160,7 +160,7 @@ const WalletSection = styled.div`
 const MenuButton = styled.button`
   background: none;
   border: none;
-  color: #00FF41;
+  color: #00BFFF;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0.5rem;
@@ -168,7 +168,7 @@ const MenuButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover {
-    color: #00CC33;
+    color: #0099CC;
     transform: scale(1.1);
   }
 `
