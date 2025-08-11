@@ -9,6 +9,9 @@ class WebSocketService {
     this.messageHandlers = new Map()
     this.connectionState = 'disconnected' // disconnected, connecting, connected, reconnecting
     this.connectionPromise = null
+    this.connectionTimeout = null
+    this.heartbeatInterval = null
+    this.lastHeartbeat = Date.now()
   }
 
   // Connect to WebSocket server
@@ -26,22 +29,33 @@ class WebSocketService {
         console.log('🎮 Game ID:', gameId)
         console.log('👤 Address:', address)
 
+        // Clear any existing connection
+        if (this.ws) {
+          this.ws.close()
+          this.ws = null
+        }
+
         this.ws = new WebSocket(wsUrl)
 
-        // Connection timeout
-        const connectionTimeout = setTimeout(() => {
-          if (this.ws.readyState === WebSocket.CONNECTING) {
+        // Connection timeout with Chrome-friendly settings
+        this.connectionTimeout = setTimeout(() => {
+          if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
             console.log('⏰ WebSocket connection timeout')
             this.ws.close()
+            this.connectionState = 'disconnected'
             reject(new Error('Connection timeout'))
           }
-        }, 10000)
+        }, 15000) // Increased timeout for Chrome
 
         this.ws.onopen = () => {
           console.log('🔌 WebSocket connected successfully')
-          clearTimeout(connectionTimeout)
+          clearTimeout(this.connectionTimeout)
           this.connectionState = 'connected'
           this.reconnectAttempts = 0
+          this.lastHeartbeat = Date.now()
+
+          // Start heartbeat for Chrome
+          this.startHeartbeat()
 
           // Join game room immediately
           this.joinRoom(gameId)
@@ -56,8 +70,9 @@ class WebSocketService {
 
         this.ws.onerror = (error) => {
           console.error('🔌 WebSocket error:', error)
-          clearTimeout(connectionTimeout)
+          clearTimeout(this.connectionTimeout)
           this.connectionState = 'disconnected'
+          this.stopHeartbeat()
           reject(error)
         }
 
@@ -68,6 +83,8 @@ class WebSocketService {
             wasClean: event.wasClean
           })
           
+          clearTimeout(this.connectionTimeout)
+          this.stopHeartbeat()
           this.connectionState = 'disconnected'
           
           // Attempt reconnection if not a clean close
@@ -82,12 +99,42 @@ class WebSocketService {
 
       } catch (error) {
         console.error('❌ Error creating WebSocket connection:', error)
+        clearTimeout(this.connectionTimeout)
         this.connectionState = 'disconnected'
         reject(error)
       }
     })
 
     return this.connectionPromise
+  }
+
+  // Start heartbeat for Chrome compatibility
+  startHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+    }
+    
+    this.heartbeatInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        try {
+          this.ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }))
+          this.lastHeartbeat = Date.now()
+        } catch (error) {
+          console.error('🔌 Heartbeat error:', error)
+          this.stopHeartbeat()
+        }
+      } else {
+        this.stopHeartbeat()
+      }
+    }, 30000) // Send heartbeat every 30 seconds
+  }
+
+  // Stop heartbeat
+  stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+    }
   }
 
   // Attempt to reconnect
@@ -98,9 +145,12 @@ class WebSocketService {
 
     this.connectionState = 'reconnecting'
     this.reconnectAttempts++
-
-    console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`)
-
+    
+    console.log(`🔄 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts}`)
+    
+    // Exponential backoff for Chrome
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000)
+    
     setTimeout(async () => {
       try {
         await this.connect(gameId, address)
@@ -108,65 +158,53 @@ class WebSocketService {
         console.error('❌ Reconnection failed:', error)
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.attemptReconnect(gameId, address)
-        } else {
-          console.error('❌ Max reconnection attempts reached')
-          this.connectionState = 'disconnected'
         }
       }
-    }, this.reconnectDelay * this.reconnectAttempts)
+    }, delay)
   }
 
-  // Join a game room
+  // Join game room
   joinRoom(roomId) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('⚠️ Cannot join room - WebSocket not connected')
-      return
-    }
-
-    try {
-      this.ws.send(JSON.stringify({
-        type: 'join_room',
-        roomId: roomId
-      }))
-      console.log('🏠 Joined game room:', roomId)
-    } catch (error) {
-      console.error('❌ Failed to join room:', error)
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(JSON.stringify({
+          type: 'join_room',
+          roomId: roomId
+        }))
+        console.log('🎮 Joined room:', roomId)
+      } catch (error) {
+        console.error('❌ Error joining room:', error)
+      }
     }
   }
 
   // Register user
   registerUser(address) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('⚠️ Cannot register user - WebSocket not connected')
-      return
-    }
-
-    try {
-      this.ws.send(JSON.stringify({
-        type: 'register_user',
-        address: address
-      }))
-      console.log('👤 Registered user:', address)
-    } catch (error) {
-      console.error('❌ Failed to register user:', error)
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(JSON.stringify({
+          type: 'register_user',
+          address: address
+        }))
+        console.log('👤 Registered user:', address)
+      } catch (error) {
+        console.error('❌ Error registering user:', error)
+      }
     }
   }
 
-  // Send a message
+  // Send message with error handling
   send(message) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('⚠️ Cannot send message - WebSocket not connected')
-      console.warn('🔍 WebSocket state:', this.ws ? this.ws.readyState : 'null')
-      return false
-    }
-
-    try {
-      const messageStr = JSON.stringify(message)
-      this.ws.send(messageStr)
-      console.log('📤 Sent WebSocket message:', message.type, message)
-      return true
-    } catch (error) {
-      console.error('❌ Failed to send message:', error)
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(JSON.stringify(message))
+        return true
+      } catch (error) {
+        console.error('❌ Error sending message:', error)
+        return false
+      }
+    } else {
+      console.warn('⚠️ WebSocket not connected, cannot send message')
       return false
     }
   }
@@ -174,31 +212,29 @@ class WebSocketService {
   // Handle incoming messages
   handleMessage(event) {
     try {
-      console.log('📨 Raw WebSocket message received:', event.data)
       const data = JSON.parse(event.data)
-      console.log('📨 Parsed WebSocket message:', data)
-
-      // Call registered handlers
-      if (this.messageHandlers.has(data.type)) {
-        console.log(`📨 Found ${this.messageHandlers.get(data.type).length} handlers for message type: ${data.type}`)
-        this.messageHandlers.get(data.type).forEach((handler, index) => {
-          try {
-            console.log(`📨 Calling handler ${index + 1} for ${data.type}`)
-            handler(data)
-          } catch (error) {
-            console.error('❌ Error in message handler:', error)
-          }
-        })
-      } else {
-        console.log('📨 No handlers for message type:', data.type)
-        console.log('📨 Available handlers:', Array.from(this.messageHandlers.keys()))
+      
+      // Handle heartbeat response
+      if (data.type === 'pong') {
+        this.lastHeartbeat = Date.now()
+        return
       }
+      
+      // Call registered handlers
+      const handlers = this.messageHandlers.get(data.type) || []
+      handlers.forEach(handler => {
+        try {
+          handler(data)
+        } catch (error) {
+          console.error('❌ Error in message handler:', error)
+        }
+      })
     } catch (error) {
-      console.error('❌ Error parsing WebSocket message:', error, 'Raw data:', event.data)
+      console.error('❌ Error parsing WebSocket message:', error)
     }
   }
 
-  // Register a message handler
+  // Register message handler
   on(messageType, handler) {
     if (!this.messageHandlers.has(messageType)) {
       this.messageHandlers.set(messageType, [])
@@ -206,10 +242,10 @@ class WebSocketService {
     this.messageHandlers.get(messageType).push(handler)
   }
 
-  // Remove a message handler
+  // Remove message handler
   off(messageType, handler) {
-    if (this.messageHandlers.has(messageType)) {
-      const handlers = this.messageHandlers.get(messageType)
+    const handlers = this.messageHandlers.get(messageType)
+    if (handlers) {
       const index = handlers.indexOf(handler)
       if (index > -1) {
         handlers.splice(index, 1)
@@ -227,68 +263,72 @@ class WebSocketService {
     return this.ws && this.ws.readyState === WebSocket.OPEN
   }
 
-  // Get the WebSocket instance
+  // Get WebSocket instance
   getWebSocket() {
     return this.ws
   }
 
   // Disconnect
   disconnect() {
+    this.stopHeartbeat()
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout)
+    }
     if (this.ws) {
       this.ws.close()
       this.ws = null
     }
     this.connectionState = 'disconnected'
-    this.messageHandlers.clear()
+    this.reconnectAttempts = 0
   }
 
   // Send game action
   sendGameAction(action, data) {
     return this.send({
-      type: 'GAME_ACTION',
-      gameId: data.gameId,
+      type: 'game_action',
       action: action,
-      ...data
+      data: data
     })
   }
 
   // Send player choice
   sendPlayerChoice(gameId, player, choice) {
-    return this.sendGameAction('MAKE_CHOICE', {
-      gameId,
-      player,
-      choice
+    return this.send({
+      type: 'player_choice',
+      gameId: gameId,
+      player: player,
+      choice: choice
     })
   }
 
   // Send power charge
   sendPowerCharge(gameId, player, powerLevel) {
-    return this.sendGameAction('POWER_CHARGED', {
-      gameId,
-      player,
-      powerLevel
+    return this.send({
+      type: 'power_charge',
+      gameId: gameId,
+      player: player,
+      powerLevel: powerLevel
     })
   }
 
   // Send power charge start
   sendPowerChargeStart(gameId, player) {
-    return this.sendGameAction('POWER_CHARGE_START', {
-      gameId,
-      player
+    return this.send({
+      type: 'power_charge_start',
+      gameId: gameId,
+      player: player
     })
   }
 
   // Send auto flip
   sendAutoFlip(gameId, player, choice) {
-    return this.sendGameAction('AUTO_FLIP', {
-      gameId,
-      player,
-      choice
+    return this.send({
+      type: 'auto_flip',
+      gameId: gameId,
+      player: player,
+      choice: choice
     })
   }
 }
 
-// Create singleton instance
-const webSocketService = new WebSocketService()
-
-export default webSocketService
+export default WebSocketService

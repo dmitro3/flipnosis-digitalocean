@@ -53,6 +53,7 @@ export default defineConfig(({ mode }) => {
         net: false,
         tls: false,
         child_process: false,
+        canvas: false, // Disable canvas for browser compatibility
       },
     },
     optimizeDeps: {
@@ -68,23 +69,31 @@ export default defineConfig(({ mode }) => {
         'use-sync-external-store/shim',
         'use-sync-external-store/shim/with-selector'
       ],
-      exclude: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi'],
+      exclude: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi', 'canvas'],
       esbuildOptions: {
         target: 'esnext'
       }
     },
     build: {
       target: 'esnext',
-      minify: false, // Disable minification for better error messages
+      minify: 'esbuild', // Use esbuild for better compatibility
       rollupOptions: {
-        external: ['fsevents']
+        external: ['fsevents'],
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            wagmi: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi'],
+            three: ['three', '@react-three/fiber', '@react-three/drei'],
+          },
+        },
       },
       commonjsOptions: {
         transformMixedEsModules: true,
         include: [/node_modules/],
         requireReturnsDefault: 'auto',
         defaultIsModuleExports: 'auto'
-      }
+      },
+      chunkSizeWarningLimit: 1000, // Increase warning limit
     },
     define: {
       'process.env': safeEnv
