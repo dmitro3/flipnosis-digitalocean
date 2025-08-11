@@ -24,6 +24,9 @@ export const WalletProvider = ({ children }) => {
   
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
+  
+  // Chrome extension conflict detection
+  const hasChromeExtensions = typeof window !== 'undefined' && window.chrome && window.chrome.runtime
 
   // Chain information
   const chains = {
@@ -262,21 +265,64 @@ export const WalletProvider = ({ children }) => {
 
   // Create a proper signer that works with the new walletClient
   const getSigner = () => {
-    if (!walletClient || !publicClient || !walletClient.account) {
-      console.warn('⚠️ Wallet client, public client, or wallet account not available')
-      return null
-    }
-
     try {
+      // Enhanced null checks to prevent Chrome extension conflicts
+      if (!walletClient) {
+        console.warn('⚠️ Wallet client not available')
+        return null
+      }
+      
+      if (!publicClient) {
+        console.warn('⚠️ Public client not available')
+        return null
+      }
+      
+      if (!walletClient.account) {
+        console.warn('⚠️ Wallet account not available')
+        return null
+      }
+      
+      // Additional safety check for Chrome extension conflicts
+      if (typeof walletClient.account !== 'object' || walletClient.account === null) {
+        console.warn('⚠️ Invalid wallet account object')
+        return null
+      }
+      
+      // Chrome extension specific safety checks
+      if (hasChromeExtensions) {
+        try {
+          // Test if wallet client is accessible without causing extension conflicts
+          if (walletClient.account && typeof walletClient.account.address === 'undefined') {
+            console.warn('⚠️ Chrome extension detected - wallet account may be corrupted')
+            return null
+          }
+        } catch (extensionError) {
+          console.warn('⚠️ Chrome extension conflict detected:', extensionError.message)
+          return null
+        }
+      }
+
       // Create a signer that wraps the walletClient for ethers compatibility
       const signer = {
         // Basic signer interface
-        getAddress: async () => walletClient.account?.address || null,
-        signMessage: async (message) => {
-          if (!walletClient.signMessage) {
-            throw new Error('Sign message not available')
+        getAddress: async () => {
+          try {
+            return walletClient.account?.address || null
+          } catch (error) {
+            console.warn('⚠️ Error getting address:', error)
+            return null
           }
-          return await walletClient.signMessage({ message })
+        },
+        signMessage: async (message) => {
+          try {
+            if (!walletClient.signMessage) {
+              throw new Error('Sign message not available')
+            }
+            return await walletClient.signMessage({ message })
+          } catch (error) {
+            console.warn('⚠️ Error signing message:', error)
+            throw error
+          }
         },
         signTransaction: async (transaction) => {
           // This is a simplified version - in practice, you'd use walletClient.writeContract
@@ -285,12 +331,24 @@ export const WalletProvider = ({ children }) => {
         },
         connect: () => signer,
         provider: {
-          getNetwork: async () => ({ chainId: chainId || 1 }),
-          getBalance: async (address) => {
-            if (!publicClient.getBalance) {
-              throw new Error('Get balance not available')
+          getNetwork: async () => {
+            try {
+              return { chainId: chainId || 1 }
+            } catch (error) {
+              console.warn('⚠️ Error getting network:', error)
+              return { chainId: 1 }
             }
-            return await publicClient.getBalance({ address })
+          },
+          getBalance: async (address) => {
+            try {
+              if (!publicClient.getBalance) {
+                throw new Error('Get balance not available')
+              }
+              return await publicClient.getBalance({ address })
+            } catch (error) {
+              console.warn('⚠️ Error getting balance:', error)
+              throw error
+            }
           }
         }
       }

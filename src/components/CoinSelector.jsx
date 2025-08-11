@@ -39,21 +39,21 @@ const CoinSelector = ({
     {
       id: 'mario',
       type: 'default',
-      name: 'Mario Bros',
+      name: 'Mario',
       headsImage: '/coins/mario.png',
       tailsImage: '/coins/luigi.png'
     },
     {
       id: 'clown',
       type: 'default',
-      name: 'Clown',
+      name: 'Bozo',
       headsImage: '/coins/clownh.png',
       tailsImage: '/coins/clownt.png'
     },
     {
       id: 'dragon',
       type: 'default',
-      name: 'Dragon',
+      name: '龙',
       headsImage: '/coins/dragonh.png',
       tailsImage: '/coins/dragont.png'
     },
@@ -67,7 +67,7 @@ const CoinSelector = ({
     {
       id: 'manga',
       type: 'default',
-      name: 'Manga',
+      name: 'Heroine',
       headsImage: '/coins/mangah.png',
       tailsImage: '/coins/mangat.png'
     },

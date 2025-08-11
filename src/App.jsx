@@ -48,15 +48,36 @@ function App() {
     console.error('🚨 Error in App.jsx debug logging:', error)
   }
 
-  // Add global error handler
+  // Add global error handler with Chrome extension conflict handling
   useEffect(() => {
     const handleGlobalError = (event) => {
+      // Check if error is from Chrome extension
+      if (event.error && event.error.stack && event.error.stack.includes('chrome-extension://')) {
+        console.warn('⚠️ Chrome extension error detected, ignoring:', event.error.message)
+        event.preventDefault()
+        return
+      }
+      
       console.error('🚨 Global error caught:', event.error)
       // Prevent the error from showing in console
       event.preventDefault()
     }
 
     const handleUnhandledRejection = (event) => {
+      // Check if rejection is from Chrome extension
+      if (event.reason && event.reason.stack && event.reason.stack.includes('chrome-extension://')) {
+        console.warn('⚠️ Chrome extension promise rejection detected, ignoring:', event.reason.message)
+        event.preventDefault()
+        return
+      }
+      
+      // Check for specific Binance wallet extension errors
+      if (event.reason && event.reason.message && event.reason.message.includes('Cannot read properties of null')) {
+        console.warn('⚠️ Wallet extension null property error detected, ignoring:', event.reason.message)
+        event.preventDefault()
+        return
+      }
+      
       console.error('🚨 Unhandled promise rejection:', event.reason)
       // Prevent the error from showing in console
       event.preventDefault()

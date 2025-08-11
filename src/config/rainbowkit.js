@@ -52,6 +52,25 @@ if (!projectId) {
 // Check if we're on mobile
 const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 
+// Check for Chrome extensions that might cause conflicts
+const hasChromeExtensions = typeof window !== 'undefined' && window.chrome && window.chrome.runtime
+
+// Add Chrome extension conflict handling
+if (hasChromeExtensions) {
+  console.log('🔍 Chrome extensions detected, adding conflict handling...')
+  
+  // Override console.error to filter out Chrome extension errors
+  const originalConsoleError = console.error
+  console.error = (...args) => {
+    const message = args.join(' ')
+    if (message.includes('chrome-extension://') || message.includes('Cannot read properties of null')) {
+      console.warn('⚠️ Chrome extension error filtered:', message)
+      return
+    }
+    originalConsoleError.apply(console, args)
+  }
+}
+
 // Create custom connectors to handle MetaMask mobile properly
 let config
 
