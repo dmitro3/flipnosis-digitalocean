@@ -7,7 +7,7 @@ param(
 
 $DROPLET_IP = "143.198.166.196"
 $DOMAIN = "flipnosis.fun"
-$Email = "strik9games@gmail.com"  # Your email
+$Email = "strik9games@gmail.com"
 
 Write-Host "Starting deployment and backup process..." -ForegroundColor Green
 
@@ -24,8 +24,6 @@ npm run build
 
 # Step 3: Create deployment package
 $deployDir = "deploy-package"
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-
 if (Test-Path $deployDir) {
     Remove-Item $deployDir -Recurse -Force
 }
@@ -44,9 +42,12 @@ tar -czf "$deployDir.tar.gz" $deployDir
 Write-Host "Deploying to server..." -ForegroundColor Yellow
 scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
 
-$deployCommands = @"
+# Create a simple deployment script on the server
+$deployScript = @"
+#!/bin/bash
+set -e
 cd /root/flipnosis-digitalocean
-tar -xzf $deployDir.tar.gz
+tar -xzf deploy-package.tar.gz
 cd deploy-package
 cp env-template.txt .env
 npm install --production
@@ -54,18 +55,17 @@ chmod +x digitalocean-deploy/scripts/setup-ssl.sh
 ./digitalocean-deploy/scripts/setup-ssl.sh $DOMAIN $Email
 systemctl restart nginx
 systemctl restart flipnosis-app
-rm $deployDir.tar.gz
+rm deploy-package.tar.gz
 echo "Deployment completed!"
 "@
 
-# Write commands to a temporary file to avoid line ending issues
-$tempScript = "deploy-temp.sh"
-$deployCommands | Out-File -FilePath $tempScript -Encoding ASCII -NoNewline
-scp $tempScript "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
-ssh root@$DROPLET_IP "cd /root/flipnosis-digitalocean && chmod +x deploy-temp.sh && ./deploy-temp.sh && rm deploy-temp.sh"
+# Write the script to a file with proper line endings
+$deployScript | Out-File -FilePath "deploy-server.sh" -Encoding ASCII -NoNewline
+scp "deploy-server.sh" "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
+ssh root@$DROPLET_IP "cd /root/flipnosis-digitalocean && chmod +x deploy-server.sh && ./deploy-server.sh && rm deploy-server.sh"
 
 # Cleanup
-Remove-Item $tempScript -Force
+Remove-Item "deploy-server.sh" -Force
 Write-Host "Cleaning up..." -ForegroundColor Yellow
 Remove-Item $deployDir -Recurse -Force
 Remove-Item "$deployDir.tar.gz" -Force
