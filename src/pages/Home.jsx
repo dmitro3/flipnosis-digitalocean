@@ -676,7 +676,7 @@ const getAllItems = () => {
               <p style={{ color: theme.colors.textSecondary, marginBottom: '2rem' }}>
                 Be the first to create a flip game!
               </p>
-              <Button as={Link} to="/create" style={{ background: theme.colors.neonPink }}>
+              <Button as={Link} to="/create" style={{ background: theme.colors.neonGreen }}>
                 Create Flip
               </Button>
             </GlassCard>

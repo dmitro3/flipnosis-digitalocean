@@ -18,8 +18,8 @@ const ProfilePictureContainer = styled.div`
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: ${props => props.isClickable ? 'rgba(255, 20, 147, 0.5)' : props.style?.border};
-    box-shadow: ${props => props.isClickable ? '0 0 15px rgba(255, 20, 147, 0.3)' : 'none'};
+      border-color: ${props => props.isClickable ? 'rgba(0, 191, 255, 0.5)' : props.style?.border};
+  box-shadow: ${props => props.isClickable ? '0 0 15px rgba(0, 191, 255, 0.3)' : 'none'};
   }
 `
 

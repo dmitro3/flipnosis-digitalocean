@@ -20,8 +20,8 @@ const ProfileContainer = styled.div`
 `;
 
 const ProfileHeader = styled.div`
-  background: linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(255, 105, 180, 0.1));
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  background: linear-gradient(135deg, rgba(0, 191, 255, 0.1), rgba(30, 144, 255, 0.1));
+  border: 1px solid rgba(0, 191, 255, 0.3);
   border-radius: 1.5rem;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -35,7 +35,7 @@ const ProfileHeader = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 20, 147, 0.05) 50%, transparent 70%);
+    background: linear-gradient(45deg, transparent 30%, rgba(0, 191, 255, 0.05) 50%, transparent 70%);
     animation: shimmer 3s infinite;
   }
 
@@ -67,12 +67,12 @@ const Avatar = styled.img`
   width: 8rem;
   height: 8rem;
   border-radius: 50%;
-  border: 4px solid rgba(255, 20, 147, 0.5);
+  border: 4px solid rgba(0, 191, 255, 0.5);
   object-fit: cover;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.8);
+    border-color: rgba(0, 191, 255, 0.8);
     transform: scale(1.05);
   }
 `;
@@ -82,14 +82,14 @@ const AvatarPlaceholder = styled.div`
   height: 8rem;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
-  border: 4px solid rgba(255, 20, 147, 0.5);
+  border: 4px solid rgba(0, 191, 255, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.8);
+    border-color: rgba(0, 191, 255, 0.8);
     background: rgba(255, 255, 255, 0.2);
   }
 `;
@@ -100,7 +100,7 @@ const UserDetails = styled.div`
 
 const NameInput = styled.input`
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 20, 147, 0.5);
+  border: 1px solid rgba(0, 191, 255, 0.5);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   color: #fff;
@@ -112,8 +112,8 @@ const NameInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: rgba(255, 20, 147, 0.8);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+    border-color: rgba(0, 191, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
   }
 `;
 
@@ -181,21 +181,21 @@ const StatsGrid = styled.div`
 
 const StatCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 1.5rem;
   transition: all 0.3s ease;
   text-align: center;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.4);
-    box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
+    border-color: rgba(0, 191, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
     transform: translateY(-2px);
   }
 `;
 
 const StatIcon = styled.div`
-  color: #FF1493;
+  color: #00BFFF;
   margin-bottom: 0.5rem;
 `;
 
@@ -220,7 +220,7 @@ const TabContainer = styled.div`
 `;
 
 const TabButton = styled.button`
-  background: ${props => props.active ? 'rgba(255, 20, 147, 0.2)' : 'transparent'};
+  background: ${props => props.active ? 'rgba(0, 191, 255, 0.2)' : 'transparent'};
   border: none;
   color: ${props => props.active ? '#fff' : 'rgba(255, 255, 255, 0.7)'};
   font-size: 1rem;
@@ -228,17 +228,17 @@ const TabButton = styled.button`
   cursor: pointer;
   padding: 1rem 1.5rem;
   transition: all 0.3s ease;
-  border-bottom: ${props => props.active ? '2px solid #FF1493' : 'none'};
+  border-bottom: ${props => props.active ? '2px solid #00BFFF' : 'none'};
   white-space: nowrap;
 
   &:hover {
-    background: rgba(255, 20, 147, 0.1);
+    background: rgba(0, 191, 255, 0.1);
   }
 `;
 
 const TabContent = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 2rem;
   min-height: 400px;
@@ -257,14 +257,14 @@ const CoinImagesGrid = styled.div`
 
 const CoinImageCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 1.5rem;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.4);
-    box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
+    border-color: rgba(0, 191, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
   }
 `;
 
@@ -273,12 +273,12 @@ const CoinImage = styled.img`
   height: 12rem;
   object-fit: cover;
   border-radius: 0.5rem;
-  border: 2px solid rgba(255, 20, 147, 0.3);
+  border: 2px solid rgba(0, 191, 255, 0.3);
   aspect-ratio: 1;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.8);
+    border-color: rgba(0, 191, 255, 0.8);
     transform: scale(1.02);
   }
 `;
@@ -291,7 +291,7 @@ const CoinImagePlaceholder = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(255, 20, 147, 0.3);
+  border: 2px solid rgba(0, 191, 255, 0.3);
   color: rgba(255, 255, 255, 0.5);
   aspect-ratio: 1;
   cursor: pointer;
@@ -299,21 +299,21 @@ const CoinImagePlaceholder = styled.div`
 
   &:hover {
     background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 20, 147, 0.8);
+    border-color: rgba(0, 191, 255, 0.8);
   }
 `;
 
 const GameCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 1.5rem;
   margin-bottom: 1rem;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.4);
-    box-shadow: 0 0 20px rgba(255, 20, 147, 0.2);
+    border-color: rgba(0, 191, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
     transform: translateY(-2px);
   }
 `;
@@ -335,7 +335,7 @@ const GameActions = styled.div`
 `;
 
 const ActionButton = styled.button`
-  background: ${props => props.variant === 'danger' ? 'linear-gradient(45deg, #FF4444, #CC0000)' : 'linear-gradient(45deg, #FF1493, #FF69B4)'};
+  background: ${props => props.variant === 'danger' ? 'linear-gradient(45deg, #FF4444, #CC0000)' : 'linear-gradient(45deg, #00BFFF, #1E90FF)'};
   border: none;
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
@@ -349,7 +349,7 @@ const ActionButton = styled.button`
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 15px ${props => props.variant === 'danger' ? 'rgba(255, 68, 68, 0.4)' : 'rgba(255, 20, 147, 0.4)'};
+    box-shadow: 0 0 15px ${props => props.variant === 'danger' ? 'rgba(255, 68, 68, 0.4)' : 'rgba(0, 191, 255, 0.4)'};
   }
 `;
 
@@ -402,7 +402,7 @@ const SocialLinksSection = styled.div`
 
 const SocialInput = styled.input`
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  border: 1px solid rgba(0, 191, 255, 0.3);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   color: #fff;
@@ -411,8 +411,8 @@ const SocialInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: rgba(255, 20, 147, 0.8);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+    border-color: rgba(0, 191, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
   }
 `;
 
@@ -424,7 +424,7 @@ const SocialInputContainer = styled.div`
 
 const WalletSection = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -459,9 +459,9 @@ const LoadingSpinner = styled.div`
   display: inline-block;
   width: 2rem;
   height: 2rem;
-  border: 3px solid rgba(255, 20, 147, 0.3);
+  border: 3px solid rgba(0, 191, 255, 0.3);
   border-radius: 50%;
-  border-top-color: #FF1493;
+  border-top-color: #00BFFF;
   animation: spin 1s ease-in-out infinite;
 
   @keyframes spin {
@@ -743,7 +743,7 @@ const Profile = () => {
               <Avatar src={profileData.avatar} alt="Profile" />
             ) : (
               <AvatarPlaceholder>
-                <User style={{ width: '3rem', height: '3rem', color: '#FF1493' }} />
+                <User style={{ width: '3rem', height: '3rem', color: '#00BFFF' }} />
               </AvatarPlaceholder>
             )}
           </AvatarSection>

@@ -109,13 +109,13 @@ export const themes = {
   },
   blue: {
     name: 'Blue',
-    description: 'Cool blue theme',
-    primary: '#2196F3',
-    secondary: '#03DAC6',
-    accent: '#1976D2',
-    background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(3, 218, 198, 0.1))',
-    border: 'rgba(33, 150, 243, 0.5)',
-    color: '#2196F3'
+    description: 'Electric blue theme',
+    primary: '#00BFFF',
+    secondary: '#1E90FF',
+    accent: '#4169E1',
+    background: 'linear-gradient(135deg, rgba(0, 191, 255, 0.1), rgba(30, 144, 255, 0.1))',
+    border: 'rgba(0, 191, 255, 0.5)',
+    color: '#00BFFF'
   },
   orange: {
     name: 'Orange',
@@ -153,7 +153,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, saving }) => {
   return (
     <ThemeSelectorContainer>
       <ThemeSelectorHeader>
-        <Palette style={{ width: '1.5rem', height: '1.5rem', color: '#FF1493' }} />
+        <Palette style={{ width: '1.5rem', height: '1.5rem', color: '#00BFFF' }} />
         <h3>Profile Theme</h3>
       </ThemeSelectorHeader>
       

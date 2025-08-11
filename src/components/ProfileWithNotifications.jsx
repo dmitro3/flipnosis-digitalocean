@@ -20,8 +20,8 @@ const ProfileButton = styled.button`
 
   &:hover {
     background: rgba(0, 0, 0, 0.8);
-    border-color: rgba(255, 20, 147, 0.3);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.2);
+    border-color: rgba(0, 191, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
   }
 `
 
@@ -29,7 +29,7 @@ const Badge = styled.div`
   position: absolute;
   top: -0.5rem;
   right: -0.5rem;
-  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  background: linear-gradient(45deg, #00BFFF, #1E90FF);
   color: white;
   font-size: 0.75rem;
   font-weight: bold;
@@ -39,7 +39,7 @@ const Badge = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 10px rgba(255, 20, 147, 0.4);
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.4);
 `
 
 const Modal = styled.div`
@@ -58,18 +58,18 @@ const Modal = styled.div`
 
 const ModalContent = styled.div`
   background: rgba(0, 0, 0, 0.9);
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  border: 1px solid rgba(0, 191, 255, 0.3);
   border-radius: 1rem;
   width: 90%;
   max-width: 800px;
   max-height: 90vh;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 0 30px rgba(255, 20, 147, 0.2);
+  box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
 `
 
 const ModalHeader = styled.div`
-  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  background: linear-gradient(45deg, #00BFFF, #1E90FF);
   padding: 1.5rem;
   border-radius: 1rem 1rem 0 0;
   position: relative;
@@ -122,7 +122,7 @@ const TabBadge = styled.div`
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  background: linear-gradient(45deg, #00BFFF, #1E90FF);
   color: white;
   font-size: 0.75rem;
   font-weight: bold;
@@ -132,7 +132,7 @@ const TabBadge = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 10px rgba(255, 20, 147, 0.4);
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.4);
 `
 
 const ModalBody = styled.div`
@@ -150,14 +150,14 @@ const StatsGrid = styled.div`
 
 const StatCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 1.5rem;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.4);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.2);
+    border-color: rgba(0, 191, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
     transform: translateY(-2px);
   }
 `
@@ -187,14 +187,14 @@ const CoinImagesGrid = styled.div`
 
 const CoinImageCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 1rem;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.4);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.2);
+    border-color: rgba(0, 191, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
   }
 `
 
@@ -203,7 +203,7 @@ const CoinImage = styled.img`
   height: 8rem;
   object-fit: cover;
   border-radius: 0.5rem;
-  border: 2px solid rgba(255, 20, 147, 0.3);
+  border: 2px solid rgba(0, 191, 255, 0.3);
   aspect-ratio: 1;
 `
 
@@ -215,22 +215,22 @@ const CoinImagePlaceholder = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(255, 20, 147, 0.3);
+  border: 2px solid rgba(0, 191, 255, 0.3);
   color: rgba(255, 255, 255, 0.5);
   aspect-ratio: 1;
 `
 
 const GameCard = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 20, 147, 0.2);
+  border: 1px solid rgba(0, 191, 255, 0.2);
   border-radius: 1rem;
   padding: 1.5rem;
   margin-bottom: 1rem;
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(255, 20, 147, 0.4);
-    box-shadow: 0 0 15px rgba(255, 20, 147, 0.2);
+    border-color: rgba(0, 191, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
     transform: translateY(-2px);
   }
 `
@@ -252,7 +252,7 @@ const GameActions = styled.div`
 `
 
 const ActionButton = styled.button`
-  background: ${props => props.variant === 'danger' ? 'linear-gradient(45deg, #FF4444, #CC0000)' : 'linear-gradient(45deg, #FF1493, #FF69B4)'};
+  background: ${props => props.variant === 'danger' ? 'linear-gradient(45deg, #FF4444, #CC0000)' : 'linear-gradient(45deg, #00BFFF, #1E90FF)'};
   border: none;
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
@@ -266,7 +266,7 @@ const ActionButton = styled.button`
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 15px ${props => props.variant === 'danger' ? 'rgba(255, 68, 68, 0.4)' : 'rgba(255, 20, 147, 0.4)'};
+    box-shadow: 0 0 15px ${props => props.variant === 'danger' ? 'rgba(255, 68, 68, 0.4)' : 'rgba(0, 191, 255, 0.4)'};
   }
 `
 
@@ -347,9 +347,9 @@ const InfoBadge = styled.div`
   border-radius: 1rem;
   font-size: 0.9rem;
   font-weight: bold;
-  background: rgba(255, 20, 147, 0.1);
-  color: #FF1493;
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  background: rgba(0, 191, 255, 0.1);
+  color: #00BFFF;
+  border: 1px solid rgba(0, 191, 255, 0.3);
 `
 
 const ControlButton = styled.button`
@@ -377,9 +377,9 @@ const LoadingSpinner = styled.div`
   display: inline-block;
   width: 2rem;
   height: 2rem;
-  border: 3px solid rgba(255, 20, 147, 0.3);
+  border: 3px solid rgba(0, 191, 255, 0.3);
   border-radius: 50%;
-  border-top-color: #FF1493;
+  border-top-color: #00BFFF;
   animation: spin 1s ease-in-out infinite;
 
   @keyframes spin {
@@ -878,12 +878,12 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
               width: '2rem',
               height: '2rem',
               borderRadius: '12px',
-              border: '2px solid rgba(255, 20, 147, 0.5)',
+              border: '2px solid rgba(0, 191, 255, 0.5)',
               objectFit: 'cover'
             }}
           />
         ) : (
-          <User style={{ width: '1.5rem', height: '1.5rem', color: '#FF1493' }} />
+          <User style={{ width: '1.5rem', height: '1.5rem', color: '#00BFFF' }} />
         )}
         <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
           {profileData.name || 'Anonymous Player'}
