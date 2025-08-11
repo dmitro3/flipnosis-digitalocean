@@ -32,18 +32,17 @@ Write-Host "Creating deployment package..." -ForegroundColor Yellow
 Copy-Item -Path "dist" -Destination "$deployDir/dist" -Recurse
 Copy-Item -Path "server" -Destination "$deployDir/server" -Recurse
 Copy-Item -Path "package.json" -Destination "$deployDir/"
-Copy-Item -Path "digitalocean-deploy" -Destination "$deployDir/" -Recurse
-Copy-Item -Path "env-template.txt" -Destination "$deployDir/"
+Copy-Item -Path "package-lock.json" -Destination "$deployDir/"
 
 # Create tar.gz
 tar -czf "$deployDir.tar.gz" $deployDir
 
 # Step 4: Deploy to server
 Write-Host "Deploying to server..." -ForegroundColor Yellow
-scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
+scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/"
 
-# Deploy using direct SSH commands to avoid line ending issues
-ssh root@$DROPLET_IP "cd /root/flipnosis-digitalocean && tar -xzf deploy-package.tar.gz && cd deploy-package && cp env-template.txt .env && npm install --production && chmod +x digitalocean-deploy/scripts/setup-ssl.sh && ./digitalocean-deploy/scripts/setup-ssl.sh $DOMAIN $Email && systemctl restart nginx && systemctl restart flipnosis-app && rm deploy-package.tar.gz && echo 'Deployment completed!'"
+# Deploy using direct SSH commands to the correct location
+ssh root@$DROPLET_IP "cd /root && tar -xzf deploy-package.tar.gz && cd deploy-package && npm install --production && cd /root/flipnosis-digitalocean && systemctl stop flipnosis-app 2>/dev/null || true && cp -r /root/deploy-package/dist/* . && cp -r /root/deploy-package/server . && cp /root/deploy-package/package.json . && cp /root/deploy-package/package-lock.json . && npm install --production && systemctl start flipnosis-app && systemctl restart nginx && rm -rf /root/deploy-package && rm /root/deploy-package.tar.gz && echo 'Deployment completed!'"
 
 # Cleanup
 Write-Host "Cleaning up..." -ForegroundColor Yellow
