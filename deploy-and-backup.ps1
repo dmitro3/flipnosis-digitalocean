@@ -42,30 +42,10 @@ tar -czf "$deployDir.tar.gz" $deployDir
 Write-Host "Deploying to server..." -ForegroundColor Yellow
 scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
 
-# Create a simple deployment script on the server
-$deployScript = @"
-#!/bin/bash
-set -e
-cd /root/flipnosis-digitalocean
-tar -xzf deploy-package.tar.gz
-cd deploy-package
-cp env-template.txt .env
-npm install --production
-chmod +x digitalocean-deploy/scripts/setup-ssl.sh
-./digitalocean-deploy/scripts/setup-ssl.sh $DOMAIN $Email
-systemctl restart nginx
-systemctl restart flipnosis-app
-rm deploy-package.tar.gz
-echo "Deployment completed!"
-"@
-
-# Write the script to a file with proper line endings
-$deployScript | Out-File -FilePath "deploy-server.sh" -Encoding ASCII -NoNewline
-scp "deploy-server.sh" "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
-ssh root@$DROPLET_IP "cd /root/flipnosis-digitalocean && chmod +x deploy-server.sh && ./deploy-server.sh && rm deploy-server.sh"
+# Deploy using direct SSH commands to avoid line ending issues
+ssh root@$DROPLET_IP "cd /root/flipnosis-digitalocean && tar -xzf deploy-package.tar.gz && cd deploy-package && cp env-template.txt .env && npm install --production && chmod +x digitalocean-deploy/scripts/setup-ssl.sh && ./digitalocean-deploy/scripts/setup-ssl.sh $DOMAIN $Email && systemctl restart nginx && systemctl restart flipnosis-app && rm deploy-package.tar.gz && echo 'Deployment completed!'"
 
 # Cleanup
-Remove-Item "deploy-server.sh" -Force
 Write-Host "Cleaning up..." -ForegroundColor Yellow
 Remove-Item $deployDir -Recurse -Force
 Remove-Item "$deployDir.tar.gz" -Force
