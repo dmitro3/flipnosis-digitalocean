@@ -53,7 +53,7 @@ ExecStart=/usr/bin/node server/server.js
 Restart=always
 RestartSec=10
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=3001
 
 [Install]
 WantedBy=multi-user.target
@@ -79,7 +79,7 @@ server {
     ssl_prefer_server_ciphers off;
     
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -91,7 +91,7 @@ server {
     }
     
     location /ws {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";

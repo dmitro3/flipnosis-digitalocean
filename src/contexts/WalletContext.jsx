@@ -244,16 +244,18 @@ export const WalletProvider = ({ children }) => {
     }
   }, [isConnected, address])
 
-  // Debug logging for mobile
+  // Debug logging for mobile (only in development)
   useEffect(() => {
-    console.log('🔍 WalletContext state:', {
-      isConnected,
-      address,
-      chainId,
-      hasWalletClient: !!walletClient,
-      hasPublicClient: !!publicClient,
-      isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    })
+    if (import.meta.env.DEV) {
+      console.log('🔍 WalletContext state:', {
+        isConnected,
+        address,
+        chainId,
+        hasWalletClient: !!walletClient,
+        hasPublicClient: !!publicClient,
+        isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      })
+    }
   }, [isConnected, address, chainId, walletClient, publicClient])
 
 

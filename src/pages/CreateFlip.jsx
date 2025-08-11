@@ -233,16 +233,18 @@ const CreateFlip = () => {
   // Check if wallet is fully connected and ready
   const isFullyConnected = address && walletClient
   
-  // Debug wallet connection status
+  // Debug wallet connection status (only in development)
   useEffect(() => {
-    console.log('🔍 Wallet connection status:', {
-      address,
-      hasWalletClient: !!walletClient,
-      isFullyConnected,
-      isConnected,
-      isConnecting,
-      chainId
-    })
+    if (import.meta.env.DEV) {
+      console.log('🔍 Wallet connection status:', {
+        address,
+        hasWalletClient: !!walletClient,
+        isFullyConnected,
+        isConnected,
+        isConnecting,
+        chainId
+      })
+    }
     
     // Check if wallet is on Base network
     if (isConnected && chainId !== 8453) {

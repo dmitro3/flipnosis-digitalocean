@@ -110,7 +110,7 @@ const CoinSelector = ({
     }
 
     loadCustomCoin()
-  }, [address, getCoinHeadsImage, getCoinTailsImage])
+  }, [address]) // Removed getCoinHeadsImage and getCoinTailsImage from dependencies to prevent infinite loops
 
   const handleCoinSelect = (coin) => {
     console.log('🪙 Coin selected:', coin)
@@ -136,14 +136,17 @@ const CoinSelector = ({
 
   const hasCustomCoin = customHeadsImage || customTailsImage
   
-  console.log('🪙 CoinSelector state:', {
-    address,
-    hasCustomCoin,
-    customHeadsImage: !!customHeadsImage,
-    customTailsImage: !!customTailsImage,
-    showCustomOption,
-    selectedCoinType
-  })
+  // Only log in development to prevent performance issues
+  if (import.meta.env.DEV) {
+    console.log('🪙 CoinSelector state:', {
+      address,
+      hasCustomCoin,
+      customHeadsImage: !!customHeadsImage,
+      customTailsImage: !!customTailsImage,
+      showCustomOption,
+      selectedCoinType
+    })
+  }
 
   return (
     <div style={{
