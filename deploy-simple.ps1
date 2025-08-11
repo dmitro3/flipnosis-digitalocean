@@ -1,85 +1,72 @@
-# Simple Flipnosis Deployment Script
+# Simple Deployment Script - One Password Entry
+# Usage: .\deploy-simple.ps1 "Your commit message"
+
 param(
-    [string]$Email = ""
+    [string]$CommitMessage = "Auto backup $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 )
 
-Write-Host "Flipnosis Simple Deployment" -ForegroundColor Green
-
-# Configuration
 $DROPLET_IP = "143.198.166.196"
-$DOMAIN = "www.flipnosis.fun"
 
-# Get email
-if (-not $Email) {
-    $Email = Read-Host "Enter your email for SSL certificates"
-}
+Write-Host "Starting simple deployment..." -ForegroundColor Green
 
-Write-Host "Using email: $Email" -ForegroundColor Yellow
+# Step 1: Git backup
+Write-Host "Creating git backup..." -ForegroundColor Yellow
+git add .
+git commit -m $CommitMessage
+git push origin main
 
-# Step 1: Build locally
-Write-Host "Building application..." -ForegroundColor Blue
-
-# Clean and build
-if (Test-Path "dist") {
-    Remove-Item "dist" -Recurse -Force
-}
-
+# Step 2: Build locally
+Write-Host "Building application..." -ForegroundColor Yellow
 npm install
 npm run build
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Build failed!" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "Build completed!" -ForegroundColor Green
-
-# Step 2: Create deployment package
-Write-Host "Creating deployment package..." -ForegroundColor Blue
-
+# Step 3: Create deployment package
 $deployDir = "deploy-package"
 if (Test-Path $deployDir) {
     Remove-Item $deployDir -Recurse -Force
 }
-New-Item -ItemType Directory -Path $deployDir -Force
 
-# Copy files
-Copy-Item "dist" -Destination "$deployDir/" -Recurse -Force
-Copy-Item "server" -Destination "$deployDir/" -Recurse -Force
-Copy-Item "contracts" -Destination "$deployDir/" -Recurse -Force
-Copy-Item "public" -Destination "$deployDir/" -Recurse -Force
-Copy-Item "scripts" -Destination "$deployDir/" -Recurse -Force
-Copy-Item "package.json" -Destination "$deployDir/" -Force
-Copy-Item "env-template.txt" -Destination "$deployDir/" -Force
+Write-Host "Creating deployment package..." -ForegroundColor Yellow
+Copy-Item -Path "dist" -Destination "$deployDir/dist" -Recurse
+Copy-Item -Path "server" -Destination "$deployDir/server" -Recurse
+Copy-Item -Path "package.json" -Destination "$deployDir/"
+Copy-Item -Path "package-lock.json" -Destination "$deployDir/"
 
 # Create tar.gz
-tar -czf "$deployDir.tar.gz" -C $deployDir .
+tar -czf "$deployDir.tar.gz" $deployDir
 
-# Step 3: Deploy to server
-Write-Host "Deploying to server..." -ForegroundColor Blue
+# Step 4: Deploy to server with single SSH command
+Write-Host "Deploying to server..." -ForegroundColor Yellow
+scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/"
 
-# Upload package
-scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
-
-# Deploy on server
-$deployCommands = @"
-cd /root/flipnosis-digitalocean
-tar -xzf $deployDir.tar.gz
-cd deploy-package
-cp env-template.txt .env
-npm install --production
-chmod +x scripts/setup-ssl.sh
-./scripts/setup-ssl.sh $DOMAIN $Email
-systemctl restart nginx
-systemctl restart flipnosis-app
-echo "Deployment completed!"
+# Single SSH command that does everything
+$deployCommand = @"
+cd /root && 
+tar -xzf deploy-package.tar.gz && 
+cd deploy-package && 
+npm install --production && 
+cd /root/flipnosis-digitalocean && 
+pkill -f 'node.*server.js' && 
+sleep 2 && 
+cp -r /root/deploy-package/dist/* . && 
+cp -r /root/deploy-package/server . && 
+cp /root/deploy-package/package.json . && 
+cp /root/deploy-package/package-lock.json . && 
+npm install --production && 
+nohup node server/server.js > server.log 2>&1 & && 
+systemctl restart nginx && 
+rm -rf /root/deploy-package && 
+rm /root/deploy-package.tar.gz && 
+echo 'Deployment completed successfully!'
 "@
 
-ssh root@$DROPLET_IP $deployCommands
+ssh root@$DROPLET_IP $deployCommand
 
 # Cleanup
+Write-Host "Cleaning up..." -ForegroundColor Yellow
 Remove-Item $deployDir -Recurse -Force
 Remove-Item "$deployDir.tar.gz" -Force
 
 Write-Host "Deployment completed!" -ForegroundColor Green
-Write-Host "Your site should be available at: https://$DOMAIN" -ForegroundColor Cyan
+Write-Host "Your site: https://www.flipnosis.fun" -ForegroundColor Cyan
+Write-Host "Note: You may need to hard refresh (Ctrl+F5) to see changes due to browser caching" -ForegroundColor Yellow
