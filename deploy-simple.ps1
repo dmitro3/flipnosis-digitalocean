@@ -1,42 +1,85 @@
-# Simple Digital Ocean Deployment Script
-Write-Host "🚀 Starting simple Digital Ocean deployment..." -ForegroundColor Green
+# Simple Flipnosis Deployment Script
+param(
+    [string]$Email = ""
+)
 
-# Build the application locally
-Write-Host "📦 Building application..." -ForegroundColor Yellow
-npm run build:production
+Write-Host "Flipnosis Simple Deployment" -ForegroundColor Green
+
+# Configuration
+$DROPLET_IP = "143.198.166.196"
+$DOMAIN = "www.flipnosis.fun"
+
+# Get email
+if (-not $Email) {
+    $Email = Read-Host "Enter your email for SSL certificates"
+}
+
+Write-Host "Using email: $Email" -ForegroundColor Yellow
+
+# Step 1: Build locally
+Write-Host "Building application..." -ForegroundColor Blue
+
+# Clean and build
+if (Test-Path "dist") {
+    Remove-Item "dist" -Recurse -Force
+}
+
+npm install
+npm run build
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Build failed!" -ForegroundColor Red
+    Write-Host "Build failed!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✅ Build completed successfully!" -ForegroundColor Green
+Write-Host "Build completed!" -ForegroundColor Green
 
-# Copy files to deployment directory
-Write-Host "📁 Copying files to deployment directory..." -ForegroundColor Yellow
-if (Test-Path "digitalocean-deploy") {
-    Remove-Item "digitalocean-deploy" -Recurse -Force
+# Step 2: Create deployment package
+Write-Host "Creating deployment package..." -ForegroundColor Blue
+
+$deployDir = "deploy-package"
+if (Test-Path $deployDir) {
+    Remove-Item $deployDir -Recurse -Force
 }
-New-Item -ItemType Directory -Path "digitalocean-deploy" -Force
+New-Item -ItemType Directory -Path $deployDir -Force
 
-# Copy necessary files
-Copy-Item "dist" -Destination "digitalocean-deploy/" -Recurse -Force
-Copy-Item "server" -Destination "digitalocean-deploy/" -Recurse -Force
-Copy-Item "contracts" -Destination "digitalocean-deploy/" -Recurse -Force
-Copy-Item "public" -Destination "digitalocean-deploy/" -Recurse -Force
-Copy-Item "scripts" -Destination "digitalocean-deploy/" -Recurse -Force
-Copy-Item "package*.json" -Destination "digitalocean-deploy/" -Force
-Copy-Item "env-template.txt" -Destination "digitalocean-deploy/" -Force
+# Copy files
+Copy-Item "dist" -Destination "$deployDir/" -Recurse -Force
+Copy-Item "server" -Destination "$deployDir/" -Recurse -Force
+Copy-Item "contracts" -Destination "$deployDir/" -Recurse -Force
+Copy-Item "public" -Destination "$deployDir/" -Recurse -Force
+Copy-Item "scripts" -Destination "$deployDir/" -Recurse -Force
+Copy-Item "package.json" -Destination "$deployDir/" -Force
+Copy-Item "env-template.txt" -Destination "$deployDir/" -Force
 
-Write-Host "✅ Files copied successfully!" -ForegroundColor Green
+# Create tar.gz
+tar -czf "$deployDir.tar.gz" -C $deployDir .
 
-# Instructions for manual deployment
-Write-Host "📋 Manual Deployment Instructions:" -ForegroundColor Cyan
-Write-Host "1. Upload the 'digitalocean-deploy' folder to your Digital Ocean server" -ForegroundColor White
-Write-Host "2. SSH into your server and navigate to the digitalocean-deploy directory" -ForegroundColor White
-Write-Host "3. Run: docker-compose down" -ForegroundColor White
-Write-Host "4. Run: docker-compose build --no-cache" -ForegroundColor White
-Write-Host "5. Run: docker-compose up -d" -ForegroundColor White
-Write-Host "6. Your app will be available at your server IP" -ForegroundColor White
+# Step 3: Deploy to server
+Write-Host "Deploying to server..." -ForegroundColor Blue
 
-Write-Host "🎉 Deployment package ready!" -ForegroundColor Green
+# Upload package
+scp "$deployDir.tar.gz" "root@${DROPLET_IP}:/root/flipnosis-digitalocean/"
+
+# Deploy on server
+$deployCommands = @"
+cd /root/flipnosis-digitalocean
+tar -xzf $deployDir.tar.gz
+cd deploy-package
+cp env-template.txt .env
+npm install --production
+chmod +x scripts/setup-ssl.sh
+./scripts/setup-ssl.sh $DOMAIN $Email
+systemctl restart nginx
+systemctl restart flipnosis-app
+echo "Deployment completed!"
+"@
+
+ssh root@$DROPLET_IP $deployCommands
+
+# Cleanup
+Remove-Item $deployDir -Recurse -Force
+Remove-Item "$deployDir.tar.gz" -Force
+
+Write-Host "Deployment completed!" -ForegroundColor Green
+Write-Host "Your site should be available at: https://$DOMAIN" -ForegroundColor Cyan

@@ -4,7 +4,7 @@ services:
   app:
     build: 
       context: ..
-      dockerfile: digitalocean-deploy/Dockerfile
+      dockerfile: digitalocean-deploy/Dockerfile.simple
     container_name: flipnosis-app
     restart: unless-stopped
     ports:
