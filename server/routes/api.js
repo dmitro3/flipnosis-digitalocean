@@ -430,7 +430,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator, challenger,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            final_price, coin_data, status, creator_deposited
+            price_usd, coin_data, status, creator_deposited
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listing.id, ethers.id(gameId), listing.creator, '', // challenger is empty initially
@@ -635,7 +635,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            final_price, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
+            price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listingId, blockchainGameId, creator,
@@ -766,7 +766,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             INSERT INTO games (
               id, listing_id, offer_id, blockchain_game_id, creator, challenger,
               nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-              final_price, eth_amount, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
+              price_usd, eth_amount, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, [
             gameId, listing.id, offerId, blockchainGameId, listing.creator, offer.offerer_address,
@@ -784,7 +784,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         await new Promise((resolve, reject) => {
           db.run(`
             UPDATE games 
-            SET challenger = ?, offer_id = ?, final_price = ?, 
+            SET challenger = ?, offer_id = ?, price_usd = ?, 
                 status = 'waiting_challenger_deposit', deposit_deadline = ?,
                 creator_deposited = true
             WHERE id = ?
@@ -1038,7 +1038,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             nft_image: listing.nft_image,
             nft_collection: listing.nft_collection,
             asking_price: listing.asking_price,
-            final_price: listing.asking_price, // Add for consistency
+            price_usd: listing.asking_price, // Add for consistency
             coin_data: listing.coin_data,
             coinData: coinData, // Parsed coin data
             status: listing.status === 'open' ? 'awaiting_challenger' : listing.status, // Map 'open' to 'awaiting_challenger'
@@ -1257,7 +1257,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             gameId: game.id,
             nftContract: game.nft_contract,
             tokenId: game.nft_token_id,
-            priceUSD: game.final_price,
+            priceUSD: game.price_usd,
             gameType: 0, // Default to ETH for now
             paymentToken: 0, // Default to ETH
             totalPaid: '0',
@@ -1452,8 +1452,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         
         let totalVolume = 0
         games.forEach(game => {
-          if (game.final_price) {
-            totalVolume += game.final_price
+          if (game.price_usd) {
+            totalVolume += game.price_usd
           }
         })
         
