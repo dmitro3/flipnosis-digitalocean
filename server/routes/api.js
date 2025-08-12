@@ -1220,20 +1220,27 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   router.get('/users/:address/games', (req, res) => {
     const { address } = req.params
     
-    db.all(
-      'SELECT * FROM games WHERE creator = ? OR challenger = ? ORDER BY created_at DESC',
-      [address, address],
-      (err, games) => {
-        if (err) {
-          console.error('Database error in /users/:address/games:', err)
-          return res.status(500).json({ error: 'Database error' })
-        }
-        
-        // Ensure games is an array (handle null/undefined)
-        const gamesList = games || []
-        
-        // Transform the data to match frontend expectations
-        const transformedGames = gamesList.map(game => {
+    // Check if games table exists first
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='games';", (err, tableExists) => {
+      if (err || !tableExists) {
+        console.log('Games table does not exist, returning empty array')
+        return res.json([])
+      }
+      
+      db.all(
+        'SELECT * FROM games WHERE creator = ? OR challenger = ? ORDER BY created_at DESC',
+        [address, address],
+        (err, games) => {
+          if (err) {
+            console.error('Database error in /users/:address/games:', err)
+            return res.json([]) // Return empty array instead of error
+          }
+          
+          // Ensure games is an array (handle null/undefined)
+          const gamesList = games || []
+          
+          // Transform the data to match frontend expectations
+          const transformedGames = gamesList.map(game => {
           // Ensure createdAt is a valid timestamp
           let createdAt = Date.now() / 1000 // Default to current time
           if (game.created_at) {
@@ -1264,8 +1271,9 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         })
         
         res.json(transformedGames)
-      }
-    )
+        }
+      )
+    })
   })
 
   // Get user listings
