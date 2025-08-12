@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   // Use relative URLs to avoid CSP issues
   BASE_URL: '',
-  WS_URL: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host
+  WS_URL: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws'
 }
 
 // Helper functions

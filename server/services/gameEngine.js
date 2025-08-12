@@ -501,12 +501,19 @@ class GameEngine {
   async saveRoundToDatabase(gameId, roundData) {
     const db = this.dbService.getDatabase()
     
+    // Determine who initiated the flip (flipper_address)
+    const gameState = this.activeGames.get(gameId)
+    const flipperAddress = gameState?.currentTurn || roundData.winner || roundData.creatorChoice
+    
+    // Get power used (if available)
+    const powerUsed = roundData.powerUsed || 0
+    
     return new Promise((resolve, reject) => {
       db.run(
         `INSERT INTO game_rounds (
           game_id, round_number, creator_choice, challenger_choice, 
-          flip_result, round_winner, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          flip_result, round_winner, flipper_address, power_used, timestamp
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           gameId,
           roundData.roundNumber,
@@ -514,6 +521,8 @@ class GameEngine {
           roundData.challengerChoice,
           roundData.flipResult,
           roundData.winner,
+          flipperAddress,
+          powerUsed,
           new Date().toISOString()
         ],
         function(err) {

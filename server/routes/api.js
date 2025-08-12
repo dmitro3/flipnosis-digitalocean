@@ -430,15 +430,18 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator, challenger,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            price_usd, coin_data, status, creator_deposited
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            price_usd, coin_data, status, creator_deposited, game_type, chain, payment_token
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listing.id, ethers.id(gameId), listing.creator, '', // challenger is empty initially
           listing.nft_contract, listing.nft_token_id, listing.nft_name, 
           listing.nft_image, listing.nft_collection,
           listing.asking_price, JSON.stringify(coinData), 
           'awaiting_deposit', // Status for game created but NFT not deposited yet
-          false // creator_deposited
+          false, // creator_deposited
+          'nft-vs-crypto', // game_type
+          'base', // chain
+          'ETH' // payment_token
         ], function(err) {
           if (err) {
             console.error('Database error details:', err)
@@ -635,12 +638,14 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
+            game_type, chain, payment_token
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listingId, blockchainGameId, creator,
           listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
-          listing.asking_price, listing.coin_data, 'awaiting_challenger', depositDeadline, false, false
+          listing.asking_price, listing.coin_data, 'awaiting_challenger', depositDeadline, false, false,
+          'nft-vs-crypto', 'base', 'ETH'
         ], function(err) {
           if (err) reject(err)
           else resolve()
@@ -766,12 +771,14 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             INSERT INTO games (
               id, listing_id, offer_id, blockchain_game_id, creator, challenger,
               nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-              price_usd, eth_amount, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              price_usd, payment_amount, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
+              game_type, chain, payment_token
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, [
             gameId, listing.id, offerId, blockchainGameId, listing.creator, offer.offerer_address,
             listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
-            offer.offer_price, ethAmount, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false
+            offer.offer_price, ethAmount, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false,
+            'nft-vs-crypto', 'base', 'ETH'
           ], function(err) {
             if (err) reject(err)
             else resolve()
