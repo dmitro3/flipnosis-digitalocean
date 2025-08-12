@@ -62,18 +62,32 @@ try {
 # Push to hetzner remote
 Write-Info "Pushing to hetzner remote..."
 try {
+    # Capture both stdout and stderr but don't treat hook output as errors
     $pushOutput = & git push hetzner HEAD:refs/heads/main 2>&1
+    # Git push returns 0 on success, regardless of hook output
     if ($LASTEXITCODE -eq 0) {
         Write-Ok "Successfully pushed to hetzner"
-        Write-Info "Post-receive hook should be running deployment..."
+        Write-Info "Post-receive hook output:"
+        # Show hook output but don't treat it as error
+        $pushOutput | ForEach-Object { 
+            if ($_ -like "remote:*") {
+                $hookOutput = $_ -replace "^remote: ", ""
+                Write-Host "  $hookOutput" -ForegroundColor Gray
+            }
+        }
     } else {
-        Write-Fail "Git push failed"
+        Write-Fail "Git push failed with exit code: $LASTEXITCODE"
         Write-Host $pushOutput -ForegroundColor Red
         throw "Git push failed"
     }
 } catch {
-    Write-Fail "Push to hetzner failed: $($_.Exception.Message)"
-    throw
+    # Only show real errors, not hook output
+    if ($_.Exception.Message -notlike "*remote:*") {
+        Write-Fail "Push to hetzner failed: $($_.Exception.Message)"
+        throw
+    } else {
+        Write-Ok "Push completed (hook output captured)"
+    }
 }
 
 # Wait a moment for deployment to process

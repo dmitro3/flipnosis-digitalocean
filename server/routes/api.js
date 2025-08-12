@@ -1225,11 +1225,15 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       [address, address],
       (err, games) => {
         if (err) {
+          console.error('Database error in /users/:address/games:', err)
           return res.status(500).json({ error: 'Database error' })
         }
         
+        // Ensure games is an array (handle null/undefined)
+        const gamesList = games || []
+        
         // Transform the data to match frontend expectations
-        const transformedGames = games.map(game => {
+        const transformedGames = gamesList.map(game => {
           // Ensure createdAt is a valid timestamp
           let createdAt = Date.now() / 1000 // Default to current time
           if (game.created_at) {

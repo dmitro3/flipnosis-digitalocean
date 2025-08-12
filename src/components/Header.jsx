@@ -78,7 +78,7 @@ const RightSection = styled.div`
 `
 
 const CreateButton = styled(Link)`
-  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  background: linear-gradient(45deg, #00FF41, #39FF14);
   color: #000000;
   padding: 0.5rem 1.5rem;
   border-radius: 0.75rem;
@@ -87,7 +87,7 @@ const CreateButton = styled(Link)`
   transition: ${props => props.theme.transitions.default};
   position: relative;
   overflow: hidden;
-  border: 2px solid #FF1493;
+  border: 2px solid #00FF41;
   
   &::before {
     content: '';
