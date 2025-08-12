@@ -391,7 +391,7 @@ const getAllItems = () => {
         tokenId: g.nft_token_id
       },
       gameType: 'nft-vs-nft',
-      priceUSD: g.final_price || 0
+      priceUSD: g.price_usd || 0
     })
   })
   
