@@ -9,7 +9,7 @@ import { theme } from '../styles/theme'
 import { keyframes } from '@emotion/react'
 import ProfileWithNotifications from './ProfileWithNotifications'
 import PortalMenu from './PortalMenu'
-import PopupMenu from './PopupMenu'
+import DesktopMenu from './DesktopMenu'
 
 const HeaderContainer = styled.header`
   background-color: ${props => props.theme.colors.bgDark};
@@ -330,7 +330,6 @@ const Header = () => {
 
         <DesktopNav>
           <CreateButton to="/create">Create Flip</CreateButton>
-          <PopupMenu />
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
   
           <ConnectButton 
@@ -340,6 +339,7 @@ const Header = () => {
             }}
           />
           {isConnected && <ProfileWithNotifications address={address} isConnected={isConnected} currentChain={chain?.name?.toLowerCase() || 'base'} />}
+          <DesktopMenu />
         </DesktopNav>
 
         <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
