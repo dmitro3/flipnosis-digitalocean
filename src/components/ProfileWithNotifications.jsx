@@ -420,7 +420,7 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
   const MAX_ACTIVE_GAMES = 5
   const AUTO_CANCEL_HOURS = 3
 
-  const API_URL = '/api'
+  const API_URL = ''
 
   // Request notification permission
   const requestNotificationPermission = async () => {

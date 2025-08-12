@@ -13,7 +13,7 @@ const DatabaseAdmin = () => {
   const { address } = useWallet()
   const { showSuccess, showError } = useToast()
   
-  const API_URL = '/api'
+  const API_URL = ''
   
   const fetchData = async () => {
     try {

@@ -3,7 +3,7 @@
 
 $HETZNER_IP = "159.69.242.154"
 
-Write-Host "🚀 Deploying Chrome Extension Fix to Hetzner Server..." -ForegroundColor Green
+Write-Host "Deploying Chrome Extension Fix to Hetzner Server..." -ForegroundColor Green
 Write-Host "Server IP: $HETZNER_IP" -ForegroundColor Cyan
 Write-Host ""
 
@@ -12,11 +12,11 @@ Write-Host "Step 1: Building application..." -ForegroundColor Yellow
 npm run build
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Build failed!" -ForegroundColor Red
+    Write-Host "Build failed!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✅ Build completed successfully" -ForegroundColor Green
+Write-Host "Build completed successfully" -ForegroundColor Green
 
 # Step 2: Create deployment package
 Write-Host "Step 2: Creating deployment package..." -ForegroundColor Yellow
@@ -55,14 +55,14 @@ Remove-Item $deployDir -Recurse -Force
 Remove-Item "$deployDir.tar.gz" -Force
 
 Write-Host ""
-Write-Host "✅ Chrome Extension Fix Deployment Completed!" -ForegroundColor Green
+Write-Host "Chrome Extension Fix Deployment Completed!" -ForegroundColor Green
 Write-Host "Your site: http://$HETZNER_IP" -ForegroundColor Cyan
 Write-Host "Domain: https://www.flipnosis.fun" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "🔧 Changes deployed:" -ForegroundColor Yellow
+Write-Host "Changes deployed:" -ForegroundColor Yellow
 Write-Host "  - Enhanced error handling for Chrome extension conflicts" -ForegroundColor White
 Write-Host "  - Added null property checks for wallet client" -ForegroundColor White
 Write-Host "  - Global error handlers for unhandled promise rejections" -ForegroundColor White
 Write-Host "  - Chrome extension detection and conflict prevention" -ForegroundColor White
 Write-Host ""
-Write-Host "💡 Test the site in Chrome to verify the fix works!" -ForegroundColor Green
+Write-Host "Test the site in Chrome to verify the fix works!" -ForegroundColor Green

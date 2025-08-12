@@ -564,7 +564,7 @@ export default function AdminPanel() {
   const [withdrawalAddress, setWithdrawalAddress] = useState('')
   
   // API URL
-  const API_URL = '/api'
+  const API_URL = ''
   
   // Admin wallet connection effect
   useEffect(() => {
