@@ -397,6 +397,45 @@ class DatabaseService {
     })
   }
 
+  // Timeout and cleanup methods
+  async getTimedOutGames(status, now) {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        `SELECT * FROM games WHERE status = ? AND deposit_deadline < ?`,
+        [status, now],
+        (err, games) => {
+          if (err) reject(err)
+          else resolve(games || [])
+        }
+      )
+    })
+  }
+
+  async moveNFTToReady(game) {
+    return new Promise((resolve, reject) => {
+      this.db.run(`
+        INSERT OR REPLACE INTO ready_nfts (
+          player_address, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, source
+        ) VALUES (?, ?, ?, ?, ?, ?, 'timeout_retention')
+      `, [
+        game.creator, game.nft_contract, game.nft_token_id, 
+        game.nft_name, game.nft_image, game.nft_collection
+      ], function(err) {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+  }
+
+  async cancelGame(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.run('UPDATE games SET status = "cancelled" WHERE id = ?', [gameId], function(err) {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+  }
+
   getDatabase() {
     return this.db
   }
