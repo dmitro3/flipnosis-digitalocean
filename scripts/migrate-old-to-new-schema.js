@@ -83,12 +83,12 @@ async function migrateDatabase() {
       });
     });
     
-    // Create new games table with correct schema
+    // Create new games table with correct schema (without complex DEFAULT)
     await new Promise((resolve, reject) => {
       db.run(`
         CREATE TABLE games (
           id TEXT PRIMARY KEY,
-          listing_id TEXT NOT NULL DEFAULT 'migrated_listing_' || substr(id, 1, 8),
+          listing_id TEXT NOT NULL,
           offer_id TEXT,
           blockchain_game_id TEXT UNIQUE,
           creator TEXT NOT NULL,
