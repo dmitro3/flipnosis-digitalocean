@@ -1228,7 +1228,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       }
       
       db.all(
-        'SELECT * FROM games WHERE creator = ? OR challenger = ? ORDER BY created_at DESC',
+        'SELECT * FROM games WHERE creator = ? OR joiner = ? ORDER BY created_at DESC',
         [address, address],
         (err, games) => {
           if (err) {

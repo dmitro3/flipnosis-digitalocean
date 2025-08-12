@@ -155,9 +155,7 @@ const WalletSection = styled.div`
   }
 `
 
-
-
-const MenuButton = styled.button`
+const MobileMenuButton = styled.button`
   background: none;
   border: none;
   color: #00BFFF;
@@ -171,7 +169,15 @@ const MenuButton = styled.button`
     color: #0099CC;
     transform: scale(1.1);
   }
+
+  @media (min-width: 769px) {
+    display: none;
+  }
 `
+
+
+
+
 
 const MobileMenu = styled.div`
   position: fixed;
@@ -342,9 +348,9 @@ const Header = () => {
           <DesktopMenu />
         </DesktopNav>
 
-        <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
+        <MobileMenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? '✕' : '☰'}
-        </MenuButton>
+        </MobileMenuButton>
 
         <PortalMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       </HeaderContainer>

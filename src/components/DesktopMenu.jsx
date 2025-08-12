@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { 
   User, Gamepad2, Plus, Store, Palette, Settings, 
-  ExternalLink, ChevronDown, ChevronUp, Home, Crown, Trophy
+  ExternalLink, X, Menu, Home, Crown, Trophy, Info
 } from 'lucide-react';
 
 const MenuContainer = styled.div`
@@ -13,42 +13,82 @@ const MenuContainer = styled.div`
 `;
 
 const MenuButton = styled.button`
-  background: linear-gradient(45deg, #FF1493, #FF69B4);
-  border: none;
-  border-radius: 0.75rem;
-  padding: 0.75rem 1.5rem;
-  color: #fff;
-  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-
+  justify-content: center;
+  
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #00FF41;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
   }
 `;
 
-const MenuDropdown = styled.div`
-  position: absolute;
-  top: 100%;
-  right: 0;
-  width: 280px;
-  background: rgba(0, 0, 0, 0.95);
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: ${props => props.isOpen ? 'flex' : 'none'};
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
   backdrop-filter: blur(10px);
+`;
+
+const ModalContent = styled.div`
+  background: rgba(0, 0, 0, 0.9);
   border: 1px solid rgba(255, 20, 147, 0.3);
   border-radius: 1rem;
-  padding: 1rem;
-  margin-top: 0.5rem;
-  z-index: 1000;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  opacity: ${props => props.isOpen ? 1 : 0};
-  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transform: translateY(${props => props.isOpen ? '0' : '-10px'});
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.2);
+`;
+
+const ModalHeader = styled.div`
+  background: linear-gradient(45deg, #FF1493, #FF69B4);
+  padding: 1.5rem;
+  border-radius: 1rem 1rem 0 0;
+  position: relative;
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
   transition: all 0.3s ease;
+
+  &:hover {
+    color: #fff;
+    transform: scale(1.1);
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: calc(80vh - 120px);
 `;
 
 const MenuSection = styled.div`
@@ -59,74 +99,62 @@ const MenuSection = styled.div`
   }
 `;
 
-const MenuSectionTitle = styled.div`
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
+const SectionTitle = styled.h3`
+  color: #FF1493;
+  font-size: 1.1rem;
   font-weight: 600;
+  margin-bottom: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.5rem;
-  padding: 0 0.5rem;
+  letter-spacing: 1px;
 `;
 
 const MenuItem = styled(Link)`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  color: #fff;
+  gap: 1rem;
+  padding: 1rem;
+  color: #ffffff;
   text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
   transition: all 0.3s ease;
-  font-size: 0.9rem;
-
+  
   &:hover {
-    background: rgba(255, 20, 147, 0.1);
-    color: #FF1493;
-    transform: translateX(5px);
+    background: rgba(0, 255, 65, 0.1);
+    border-color: rgba(0, 255, 65, 0.3);
+    color: #00FF41;
+    transform: translateY(-2px);
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
   }
 `;
 
-const MenuButtonItem = styled.button`
+const ComingSoonItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  color: #fff;
-  background: none;
-  border: none;
+  gap: 1rem;
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-
-  &:hover {
-    background: rgba(255, 20, 147, 0.1);
-    color: #FF1493;
-    transform: translateX(5px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    
-    &:hover {
-      background: none;
-      color: #fff;
-      transform: none;
-    }
+  margin-bottom: 0.5rem;
+  cursor: not-allowed;
+  
+  &:last-child {
+    margin-bottom: 0;
   }
 `;
 
 const ComingSoonBadge = styled.span`
-  background: linear-gradient(45deg, #FFD700, #FFA500);
-  color: #000;
-  font-size: 0.7rem;
-  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
   padding: 0.25rem 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   margin-left: auto;
 `;
 
@@ -151,72 +179,59 @@ const DesktopMenu = () => {
   return (
     <MenuContainer>
       <MenuButton onClick={toggleMenu}>
-        Menu
-        {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        <Menu size={20} />
       </MenuButton>
+      
+      {isOpen && (
+        <Modal isOpen={isOpen} onClick={closeMenu}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>
+              <h2 style={{ margin: 0, color: '#fff' }}>Menu</h2>
+              <CloseButton onClick={closeMenu}>
+                <X size={24} />
+              </CloseButton>
+            </ModalHeader>
+            
+            <ModalBody>
+              <MenuSection>
+                <SectionTitle>Navigation</SectionTitle>
+                <MenuItem to="/" onClick={closeMenu}>
+                  <Home size={20} />
+                  Home
+                </MenuItem>
+                <MenuItem to="/create" onClick={closeMenu}>
+                  <Plus size={20} />
+                  Create Flip
+                </MenuItem>
+                <MenuItem to="/leaderboard" onClick={closeMenu}>
+                  <Trophy size={20} />
+                  Leaderboard
+                </MenuItem>
+                {isConnected && (
+                  <MenuItem to="/profile" onClick={closeMenu}>
+                    <User size={20} />
+                    My Profile
+                  </MenuItem>
+                )}
+              </MenuSection>
 
-      <MenuDropdown isOpen={isOpen}>
-        <MenuSection>
-          <MenuSectionTitle>Navigation</MenuSectionTitle>
-          <MenuItem to="/" onClick={closeMenu}>
-            <Home size={16} />
-            Home
-          </MenuItem>
-          <MenuItem to="/create" onClick={closeMenu}>
-            <Plus size={16} />
-            Create Flip
-          </MenuItem>
-          <MenuItem to="/leaderboard" onClick={closeMenu}>
-            <Trophy size={16} />
-            Leaderboard
-          </MenuItem>
-          {isConnected && (
-            <MenuItem to="/profile" onClick={closeMenu}>
-              <User size={16} />
-              My Profile
-            </MenuItem>
-          )}
-        </MenuSection>
-
-        <Divider />
-
-        <MenuSection>
-          <MenuSectionTitle>Features</MenuSectionTitle>
-          <MenuButtonItem disabled>
-            <Palette size={16} />
-            Coin Creator
-            <ComingSoonBadge>Coming Soon</ComingSoonBadge>
-          </MenuButtonItem>
-          <MenuButtonItem disabled>
-            <Store size={16} />
-            Marketplace
-            <ComingSoonBadge>Coming Soon</ComingSoonBadge>
-          </MenuButtonItem>
-        </MenuSection>
-
-        <Divider />
-
-        <MenuSection>
-          <MenuSectionTitle>Account</MenuSectionTitle>
-          {isConnected ? (
-            <>
-              <MenuItem to="/profile" onClick={closeMenu}>
-                <User size={16} />
-                Profile Settings
-              </MenuItem>
-              <MenuItem to="/profile" onClick={closeMenu}>
-                <Gamepad2 size={16} />
-                My Games
-              </MenuItem>
-            </>
-          ) : (
-            <MenuButtonItem disabled>
-              <User size={16} />
-              Connect Wallet to Access
-            </MenuButtonItem>
-          )}
-        </MenuSection>
-      </MenuDropdown>
+              <MenuSection>
+                <SectionTitle>Features</SectionTitle>
+                <ComingSoonItem>
+                  <Palette size={20} />
+                  Coin Creator
+                  <ComingSoonBadge>Coming Soon</ComingSoonBadge>
+                </ComingSoonItem>
+                <ComingSoonItem>
+                  <Store size={20} />
+                  Marketplace
+                  <ComingSoonBadge>Coming Soon</ComingSoonBadge>
+                </ComingSoonItem>
+              </MenuSection>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      )}
     </MenuContainer>
   );
 };
