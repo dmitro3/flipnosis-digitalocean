@@ -331,4 +331,6 @@ class WebSocketService {
   }
 }
 
-export default WebSocketService
+// Create and export a singleton instance
+const webSocketService = new WebSocketService()
+export default webSocketService
