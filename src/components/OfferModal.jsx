@@ -163,7 +163,7 @@ const OfferModal = ({ listing, onClose, onSuccess }) => {
     setLoading(true)
     
     try {
-      const baseUrl = 'https://cryptoflipz2-production.up.railway.app'
+      const baseUrl = '/api'
       
       const response = await fetch(`${baseUrl}/api/listings/${listing.id}/offers`, {
         method: 'POST',

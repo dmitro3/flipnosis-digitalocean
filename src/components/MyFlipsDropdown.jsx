@@ -216,8 +216,8 @@ const MyFlipsDropdown = () => {
       setLoading(true)
       try {
         const API_URL = process.env.NODE_ENV === 'production' 
-          ? 'https://cryptoflipz2-production.up.railway.app'
-          : 'https://cryptoflipz2-production.up.railway.app'
+          ? '/api'
+: '/api'
           
         const response = await fetch(`${API_URL}/api/dashboard/${address}`)
         const data = await response.json()

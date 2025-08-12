@@ -51,45 +51,54 @@ function App() {
   // Add global error handler with Chrome extension conflict handling
   useEffect(() => {
     const handleGlobalError = (event) => {
-      // Check if error is from Chrome extension
-      if (event.error && event.error.stack && event.error.stack.includes('chrome-extension://')) {
-        console.warn('⚠️ Chrome extension error detected, ignoring:', event.error.message)
-        event.preventDefault()
-        return
+      // More aggressive Chrome extension error filtering
+      const errorString = event.error?.toString() || '';
+      const stackString = event.error?.stack || '';
+      
+      if (
+        stackString.includes('chrome-extension://') ||
+        errorString.includes('chrome-extension://') ||
+        errorString.includes('Cannot read properties of null') ||
+        errorString.includes('Cannot read properties of undefined')
+      ) {
+        console.warn('⚠️ Chrome extension error blocked:', event.error?.message);
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return false;
       }
       
-      console.error('🚨 Global error caught:', event.error)
-      // Prevent the error from showing in console
-      event.preventDefault()
-    }
+      console.error('🚨 Global error:', event.error);
+      event.preventDefault();
+    };
 
     const handleUnhandledRejection = (event) => {
-      // Check if rejection is from Chrome extension
-      if (event.reason && event.reason.stack && event.reason.stack.includes('chrome-extension://')) {
-        console.warn('⚠️ Chrome extension promise rejection detected, ignoring:', event.reason.message)
-        event.preventDefault()
-        return
+      const reasonString = event.reason?.toString() || '';
+      const stackString = event.reason?.stack || '';
+      
+      if (
+        stackString.includes('chrome-extension://') ||
+        reasonString.includes('chrome-extension://') ||
+        reasonString.includes('Cannot read properties of null') ||
+        reasonString.includes('Cannot read properties of undefined')
+      ) {
+        console.warn('⚠️ Chrome extension rejection blocked:', event.reason?.message);
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return false;
       }
       
-      // Check for specific Binance wallet extension errors
-      if (event.reason && event.reason.message && event.reason.message.includes('Cannot read properties of null')) {
-        console.warn('⚠️ Wallet extension null property error detected, ignoring:', event.reason.message)
-        event.preventDefault()
-        return
-      }
-      
-      console.error('🚨 Unhandled promise rejection:', event.reason)
-      // Prevent the error from showing in console
-      event.preventDefault()
-    }
+      console.error('🚨 Unhandled rejection:', event.reason);
+      event.preventDefault();
+    };
 
-    window.addEventListener('error', handleGlobalError)
-    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+    // Add capture phase listeners to catch errors earlier
+    window.addEventListener('error', handleGlobalError, true);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection, true);
 
     return () => {
-      window.removeEventListener('error', handleGlobalError)
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
-    }
+      window.removeEventListener('error', handleGlobalError, true);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection, true);
+    };
   }, [])
 
   // Add global WebSocket listener for TRANSPORT_TO_GAME messages and offer acceptance

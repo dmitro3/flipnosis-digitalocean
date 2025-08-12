@@ -266,40 +266,22 @@ export const WalletProvider = ({ children }) => {
   // Create a proper signer that works with the new walletClient
   const getSigner = () => {
     try {
-      // Enhanced null checks to prevent Chrome extension conflicts
-      if (!walletClient) {
-        console.warn('⚠️ Wallet client not available')
-        return null
-      }
-      
-      if (!publicClient) {
-        console.warn('⚠️ Public client not available')
-        return null
-      }
-      
-      if (!walletClient.account) {
-        console.warn('⚠️ Wallet account not available')
-        return null
-      }
-      
-      // Additional safety check for Chrome extension conflicts
-      if (typeof walletClient.account !== 'object' || walletClient.account === null) {
-        console.warn('⚠️ Invalid wallet account object')
-        return null
-      }
-      
-      // Chrome extension specific safety checks
-      if (hasChromeExtensions) {
+      // Add immediate return if Chrome extension issues detected
+      if (typeof window !== 'undefined' && window.chrome?.runtime) {
         try {
-          // Test if wallet client is accessible without causing extension conflicts
-          if (walletClient.account && typeof walletClient.account.address === 'undefined') {
-            console.warn('⚠️ Chrome extension detected - wallet account may be corrupted')
-            return null
+          // Test if wallet is accessible
+          if (!walletClient || !walletClient.account?.address) {
+            console.warn('⚠️ Wallet not ready in Chrome');
+            return null;
           }
-        } catch (extensionError) {
-          console.warn('⚠️ Chrome extension conflict detected:', extensionError.message)
-          return null
+        } catch (e) {
+          console.warn('⚠️ Chrome wallet access failed');
+          return null;
         }
+      }
+      
+      if (!walletClient || !publicClient) {
+        return null;
       }
 
       // Create a signer that wraps the walletClient for ethers compatibility

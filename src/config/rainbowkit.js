@@ -10,6 +10,34 @@ import {
 import { base, mainnet, polygon, arbitrum, optimism, bsc, avalanche } from 'wagmi/chains'
 import { createConfig, http } from 'wagmi'
 
+// Detect if we're in Chrome
+const isChrome = typeof window !== 'undefined' && 
+  /Chrome/.test(navigator.userAgent) && 
+  /Google Inc/.test(navigator.vendor);
+
+// Before creating config, add Chrome-specific fixes:
+if (isChrome) {
+  // Disable problematic wallet connectors in Chrome
+  console.log('🔍 Chrome detected, applying compatibility fixes...');
+  
+  // Override window.ethereum if it's causing issues
+  if (window.ethereum && window.ethereum.providers) {
+    // Filter out problematic providers
+    const providers = window.ethereum.providers.filter(p => {
+      try {
+        // Test if provider is accessible
+        return p && p.request;
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    if (providers.length === 1) {
+      window.ethereum = providers[0];
+    }
+  }
+}
+
 console.log('Initializing Rainbow Kit with:', {
   projectId: 'fd95ed98ecab7ef051bdcaa27f9d0547',
   chains: [base, mainnet, polygon, arbitrum, optimism, bsc, avalanche]

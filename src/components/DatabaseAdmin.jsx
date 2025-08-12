@@ -13,7 +13,7 @@ const DatabaseAdmin = () => {
   const { address } = useWallet()
   const { showSuccess, showError } = useToast()
   
-  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+  const API_URL = '/api'
   
   const fetchData = async () => {
     try {

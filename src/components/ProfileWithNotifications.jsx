@@ -420,7 +420,7 @@ const ProfileWithNotifications = ({ address, isConnected, currentChain }) => {
   const MAX_ACTIVE_GAMES = 5
   const AUTO_CANCEL_HOURS = 3
 
-  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+  const API_URL = '/api'
 
   // Request notification permission
   const requestNotificationPermission = async () => {

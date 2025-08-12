@@ -1,12 +1,13 @@
 // Single source of truth for API configuration
 export const API_CONFIG = {
-  BASE_URL: (import.meta.env.DEV || window.location.hostname === 'localhost') ? 'http://localhost:3001' : 'https://www.flipnosis.fun',
-  WS_URL: (import.meta.env.DEV || window.location.hostname === 'localhost') ? 'ws://localhost:3001' : 'wss://www.flipnosis.fun'
+  // Use relative URLs to avoid CSP issues
+  BASE_URL: '',
+  WS_URL: window.location.protocol === 'https:' ? 'wss:' : 'ws:' + '//' + window.location.host
 }
 
 // Helper functions
 export const getApiUrl = (endpoint) => {
-  return `${API_CONFIG.BASE_URL}/api${endpoint}`
+  return `/api${endpoint}`
 }
 
 export const getWsUrl = () => {

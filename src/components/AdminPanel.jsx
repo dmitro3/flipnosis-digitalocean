@@ -564,7 +564,7 @@ export default function AdminPanel() {
   const [withdrawalAddress, setWithdrawalAddress] = useState('')
   
   // API URL
-  const API_URL = 'https://cryptoflipz2-production.up.railway.app'
+  const API_URL = '/api'
   
   // Admin wallet connection effect
   useEffect(() => {

@@ -8,10 +8,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-33eb41e6.js"></script>
+    <script>
+      // Chrome extension conflict workaround
+      if (window.chrome && window.chrome.runtime) {
+        const originalError = window.Error;
+        window.Error = function(...args) {
+          const error = new originalError(...args);
+          if (error.stack && error.stack.includes('chrome-extension://')) {
+            console.warn('Chrome extension error suppressed');
+            return {};
+          }
+          return error;
+        };
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-6f7c9e11.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-953f4813.js">
-    <link rel="modulepreload" crossorigin href="/assets/wagmi-f81a0064.js">
-    <link rel="modulepreload" crossorigin href="/assets/three-096b2361.js">
+    <link rel="modulepreload" crossorigin href="/assets/wagmi-51500098.js">
+    <link rel="modulepreload" crossorigin href="/assets/three-d1c6488b.js">
     <link rel="stylesheet" href="/assets/index-b48e17c0.css">
   </head>
   <body>
