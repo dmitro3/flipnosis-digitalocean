@@ -212,6 +212,84 @@ class DatabaseService {
     }
   }
 
+  // ===== LISTINGS MANAGEMENT =====
+  async getActiveListings(chain = 'base') {
+    try {
+      const result = await this.pgPool.query(
+        'SELECT * FROM listings WHERE status = $1 AND nft_chain = $2 ORDER BY created_at DESC',
+        ['open', chain]
+      );
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting active listings:', error);
+      throw error;
+    }
+  }
+
+  async getListingById(listingId) {
+    try {
+      const result = await this.pgPool.query(
+        'SELECT * FROM listings WHERE id = $1',
+        [listingId]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error('Error getting listing by ID:', error);
+      throw error;
+    }
+  }
+
+  async createListing(listingData) {
+    try {
+      const query = `
+        INSERT INTO listings (
+          id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
+          nft_collection, nft_chain, asking_price, status, coin_data
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        ) RETURNING *
+      `;
+      
+      const values = [
+        listingData.id || Math.random().toString(36).substr(2, 9),
+        listingData.creator, listingData.nft_contract, listingData.nft_token_id,
+        listingData.nft_name, listingData.nft_image, listingData.nft_collection, 
+        listingData.nft_chain, listingData.asking_price, 'open', listingData.coin_data
+      ];
+
+      const result = await this.pgPool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error creating listing:', error);
+      throw error;
+    }
+  }
+
+  async acceptOffer(offerId, acceptData) {
+    try {
+      // Update offer status to accepted
+      const offerQuery = 'UPDATE offers SET status = $1 WHERE id = $2 RETURNING *';
+      const offerResult = await this.pgPool.query(offerQuery, ['accepted', offerId]);
+      
+      if (offerResult.rows.length === 0) {
+        throw new Error('Offer not found');
+      }
+
+      const offer = offerResult.rows[0];
+      
+      // Update listing status to sold
+      await this.pgPool.query(
+        'UPDATE listings SET status = $1 WHERE id = $2',
+        ['sold', offer.listing_id]
+      );
+
+      return { success: true, offer: offer };
+    } catch (error) {
+      console.error('Error accepting offer:', error);
+      throw error;
+    }
+  }
+
   // ===== CHAT MANAGEMENT =====
   async saveChatMessage(roomId, senderAddress, message, messageType = 'chat', messageData = null) {
     try {

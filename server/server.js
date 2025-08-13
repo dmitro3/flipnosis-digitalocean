@@ -231,6 +231,42 @@ app.post('/api/profiles', async (req, res) => {
   }
 })
 
+// Listings routes
+app.get('/api/listings', async (req, res) => {
+  try {
+    const chain = req.query.chain || 'base'
+    const listings = await dbService.getActiveListings(chain)
+    res.json(listings || [])
+  } catch (error) {
+    console.error('Error getting listings:', error)
+    res.status(500).json({ error: 'Failed to get listings' })
+  }
+})
+
+app.get('/api/listings/:id', async (req, res) => {
+  try {
+    const listing = await dbService.getListingById(req.params.id)
+    if (listing) {
+      res.json(listing)
+    } else {
+      res.status(404).json({ error: 'Listing not found' })
+    }
+  } catch (error) {
+    console.error('Error getting listing:', error)
+    res.status(500).json({ error: 'Failed to get listing' })
+  }
+})
+
+app.post('/api/listings', async (req, res) => {
+  try {
+    const listing = await dbService.createListing(req.body)
+    res.json(listing)
+  } catch (error) {
+    console.error('Error creating listing:', error)
+    res.status(500).json({ error: 'Failed to create listing' })
+  }
+})
+
 // Offers routes
 app.post('/api/offers', async (req, res) => {
   try {
@@ -249,6 +285,31 @@ app.get('/api/offers/:listingId', async (req, res) => {
   } catch (error) {
     console.error('Error getting offers:', error)
     res.status(500).json({ error: 'Failed to get offers' })
+  }
+})
+
+app.post('/api/listings/:listingId/offers', async (req, res) => {
+  try {
+    const offerData = {
+      ...req.body,
+      listing_id: req.params.listingId,
+      id: Math.random().toString(36).substr(2, 9)
+    }
+    const offer = await dbService.createOffer(offerData)
+    res.json(offer)
+  } catch (error) {
+    console.error('Error creating offer:', error)
+    res.status(500).json({ error: 'Failed to create offer' })
+  }
+})
+
+app.post('/api/offers/:offerId/accept', async (req, res) => {
+  try {
+    const result = await dbService.acceptOffer(req.params.offerId, req.body)
+    res.json(result)
+  } catch (error) {
+    console.error('Error accepting offer:', error)
+    res.status(500).json({ error: 'Failed to accept offer' })
   }
 })
 
