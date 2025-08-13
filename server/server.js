@@ -169,6 +169,20 @@ app.post('/api/games', async (req, res) => {
   }
 })
 
+app.post('/api/games/:gameId/create-from-listing', async (req, res) => {
+  try {
+    const gameData = {
+      ...req.body,
+      id: req.params.gameId
+    }
+    const game = await dbService.createGame(gameData)
+    res.json(game)
+  } catch (error) {
+    console.error('Error creating game from listing:', error)
+    res.status(500).json({ error: 'Failed to create game from listing' })
+  }
+})
+
 app.put('/api/games/:id/status', async (req, res) => {
   try {
     const game = await dbService.updateGameStatus(req.params.id, req.body.status, req.body.additionalData)
@@ -206,14 +220,28 @@ app.get('/api/chat/:roomId', async (req, res) => {
   }
 })
 
-// Profile routes
+// Profile routes (both /api/profile and /api/profiles for compatibility)
+app.get('/api/profile/:address', async (req, res) => {
+  try {
+    const profile = await dbService.getUserProfile(req.params.address)
+    if (profile) {
+      res.json(profile)
+    } else {
+      res.json({}) // Return empty object instead of 404 for frontend compatibility
+    }
+  } catch (error) {
+    console.error('Error getting profile:', error)
+    res.status(500).json({ error: 'Failed to get profile' })
+  }
+})
+
 app.get('/api/profiles/:address', async (req, res) => {
   try {
     const profile = await dbService.getUserProfile(req.params.address)
     if (profile) {
       res.json(profile)
     } else {
-      res.status(404).json({ error: 'Profile not found' })
+      res.json({}) // Return empty object instead of 404 for frontend compatibility
     }
   } catch (error) {
     console.error('Error getting profile:', error)
@@ -228,6 +256,17 @@ app.post('/api/profiles', async (req, res) => {
   } catch (error) {
     console.error('Error creating/updating profile:', error)
     res.status(500).json({ error: 'Failed to create/update profile' })
+  }
+})
+
+// User games endpoint
+app.get('/api/users/:address/games', async (req, res) => {
+  try {
+    const games = await dbService.getUserGames(req.params.address)
+    res.json(games || [])
+  } catch (error) {
+    console.error('Error getting user games:', error)
+    res.status(500).json({ error: 'Failed to get user games' })
   }
 })
 

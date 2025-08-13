@@ -212,6 +212,19 @@ class DatabaseService {
     }
   }
 
+  async getUserGames(userAddress) {
+    try {
+      const result = await this.pgPool.query(
+        'SELECT * FROM games WHERE creator = $1 OR joiner = $1 OR challenger = $1 ORDER BY created_at DESC',
+        [userAddress]
+      );
+      return result.rows;
+    } catch (error) {
+      console.error('Error getting user games:', error);
+      throw error;
+    }
+  }
+
   // ===== LISTINGS MANAGEMENT =====
   async getActiveListings(chain = 'base') {
     try {
