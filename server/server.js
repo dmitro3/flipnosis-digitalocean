@@ -214,7 +214,8 @@ async function initializeServices() {
 function startTimeoutChecker(dbService, blockchainService, wsHandlers) {
   setInterval(async () => {
     try {
-      const expiredGames = await dbService.getExpiredDepositGames()
+      const now = new Date().toISOString()
+      const expiredGames = await dbService.getTimedOutGames('awaiting_deposit', now)
       
       for (const game of expiredGames) {
         await handleGameTimeout(game, dbService, wsHandlers)
