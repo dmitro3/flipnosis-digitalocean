@@ -1,10 +1,11 @@
 // config/api.js
-// Simple configuration for single server setup
+// Configuration for flipnosis.fun domain
 
 export const API_CONFIG = {
-  // Everything is local now
+  // Base URL for API calls
   BASE_URL: '',
-  WS_URL: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host
+  // WebSocket URL - will be determined dynamically
+  WS_URL: null
 }
 
 // Helper functions
@@ -18,9 +19,16 @@ export const getWsUrl = () => {
     return 'ws://localhost:3001'
   }
   
-  // For production - use the same domain as the page to avoid mixed content
-  // This will use wss:// for HTTPS pages and ws:// for HTTP pages
-  return (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host
+  // For production - flipnosis.fun domain
+  if (window.location.hostname === 'www.flipnosis.fun' || window.location.hostname === 'flipnosis.fun') {
+    // Use WSS for HTTPS, WS for HTTP
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}`
+  }
+  
+  // Fallback - use current host with appropriate protocol
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${window.location.host}`
 }
 
 export default API_CONFIG 

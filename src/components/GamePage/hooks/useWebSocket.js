@@ -1,39 +1,9 @@
 import { useState, useEffect } from 'react'
 import webSocketService from '../../../services/WebSocketService'
 
-// Debug the import
-console.log('🔧 useWebSocket hook - webSocketService import:', webSocketService)
-console.log('🔧 useWebSocket hook - webSocketService type:', typeof webSocketService)
-console.log('🔧 useWebSocket hook - webSocketService methods:', webSocketService ? Object.getOwnPropertyNames(Object.getPrototypeOf(webSocketService)) : 'null')
-
 export const useWebSocket = (gameId, address, gameData) => {
   const [wsConnected, setWsConnected] = useState(false)
   const [wsRef, setWsRef] = useState(null)
-
-  // Helper function to safely call WebSocket service methods
-  const safeCallMethod = (methodName, ...args) => {
-    try {
-      if (!webSocketService) {
-        console.error('❌ WebSocket service not available')
-        return null
-      }
-      
-      // Try different ways to access the method
-      const method = webSocketService[methodName] || 
-                    webSocketService[`is${methodName.charAt(0).toUpperCase() + methodName.slice(1)}`] ||
-                    (typeof webSocketService[methodName] === 'function' ? webSocketService[methodName] : null)
-      
-      if (typeof method === 'function') {
-        return method.apply(webSocketService, args)
-      }
-      
-      console.error(`❌ Method ${methodName} not found on WebSocket service`)
-      return null
-    } catch (error) {
-      console.error(`❌ Error calling ${methodName}:`, error)
-      return null
-    }
-  }
 
   // Initialize WebSocket connection
   const initializeWebSocket = async () => {
@@ -46,7 +16,7 @@ export const useWebSocket = (gameId, address, gameData) => {
       console.log('🔌 Initializing WebSocket connection for game:', gameId)
       
       // Connect using the WebSocket service
-      const ws = await safeCallMethod('connect', gameId, address)
+      const ws = await webSocketService.connect(gameId, address)
       if (ws) {
         setWsRef(ws)
         setWsConnected(true)
@@ -65,11 +35,15 @@ export const useWebSocket = (gameId, address, gameData) => {
   useEffect(() => {
     const checkConnectionState = () => {
       try {
-        const isConnected = safeCallMethod('isConnected')
-        if (isConnected !== null) {
+        // Check if WebSocket service has the isConnected method
+        if (webSocketService && typeof webSocketService.isConnected === 'function') {
+          const isConnected = webSocketService.isConnected()
           setWsConnected(isConnected)
         } else {
-          setWsConnected(false)
+          // Fallback: check if WebSocket exists and is open
+          const ws = webSocketService?.getWebSocket?.()
+          const connected = ws && ws.readyState === WebSocket.OPEN
+          setWsConnected(connected)
         }
       } catch (error) {
         console.error('❌ Error checking WebSocket connection:', error)
@@ -99,13 +73,15 @@ export const useWebSocket = (gameId, address, gameData) => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      safeCallMethod('disconnect')
+      if (webSocketService && typeof webSocketService.disconnect === 'function') {
+        webSocketService.disconnect()
+      }
     }
   }, [wsRef])
 
   return {
     wsConnected,
-    wsRef: webSocketService ? safeCallMethod('getWebSocket') : null,
+    wsRef: webSocketService?.getWebSocket?.() || null,
     setWsRef,
     webSocketService
   }

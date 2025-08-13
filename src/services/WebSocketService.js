@@ -13,9 +13,14 @@ class WebSocketService {
     this.messageHandlers = new Map()
     this.isConnected = false
     this.connectionPromise = null
+    this.gameId = null
+    this.address = null
   }
 
   async connect(gameId, address) {
+    this.gameId = gameId
+    this.address = address
+
     // If already connected, return existing connection
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       console.log('🔌 Already connected')
@@ -42,17 +47,17 @@ class WebSocketService {
           this.connectionPromise = null
           
           // Join room and register user
-          if (gameId) {
+          if (this.gameId) {
             this.ws.send(JSON.stringify({
               type: 'join_room',
-              roomId: gameId
+              roomId: this.gameId
             }))
           }
           
-          if (address) {
+          if (this.address) {
             this.ws.send(JSON.stringify({
               type: 'register_user',
-              address: address
+              address: this.address
             }))
           }
           
@@ -76,7 +81,7 @@ class WebSocketService {
             setTimeout(() => {
               this.reconnectAttempts++
               console.log(`🔄 Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-              this.connect(gameId, address)
+              this.connect(this.gameId, this.address)
             }, this.reconnectDelay)
           }
         }
@@ -84,6 +89,7 @@ class WebSocketService {
         this.ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data)
+            console.log('📨 WebSocket message received:', data)
             
             // Call registered handlers
             const handlers = this.messageHandlers.get(data.type) || []
