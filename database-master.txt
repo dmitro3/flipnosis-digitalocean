@@ -1,7 +1,7 @@
 # FLIPNOSIS DATABASE MASTER DOCUMENTATION
 # Database Location: /opt/flipnosis/shared/flipz-clean.db
 # Server: 116.202.24.43
-# Generated: August 12, 2025
+# Updated: August 12, 2025
 
 ================================================================================
 DATABASE OVERVIEW
@@ -33,32 +33,10 @@ Tables Found:
 - ready_nfts
 
 ================================================================================
-TABLE SCHEMAS
+ACTUAL SCHEMA FROM SQLITE DATABASE
 ================================================================================
 
-1. ADMIN_ACTIONS TABLE
-================================================================================
-CREATE TABLE admin_actions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        admin_address TEXT NOT NULL,
-        action_type TEXT NOT NULL,
-        target_address TEXT,
-        amount DECIMAL(20, 8),
-        game_id INTEGER,
-        chain TEXT NOT NULL,
-        details TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
-
-Indexes:
-- idx_admin_actions_admin ON admin_actions(admin_address)
-- idx_admin_actions_type ON admin_actions(action_type)
-- idx_admin_actions_chain ON admin_actions(chain)
-- idx_admin_actions_created ON admin_actions(created_at)
-
-Purpose: Tracks administrative actions and XP awards
-
-2. GAMES TABLE
+1. GAMES TABLE
 ================================================================================
 CREATE TABLE games (
         id TEXT PRIMARY KEY,
@@ -103,12 +81,12 @@ CREATE TABLE games (
         countdown_end_time TIMESTAMP,
         auth_info TEXT,
         unclaimed_eth DECIMAL(20, 8) DEFAULT 0,
-        unclaimed_usdc DECIMAL(20, 8) DEFAULT 0,        
+        unclaimed_usdc DECIMAL(20, 8) DEFAULT 0,
         unclaimed_nfts TEXT,
         total_spectators INTEGER DEFAULT 0,
         coin TEXT,
         game_data TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,  
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         started_at DATETIME,
         completed_at DATETIME,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -118,69 +96,40 @@ CREATE TABLE games (
         coin_data TEXT,
         creator_deposited BOOLEAN DEFAULT false,
         challenger_deposited BOOLEAN DEFAULT false
-      );
+);
 
 Indexes:
 - idx_games_chain ON games(chain)
-- idx_games_game_type ON games(game_type)   
+- idx_games_game_type ON games(game_type)
 - idx_games_status_chain ON games(status, chain)
 - idx_games_creator_chain ON games(creator, chain)
 - idx_games_joiner_chain ON games(joiner, chain)
 - idx_games_created_at_chain ON games(created_at, chain)
 
-Purpose: Core game data storage for NFT flipping games
-
-3. OFFERS TABLE
+2. PROFILES TABLE
 ================================================================================
-CREATE TABLE offers (
-        id TEXT PRIMARY KEY,
-        listing_id TEXT NOT NULL,
-        offerer_address TEXT NOT NULL,
-        offerer_name TEXT,
-        offer_price REAL NOT NULL,
-        message TEXT,
-        status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
+CREATE TABLE profiles (
+        address TEXT PRIMARY KEY,
+        name TEXT,
+        avatar TEXT,
+        headsImage TEXT,
+        tailsImage TEXT,
+        twitter TEXT,
+        telegram TEXT,
+        xp INTEGER DEFAULT 0,
+        heads_image TEXT,
+        tails_image TEXT,
+        xp_name_earned BOOLEAN DEFAULT FALSE,
+        xp_avatar_earned BOOLEAN DEFAULT FALSE,
+        xp_twitter_earned BOOLEAN DEFAULT FALSE,
+        xp_telegram_earned BOOLEAN DEFAULT FALSE,
+        xp_heads_earned BOOLEAN DEFAULT FALSE,
+        xp_tails_earned BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-Purpose: Stores offers made on NFT listings
-
-4. TRANSACTIONS TABLE
-================================================================================
-CREATE TABLE transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        game_id TEXT,
-        player_address TEXT NOT NULL,
-        transaction_type TEXT NOT NULL,
-        amount_usd REAL NOT NULL,
-        amount_eth REAL NOT NULL,
-        tx_hash TEXT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP    
-      );
-
-Indexes:
-- idx_transactions_game_id ON transactions(game_id)
-- idx_transactions_player ON transactions(player_address)
-- idx_transactions_type ON transactions(transaction_type)
-
-Purpose: Tracks all blockchain transactions
-
-5. CHAT_MESSAGES TABLE
-================================================================================
-CREATE TABLE chat_messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        room_id TEXT NOT NULL,
-        sender_address TEXT NOT NULL,
-        message TEXT NOT NULL,
-        message_type TEXT DEFAULT 'chat',
-        message_data TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
-
-Purpose: Stores chat messages for game rooms
-
-6. LISTINGS TABLE
+3. LISTINGS TABLE
 ================================================================================
 CREATE TABLE listings (
         id TEXT PRIMARY KEY,
@@ -196,60 +145,107 @@ CREATE TABLE listings (
         status TEXT DEFAULT 'open',
         coin_data TEXT,
         listing_fee_paid BOOLEAN DEFAULT false,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-Purpose: NFT listings for sale
-
-7. PLATFORM_STATS TABLE
+4. OFFERS TABLE
 ================================================================================
-CREATE TABLE platform_stats (
+CREATE TABLE offers (
+        id TEXT PRIMARY KEY,
+        listing_id TEXT NOT NULL,
+        offerer_address TEXT NOT NULL,
+        offerer_name TEXT,
+        offer_price REAL NOT NULL,
+        message TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+5. GAME_ROUNDS TABLE
+================================================================================
+CREATE TABLE game_rounds (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        chain TEXT NOT NULL,
-        date DATE NOT NULL,
-        total_games INTEGER DEFAULT 0,
-        active_games INTEGER DEFAULT 0,
-        completed_games INTEGER DEFAULT 0,
-        total_volume DECIMAL(20, 8) DEFAULT 0,
-        platform_fees DECIMAL(20, 8) DEFAULT 0,
-        listing_fees DECIMAL(20, 8) DEFAULT 0,
-        unique_players INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        UNIQUE(chain, date)
-      );
+        game_id TEXT NOT NULL,
+        round_number INTEGER NOT NULL,
+        creator_choice TEXT,
+        challenger_choice TEXT,
+        flip_result TEXT,
+        round_winner TEXT,
+        flipper_address TEXT NOT NULL,
+        power_used REAL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 Indexes:
-- idx_platform_stats_chain_date ON platform_stats(chain, date)
-- idx_platform_stats_date ON platform_stats(date)
+- idx_game_rounds_game_id ON game_rounds(game_id)
+- idx_game_rounds_round_number ON game_rounds(round_number)
 
-Purpose: Daily platform statistics and metrics
-
-8. UNCLAIMED_REWARDS TABLE
+6. CHAT_MESSAGES TABLE
 ================================================================================
-CREATE TABLE unclaimed_rewards (
+CREATE TABLE chat_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_address TEXT NOT NULL,
-        chain TEXT NOT NULL,
-        reward_type TEXT NOT NULL,
-        amount DECIMAL(20, 8) DEFAULT 0,
-        nft_contract TEXT,
-        nft_token_id INTEGER,
-        game_id INTEGER,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        claimed_at TIMESTAMP,
-        UNIQUE(user_address, chain, reward_type, nft_contract, nft_token_id)
-      );
+        room_id TEXT NOT NULL,
+        sender_address TEXT NOT NULL,
+        message TEXT NOT NULL,
+        message_type TEXT DEFAULT 'chat',
+        message_data TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+7. READY_NFTS TABLE
+================================================================================
+CREATE TABLE ready_nfts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        player_address TEXT NOT NULL,
+        nft_contract TEXT NOT NULL,
+        nft_token_id TEXT NOT NULL,
+        nft_name TEXT,
+        nft_image TEXT,
+        nft_collection TEXT,
+        deposited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        source TEXT DEFAULT 'preload',
+        UNIQUE(player_address, nft_contract, nft_token_id)
+);
+
+8. TRANSACTIONS TABLE
+================================================================================
+CREATE TABLE transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        game_id TEXT,
+        player_address TEXT NOT NULL,
+        transaction_type TEXT NOT NULL,
+        amount_usd REAL NOT NULL,
+        amount_eth REAL NOT NULL,
+        tx_hash TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 Indexes:
-- idx_unclaimed_rewards_user ON unclaimed_rewards(user_address)
-- idx_unclaimed_rewards_chain ON unclaimed_rewards(chain)
-- idx_unclaimed_rewards_type ON unclaimed_rewards(reward_type)
+- idx_transactions_game_id ON transactions(game_id)
+- idx_transactions_player ON transactions(player_address)
+- idx_transactions_type ON transactions(transaction_type)
 
-Purpose: Tracks unclaimed rewards for users
+9. NFT_METADATA_CACHE TABLE
+================================================================================
+CREATE TABLE nft_metadata_cache (
+        contract_address TEXT NOT NULL,
+        token_id TEXT NOT NULL,
+        chain TEXT NOT NULL,
+        name TEXT,
+        image_url TEXT,
+        collection_name TEXT,
+        description TEXT,
+        attributes TEXT,
+        token_type TEXT,
+        fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (contract_address, token_id, chain)
+);
 
-9. GAME_LISTINGS TABLE
+10. GAME_LISTINGS TABLE
 ================================================================================
 CREATE TABLE game_listings (
         id TEXT PRIMARY KEY,
@@ -265,34 +261,44 @@ CREATE TABLE game_listings (
         min_offer_price REAL,
         coin TEXT,
         status TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         contract_game_id TEXT,
         transaction_hash TEXT
-      );
+);
 
-Purpose: Game-specific listings
-
-10. NFT_METADATA_CACHE TABLE
+11. NOTIFICATIONS TABLE
 ================================================================================
-CREATE TABLE nft_metadata_cache (
-        contract_address TEXT NOT NULL,
-        token_id TEXT NOT NULL,
-        chain TEXT NOT NULL,
-        name TEXT,
-        image_url TEXT,
-        collection_name TEXT,
-        description TEXT,
-        attributes TEXT,
-        token_type TEXT,
-        fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (contract_address, token_id, chain) 
-      );
+CREATE TABLE notifications (
+        id TEXT PRIMARY KEY,
+        user_address TEXT NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        data TEXT,
+        read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-Purpose: Caches NFT metadata to avoid repeated API calls
+Indexes:
+- idx_notifications_user ON notifications(user_address)
+- idx_notifications_type ON notifications(type)
+- idx_notifications_read ON notifications(read)
 
-11. PLAYER_STATS TABLE
+12. USER_PRESENCE TABLE
+================================================================================
+CREATE TABLE user_presence (
+        address TEXT PRIMARY KEY,
+        last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        is_online BOOLEAN DEFAULT FALSE,
+        socket_id TEXT
+);
+
+Indexes:
+- idx_user_presence_online ON user_presence(is_online)
+- idx_user_presence_last_seen ON user_presence(last_seen)
+
+13. PLAYER_STATS TABLE
 ================================================================================
 CREATE TABLE player_stats (
         address TEXT PRIMARY KEY,
@@ -304,52 +310,56 @@ CREATE TABLE player_stats (
         favorite_chain TEXT,
         first_game_date DATETIME,
         last_game_date DATETIME
-      );
+);
 
 Indexes:
 - idx_player_stats_user ON player_stats(address)
 - idx_player_stats_chain ON player_stats(favorite_chain)
 
-Purpose: Player statistics and performance tracking
-
-12. USER_PRESENCE TABLE
+14. PLATFORM_STATS TABLE
 ================================================================================
-CREATE TABLE user_presence (
-        address TEXT PRIMARY KEY,
-        last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
-        is_online BOOLEAN DEFAULT FALSE,
-        socket_id TEXT
-      );
-
-Indexes:
-- idx_user_presence_online ON user_presence(is_online)
-- idx_user_presence_last_seen ON user_presence(last_seen)
-
-Purpose: Tracks user online status and WebSocket connections
-
-13. GAME_ROUNDS TABLE
-================================================================================
-CREATE TABLE game_rounds (
+CREATE TABLE platform_stats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        game_id TEXT NOT NULL,
-        round_number INTEGER NOT NULL,
-        creator_choice TEXT,
-        challenger_choice TEXT,
-        flip_result TEXT,
-        round_winner TEXT,
-        flipper_address TEXT NOT NULL,
-        power_used REAL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,   
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
+        chain TEXT NOT NULL,
+        date DATE NOT NULL,
+        total_games INTEGER DEFAULT 0,
+        active_games INTEGER DEFAULT 0,
+        completed_games INTEGER DEFAULT 0,
+        total_volume DECIMAL(20, 8) DEFAULT 0,
+        platform_fees DECIMAL(20, 8) DEFAULT 0,
+        listing_fees DECIMAL(20, 8) DEFAULT 0,
+        unique_players INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(chain, date)
+);
 
 Indexes:
-- idx_game_rounds_game_id ON game_rounds(game_id)
-- idx_game_rounds_round_number ON game_rounds(round_number)
+- idx_platform_stats_chain_date ON platform_stats(chain, date)
+- idx_platform_stats_date ON platform_stats(date)
 
-Purpose: Individual round data for each game
+15. UNCLAIMED_REWARDS TABLE
+================================================================================
+CREATE TABLE unclaimed_rewards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_address TEXT NOT NULL,
+        chain TEXT NOT NULL,
+        reward_type TEXT NOT NULL,
+        amount DECIMAL(20, 8) DEFAULT 0,
+        nft_contract TEXT,
+        nft_token_id INTEGER,
+        game_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        claimed_at TIMESTAMP,
+        UNIQUE(user_address, chain, reward_type, nft_contract, nft_token_id)
+);
 
-14. NFT_TRACKING TABLE
+Indexes:
+- idx_unclaimed_rewards_user ON unclaimed_rewards(user_address)
+- idx_unclaimed_rewards_chain ON unclaimed_rewards(chain)
+- idx_unclaimed_rewards_type ON unclaimed_rewards(reward_type)
+
+16. NFT_TRACKING TABLE
 ================================================================================
 CREATE TABLE nft_tracking (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -359,10 +369,10 @@ CREATE TABLE nft_tracking (
         chain TEXT NOT NULL,
         game_id INTEGER,
         status TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(nft_contract, token_id, chain)
-      );
+);
 
 Indexes:
 - idx_nft_tracking_contract_token ON nft_tracking(nft_contract, token_id)
@@ -370,185 +380,394 @@ Indexes:
 - idx_nft_tracking_chain ON nft_tracking(chain)
 - idx_nft_tracking_status ON nft_tracking(status)
 
-Purpose: Tracks NFT ownership and status changes
-
-15. PROFILES TABLE
+17. ADMIN_ACTIONS TABLE
 ================================================================================
-CREATE TABLE profiles (
-        address TEXT PRIMARY KEY,
-        name TEXT,
-        avatar TEXT,
-        headsImage TEXT,
-        tailsImage TEXT,
-        twitter TEXT,
-        telegram TEXT,
-        xp INTEGER DEFAULT 0,
-        heads_image TEXT,
-        tails_image TEXT,
-        xp_name_earned BOOLEAN DEFAULT FALSE,
-        xp_avatar_earned BOOLEAN DEFAULT FALSE,
-        xp_twitter_earned BOOLEAN DEFAULT FALSE,        
-        xp_telegram_earned BOOLEAN DEFAULT FALSE,       
-        xp_heads_earned BOOLEAN DEFAULT FALSE,
-        xp_tails_earned BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
-
-Purpose: User profile information and XP system
-
-16. GAME_SHARES TABLE
-================================================================================
-CREATE TABLE game_shares (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,       
-            game_id TEXT NOT NULL,
-            player_address TEXT NOT NULL,
-            share_platform TEXT NOT NULL,
-            xp_awarded BOOLEAN DEFAULT FALSE,
-            shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(game_id, player_address, share_platform)
-          );
-
-Purpose: Tracks social media shares of games for XP rewards
-
-17. NOTIFICATIONS TABLE
-================================================================================
-CREATE TABLE notifications (
-        id TEXT PRIMARY KEY,
-        user_address TEXT NOT NULL,
-        type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        message TEXT NOT NULL,
-        data TEXT,
-        read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
+CREATE TABLE admin_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_address TEXT NOT NULL,
+        action_type TEXT NOT NULL,
+        target_address TEXT,
+        amount DECIMAL(20, 8),
+        game_id INTEGER,
+        chain TEXT NOT NULL,
+        details TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 Indexes:
-- idx_notifications_user ON notifications(user_address)
-- idx_notifications_type ON notifications(type)
-- idx_notifications_read ON notifications(read)
+- idx_admin_actions_admin ON admin_actions(admin_address)
+- idx_admin_actions_type ON admin_actions(action_type)
+- idx_admin_actions_chain ON admin_actions(chain)
+- idx_admin_actions_created ON admin_actions(created_at)
 
-Purpose: User notification system
-
-18. READY_NFTS TABLE
+18. GAME_SHARES TABLE
 ================================================================================
-CREATE TABLE ready_nfts (
+CREATE TABLE game_shares (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        game_id TEXT NOT NULL,
         player_address TEXT NOT NULL,
-        nft_contract TEXT NOT NULL,
-        nft_token_id TEXT NOT NULL,
-        nft_name TEXT,
-        nft_image TEXT,
-        nft_collection TEXT,
-        deposited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        source TEXT DEFAULT 'preload',
-        UNIQUE(player_address, nft_contract, nft_token_id)
-      );
-
-Purpose: Pre-loaded NFTs ready for game creation
+        share_platform TEXT NOT NULL,
+        xp_awarded BOOLEAN DEFAULT FALSE,
+        shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(game_id, player_address, share_platform)
+);
 
 ================================================================================
-ACTUAL DATA CONTENT
+POSTGRESQL SCHEMA CONVERSION
 ================================================================================
 
-1. ADMIN_ACTIONS DATA (24 records):
-================================================================================
-1|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|750|game_123|base|{"reason":"game_won"}|2025-08-06 09:57:12
-2|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_124|base|{"reason":"game_lost"}|2025-08-06 09:57:12
-3|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"first_game"}|2025-08-06 09:57:12
-4|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"winning_streak"}|2025-08-06 09:57:12
-5|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"comeback_victory"}|2025-08-06 09:57:12
-6|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"perfect_game"}|2025-08-06 09:57:12
-7|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|750|game_123|base|{"reason":"game_won"}|2025-08-06 09:57:30
-8|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_124|base|{"reason":"game_lost"}|2025-08-06 09:57:30
-9|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"first_game"}|2025-08-06 09:57:30
-10|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"winning_streak"}|2025-08-06 09:57:30
-11|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"comeback_victory"}|2025-08-06 09:57:30
-12|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"perfect_game"}|2025-08-06 09:57:30
-13|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|750|game_123|base|{"reason":"game_won"}|2025-08-06 10:06:16
-14|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_124|base|{"reason":"game_lost"}|2025-08-06 10:06:16
-15|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"first_game"}|2025-08-06 10:06:16
-16|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"winning_streak"}|2025-08-06 10:06:16
-17|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"comeback_victory"}|2025-08-06 10:06:16
-18|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"perfect_game"}|2025-08-06 10:06:16
-19|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|750|game_123|base|{"reason":"game_won"}|2025-08-06 10:06:30
-20|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_124|base|{"reason":"game_lost"}|2025-08-06 10:06:30
-21|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"first_game"}|2025-08-06 10:06:30
-22|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"winning_streak"}|2025-08-06 10:06:30
-23|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"comeback_victory"}|2025-08-06 10:06:30
-24|SYSTEM|XP_AWARD|0x1234567890123456789012345678901234567890|250|game_125|base|{"reason":"perfect_game"}|2025-08-06 10:06:30
+Now converting to PostgreSQL format with all the same fields:
 
-2. GAMES DATA (5 records):
-================================================================================
-4a500b2f-534d-4e46-8721-d78c2025cbd8|0x1234567890123456789012345678901234567890||0x8a90CAb2b38dba7cF6C4a6C4d9C4d9C4d9C4d9C4|1234|Doodle #1234|https://ipfs.io/ipfs/QmPMc4tcBsMqLRuCQtPvPe6kS4rVqDpFbw7Bxw6QLe6QqA|Doodles|ethereum|18.5|3|waiting||0|0|0|||||||||||||nft-vs-crypto|base|ETH||||FLIPPER|CHOOSER|HEADS|5||||0|0||0|||2025-07-11T11:10:02.709Z|||2025-07-11 11:10:02||listing_7286544385886_legacy|||0|0
-4d2f2288-4e72-4ef8-9a43-e5fae931923c|0x1234567890123456789012345678901234567890||0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f|2719|Based Ape 2025 #2719|https://ipfs.io/ipfs/QmZ15eQX8FXjqrLWw4Vvvw1JArCkWBwXy6w9Qk8V1bKbEe|Based Ape 2025|base|15.75|3|waiting||0|0|0|||||||||||||nft-vs-nft|base|ETH||||FLIPPER|CHOOSER|HEADS|5||||0|0||0|||2025-07-11T11:10:02.707Z|||2025-07-11 11:10:02||listing_3262342003237_legacy|||0|0
-220b9f18-b7c4-4cbf-afea-da20be889b1a|0x1234567890123456789012345678901234567890||0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D|1234|Bored Ape #1234|https://ipfs.io/ipfs/QmPMc4tcBsMqLRuCQtPvPe6kS4rVqDpFbw7Bxw6QLe6QqA|Bored Ape Yacht Club|ethereum|8.25|3|waiting||0|0|0|||||||||||||nft-vs-crypto|base|ETH||||FLIPPER|CHOOSER|HEADS|5||||0|0||0|||2025-07-11T11:10:02.708Z|||2025-07-11 11:10:02||listing_4667068636232_legacy|||0|0
-5b394cb4-2cdd-4d66-9b79-8f594a3fbbad|0x1234567890123456789012345678901234567890||0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB|3100|CryptoPunk #3100|https://ipfs.io/ipfs/QmZ15eQX8FXjqrLWw4Vvvw1JArCkWBwXy6w9Qk8V1bKbEe|CryptoPunks|ethereum|12.0|3|waiting||0|0|0|||||||||||||nft-vs-nft|base|ETH||||FLIPPER|CHOOSER|HEADS|5||||0|0||0|||2025-07-11T11:10:02.709Z|||2025-07-11 11:10:02||listing_6434510127701_legacy|||0|0
-689e27f8-90b3-48d3-964a-e8a0b17175fe|0x1234567890123456789012345678901234567890||0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f|9202|Based Ape 2025 #9202|https://ipfs.io/ipfs/QmRRPWG96cmgTn2qSzjwr2qvfNEuhunv6FNeMFGa9bx6mQ|Based Ape 2025|base|25.5|3|waiting||0|0|0|||||||||||||nft-vs-crypto|base|ETH||||FLIPPER|CHOOSER|HEADS|5||||0|0||0|||2025-07-11T11:10:02.704Z|||2025-07-11 11:10:03||listing_5201863133070_legacy|||0|0
+-- GAMES TABLE
+CREATE TABLE games (
+    id TEXT PRIMARY KEY,
+    creator TEXT NOT NULL,
+    joiner TEXT,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    nft_chain TEXT DEFAULT 'base',
+    price_usd REAL NOT NULL,
+    rounds INTEGER NOT NULL DEFAULT 5,
+    status TEXT DEFAULT 'waiting',
+    winner TEXT,
+    creator_wins INTEGER DEFAULT 0,
+    joiner_wins INTEGER DEFAULT 0,
+    current_round INTEGER DEFAULT 1,
+    listing_fee_eth REAL,
+    listing_fee_hash TEXT,
+    entry_fee_hash TEXT,
+    listing_fee_usd REAL,
+    contract_game_id TEXT,
+    transaction_hash TEXT,
+    blockchain_game_id TEXT UNIQUE,
+    challenger_nft_name TEXT,
+    challenger_nft_image TEXT,
+    challenger_nft_collection TEXT,
+    challenger_nft_contract TEXT,
+    challenger_nft_token_id TEXT,
+    game_type TEXT DEFAULT 'nft-vs-crypto',
+    chain TEXT DEFAULT 'base',
+    payment_token TEXT DEFAULT 'ETH',
+    payment_amount DECIMAL(20, 8),
+    listing_fee_paid DECIMAL(20, 8),
+    platform_fee_collected DECIMAL(20, 8),
+    creator_role TEXT DEFAULT 'FLIPPER',
+    joiner_role TEXT DEFAULT 'CHOOSER',
+    joiner_choice TEXT DEFAULT 'HEADS',
+    max_rounds INTEGER DEFAULT 5,
+    last_action_time TIMESTAMP,
+    countdown_end_time TIMESTAMP,
+    auth_info TEXT,
+    unclaimed_eth DECIMAL(20, 8) DEFAULT 0,
+    unclaimed_usdc DECIMAL(20, 8) DEFAULT 0,
+    unclaimed_nfts TEXT,
+    total_spectators INTEGER DEFAULT 0,
+    coin TEXT,
+    game_data TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deposit_deadline TIMESTAMP,
+    listing_id TEXT,
+    challenger TEXT,
+    coin_data TEXT,
+    creator_deposited BOOLEAN DEFAULT false,
+    challenger_deposited BOOLEAN DEFAULT false
+);
 
-3. LISTINGS DATA (1 record):
-================================================================================
-listing_1752839237216_a05b76b113ac52f5||test|0x123|1||||base|100.0|active||0|2025-07-18 11:47:17|2025-07-18 11:47:17
+-- PROFILES TABLE
+CREATE TABLE profiles (
+    address TEXT PRIMARY KEY,
+    name TEXT,
+    avatar TEXT,
+    headsImage TEXT,
+    tailsImage TEXT,
+    twitter TEXT,
+    telegram TEXT,
+    xp INTEGER DEFAULT 0,
+    heads_image TEXT,
+    tails_image TEXT,
+    xp_name_earned BOOLEAN DEFAULT FALSE,
+    xp_avatar_earned BOOLEAN DEFAULT FALSE,
+    xp_twitter_earned BOOLEAN DEFAULT FALSE,
+    xp_telegram_earned BOOLEAN DEFAULT FALSE,
+    xp_heads_earned BOOLEAN DEFAULT FALSE,
+    xp_tails_earned BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-4. GAME_LISTINGS DATA (1 record):
-================================================================================
-listing_1752320968830_to11ucwbe|0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28|0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f|9186|9186|https://ipfs.io/ipfs/Qmd9ipvdyngNdqChgjuRhWCb4XG2PTJKo7MZvUuPxkieeA|Based Ape 2025|Base|0.3|1|0.24|{"coinType":"default","headsImage":"/coins/skullh.png","tailsImage":"/coins/skullt.png","isCustom":false}|active|2025-07-12 11:49:28|2025-07-12 11:49:28||
+-- LISTINGS TABLE
+CREATE TABLE listings (
+    id TEXT PRIMARY KEY,
+    game_id TEXT UNIQUE,
+    creator TEXT NOT NULL,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    nft_chain TEXT DEFAULT 'base',
+    asking_price REAL NOT NULL,
+    status TEXT DEFAULT 'open',
+    coin_data TEXT,
+    listing_fee_paid BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-5. USER_PRESENCE DATA (1 record):
-================================================================================
-0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28|2025-07-18 12:16:20|0|1b9fd8b2ec574bb2753e5962c3a73b28
+-- OFFERS TABLE
+CREATE TABLE offers (
+    id TEXT PRIMARY KEY,
+    listing_id TEXT NOT NULL,
+    offerer_address TEXT NOT NULL,
+    offerer_name TEXT,
+    offer_price REAL NOT NULL,
+    message TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-6. PROFILES DATA (1 record):
-================================================================================
-0x1234567890123456789012345678901234567890|TestPlayer|https://example.com/avatar.png|||@testplayer|@testplayer|9000|||1|1|1|1|0|0|2025-08-06 09:55:41|2025-08-06 10:06:30
+-- GAME_ROUNDS TABLE
+CREATE TABLE game_rounds (
+    id SERIAL PRIMARY KEY,
+    game_id TEXT NOT NULL,
+    round_number INTEGER NOT NULL,
+    creator_choice TEXT,
+    challenger_choice TEXT,
+    flip_result TEXT,
+    round_winner TEXT,
+    flipper_address TEXT NOT NULL,
+    power_used REAL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-7. NOTIFICATIONS DATA (1 record):
-================================================================================
-notif_1752320968939_4yg2rx5a9|0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28|listing_created|Listing Created|Your 9186 listing is now active!|{"listingId":"listing_1752320968830_to11ucwbe"}|0|2025-07-12 11:49:28
+-- CHAT_MESSAGES TABLE
+CREATE TABLE chat_messages (
+    id SERIAL PRIMARY KEY,
+    room_id TEXT NOT NULL,
+    sender_address TEXT NOT NULL,
+    message TEXT NOT NULL,
+    message_type TEXT DEFAULT 'chat',
+    message_data TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-================================================================================
-EMPTY TABLES
-================================================================================
-The following tables contain no data:
-- offers
-- transactions
-- chat_messages
-- platform_stats
-- unclaimed_rewards
-- nft_metadata_cache
-- player_stats
-- game_rounds
-- nft_tracking
-- game_shares
-- ready_nfts
+-- READY_NFTS TABLE
+CREATE TABLE ready_nfts (
+    id SERIAL PRIMARY KEY,
+    player_address TEXT NOT NULL,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    deposited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    source TEXT DEFAULT 'preload',
+    UNIQUE(player_address, nft_contract, nft_token_id)
+);
 
-================================================================================
-DATABASE SUMMARY
-================================================================================
+-- TRANSACTIONS TABLE
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    game_id TEXT,
+    player_address TEXT NOT NULL,
+    transaction_type TEXT NOT NULL,
+    amount_usd REAL NOT NULL,
+    amount_eth REAL NOT NULL,
+    tx_hash TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-Total Records: 33
-- admin_actions: 24 records (XP award system data)
-- games: 5 records (NFT flipping games)
-- listings: 1 record (NFT listing)
-- game_listings: 1 record (Game-specific listing)
-- user_presence: 1 record (Online user tracking)
-- profiles: 1 record (User profile with XP)
-- notifications: 1 record (User notification)
+-- NFT_METADATA_CACHE TABLE
+CREATE TABLE nft_metadata_cache (
+    contract_address TEXT NOT NULL,
+    token_id TEXT NOT NULL,
+    chain TEXT NOT NULL,
+    name TEXT,
+    image_url TEXT,
+    collection_name TEXT,
+    description TEXT,
+    attributes TEXT,
+    token_type TEXT,
+    fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (contract_address, token_id, chain)
+);
 
-Key Features Identified:
-1. NFT Flipping Game System
-2. XP/Achievement System
-3. Multi-chain Support (Base, Ethereum)
-4. Social Features (Chat, Sharing)
-5. Notification System
-6. User Profile Management
-7. Transaction Tracking
-8. Platform Statistics
-9. NFT Metadata Caching
-10. Game Round Tracking
+-- GAME_LISTINGS TABLE
+CREATE TABLE game_listings (
+    id TEXT PRIMARY KEY,
+    creator TEXT NOT NULL,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    nft_chain TEXT,
+    asking_price REAL NOT NULL,
+    accepts_offers BOOLEAN,
+    min_offer_price REAL,
+    coin TEXT,
+    status TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    contract_game_id TEXT,
+    transaction_hash TEXT
+);
 
-Database Size: Small but well-structured for a gaming platform
-Active Users: At least 2 unique addresses identified
-Game Types: NFT vs Crypto, NFT vs NFT
-Chains Supported: Base, Ethereum
+-- NOTIFICATIONS TABLE
+CREATE TABLE notifications (
+    id TEXT PRIMARY KEY,
+    user_address TEXT NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    data TEXT,
+    read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- USER_PRESENCE TABLE
+CREATE TABLE user_presence (
+    address TEXT PRIMARY KEY,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_online BOOLEAN DEFAULT FALSE,
+    socket_id TEXT
+);
+
+-- PLAYER_STATS TABLE
+CREATE TABLE player_stats (
+    address TEXT PRIMARY KEY,
+    total_games INTEGER DEFAULT 0,
+    games_won INTEGER DEFAULT 0,
+    games_lost INTEGER DEFAULT 0,
+    total_winnings_usd REAL DEFAULT 0,
+    total_spent_usd REAL DEFAULT 0,
+    favorite_chain TEXT,
+    first_game_date TIMESTAMP,
+    last_game_date TIMESTAMP
+);
+
+-- PLATFORM_STATS TABLE
+CREATE TABLE platform_stats (
+    id SERIAL PRIMARY KEY,
+    chain TEXT NOT NULL,
+    date DATE NOT NULL,
+    total_games INTEGER DEFAULT 0,
+    active_games INTEGER DEFAULT 0,
+    completed_games INTEGER DEFAULT 0,
+    total_volume DECIMAL(20, 8) DEFAULT 0,
+    platform_fees DECIMAL(20, 8) DEFAULT 0,
+    listing_fees DECIMAL(20, 8) DEFAULT 0,
+    unique_players INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(chain, date)
+);
+
+-- UNCLAIMED_REWARDS TABLE
+CREATE TABLE unclaimed_rewards (
+    id SERIAL PRIMARY KEY,
+    user_address TEXT NOT NULL,
+    chain TEXT NOT NULL,
+    reward_type TEXT NOT NULL,
+    amount DECIMAL(20, 8) DEFAULT 0,
+    nft_contract TEXT,
+    nft_token_id INTEGER,
+    game_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    claimed_at TIMESTAMP,
+    UNIQUE(user_address, chain, reward_type, nft_contract, nft_token_id)
+);
+
+-- NFT_TRACKING TABLE
+CREATE TABLE nft_tracking (
+    id SERIAL PRIMARY KEY,
+    nft_contract TEXT NOT NULL,
+    token_id INTEGER NOT NULL,
+    owner_address TEXT NOT NULL,
+    chain TEXT NOT NULL,
+    game_id INTEGER,
+    status TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(nft_contract, token_id, chain)
+);
+
+-- ADMIN_ACTIONS TABLE
+CREATE TABLE admin_actions (
+    id SERIAL PRIMARY KEY,
+    admin_address TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    target_address TEXT,
+    amount DECIMAL(20, 8),
+    game_id INTEGER,
+    chain TEXT NOT NULL,
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- GAME_SHARES TABLE
+CREATE TABLE game_shares (
+    id SERIAL PRIMARY KEY,
+    game_id TEXT NOT NULL,
+    player_address TEXT NOT NULL,
+    share_platform TEXT NOT NULL,
+    xp_awarded BOOLEAN DEFAULT FALSE,
+    shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(game_id, player_address, share_platform)
+);
+
+-- CREATE ALL INDEXES
+CREATE INDEX idx_games_chain ON games(chain);
+CREATE INDEX idx_games_game_type ON games(game_type);
+CREATE INDEX idx_games_status_chain ON games(status, chain);
+CREATE INDEX idx_games_creator_chain ON games(creator, chain);
+CREATE INDEX idx_games_joiner_chain ON games(joiner, chain);
+CREATE INDEX idx_games_created_at_chain ON games(created_at, chain);
+
+CREATE INDEX idx_game_rounds_game_id ON game_rounds(game_id);
+CREATE INDEX idx_game_rounds_round_number ON game_rounds(round_number);
+
+CREATE INDEX idx_transactions_game_id ON transactions(game_id);
+CREATE INDEX idx_transactions_player ON transactions(player_address);
+CREATE INDEX idx_transactions_type ON transactions(transaction_type);
+
+CREATE INDEX idx_notifications_user ON notifications(user_address);
+CREATE INDEX idx_notifications_type ON notifications(type);
+CREATE INDEX idx_notifications_read ON notifications(read);
+
+CREATE INDEX idx_user_presence_online ON user_presence(is_online);
+CREATE INDEX idx_user_presence_last_seen ON user_presence(last_seen);
+
+CREATE INDEX idx_player_stats_user ON player_stats(address);
+CREATE INDEX idx_player_stats_chain ON player_stats(favorite_chain);
+
+CREATE INDEX idx_platform_stats_chain_date ON platform_stats(chain, date);
+CREATE INDEX idx_platform_stats_date ON platform_stats(date);
+
+CREATE INDEX idx_unclaimed_rewards_user ON unclaimed_rewards(user_address);
+CREATE INDEX idx_unclaimed_rewards_chain ON unclaimed_rewards(chain);
+CREATE INDEX idx_unclaimed_rewards_type ON unclaimed_rewards(reward_type);
+
+CREATE INDEX idx_nft_tracking_contract_token ON nft_tracking(nft_contract, token_id);
+CREATE INDEX idx_nft_tracking_owner ON nft_tracking(owner_address);
+CREATE INDEX idx_nft_tracking_chain ON nft_tracking(chain);
+CREATE INDEX idx_nft_tracking_status ON nft_tracking(status);
+
+CREATE INDEX idx_admin_actions_admin ON admin_actions(admin_address);
+CREATE INDEX idx_admin_actions_type ON admin_actions(action_type);
+CREATE INDEX idx_admin_actions_chain ON admin_actions(chain);
+CREATE INDEX idx_admin_actions_created ON admin_actions(created_at);
+
+-- GRANT PERMISSIONS
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO flipnosis_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO flipnosis_user;
+GRANT ALL PRIVILEGES ON SCHEMA public TO flipnosis_user;

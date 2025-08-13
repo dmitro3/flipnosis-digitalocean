@@ -8,7 +8,7 @@ const fs = require('fs')
 const path = require('path')
 
 // Import new database service
-const DatabaseService = require('./services/database-postgresql')
+const DatabaseService = require('./server/services/database-postgresql')
 
 console.log('🚀 Starting CryptoFlipz PostgreSQL Server...')
 
@@ -89,30 +89,7 @@ app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
 // ===== STATIC FILES =====
-const possibleDistPaths = [
-  path.join(__dirname, '..', 'dist'),
-  path.join(__dirname, 'dist'),
-  path.join(__dirname, '..'),
-  path.join(process.cwd(), 'dist'),
-  path.join(process.cwd(), '..', 'dist')
-]
-
-let distPath = null
-for (const testPath of possibleDistPaths) {
-  if (fs.existsSync(testPath)) {
-    distPath = testPath
-    console.log('📁 Found dist directory at:', distPath)
-    break
-  }
-}
-
-if (distPath) {
-  app.use(express.static(distPath))
-  console.log('✅ Serving static files from:', distPath)
-} else {
-  console.log('⚠️ No dist directory found, serving from current directory')
-  app.use(express.static(__dirname))
-}
+app.use(express.static(path.join(__dirname, 'dist')))
 
 // ===== HEALTH CHECK =====
 app.get('/health', async (req, res) => {
@@ -274,37 +251,6 @@ app.get('/api/notifications/:address', async (req, res) => {
   }
 })
 
-// Static file fallback
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API endpoint not found' })
-  }
-  
-  const possibleIndexPaths = [
-    path.join(distPath || '', 'index.html'),
-    path.join(__dirname, 'dist', 'index.html'),
-    path.join(__dirname, '..', 'index.html'),
-    path.join(process.cwd(), 'dist', 'index.html'),
-    path.join(process.cwd(), 'index.html')
-  ]
-  
-  let indexPath = null
-  for (const testPath of possibleIndexPaths) {
-    if (fs.existsSync(testPath)) {
-      indexPath = testPath
-      break
-    }
-  }
-  
-  if (indexPath) {
-    console.log('📄 Serving index.html from:', indexPath)
-    res.sendFile(indexPath)
-  } else {
-    console.log('❌ No index.html found, serving 404')
-    res.status(404).send('Not Found')
-  }
-})
-
 // ===== WEBSOCKET HANDLERS =====
 wss.on('connection', async (socket) => {
   console.log('🔌 New WebSocket connection')
@@ -370,8 +316,6 @@ async function startServer() {
     server.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`)
       console.log(`🌐 Health check: http://localhost:${PORT}/health`)
-      console.log(`🗄️ Database: PostgreSQL + Redis`)
-      console.log(`🔗 Database server: ${DB_SERVER_IP}`)
     })
   } catch (error) {
     console.error('❌ Failed to start server:', error)

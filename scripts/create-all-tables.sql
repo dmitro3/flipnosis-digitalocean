@@ -1,0 +1,353 @@
+-- GAMES TABLE
+CREATE TABLE games (
+    id TEXT PRIMARY KEY,
+    creator TEXT NOT NULL,
+    joiner TEXT,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    nft_chain TEXT DEFAULT 'base',
+    price_usd REAL NOT NULL,
+    rounds INTEGER NOT NULL DEFAULT 5,
+    status TEXT DEFAULT 'waiting',
+    winner TEXT,
+    creator_wins INTEGER DEFAULT 0,
+    joiner_wins INTEGER DEFAULT 0,
+    current_round INTEGER DEFAULT 1,
+    listing_fee_eth REAL,
+    listing_fee_hash TEXT,
+    entry_fee_hash TEXT,
+    listing_fee_usd REAL,
+    contract_game_id TEXT,
+    transaction_hash TEXT,
+    blockchain_game_id TEXT UNIQUE,
+    challenger_nft_name TEXT,
+    challenger_nft_image TEXT,
+    challenger_nft_collection TEXT,
+    challenger_nft_contract TEXT,
+    challenger_nft_token_id TEXT,
+    game_type TEXT DEFAULT 'nft-vs-crypto',
+    chain TEXT DEFAULT 'base',
+    payment_token TEXT DEFAULT 'ETH',
+    payment_amount DECIMAL(20, 8),
+    listing_fee_paid DECIMAL(20, 8),
+    platform_fee_collected DECIMAL(20, 8),
+    creator_role TEXT DEFAULT 'FLIPPER',
+    joiner_role TEXT DEFAULT 'CHOOSER',
+    joiner_choice TEXT DEFAULT 'HEADS',
+    max_rounds INTEGER DEFAULT 5,
+    last_action_time TIMESTAMP,
+    countdown_end_time TIMESTAMP,
+    auth_info TEXT,
+    unclaimed_eth DECIMAL(20, 8) DEFAULT 0,
+    unclaimed_usdc DECIMAL(20, 8) DEFAULT 0,
+    unclaimed_nfts TEXT,
+    total_spectators INTEGER DEFAULT 0,
+    coin TEXT,
+    game_data TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deposit_deadline TIMESTAMP,
+    listing_id TEXT,
+    challenger TEXT,
+    coin_data TEXT,
+    creator_deposited BOOLEAN DEFAULT false,
+    challenger_deposited BOOLEAN DEFAULT false
+);
+
+-- PROFILES TABLE
+CREATE TABLE profiles (
+    address TEXT PRIMARY KEY,
+    name TEXT,
+    avatar TEXT,
+    headsImage TEXT,
+    tailsImage TEXT,
+    twitter TEXT,
+    telegram TEXT,
+    xp INTEGER DEFAULT 0,
+    heads_image TEXT,
+    tails_image TEXT,
+    xp_name_earned BOOLEAN DEFAULT FALSE,
+    xp_avatar_earned BOOLEAN DEFAULT FALSE,
+    xp_twitter_earned BOOLEAN DEFAULT FALSE,
+    xp_telegram_earned BOOLEAN DEFAULT FALSE,
+    xp_heads_earned BOOLEAN DEFAULT FALSE,
+    xp_tails_earned BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- LISTINGS TABLE
+CREATE TABLE listings (
+    id TEXT PRIMARY KEY,
+    game_id TEXT UNIQUE,
+    creator TEXT NOT NULL,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    nft_chain TEXT DEFAULT 'base',
+    asking_price REAL NOT NULL,
+    status TEXT DEFAULT 'open',
+    coin_data TEXT,
+    listing_fee_paid BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- OFFERS TABLE
+CREATE TABLE offers (
+    id TEXT PRIMARY KEY,
+    listing_id TEXT NOT NULL,
+    offerer_address TEXT NOT NULL,
+    offerer_name TEXT,
+    offer_price REAL NOT NULL,
+    message TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- GAME_ROUNDS TABLE
+CREATE TABLE game_rounds (
+    id SERIAL PRIMARY KEY,
+    game_id TEXT NOT NULL,
+    round_number INTEGER NOT NULL,
+    creator_choice TEXT,
+    challenger_choice TEXT,
+    flip_result TEXT,
+    round_winner TEXT,
+    flipper_address TEXT NOT NULL,
+    power_used REAL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CHAT_MESSAGES TABLE
+CREATE TABLE chat_messages (
+    id SERIAL PRIMARY KEY,
+    room_id TEXT NOT NULL,
+    sender_address TEXT NOT NULL,
+    message TEXT NOT NULL,
+    message_type TEXT DEFAULT 'chat',
+    message_data TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- READY_NFTS TABLE
+CREATE TABLE ready_nfts (
+    id SERIAL PRIMARY KEY,
+    player_address TEXT NOT NULL,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    deposited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    source TEXT DEFAULT 'preload',
+    UNIQUE(player_address, nft_contract, nft_token_id)
+);
+
+-- TRANSACTIONS TABLE
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    game_id TEXT,
+    player_address TEXT NOT NULL,
+    transaction_type TEXT NOT NULL,
+    amount_usd REAL NOT NULL,
+    amount_eth REAL NOT NULL,
+    tx_hash TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- NFT_METADATA_CACHE TABLE
+CREATE TABLE nft_metadata_cache (
+    contract_address TEXT NOT NULL,
+    token_id TEXT NOT NULL,
+    chain TEXT NOT NULL,
+    name TEXT,
+    image_url TEXT,
+    collection_name TEXT,
+    description TEXT,
+    attributes TEXT,
+    token_type TEXT,
+    fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (contract_address, token_id, chain)
+);
+
+-- GAME_LISTINGS TABLE
+CREATE TABLE game_listings (
+    id TEXT PRIMARY KEY,
+    creator TEXT NOT NULL,
+    nft_contract TEXT NOT NULL,
+    nft_token_id TEXT NOT NULL,
+    nft_name TEXT,
+    nft_image TEXT,
+    nft_collection TEXT,
+    nft_chain TEXT,
+    asking_price REAL NOT NULL,
+    accepts_offers BOOLEAN,
+    min_offer_price REAL,
+    coin TEXT,
+    status TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    contract_game_id TEXT,
+    transaction_hash TEXT
+);
+
+-- NOTIFICATIONS TABLE
+CREATE TABLE notifications (
+    id TEXT PRIMARY KEY,
+    user_address TEXT NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    data TEXT,
+    read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- USER_PRESENCE TABLE
+CREATE TABLE user_presence (
+    address TEXT PRIMARY KEY,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_online BOOLEAN DEFAULT FALSE,
+    socket_id TEXT
+);
+
+-- PLAYER_STATS TABLE
+CREATE TABLE player_stats (
+    address TEXT PRIMARY KEY,
+    total_games INTEGER DEFAULT 0,
+    games_won INTEGER DEFAULT 0,
+    games_lost INTEGER DEFAULT 0,
+    total_winnings_usd REAL DEFAULT 0,
+    total_spent_usd REAL DEFAULT 0,
+    favorite_chain TEXT,
+    first_game_date TIMESTAMP,
+    last_game_date TIMESTAMP
+);
+
+-- PLATFORM_STATS TABLE
+CREATE TABLE platform_stats (
+    id SERIAL PRIMARY KEY,
+    chain TEXT NOT NULL,
+    date DATE NOT NULL,
+    total_games INTEGER DEFAULT 0,
+    active_games INTEGER DEFAULT 0,
+    completed_games INTEGER DEFAULT 0,
+    total_volume DECIMAL(20, 8) DEFAULT 0,
+    platform_fees DECIMAL(20, 8) DEFAULT 0,
+    listing_fees DECIMAL(20, 8) DEFAULT 0,
+    unique_players INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(chain, date)
+);
+
+-- UNCLAIMED_REWARDS TABLE
+CREATE TABLE unclaimed_rewards (
+    id SERIAL PRIMARY KEY,
+    user_address TEXT NOT NULL,
+    chain TEXT NOT NULL,
+    reward_type TEXT NOT NULL,
+    amount DECIMAL(20, 8) DEFAULT 0,
+    nft_contract TEXT,
+    nft_token_id INTEGER,
+    game_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    claimed_at TIMESTAMP,
+    UNIQUE(user_address, chain, reward_type, nft_contract, nft_token_id)
+);
+
+-- NFT_TRACKING TABLE
+CREATE TABLE nft_tracking (
+    id SERIAL PRIMARY KEY,
+    nft_contract TEXT NOT NULL,
+    token_id INTEGER NOT NULL,
+    owner_address TEXT NOT NULL,
+    chain TEXT NOT NULL,
+    game_id INTEGER,
+    status TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(nft_contract, token_id, chain)
+);
+
+-- ADMIN_ACTIONS TABLE
+CREATE TABLE admin_actions (
+    id SERIAL PRIMARY KEY,
+    admin_address TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    target_address TEXT,
+    amount DECIMAL(20, 8),
+    game_id INTEGER,
+    chain TEXT NOT NULL,
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- GAME_SHARES TABLE
+CREATE TABLE game_shares (
+    id SERIAL PRIMARY KEY,
+    game_id TEXT NOT NULL,
+    player_address TEXT NOT NULL,
+    share_platform TEXT NOT NULL,
+    xp_awarded BOOLEAN DEFAULT FALSE,
+    shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(game_id, player_address, share_platform)
+);
+
+-- CREATE ALL INDEXES
+CREATE INDEX idx_games_chain ON games(chain);
+CREATE INDEX idx_games_game_type ON games(game_type);
+CREATE INDEX idx_games_status_chain ON games(status, chain);
+CREATE INDEX idx_games_creator_chain ON games(creator, chain);
+CREATE INDEX idx_games_joiner_chain ON games(joiner, chain);
+CREATE INDEX idx_games_created_at_chain ON games(created_at, chain);
+
+CREATE INDEX idx_game_rounds_game_id ON game_rounds(game_id);
+CREATE INDEX idx_game_rounds_round_number ON game_rounds(round_number);
+
+CREATE INDEX idx_transactions_game_id ON transactions(game_id);
+CREATE INDEX idx_transactions_player ON transactions(player_address);
+CREATE INDEX idx_transactions_type ON transactions(transaction_type);
+
+CREATE INDEX idx_notifications_user ON notifications(user_address);
+CREATE INDEX idx_notifications_type ON notifications(type);
+CREATE INDEX idx_notifications_read ON notifications(read);
+
+CREATE INDEX idx_user_presence_online ON user_presence(is_online);
+CREATE INDEX idx_user_presence_last_seen ON user_presence(last_seen);
+
+CREATE INDEX idx_player_stats_user ON player_stats(address);
+CREATE INDEX idx_player_stats_chain ON player_stats(favorite_chain);
+
+CREATE INDEX idx_platform_stats_chain_date ON platform_stats(chain, date);
+CREATE INDEX idx_platform_stats_date ON platform_stats(date);
+
+CREATE INDEX idx_unclaimed_rewards_user ON unclaimed_rewards(user_address);
+CREATE INDEX idx_unclaimed_rewards_chain ON unclaimed_rewards(chain);
+CREATE INDEX idx_unclaimed_rewards_type ON unclaimed_rewards(reward_type);
+
+CREATE INDEX idx_nft_tracking_contract_token ON nft_tracking(nft_contract, token_id);
+CREATE INDEX idx_nft_tracking_owner ON nft_tracking(owner_address);
+CREATE INDEX idx_nft_tracking_chain ON nft_tracking(chain);
+CREATE INDEX idx_nft_tracking_status ON nft_tracking(status);
+
+CREATE INDEX idx_admin_actions_admin ON admin_actions(admin_address);
+CREATE INDEX idx_admin_actions_type ON admin_actions(action_type);
+CREATE INDEX idx_admin_actions_chain ON admin_actions(chain);
+CREATE INDEX idx_admin_actions_created ON admin_actions(created_at);
+
+-- GRANT PERMISSIONS
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO flipnosis_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO flipnosis_user;
+GRANT ALL PRIVILEGES ON SCHEMA public TO flipnosis_user;
