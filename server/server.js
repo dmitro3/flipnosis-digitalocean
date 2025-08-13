@@ -171,10 +171,30 @@ app.post('/api/games', async (req, res) => {
 
 app.post('/api/games/:gameId/create-from-listing', async (req, res) => {
   try {
+    console.log('Creating game from listing:', { gameId: req.params.gameId, body: req.body })
+    
     const gameData = {
-      ...req.body,
-      id: req.params.gameId
+      id: req.params.gameId,
+      creator: req.body.creator || req.body.player || req.body.user_address,
+      nft_contract: req.body.nft_contract || req.body.nftContract,
+      nft_token_id: req.body.nft_token_id || req.body.nftTokenId || req.body.tokenId,
+      nft_name: req.body.nft_name || req.body.nftName || req.body.name,
+      nft_image: req.body.nft_image || req.body.nftImage || req.body.image,
+      nft_collection: req.body.nft_collection || req.body.nftCollection || req.body.collection,
+      nft_chain: req.body.nft_chain || req.body.nftChain || req.body.chain || 'base',
+      price_usd: req.body.price_usd || req.body.priceUSD || req.body.price || 0,
+      rounds: req.body.rounds || 1,
+      status: 'waiting',
+      game_type: req.body.game_type || req.body.gameType || 'FLIPPER',
+      chain: req.body.chain || 'base',
+      payment_token: req.body.payment_token || req.body.paymentToken || 0,
+      payment_amount: req.body.payment_amount || req.body.paymentAmount || '0',
+      listing_id: req.body.listing_id || req.body.listingId,
+      challenger: null,
+      coin_data: req.body.coin_data || req.body.coinData || JSON.stringify({})
     }
+    
+    console.log('Processed game data:', gameData)
     const game = await dbService.createGame(gameData)
     res.json(game)
   } catch (error) {
@@ -227,7 +247,21 @@ app.get('/api/profile/:address', async (req, res) => {
     if (profile) {
       res.json(profile)
     } else {
-      res.json({}) // Return empty object instead of 404 for frontend compatibility
+      // Return default profile object with address for frontend compatibility
+      res.json({
+        address: req.params.address,
+        name: null,
+        avatar: null,
+        heads_image: null,
+        tails_image: null,
+        twitter: null,
+        telegram: null,
+        xp: 0,
+        hasName: false,
+        hasAvatar: false,
+        hasHeadsImage: false,
+        hasTailsImage: false
+      })
     }
   } catch (error) {
     console.error('Error getting profile:', error)
