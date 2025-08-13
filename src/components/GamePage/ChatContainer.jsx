@@ -4,6 +4,7 @@ import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
 import styled from '@emotion/styled'
 import ProfilePicture from '../ProfilePicture'
+import webSocketService from '../../services/WebSocketService'
 
 const ChatContainerStyled = styled.div`
   background: rgba(0, 0, 0, 0.7);
@@ -316,35 +317,49 @@ const ChatContainer = ({
   const sendMessage = async (e) => {
     e.preventDefault()
     
-    if (!currentMessage.trim() || !socket || socket.readyState !== WebSocket.OPEN || !address) {
-      if (!address) showError('Please connect your wallet')
-      else if (!socket || socket.readyState !== WebSocket.OPEN) showError('Not connected to game')
-      return
-    }
-
-    // Check if user has set a name
-    if (!playerName) {
-      setIsNameModalOpen(true)
-      return
-    }
-
-    try {
-      const chatMessage = {
-        type: 'chat_message',
-        roomId: gameId,
+    if (!currentMessage.trim()) return
+    
+    // Try to send via WebSocket if available
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      try {
+        socket.send(JSON.stringify({
+          type: 'chat_message',
+          gameId: gameId,
+          address: address,
+          message: currentMessage.trim(),
+          timestamp: new Date().toISOString()
+        }))
+        
+        console.log('💬 Chat message sent via WebSocket')
+        setCurrentMessage('')
+      } catch (error) {
+        console.error('❌ Chat: Error sending message:', error)
+        showError('Failed to send message. Reconnecting...')
+        
+        // Try to reconnect
+        if (webSocketService) {
+          webSocketService.connect(gameId, address)
+        }
+      }
+    } else {
+      // Queue the message if WebSocket is not available
+      console.log('⚠️ WebSocket not connected, queueing message')
+      
+      // Still add to local state so user sees their message
+      const newMessage = {
+        id: Date.now(),
+        address: address,
         message: currentMessage.trim(),
-        from: address,
         timestamp: new Date().toISOString()
       }
-
-      console.log('📤 Chat: Sending chat message:', chatMessage)
-      socket.send(JSON.stringify(chatMessage))
       
+      setMessages(prev => [...prev, newMessage])
       setCurrentMessage('')
-      inputRef.current?.focus()
-    } catch (error) {
-      console.error('Chat: Error sending chat message:', error)
-      showError('Failed to send message')
+      
+      // Try to reconnect
+      if (webSocketService) {
+        webSocketService.sendChatMessage(gameId, address, newMessage.message)
+      }
     }
   }
 
@@ -435,15 +450,19 @@ const ChatContainer = ({
           type="text"
           value={currentMessage}
           onChange={(e) => setCurrentMessage(e.target.value)}
-          placeholder="Type your message..."
-          disabled={!connected}
+          placeholder={connected ? "Type your message..." : "Reconnecting... (you can still type)"}
+          disabled={false} // Never disable
           onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
         />
         <SendButton
           onClick={sendMessage}
-          disabled={!connected || !currentMessage.trim()}
+          disabled={!currentMessage.trim()} // Only disable if no message
+          style={{
+            background: connected ? '#00BFFF' : '#FFA500',
+            cursor: currentMessage.trim() ? 'pointer' : 'not-allowed'
+          }}
         >
-          Send
+          {connected ? 'Send' : 'Queue'}
         </SendButton>
       </InputContainer>
 

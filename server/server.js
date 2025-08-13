@@ -1,5 +1,6 @@
 const express = require('express')
-const https = require('https')  // Change from http to https
+const http = require('http')
+const https = require('https')
 const WebSocket = require('ws')
 const cors = require('cors')
 const path = require('path')
@@ -15,22 +16,48 @@ console.log('🚀 Starting CryptoFlipz Clean Server...')
 
 const app = express()
 
-// Add SSL certificate configuration
-const serverOptions = {
-  key: fs.readFileSync('/etc/ssl/private/selfsigned.key'),
-  cert: fs.readFileSync('/etc/ssl/certs/selfsigned.crt')
-}
-
-// Create HTTPS server instead of HTTP
-const server = https.createServer(serverOptions, app)
-const wss = new WebSocket.Server({ server })
-
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3001
+const USE_HTTPS = process.env.USE_HTTPS === 'true' || fs.existsSync('/etc/ssl/private/selfsigned.key')
 const DATABASE_PATH = process.env.DATABASE_PATH || '/opt/flipnosis/app/server/flipz-clean.db'
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014eeBE'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+
+// Create server based on SSL availability
+let server
+let wss
+
+if (USE_HTTPS) {
+  try {
+    // Try to load SSL certificates
+    const serverOptions = {
+      key: fs.readFileSync('/etc/ssl/private/selfsigned.key'),
+      cert: fs.readFileSync('/etc/ssl/certs/selfsigned.crt')
+    }
+    
+    server = https.createServer(serverOptions, app)
+    console.log('🔒 HTTPS server created with SSL certificates')
+  } catch (error) {
+    console.log('⚠️ SSL certificates not found, falling back to HTTP')
+    server = http.createServer(app)
+  }
+} else {
+  server = http.createServer(app)
+  console.log('📡 HTTP server created (no SSL)')
+}
+
+// Create WebSocket server with proper configuration
+wss = new WebSocket.Server({ 
+  server,
+  perMessageDeflate: false,
+  clientTracking: true,
+  // Handle verification for self-signed certificates
+  verifyClient: (info, cb) => {
+    // Always accept connections for now
+    cb(true)
+  }
+})
 
 // ===== MIDDLEWARE =====
 app.use(cors({
@@ -40,10 +67,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
-// Add CSP headers to allow eval() for React and other libraries
+// Add CSP headers with Chrome compatibility
 app.use((req, res, next) => {
-  // Detect Chrome user agent
-  const isChrome = req.headers['user-agent']?.includes('Chrome');
+  const isChrome = req.headers['user-agent']?.includes('Chrome')
   
   if (isChrome) {
     // More permissive CSP for Chrome
@@ -55,9 +81,8 @@ app.use((req, res, next) => {
       "img-src * data: blob: https:; " +
       "frame-src *; " +
       "style-src * 'unsafe-inline';"
-    );
+    )
   } else {
-    // Original CSP for other browsers
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
@@ -65,27 +90,26 @@ app.use((req, res, next) => {
       "style-src 'self' 'unsafe-inline' https:; " +
       "font-src 'self' https:; " +
       "img-src 'self' data: https: blob:; " +
-      "connect-src 'self' wss: https: ws:; " +
+      "connect-src 'self' wss: ws: https: http:; " +
       "frame-src 'self'; " +
       "object-src 'none'; " +
       "base-uri 'self'; " +
       "form-action 'self';"
-    );
+    )
   }
-  next();
+  next()
 })
 
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ===== STATIC FILES =====
-// Try multiple possible locations for the dist directory
 const possibleDistPaths = [
-  path.join(__dirname, '..', 'dist'),           // ../dist (when running from server/)
-  path.join(__dirname, 'dist'),                 // ./dist (when running from root)
-  path.join(__dirname, '..'),                   // ../ (fallback to parent)
-  path.join(process.cwd(), 'dist'),             // cwd/dist
-  path.join(process.cwd(), '..', 'dist')        // cwd/../dist
+  path.join(__dirname, '..', 'dist'),
+  path.join(__dirname, 'dist'),
+  path.join(__dirname, '..'),
+  path.join(process.cwd(), 'dist'),
+  path.join(process.cwd(), '..', 'dist')
 ]
 
 let distPath = null
@@ -101,7 +125,7 @@ if (distPath) {
   app.use(express.static(distPath))
   console.log('✅ Serving static files from:', distPath)
 } else {
-  console.log('⚠️  No dist directory found, serving from current directory')
+  console.log('⚠️ No dist directory found, serving from current directory')
   app.use(express.static(__dirname))
 }
 
@@ -125,24 +149,24 @@ async function initializeServices() {
   const apiRouter = createApiRoutes(dbService, blockchainService, wsHandlers)
   app.use('/api', apiRouter)
 
-  // Health check
+  // Health check endpoint
   app.get('/health', (req, res) => {
     res.json({ 
       status: 'ok', 
       server: 'clean-architecture', 
       timestamp: new Date().toISOString(),
-      hasContractOwner: blockchainService.hasOwnerWallet() 
+      hasContractOwner: blockchainService.hasOwnerWallet(),
+      ssl: USE_HTTPS,
+      wsClients: wss.clients.size
     })
   })
 
-  // Static file fallback - serve index.html for all non-API routes
+  // Static file fallback
   app.get('*', (req, res) => {
-    // Don't serve index.html for API routes
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ error: 'API endpoint not found' })
     }
     
-    // Try to find index.html in various locations
     const possibleIndexPaths = [
       path.join(distPath || '', 'index.html'),
       path.join(__dirname, 'dist', 'index.html'),
@@ -169,84 +193,39 @@ async function initializeServices() {
   })
 
   // Start timeout checker
-  startTimeoutChecker(dbService, wsHandlers)
+  startTimeoutChecker(dbService, blockchainService, wsHandlers)
 
-  return { dbService, blockchainService, wsHandlers }
+  return { dbService, blockchainService }
 }
 
-// ===== TIMEOUT CHECKER =====
-function startTimeoutChecker(dbService, wsHandlers) {
+// Timeout checker function
+function startTimeoutChecker(dbService, blockchainService, wsHandlers) {
   setInterval(async () => {
-    const now = new Date().toISOString()
     try {
-      // Handle old flow timeouts
-      const oldFlowGames = await dbService.getTimedOutGames('waiting_deposits', now)
-      for (const game of oldFlowGames) {
-        await handleOldFlowTimeout(game, dbService, wsHandlers)
-      }
-
-      // Handle new flow timeouts
-      const newFlowGames = await dbService.getTimedOutGames('waiting_challenger_deposit', now)
-      for (const game of newFlowGames) {
-        await handleNewFlowTimeout(game, dbService, wsHandlers)
-      }
+      const expiredGames = await dbService.getExpiredDepositGames()
       
-      // Handle listings that timeout (awaiting_offer status)
-      const awaitingOfferGames = await dbService.getTimedOutGames('awaiting_offer', now)
-      for (const game of awaitingOfferGames) {
-        // These are listings where NFT was deposited but no offer came in reasonable time
-        // You might want to allow creator to reclaim NFT after 24 hours
-        console.log('⏰ Listing timeout check:', game.id)
-        // Optionally implement a longer timeout for these
+      for (const game of expiredGames) {
+        await handleGameTimeout(game, dbService, wsHandlers)
       }
     } catch (error) {
-      console.error('❌ Error in timeout checker:', error)
+      console.error('❌ Error checking timeouts:', error)
     }
-  }, 10000) // Check every 10 seconds
+  }, 5000) // Check every 5 seconds
 }
 
-async function handleOldFlowTimeout(game, dbService, wsHandlers) {
-  console.log('⏰ Timeout for old flow game:', game.id)
-  if (game.creator_deposited && !game.challenger_deposited) {
-    console.log('🎯 Moving timed-out NFT to ready state for future games:', game.nft_name)
-    try {
-      await dbService.moveNFTToReady(game)
-      wsHandlers.sendToUser(game.creator, {
-        type: 'nft_moved_to_ready',
-        nft_name: game.nft_name,
-        message: 'Your NFT is ready for the next game - no need to deposit again!'
-      })
-    } catch (error) {
-      console.error('❌ Error moving NFT to ready state:', error)
-    }
-  }
-  await dbService.cancelGame(game.id)
-  wsHandlers.broadcastToRoom(game.id, {
-    type: 'game_cancelled',
-    reason: 'deposit_timeout',
-    creator_deposited: game.creator_deposited,
-    nft_moved_to_ready: game.creator_deposited && !game.challenger_deposited
-  })
-  if (!game.creator_deposited && !game.challenger_deposited) {
-    await dbService.updateListingStatus(game.listing_id, 'open')
-  }
-}
-
-async function handleNewFlowTimeout(game, dbService, wsHandlers) {
-  console.log('⏰ Timeout for challenger deposit:', game.id)
-  
+// Handle game timeout
+async function handleGameTimeout(game, dbService, wsHandlers) {
   try {
-    // Reset game to allow new offers
-    await dbService.resetGameForNewOffers(game)
+    console.log('⏰ Handling timeout for game:', game.id)
     
-    // Reopen the listing
-    await dbService.updateListingStatus(game.listing_id, 'open')
+    // Reset the game
+    await dbService.resetGameForNewOffers(game.id)
     
-    // Reject the timed-out offer
+    // Clear the accepted offer
     if (game.offer_id) {
       await new Promise((resolve, reject) => {
-        dbService.getDatabase().run(
-          'UPDATE offers SET status = "timeout" WHERE id = ?',
+        dbService.db.run(
+          'UPDATE offers SET status = "expired" WHERE id = ?',
           [game.offer_id],
           function(err) {
             if (err) reject(err)
@@ -256,14 +235,13 @@ async function handleNewFlowTimeout(game, dbService, wsHandlers) {
       })
     }
     
-    // Notify creator
+    // Notify users
     wsHandlers.sendToUser(game.creator, {
       type: 'challenger_timeout',
       gameId: game.id,
       message: 'Challenger didn\'t deposit in time. Your listing is now open for new offers!'
     })
     
-    // Notify challenger
     if (game.challenger) {
       wsHandlers.sendToUser(game.challenger, {
         type: 'deposit_timeout',
@@ -272,7 +250,7 @@ async function handleNewFlowTimeout(game, dbService, wsHandlers) {
       })
     }
     
-    // Broadcast to both rooms
+    // Broadcast to rooms
     wsHandlers.broadcastToRoom(game.id, {
       type: 'game_timeout',
       reason: 'challenger_deposit_timeout',
@@ -294,17 +272,36 @@ async function handleNewFlowTimeout(game, dbService, wsHandlers) {
 // ===== SERVER STARTUP =====
 initializeServices()
   .then(({ dbService, blockchainService }) => {
-    server.listen(PORT, () => {
-      console.log(`🎮 CryptoFlipz Clean Server running on HTTPS port ${PORT}`)
-      console.log(`🌐 WebSocket server ready (WSS)`)
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🎮 CryptoFlipz Clean Server running on ${USE_HTTPS ? 'HTTPS' : 'HTTP'} port ${PORT}`)
+      console.log(`🌐 WebSocket server ready (${USE_HTTPS ? 'WSS' : 'WS'})`)
       console.log(`📊 Database: ${DATABASE_PATH}`)
       console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
       console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
-      console.log(`🔒 SSL Certificate: Self-signed certificate loaded`)
+      if (USE_HTTPS) {
+        console.log(`🔒 SSL: Enabled`)
+      }
     })
   })
   .catch((error) => {
     console.error('❌ Failed to start server:', error)
     process.exit(1)
   })
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully')
+  server.close(() => {
+    console.log('Server closed')
+    process.exit(0)
+  })
+})
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully')
+  server.close(() => {
+    console.log('Server closed')
+    process.exit(0)
+  })
+})
   

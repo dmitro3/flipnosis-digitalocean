@@ -3,6 +3,7 @@ import { useWallet } from '../../contexts/WalletContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
 import styled from '@emotion/styled'
+import webSocketService from '../../services/WebSocketService'
 
 const OffersContainerStyled = styled.div`
   background: rgba(0, 0, 0, 0.7);
@@ -400,64 +401,63 @@ const OffersContainer = ({
   }
 
   const handleSubmitCryptoOffer = async () => {
-    if (!cryptoOffer.trim() || !connected || !socket) {
-      console.error('❌ Offers: Cannot submit crypto offer:', { 
-        cryptoOffer: cryptoOffer.trim(), 
-        connected, 
-        socket: !!socket,
-        socketState: socket?.readyState,
-        gameId,
-        address
-      })
-      showError('Please enter a valid amount')
+    if (!cryptoOffer.trim()) {
+      console.error('❌ Offers: No offer amount entered')
       return
     }
 
     const offerAmount = parseFloat(cryptoOffer)
-    if (isNaN(offerAmount) || offerAmount <= 0) {
-      showError('Please enter a valid positive number for the offer')
+    
+    // Validate offer amount
+    if (isNaN(offerAmount) || offerAmount < minOfferAmount) {
+      showError(`Minimum offer is $${minOfferAmount.toFixed(2)} USD`)
       return
     }
 
-    // Check 20% price restriction
-    if (offerAmount < minOfferAmount) {
-      showError(`Offer must be at least $${minOfferAmount.toFixed(2)} USD (80% of game price $${gamePrice.toFixed(2)})`)
-      return
-    }
+    setIsSubmittingOffer(true)
 
     try {
-      setIsSubmittingOffer(true)
-      showInfo('Submitting offer...')
-
-      const offerData = {
-        type: 'crypto_offer',
-        gameId,
-        offererAddress: address,
-        cryptoAmount: offerAmount,
-        timestamp: new Date().toISOString()
+      // Try WebSocket first
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: 'crypto_offer',
+          listingId: gameData.listing_id,
+          address: address,
+          cryptoAmount: offerAmount,
+          timestamp: new Date().toISOString()
+        }))
+        
+        console.log('💰 Crypto offer sent via WebSocket')
+        showSuccess(`Offer of $${offerAmount.toFixed(2)} USD sent!`)
+        setCryptoOffer('')
+      } else {
+        // Use WebSocketService with queuing
+        console.log('⚠️ WebSocket not connected, using service to queue offer')
+        
+        if (webSocketService) {
+          webSocketService.sendCryptoOffer(gameData.listing_id, address, offerAmount)
+          
+          // Optimistically add to local state
+          const newOffer = {
+            id: Date.now(),
+            type: 'crypto_offer',
+            address: address,
+            cryptoAmount: offerAmount,
+            timestamp: new Date().toISOString(),
+            message: `💰 Offered $${offerAmount.toFixed(2)} USD`
+          }
+          
+          addOffer(newOffer)
+          showSuccess(`Offer queued: $${offerAmount.toFixed(2)} USD`)
+          setCryptoOffer('')
+          
+          // Try to reconnect
+          webSocketService.connect(gameId, address)
+        }
       }
-
-      console.log('📤 Offers: Sending crypto offer:', offerData)
-      console.log('📡 Offers: WebSocket state:', socket.readyState)
-      console.log('📡 Offers: WebSocket connected:', socket.readyState === WebSocket.OPEN)
-      
-      if (socket.readyState !== WebSocket.OPEN) {
-        showError('WebSocket not connected. Please refresh the page.')
-        return
-      }
-      
-      socket.send(JSON.stringify(offerData))
-      
-      showSuccess(`Offer of $${offerAmount} USD submitted! Waiting for creator to accept...`)
-      setCryptoOffer('') // Clear the crypto offer input
-      
-      if (onOfferSubmitted) {
-        onOfferSubmitted(offerData)
-      }
-      
     } catch (error) {
-      console.error('Offers: Error submitting crypto offer:', error)
-      showError('Failed to submit offer: ' + error.message)
+      console.error('❌ Error submitting offer:', error)
+      showError('Failed to submit offer. Please try again.')
     } finally {
       setIsSubmittingOffer(false)
     }
@@ -700,14 +700,23 @@ const OffersContainer = ({
               }
             }}
             placeholder={`Min $${minOfferAmount.toFixed(2)} USD...`}
-            disabled={!connected}
+            disabled={false} // Never disable
             onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+            style={{
+              borderColor: connected ? '#00FF41' : '#FFA500'
+            }}
           />
           <OfferButton
             onClick={handleSubmitCryptoOffer}
-            disabled={!connected || !cryptoOffer.trim() || isSubmittingOffer}
+            disabled={!cryptoOffer.trim() || isSubmittingOffer}
+            style={{
+              background: connected 
+                ? 'linear-gradient(45deg, #FFD700, #FFA500)' 
+                : 'linear-gradient(45deg, #FFA500, #FF8C00)',
+              opacity: (!cryptoOffer.trim() || isSubmittingOffer) ? 0.5 : 1
+            }}
           >
-            {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+            {isSubmittingOffer ? 'Submitting...' : (connected ? 'Make Offer' : 'Queue Offer')}
           </OfferButton>
         </OfferInputContainer>
       )}
