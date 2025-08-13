@@ -28,7 +28,6 @@ const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/ho
 
 // SSL Configuration
 const https = require('https')
-const fs = require('fs')
 const sslOptions = {
   cert: fs.readFileSync('/etc/ssl/certs/selfsigned.crt'),
   key: fs.readFileSync('/etc/ssl/private/selfsigned.key')
