@@ -1,0 +1,4 @@
+ALTER USER flipnosis_user WITH PASSWORD 'xUncTgMpgNtw';
+GRANT ALL PRIVILEGES ON DATABASE flipnosis TO flipnosis_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO flipnosis_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO flipnosis_user;
