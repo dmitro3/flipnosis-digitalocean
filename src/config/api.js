@@ -18,7 +18,12 @@ export const getWsUrl = () => {
     return 'ws://localhost:3001'
   }
   
-  // For production (your 159 server) - direct connection without /ws path
+  // For production - use the domain directly
+  if (window.location.hostname === 'www.flipnosis.fun' || window.location.hostname === 'flipnosis.fun') {
+    return 'ws://159.69.242.154'
+  }
+  
+  // Fallback to current host
   return API_CONFIG.WS_URL
 }
 
