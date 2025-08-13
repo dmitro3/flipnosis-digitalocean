@@ -1,6 +1,8 @@
-// Single source of truth for API configuration
+// config/api.js
+// Simple configuration for single server setup
+
 export const API_CONFIG = {
-  // Use relative URLs to avoid CSP issues
+  // Everything is local now
   BASE_URL: '',
   WS_URL: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws'
 }
@@ -11,7 +13,13 @@ export const getApiUrl = (endpoint) => {
 }
 
 export const getWsUrl = () => {
+  // For development
+  if (window.location.hostname === 'localhost') {
+    return 'ws://localhost:3001/ws'
+  }
+  
+  // For production (your 159 server)
   return API_CONFIG.WS_URL
 }
 
-export default API_CONFIG; 
+export default API_CONFIG 

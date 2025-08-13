@@ -30,8 +30,14 @@ export const useWebSocket = (gameId, address, gameData) => {
   // Set up connection state monitoring
   useEffect(() => {
     const checkConnectionState = () => {
-      const isConnected = webSocketService.isConnected()
-      setWsConnected(isConnected)
+      try {
+        // Fix: Use the correct method call with error handling
+        const isConnected = webSocketService.isConnected()
+        setWsConnected(isConnected)
+      } catch (error) {
+        console.error('❌ Error checking WebSocket connection:', error)
+        setWsConnected(false)
+      }
     }
 
     // Check connection state periodically

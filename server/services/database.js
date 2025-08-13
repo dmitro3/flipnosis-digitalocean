@@ -439,6 +439,132 @@ class DatabaseService {
   getDatabase() {
     return this.db
   }
+
+  // ===== BACKUP AND RESTORE =====
+  async createBackup() {
+    console.log('📦 Creating database backup...')
+    
+    const backup = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      tables: {}
+    }
+    
+    // Backup all tables
+    const tables = ['games', 'messages', 'offers', 'profiles', 'listings', 'notifications', 'game_rounds', 'ready_nfts']
+    
+    for (const table of tables) {
+      backup.tables[table] = await new Promise((resolve, reject) => {
+        this.db.all(`SELECT * FROM ${table}`, (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows)
+        })
+      })
+      console.log(`  ✓ Backed up ${table}: ${backup.tables[table].length} rows`)
+    }
+    
+    console.log('✅ Backup complete')
+    return backup
+  }
+
+  async restoreBackup(backupData) {
+    console.log('📥 Restoring database from backup...')
+    
+    if (!backupData || !backupData.tables) {
+      throw new Error('Invalid backup data')
+    }
+    
+    // Start transaction
+    await this.run('BEGIN TRANSACTION')
+    
+    try {
+      // Clear existing data
+      const tables = ['notifications', 'game_rounds', 'messages', 'offers', 'ready_nfts', 'profiles', 'listings', 'games']
+      for (const table of tables) {
+        await this.run(`DELETE FROM ${table}`)
+        console.log(`  ✓ Cleared ${table}`)
+      }
+      
+      // Restore games first (foreign key constraint)
+      if (backupData.tables.games) {
+        for (const game of backupData.tables.games) {
+          const fields = Object.keys(game)
+          const placeholders = fields.map(() => '?').join(', ')
+          const values = fields.map(f => game[f])
+          
+          await this.run(
+            `INSERT INTO games (${fields.join(', ')}) VALUES (${placeholders})`,
+            values
+          )
+        }
+        console.log(`  ✓ Restored games: ${backupData.tables.games.length} rows`)
+      }
+      
+      // Restore other tables
+      const otherTables = ['profiles', 'listings', 'messages', 'offers', 'notifications', 'game_rounds', 'ready_nfts']
+      
+      for (const table of otherTables) {
+        if (backupData.tables[table]) {
+          for (const row of backupData.tables[table]) {
+            const fields = Object.keys(row).filter(f => f !== 'id')
+            const placeholders = fields.map(() => '?').join(', ')
+            const values = fields.map(f => row[f])
+            
+            await this.run(
+              `INSERT INTO ${table} (${fields.join(', ')}) VALUES (${placeholders})`,
+              values
+            )
+          }
+          console.log(`  ✓ Restored ${table}: ${backupData.tables[table].length} rows`)
+        }
+      }
+      
+      // Commit transaction
+      await this.run('COMMIT')
+      console.log('✅ Restore complete')
+      
+    } catch (error) {
+      // Rollback on error
+      await this.run('ROLLBACK')
+      console.error('❌ Restore failed:', error)
+      throw error
+    }
+  }
+
+  // Timeout handling methods
+  async getExpiredDepositGames() {
+    const now = Math.floor(Date.now() / 1000)
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        `SELECT * FROM games 
+         WHERE status = 'awaiting_challenger_deposit' 
+         AND deposit_deadline < ? 
+         AND deposit_deadline IS NOT NULL`,
+        [now],
+        (err, games) => {
+          if (err) reject(err)
+          else resolve(games)
+        }
+      )
+    })
+  }
+
+  async resetGameForNewOffers(gameId) {
+    await this.run(
+      `UPDATE games SET 
+       status = 'awaiting_challenger',
+       challenger = NULL,
+       offer_id = NULL,
+       deposit_deadline = NULL,
+       updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [gameId]
+    )
+  }
+
+  async expireOffer(offerId) {
+    await this.run('UPDATE offers SET status = "expired" WHERE id = ?', [offerId])
+  }
 }
 
 module.exports = { DatabaseService } 

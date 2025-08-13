@@ -447,75 +447,95 @@ export const useGameState = (gameId, address) => {
 
   // Game actions
   const handlePlayerChoice = (choice) => {
-    if (!webSocketService.isConnected()) {
-      showError('Not connected to game server')
-      return
+    try {
+      if (!webSocketService.isConnected()) {
+        showError('Not connected to game server')
+        return
+      }
+
+      stopRoundCountdown()
+
+      // Validate choice
+      if (!['heads', 'tails'].includes(choice)) {
+        console.error('❌ Invalid choice:', choice)
+        return
+      }
+
+      showSuccess(`🎯 You chose ${choice.toUpperCase()}!`)
+
+      // Send choice to server via WebSocket
+      webSocketService.send({
+        type: 'GAME_ACTION',
+        gameId,
+        action: 'MAKE_CHOICE',
+        choice,
+        player: address
+      })
+    } catch (error) {
+      console.error('❌ Error in handlePlayerChoice:', error)
+      showError('Failed to send choice to server')
     }
-
-    stopRoundCountdown()
-
-    // Validate choice
-    if (!['heads', 'tails'].includes(choice)) {
-      console.error('❌ Invalid choice:', choice)
-      return
-    }
-
-    showSuccess(`🎯 You chose ${choice.toUpperCase()}!`)
-
-    // Send choice to server via WebSocket
-    webSocketService.send({
-      type: 'GAME_ACTION',
-      gameId,
-      action: 'MAKE_CHOICE',
-      choice,
-      player: address
-    })
   }
 
   const handleAutoFlip = () => {
-    showInfo('Round 5 - Auto-flipping for fairness!')
+    try {
+      showInfo('Round 5 - Auto-flipping for fairness!')
 
-    const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
+      const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
 
-    setGameState(prev => ({
-      ...prev,
-      creatorChoice: autoChoice,
-      joinerChoice: autoChoice
-    }))
+      setGameState(prev => ({
+        ...prev,
+        creatorChoice: autoChoice,
+        joinerChoice: autoChoice
+      }))
 
-    if (webSocketService.isConnected()) {
-      webSocketService.sendAutoFlip(gameId, 'system', autoChoice)
+      if (webSocketService.isConnected()) {
+        webSocketService.sendAutoFlip(gameId, 'system', autoChoice)
+      }
+    } catch (error) {
+      console.error('❌ Error in handleAutoFlip:', error)
+      showError('Failed to send auto-flip to server')
     }
   }
 
   const handlePowerChargeStart = () => {
-    // Send power charge start to server
-    if (webSocketService.isConnected()) {
-      webSocketService.send({
-        type: 'GAME_ACTION',
-        gameId,
-        action: 'POWER_CHARGE_START',
-        player: address
-      })
+    try {
+      // Send power charge start to server
+      if (webSocketService.isConnected()) {
+        webSocketService.send({
+          type: 'GAME_ACTION',
+          gameId,
+          action: 'POWER_CHARGE_START',
+          player: address
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error in handlePowerChargeStart:', error)
+      showError('Failed to send power charge start to server')
     }
   }
 
   const handlePowerChargeStop = async (powerLevel) => {
-    if (!webSocketService.isConnected()) {
-      showError('Not connected to game server')
-      return
+    try {
+      if (!webSocketService.isConnected()) {
+        showError('Not connected to game server')
+        return
+      }
+
+      const validPowerLevel = typeof powerLevel === 'number' && !isNaN(powerLevel) ? powerLevel : 5
+
+      // Send power charge completion to server
+      webSocketService.send({
+        type: 'GAME_ACTION',
+        gameId,
+        action: 'POWER_CHARGED',
+        player: address,
+        powerLevel: validPowerLevel
+      })
+    } catch (error) {
+      console.error('❌ Error in handlePowerChargeStop:', error)
+      showError('Failed to send power charge to server')
     }
-
-    const validPowerLevel = typeof powerLevel === 'number' && !isNaN(powerLevel) ? powerLevel : 5
-
-    // Send power charge completion to server
-    webSocketService.send({
-      type: 'GAME_ACTION',
-      gameId,
-      action: 'POWER_CHARGED',
-      player: address,
-      powerLevel: validPowerLevel
-    })
   }
 
   // Handle flip result

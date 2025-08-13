@@ -411,7 +411,7 @@ const CreateFlip = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          listingId: listingResult.listingId,
+          listingId: listingResult.id,
           transactionHash: createResult.transactionHash
         })
       })

@@ -1,63 +1,29 @@
-// Updated server.js for PostgreSQL + Redis
+// Simplified server.js for single server setup
 const express = require('express')
 const http = require('http')
-const https = require('https')
 const WebSocket = require('ws')
 const cors = require('cors')
-const fs = require('fs')
 const path = require('path')
+const fs = require('fs')
 
-// Import new database service
-const DatabaseService = require('./services/database-postgresql')
+// Import route handlers
+const { createApiRoutes } = require('./routes/api')
+const { createWebSocketHandlers } = require('./handlers/websocket')
+const { DatabaseService } = require('./services/database')
+const { BlockchainService } = require('./services/blockchain')
 
-console.log('🚀 Starting CryptoFlipz PostgreSQL Server...')
+console.log('🚀 Starting CryptoFlipz Server...')
 
 const app = express()
+const server = http.createServer(app)
+const wss = new WebSocket.Server({ server })
 
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3001
-const USE_HTTPS = process.env.USE_HTTPS === 'true' || fs.existsSync('/etc/ssl/private/selfsigned.key')
-
-// Database configuration - PostgreSQL + Redis
-const DB_SERVER_IP = process.env.DB_SERVER_IP || '116.202.24.43'
+const DATABASE_PATH = path.join(__dirname, 'flipz.db') // Local database file
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014eeBE'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
-
-// Initialize database service
-const dbService = new DatabaseService()
-
-// Create server based on SSL availability
-let server
-let wss
-
-if (USE_HTTPS) {
-  try {
-    const serverOptions = {
-      key: fs.readFileSync('/etc/ssl/private/selfsigned.key'),
-      cert: fs.readFileSync('/etc/ssl/certs/selfsigned.crt')
-    }
-    
-    server = https.createServer(serverOptions, app)
-    console.log('🔒 HTTPS server created with SSL certificates')
-  } catch (error) {
-    console.log('⚠️ SSL certificates not found, falling back to HTTP')
-    server = http.createServer(app)
-  }
-} else {
-  server = http.createServer(app)
-  console.log('📡 HTTP server created (no SSL)')
-}
-
-// Create WebSocket server
-wss = new WebSocket.Server({ 
-  server,
-  perMessageDeflate: false,
-  clientTracking: true,
-  verifyClient: (info, cb) => {
-    cb(true)
-  }
-})
 
 // ===== MIDDLEWARE =====
 app.use(cors({
@@ -67,470 +33,205 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
-// Add CSP headers
-app.use((req, res, next) => {
-  const isChrome = req.headers['user-agent']?.includes('Chrome')
-  
-  if (isChrome) {
-    res.setHeader(
-      'Content-Security-Policy',
-      "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; " +
-      "script-src * 'unsafe-inline' 'unsafe-eval'; " +
-      "connect-src * wss: ws: https: http:; " +
-      "img-src * data: blob: https:; " +
-      "frame-src *; " +
-      "style-src * 'unsafe-inline';"
-    )
-  }
-  next()
-})
-
 app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ extended: true, limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ===== STATIC FILES =====
-const possibleDistPaths = [
-  path.join(__dirname, '..', 'dist'),
-  path.join(__dirname, 'dist'),
-  path.join(__dirname, '..'),
-  path.join(process.cwd(), 'dist'),
-  path.join(process.cwd(), '..', 'dist')
-]
-
-let distPath = null
-for (const testPath of possibleDistPaths) {
-  if (fs.existsSync(testPath)) {
-    distPath = testPath
-    console.log('📁 Found dist directory at:', distPath)
-    break
-  }
-}
-
-if (distPath) {
+const distPath = path.join(__dirname, '..', 'dist')
+if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))
   console.log('✅ Serving static files from:', distPath)
 } else {
-  console.log('⚠️ No dist directory found, serving from current directory')
-  app.use(express.static(__dirname))
+  console.log('⚠️ No dist directory found')
 }
 
-// ===== HEALTH CHECK =====
-app.get('/health', async (req, res) => {
-  try {
-    const dbHealth = await dbService.healthCheck()
-    res.json({
-      status: 'healthy',
-      database: dbHealth,
+// ===== SERVICES INITIALIZATION =====
+async function initializeServices() {
+  // Initialize database
+  const dbService = new DatabaseService(DATABASE_PATH)
+  await dbService.initialize()
+
+  // Initialize blockchain service
+  const blockchainService = new BlockchainService(
+    RPC_URL,
+    CONTRACT_ADDRESS,
+    CONTRACT_OWNER_KEY
+  )
+
+  // Initialize WebSocket handlers
+  const wsHandlers = createWebSocketHandlers(wss, dbService, blockchainService)
+
+  // Initialize API routes
+  const apiRouter = createApiRoutes(dbService, blockchainService, wsHandlers)
+  app.use('/api', apiRouter)
+
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      server: 'single-server', 
       timestamp: new Date().toISOString(),
-      uptime: process.uptime()
+      wsClients: wss.clients.size,
+      database: DATABASE_PATH
     })
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    })
-  }
-})
+  })
 
-// ===== API ROUTES =====
-app.get('/api/games', async (req, res) => {
-  try {
-    const chain = req.query.chain || 'base'
-    const games = await dbService.getActiveGames(chain)
-    res.json(games)
-  } catch (error) {
-    console.error('Error getting games:', error)
-    res.status(500).json({ error: 'Failed to get games' })
-  }
-})
-
-app.get('/api/games/:id', async (req, res) => {
-  try {
-    const game = await dbService.getGameById(req.params.id)
-    if (game) {
-      res.json(game)
-    } else {
-      res.status(404).json({ error: 'Game not found' })
-    }
-  } catch (error) {
-    console.error('Error getting game:', error)
-    res.status(500).json({ error: 'Failed to get game' })
-  }
-})
-
-app.post('/api/games', async (req, res) => {
-  try {
-    const game = await dbService.createGame(req.body)
-    res.json(game)
-  } catch (error) {
-    console.error('Error creating game:', error)
-    res.status(500).json({ error: 'Failed to create game' })
-  }
-})
-
-app.post('/api/games/:gameId/create-from-listing', async (req, res) => {
-  try {
-    console.log('Creating game from listing:', { gameId: req.params.gameId, body: req.body })
-    
-    const gameData = {
-      id: req.params.gameId,
-      creator: req.body.creator || req.body.player || req.body.user_address,
-      nft_contract: req.body.nft_contract || req.body.nftContract,
-      nft_token_id: req.body.nft_token_id || req.body.nftTokenId || req.body.tokenId,
-      nft_name: req.body.nft_name || req.body.nftName || req.body.name,
-      nft_image: req.body.nft_image || req.body.nftImage || req.body.image,
-      nft_collection: req.body.nft_collection || req.body.nftCollection || req.body.collection,
-      nft_chain: req.body.nft_chain || req.body.nftChain || req.body.chain || 'base',
-      price_usd: req.body.price_usd || req.body.priceUSD || req.body.price || 0,
-      rounds: req.body.rounds || 1,
-      status: 'waiting',
-      game_type: req.body.game_type || req.body.gameType || 'FLIPPER',
-      chain: req.body.chain || 'base',
-      payment_token: req.body.payment_token || req.body.paymentToken || 0,
-      payment_amount: req.body.payment_amount || req.body.paymentAmount || '0',
-      listing_id: req.body.listing_id || req.body.listingId,
-      challenger: null,
-      coin_data: req.body.coin_data || req.body.coinData || JSON.stringify({})
-    }
-    
-    console.log('Processed game data:', gameData)
-    const game = await dbService.createGame(gameData)
-    res.json(game)
-  } catch (error) {
-    console.error('Error creating game from listing:', error)
-    res.status(500).json({ error: 'Failed to create game from listing' })
-  }
-})
-
-app.put('/api/games/:id/status', async (req, res) => {
-  try {
-    const game = await dbService.updateGameStatus(req.params.id, req.body.status, req.body.additionalData)
-    if (game) {
-      res.json(game)
-    } else {
-      res.status(404).json({ error: 'Game not found' })
-    }
-  } catch (error) {
-    console.error('Error updating game:', error)
-    res.status(500).json({ error: 'Failed to update game' })
-  }
-})
-
-// Chat routes
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { roomId, senderAddress, message, messageType, messageData } = req.body
-    const chatMessage = await dbService.saveChatMessage(roomId, senderAddress, message, messageType, messageData)
-    res.json(chatMessage)
-  } catch (error) {
-    console.error('Error saving chat message:', error)
-    res.status(500).json({ error: 'Failed to save chat message' })
-  }
-})
-
-app.get('/api/chat/:roomId', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 50
-    const messages = await dbService.getChatHistory(req.params.roomId, limit)
-    res.json(messages)
-  } catch (error) {
-    console.error('Error getting chat history:', error)
-    res.status(500).json({ error: 'Failed to get chat history' })
-  }
-})
-
-// Profile routes (both /api/profile and /api/profiles for compatibility)
-app.get('/api/profile/:address', async (req, res) => {
-  try {
-    const profile = await dbService.getUserProfile(req.params.address)
-    if (profile) {
-      res.json(profile)
-    } else {
-      // Return default profile object with address for frontend compatibility
-      res.json({
-        address: req.params.address,
-        name: null,
-        avatar: null,
-        heads_image: null,
-        tails_image: null,
-        twitter: null,
-        telegram: null,
-        xp: 0,
-        hasName: false,
-        hasAvatar: false,
-        hasHeadsImage: false,
-        hasTailsImage: false
-      })
-    }
-  } catch (error) {
-    console.error('Error getting profile:', error)
-    res.status(500).json({ error: 'Failed to get profile' })
-  }
-})
-
-app.get('/api/profiles/:address', async (req, res) => {
-  try {
-    const profile = await dbService.getUserProfile(req.params.address)
-    if (profile) {
-      res.json(profile)
-    } else {
-      res.json({}) // Return empty object instead of 404 for frontend compatibility
-    }
-  } catch (error) {
-    console.error('Error getting profile:', error)
-    res.status(500).json({ error: 'Failed to get profile' })
-  }
-})
-
-app.post('/api/profiles', async (req, res) => {
-  try {
-    const profile = await dbService.createOrUpdateProfile(req.body)
-    res.json(profile)
-  } catch (error) {
-    console.error('Error creating/updating profile:', error)
-    res.status(500).json({ error: 'Failed to create/update profile' })
-  }
-})
-
-// User games endpoint
-app.get('/api/users/:address/games', async (req, res) => {
-  try {
-    const games = await dbService.getUserGames(req.params.address)
-    res.json(games || [])
-  } catch (error) {
-    console.error('Error getting user games:', error)
-    res.status(500).json({ error: 'Failed to get user games' })
-  }
-})
-
-// Listings routes
-app.get('/api/listings', async (req, res) => {
-  try {
-    const chain = req.query.chain || 'base'
-    const listings = await dbService.getActiveListings(chain)
-    res.json(listings || [])
-  } catch (error) {
-    console.error('Error getting listings:', error)
-    res.status(500).json({ error: 'Failed to get listings' })
-  }
-})
-
-app.get('/api/listings/:id', async (req, res) => {
-  try {
-    const listing = await dbService.getListingById(req.params.id)
-    if (listing) {
-      res.json(listing)
-    } else {
-      res.status(404).json({ error: 'Listing not found' })
-    }
-  } catch (error) {
-    console.error('Error getting listing:', error)
-    res.status(500).json({ error: 'Failed to get listing' })
-  }
-})
-
-app.post('/api/listings', async (req, res) => {
-  try {
-    const listing = await dbService.createListing(req.body)
-    res.json(listing)
-  } catch (error) {
-    console.error('Error creating listing:', error)
-    res.status(500).json({ error: 'Failed to create listing' })
-  }
-})
-
-// Offers routes
-app.post('/api/offers', async (req, res) => {
-  try {
-    const offer = await dbService.createOffer(req.body)
-    res.json(offer)
-  } catch (error) {
-    console.error('Error creating offer:', error)
-    res.status(500).json({ error: 'Failed to create offer' })
-  }
-})
-
-app.get('/api/offers/:listingId', async (req, res) => {
-  try {
-    const offers = await dbService.getOffersForListing(req.params.listingId)
-    res.json(offers)
-  } catch (error) {
-    console.error('Error getting offers:', error)
-    res.status(500).json({ error: 'Failed to get offers' })
-  }
-})
-
-app.post('/api/listings/:listingId/offers', async (req, res) => {
-  try {
-    const offerData = {
-      ...req.body,
-      listing_id: req.params.listingId,
-      id: Math.random().toString(36).substr(2, 9)
-    }
-    const offer = await dbService.createOffer(offerData)
-    res.json(offer)
-  } catch (error) {
-    console.error('Error creating offer:', error)
-    res.status(500).json({ error: 'Failed to create offer' })
-  }
-})
-
-app.post('/api/offers/:offerId/accept', async (req, res) => {
-  try {
-    const result = await dbService.acceptOffer(req.params.offerId, req.body)
-    res.json(result)
-  } catch (error) {
-    console.error('Error accepting offer:', error)
-    res.status(500).json({ error: 'Failed to accept offer' })
-  }
-})
-
-// Notifications routes
-app.post('/api/notifications', async (req, res) => {
-  try {
-    const notification = await dbService.createNotification(req.body)
-    res.json(notification)
-  } catch (error) {
-    console.error('Error creating notification:', error)
-    res.status(500).json({ error: 'Failed to create notification' })
-  }
-})
-
-app.get('/api/notifications/:address', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 20
-    const notifications = await dbService.getUserNotifications(req.params.address, limit)
-    res.json(notifications)
-  } catch (error) {
-    console.error('Error getting notifications:', error)
-    res.status(500).json({ error: 'Failed to get notifications' })
-  }
-})
-
-// Static file fallback
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API endpoint not found' })
-  }
-  
-  const possibleIndexPaths = [
-    path.join(distPath || '', 'index.html'),
-    path.join(__dirname, 'dist', 'index.html'),
-    path.join(__dirname, '..', 'index.html'),
-    path.join(process.cwd(), 'dist', 'index.html'),
-    path.join(process.cwd(), 'index.html')
-  ]
-  
-  let indexPath = null
-  for (const testPath of possibleIndexPaths) {
-    if (fs.existsSync(testPath)) {
-      indexPath = testPath
-      break
-    }
-  }
-  
-  if (indexPath) {
-    console.log('📄 Serving index.html from:', indexPath)
-    res.sendFile(indexPath)
-  } else {
-    console.log('❌ No index.html found, serving 404')
-    res.status(404).send('Not Found')
-  }
-})
-
-// ===== WEBSOCKET HANDLERS =====
-wss.on('connection', async (socket) => {
-  console.log('🔌 New WebSocket connection')
-  
-  socket.id = Math.random().toString(36).substr(2, 9)
-  
-  socket.on('message', async (message) => {
+  // Backup endpoint for admin panel
+  app.get('/api/backup', async (req, res) => {
     try {
-      const data = JSON.parse(message)
-      
-      switch (data.type) {
-        case 'join_room':
-          await dbService.joinRoom(socket, data.roomId, data.address)
-          socket.send(JSON.stringify({ type: 'joined_room', roomId: data.roomId }))
-          break
-          
-        case 'chat_message':
-          const chatMessage = await dbService.saveChatMessage(
-            data.roomId,
-            data.senderAddress,
-            data.message,
-            data.messageType,
-            data.messageData
-          )
-          socket.send(JSON.stringify({ type: 'chat_sent', message: chatMessage }))
-          break
-          
-        case 'leave_room':
-          await dbService.leaveRoom(socket)
-          socket.send(JSON.stringify({ type: 'left_room' }))
-          break
-          
-        default:
-          console.log('Unknown message type:', data.type)
+      const backup = await dbService.createBackup()
+      res.json({ 
+        success: true, 
+        data: backup,
+        timestamp: new Date().toISOString()
+      })
+    } catch (error) {
+      res.status(500).json({ error: error.message })
+    }
+  })
+
+  // Restore endpoint for admin panel
+  app.post('/api/restore', async (req, res) => {
+    try {
+      await dbService.restoreBackup(req.body.data)
+      res.json({ 
+        success: true,
+        message: 'Database restored successfully'
+      })
+    } catch (error) {
+      res.status(500).json({ error: error.message })
+    }
+  })
+
+  // Serve index.html for all other routes
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' })
+    }
+    
+    const indexPath = path.join(distPath, 'index.html')
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath)
+    } else {
+      res.status(404).send('Not Found')
+    }
+  })
+
+  // Start timeout checker
+  setInterval(async () => {
+    try {
+      const expiredGames = await dbService.getExpiredDepositGames()
+      for (const game of expiredGames) {
+        await handleGameTimeout(game, dbService, wsHandlers)
       }
     } catch (error) {
-      console.error('WebSocket message error:', error)
-      socket.send(JSON.stringify({ type: 'error', message: 'Internal server error' }))
+      console.error('❌ Error checking timeouts:', error)
     }
-  })
-  
-  socket.on('close', async () => {
-    console.log('🔌 WebSocket connection closed')
-    await dbService.leaveRoom(socket)
-  })
-  
-  socket.on('error', (error) => {
-    console.error('WebSocket error:', error)
-  })
-})
+  }, 5000)
 
-// ===== STARTUP =====
-async function startServer() {
+  return { dbService, blockchainService }
+}
+
+// Handle game timeout
+async function handleGameTimeout(game, dbService, wsHandlers) {
   try {
-    // Initialize database
-    const dbInitialized = await dbService.initialize()
-    if (!dbInitialized) {
-      console.error('❌ Failed to initialize database')
-      process.exit(1)
+    console.log('⏰ Handling timeout for game:', game.id)
+    
+    await dbService.resetGameForNewOffers(game.id)
+    
+    if (game.offer_id) {
+      await dbService.expireOffer(game.offer_id)
     }
     
-    // Start server
-    server.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`)
-      console.log(`🌐 Health check: http://localhost:${PORT}/health`)
-      console.log(`🗄️ Database: PostgreSQL + Redis`)
-      console.log(`🔗 Database server: ${DB_SERVER_IP}`)
+    // Notify users
+    wsHandlers.sendToUser(game.creator, {
+      type: 'challenger_timeout',
+      gameId: game.id,
+      message: 'Challenger didn\'t deposit in time. Your listing is now open for new offers!'
     })
+    
+    if (game.challenger) {
+      wsHandlers.sendToUser(game.challenger, {
+        type: 'deposit_timeout',
+        gameId: game.id,
+        message: 'You missed the deposit deadline. The offer has expired.'
+      })
+    }
+    
+    console.log('✅ Game reset for new offers after timeout:', game.id)
   } catch (error) {
-    console.error('❌ Failed to start server:', error)
-    process.exit(1)
+    console.error('❌ Error handling timeout:', error)
   }
 }
 
+// ===== AUTOMATIC BACKUP =====
+function startAutoBackup(dbService) {
+  // Backup every 6 hours
+  setInterval(async () => {
+    try {
+      const backupDir = path.join(__dirname, 'backups')
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true })
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const backupPath = path.join(backupDir, `backup-${timestamp}.json`)
+      
+      const backup = await dbService.createBackup()
+      fs.writeFileSync(backupPath, JSON.stringify(backup, null, 2))
+      
+      console.log(`✅ Auto-backup saved to ${backupPath}`)
+      
+      // Keep only last 7 days of backups
+      const files = fs.readdirSync(backupDir)
+      const now = Date.now()
+      const sevenDays = 7 * 24 * 60 * 60 * 1000
+      
+      files.forEach(file => {
+        const filePath = path.join(backupDir, file)
+        const stats = fs.statSync(filePath)
+        if (now - stats.mtime.getTime() > sevenDays) {
+          fs.unlinkSync(filePath)
+          console.log(`🗑️ Deleted old backup: ${file}`)
+        }
+      })
+    } catch (error) {
+      console.error('❌ Auto-backup failed:', error)
+    }
+  }, 6 * 60 * 60 * 1000) // Every 6 hours
+}
+
+// ===== SERVER STARTUP =====
+initializeServices()
+  .then(({ dbService, blockchainService }) => {
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🎮 CryptoFlipz Server running on port ${PORT}`)
+      console.log(`🌐 WebSocket server ready`)
+      console.log(`📊 Database: ${DATABASE_PATH}`)
+      console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
+      console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
+      console.log(`💾 Auto-backup: Enabled (every 6 hours)`)
+    })
+    
+    // Start auto-backup
+    startAutoBackup(dbService)
+  })
+  .catch((error) => {
+    console.error('❌ Failed to start server:', error)
+    process.exit(1)
+  })
+
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('🛑 Received SIGTERM, shutting down gracefully...')
-  await dbService.close()
+process.on('SIGTERM', () => {
+  console.log('Shutting down gracefully...')
   server.close(() => {
-    console.log('✅ Server closed')
     process.exit(0)
   })
 })
 
-process.on('SIGINT', async () => {
-  console.log('🛑 Received SIGINT, shutting down gracefully...')
-  await dbService.close()
+process.on('SIGINT', () => {
+  console.log('Shutting down gracefully...')
   server.close(() => {
-    console.log('✅ Server closed')
     process.exit(0)
   })
 })
-
-// Start the server
-startServer()

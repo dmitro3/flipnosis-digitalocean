@@ -188,7 +188,7 @@ fi
 echo "📝 SSL setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Make sure your domain points to IP: 116.202.24.43"
+echo "1. Make sure your domain points to IP: 159.69.242.154"
 echo "2. Restart your Node.js server: pm2 restart all"
 echo "3. Check WebSocket connection in browser console"
 '@
