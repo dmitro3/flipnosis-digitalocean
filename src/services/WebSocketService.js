@@ -5,6 +5,7 @@ import { getWsUrl } from '../config/api'
 
 class WebSocketService {
   constructor() {
+    console.log('🔧 WebSocketService constructor called')
     this.ws = null
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
@@ -152,12 +153,32 @@ class WebSocketService {
     return this.ws
   }
 
+  // Ensure this method is always available
   isConnected() {
-    const connected = this.ws && this.ws.readyState === WebSocket.OPEN
-    console.log('🔍 WebSocket connection check:', connected, this.ws?.readyState)
-    return connected
+    try {
+      const connected = this.ws && this.ws.readyState === WebSocket.OPEN
+      console.log('🔍 WebSocket connection check:', connected, this.ws?.readyState)
+      return connected
+    } catch (error) {
+      console.error('❌ Error in isConnected check:', error)
+      return false
+    }
+  }
+
+  // Add a method to check if the service is properly initialized
+  isInitialized() {
+    return this !== null && typeof this.isConnected === 'function'
   }
 }
 
+// Create a singleton instance
+console.log('🔧 Creating WebSocketService singleton instance')
 const webSocketService = new WebSocketService()
+console.log('✅ WebSocketService singleton created:', webSocketService)
+console.log('🔍 WebSocketService methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(webSocketService)))
+
+// Ensure the instance is properly exported
 export default webSocketService
+
+// Also export the class for testing purposes
+export { WebSocketService }

@@ -448,6 +448,11 @@ export const useGameState = (gameId, address) => {
   // Game actions
   const handlePlayerChoice = (choice) => {
     try {
+      if (!webSocketService || typeof webSocketService.isConnected !== 'function') {
+        showError('WebSocket service not available')
+        return
+      }
+      
       if (!webSocketService.isConnected()) {
         showError('Not connected to game server')
         return
@@ -489,7 +494,7 @@ export const useGameState = (gameId, address) => {
         joinerChoice: autoChoice
       }))
 
-      if (webSocketService.isConnected()) {
+      if (webSocketService && typeof webSocketService.isConnected === 'function' && webSocketService.isConnected()) {
         webSocketService.sendAutoFlip(gameId, 'system', autoChoice)
       }
     } catch (error) {
@@ -501,7 +506,7 @@ export const useGameState = (gameId, address) => {
   const handlePowerChargeStart = () => {
     try {
       // Send power charge start to server
-      if (webSocketService.isConnected()) {
+      if (webSocketService && typeof webSocketService.isConnected === 'function' && webSocketService.isConnected()) {
         webSocketService.send({
           type: 'GAME_ACTION',
           gameId,
@@ -517,6 +522,11 @@ export const useGameState = (gameId, address) => {
 
   const handlePowerChargeStop = async (powerLevel) => {
     try {
+      if (!webSocketService || typeof webSocketService.isConnected !== 'function') {
+        showError('WebSocket service not available')
+        return
+      }
+      
       if (!webSocketService.isConnected()) {
         showError('Not connected to game server')
         return
