@@ -14,7 +14,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = process.env.DATABASE_PATH || path.join(__dirname, '../server/flipz-clean.db');
+const DB_PATH = '/opt/flipnosis/app/server/flipz-clean.db';
 const BACKUP_PATH = DB_PATH + '.backup.' + new Date().toISOString().replace(/[:.]/g, '-');
 
 async function migrateDatabase() {

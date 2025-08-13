@@ -10,7 +10,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const DB_PATH = process.env.DATABASE_PATH || path.join(__dirname, '../server/flipz-clean.db');
+const DB_PATH = '/opt/flipnosis/app/server/flipz-clean.db';
 
 async function checkAndFixSchema() {
   console.log('🔧 Checking and fixing database schema...\n');

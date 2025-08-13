@@ -141,8 +141,8 @@ systemctl start flipnosis-db-sync.timer
 The application now uses these environment variables:
 
 ```bash
-# Database path (local copy on app server)
-DATABASE_PATH=/opt/flipnosis/app/server/flipz-clean.db
+# Database server configuration
+DB_SERVER_IP=116.202.24.43
 
 # Contract configuration
 CONTRACT_ADDRESS=0x3997F4720B3a515e82d54F30d7CF2993B014eeBE

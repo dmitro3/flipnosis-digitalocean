@@ -19,7 +19,9 @@ const app = express()
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 3001
 const USE_HTTPS = process.env.USE_HTTPS === 'true' || fs.existsSync('/etc/ssl/private/selfsigned.key')
-const DATABASE_PATH = process.env.DATABASE_PATH || '/opt/flipnosis/app/server/flipz-clean.db'
+// Database configuration - always use remote database server
+const DB_SERVER_IP = process.env.DB_SERVER_IP || '116.202.24.43'
+const DATABASE_PATH = '/opt/flipnosis/app/server/flipz-clean.db' // Local path for synced database
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014eeBE'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
@@ -131,6 +133,16 @@ if (distPath) {
 
 // ===== SERVICES INITIALIZATION =====
 async function initializeServices() {
+  // Ensure database is synced from remote server
+  console.log('🔄 Checking database sync from remote server...')
+  try {
+    const { execSync } = require('child_process')
+    execSync('/opt/flipnosis/app/scripts/db-sync.sh', { stdio: 'inherit' })
+    console.log('✅ Database sync completed')
+  } catch (error) {
+    console.log('⚠️ Database sync failed, continuing with existing database:', error.message)
+  }
+
   // Initialize database
   const dbService = new DatabaseService(DATABASE_PATH)
   await dbService.initialize()
@@ -275,7 +287,7 @@ initializeServices()
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`🎮 CryptoFlipz Clean Server running on ${USE_HTTPS ? 'HTTPS' : 'HTTP'} port ${PORT}`)
       console.log(`🌐 WebSocket server ready (${USE_HTTPS ? 'WSS' : 'WS'})`)
-      console.log(`📊 Database: ${DATABASE_PATH}`)
+      console.log(`📊 Database: ${DATABASE_PATH} (synced from ${DB_SERVER_IP})`)
       console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
       console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
       if (USE_HTTPS) {

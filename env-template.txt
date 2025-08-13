@@ -1,8 +1,9 @@
 # Flipnosis Environment Configuration
 # Copy this to .env and update with your values
 
-# Database Configuration
-DATABASE_PATH=/opt/flipnosis/app/server/flipz-clean.db
+# Database Configuration (Remote Database Server)
+# The app server syncs the database from the database server
+DB_SERVER_IP=116.202.24.43
 
 # Blockchain Configuration
 CONTRACT_ADDRESS=0x3997F4720B3a515e82d54F30d7CF2993B014eeBE
@@ -13,8 +14,7 @@ PRIVATE_KEY=your_private_key_here
 PORT=3001
 NODE_ENV=production
 
-# Database Sync Configuration (for separate database server)
-DB_SERVER_IP=116.202.24.43
+# Server Configuration
 APP_SERVER_IP=159.69.242.154
 
 # SSL Configuration
