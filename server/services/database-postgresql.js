@@ -18,8 +18,10 @@ class DatabaseService {
 
     // Redis connection
     this.redis = Redis.createClient({
-      host: process.env.REDIS_HOST || '116.202.24.43',
-      port: process.env.REDIS_PORT || 6379,
+      socket: {
+        host: process.env.REDIS_HOST || '116.202.24.43',
+        port: process.env.REDIS_PORT || 6379
+      },
       password: process.env.REDIS_PASSWORD || 'flipnosis_redis_password'
     });
 
