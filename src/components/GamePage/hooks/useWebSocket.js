@@ -10,6 +10,31 @@ export const useWebSocket = (gameId, address, gameData) => {
   const [wsConnected, setWsConnected] = useState(false)
   const [wsRef, setWsRef] = useState(null)
 
+  // Helper function to safely call WebSocket service methods
+  const safeCallMethod = (methodName, ...args) => {
+    try {
+      if (!webSocketService) {
+        console.error('❌ WebSocket service not available')
+        return null
+      }
+      
+      // Try different ways to access the method
+      const method = webSocketService[methodName] || 
+                    webSocketService[`is${methodName.charAt(0).toUpperCase() + methodName.slice(1)}`] ||
+                    (typeof webSocketService[methodName] === 'function' ? webSocketService[methodName] : null)
+      
+      if (typeof method === 'function') {
+        return method.apply(webSocketService, args)
+      }
+      
+      console.error(`❌ Method ${methodName} not found on WebSocket service`)
+      return null
+    } catch (error) {
+      console.error(`❌ Error calling ${methodName}:`, error)
+      return null
+    }
+  }
+
   // Initialize WebSocket connection
   const initializeWebSocket = async () => {
     if (!gameId || !address) {
@@ -20,20 +45,16 @@ export const useWebSocket = (gameId, address, gameData) => {
     try {
       console.log('🔌 Initializing WebSocket connection for game:', gameId)
       
-      // Verify the WebSocket service is properly initialized
-      if (!webSocketService || typeof webSocketService.isInitialized !== 'function') {
-        console.error('❌ WebSocket service not properly initialized')
-        console.error('❌ webSocketService:', webSocketService)
-        console.error('❌ webSocketService type:', typeof webSocketService)
-        return
-      }
-      
       // Connect using the WebSocket service
-      const ws = await webSocketService.connect(gameId, address)
-      setWsRef(ws)
-      setWsConnected(true)
-      
-      console.log('✅ WebSocket connection established successfully')
+      const ws = await safeCallMethod('connect', gameId, address)
+      if (ws) {
+        setWsRef(ws)
+        setWsConnected(true)
+        console.log('✅ WebSocket connection established successfully')
+      } else {
+        console.error('❌ Failed to connect WebSocket')
+        setWsConnected(false)
+      }
     } catch (error) {
       console.error('❌ Failed to initialize WebSocket:', error)
       setWsConnected(false)
@@ -44,24 +65,12 @@ export const useWebSocket = (gameId, address, gameData) => {
   useEffect(() => {
     const checkConnectionState = () => {
       try {
-        // Verify the WebSocket service is available and has the isConnected method
-        if (!webSocketService) {
-          console.error('❌ WebSocket service not available')
+        const isConnected = safeCallMethod('isConnected')
+        if (isConnected !== null) {
+          setWsConnected(isConnected)
+        } else {
           setWsConnected(false)
-          return
         }
-        
-        if (typeof webSocketService.isConnected !== 'function') {
-          console.error('❌ WebSocket service isConnected method not available')
-          console.error('❌ webSocketService:', webSocketService)
-          console.error('❌ webSocketService methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(webSocketService)))
-          setWsConnected(false)
-          return
-        }
-        
-        // Use the correct method call with error handling
-        const isConnected = webSocketService.isConnected()
-        setWsConnected(isConnected)
       } catch (error) {
         console.error('❌ Error checking WebSocket connection:', error)
         setWsConnected(false)
@@ -90,15 +99,13 @@ export const useWebSocket = (gameId, address, gameData) => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (wsRef && webSocketService && typeof webSocketService.disconnect === 'function') {
-        webSocketService.disconnect()
-      }
+      safeCallMethod('disconnect')
     }
   }, [wsRef])
 
   return {
     wsConnected,
-    wsRef: webSocketService ? webSocketService.getWebSocket() : null,
+    wsRef: webSocketService ? safeCallMethod('getWebSocket') : null,
     setWsRef,
     webSocketService
   }
