@@ -711,6 +711,15 @@ class ContractService {
       const value = typeof ethAmount === 'bigint' ? ethAmount : BigInt(ethAmount)
       console.log('💰 ETH amount being sent to contract:', value.toString())
       console.log('💰 ETH amount in ETH:', ethers.formatEther(value))
+      console.log('💰 ETH amount in wei (exact):', value.toString())
+      console.log('💰 ETH amount precision check:', {
+        original: ethAmount,
+        type: typeof ethAmount,
+        converted: value,
+        convertedType: typeof value,
+        asString: value.toString(),
+        asHex: '0x' + value.toString(16)
+      })
       
       const hash = await this.contract.depositETH(gameIdBytes32, value)
       console.log('💰 ETH deposit tx:', hash)
