@@ -142,9 +142,13 @@ const FilterContainer = styled.div`
 
 const DesktopFilters = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.75rem;
   width: 100%;
+
+  @media (max-width: 1400px) {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  }
 
   @media (max-width: 1200px) {
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -220,6 +224,170 @@ const SearchInput = styled.input`
   }
 `
 
+const ViewToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`
+
+const ViewToggleButton = styled.button`
+  background: ${props => props.active ? props.theme.colors.neonGreen : 'transparent'};
+  border: 1px solid ${props => props.theme.colors.neonGreen};
+  color: ${props => props.active ? '#000B1A' : props.theme.colors.textPrimary};
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: bold;
+
+  &:hover {
+    background: ${props => props.active ? props.theme.colors.neonGreen : 'rgba(0, 255, 65, 0.1)'};
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+`
+
+const ListViewContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+`
+
+const ListViewItem = styled.div`
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  cursor: ${props => props.isJoinable ? 'pointer' : 'default'};
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  opacity: ${props => props.isJoinable ? 1 : 0.85};
+
+  &:hover {
+    ${props => props.isJoinable && `
+      transform: scale(1.02);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    `}
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+`
+
+const ListViewImage = styled.div`
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 60px;
+    height: 60px;
+  }
+`
+
+const ListViewContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+`
+
+const ListViewHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+`
+
+const ListViewTitle = styled.div`
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: ${props => props.theme.colors.textPrimary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    max-width: 100%;
+  }
+`
+
+const ListViewCollection = styled.div`
+  font-size: 0.9rem;
+  color: ${props => props.theme.colors.textSecondary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
+`
+
+const ListViewStats = styled.div`
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
+`
+
+const ListViewStat = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: ${props => props.theme.colors.textSecondary};
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+`
+
+const ListViewPrice = styled.div`
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: ${props => props.theme.colors.neonBlue};
+  margin-left: auto;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-left: 0;
+  }
+`
+
 const Home = () => {
   const navigate = useNavigate()
   const { showSuccess, showError, showInfo } = useToast()
@@ -232,6 +400,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState(null)
   const [selectedFlip, setSelectedFlip] = useState(null)
+  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
 
   // Fetch data from database
   const fetchData = async () => {
@@ -670,6 +839,30 @@ const getAllItems = () => {
             </FilterContainer>
           </TransparentCard>
 
+          {/* View Toggle */}
+          <ViewToggleContainer>
+            <ViewToggleButton
+              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              active={viewMode === 'list'}
+            >
+              {viewMode === 'grid' ? (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Switch to List View
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 6H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zM18 6h-2a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2zM8 16H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2zM18 16h-2a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Switch to Grid View
+                </>
+              )}
+            </ViewToggleButton>
+          </ViewToggleContainer>
+
           {filteredItems.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: '3rem', border: `2px solid ${theme.colors.neonPink}` }}>
               <NeonText style={{ fontSize: '2rem', marginBottom: '1rem' }}>No Games Available</NeonText>
@@ -683,14 +876,16 @@ const getAllItems = () => {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : '240px 1fr',
-              gap: '1.5rem',
+              gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : 
+                                 window.innerWidth <= 1200 ? '300px 1fr' : '320px 1fr',
+              gap: window.innerWidth <= 768 ? '1.5rem' : '2rem',
               marginTop: '2rem'
             }}>
               {/* Left Box - Selected Game */}
               <div style={{
                 order: window.innerWidth <= 768 ? 1 : 0,
-                width: window.innerWidth <= 768 ? '100%' : '240px'
+                width: window.innerWidth <= 768 ? '100%' : 
+                       window.innerWidth <= 1200 ? '300px' : '320px'
               }}>
                 {selectedFlip && (
                   <div style={{
@@ -698,7 +893,8 @@ const getAllItems = () => {
                     borderRadius: '1rem',
                     padding: window.innerWidth <= 768 ? '1.25rem' : '1.5rem',
                     border: `2px solid ${selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink}`,
-                    maxWidth: window.innerWidth <= 768 ? '100%' : '240px'
+                    maxWidth: window.innerWidth <= 768 ? '100%' : 
+                              window.innerWidth <= 1200 ? '300px' : '320px'
                   }}>
                     <div style={{ 
                       fontSize: '1.2rem', 
@@ -1081,216 +1277,364 @@ const getAllItems = () => {
                   />
                 </div>
 
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))',
-                  gap: window.innerWidth <= 768 ? '0.25rem' : '0.75rem',
-                  margin: '1rem 0',
-                  width: '100%',
-                  overflowX: 'hidden',
-                  padding: window.innerWidth <= 768 ? '0 0.25rem' : '0',
-                  gridAutoRows: 'minmax(auto, auto)',
-                  gridAutoFlow: 'row'
-                }}>
-                  {filteredItems.length > 0 ? (
-                    filteredItems.map(item => (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        handleItemClick(item)
-                      }}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        borderRadius: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
-                        padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                        cursor: isGameJoinable(item.status) ? 'pointer' : 'default',
-                        transition: 'all 0.2s ease',
-                        border: `1px solid ${isGameJoinable(item.status) ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)'}`,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                        height: window.innerWidth <= 768 ? 'auto' : '210px',
-                        width: '100%',
-                        opacity: isGameJoinable(item.status) ? 1 : 0.85
-                      }}
-                      onMouseEnter={(e) => {
-                        if (isGameJoinable(item.status)) {
-                          e.currentTarget.style.transform = 'scale(1.02)';
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                          e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.2)';
-                          // Enhance image on hover
+                {viewMode === 'grid' ? (
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 
+                                       window.innerWidth <= 1200 ? 'repeat(auto-fill, minmax(220px, 1fr))' :
+                                       'repeat(auto-fill, minmax(240px, 1fr))',
+                    gap: window.innerWidth <= 768 ? '0.5rem' : 
+                         window.innerWidth <= 1200 ? '1rem' : '1.25rem',
+                    margin: '1rem 0',
+                    width: '100%',
+                    overflowX: 'hidden',
+                    padding: window.innerWidth <= 768 ? '0 0.5rem' : '0',
+                    gridAutoRows: 'minmax(auto, auto)',
+                    gridAutoFlow: 'row'
+                  }}>
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map(item => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          handleItemClick(item)
+                        }}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          borderRadius: window.innerWidth <= 768 ? '0.75rem' : '1rem',
+                          padding: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
+                          cursor: isGameJoinable(item.status) ? 'pointer' : 'default',
+                          transition: 'all 0.2s ease',
+                          border: `1px solid ${isGameJoinable(item.status) ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)'}`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
+                          height: window.innerWidth <= 768 ? 'auto' : 
+                                  window.innerWidth <= 1200 ? '240px' : '250px',
+                          width: '100%',
+                          opacity: isGameJoinable(item.status) ? 1 : 0.85
+                        }}
+                        onMouseEnter={(e) => {
+                          if (isGameJoinable(item.status)) {
+                            e.currentTarget.style.transform = 'scale(1.02)';
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                            e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.2)';
+                            // Enhance image on hover
+                            const image = e.currentTarget.querySelector('img');
+                            if (image) {
+                              image.style.filter = 'brightness(1.3) contrast(1.2) saturate(1.4)';
+                            }
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.boxShadow = 'none';
+                          // Reset image filter
                           const image = e.currentTarget.querySelector('img');
                           if (image) {
-                            image.style.filter = 'brightness(1.3) contrast(1.2) saturate(1.4)';
+                            image.style.filter = 'brightness(1.1) contrast(1.1) saturate(1.2)';
                           }
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                        e.currentTarget.style.boxShadow = 'none';
-                        // Reset image filter
-                        const image = e.currentTarget.querySelector('img');
-                        if (image) {
-                          image.style.filter = 'brightness(1.1) contrast(1.1) saturate(1.2)';
-                        }
-                      }}
-                    >
-                      <div style={{ 
-                        position: 'relative',
-                        aspectRatio: '1',
-                        borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
-                        overflow: 'hidden',
-                        width: '100%',
-                        height: window.innerWidth <= 768 ? 'auto' : '135px',
-                        minHeight: window.innerWidth <= 768 ? '80px' : '135px'
-                      }}>
-                        <GameImage 
-                          src={item.nft?.image || '/placeholder-nft.svg'} 
-                          alt={item.nft?.name || 'NFT'}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            objectPosition: 'center',
-                            filter: 'brightness(1.1) contrast(1.1) saturate(1.2)',
-                            transition: 'all 0.3s ease'
-                          }}
-                          onError={(e) => {
-                            e.target.src = '/placeholder-nft.svg'
-                          }}
-                        />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '0.25rem',
-                          right: '0.25rem',
-                          background: item.gameType === 'nft-vs-nft' ? 
-                            'linear-gradient(45deg, #00FF41, #39FF14)' : 
-                            'linear-gradient(45deg, #FF1493, #FF69B4)',
-                          color: item.gameType === 'nft-vs-nft' ? '#000' : '#fff',
-                          padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.15rem 0.35rem',
-                          borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
-                          fontWeight: 'bold'
+                        }}
+                      >
+                        <div style={{ 
+                          position: 'relative',
+                          aspectRatio: '1',
+                          borderRadius: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
+                          overflow: 'hidden',
+                          width: '100%',
+                          height: window.innerWidth <= 768 ? 'auto' : '135px',
+                          minHeight: window.innerWidth <= 768 ? '80px' : '135px'
                         }}>
-                          {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
-                        </div>
-                        
-                        {/* Status indicator */}
-                        <div style={{
-                          position: 'absolute',
-                          top: '0.25rem',
-                          left: '0.25rem',
-                          background: `rgba(${getStatusColor(item.status).replace('#', '')}, 0.9)`,
-                          color: '#fff',
-                          padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
-                          borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                          fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
-                          fontWeight: 'bold',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.1rem'
-                        }}>
-                          <span>{getStatusIcon(item.status)}</span>
-                          <span>{getStatusText(item.status)}</span>
-                        </div>
-                        {item.nft?.needsMetadataUpdate && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateNFTMetadata(item.id);
-                            }}
+                          <GameImage 
+                            src={item.nft?.image || '/placeholder-nft.svg'} 
+                            alt={item.nft?.name || 'NFT'}
                             style={{
-                              position: 'absolute',
-                              top: '0.25rem',
-                              right: '0.25rem',
-                              background: 'rgba(255, 193, 7, 0.9)',
-                              color: '#000',
-                              border: 'none',
-                              padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
-                              borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
-                              fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              objectPosition: 'center',
+                              filter: 'brightness(1.1) contrast(1.1) saturate(1.2)',
+                              transition: 'all 0.3s ease'
                             }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(255, 193, 7, 1)';
+                            onError={(e) => {
+                              e.target.src = '/placeholder-nft.svg'
                             }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(255, 193, 7, 0.9)';
-                            }}
-                          >
-                            🔄 Update
-                          </button>
-                        )}
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
-                        padding: window.innerWidth <= 768 ? '0.1rem' : '0.25rem',
-                        height: window.innerWidth <= 768 ? 'auto' : '60px',
-                        justifyContent: 'space-between'
-                      }}>
-                        <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
-                          fontWeight: 'bold',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}>
-                          {item.nft?.name || 'Unknown NFT'}
-                        </div>
-                        <div style={{ 
-                          fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
-                          color: theme.colors.textSecondary,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}>
-                          {item.nft?.collection || 'Unknown Collection'}
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem'
-                        }}>
-                          <div style={{ 
-                            fontWeight: 'bold',
-                            color: theme.colors.neonBlue
-                          }}>
-                            ${(item.priceUSD || 0).toFixed(2)}
-                          </div>
+                          />
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            padding: '0.1rem 0.3rem',
-                            borderRadius: '0.2rem',
+                            position: 'absolute',
+                            bottom: '0.25rem',
+                            right: '0.25rem',
+                            background: item.gameType === 'nft-vs-nft' ? 
+                              'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                              'linear-gradient(45deg, #FF1493, #FF69B4)',
+                            color: item.gameType === 'nft-vs-nft' ? '#000' : '#fff',
+                            padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.15rem 0.35rem',
+                            borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
+                            fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
+                            fontWeight: 'bold'
+                          }}>
+                            {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                          </div>
+                          
+                          {/* Status indicator */}
+                          <div style={{
+                            position: 'absolute',
+                            top: '0.25rem',
+                            left: '0.25rem',
+                            background: `rgba(${getStatusColor(item.status).replace('#', '')}, 0.9)`,
+                            color: '#fff',
+                            padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
+                            borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
                             fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            fontWeight: 'bold',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.1rem'
                           }}>
-                            <span>{getChainIcon(item.nft?.chain || 'base')}</span>
-                            <span>{getChainName(item.nft?.chain || 'base')}</span>
+                            <span>{getStatusIcon(item.status)}</span>
+                            <span>{getStatusText(item.status)}</span>
                           </div>
+                          {item.nft?.needsMetadataUpdate && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateNFTMetadata(item.id);
+                              }}
+                              style={{
+                                position: 'absolute',
+                                top: '0.25rem',
+                                right: '0.25rem',
+                                background: 'rgba(255, 193, 7, 0.9)',
+                                color: '#000',
+                                border: 'none',
+                                padding: window.innerWidth <= 768 ? '0.1rem 0.2rem' : '0.15rem 0.3rem',
+                                borderRadius: window.innerWidth <= 768 ? '0.15rem' : '0.25rem',
+                                fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 193, 7, 1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 193, 7, 0.9)';
+                              }}
+                            >
+                              🔄 Update
+                            </button>
+                          )}
                         </div>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
+                          padding: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
+                          height: window.innerWidth <= 768 ? 'auto' : 
+                                  window.innerWidth <= 1200 ? '75px' : '80px',
+                          justifyContent: 'space-between'
+                        }}>
+                          <div style={{ 
+                            fontSize: window.innerWidth <= 768 ? '0.7rem' : '0.8rem',
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {item.nft?.name || 'Unknown NFT'}
+                          </div>
+                          <div style={{ 
+                            fontSize: window.innerWidth <= 768 ? '0.6rem' : '0.7rem',
+                            color: theme.colors.textSecondary,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {item.nft?.collection || 'Unknown Collection'}
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: window.innerWidth <= 768 ? '0.7rem' : '0.8rem'
+                          }}>
+                            <div style={{ 
+                              fontWeight: 'bold',
+                              color: theme.colors.neonBlue
+                            }}>
+                              ${(item.priceUSD || 0).toFixed(2)}
+                            </div>
+                            <div style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              padding: '0.1rem 0.3rem',
+                              borderRadius: '0.2rem',
+                              fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.1rem'
+                            }}>
+                              <span>{getChainIcon(item.nft?.chain || 'base')}</span>
+                              <span>{getChainName(item.nft?.chain || 'base')}</span>
+                            </div>
+                          </div>
 
+                        </div>
                       </div>
-                    </div>
-                  ))) : (
-                    <div style={{
-                      gridColumn: '1 / -1',
-                      textAlign: 'center',
-                      padding: '2rem',
-                      color: theme.colors.textSecondary
-                    }}>
-                      No games or listings available
-                    </div>
-                  )}
-                </div>
+                    ))) : (
+                      <div style={{
+                        gridColumn: '1 / -1',
+                        textAlign: 'center',
+                        padding: '2rem',
+                        color: theme.colors.textSecondary
+                      }}>
+                        No games or listings available
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <ListViewContainer>
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map(item => (
+                        <ListViewItem
+                          key={item.id}
+                          onClick={() => {
+                            handleItemClick(item)
+                          }}
+                          isJoinable={isGameJoinable(item.status)}
+                        >
+                          <ListViewImage>
+                            <GameImage 
+                              src={item.nft?.image || '/placeholder-nft.svg'} 
+                              alt={item.nft?.name || 'NFT'}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                objectPosition: 'center'
+                              }}
+                              onError={(e) => {
+                                e.target.src = '/placeholder-nft.svg'
+                              }}
+                            />
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '0.25rem',
+                              right: '0.25rem',
+                              background: item.gameType === 'nft-vs-nft' ? 
+                                'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                                'linear-gradient(45deg, #FF1493, #FF69B4)',
+                              color: item.gameType === 'nft-vs-nft' ? '#000' : '#fff',
+                              padding: '0.1rem 0.25rem',
+                              borderRadius: '0.15rem',
+                              fontSize: '0.5rem',
+                              fontWeight: 'bold'
+                            }}>
+                              {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                            </div>
+                            {/* Status indicator */}
+                            <div style={{
+                              position: 'absolute',
+                              top: '0.25rem',
+                              left: '0.25rem',
+                              background: `rgba(${getStatusColor(item.status).replace('#', '')}, 0.9)`,
+                              color: '#fff',
+                              padding: '0.1rem 0.2rem',
+                              borderRadius: '0.15rem',
+                              fontSize: '0.4rem',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.1rem'
+                            }}>
+                              <span>{getStatusIcon(item.status)}</span>
+                              <span>{getStatusText(item.status)}</span>
+                            </div>
+                            {item.nft?.needsMetadataUpdate && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateNFTMetadata(item.id);
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  top: '0.25rem',
+                                  right: '0.25rem',
+                                  background: 'rgba(255, 193, 7, 0.9)',
+                                  color: '#000',
+                                  border: 'none',
+                                  padding: '0.1rem 0.2rem',
+                                  borderRadius: '0.15rem',
+                                  fontSize: '0.4rem',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = 'rgba(255, 193, 7, 1)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'rgba(255, 193, 7, 0.9)';
+                                }}
+                              >
+                                🔄 Update
+                              </button>
+                            )}
+                          </ListViewImage>
+                          <ListViewContent>
+                            <ListViewHeader>
+                              <ListViewTitle>{item.nft?.name || 'Unknown NFT'}</ListViewTitle>
+                              <div style={{
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                padding: '0.2rem 0.5rem',
+                                borderRadius: '0.25rem',
+                                fontSize: '0.7rem',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.2rem'
+                              }}>
+                                <span>{getChainIcon(item.nft?.chain || 'base')}</span>
+                                <span>{getChainName(item.nft?.chain || 'base')}</span>
+                              </div>
+                            </ListViewHeader>
+                            <ListViewCollection>{item.nft?.collection || 'Unknown Collection'}</ListViewCollection>
+                            <ListViewStats>
+                              <ListViewStat>
+                                <span>Type</span>
+                                <div style={{ color: item.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink }}>
+                                  {item.gameType === 'nft-vs-nft' ? 'NFT Battle' : 'NFT vs Crypto'}
+                                </div>
+                              </ListViewStat>
+                              <ListViewStat>
+                                <span>Status</span>
+                                <div style={{ color: getStatusColor(item.status) }}>
+                                  {getStatusText(item.status)}
+                                </div>
+                              </ListViewStat>
+                              <ListViewStat>
+                                <span>Price</span>
+                                <div style={{ color: theme.colors.neonBlue, fontWeight: 'bold' }}>
+                                  ${(item.priceUSD || 0).toFixed(2)}
+                                </div>
+                              </ListViewStat>
+                            </ListViewStats>
+                          </ListViewContent>
+                        </ListViewItem>
+                      ))
+                    ) : (
+                      <div style={{
+                        gridColumn: '1 / -1',
+                        textAlign: 'center',
+                        padding: '2rem',
+                        color: theme.colors.textSecondary
+                      }}>
+                        No games or listings available
+                      </div>
+                    )}
+                  </ListViewContainer>
+                )}
               </div>
             </div>
           )}
