@@ -3,7 +3,7 @@ import { useWallet } from '../../contexts/WalletContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
 import styled from '@emotion/styled'
-import webSocketService from '../../services/WebSocketService'
+// Using global WebSocket service to avoid minification issues
 
 const OffersContainerStyled = styled.div`
   background: rgba(0, 0, 0, 0.7);
@@ -434,8 +434,15 @@ const OffersContainer = ({
         // Use WebSocketService with queuing
         console.log('⚠️ WebSocket not connected, using service to queue offer')
         
-        if (webSocketService) {
-          webSocketService.sendCryptoOffer(gameData.listing_id, address, offerAmount)
+        const ws = window.FlipnosisWS
+        if (ws) {
+          // Send offer via global WebSocket service
+          ws.send({
+            type: 'crypto_offer',
+            gameId: gameData.listing_id,
+            address: address,
+            amount: offerAmount
+          })
           
           // Optimistically add to local state
           const newOffer = {
@@ -452,7 +459,7 @@ const OffersContainer = ({
           setCryptoOffer('')
           
           // Try to reconnect
-          webSocketService.connect(gameId, address)
+          ws.connect(gameId, address)
         }
       }
     } catch (error) {
