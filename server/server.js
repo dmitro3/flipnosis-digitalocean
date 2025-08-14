@@ -219,34 +219,75 @@ function startAutoBackup(dbService) {
 // ===== SERVER STARTUP =====
 initializeServices()
   .then(({ dbService, blockchainService }) => {
-    // HTTP Server (port 80)
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`🎮 CryptoFlipz HTTP Server running on port ${PORT}`)
-      console.log(`🌐 WebSocket server ready`)
-      console.log(`📊 Database: ${DATABASE_PATH}`)
-      console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
-      console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
-      console.log(`💾 Auto-backup: Enabled (every 6 hours)`)
-    })
+    // Check if ports are already in use
+    const net = require('net')
     
-    // HTTPS Server (port 443) for WSS support - only if SSL certificates exist
-    if (sslOptions) {
-      const httpsServer = https.createServer(sslOptions, app)
-      const httpsWss = new WebSocket.Server({ server: httpsServer })
-      
-      // Initialize WebSocket handlers for HTTPS
-      const httpsWsHandlers = createWebSocketHandlers(httpsWss, dbService, blockchainService)
-      
-      httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
-        console.log(`🔒 CryptoFlipz HTTPS Server running on port ${HTTPS_PORT}`)
-        console.log(`🔐 WSS WebSocket server ready`)
+    function checkPort(port) {
+      return new Promise((resolve) => {
+        const tester = net.createServer()
+        tester.once('error', () => resolve(false))
+        tester.once('listening', () => {
+          tester.close()
+          resolve(true)
+        })
+        tester.listen(port)
       })
-    } else {
-      console.log('⚠️ HTTPS/WSS server not started - SSL certificates not found')
     }
     
-    // Start auto-backup
-    startAutoBackup(dbService)
+    async function startServer() {
+      // Check if port 80 is available
+      const port80Available = await checkPort(80)
+      if (!port80Available) {
+        console.error('❌ Port 80 is already in use. Please stop the process using port 80 first.')
+        console.error('💡 Try: sudo lsof -i :80 or sudo netstat -tlnp | grep :80')
+        process.exit(1)
+      }
+      
+      // Check if port 443 is available (if we're using HTTPS)
+      if (sslOptions) {
+        const port443Available = await checkPort(443)
+        if (!port443Available) {
+          console.error('❌ Port 443 is already in use. Please stop the process using port 443 first.')
+          console.error('💡 Try: sudo lsof -i :443 or sudo netstat -tlnp | grep :443')
+          process.exit(1)
+        }
+      }
+      
+      // HTTP Server (port 80)
+      server.listen(PORT, '0.0.0.0', () => {
+        console.log(`🎮 CryptoFlipz HTTP Server running on port ${PORT}`)
+        console.log(`🌐 WebSocket server ready`)
+        console.log(`📊 Database: ${DATABASE_PATH}`)
+        console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
+        console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
+        console.log(`💾 Auto-backup: Enabled (every 6 hours)`)
+      })
+      
+      // HTTPS Server (port 443) for WSS support - only if SSL certificates exist
+      if (sslOptions) {
+        console.log('⚠️ HTTPS/WSS server temporarily disabled to avoid port conflicts')
+        // const httpsServer = https.createServer(sslOptions, app)
+        // const httpsWss = new WebSocket.Server({ server: httpsServer })
+        
+        // // Initialize WebSocket handlers for HTTPS
+        // const httpsWsHandlers = createWebSocketHandlers(httpsWss, dbService, blockchainService)
+        
+        // httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+        //   console.log(`🔒 CryptoFlipz HTTPS Server running on port ${HTTPS_PORT}`)
+        //   console.log(`🔐 WSS WebSocket server ready`)
+        // })
+      } else {
+        console.log('⚠️ HTTPS/WSS server not started - SSL certificates not found')
+      }
+      
+      // Start auto-backup
+      startAutoBackup(dbService)
+    }
+    
+    startServer().catch((error) => {
+      console.error('❌ Failed to start server:', error)
+      process.exit(1)
+    })
   })
   .catch((error) => {
     console.error('❌ Failed to start server:', error)
