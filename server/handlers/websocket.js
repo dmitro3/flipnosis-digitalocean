@@ -276,16 +276,19 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   }
 
   async function handleChatMessage(socket, data) {
-    const { roomId, message, from } = data
+    const { roomId, gameId, message, from } = data
+    
+    // Use gameId as roomId if roomId is not provided
+    const targetRoomId = roomId || gameId
     
     const senderAddress = socket.address || from || 'anonymous'
     
     try {
       // Save to database
-      await dbService.saveChatMessage(roomId, senderAddress, message, 'chat')
+      await dbService.saveChatMessage(targetRoomId, senderAddress, message, 'chat')
       
       // Broadcast to room
-      broadcastToRoom(roomId, {
+      broadcastToRoom(targetRoomId, {
         type: 'chat_message',
         message,
         from: senderAddress,
