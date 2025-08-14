@@ -707,7 +707,11 @@ class ContractService {
         }
       }
 
-      const value = BigInt(ethAmount)
+      // Ensure ethAmount is properly converted to BigInt without double wrapping
+      const value = typeof ethAmount === 'bigint' ? ethAmount : BigInt(ethAmount)
+      console.log('💰 ETH amount being sent to contract:', value.toString())
+      console.log('💰 ETH amount in ETH:', ethers.formatEther(value))
+      
       const hash = await this.contract.depositETH(gameIdBytes32, value)
       console.log('💰 ETH deposit tx:', hash)
 
