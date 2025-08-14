@@ -19,9 +19,9 @@ const app = express()
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
 
-// ===== CONFIGURATION =====
-const PORT = process.env.PORT || 80
-const HTTPS_PORT = process.env.HTTPS_PORT || 443
+// ===== SERVER CONFIGURATION =====
+const PORT = process.env.PORT || 3000
+const HTTPS_PORT = process.env.HTTPS_PORT || 3001
 const DATABASE_PATH = path.join(__dirname, 'flipz.db') // Local database file
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014eeBE'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY

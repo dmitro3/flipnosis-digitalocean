@@ -113,7 +113,7 @@ if ($ServerIP) {
         $httpsResponse = Invoke-WebRequest -Uri "https://$ServerIP/health" -UseBasicParsing -TimeoutSec 10
         Write-Ok "HTTPS health check: $($httpsResponse.StatusCode)"
     } catch {
-        Write-Warn "HTTPS health check failed: $($_.Exception.Message)"
+        Write-Host "[WARN] HTTPS health check failed: $($_.Exception.Message)" -ForegroundColor Yellow
     }
     
     # Test main page
