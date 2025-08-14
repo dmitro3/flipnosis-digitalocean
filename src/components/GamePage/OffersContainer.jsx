@@ -256,7 +256,7 @@ const OffersContainer = ({
   const offersEndRef = useRef(null)
   
   // Get game price for validation
-  const gamePrice = gameData?.price_usd || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || 0
+  const gamePrice = gameData?.payment_amount || gameData?.price_usd || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || 0
   const minOfferAmount = gamePrice * 0.8 // 80% of the game price
   
   // Auto scroll to bottom when new offers arrive
