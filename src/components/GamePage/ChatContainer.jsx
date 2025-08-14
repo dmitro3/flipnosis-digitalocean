@@ -198,39 +198,47 @@ const ChatContainer = () => {
     const handleChatMessage = (data) => {
       console.log('📨 Chat message received:', data)
       if (data.type === 'chat_message') {
-        setMessages(prev => [...prev, {
-          id: Date.now(),
+        const newMessageObj = {
+          id: Date.now() + Math.random(), // Ensure unique ID
           sender: data.from || data.sender,
           message: data.message,
           timestamp: new Date().toLocaleTimeString(),
           isCurrentUser: (data.from || data.sender) === address
-        }])
+        }
+        console.log('📝 Adding message to state:', newMessageObj)
+        setMessages(prev => {
+          const newMessages = [...prev, newMessageObj]
+          console.log('📝 New messages state:', newMessages.length, 'messages')
+          return newMessages
+        })
       }
     }
 
     const handleUserJoined = (data) => {
       console.log('👤 User joined:', data)
       if (data.type === 'user_joined') {
-        setMessages(prev => [...prev, {
-          id: Date.now(),
+        const systemMessage = {
+          id: Date.now() + Math.random(),
           sender: 'System',
           message: `${data.address} joined the game`,
           timestamp: new Date().toLocaleTimeString(),
           isSystem: true
-        }])
+        }
+        setMessages(prev => [...prev, systemMessage])
       }
     }
 
     const handleUserLeft = (data) => {
       console.log('👤 User left:', data)
       if (data.type === 'user_left') {
-        setMessages(prev => [...prev, {
-          id: Date.now(),
+        const systemMessage = {
+          id: Date.now() + Math.random(),
           sender: 'System',
           message: `${data.address} left the game`,
           timestamp: new Date().toLocaleTimeString(),
           isSystem: true
-        }])
+        }
+        setMessages(prev => [...prev, systemMessage])
       }
     }
 
@@ -243,14 +251,17 @@ const ChatContainer = () => {
     fetch(`/api/chat/${gameId}`)
       .then(response => response.json())
       .then(data => {
+        console.log('📚 Chat history loaded:', data)
         if (data.messages) {
-          setMessages(data.messages.map(msg => ({
-            id: msg.id,
+          const historyMessages = data.messages.map(msg => ({
+            id: msg.id || Date.now() + Math.random(),
             sender: msg.sender,
             message: msg.message,
             timestamp: new Date(msg.timestamp).toLocaleTimeString(),
             isCurrentUser: msg.sender === address
-          })))
+          }))
+          console.log('📚 Setting history messages:', historyMessages)
+          setMessages(historyMessages)
         }
       })
       .catch(error => {
@@ -301,6 +312,10 @@ const ChatContainer = () => {
     return sender ? `${sender.slice(0, 6)}...${sender.slice(-4)}` : 'Unknown'
   }
 
+  // Debug logging for render
+  console.log('🔍 ChatContainer render - messages count:', messages.length)
+  console.log('🔍 ChatContainer render - messages:', messages)
+
   return (
     <ChatContainerStyled>
       <ChatHeader>
@@ -331,9 +346,11 @@ const ChatContainer = () => {
             const isCurrentUser = msg.sender === address
             const displayName = getDisplayName(msg.sender)
             
+            console.log('🔍 Rendering message:', { index, msg, isCurrentUser, displayName })
+            
             if (msg.isSystem) {
               return (
-                <div key={index} style={{
+                <div key={msg.id || index} style={{
                   textAlign: 'center',
                   marginBottom: '0.75rem',
                   padding: '0.5rem',
@@ -350,7 +367,7 @@ const ChatContainer = () => {
             }
             
             return (
-              <Message key={index} isCurrentUser={isCurrentUser}>
+              <Message key={msg.id || index} isCurrentUser={isCurrentUser}>
                 <MessageHeader isCurrentUser={isCurrentUser}>
                   <span>💬 {displayName}</span>
                   <span>{formatTimestamp(msg.timestamp)}</span>
