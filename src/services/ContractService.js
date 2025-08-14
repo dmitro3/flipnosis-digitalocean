@@ -708,7 +708,7 @@ class ContractService {
       }
 
       const value = BigInt(ethAmount)
-      const hash = await this.contractService.depositETH(gameIdBytes32, value)
+      const hash = await this.contract.depositETH(gameIdBytes32, value)
       console.log('💰 ETH deposit tx:', hash)
 
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
