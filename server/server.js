@@ -1,7 +1,6 @@
 // Simplified server.js for single server setup
 const express = require('express')
 const http = require('http')
-const https = require('https')
 const WebSocket = require('ws')
 const cors = require('cors')
 const path = require('path')
@@ -21,19 +20,10 @@ const wss = new WebSocket.Server({ server })
 
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 80
-const HTTPS_PORT = process.env.HTTPS_PORT || 443
 const DATABASE_PATH = path.join(__dirname, 'flipz.db') // Local database file
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014eeBE'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
-
-// SSL Configuration
-const sslOptions = {
-  cert: fs.readFileSync('/etc/ssl/certs/selfsigned.crt'),
-  key: fs.readFileSync('/etc/ssl/private/selfsigned.key')
-}
-
-// SSL configuration for HTTPS/WSS support
 
 // ===== MIDDLEWARE =====
 app.use(cors({
@@ -42,8 +32,6 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
-
-// Note: No HTTP to HTTPS redirect needed since we're handling both directly
 
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
@@ -224,18 +212,6 @@ initializeServices()
       console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
       console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
       console.log(`💾 Auto-backup: Enabled (every 6 hours)`)
-    })
-    
-    // HTTPS Server (port 443) for WSS support
-    const httpsServer = https.createServer(sslOptions, app)
-    const httpsWss = new WebSocket.Server({ server: httpsServer })
-    
-    // Initialize WebSocket handlers for HTTPS
-    const httpsWsHandlers = createWebSocketHandlers(httpsWss, dbService, blockchainService)
-    
-    httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
-      console.log(`🔒 CryptoFlipz HTTPS Server running on port ${HTTPS_PORT}`)
-      console.log(`🔐 WSS WebSocket server ready`)
     })
     
     // Start auto-backup

@@ -21,14 +21,12 @@ export const getWsUrl = () => {
   
   // For production - flipnosis.fun domain
   if (window.location.hostname === 'www.flipnosis.fun' || window.location.hostname === 'flipnosis.fun') {
-    // Use WSS for HTTPS, WS for HTTP
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    return `${protocol}//${window.location.host}`
+    // Use WS for HTTP (since we removed HTTPS/WSS)
+    return `ws://${window.location.host}`
   }
   
-  // Fallback - use current host with appropriate protocol
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}`
+  // Fallback - use current host with WS protocol
+  return `ws://${window.location.host}`
 }
 
 export default API_CONFIG 
