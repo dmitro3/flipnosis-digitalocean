@@ -637,12 +637,17 @@ class ContractService {
 
   // Deposit ETH to game
   async depositETH(gameId, ethAmount) {
+    console.log('🚀 depositETH function called with:', { gameId, ethAmount, ethAmountType: typeof ethAmount })
+    
     if (!this.isReady()) {
+      console.log('❌ Contract service not ready')
       return { success: false, error: 'Contract service not initialized' }
     }
 
     try {
+      console.log('✅ Contract service is ready, proceeding with deposit...')
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      console.log('🆔 Game ID bytes32:', gameIdBytes32)
 
       // Add retry mechanism for canDeposit check due to potential race conditions
       let canDeposit = false
