@@ -428,16 +428,28 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     try {
       // Get the listing_id for this game
       const db = dbService.getDatabase()
-      const game = await new Promise((resolve, reject) => {
-        db.get('SELECT listing_id FROM games WHERE id = ?', [gameId], (err, result) => {
-          if (err) reject(err)
-          else resolve(result)
-        })
-      })
+      let listingId = gameId
       
-      if (!game || !game.listing_id) {
-        console.error('❌ Game not found or no listing_id:', gameId)
-        return
+      // If the gameId looks like a listing ID (starts with 'listing_'), use it directly
+      if (gameId.startsWith('listing_')) {
+        listingId = gameId
+        console.log('📋 Using provided listing ID directly:', listingId)
+      } else {
+        // Otherwise, try to find the game and get its listing_id
+        const game = await new Promise((resolve, reject) => {
+          db.get('SELECT listing_id FROM games WHERE id = ?', [gameId], (err, result) => {
+            if (err) reject(err)
+            else resolve(result)
+          })
+        })
+        
+        if (!game || !game.listing_id) {
+          console.error('❌ Game not found or no listing_id:', gameId)
+          return
+        }
+        
+        listingId = game.listing_id
+        console.log('📋 Found listing ID from game:', listingId)
       }
       
       // Create offer ID
@@ -446,7 +458,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       // Save offer to offers table
       await dbService.createOffer({
         id: offerId,
-        listing_id: game.listing_id,
+        listing_id: listingId,
         offerer_address: offererAddress,
         offer_price: cryptoAmount,
         message: `Crypto offer of $${cryptoAmount} USD`
@@ -454,9 +466,19 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       
       console.log('✅ Offer saved to database:', offerId)
       
+      // Find the actual game ID for this listing to save chat message and broadcast
+      const game = await new Promise((resolve, reject) => {
+        db.get('SELECT id FROM games WHERE listing_id = ?', [listingId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      const actualGameId = game?.id || gameId
+      
       // Also save as chat message for real-time display
       await dbService.saveChatMessage(
-        gameId, 
+        actualGameId, 
         offererAddress, 
         `Crypto offer of $${cryptoAmount} USD`, 
         'offer', 
@@ -466,7 +488,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       // Broadcast to the game room
       const broadcastMessage = {
         type: 'crypto_offer',
-        gameId,
+        gameId: actualGameId,
         offererAddress,
         cryptoAmount,
         offerId,
@@ -474,8 +496,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       }
       
       console.log('📢 Broadcasting crypto offer:', broadcastMessage)
-      broadcastToRoom(gameId, broadcastMessage)
-      console.log('✅ Crypto offer broadcasted successfully to room', gameId)
+      broadcastToRoom(actualGameId, broadcastMessage)
+      console.log('✅ Crypto offer broadcasted successfully to room', actualGameId)
     } catch (error) {
       console.error('❌ Error saving crypto offer:', error)
     }
