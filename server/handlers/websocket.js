@@ -421,13 +421,41 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     console.log('👥 Room members for this game:', rooms.has(gameId) ? Array.from(rooms.get(gameId)) : 'Room not found')
     
     try {
-      // Save to database
+      // Get the listing_id for this game
+      const db = dbService.getDatabase()
+      const game = await new Promise((resolve, reject) => {
+        db.get('SELECT listing_id FROM games WHERE id = ?', [gameId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (!game || !game.listing_id) {
+        console.error('❌ Game not found or no listing_id:', gameId)
+        return
+      }
+      
+      // Create offer ID
+      const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+      
+      // Save offer to offers table
+      await dbService.createOffer({
+        id: offerId,
+        listing_id: game.listing_id,
+        offerer_address: offererAddress,
+        offer_price: cryptoAmount,
+        message: `Crypto offer of $${cryptoAmount} USD`
+      })
+      
+      console.log('✅ Offer saved to database:', offerId)
+      
+      // Also save as chat message for real-time display
       await dbService.saveChatMessage(
         gameId, 
         offererAddress, 
         `Crypto offer of $${cryptoAmount} USD`, 
         'offer', 
-        { cryptoAmount, offerType: 'crypto' }
+        { cryptoAmount, offerType: 'crypto', offerId }
       )
       
       // Broadcast to the game room
@@ -436,6 +464,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         gameId,
         offererAddress,
         cryptoAmount,
+        offerId,
         timestamp: timestamp || new Date().toISOString()
       }
       

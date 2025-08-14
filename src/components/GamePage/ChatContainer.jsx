@@ -252,24 +252,19 @@ const ChatContainer = () => {
       .then(response => response.json())
       .then(data => {
         console.log('📚 Chat history loaded:', data)
-        if (data.messages) {
+        if (data.messages && data.messages.length > 0) {
           const historyMessages = data.messages.map(msg => ({
             id: msg.id || Date.now() + Math.random(),
-            sender: msg.sender,
+            sender: msg.sender_address || msg.sender,
             message: msg.message,
-            timestamp: new Date(msg.timestamp).toLocaleTimeString(),
-            isCurrentUser: msg.sender === address
+            timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
+            isCurrentUser: (msg.sender_address || msg.sender) === address
           }))
           console.log('📚 Setting history messages:', historyMessages)
-          // Only set history if we don't have any messages yet
-          setMessages(prev => {
-            if (prev.length === 0) {
-              return historyMessages
-            } else {
-              console.log('📚 Keeping existing messages, not overwriting with history')
-              return prev
-            }
-          })
+          // Always set history messages when they exist
+          setMessages(historyMessages)
+        } else {
+          console.log('📚 No chat history found')
         }
       })
       .catch(error => {

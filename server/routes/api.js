@@ -1639,6 +1639,21 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     res.json({ success: true, message: 'Database structure verified' })
   })
 
+  // Chat history endpoint
+  router.get('/chat/:gameId', async (req, res) => {
+    const { gameId } = req.params
+    const limit = parseInt(req.query.limit) || 50
+    
+    try {
+      const messages = await dbService.getChatHistory(gameId, limit)
+      console.log(`📚 API: Returning ${messages.length} chat messages for game ${gameId}`)
+      res.json({ messages })
+    } catch (error) {
+      console.error('❌ Error fetching chat history:', error)
+      res.status(500).json({ error: 'Failed to fetch chat history' })
+    }
+  })
+
   return router
 }
 
