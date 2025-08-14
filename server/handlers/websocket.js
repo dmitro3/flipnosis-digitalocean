@@ -542,13 +542,13 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         const db = dbService.getDatabase()
         
         db.run(
-          'UPDATE games SET status = ?, deposit_deadline = ?, challenger = ? WHERE id = ?',
-          ['waiting_challenger_deposit', depositDeadline.toISOString(), acceptedOffer.address, gameId],
+          'UPDATE games SET status = ?, deposit_deadline = ?, challenger = ?, payment_amount = ? WHERE id = ?',
+          ['waiting_challenger_deposit', depositDeadline.toISOString(), acceptedOffer.address, acceptedOffer.cryptoAmount, gameId],
           async (err) => {
             if (err) {
               console.error('❌ Error updating game status:', err)
             } else {
-              console.log('✅ Game status updated to waiting_challenger_deposit')
+              console.log('✅ Game status updated to waiting_challenger_deposit with payment amount:', acceptedOffer.cryptoAmount)
               
               // Save system message to database
               await dbService.saveChatMessage(
@@ -565,7 +565,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
                 status: 'waiting_challenger_deposit',
                 deposit_deadline: depositDeadline.toISOString(),
                 challenger: acceptedOffer.address,
-                cryptoAmount: acceptedOffer.cryptoAmount
+                cryptoAmount: acceptedOffer.cryptoAmount,
+                payment_amount: acceptedOffer.cryptoAmount
               })
               
               // Broadcast a system message to prompt the joiner to load their crypto
