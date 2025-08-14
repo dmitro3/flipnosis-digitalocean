@@ -205,7 +205,6 @@ const ChatContainer = ({
   gameId, 
   gameData, 
   isCreator, 
-  socket, 
   connected 
 }) => {
   const { address, isConnected } = useWallet()
@@ -238,52 +237,50 @@ const ChatContainer = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Listen for chat messages from socket
+  // Listen for chat messages from WebSocketService
   useEffect(() => {
-    if (!socket) return
+    if (!webSocketService) return
     
-    const handleMessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        console.log('📨 Chat: Raw WebSocket message received:', data)
-        
-        if (data.type === 'chat_message') {
-          console.log('📩 Chat: Received chat message:', data)
-          addMessage({
-            id: Date.now() + Math.random(),
-            type: 'chat',
-            address: data.from || data.address,
-            message: data.message,
-            timestamp: data.timestamp || new Date().toISOString()
-          })
-        } else if (data.type === 'chat_history') {
-          console.log('📚 Chat: Received chat history:', data)
-          if (data.messages && Array.isArray(data.messages)) {
-            const historyMessages = data.messages
-              .filter(msg => msg.message_type === 'chat') // Only chat messages
-              .map(msg => ({
-                id: msg.id || Date.now() + Math.random(),
-                type: 'chat',
-                address: msg.sender_address,
-                message: msg.message,
-                timestamp: msg.created_at
-              }))
-            
-            setMessages(historyMessages)
-            console.log(`📚 Chat: Loaded ${historyMessages.length} chat history messages`)
-          }
+    const handleChatMessage = (data) => {
+      console.log('📨 Chat: Received chat message via WebSocketService:', data)
+      
+      if (data.type === 'chat_message') {
+        addMessage({
+          id: Date.now() + Math.random(),
+          type: 'chat',
+          address: data.from || data.address,
+          message: data.message,
+          timestamp: data.timestamp || new Date().toISOString()
+        })
+      } else if (data.type === 'chat_history') {
+        console.log('📚 Chat: Received chat history:', data)
+        if (data.messages && Array.isArray(data.messages)) {
+          const historyMessages = data.messages
+            .filter(msg => msg.message_type === 'chat') // Only chat messages
+            .map(msg => ({
+              id: msg.id || Date.now() + Math.random(),
+              type: 'chat',
+              address: msg.sender_address,
+              message: msg.message,
+              timestamp: msg.created_at
+            }))
+          
+          setMessages(historyMessages)
+          console.log(`📚 Chat: Loaded ${historyMessages.length} chat history messages`)
         }
-      } catch (error) {
-        console.error('Chat: Error parsing message:', error)
       }
     }
     
-    socket.addEventListener('message', handleMessage)
+    // Register message handler
+    webSocketService.on('chat_message', handleChatMessage)
+    webSocketService.on('chat_history', handleChatMessage)
     
     return () => {
-      socket.removeEventListener('message', handleMessage)
+      // Clean up handlers
+      webSocketService.off('chat_message', handleChatMessage)
+      webSocketService.off('chat_history', handleChatMessage)
     }
-  }, [socket])
+  }, [webSocketService])
 
   // Load player names for messages
   useEffect(() => {
@@ -319,18 +316,19 @@ const ChatContainer = ({
     
     if (!currentMessage.trim()) return
     
-    // Try to send via WebSocket if available
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    // Try to send via WebSocketService
+    if (webSocketService && webSocketService.isConnected()) {
       try {
-        socket.send(JSON.stringify({
+        const messageData = {
           type: 'chat_message',
           gameId: gameId,
           address: address,
           message: currentMessage.trim(),
           timestamp: new Date().toISOString()
-        }))
+        }
         
-        console.log('💬 Chat message sent via WebSocket')
+        webSocketService.send(messageData)
+        console.log('💬 Chat message sent via WebSocketService')
         setCurrentMessage('')
       } catch (error) {
         console.error('❌ Chat: Error sending message:', error)
@@ -358,7 +356,7 @@ const ChatContainer = ({
       
       // Try to reconnect
       if (webSocketService) {
-        webSocketService.sendChatMessage(gameId, address, newMessage.message)
+        webSocketService.connect(gameId, address)
       }
     }
   }
