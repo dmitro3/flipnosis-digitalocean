@@ -410,7 +410,12 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
 
   // Handle crypto offer (for NFT-vs-crypto games)
   async function handleCryptoOffer(socket, data, dbService) {
-    const { gameId, offererAddress, cryptoAmount, timestamp } = data
+    // Accept both field name variations for compatibility
+    const gameId = data.gameId || data.listingId
+    const offererAddress = data.offererAddress || data.address
+    const cryptoAmount = data.cryptoAmount || data.amount
+    const timestamp = data.timestamp
+    
     if (!gameId || !offererAddress || !cryptoAmount) {
       console.error('❌ Invalid crypto offer data:', data)
       return
