@@ -229,12 +229,13 @@ export const useGameState = (gameId, address) => {
 
       setGameData(data)
 
-      // Calculate ETH amount if we have a final price
-      if (data.final_price) {
+      // Calculate ETH amount if we have a payment amount (accepted offer) or final price
+      const priceForCalculation = data.payment_amount || data.final_price
+      if (priceForCalculation) {
         if (data.eth_amount) {
           setEthAmount(BigInt(data.eth_amount))
         } else {
-          await calculateAndSetEthAmount(data.final_price)
+          await calculateAndSetEthAmount(priceForCalculation)
         }
       } else {
         setEthAmount(null)
