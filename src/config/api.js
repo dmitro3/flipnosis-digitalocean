@@ -19,14 +19,9 @@ export const getWsUrl = () => {
     return 'ws://localhost:3001'
   }
   
-  // For production - flipnosis.fun domain
-  if (window.location.hostname === 'www.flipnosis.fun' || window.location.hostname === 'flipnosis.fun') {
-    // Use WS for HTTP (since we removed HTTPS/WSS)
-    return `ws://${window.location.host}`
-  }
-  
-  // Fallback - use current host with WS protocol
-  return `ws://${window.location.host}`
+  // For production - use appropriate protocol based on current page
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${window.location.host}`
 }
 
 export default API_CONFIG 

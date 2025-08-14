@@ -1,6 +1,7 @@
 // Simplified server.js for single server setup
 const express = require('express')
 const http = require('http')
+const https = require('https')
 const WebSocket = require('ws')
 const cors = require('cors')
 const path = require('path')
@@ -20,10 +21,24 @@ const wss = new WebSocket.Server({ server })
 
 // ===== CONFIGURATION =====
 const PORT = process.env.PORT || 80
+const HTTPS_PORT = process.env.HTTPS_PORT || 443
 const DATABASE_PATH = path.join(__dirname, 'flipz.db') // Local database file
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x3997F4720B3a515e82d54F30d7CF2993B014eeBE'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+
+// SSL Configuration - try to load certificates, but don't fail if they don't exist
+let sslOptions = null
+try {
+  sslOptions = {
+    cert: fs.readFileSync('/etc/ssl/certs/selfsigned.crt'),
+    key: fs.readFileSync('/etc/ssl/private/selfsigned.key')
+  }
+  console.log('✅ SSL certificates loaded')
+} catch (error) {
+  console.log('⚠️ SSL certificates not found, HTTPS/WSS will be disabled')
+  sslOptions = null
+}
 
 // ===== MIDDLEWARE =====
 app.use(cors({
@@ -213,6 +228,22 @@ initializeServices()
       console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
       console.log(`💾 Auto-backup: Enabled (every 6 hours)`)
     })
+    
+    // HTTPS Server (port 443) for WSS support - only if SSL certificates exist
+    if (sslOptions) {
+      const httpsServer = https.createServer(sslOptions, app)
+      const httpsWss = new WebSocket.Server({ server: httpsServer })
+      
+      // Initialize WebSocket handlers for HTTPS
+      const httpsWsHandlers = createWebSocketHandlers(httpsWss, dbService, blockchainService)
+      
+      httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+        console.log(`🔒 CryptoFlipz HTTPS Server running on port ${HTTPS_PORT}`)
+        console.log(`🔐 WSS WebSocket server ready`)
+      })
+    } else {
+      console.log('⚠️ HTTPS/WSS server not started - SSL certificates not found')
+    }
     
     // Start auto-backup
     startAutoBackup(dbService)
