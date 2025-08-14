@@ -261,7 +261,15 @@ const ChatContainer = () => {
             isCurrentUser: msg.sender === address
           }))
           console.log('📚 Setting history messages:', historyMessages)
-          setMessages(historyMessages)
+          // Only set history if we don't have any messages yet
+          setMessages(prev => {
+            if (prev.length === 0) {
+              return historyMessages
+            } else {
+              console.log('📚 Keeping existing messages, not overwriting with history')
+              return prev
+            }
+          })
         }
       })
       .catch(error => {
