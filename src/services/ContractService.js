@@ -4,7 +4,7 @@ import { createWalletClient, createPublicClient, http, custom } from 'viem'
 import { base } from 'viem/chains'
 
 // Contract configuration
-const CONTRACT_ADDRESS = '0x1e87b4067Ba26cE294D157bEEC3a638541DdA0aC'
+const CONTRACT_ADDRESS = '0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0'
 
 // Use Alchemy RPC endpoint directly
 const ALCHEMY_RPC_URL = 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
@@ -43,8 +43,7 @@ const CONTRACT_ABI = [
     type: 'function',
     stateMutability: 'payable',
     inputs: [
-      { name: 'gameId', type: 'bytes32' },
-      { name: 'agreedPriceUSD', type: 'uint256' }
+      { name: 'gameId', type: 'bytes32' }
     ],
     outputs: []
   },
@@ -651,7 +650,7 @@ class ContractService {
       // Convert USD price to 6 decimals for contract
       const priceUSDWei = ethers.parseUnits(priceUSD.toString(), 6)
       
-      // Get the ETH amount for this USD price
+      // Get the ETH amount for this USD price (frontend calculation)
       const ethAmount = await this.contract.getETHAmount(priceUSDWei)
       
       console.log('💰 Deposit details:', {
@@ -661,27 +660,12 @@ class ContractService {
         ethAmountFormatted: ethers.formatEther(ethAmount)
       })
       
-      // Update the contract ABI to include the new depositETH signature
-      const updatedABI = [
-        ...CONTRACT_ABI,
-        {
-          name: 'depositETH',
-          type: 'function',
-          stateMutability: 'payable',
-          inputs: [
-            { name: 'gameId', type: 'bytes32' },
-            { name: 'agreedPriceUSD', type: 'uint256' }
-          ],
-          outputs: []
-        }
-      ]
-      
-      // Call the updated depositETH with price
+      // Call depositETH without price validation - contract accepts any amount
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
-        abi: updatedABI,
+        abi: CONTRACT_ABI,
         functionName: 'depositETH',
-        args: [gameIdBytes32, priceUSDWei],
+        args: [gameIdBytes32],
         value: ethAmount
       })
       

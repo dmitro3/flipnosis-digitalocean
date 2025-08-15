@@ -255,7 +255,7 @@ nano .env
 DATABASE_URL=postgresql://flipnosis_user:your_password@host:port/flipnosis_production
 
 # Blockchain Configuration
-CONTRACT_ADDRESS=0x1e87b4067Ba26cE294D157bEEC3a638541DdA0aC
+CONTRACT_ADDRESS=0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0
 CONTRACT_OWNER_KEY=your_private_key_here
 RPC_URL=https://base-mainnet.g.alchemy.com/v2/your_alchemy_key
 

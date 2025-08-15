@@ -200,39 +200,22 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Player 2 deposits their ETH and sets the final game price
+     * @notice Player 2 deposits their ETH (no price validation - server handles business logic)
      * @param gameId The game ID
-     * @param agreedPriceUSD The agreed price in USD (6 decimals)
      */
-    function depositETH(bytes32 gameId, uint256 agreedPriceUSD) external payable nonReentrant whenNotPaused {
+    function depositETH(bytes32 gameId) external payable nonReentrant whenNotPaused {
         ActiveGame storage game = games[gameId];
         require(game.player2 != address(0), "Game does not exist");
         require(msg.sender == game.player2, "Not player 2");
         require(!game.player2Deposited, "Already deposited");
         require(!game.completed, "Game completed");
         require(block.timestamp <= game.depositTime + depositTimeout, "Deposit timeout");
+        require(msg.value > 0, "Must send some ETH");
         
-        // Calculate ETH amount from the agreed USD price
-        uint256 ethAmount = getETHAmount(agreedPriceUSD);
-        uint256 platformFee = (ethAmount * platformFeePercent) / BASIS_POINTS;
-        
-        // Player 2 sends the exact ETH amount (platform fee will be deducted from pot)
-        require(msg.value >= ethAmount, "Insufficient ETH");
-        
-        // Update game with final amounts
-        game.ethAmount = ethAmount - platformFee; // Store amount after fee
+        // Store whatever ETH amount was sent (server handles fee calculation)
+        game.ethAmount = msg.value;
         game.paymentToken = PaymentToken.ETH;
         game.player2Deposited = true;
-        
-        // Send platform fee immediately
-        (bool feeSuccess,) = platformFeeReceiver.call{value: platformFee}("");
-        require(feeSuccess, "Platform fee transfer failed");
-        
-        // Refund excess if any
-        if (msg.value > ethAmount) {
-            (bool refundSuccess,) = msg.sender.call{value: msg.value - ethAmount}("");
-            require(refundSuccess, "Refund failed");
-        }
         
         emit AssetsDeposited(gameId, msg.sender, false, game.paymentToken);
         

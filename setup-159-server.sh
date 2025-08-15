@@ -99,7 +99,7 @@ cat > /opt/flipnosis/app/.env << 'EOF'
 PORT=3001
 NODE_ENV=production
 DATABASE_PATH=/opt/flipnosis/app/flipz.db
-CONTRACT_ADDRESS=0x1e87b4067Ba26cE294D157bEEC3a638541DdA0aC
+CONTRACT_ADDRESS=0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0
 RPC_URL=https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3
 EOF
 

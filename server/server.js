@@ -23,7 +23,7 @@ const wss = new WebSocket.Server({ server })
 const PORT = process.env.PORT || 3000
 const HTTPS_PORT = process.env.HTTPS_PORT || 3001
 const DATABASE_PATH = path.join(__dirname, 'flipz.db') // Local database file
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x1e87b4067Ba26cE294D157bEEC3a638541DdA0aC'
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
 
