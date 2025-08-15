@@ -454,8 +454,8 @@ class ContractService {
         paymentToken,
         value,
         {
-          gas: BigInt(300000), // Higher gas limit for game creation
-          maxFeePerGas: BigInt(50000000000), // 50 gwei max fee
+          gas: BigInt(250000), // Reduced gas limit for game creation
+          maxFeePerGas: BigInt(20000000000), // 20 gwei max fee (reduced)
           maxPriorityFeePerGas: BigInt(1000000000) // 1 gwei priority fee
         }
       )
@@ -674,8 +674,8 @@ class ContractService {
         functionName: 'depositETH',
         args: [gameIdBytes32],
         value: ethAmount,
-        gas: BigInt(200000), // Force reasonable gas limit
-        maxFeePerGas: BigInt(50000000000), // 50 gwei max fee
+        gas: BigInt(150000), // Reduced gas limit
+        maxFeePerGas: BigInt(20000000000), // 20 gwei max fee (reduced)
         maxPriorityFeePerGas: BigInt(1000000000) // 1 gwei priority fee
       })
       
