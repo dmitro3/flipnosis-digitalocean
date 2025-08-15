@@ -445,13 +445,19 @@ class ContractService {
       console.log('💸 Transaction value (listing fee only):', ethers.formatEther(value))
       
       // Call contract - note: no price is sent to contract anymore
+      // Force gas parameters to prevent MetaMask from using wrong values
       const hash = await this.contract.payFeeAndCreateGame(
         gameIdBytes32,
         nftContract,
         tokenId,
         priceUSD, // Keep for now but contract will ignore
         paymentToken,
-        value
+        value,
+        {
+          gas: BigInt(300000), // Higher gas limit for game creation
+          maxFeePerGas: BigInt(50000000000), // 50 gwei max fee
+          maxPriorityFeePerGas: BigInt(1000000000) // 1 gwei priority fee
+        }
       )
       
       console.log('📝 Game creation tx hash:', hash)
@@ -661,12 +667,16 @@ class ContractService {
       })
       
       // Call depositETH without price validation - contract accepts any amount
+      // Force gas parameters to prevent MetaMask from using wrong values
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'depositETH',
         args: [gameIdBytes32],
-        value: ethAmount
+        value: ethAmount,
+        gas: BigInt(200000), // Force reasonable gas limit
+        maxFeePerGas: BigInt(50000000000), // 50 gwei max fee
+        maxPriorityFeePerGas: BigInt(1000000000) // 1 gwei priority fee
       })
       
       console.log('💰 ETH deposit tx:', hash)
