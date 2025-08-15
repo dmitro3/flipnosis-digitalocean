@@ -646,7 +646,7 @@ class ContractService {
 
     try {
       // SAFETY CHECK: Reject if ethAmount looks like USD (too small)
-      if (ethAmount && Number(ethAmount) < 1000000000000) { // Less than 0.000001 ETH
+      if (ethAmount && BigInt(ethAmount) < BigInt(1000000000000)) { // Less than 0.000001 ETH
         console.error('❌ DANGER: ethAmount looks like USD value, not WEI:', ethAmount)
         return { 
           success: false, 

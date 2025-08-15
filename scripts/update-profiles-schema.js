@@ -2,95 +2,198 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 async function updateProfilesSchema() {
-  const dbPath = path.join(__dirname, '../server/flipz-clean.db');
+  console.log('🔧 Updating profiles table schema...\n');
   
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('❌ Error opening database:', err);
-        reject(err);
-        return;
+  const dbPath = '/opt/flipnosis/app/server/flipz.db';
+  
+  // Connect to the database
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('❌ Error opening database:', err);
+      process.exit(1);
+    }
+    console.log('✅ Connected to database:', dbPath);
+  });
+
+  try {
+    // Check current schema
+    console.log('📋 Current profiles table schema:');
+    const currentSchema = await new Promise((resolve, reject) => {
+      db.all("PRAGMA table_info(profiles)", [], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
+    });
+
+    currentSchema.forEach(col => {
+      console.log(`  ${col.name} (${col.type}) ${col.notnull ? 'NOT NULL' : ''} ${col.pk ? 'PRIMARY KEY' : ''}`);
+    });
+
+    // Check which columns are missing
+    const expectedColumns = [
+      'name',
+      'avatar', 
+      'headsImage',
+      'tailsImage',
+      'twitter',
+      'telegram',
+      'xp_name_earned',
+      'xp_avatar_earned',
+      'xp_twitter_earned',
+      'xp_telegram_earned',
+      'xp_heads_earned',
+      'xp_tails_earned'
+    ];
+
+    const existingColumns = currentSchema.map(col => col.name);
+    const missingColumns = expectedColumns.filter(col => !existingColumns.includes(col));
+
+    console.log('\n🔍 Missing columns:', missingColumns);
+
+    if (missingColumns.length === 0) {
+      console.log('✅ All expected columns already exist!');
+      return;
+    }
+
+    // Add missing columns
+    console.log('\n🔧 Adding missing columns...');
+    
+    for (const column of missingColumns) {
+      let columnType = 'TEXT';
+      let defaultValue = "''";
+      
+      if (column.startsWith('xp_') && column.endsWith('_earned')) {
+        columnType = 'BOOLEAN';
+        defaultValue = 'FALSE';
       }
       
-      console.log('✅ Connected to database for schema update');
+      const alterQuery = `ALTER TABLE profiles ADD COLUMN ${column} ${columnType} DEFAULT ${defaultValue}`;
       
-      db.serialize(() => {
-        // Add missing columns to profiles table
-        const columnsToAdd = [
-          'twitter TEXT',
-          'telegram TEXT', 
-          'xp INTEGER DEFAULT 0',
-          'heads_image TEXT',
-          'tails_image TEXT',
-          'xp_name_earned BOOLEAN DEFAULT FALSE',
-          'xp_avatar_earned BOOLEAN DEFAULT FALSE',
-          'xp_twitter_earned BOOLEAN DEFAULT FALSE',
-          'xp_telegram_earned BOOLEAN DEFAULT FALSE',
-          'xp_heads_earned BOOLEAN DEFAULT FALSE',
-          'xp_tails_earned BOOLEAN DEFAULT FALSE',
-          'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-          'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-        ];
-        
-        columnsToAdd.forEach((columnDef) => {
-          const columnName = columnDef.split(' ')[0];
-          
-          db.run(`ALTER TABLE profiles ADD COLUMN ${columnDef}`, (err) => {
-            if (err && !err.message.includes('duplicate column name')) {
-              console.error(`❌ Error adding column ${columnName}:`, err.message);
-            } else if (err && err.message.includes('duplicate column name')) {
-              console.log(`ℹ️ Column ${columnName} already exists`);
+      try {
+        await new Promise((resolve, reject) => {
+          db.run(alterQuery, [], function(err) {
+            if (err) {
+              // Column might already exist
+              console.log(`⚠️ Column ${column} might already exist:`, err.message);
+              resolve();
             } else {
-              console.log(`✅ Added column ${columnName}`);
+              console.log(`✅ Added column: ${column}`);
+              resolve();
             }
           });
         });
-        
-        // Create game_shares table
-        db.run(`
-          CREATE TABLE IF NOT EXISTS game_shares (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id TEXT NOT NULL,
-            player_address TEXT NOT NULL,
-            share_platform TEXT NOT NULL,
-            xp_awarded BOOLEAN DEFAULT FALSE,
-            shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(game_id, player_address, share_platform)
-          )
-        `, (err) => {
+      } catch (error) {
+        console.log(`⚠️ Error adding column ${column}:`, error.message);
+      }
+    }
+
+    // Rename existing columns if needed
+    console.log('\n🔄 Checking for column renames...');
+    
+    // Check if username exists and name doesn't
+    const hasUsername = existingColumns.includes('username');
+    const hasName = existingColumns.includes('name');
+    
+    if (hasUsername && !hasName) {
+      console.log('🔄 Renaming username to name...');
+      await new Promise((resolve, reject) => {
+        db.run("ALTER TABLE profiles ADD COLUMN name TEXT DEFAULT ''", [], function(err) {
           if (err) {
-            console.error('❌ Error creating game_shares table:', err);
+            console.log('⚠️ Error adding name column:', err.message);
           } else {
-            console.log('✅ Game shares table ready');
+            console.log('✅ Added name column');
           }
-        });
-        
-        // Close database after all operations
-        db.close((err) => {
-          if (err) {
-            console.error('❌ Error closing database:', err);
-            reject(err);
-          } else {
-            console.log('✅ Database schema update completed successfully');
-            resolve();
-          }
+          resolve();
         });
       });
+      
+      // Copy data from username to name
+      await new Promise((resolve, reject) => {
+        db.run("UPDATE profiles SET name = username WHERE name = '' OR name IS NULL", [], function(err) {
+          if (err) {
+            console.log('⚠️ Error copying username to name:', err.message);
+          } else {
+            console.log('✅ Copied username data to name');
+          }
+          resolve();
+        });
+      });
+    }
+
+    // Check if profile_picture exists and avatar doesn't
+    const hasProfilePicture = existingColumns.includes('profile_picture');
+    const hasAvatar = existingColumns.includes('avatar');
+    
+    if (hasProfilePicture && !hasAvatar) {
+      console.log('🔄 Renaming profile_picture to avatar...');
+      await new Promise((resolve, reject) => {
+        db.run("ALTER TABLE profiles ADD COLUMN avatar TEXT DEFAULT ''", [], function(err) {
+          if (err) {
+            console.log('⚠️ Error adding avatar column:', err.message);
+          } else {
+            console.log('✅ Added avatar column');
+          }
+          resolve();
+        });
+      });
+      
+      // Copy data from profile_picture to avatar
+      await new Promise((resolve, reject) => {
+        db.run("UPDATE profiles SET avatar = profile_picture WHERE avatar = '' OR avatar IS NULL", [], function(err) {
+          if (err) {
+            console.log('⚠️ Error copying profile_picture to avatar:', err.message);
+          } else {
+            console.log('✅ Copied profile_picture data to avatar');
+          }
+          resolve();
+        });
+      });
+    }
+
+    // Show final schema
+    console.log('\n📋 Final profiles table schema:');
+    const finalSchema = await new Promise((resolve, reject) => {
+      db.all("PRAGMA table_info(profiles)", [], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows || []);
+      });
     });
-  });
+
+    finalSchema.forEach(col => {
+      console.log(`  ${col.name} (${col.type}) ${col.notnull ? 'NOT NULL' : ''} ${col.pk ? 'PRIMARY KEY' : ''}`);
+    });
+
+    // Show sample data
+    console.log('\n📊 Sample profile data:');
+    const sampleData = await new Promise((resolve, reject) => {
+      db.get("SELECT * FROM profiles LIMIT 1", [], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+
+    if (sampleData) {
+      Object.keys(sampleData).forEach(key => {
+        console.log(`  ${key}: ${sampleData[key]}`);
+      });
+    } else {
+      console.log('  No profile data found');
+    }
+
+    console.log('\n✅ Database schema update completed!');
+
+  } catch (error) {
+    console.error('❌ Error updating schema:', error);
+  } finally {
+    db.close((err) => {
+      if (err) {
+        console.error('Error closing database:', err);
+      } else {
+        console.log('\n✅ Database connection closed');
+      }
+    });
+  }
 }
 
-// Run the migration if called directly
-if (require.main === module) {
-  updateProfilesSchema()
-    .then(() => {
-      console.log('🎉 Migration completed successfully!');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('💥 Migration failed:', error);
-      process.exit(1);
-    });
-}
-
-module.exports = { updateProfilesSchema }; 
+// Run the script
+updateProfilesSchema().catch(console.error); 

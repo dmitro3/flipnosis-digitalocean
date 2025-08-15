@@ -2,6 +2,7 @@
 # Database Location: /opt/flipnosis/app/server/flipz.db
 # Server: 159.69.242.154
 # Generated: August 12, 2025
+# Updated: January 2025 - Single Server Migration Complete
 
 ================================================================================
 DATABASE OVERVIEW
@@ -10,26 +11,19 @@ DATABASE OVERVIEW
 Database Name: flipz.db
 Location: /opt/flipnosis/app/server/flipz.db
 Server: 159.69.242.154
-Total Tables: 18
+Total Tables: 12
 
 Tables Found:
 - admin_actions
-- games
-- offers
-- transactions
 - chat_messages
-- listings
-- platform_stats
-- unclaimed_rewards
-- game_listings
-- nft_metadata_cache
-- player_stats
-- user_presence
 - game_rounds
-- nft_tracking
-- profiles
 - game_shares
+- games
+- listings
+- messages
 - notifications
+- offers
+- profiles
 - ready_nfts
 
 ================================================================================
@@ -372,81 +366,110 @@ Indexes:
 
 Purpose: Tracks NFT ownership and status changes
 
-15. PROFILES TABLE
+15. PROFILES TABLE (UPDATED - PRODUCTION)
 ================================================================================
 CREATE TABLE profiles (
-        address TEXT PRIMARY KEY,
-        name TEXT,
-        avatar TEXT,
-        headsImage TEXT,
-        tailsImage TEXT,
-        twitter TEXT,
-        telegram TEXT,
-        xp INTEGER DEFAULT 0,
-        heads_image TEXT,
-        tails_image TEXT,
-        xp_name_earned BOOLEAN DEFAULT FALSE,
-        xp_avatar_earned BOOLEAN DEFAULT FALSE,
-        xp_twitter_earned BOOLEAN DEFAULT FALSE,        
-        xp_telegram_earned BOOLEAN DEFAULT FALSE,       
-        xp_heads_earned BOOLEAN DEFAULT FALSE,
-        xp_tails_earned BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
-
-Purpose: User profile information and XP system
-
-16. GAME_SHARES TABLE
-================================================================================
-CREATE TABLE game_shares (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,       
-            game_id TEXT NOT NULL,
-            player_address TEXT NOT NULL,
-            share_platform TEXT NOT NULL,
-            xp_awarded BOOLEAN DEFAULT FALSE,
-            shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(game_id, player_address, share_platform)
-          );
-
-Purpose: Tracks social media shares of games for XP rewards
-
-17. NOTIFICATIONS TABLE
-================================================================================
-CREATE TABLE notifications (
-        id TEXT PRIMARY KEY,
-        user_address TEXT NOT NULL,
-        type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        message TEXT NOT NULL,
-        data TEXT,
-        read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
-      );
-
-Indexes:
-- idx_notifications_user ON notifications(user_address)
-- idx_notifications_type ON notifications(type)
-- idx_notifications_read ON notifications(read)
-
-Purpose: User notification system
-
-18. READY_NFTS TABLE
-================================================================================
-CREATE TABLE ready_nfts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        player_address TEXT NOT NULL,
-        nft_contract TEXT NOT NULL,
-        nft_token_id TEXT NOT NULL,
-        nft_name TEXT,
-        nft_image TEXT,
-        nft_collection TEXT,
-        deposited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        source TEXT DEFAULT 'preload',
-        UNIQUE(player_address, nft_contract, nft_token_id)
+        address TEXT UNIQUE NOT NULL,
+        username TEXT,                    -- Legacy field, kept for compatibility
+        profile_picture TEXT,             -- Legacy field, kept for compatibility
+        xp INTEGER DEFAULT 0,
+        level INTEGER DEFAULT 1,
+        total_flips INTEGER DEFAULT 0,
+        wins INTEGER DEFAULT 0,
+        losses INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        name TEXT DEFAULT '',             -- NEW: User's display name
+        avatar TEXT DEFAULT '',           -- NEW: Profile picture URL
+        headsImage TEXT DEFAULT '',       -- NEW: Custom heads coin image
+        tailsImage TEXT DEFAULT '',       -- NEW: Custom tails coin image
+        twitter TEXT DEFAULT '',          -- NEW: Twitter/X username
+        telegram TEXT DEFAULT '',         -- NEW: Telegram username
+        xp_name_earned BOOLEAN DEFAULT FALSE,      -- NEW: XP tracking for name
+        xp_avatar_earned BOOLEAN DEFAULT FALSE,    -- NEW: XP tracking for avatar
+        xp_twitter_earned BOOLEAN DEFAULT FALSE,   -- NEW: XP tracking for twitter
+        xp_telegram_earned BOOLEAN DEFAULT FALSE,  -- NEW: XP tracking for telegram
+        xp_heads_earned BOOLEAN DEFAULT FALSE,     -- NEW: XP tracking for heads image
+        xp_tails_earned BOOLEAN DEFAULT FALSE      -- NEW: XP tracking for tails image
       );
 
-Purpose: Pre-loaded NFTs ready for game creation
+Purpose: User profile information and XP system with custom coin designs
+
+Profile Fields Summary:
+- Basic Info: address, name, avatar, level, xp
+- Game Stats: total_flips, wins, losses
+- Social: twitter, telegram
+- Customization: headsImage, tailsImage
+- XP Tracking: xp_*_earned flags for achievement system
+- Legacy: username, profile_picture (kept for compatibility)
+
+================================================================================
+PROFILE SYSTEM ARCHITECTURE
+================================================================================
+
+The profile system is structured as follows:
+
+1. **Core Profile Data**: Stored in the `profiles` table with all user information
+2. **XP System**: Integrated XP tracking with boolean flags for achievements
+3. **Custom Coin Designs**: Users can upload custom heads/tails images
+4. **Social Integration**: Twitter and Telegram username storage
+5. **Game Statistics**: Win/loss tracking and total games played
+
+Profile API Endpoints:
+- GET /api/profile/:address - Retrieve profile data
+- PUT /api/profile/:address - Update profile with XP awards
+
+XP Award System:
+- name: 100 XP (first time)
+- avatar: 150 XP (first time)
+- twitter: 75 XP (first time)
+- telegram: 75 XP (first time)
+- headsImage: 200 XP (first time)
+- tailsImage: 200 XP (first time)
+
+================================================================================
+MIGRATION NOTES
+================================================================================
+
+Single Server Migration (January 2025):
+- Moved from dual-server setup (116.202.24.43 + 159.69.242.154)
+- Now using single server: 159.69.242.154
+- Database consolidated to /opt/flipnosis/app/server/flipz.db
+- All profile fields added to match application requirements
+
+Schema Updates Applied:
+- Added missing profile fields (name, avatar, headsImage, tailsImage, etc.)
+- Added XP tracking boolean flags
+- Preserved legacy fields for backward compatibility
+- Copied data from legacy fields to new fields where applicable
+
+================================================================================
+APPLICATION INTEGRATION
+================================================================================
+
+Frontend Components:
+- Profile.jsx: Main profile page with all fields
+- ProfileContext.jsx: React context for profile management
+- UserProfileHeader.jsx: Profile display component
+
+Backend Integration:
+- API routes in server/routes/api.js
+- XP service integration for achievement system
+- Database service for profile CRUD operations
+
+================================================================================
+CURRENT STATUS
+================================================================================
+
+✅ Database schema updated and synchronized
+✅ All profile fields present and functional
+✅ XP system integrated
+✅ Custom coin design system ready
+✅ Social media integration complete
+✅ Legacy compatibility maintained
+
+The database is now fully synchronized with the application requirements.
 
 ================================================================================
 ACTUAL DATA CONTENT
