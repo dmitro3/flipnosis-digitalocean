@@ -128,23 +128,34 @@ const GamePayment = ({
 }) => {
   const { showInfo, showSuccess, showError } = useToast()
   const { contractService } = useContractService()
+  const [isDepositing, setIsDepositing] = React.useState(false)
 
   const handleDeposit = async () => {
     try {
-      showInfo('Depositing ETH...')
+      setIsDepositing(true)
       
-      // Use the calculated ETH amount
-      if (!ethAmount) {
-        showError('ETH amount not available. Please wait for calculation.')
-        return
+      // ALWAYS calculate fresh ETH amount from contract (never use stored value)
+      console.log('💰 Calculating fresh ETH amount from contract...')
+      
+      const priceUSD = gameData?.price_usd || gameData?.payment_amount || gameData?.final_price || 0
+      
+      if (!priceUSD || priceUSD <= 0) {
+        throw new Error('Invalid game price')
       }
       
-      console.log('💰 Using calculated ETH amount:', ethers.formatEther(ethAmount), 'ETH')
-      console.log('💰 ETH amount type:', typeof ethAmount)
-      console.log('💰 ETH amount constructor:', ethAmount?.constructor?.name)
-      console.log('💰 ETH amount toString:', ethAmount?.toString())
+      // Get fresh ETH amount from contract's Chainlink price feed
+      const freshEthAmount = await contractService.contract.getETHAmount(
+        ethers.parseUnits(priceUSD.toString(), 6)
+      )
       
-      const result = await contractService.depositETH(gameId, ethAmount)
+      console.log('📊 Fresh calculation from Chainlink:', {
+        priceUSD: priceUSD,
+        ethAmount: ethers.formatEther(freshEthAmount),
+        ethAmountWei: freshEthAmount.toString()
+      })
+      
+      // Now deposit with the correctly calculated amount
+      const result = await contractService.depositETH(gameId, freshEthAmount)
       if (result.success) {
         showSuccess('ETH deposited successfully!')
         
@@ -170,8 +181,10 @@ const GamePayment = ({
         showError(result.error || 'Failed to deposit ETH')
       }
     } catch (error) {
-      console.error('Error depositing ETH:', error)
-      showError('Failed to deposit ETH')
+      console.error('❌ Deposit failed:', error)
+      showError(`Failed to deposit: ${error.message}`)
+    } finally {
+      setIsDepositing(false)
     }
   }
 
@@ -228,11 +241,11 @@ const GamePayment = ({
           </p>
         </div>
         
-        <PayButton 
+                <PayButton
           onClick={handleDeposit}
-          disabled={!contractInitialized || depositTimeLeft === 0}
+          disabled={!contractInitialized || depositTimeLeft === 0 || isDepositing}
         >
-          {depositTimeLeft === 0 ? 'Deposit Timeout' : 'Deposit ETH & Start Game'}
+          {depositTimeLeft === 0 ? 'Deposit Timeout' : isDepositing ? 'Depositing...' : 'Deposit ETH & Start Game'}
         </PayButton>
         
         {depositTimeLeft === 0 && (

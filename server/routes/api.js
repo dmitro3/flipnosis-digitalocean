@@ -751,20 +751,9 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         const gameId = listing.game_id || `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
         const blockchainGameId = ethers.id(gameId)
         
-        // Calculate ETH amount for the final price
-        let ethAmount = null
-        try {
-          // Get ETH price from a simple calculation (this is a fallback)
-          // In a real implementation, you'd use Chainlink price feeds
-          const ethPriceUSD = 2000 // Rough estimate - in production use price feed
-          const ethAmountWei = (offer.offer_price / ethPriceUSD) * 1e18
-          ethAmount = Math.floor(ethAmountWei).toString()
-          
-          console.log(`💰 Calculated ETH amount: ${offer.offer_price} USD = ${ethers.formatEther(ethAmount)} ETH`)
-        } catch (error) {
-          console.error('❌ Error calculating ETH amount:', error)
-          // Continue without ETH amount - frontend will calculate it
-        }
+        // ETH amount will be calculated by frontend using Chainlink price feed
+        const ethAmount = null // Frontend will calculate this properly
+        console.log('💰 ETH amount will be calculated by frontend using contract price feed')
         
         await new Promise((resolve, reject) => {
           db.run(`

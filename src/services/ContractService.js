@@ -645,6 +645,15 @@ class ContractService {
     }
 
     try {
+      // SAFETY CHECK: Reject if ethAmount looks like USD (too small)
+      if (ethAmount && Number(ethAmount) < 1000000000000) { // Less than 0.000001 ETH
+        console.error('❌ DANGER: ethAmount looks like USD value, not WEI:', ethAmount)
+        return { 
+          success: false, 
+          error: 'Invalid ETH amount. Please recalculate from contract.' 
+        }
+      }
+
       console.log('✅ Contract service is ready, proceeding with deposit...')
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       console.log('🆔 Game ID bytes32:', gameIdBytes32)
