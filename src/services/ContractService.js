@@ -439,7 +439,7 @@ class ContractService {
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
-      // Only send listing fee as value (currently $0)
+      // Only send the listing fee as value (currently $0)
       const value = BigInt(listingFeeETH.toString())
       
       console.log('💸 Transaction value (listing fee only):', ethers.formatEther(value))

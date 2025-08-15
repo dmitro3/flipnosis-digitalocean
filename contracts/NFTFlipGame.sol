@@ -102,8 +102,12 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         uint256 requiredFee = getETHAmount(listingFeeUSD);
         require(msg.value >= requiredFee, "Insufficient listing fee");
         listingFees[msg.sender] += requiredFee;
-        (bool success,) = platformFeeReceiver.call{value: requiredFee}("");
-        require(success, "Fee transfer failed");
+        
+        // Only transfer fee if it's greater than 0
+        if (requiredFee > 0) {
+            (bool success,) = platformFeeReceiver.call{value: requiredFee}("");
+            require(success, "Fee transfer failed");
+        }
         
         // Then create the game
         require(games[gameId].player1 == address(0), "Game already exists");
