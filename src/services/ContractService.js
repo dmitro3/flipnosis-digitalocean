@@ -455,8 +455,8 @@ class ContractService {
         value,
         {
           gas: BigInt(25000), // Drastically reduced gas limit for game creation (10% of 250000)
-          maxFeePerGas: BigInt(2000000000), // 2 gwei max fee (10% of 20 gwei)
-          maxPriorityFeePerGas: BigInt(100000000) // 0.1 gwei priority fee (10% of 1 gwei)
+          maxFeePerGas: BigInt(50000000), // 0.05 gwei max fee (ultra low)
+          maxPriorityFeePerGas: BigInt(1000000) // 0.001 gwei priority fee (ultra low)
         }
       )
       
@@ -675,8 +675,8 @@ class ContractService {
         args: [gameIdBytes32],
         value: ethAmount,
         gas: BigInt(15000), // Drastically reduced gas limit (10% of 150000)
-        maxFeePerGas: BigInt(2000000000), // 2 gwei max fee (10% of 20 gwei)
-        maxPriorityFeePerGas: BigInt(100000000) // 0.1 gwei priority fee (10% of 1 gwei)
+        maxFeePerGas: BigInt(50000000), // 0.05 gwei max fee (ultra low)
+        maxPriorityFeePerGas: BigInt(1000000) // 0.001 gwei priority fee (ultra low)
       })
       
       console.log('💰 ETH deposit tx:', hash)
