@@ -6,7 +6,7 @@ async function main() {
   const provider = new ethers.JsonRpcProvider("https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3");
   
   const contract = new ethers.Contract(
-    "0x3997F4720B3a515e82d54F30d7CF2993B014EeBE",
+    "0x1e87b4067Ba26cE294D157bEEC3a638541DdA0aC",
     [
       "function getETHAmount(uint256 usdAmount) view returns (uint256)",
       "function listingFeeUSD() view returns (uint256)",
