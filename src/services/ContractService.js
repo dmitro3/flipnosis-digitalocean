@@ -4,7 +4,7 @@ import { createWalletClient, createPublicClient, http, custom } from 'viem'
 import { base } from 'viem/chains'
 
 // Contract configuration
-const CONTRACT_ADDRESS = '0x3997F4720B3a515e82d54F30d7CF2993B014EeBE'
+const CONTRACT_ADDRESS = '0x1e87b4067Ba26cE294D157bEEC3a638541DdA0aC'
 
 // Use Alchemy RPC endpoint directly
 const ALCHEMY_RPC_URL = 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
@@ -42,7 +42,10 @@ const CONTRACT_ABI = [
     name: 'depositETH',
     type: 'function',
     stateMutability: 'payable',
-    inputs: [{ name: 'gameId', type: 'bytes32' }],
+    inputs: [
+      { name: 'gameId', type: 'bytes32' },
+      { name: 'agreedPriceUSD', type: 'uint256' }
+    ],
     outputs: []
   },
   {
@@ -306,12 +309,12 @@ class ContractService {
             args: [gameId]
           })
         },
-        depositETH: async (gameId, value) => {
+        depositETH: async (gameId, agreedPriceUSD, value) => {
           return await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'depositETH',
-            args: [gameId],
+            args: [gameId, agreedPriceUSD],
             value
           })
         }
@@ -427,34 +430,32 @@ class ContractService {
         gameId,
         nftContract,
         tokenId,
-        priceUSD,
+        priceUSD, // This is just for logging, not sent to contract
         paymentToken
       })
 
-      // Get the ETH amount for the price (with caching)
-      const ethAmount = await this.contract.getETHAmount(priceUSD)
-      console.log('💰 ETH amount for price:', ethers.formatEther(ethAmount), 'ETH')
-
-      // Convert gameId to bytes32
+      // Get only the listing fee (currently $0)
+      const listingFeeUSD = await this.contract.listingFeeUSD()
+      const listingFeeETH = await this.contract.getETHAmount(listingFeeUSD)
+      
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      console.log('🆔 Game ID bytes32:', gameIdBytes32)
-
-      // Ensure value is a BigInt
-      const value = BigInt(ethAmount.toString())
-      console.log('💸 Transaction value (BigInt):', value.toString())
-
-      // Call the contract function
+      
+      // Only send listing fee as value (currently $0)
+      const value = BigInt(listingFeeETH.toString())
+      
+      console.log('💸 Transaction value (listing fee only):', ethers.formatEther(value))
+      
+      // Call contract - note: no price is sent to contract anymore
       const hash = await this.contract.payFeeAndCreateGame(
         gameIdBytes32,
         nftContract,
         tokenId,
-        priceUSD,
+        priceUSD, // Keep for now but contract will ignore
         paymentToken,
         value
       )
+      
       console.log('📝 Game creation tx hash:', hash)
-
-      // Wait for transaction receipt
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
       console.log('✅ Game creation confirmed:', receipt)
 
@@ -462,8 +463,7 @@ class ContractService {
         success: true,
         transactionHash: hash,
         receipt,
-        gameId: gameIdBytes32,
-        ethAmount: value.toString()
+        gameId: gameIdBytes32
       }
     } catch (error) {
       console.error('❌ Error creating game:', error)
@@ -638,108 +638,54 @@ class ContractService {
   }
 
   // Deposit ETH to game
-  async depositETH(gameId, ethAmount) {
-    console.log('🚀 depositETH function called with:', { gameId, ethAmount, ethAmountType: typeof ethAmount })
+  async depositETH(gameId, priceUSD) {
+    console.log('🚀 depositETH called with gameId:', gameId, 'priceUSD:', priceUSD)
     
     if (!this.isReady()) {
-      console.log('❌ Contract service not ready')
       return { success: false, error: 'Contract service not initialized' }
     }
 
     try {
-      // SAFETY CHECK: Reject if ethAmount looks like USD (too small)
-      if (ethAmount && BigInt(ethAmount) < BigInt(1000000000000)) { // Less than 0.000001 ETH
-        console.error('❌ DANGER: ethAmount looks like USD value, not WEI:', ethAmount)
-        return { 
-          success: false, 
-          error: 'Invalid ETH amount. Please recalculate from contract.' 
-        }
-      }
-
-      console.log('✅ Contract service is ready, proceeding with deposit...')
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
-      console.log('🆔 Game ID bytes32:', gameIdBytes32)
-
-      // Add retry mechanism for canDeposit check due to potential race conditions
-      let canDeposit = false
-      let retryCount = 0
-      const maxRetries = 3
       
-      while (!canDeposit && retryCount < maxRetries) {
-        try {
-          canDeposit = await this.contract.canDeposit(gameIdBytes32)
-          console.log(`🔍 Can deposit check result (attempt ${retryCount + 1}):`, canDeposit)
-          
-          if (!canDeposit && retryCount < maxRetries - 1) {
-            console.log(`⏳ CanDeposit returned false, waiting 2 seconds before retry...`)
-            await new Promise(resolve => setTimeout(resolve, 2000))
-          }
-        } catch (error) {
-          console.error(`❌ Error calling canDeposit (attempt ${retryCount + 1}):`, error)
-          canDeposit = false
-          
-          if (retryCount < maxRetries - 1) {
-            console.log(`⏳ Error occurred, waiting 2 seconds before retry...`)
-            await new Promise(resolve => setTimeout(resolve, 2000))
-          }
-        }
-        retryCount++
-      }
+      // Convert USD price to 6 decimals for contract
+      const priceUSDWei = ethers.parseUnits(priceUSD.toString(), 6)
       
-      if (!canDeposit) {
-        // Get game details to check if game exists and is active
-        const gameDetails = await this.getGameDetails(gameId)
-        console.log('🔍 Game details when canDeposit is false (ETH):', gameDetails)
-        
-        // If the game exists and is not completed, check timeout manually
-        if (gameDetails.success && 
-            gameDetails.data.player1 !== '0x0000000000000000000000000000000000000000' && 
-            !gameDetails.data.completed) {
-          
-          // Check if deposit timeout has actually expired
-          const currentBlock = await this.publicClient.getBlock()
-          const currentTimestamp = currentBlock.timestamp
-          const depositTime = BigInt(gameDetails.data.depositTime)
-          const depositTimeout = BigInt(300) // 5 minutes in seconds
-          const timeRemaining = depositTime + depositTimeout - BigInt(currentTimestamp)
-          
-          console.log('⏰ Time check (ETH):', {
-            currentTimestamp: currentTimestamp.toString(),
-            depositTime: depositTime.toString(),
-            depositTimeout: depositTimeout.toString(),
-            timeRemaining: timeRemaining.toString(),
-            timeRemainingMinutes: (Number(timeRemaining) / 60).toFixed(2)
-          })
-          
-          if (timeRemaining <= 0) {
-            console.error('❌ Deposit timeout has actually expired (ETH)')
-            return { success: false, error: 'Deposit period has expired' }
-          }
-          
-          console.log('⚠️ CanDeposit returned false but timeout not expired, proceeding with ETH deposit...')
-        } else {
-          console.error('❌ Game details indicate ETH deposit should not be allowed:', gameDetails)
-          return { success: false, error: 'Deposit period has expired or game is not active' }
-        }
-      }
-
-      // Ensure ethAmount is properly converted to BigInt without double wrapping
-      const value = typeof ethAmount === 'bigint' ? ethAmount : BigInt(ethAmount)
-      console.log('💰 ETH amount being sent to contract:', value.toString())
-      console.log('💰 ETH amount in ETH:', ethers.formatEther(value))
-      console.log('💰 ETH amount in wei (exact):', value.toString())
-      console.log('💰 ETH amount precision check:', {
-        original: ethAmount,
-        type: typeof ethAmount,
-        converted: value,
-        convertedType: typeof value,
-        asString: value.toString(),
-        asHex: '0x' + value.toString(16)
+      // Get the ETH amount for this USD price
+      const ethAmount = await this.contract.getETHAmount(priceUSDWei)
+      
+      console.log('💰 Deposit details:', {
+        priceUSD: priceUSD,
+        priceUSDWei: priceUSDWei.toString(),
+        ethAmount: ethAmount.toString(),
+        ethAmountFormatted: ethers.formatEther(ethAmount)
       })
       
-      const hash = await this.contract.depositETH(gameIdBytes32, value)
+      // Update the contract ABI to include the new depositETH signature
+      const updatedABI = [
+        ...CONTRACT_ABI,
+        {
+          name: 'depositETH',
+          type: 'function',
+          stateMutability: 'payable',
+          inputs: [
+            { name: 'gameId', type: 'bytes32' },
+            { name: 'agreedPriceUSD', type: 'uint256' }
+          ],
+          outputs: []
+        }
+      ]
+      
+      // Call the updated depositETH with price
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: updatedABI,
+        functionName: 'depositETH',
+        args: [gameIdBytes32, priceUSDWei],
+        value: ethAmount
+      })
+      
       console.log('💰 ETH deposit tx:', hash)
-
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
       console.log('✅ ETH deposit confirmed')
 

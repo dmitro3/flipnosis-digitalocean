@@ -108,22 +108,14 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         // Then create the game
         require(games[gameId].player1 == address(0), "Game already exists");
         
-        uint256 ethAmount = 0;
-        uint256 usdcAmount = 0;
-        if (paymentToken == PaymentToken.ETH) {
-            ethAmount = getETHAmount(priceUSD);
-        } else {
-            usdcAmount = priceUSD;
-        }
-        
         games[gameId] = ActiveGame({
             player1: msg.sender,
             player2: address(0), // No player 2 initially
             nftContract: nftContract,
             tokenId: tokenId,
-            ethAmount: ethAmount,
-            usdcAmount: usdcAmount,
-            paymentToken: paymentToken,
+            ethAmount: 0, // No amount yet - will be set when Player 2 deposits
+            usdcAmount: 0,
+            paymentToken: PaymentToken.ETH, // Default to ETH
             depositTime: block.timestamp,
             player1Deposited: false,
             player2Deposited: false,
@@ -140,7 +132,7 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         }
         
         emit ListingFeePaid(msg.sender, requiredFee);
-        emit GameCreated(gameId, msg.sender, address(0), paymentToken);
+        emit GameCreated(gameId, msg.sender, address(0), PaymentToken.ETH);
     }
 
     /**
@@ -149,31 +141,19 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     function initializeGame(
         bytes32 gameId,
         address player1,
-        address player2, // Can be address(0) initially
         address nftContract,
-        uint256 tokenId,
-        uint256 priceUSD,
-        PaymentToken paymentToken
+        uint256 tokenId
     ) external onlyOwner {
         require(games[gameId].player1 == address(0), "Game already exists");
-        // Remove this line: require(player1 != player2, "Cannot play against yourself");
-        
-        uint256 ethAmount = 0;
-        uint256 usdcAmount = 0;
-        if (paymentToken == PaymentToken.ETH) {
-            ethAmount = getETHAmount(priceUSD);
-        } else {
-            usdcAmount = priceUSD;
-        }
         
         games[gameId] = ActiveGame({
             player1: player1,
-            player2: player2, // Can be address(0)
+            player2: address(0), // No player 2 yet
             nftContract: nftContract,
             tokenId: tokenId,
-            ethAmount: ethAmount,
-            usdcAmount: usdcAmount,
-            paymentToken: paymentToken,
+            ethAmount: 0, // No amount yet - will be set when Player 2 deposits
+            usdcAmount: 0,
+            paymentToken: PaymentToken.ETH, // Default to ETH
             depositTime: block.timestamp,
             player1Deposited: false,
             player2Deposited: false,
@@ -182,22 +162,13 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         });
         
         userGames[player1].push(gameId);
-        if (player2 != address(0)) {
-            userGames[player2].push(gameId);
-        }
-        
-        emit GameCreated(gameId, player1, player2, paymentToken);
+        emit GameCreated(gameId, player1, address(0), PaymentToken.ETH);
     }
 
     /**
-     * @notice Update game with player 2 details when offer is accepted
+     * @notice Set player 2 when offer is accepted (no price set yet)
      */
-    function updateGameWithPlayer2(
-        bytes32 gameId,
-        address player2,
-        uint256 priceUSD,
-        PaymentToken paymentToken
-    ) external onlyOwner {
+    function setPlayer2(bytes32 gameId, address player2) external onlyOwner {
         ActiveGame storage game = games[gameId];
         require(game.player1 != address(0), "Game does not exist");
         require(game.player2 == address(0), "Player 2 already set");
@@ -206,16 +177,8 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         game.player2 = player2;
         game.depositTime = block.timestamp; // Reset deposit timer for player 2
         
-        if (paymentToken == PaymentToken.ETH) {
-            game.ethAmount = getETHAmount(priceUSD);
-            game.paymentToken = PaymentToken.ETH;
-        } else {
-            game.usdcAmount = priceUSD;
-            game.paymentToken = PaymentToken.USDC;
-        }
-        
         userGames[player2].push(gameId);
-        emit GameCreated(gameId, game.player1, player2, paymentToken);
+        emit GameCreated(gameId, game.player1, player2, PaymentToken.ETH);
     }
 
     /**
@@ -237,28 +200,42 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Player 2 deposits their ETH or USDC
+     * @notice Player 2 deposits their ETH and sets the final game price
+     * @param gameId The game ID
+     * @param agreedPriceUSD The agreed price in USD (6 decimals)
      */
-    function depositETH(bytes32 gameId) external payable nonReentrant whenNotPaused {
+    function depositETH(bytes32 gameId, uint256 agreedPriceUSD) external payable nonReentrant whenNotPaused {
         ActiveGame storage game = games[gameId];
         require(game.player2 != address(0), "Game does not exist");
         require(msg.sender == game.player2, "Not player 2");
         require(!game.player2Deposited, "Already deposited");
         require(!game.completed, "Game completed");
         require(block.timestamp <= game.depositTime + depositTimeout, "Deposit timeout");
-        require(game.paymentToken == PaymentToken.ETH, "Not an ETH game");
-        uint256 platformFee = (game.ethAmount * platformFeePercent) / BASIS_POINTS;
-        uint256 totalRequired = game.ethAmount;
-        require(msg.value >= totalRequired, "Insufficient ETH");
+        
+        // Calculate ETH amount from the agreed USD price
+        uint256 ethAmount = getETHAmount(agreedPriceUSD);
+        uint256 platformFee = (ethAmount * platformFeePercent) / BASIS_POINTS;
+        
+        // Player 2 sends the exact ETH amount (platform fee will be deducted from pot)
+        require(msg.value >= ethAmount, "Insufficient ETH");
+        
+        // Update game with final amounts
+        game.ethAmount = ethAmount - platformFee; // Store amount after fee
+        game.paymentToken = PaymentToken.ETH;
         game.player2Deposited = true;
+        
+        // Send platform fee immediately
         (bool feeSuccess,) = platformFeeReceiver.call{value: platformFee}("");
         require(feeSuccess, "Platform fee transfer failed");
-        game.ethAmount = game.ethAmount - platformFee;
-        if (msg.value > totalRequired) {
-            (bool refundSuccess,) = msg.sender.call{value: msg.value - totalRequired}("");
+        
+        // Refund excess if any
+        if (msg.value > ethAmount) {
+            (bool refundSuccess,) = msg.sender.call{value: msg.value - ethAmount}("");
             require(refundSuccess, "Refund failed");
         }
+        
         emit AssetsDeposited(gameId, msg.sender, false, game.paymentToken);
+        
         if (game.player1Deposited && game.player2Deposited) {
             emit GameStarted(gameId);
         }

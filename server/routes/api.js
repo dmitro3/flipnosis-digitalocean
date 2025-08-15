@@ -682,10 +682,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         const blockchainResult = await blockchainService.initializeGameOnChain(
           gameId,
           listing.creator,
-          '0x0000000000000000000000000000000000000000', // No player 2 yet
           listing.nft_contract,
-          listing.nft_token_id,
-          listing.asking_price
+          listing.nft_token_id
         )
         
         if (!blockchainResult.success) {
@@ -791,17 +789,15 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         })
       }
       
-      // Update blockchain if configured
+      // Set player 2 on blockchain if configured
       if (blockchainService.hasOwnerWallet()) {
-        const updateResult = await blockchainService.updateGameWithPlayer2(
+        const setPlayer2Result = await blockchainService.setPlayer2OnChain(
           game.id,
-          offer.offerer_address,
-          offer.offer_price,
-          0 // ETH by default
+          offer.offerer_address
         )
         
-        if (!updateResult.success) {
-          console.error('Failed to update game on blockchain:', updateResult.error)
+        if (!setPlayer2Result.success) {
+          console.error('Failed to set player 2 on blockchain:', setPlayer2Result.error)
           // Continue anyway - blockchain update is not critical for game flow
         }
       }

@@ -134,34 +134,20 @@ const GamePayment = ({
     try {
       setIsDepositing(true)
       
-      // ALWAYS calculate fresh ETH amount from contract (never use stored value)
-      console.log('💰 Calculating fresh ETH amount from contract...')
-      
+      // Get the agreed price from game data
       const priceUSD = gameData?.price_usd || gameData?.payment_amount || gameData?.final_price || 0
       
       if (!priceUSD || priceUSD <= 0) {
         throw new Error('Invalid game price')
       }
       
-      // Get fresh ETH amount from contract's Chainlink price feed
-      // Convert USD price to microdollars (6 decimals) for contract
-      const priceUSDMicro = ethers.parseUnits(priceUSD.toString(), 6)
-      console.log('💰 USD price in microdollars:', priceUSDMicro.toString())
+      console.log('💰 Depositing with price:', priceUSD, 'USD')
       
-      const freshEthAmount = await contractService.contract.getETHAmount(priceUSDMicro)
+      // Call depositETH with the USD price - contract will calculate ETH amount
+      const result = await contractService.depositETH(gameId, priceUSD)
       
-      console.log('📊 Fresh calculation from Chainlink:', {
-        priceUSD: priceUSD,
-        priceUSDMicro: priceUSDMicro.toString(),
-        ethAmount: ethers.formatEther(freshEthAmount),
-        ethAmountWei: freshEthAmount.toString(),
-        ethAmountHex: '0x' + freshEthAmount.toString(16)
-      })
-      
-      // Now deposit with the correctly calculated amount
-      const result = await contractService.depositETH(gameId, freshEthAmount)
       if (result.success) {
-        showSuccess('ETH deposited successfully!')
+        showSuccess('Crypto deposited successfully!')
         
         // Clear countdown
         if (countdownInterval) {

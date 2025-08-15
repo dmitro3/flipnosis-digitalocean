@@ -1,11 +1,16 @@
 {
-  "network": "base",
-  "contractAddress": "0x3997F4720B3a515e82d54F30d7CF2993B014EeBE",
+  "chain": "base",
+  "contractAddress": "0x1e87b4067Ba26cE294D157bEEC3a638541DdA0aC",
   "deployer": "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28",
-  "deploymentTime": "2025-07-31T12:55:56.089Z",
+  "deploymentTime": "2025-08-15T12:26:23.879Z",
   "constructorArgs": {
     "ethUsdFeed": "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
     "usdcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "platformFeeReceiver": "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28"
+  },
+  "initialSettings": {
+    "listingFeeUSD": "200000",
+    "platformFeePercent": "350",
+    "maxFeePercent": "1000"
   }
 }

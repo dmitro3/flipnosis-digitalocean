@@ -9,7 +9,8 @@ class BlockchainService {
     this.contractOwnerWallet = contractOwnerKey ? new ethers.Wallet(contractOwnerKey, this.provider) : null
     
     this.CONTRACT_ABI = [
-      "function initializeGame(bytes32 gameId, address player1, address player2, address nftContract, uint256 tokenId, uint256 priceUSD, uint8 paymentToken)",
+      "function initializeGame(bytes32 gameId, address player1, address nftContract, uint256 tokenId)",
+      "function setPlayer2(bytes32 gameId, address player2)",
       "function completeGame(bytes32 gameId, address winner)",
       "function cancelGame(bytes32 gameId)"
     ]
@@ -19,8 +20,8 @@ class BlockchainService {
     return !!this.contractOwnerWallet
   }
 
-  async initializeGameOnChain(gameId, player1, player2, nftContract, tokenId, priceUSD) {
-    console.log('🔗 Initializing game on blockchain:', { gameId, player1, player2, nftContract, tokenId, priceUSD })
+  async initializeGameOnChain(gameId, player1, nftContract, tokenId) {
+    console.log('🔗 Initializing game on blockchain:', { gameId, player1, nftContract, tokenId })
     
     if (!this.contractOwnerWallet) {
       console.error('❌ Contract owner wallet not configured')
@@ -70,11 +71,8 @@ class BlockchainService {
       console.log('📝 Transaction parameters:', {
         gameIdBytes32,
         player1,
-        player2, 
         nftContract,
-        tokenId,
-        priceUSD: ethers.parseUnits(priceUSD.toString(), 6),
-        paymentToken: 0 // 0 = ETH, 1 = USDC
+        tokenId
       })
       
       // Try to estimate gas first
@@ -82,11 +80,8 @@ class BlockchainService {
         const gasEstimate = await contract.initializeGame.estimateGas(
           gameIdBytes32,
           player1,
-          player2,
           nftContract,
-          tokenId,
-          ethers.parseUnits(priceUSD.toString(), 6),
-          0 // PaymentToken.ETH = 0, PaymentToken.USDC = 1
+          tokenId
         )
         console.log('⛽ Gas estimate:', gasEstimate.toString())
       } catch (gasError) {
@@ -97,11 +92,8 @@ class BlockchainService {
       const tx = await contract.initializeGame(
         gameIdBytes32,
         player1,
-        player2,
         nftContract,
-        tokenId,
-        ethers.parseUnits(priceUSD.toString(), 6), // 6 decimals for USD
-        0 // PaymentToken.ETH = 0, PaymentToken.USDC = 1
+        tokenId
       )
       
       console.log('⏳ Waiting for transaction confirmation:', tx.hash)
@@ -130,10 +122,10 @@ class BlockchainService {
     } catch (error) {
       console.error('❌ Failed to complete game on chain:', error)
     }
-  }
+    }
 
-  async updateGameWithPlayer2(gameId, player2, priceUSD, paymentToken = 0) {
-    console.log('🔗 Updating game with player 2 on blockchain:', { gameId, player2, priceUSD, paymentToken })
+  async setPlayer2OnChain(gameId, player2) {
+    console.log('🔗 Setting player 2 on blockchain:', { gameId, player2 })
     
     if (!this.contractOwnerWallet) {
       console.error('❌ Contract owner wallet not configured')
@@ -144,63 +136,23 @@ class BlockchainService {
       const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
       const gameIdBytes32 = ethers.id(gameId)
       
-      // Add the ABI for the new function
-      const updateABI = [
-        "function updateGameWithPlayer2(bytes32 gameId, address player2, uint256 priceUSD, uint8 paymentToken)"
-      ]
-      const contractWithUpdate = new ethers.Contract(this.contractAddress, updateABI, this.contractOwnerWallet)
-      
-      console.log('🔗 Calling updateGameWithPlayer2:', {
+      console.log('🔗 Calling setPlayer2:', {
         gameIdBytes32,
-        player2,
-        priceUSD: ethers.parseUnits(priceUSD.toString(), 6),
-        paymentToken
+        player2
       })
       
-      const tx = await contractWithUpdate.updateGameWithPlayer2(
-        gameIdBytes32,
-        player2,
-        ethers.parseUnits(priceUSD.toString(), 6),
-        paymentToken
-      )
+      const tx = await contract.setPlayer2(gameIdBytes32, player2)
       
       console.log('⏳ Waiting for transaction confirmation:', tx.hash)
       await tx.wait()
-      console.log('✅ Game updated with player 2 on chain')
+      console.log('✅ Player 2 set on chain')
       return { success: true }
     } catch (error) {
-      console.error('❌ Failed to update game on chain:', error)
+      console.error('❌ Failed to set player 2 on chain:', error)
       return { success: false, error: error.message || 'Blockchain transaction failed' }
     }
   }
 
-  async getETHAmountForUSD(usdAmount) {
-    console.log('🔗 Getting ETH amount from contract for USD:', usdAmount)
-    
-    if (!this.provider) {
-      console.error('❌ Provider not configured')
-      return { success: false, error: 'Provider not configured' }
-    }
-    
-    try {
-      const contract = new ethers.Contract(
-        this.contractAddress,
-        ["function getETHAmount(uint256) view returns (uint256)"],
-        this.provider
-      )
-      
-      const ethAmount = await contract.getETHAmount(
-        ethers.parseUnits(usdAmount.toString(), 6)
-      )
-      
-      console.log('✅ ETH amount from contract:', ethers.formatEther(ethAmount), 'ETH')
-      return ethAmount
-    } catch (error) {
-      console.error('❌ Error getting ETH amount from contract:', error)
-      // NO FALLBACK - fail properly instead of using wrong value
-      throw new Error('Failed to get ETH price from contract. Please try again.')
-    }
-  }
 }
 
 module.exports = { BlockchainService } 
