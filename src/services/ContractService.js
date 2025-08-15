@@ -308,13 +308,16 @@ class ContractService {
             args: [gameId]
           })
         },
-        depositETH: async (gameId, agreedPriceUSD, value) => {
+        depositETH: async (gameId, value) => {
           return await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'depositETH',
-            args: [gameId, agreedPriceUSD],
-            value
+            args: [gameId],
+            value,
+            gas: BigInt(100000), // Increased gas limit for reliability
+            maxFeePerGas: BigInt(1000000000), // 1 gwei max fee
+            maxPriorityFeePerGas: BigInt(100000000) // 0.1 gwei priority fee
           })
         }
       }
@@ -454,9 +457,9 @@ class ContractService {
         paymentToken,
         value,
         {
-          gas: BigInt(25000), // Drastically reduced gas limit for game creation (10% of 250000)
-          maxFeePerGas: BigInt(200000000), // 0.2 gwei max fee (more conservative)
-          maxPriorityFeePerGas: BigInt(1000000) // 0.001 gwei priority fee (ultra low)
+          gas: BigInt(150000), // Increased gas limit for game creation
+          maxFeePerGas: BigInt(1000000000), // 1 gwei max fee
+          maxPriorityFeePerGas: BigInt(100000000) // 0.1 gwei priority fee
         }
       )
       
@@ -674,9 +677,9 @@ class ContractService {
         functionName: 'depositETH',
         args: [gameIdBytes32],
         value: ethAmount,
-        gas: BigInt(15000), // Drastically reduced gas limit (10% of 150000)
-        maxFeePerGas: BigInt(200000000), // 0.2 gwei max fee (more conservative)
-        maxPriorityFeePerGas: BigInt(1000000) // 0.001 gwei priority fee (ultra low)
+        gas: BigInt(100000), // Increased gas limit for reliability
+        maxFeePerGas: BigInt(1000000000), // 1 gwei max fee
+        maxPriorityFeePerGas: BigInt(100000000) // 0.1 gwei priority fee
       })
       
       console.log('💰 ETH deposit tx:', hash)
