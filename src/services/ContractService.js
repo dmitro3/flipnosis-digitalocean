@@ -1,13 +1,32 @@
 import { ethers } from 'ethers'
 import { Alchemy, Network } from 'alchemy-sdk'
 import { createWalletClient, createPublicClient, http, custom } from 'viem'
-import { base } from 'viem/chains'
+import { base } from 'wagmi/chains'
 
 // Contract configuration
 const CONTRACT_ADDRESS = '0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0'
 
 // Use Alchemy RPC endpoint directly
 const ALCHEMY_RPC_URL = 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
+
+// Explicit Base chain configuration to ensure MetaMask recognizes it properly
+const BASE_CHAIN = {
+  ...base,
+  name: 'Base',
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: [ALCHEMY_RPC_URL],
+    },
+    public: {
+      http: [ALCHEMY_RPC_URL],
+    },
+  },
+}
 
 // Clean Contract ABI - only what we need
 const CONTRACT_ABI = [
@@ -214,7 +233,7 @@ class ContractService {
 
       // Create public client with Alchemy RPC
       this.publicClient = createPublicClient({
-        chain: base,
+        chain: BASE_CHAIN,
         transport: http(ALCHEMY_RPC_URL)
       })
 
@@ -389,6 +408,27 @@ class ContractService {
     return !!this.walletClient && !!this.publicClient && !!this.account && this.initialized
   }
 
+  // Ensure wallet is connected to Base network
+  async ensureBaseNetwork() {
+    if (!this.walletClient) {
+      throw new Error('Wallet client not available')
+    }
+
+    try {
+      const chainId = await this.walletClient.getChainId()
+      if (chainId !== BASE_CHAIN.id) {
+        console.log(`🔄 Switching to Base network (current: ${chainId}, target: ${BASE_CHAIN.id})`)
+        await this.walletClient.switchChain({ chainId: BASE_CHAIN.id })
+        console.log('✅ Switched to Base network')
+      } else {
+        console.log('✅ Already on Base network')
+      }
+    } catch (error) {
+      console.error('❌ Error switching to Base network:', error)
+      throw new Error('Failed to switch to Base network. Please switch manually in MetaMask.')
+    }
+  }
+
   isInitialized() {
     return this.initialized
   }
@@ -428,6 +468,8 @@ class ContractService {
     }
 
     try {
+      // Ensure wallet is connected to Base network
+      await this.ensureBaseNetwork()
       console.log('🎮 Creating game with params:', {
         gameId,
         nftContract,
@@ -654,6 +696,8 @@ class ContractService {
     }
 
     try {
+      // Ensure wallet is connected to Base network
+      await this.ensureBaseNetwork()
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
       // Convert USD price to 6 decimals for contract
