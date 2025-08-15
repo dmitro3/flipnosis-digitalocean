@@ -144,14 +144,18 @@ const GamePayment = ({
       }
       
       // Get fresh ETH amount from contract's Chainlink price feed
-      const freshEthAmount = await contractService.contract.getETHAmount(
-        ethers.parseUnits(priceUSD.toString(), 6)
-      )
+      // Convert USD price to microdollars (6 decimals) for contract
+      const priceUSDMicro = ethers.parseUnits(priceUSD.toString(), 6)
+      console.log('💰 USD price in microdollars:', priceUSDMicro.toString())
+      
+      const freshEthAmount = await contractService.contract.getETHAmount(priceUSDMicro)
       
       console.log('📊 Fresh calculation from Chainlink:', {
         priceUSD: priceUSD,
+        priceUSDMicro: priceUSDMicro.toString(),
         ethAmount: ethers.formatEther(freshEthAmount),
-        ethAmountWei: freshEthAmount.toString()
+        ethAmountWei: freshEthAmount.toString(),
+        ethAmountHex: '0x' + freshEthAmount.toString(16)
       })
       
       // Now deposit with the correctly calculated amount
