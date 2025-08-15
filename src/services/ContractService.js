@@ -455,7 +455,7 @@ class ContractService {
         value,
         {
           gas: BigInt(25000), // Drastically reduced gas limit for game creation (10% of 250000)
-          maxFeePerGas: BigInt(100000000), // 0.1 gwei max fee (conservative)
+          maxFeePerGas: BigInt(200000000), // 0.2 gwei max fee (more conservative)
           maxPriorityFeePerGas: BigInt(1000000) // 0.001 gwei priority fee (ultra low)
         }
       )
@@ -675,7 +675,7 @@ class ContractService {
         args: [gameIdBytes32],
         value: ethAmount,
         gas: BigInt(15000), // Drastically reduced gas limit (10% of 150000)
-        maxFeePerGas: BigInt(100000000), // 0.1 gwei max fee (conservative)
+        maxFeePerGas: BigInt(200000000), // 0.2 gwei max fee (more conservative)
         maxPriorityFeePerGas: BigInt(1000000) // 0.001 gwei priority fee (ultra low)
       })
       
