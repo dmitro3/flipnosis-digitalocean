@@ -454,9 +454,9 @@ class ContractService {
         paymentToken,
         value,
         {
-          gas: BigInt(250000), // Reduced gas limit for game creation
-          maxFeePerGas: BigInt(20000000000), // 20 gwei max fee (reduced)
-          maxPriorityFeePerGas: BigInt(1000000000) // 1 gwei priority fee
+          gas: BigInt(25000), // Drastically reduced gas limit for game creation (10% of 250000)
+          maxFeePerGas: BigInt(2000000000), // 2 gwei max fee (10% of 20 gwei)
+          maxPriorityFeePerGas: BigInt(100000000) // 0.1 gwei priority fee (10% of 1 gwei)
         }
       )
       
@@ -674,9 +674,9 @@ class ContractService {
         functionName: 'depositETH',
         args: [gameIdBytes32],
         value: ethAmount,
-        gas: BigInt(150000), // Reduced gas limit
-        maxFeePerGas: BigInt(20000000000), // 20 gwei max fee (reduced)
-        maxPriorityFeePerGas: BigInt(1000000000) // 1 gwei priority fee
+        gas: BigInt(15000), // Drastically reduced gas limit (10% of 150000)
+        maxFeePerGas: BigInt(2000000000), // 2 gwei max fee (10% of 20 gwei)
+        maxPriorityFeePerGas: BigInt(100000000) // 0.1 gwei priority fee (10% of 1 gwei)
       })
       
       console.log('💰 ETH deposit tx:', hash)
