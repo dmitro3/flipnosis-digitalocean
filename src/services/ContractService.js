@@ -220,7 +220,9 @@ class ContractService {
       this.contract = {
         // View functions using public client
         getETHAmount: async (usdAmount) => {
-          const cacheKey = `eth_price_${Math.round(usdAmount / 1000000)}`
+          // Convert BigInt to number for cache key calculation
+          const usdAmountNumber = Number(usdAmount) / 1000000
+          const cacheKey = `eth_price_${Math.round(usdAmountNumber)}`
           const cached = priceCache.get(cacheKey)
           
           if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
