@@ -1120,56 +1120,62 @@ export default function AdminPanel() {
 
     try {
       setIsLoadingNFTs(true)
-      addNotification('info', 'Loading NFTs from contract...')
-      console.log('🔄 Loading NFTs from contract (using contract view functions)...')
+      addNotification('info', 'Loading NFTs directly from smart contract...')
+      console.log('🔄 Loading NFTs directly from smart contract...')
 
-      // Get all games from the database that have NFTs deposited
+      // First, get all games from database to get game IDs
       const response = await fetch(`${API_URL}/api/admin/games`)
       if (!response.ok) {
         throw new Error('Failed to fetch games from database')
       }
-      
       const data = await response.json()
       const games = data.games || []
       
       console.log('📊 All games in database:', games.length)
-      console.log('📊 Game statuses:', games.map(g => ({ id: g.id, status: g.status, nft_contract: g.nft_contract })))
       
-      // Filter games that have NFTs deposited and are not completed
-      const gamesWithNFTs = games.filter(game => 
-        game.nft_contract && 
-        game.nft_contract !== '0x0000000000000000000000000000000000000000' &&
-        game.status !== 'completed' &&
-        game.status !== 'cancelled'
-      )
+      // Query contract directly for each game to see what's actually deposited
+      const nftsInContract = []
       
-      console.log('🔍 Filter criteria:')
-      console.log('  - Has nft_contract:', games.filter(g => g.nft_contract).length)
-      console.log('  - Not zero address:', games.filter(g => g.nft_contract && g.nft_contract !== '0x0000000000000000000000000000000000000000').length)
-      console.log('  - Not completed:', games.filter(g => g.status !== 'completed').length)
-      console.log('  - Not cancelled:', games.filter(g => g.status !== 'cancelled').length)
-
-      console.log('📦 Games with NFTs:', gamesWithNFTs)
-
-      // Format for display
-      const nfts = gamesWithNFTs.map(game => {
-        return {
-          nftContract: game.nft_contract,
-          tokenId: game.nft_token_id,
-          name: game.nft_name || `NFT #${game.nft_token_id}`,
-          metadata: {
-            image: game.nft_image || '',
-            collection: game.nft_collection || ''
-          },
-          uniqueKey: `${game.nft_contract}-${game.nft_token_id}`,
-          source: 'database',
-          gameId: game.id,
-          contractGameId: game.contract_game_id
+      for (const game of games) {
+        try {
+          console.log(`🔍 Checking contract for game ${game.id}...`)
+          
+          // Get game state from contract
+          const gameState = await contractService.getGameState(game.id)
+          
+          if (gameState.success && gameState.gameState.nftDeposit.hasDeposit) {
+            const nftDeposit = gameState.gameState.nftDeposit
+            console.log(`✅ Found NFT in contract for game ${game.id}:`, nftDeposit)
+            
+            nftsInContract.push({
+              nftContract: nftDeposit.nftContract,
+              tokenId: nftDeposit.tokenId,
+              name: `Game ${game.id} NFT`,
+              metadata: {
+                image: game.nft_image || '',
+                collection: game.nft_collection || ''
+              },
+              uniqueKey: `${nftDeposit.nftContract}-${nftDeposit.tokenId}`,
+              source: 'contract',
+              gameId: game.id,
+              contractGameId: game.contract_game_id || game.id,
+              depositor: nftDeposit.depositor,
+              claimed: nftDeposit.claimed,
+              depositTime: nftDeposit.depositTime
+            })
+          } else {
+            console.log(`❌ No NFT found in contract for game ${game.id}`)
+          }
+        } catch (error) {
+          console.error(`❌ Error checking game ${game.id}:`, error)
         }
-      })
-
-      setContractNFTs(nfts)
-      addNotification('success', `Loaded ${nfts.length} NFTs from contract (Database)`)
+      }
+      
+      console.log('📦 NFTs found in contract:', nftsInContract.length)
+      console.log('📦 NFT details:', nftsInContract)
+      
+      setContractNFTs(nftsInContract)
+      addNotification('success', `Loaded ${nftsInContract.length} NFTs from contract (Direct Query)`)
     } catch (error) {
       console.error('❌ Error loading contract NFTs:', error)
       addNotification('error', 'Failed to load NFTs: ' + error.message)
