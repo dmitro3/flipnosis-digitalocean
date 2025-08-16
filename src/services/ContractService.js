@@ -95,8 +95,8 @@ class ContractService {
       throw new Error('MetaMask not detected')
     }
 
-    // Use the new contract address
-    this.contractAddress = '0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E'
+    // Use the new contract address with 3.5% fee and 2-minute timeout
+    this.contractAddress = '0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf'
 
     try {
       // Use provided clients or create new ones
@@ -452,7 +452,7 @@ class ContractService {
 
   async getPlatformFee() {
     console.log('📋 Getting platform fee (stub)')
-    return { success: true, fee: 3.5 } // 3.5% in new contract
+    return { success: true, fee: 3.5 } // 3.5% in updated contract
   }
 
   async updatePlatformFee(newFeePercent) {
@@ -505,6 +505,7 @@ class ContractService {
   get provider() { return this.publicClient }
   get signer() { return this.walletClient }
   get contract() { return this.contractAddress }
+  set contract(value) { this.contractAddress = value } // Allow setting contract address
   get account() { return this.userAddress }
   get alchemy() { return null } // No Alchemy in new implementation
 

@@ -47,8 +47,8 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     }
     
     // Configuration
-    uint256 public depositTimeout = 2 hours;
-    uint256 public platformFeePercent = 250; // 2.5%
+    uint256 public depositTimeout = 2 minutes;
+    uint256 public platformFeePercent = 350; // 3.5%
     uint256 public constant BASIS_POINTS = 10000;
     address public platformFeeReceiver;
     address public usdcToken;
