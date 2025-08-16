@@ -452,7 +452,7 @@ class ContractService {
 
   async getPlatformFee() {
     console.log('📋 Getting platform fee (stub)')
-    return { success: true, fee: 2.5 } // 2.5% in new contract
+    return { success: true, fee: 3.5 } // 3.5% in new contract
   }
 
   async updatePlatformFee(newFeePercent) {
@@ -507,6 +507,45 @@ class ContractService {
   get contract() { return this.contractAddress }
   get account() { return this.userAddress }
   get alchemy() { return null } // No Alchemy in new implementation
+
+  // Additional missing methods for frontend compatibility
+  async withdrawRewards() {
+    console.log('💰 Withdrawing rewards (stub)')
+    return { success: true, message: 'Rewards withdrawn (stub)' }
+  }
+
+  async findMyNFTs(nftContract, tokenId) {
+    console.log('🔍 Finding my NFTs (stub):', { nftContract, tokenId })
+    return { success: true, nfts: [] }
+  }
+
+  async getMyGames(address) {
+    console.log('🎮 Getting my games (stub):', address)
+    return { success: true, games: [] }
+  }
+
+  async emergencyCancelGame(gameId) {
+    console.log('🚨 Emergency cancel game (stub):', gameId)
+    return await this.cancelGame(gameId)
+  }
+
+  async getUserUnclaimedNFTs(address, nftContract) {
+    console.log('📦 Getting user unclaimed NFTs (stub):', { address, nftContract })
+    return []
+  }
+
+  async withdrawNFTs(nfts) {
+    console.log('📦 Withdrawing NFTs (stub):', nfts)
+    return { success: true, message: 'NFTs withdrawn (stub)' }
+  }
+
+  async withdrawNFT(nftContract, tokenId) {
+    console.log('📦 Withdrawing NFT (stub):', { nftContract, tokenId })
+    return { success: true, message: 'NFT withdrawn (stub)' }
+  }
 }
 
-export default ContractService 
+// Create singleton instance
+const contractService = new ContractService()
+
+export default contractService 
