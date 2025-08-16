@@ -369,17 +369,15 @@ class ContractService {
       
       console.log('💸 Transaction value (listing fee only):', ethers.formatEther(value))
       
-             // Use legacy gas parameters for better MetaMask compatibility
-       const hash = await this.walletClient.writeContract({
-         address: this.contractAddress,
-         abi: CONTRACT_ABI,
-         functionName: 'payFeeAndCreateGame',
-         args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
-         value: value,
-                   gas: 250000n, // Gas limit for game creation
-          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
-         chain: BASE_CHAIN
-       })
+                     // Let MetaMask handle gas estimation automatically
+        const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'payFeeAndCreateGame',
+          args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
+          value: value,
+          chain: BASE_CHAIN
+        })
       
       console.log('🔖 Game creation tx hash:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -424,15 +422,13 @@ class ContractService {
       await this.ensureBaseNetwork()
       console.log('🔓 Approving NFT:', { nftContract, tokenId })
 
-             const hash = await this.walletClient.writeContract({
-         address: nftContract,
-         abi: NFT_ABI,
-         functionName: 'approve',
-         args: [this.contractAddress, tokenId],
-                   gas: 80000n, // Gas limit for NFT approval
-          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
-         chain: BASE_CHAIN
-       })
+                     const hash = await this.walletClient.writeContract({
+          address: nftContract,
+          abi: NFT_ABI,
+          functionName: 'approve',
+          args: [this.contractAddress, tokenId],
+          chain: BASE_CHAIN
+        })
 
       console.log('🔓 NFT approval tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -457,15 +453,13 @@ class ContractService {
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
-             const hash = await this.walletClient.writeContract({
-         address: this.contractAddress,
-         abi: CONTRACT_ABI,
-         functionName: 'depositNFT',
-         args: [gameIdBytes32],
-                   gas: 150000n, // Gas limit for NFT deposit
-          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
-         chain: BASE_CHAIN
-       })
+                     const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'depositNFT',
+          args: [gameIdBytes32],
+          chain: BASE_CHAIN
+        })
       
       console.log('📦 NFT deposit tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -505,19 +499,15 @@ class ContractService {
         ethAmountFormatted: ethers.formatEther(ethAmount)
       })
       
-             // CRITICAL FIX: Use legacy gas parameters for better MetaMask compatibility
-       const hash = await this.walletClient.writeContract({
-         address: this.contractAddress,
-         abi: CONTRACT_ABI,
-         functionName: 'depositETH',
-         args: [gameIdBytes32],
-         value: ethAmount,
-         // Use legacy gas parameters for better MetaMask compatibility
-                   gas: 150000n, // Gas limit
-          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
-         // Optional: Add chain to ensure correct network
-         chain: BASE_CHAIN
-       })
+                     // Let MetaMask handle gas estimation automatically
+        const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'depositETH',
+          args: [gameIdBytes32],
+          value: ethAmount,
+          chain: BASE_CHAIN
+        })
       
       console.log('💰 ETH deposit tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
