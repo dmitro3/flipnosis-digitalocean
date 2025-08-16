@@ -165,7 +165,9 @@ class ContractService {
         abi: NFT_ABI,
         functionName: 'approve',
         args: [this.contractAddress, tokenId],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        // Let MetaMask handle gas estimation
+        gas: undefined
       })
 
       console.log('🔓 NFT approval tx:', hash)
@@ -196,7 +198,9 @@ class ContractService {
         abi: CONTRACT_ABI,
         functionName: 'depositNFT',
         args: [gameIdBytes32, nftContract, BigInt(tokenId)],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        // Let MetaMask handle gas estimation
+        gas: undefined
       })
       
       console.log('📦 NFT deposit tx:', hash)
@@ -245,7 +249,9 @@ class ContractService {
         functionName: 'depositETH',
         args: [gameIdBytes32],
         value: ethAmountWei,
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        // Let MetaMask handle gas estimation
+        gas: undefined
       })
       
       console.log('💰 ETH deposit tx:', hash)
@@ -383,7 +389,9 @@ class ContractService {
         abi: CONTRACT_ABI,
         functionName: 'reclaimNFT',
         args: [gameIdBytes32],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        // Let MetaMask handle gas estimation
+        gas: undefined
       })
       
       console.log('🔄 NFT reclaim tx:', hash)
@@ -414,7 +422,9 @@ class ContractService {
         abi: CONTRACT_ABI,
         functionName: 'reclaimCrypto',
         args: [gameIdBytes32],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        // Let MetaMask handle gas estimation
+        gas: undefined
       })
       
       console.log('🔄 Crypto reclaim tx:', hash)
