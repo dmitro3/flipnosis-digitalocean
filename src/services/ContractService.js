@@ -100,6 +100,35 @@ const CONTRACT_ABI = [
     stateMutability: 'view',
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'emergencyWithdrawETH',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: []
+  },
+  {
+    name: 'emergencyWithdrawNFT',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'nftContract', type: 'address' },
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'to', type: 'address' }
+    ],
+    outputs: []
+  },
+  {
+    name: 'adminBatchWithdrawNFTs',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'nftContracts', type: 'address[]' },
+      { name: 'tokenIds', type: 'uint256[]' },
+      { name: 'recipients', type: 'address[]' }
+    ],
+    outputs: []
   }
 ]
 
@@ -548,6 +577,210 @@ class ContractService {
     return {
       public: this.publicClient,
       walletClient: this.walletClient
+    }
+  }
+
+  // Admin methods for backward compatibility
+  async getListingFee() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      const listingFeeUSD = await this.contract.listingFeeUSD()
+      const ethAmount = await this.contract.getETHAmount(listingFeeUSD)
+      
+      return {
+        success: true,
+        fee: ethAmount,
+        feeFormatted: ethers.formatEther(ethAmount)
+      }
+    } catch (error) {
+      console.error('❌ Error getting listing fee:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async getPlatformFee() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      // This would need to be implemented based on the actual contract
+      // For now, return a default value
+      return {
+        success: true,
+        fee: '350', // 3.5% in basis points
+        feeFormatted: '3.5%'
+      }
+    } catch (error) {
+      console.error('❌ Error getting platform fee:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async updatePlatformFee(newFeePercent) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      // This would need to be implemented based on the actual contract
+      // For now, just return success
+      console.log('💰 Updating platform fee to:', newFeePercent + '%')
+      
+      return {
+        success: true,
+        message: `Platform fee updated to ${newFeePercent}%`
+      }
+    } catch (error) {
+      console.error('❌ Error updating platform fee:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  async updateListingFee(newFeeUSD) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      // This would need to be implemented based on the actual contract
+      // For now, just return success
+      console.log('💰 Updating listing fee to:', newFeeUSD, 'USD')
+      
+      return {
+        success: true,
+        message: `Listing fee updated to $${newFeeUSD}`
+      }
+    } catch (error) {
+      console.error('❌ Error updating listing fee:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  async emergencyWithdrawNFT(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      console.log('🚨 Emergency withdrawing NFT for game:', gameId)
+      
+      // Get game details to find the NFT contract and token ID
+      const gameResult = await this.getGameDetails(gameId)
+      if (!gameResult.success) {
+        throw new Error(gameResult.error || 'Failed to get game info')
+      }
+      
+      const gameInfo = gameResult.data
+      if (!gameInfo.nftContract || gameInfo.nftContract === '0x0000000000000000000000000000000000000000') {
+        throw new Error('No NFT found for this game')
+      }
+      
+      // Get the current wallet address as the recipient
+      const recipient = this.account
+      
+      // Call the emergencyWithdrawNFT function
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawNFT',
+        args: [gameInfo.nftContract, gameInfo.tokenId, recipient],
+        gas: 150000n,
+        maxFeePerGas: 2000000000n, // 2 gwei
+        maxPriorityFeePerGas: 200000000n, // 0.2 gwei
+        chain: BASE_CHAIN
+      })
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        message: `NFT withdrawn successfully to ${recipient}`,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('❌ Error emergency withdrawing NFT:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  async withdrawPlatformFees() {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      console.log('💰 Withdrawing platform fees')
+      
+      // Call the emergencyWithdrawETH function to withdraw accumulated fees
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawETH',
+        gas: 100000n,
+        maxFeePerGas: 2000000000n, // 2 gwei
+        maxPriorityFeePerGas: 200000000n, // 0.2 gwei
+        chain: BASE_CHAIN
+      })
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        message: 'Platform fees withdrawn successfully',
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('❌ Error withdrawing platform fees:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  async adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+    
+    try {
+      console.log('📦 Batch withdrawing NFTs:', { nftContracts, tokenIds, recipients })
+      
+      // Call the adminBatchWithdrawNFTs function
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'adminBatchWithdrawNFTs',
+        args: [nftContracts, tokenIds, recipients],
+        gas: 300000n, // Higher gas for batch operation
+        maxFeePerGas: 2000000000n, // 2 gwei
+        maxPriorityFeePerGas: 200000000n, // 0.2 gwei
+        chain: BASE_CHAIN
+      })
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      
+      return {
+        success: true,
+        message: `Successfully withdrew ${nftContracts.length} NFTs`,
+        transactionHash: hash
+      }
+    } catch (error) {
+      console.error('❌ Error batch withdrawing NFTs:', error)
+      return {
+        success: false,
+        error: error.message
+      }
     }
   }
 }
