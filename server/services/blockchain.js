@@ -8,11 +8,25 @@ class BlockchainService {
     this.provider = new ethers.JsonRpcProvider(rpcUrl)
     this.contractOwnerWallet = contractOwnerKey ? new ethers.Wallet(contractOwnerKey, this.provider) : null
     
+    // Updated ABI for simplified contract
     this.CONTRACT_ABI = [
-      "function initializeGame(bytes32 gameId, address player1, address nftContract, uint256 tokenId)",
-      "function setPlayer2(bytes32 gameId, address player2)",
+      "function depositNFT(bytes32 gameId, address nftContract, uint256 tokenId)",
+      "function depositETH(bytes32 gameId) payable",
+      "function depositUSDC(bytes32 gameId, uint256 amount)",
       "function completeGame(bytes32 gameId, address winner)",
-      "function cancelGame(bytes32 gameId)"
+      "function isGameReady(bytes32 gameId) view returns (bool)",
+      "function getGameParticipants(bytes32 gameId) view returns (address nftPlayer, address cryptoPlayer)",
+      "function reclaimNFT(bytes32 gameId)",
+      "function reclaimCrypto(bytes32 gameId)",
+      "function nftDeposits(bytes32) view returns (address depositor, address nftContract, uint256 tokenId, bool claimed, uint256 depositTime)",
+      "function ethDeposits(bytes32) view returns (address depositor, uint256 amount, bool claimed, uint256 depositTime)",
+      "function usdcDeposits(bytes32) view returns (address depositor, uint256 amount, bool claimed, uint256 depositTime)",
+      "function gameResults(bytes32) view returns (address winner, bool completed, uint256 completionTime)",
+      "event NFTDeposited(bytes32 indexed gameId, address indexed depositor, address nftContract, uint256 tokenId)",
+      "event ETHDeposited(bytes32 indexed gameId, address indexed depositor, uint256 amount)",
+      "event USDCDeposited(bytes32 indexed gameId, address indexed depositor, uint256 amount)",
+      "event GameReady(bytes32 indexed gameId, address nftDepositor, address cryptoDepositor)",
+      "event GameCompleted(bytes32 indexed gameId, address indexed winner)"
     ]
   }
 
@@ -20,139 +34,199 @@ class BlockchainService {
     return !!this.contractOwnerWallet
   }
 
-  async initializeGameOnChain(gameId, player1, nftContract, tokenId) {
-    console.log('🔗 Initializing game on blockchain:', { gameId, player1, nftContract, tokenId })
-    
-    if (!this.contractOwnerWallet) {
-      console.error('❌ Contract owner wallet not configured')
-      console.error('❌ Please check CONTRACT_OWNER_KEY or PRIVATE_KEY environment variable')
-      return { success: false, error: 'Contract wallet not configured' }
-    }
-    
-    if (!this.contractAddress) {
-      console.error('❌ Contract address not configured')
-      return { success: false, error: 'Contract address not configured' }
-    }
+  /**
+   * Check if game is ready (both assets deposited)
+   */
+  async isGameReady(gameId) {
+    if (!this.contractOwnerWallet) return { success: false, error: 'Contract wallet not configured' }
     
     try {
-      // Add network info
-      const network = await this.provider.getNetwork()
-      console.log('🌐 Connected to network:', {
-        name: network.name,
-        chainId: network.chainId,
-        rpc: this.rpcUrl
-      })
-      
-      // Check wallet balance
-      const balance = await this.provider.getBalance(this.contractOwnerWallet.address)
-      console.log('💰 Contract owner balance:', ethers.formatEther(balance), 'ETH')
-      
-      if (balance === 0n) {
-        return { success: false, error: 'Contract owner wallet has no ETH for gas fees' }
-      }
-      
       const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
       const gameIdBytes32 = ethers.id(gameId)
       
-      // Verify contract exists
-      try {
-        const code = await this.provider.getCode(this.contractAddress)
-        if (code === '0x') {
-          console.error('❌ No contract deployed at address:', this.contractAddress)
-          return { success: false, error: 'Contract not found at specified address' }
-        }
-        console.log('✅ Contract found at address:', this.contractAddress)
-      } catch (err) {
-        console.error('❌ Error checking contract:', err)
-        return { success: false, error: 'Failed to verify contract existence' }
+      const isReady = await contract.isGameReady(gameIdBytes32)
+      console.log(`🎮 Game ${gameId} ready status:`, isReady)
+      
+      return { success: true, isReady }
+    } catch (error) {
+      console.error('❌ Error checking game ready status:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
+   * Get game participants
+   */
+  async getGameParticipants(gameId) {
+    if (!this.contractOwnerWallet) return { success: false, error: 'Contract wallet not configured' }
+    
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
+      const gameIdBytes32 = ethers.id(gameId)
+      
+      const [nftPlayer, cryptoPlayer] = await contract.getGameParticipants(gameIdBytes32)
+      console.log(`🎮 Game ${gameId} participants:`, { nftPlayer, cryptoPlayer })
+      
+      return { success: true, nftPlayer, cryptoPlayer }
+    } catch (error) {
+      console.error('❌ Error getting game participants:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
+   * Get detailed game state
+   */
+  async getGameState(gameId) {
+    if (!this.contractOwnerWallet) return { success: false, error: 'Contract wallet not configured' }
+    
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
+      const gameIdBytes32 = ethers.id(gameId)
+      
+      // Get all deposit info
+      const nftDeposit = await contract.nftDeposits(gameIdBytes32)
+      const ethDeposit = await contract.ethDeposits(gameIdBytes32)
+      const usdcDeposit = await contract.usdcDeposits(gameIdBytes32)
+      const gameResult = await contract.gameResults(gameIdBytes32)
+      
+      const gameState = {
+        nftDeposit: {
+          depositor: nftDeposit.depositor,
+          nftContract: nftDeposit.nftContract,
+          tokenId: nftDeposit.tokenId.toString(),
+          claimed: nftDeposit.claimed,
+          depositTime: nftDeposit.depositTime.toString(),
+          hasDeposit: nftDeposit.depositor !== '0x0000000000000000000000000000000000000000'
+        },
+        ethDeposit: {
+          depositor: ethDeposit.depositor,
+          amount: ethDeposit.amount.toString(),
+          claimed: ethDeposit.claimed,
+          depositTime: ethDeposit.depositTime.toString(),
+          hasDeposit: ethDeposit.depositor !== '0x0000000000000000000000000000000000000000'
+        },
+        usdcDeposit: {
+          depositor: usdcDeposit.depositor,
+          amount: usdcDeposit.amount.toString(),
+          claimed: usdcDeposit.claimed,
+          depositTime: usdcDeposit.depositTime.toString(),
+          hasDeposit: usdcDeposit.depositor !== '0x0000000000000000000000000000000000000000'
+        },
+        gameResult: {
+          winner: gameResult.winner,
+          completed: gameResult.completed,
+          completionTime: gameResult.completionTime.toString()
+        },
+        isReady: false
       }
       
-      console.log('🔗 Sending transaction to contract:', this.contractAddress)
-      console.log('📝 Transaction parameters:', {
+      // Check if game is ready
+      gameState.isReady = gameState.nftDeposit.hasDeposit && 
+                         (gameState.ethDeposit.hasDeposit || gameState.usdcDeposit.hasDeposit) &&
+                         !gameState.gameResult.completed
+      
+      console.log(`🎮 Game ${gameId} full state:`, gameState)
+      return { success: true, gameState }
+    } catch (error) {
+      console.error('❌ Error getting game state:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  /**
+   * Complete game and declare winner (called by backend)
+   */
+  async completeGameOnChain(gameId, winner) {
+    console.log('🏆 Completing game on blockchain:', { gameId, winner })
+    
+    if (!this.contractOwnerWallet) {
+      console.error('❌ Contract owner wallet not configured')
+      return { success: false, error: 'Contract wallet not configured' }
+    }
+    
+    try {
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
+      const gameIdBytes32 = ethers.id(gameId)
+      
+      // Verify game is ready before completing
+      const isReady = await contract.isGameReady(gameIdBytes32)
+      if (!isReady) {
+        return { success: false, error: 'Game is not ready to complete' }
+      }
+      
+      // Get participants to verify winner
+      const [nftPlayer, cryptoPlayer] = await contract.getGameParticipants(gameIdBytes32)
+      if (winner !== nftPlayer && winner !== cryptoPlayer) {
+        return { success: false, error: 'Winner must be one of the game participants' }
+      }
+      
+      console.log('🏆 Calling completeGame:', {
         gameIdBytes32,
-        player1,
-        nftContract,
-        tokenId
+        winner,
+        participants: { nftPlayer, cryptoPlayer }
       })
       
-      // Try to estimate gas first
-      try {
-        const gasEstimate = await contract.initializeGame.estimateGas(
-          gameIdBytes32,
-          player1,
-          nftContract,
-          tokenId
-        )
-        console.log('⛽ Gas estimate:', gasEstimate.toString())
-      } catch (gasError) {
-        console.error('❌ Gas estimation failed:', gasError)
-        return { success: false, error: `Gas estimation failed: ${gasError.message}` }
-      }
-      
-      const tx = await contract.initializeGame(
-        gameIdBytes32,
-        player1,
-        nftContract,
-        tokenId
-      )
+      const tx = await contract.completeGame(gameIdBytes32, winner)
       
       console.log('⏳ Waiting for transaction confirmation:', tx.hash)
       await tx.wait()
-      console.log('✅ Game initialized on chain:', gameId)
-      return { success: true }
+      console.log('✅ Game completed on chain')
+      return { success: true, transactionHash: tx.hash }
     } catch (error) {
-      console.error('❌ Failed to initialize game on chain:', error)
-      console.error('❌ Error details:', {
-        message: error.message,
-        code: error.code,
-        reason: error.reason
-      })
+      console.error('❌ Failed to complete game on chain:', error)
       return { success: false, error: error.message || 'Blockchain transaction failed' }
     }
   }
 
-  async completeGameOnChain(gameIdBytes32, winner) {
+  /**
+   * Monitor game events
+   */
+  async setupEventListeners(callback) {
     if (!this.contractOwnerWallet) return
     
     try {
-      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
-      const tx = await contract.completeGame(gameIdBytes32, winner)
-      await tx.wait()
-      console.log('✅ Game completed on chain')
-    } catch (error) {
-      console.error('❌ Failed to complete game on chain:', error)
-    }
-    }
-
-  async setPlayer2OnChain(gameId, player2) {
-    console.log('🔗 Setting player 2 on blockchain:', { gameId, player2 })
-    
-    if (!this.contractOwnerWallet) {
-      console.error('❌ Contract owner wallet not configured')
-      return { success: false, error: 'Contract wallet not configured' }
-    }
-    
-    try {
-      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.contractOwnerWallet)
-      const gameIdBytes32 = ethers.id(gameId)
+      const contract = new ethers.Contract(this.contractAddress, this.CONTRACT_ABI, this.provider)
       
-      console.log('🔗 Calling setPlayer2:', {
-        gameIdBytes32,
-        player2
+      // Listen for GameReady events
+      contract.on('GameReady', (gameId, nftDepositor, cryptoDepositor, event) => {
+        console.log('🎮 GameReady event:', {
+          gameId: gameId,
+          nftDepositor,
+          cryptoDepositor,
+          blockNumber: event.blockNumber
+        })
+        
+        callback({
+          type: 'GameReady',
+          gameId: gameId,
+          nftDepositor,
+          cryptoDepositor,
+          event
+        })
       })
       
-      const tx = await contract.setPlayer2(gameIdBytes32, player2)
+      // Listen for GameCompleted events
+      contract.on('GameCompleted', (gameId, winner, event) => {
+        console.log('🏆 GameCompleted event:', {
+          gameId: gameId,
+          winner,
+          blockNumber: event.blockNumber
+        })
+        
+        callback({
+          type: 'GameCompleted',
+          gameId: gameId,
+          winner,
+          event
+        })
+      })
       
-      console.log('⏳ Waiting for transaction confirmation:', tx.hash)
-      await tx.wait()
-      console.log('✅ Player 2 set on chain')
-      return { success: true }
+      console.log('👂 Event listeners set up successfully')
     } catch (error) {
-      console.error('❌ Failed to set player 2 on chain:', error)
-      return { success: false, error: error.message || 'Blockchain transaction failed' }
+      console.error('❌ Failed to set up event listeners:', error)
     }
   }
-
 }
 
 module.exports = { BlockchainService } 

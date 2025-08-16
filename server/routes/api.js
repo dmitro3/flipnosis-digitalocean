@@ -734,37 +734,32 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         return res.status(404).json({ error: 'Listing not found' })
       }
       
-      // Check if game already exists for this listing
+      // Check if there's already an active game for this listing
       let game = await new Promise((resolve, reject) => {
-        db.get('SELECT * FROM games WHERE listing_id = ? AND status != "cancelled"', [listing.id], (err, result) => {
+        db.get('SELECT * FROM games WHERE listing_id = ? AND status IN ("awaiting_challenger", "waiting_challenger_deposit")', 
+          [listing.id], (err, result) => {
           if (err) reject(err)
           else resolve(result)
         })
       })
       
-      const depositDeadline = new Date(Date.now() + 2 * 60 * 1000).toISOString() // 2 minutes
+      const gameId = game?.id || `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const depositDeadline = new Date(Date.now() + 2 * 60 * 1000) // 2 minutes from now
       
       if (!game) {
-        // Create new game if one doesn't exist
-        const gameId = listing.game_id || `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
-        const blockchainGameId = ethers.id(gameId)
-        
-        // ETH amount will be calculated by frontend using Chainlink price feed
-        const ethAmount = null // Frontend will calculate this properly
-        console.log('💰 ETH amount will be calculated by frontend using contract price feed')
-        
+        // Create new game record
         await new Promise((resolve, reject) => {
           db.run(`
             INSERT INTO games (
               id, listing_id, offer_id, blockchain_game_id, creator, challenger,
               nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-              price_usd, payment_amount, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
-              game_type, chain, payment_token
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
+              game_type, network, payment_token
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, [
-            gameId, listing.id, offerId, blockchainGameId, listing.creator, offer.offerer_address,
+            gameId, listing.id, offerId, gameId, listing.creator, offer.offerer_address,
             listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
-            offer.offer_price, ethAmount, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false,
+            offer.offer_price, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false,
             'nft-vs-crypto', 'base', 'ETH'
           ], function(err) {
             if (err) reject(err)
@@ -789,18 +784,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         })
       }
       
-      // Set player 2 on blockchain if configured
-      if (blockchainService.hasOwnerWallet()) {
-        const setPlayer2Result = await blockchainService.setPlayer2OnChain(
-          game.id,
-          offer.offerer_address
-        )
-        
-        if (!setPlayer2Result.success) {
-          console.error('Failed to set player 2 on blockchain:', setPlayer2Result.error)
-          // Continue anyway - blockchain update is not critical for game flow
-        }
-      }
+      // No need to call setPlayer2 - contract will auto-detect when both assets are deposited!
+      console.log('✅ Simplified flow: No contract interaction needed for offer acceptance')
       
       // Update offer status
       await new Promise((resolve, reject) => {
@@ -1636,6 +1621,197 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     } catch (error) {
       console.error('❌ Error fetching chat history:', error)
       res.status(500).json({ error: 'Failed to fetch chat history' })
+    }
+  })
+
+  // New route: Confirm deposit received (called by frontend after successful deposit)
+  router.post('/games/:gameId/deposit-confirmed', async (req, res) => {
+    const { gameId } = req.params
+    const { player, assetType, transactionHash } = req.body
+    
+    try {
+      console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash })
+      
+      // Get game details
+      const game = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' })
+      }
+      
+      // Update deposit status in database
+      let updateField = ''
+      if (assetType === 'nft' && player.toLowerCase() === game.creator.toLowerCase()) {
+        updateField = 'creator_deposited = true'
+      } else if (assetType === 'eth' && player.toLowerCase() === game.challenger.toLowerCase()) {
+        updateField = 'challenger_deposited = true'
+      } else {
+        return res.status(400).json({ error: 'Invalid deposit confirmation' })
+      }
+      
+      await new Promise((resolve, reject) => {
+        db.run(`UPDATE games SET ${updateField} WHERE id = ?`, [gameId], function(err) {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      // Check if both players have deposited using contract
+      if (blockchainService.hasOwnerWallet()) {
+        const gameReadyResult = await blockchainService.isGameReady(gameId)
+        
+        if (gameReadyResult.success && gameReadyResult.isReady) {
+          console.log('🎮 Both assets deposited - Game is ready!')
+          
+          // Update game status to active
+          await new Promise((resolve, reject) => {
+            db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], function(err) {
+              if (err) reject(err)
+              else resolve()
+            })
+          })
+          
+          // Broadcast game started
+          wsHandlers.broadcastToRoom(gameId, {
+            type: 'game_started',
+            gameId,
+            message: 'Both players have deposited! Game is now active.',
+            bothDeposited: true
+          })
+          
+          wsHandlers.broadcastToRoom(gameId, {
+            type: 'deposit_received',
+            gameId,
+            player,
+            assetType,
+            bothDeposited: true
+          })
+          
+          console.log(`🎮 Game ${gameId} is now active with both deposits confirmed`)
+        } else {
+          // Only one deposit so far
+          wsHandlers.broadcastToRoom(gameId, {
+            type: 'deposit_received',
+            gameId,
+            player,
+            assetType,
+            bothDeposited: false
+          })
+        }
+      }
+      
+      res.json({ success: true, message: 'Deposit confirmed' })
+      
+    } catch (error) {
+      console.error('❌ Error confirming deposit:', error)
+      res.status(500).json({ error: 'Failed to confirm deposit', details: error.message })
+    }
+  })
+
+  // Route: Complete game (called by game engine after flip result)
+  router.post('/games/:gameId/complete', async (req, res) => {
+    const { gameId } = req.params
+    const { winner, loser, result } = req.body
+    
+    try {
+      console.log('🏆 Completing game:', { gameId, winner, loser, result })
+      
+      // Update game in database
+      await new Promise((resolve, reject) => {
+        db.run(`
+          UPDATE games 
+          SET status = 'completed', winner = ?, completed_at = ? 
+          WHERE id = ?
+        `, [winner, new Date().toISOString(), gameId], function(err) {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      // Complete game on blockchain (transfers assets to winner)
+      if (blockchainService.hasOwnerWallet()) {
+        const completeResult = await blockchainService.completeGameOnChain(gameId, winner)
+        
+        if (completeResult.success) {
+          console.log('✅ Game completed on blockchain:', completeResult.transactionHash)
+          
+          // Broadcast completion
+          wsHandlers.broadcastToRoom(gameId, {
+            type: 'game_completed',
+            gameId,
+            winner,
+            loser,
+            result,
+            transactionHash: completeResult.transactionHash
+          })
+          
+          res.json({ 
+            success: true, 
+            winner, 
+            transactionHash: completeResult.transactionHash,
+            message: 'Game completed and assets transferred to winner!'
+          })
+        } else {
+          console.error('❌ Failed to complete game on blockchain:', completeResult.error)
+          res.status(500).json({ 
+            error: 'Failed to complete game on blockchain', 
+            details: completeResult.error 
+          })
+        }
+      } else {
+        // No blockchain service - just update database
+        wsHandlers.broadcastToRoom(gameId, {
+          type: 'game_completed',
+          gameId,
+          winner,
+          loser,
+          result
+        })
+        
+        res.json({ success: true, winner, message: 'Game completed!' })
+      }
+      
+    } catch (error) {
+      console.error('❌ Error completing game:', error)
+      res.status(500).json({ error: 'Failed to complete game', details: error.message })
+    }
+  })
+
+  // Route: Check game contract status
+  router.get('/games/:gameId/contract-status', async (req, res) => {
+    const { gameId } = req.params
+    
+    try {
+      if (!blockchainService.hasOwnerWallet()) {
+        return res.json({ 
+          contractAvailable: false, 
+          message: 'Blockchain service not configured' 
+        })
+      }
+      
+      const gameStateResult = await blockchainService.getGameState(gameId)
+      
+      if (gameStateResult.success) {
+        res.json({
+          contractAvailable: true,
+          gameState: gameStateResult.gameState,
+          isReady: gameStateResult.gameState.isReady
+        })
+      } else {
+        res.json({
+          contractAvailable: true,
+          error: gameStateResult.error
+        })
+      }
+      
+    } catch (error) {
+      console.error('❌ Error checking contract status:', error)
+      res.status(500).json({ error: 'Failed to check contract status' })
     }
   })
 

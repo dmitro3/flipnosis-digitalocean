@@ -4,7 +4,7 @@ async function main() {
   console.log('🔄 Syncing missing game from blockchain to database...')
   
   // Contract address
-  const contractAddress = "0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0"
+  const contractAddress = "0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E"
   
   // Get the contract
   const contract = await ethers.getContractAt("NFTFlipGame", contractAddress)

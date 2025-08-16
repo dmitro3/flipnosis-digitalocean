@@ -1,0 +1,18 @@
+{
+  "network": "base",
+  "contractAddress": "0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E",
+  "deployer": "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28",
+  "deploymentTime": "2025-08-16T15:44:52.115Z",
+  "constructorArgs": {
+    "platformFeeReceiver": "0xF5980979c1B0B43f78c8EeAaB697d25C611c0E0a",
+    "usdcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  "contractType": "simplified-escrow",
+  "features": [
+    "Auto-detection of deposits",
+    "No player management needed",
+    "2.5% platform fee",
+    "2-hour deposit timeout",
+    "Reclaim functions for timeouts"
+  ]
+}

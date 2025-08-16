@@ -4,7 +4,7 @@ const { base } = require('viem/chains')
 const path = require('path')
 
 // Contract configuration
-const CONTRACT_ADDRESS = "0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0"
+const CONTRACT_ADDRESS = "0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E"
 const CONTRACT_ABI = [
   {
     name: 'getGameDetails',
