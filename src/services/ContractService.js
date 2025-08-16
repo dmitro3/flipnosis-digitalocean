@@ -68,6 +68,34 @@ const CONTRACT_ABI = [
     "outputs": [{"internalType": "address", "name": "depositor", "type": "address"}, {"internalType": "uint256", "name": "amount", "type": "uint256"}, {"internalType": "bool", "name": "claimed", "type": "bool"}, {"internalType": "uint256", "name": "depositTime", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}, {"internalType": "address", "name": "recipient", "type": "address"}],
+    "name": "emergencyWithdrawNFT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}, {"internalType": "address", "name": "recipient", "type": "address"}],
+    "name": "emergencyWithdrawETH",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}, {"internalType": "address", "name": "recipient", "type": "address"}],
+    "name": "emergencyWithdrawUSDC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "bytes32[]", "name": "gameIds", "type": "bytes32[]"}, {"internalType": "address[]", "name": "recipients", "type": "address[]"}],
+    "name": "adminBatchWithdrawNFTs",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]
 
@@ -95,8 +123,8 @@ class ContractService {
       throw new Error('MetaMask not detected')
     }
 
-    // Use the new contract address with 3.5% fee and 2-minute timeout
-    this.contractAddress = '0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf'
+    // Use the new contract address with admin functions
+    this.contractAddress = '0x57841f045a343afD97452708bA316126A8EeAa27'
 
     try {
       // Use provided clients or create new ones
@@ -238,11 +266,13 @@ class ContractService {
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
-      // Convert USD price to ETH (you'll need to implement proper price conversion)
-      // For now, using a simple conversion - replace with actual price feed
+      // Convert USD price to ETH with proper decimal handling
       const ethPriceUSD = 3500 // This should come from a price oracle
-      const ethAmount = (parseFloat(priceUSD) / ethPriceUSD).toString()
-      const ethAmountWei = ethers.parseEther(ethAmount)
+      const ethAmount = parseFloat(priceUSD) / ethPriceUSD
+      
+      // Round to 6 decimal places to avoid precision issues
+      const ethAmountRounded = Math.round(ethAmount * 1000000) / 1000000
+      const ethAmountWei = ethers.parseEther(ethAmountRounded.toString())
       
       console.log('💰 Deposit details:', {
         priceUSD,
@@ -477,9 +507,94 @@ class ContractService {
     return { success: true, message: 'Listing fee updated (stub)' }
   }
 
-  async emergencyWithdrawNFT(gameId) {
-    console.log('🚨 Emergency withdraw NFT (stub):', gameId)
-    return await this.reclaimNFT(gameId)
+  async emergencyWithdrawNFT(gameId, recipient) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🚨 Emergency withdrawing NFT for game:', gameId, 'to recipient:', recipient)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawNFT',
+        args: [gameIdBytes32, recipient],
+        chain: BASE_CHAIN
+      })
+      
+      console.log('🚨 Emergency NFT withdraw tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Emergency NFT withdraw confirmed')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error emergency withdrawing NFT:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async emergencyWithdrawETH(gameId, recipient) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🚨 Emergency withdrawing ETH for game:', gameId, 'to recipient:', recipient)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawETH',
+        args: [gameIdBytes32, recipient],
+        chain: BASE_CHAIN
+      })
+      
+      console.log('🚨 Emergency ETH withdraw tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Emergency ETH withdraw confirmed')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error emergency withdrawing ETH:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  async emergencyWithdrawUSDC(gameId, recipient) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🚨 Emergency withdrawing USDC for game:', gameId, 'to recipient:', recipient)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawUSDC',
+        args: [gameIdBytes32, recipient],
+        chain: BASE_CHAIN
+      })
+      
+      console.log('🚨 Emergency USDC withdraw tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Emergency USDC withdraw confirmed')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error emergency withdrawing USDC:', error)
+      return { success: false, error: error.message }
+    }
   }
 
   async withdrawPlatformFees() {
@@ -487,9 +602,35 @@ class ContractService {
     return { success: true, message: 'Platform fees withdrawn (stub)' }
   }
 
-  async adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients) {
-    console.log('📦 Admin batch withdraw NFTs (stub):', { nftContracts, tokenIds, recipients })
-    return { success: true, message: 'Batch withdraw completed (stub)' }
+  async adminBatchWithdrawNFTs(gameIds, recipients) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('📦 Admin batch withdrawing NFTs:', { gameIds, recipients })
+      
+      // Convert game IDs to bytes32
+      const gameIdsBytes32 = gameIds.map(gameId => this.getGameIdBytes32(gameId))
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'adminBatchWithdrawNFTs',
+        args: [gameIdsBytes32, recipients],
+        chain: BASE_CHAIN
+      })
+      
+      console.log('📦 Admin batch withdraw tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Admin batch withdraw confirmed')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error admin batch withdrawing NFTs:', error)
+      return { success: false, error: error.message }
+    }
   }
 
   async getGameDetails(gameId) {

@@ -824,11 +824,14 @@ export default function AdminPanel() {
       const game = games.find(g => g.id === gameId)
       if (!game) throw new Error('Game not found')
       
+      // Withdraw to the original depositor
+      const recipient = game.creator || address
+      
       // Use contract service to withdraw NFT
-      const result = await contractService.emergencyWithdrawNFT(game.contract_game_id)
+      const result = await contractService.emergencyWithdrawNFT(game.contract_game_id, recipient)
       
       if (result.success) {
-        addNotification('success', 'NFT withdrawn successfully!')
+        addNotification('success', `NFT withdrawn successfully to ${recipient}!`)
         
         // Update database
         await fetch(`${API_URL}/api/admin/games/${gameId}/cancel`, {
@@ -1209,31 +1212,29 @@ export default function AdminPanel() {
       addNotification('info', 'Processing NFT withdrawal...')
       
       // For each selected NFT, withdraw it individually using adminBatchWithdrawNFTs
-      const nftContracts = []
-      const tokenIds = []
+      const gameIds = []
       const recipients = []
       
       for (const nft of selectedNFTsForWithdrawal) {
         if (nft.nftContract !== '0x0000000000000000000000000000000000000000') {
-          nftContracts.push(nft.nftContract)
-          tokenIds.push(nft.tokenId)
+          // Use the game ID from the NFT data
+          gameIds.push(nft.gameId || nft.id)
           recipients.push(targetAddress)
         }
       }
       
-      if (nftContracts.length === 0) {
+      if (gameIds.length === 0) {
         addNotification('error', 'No valid NFTs selected for withdrawal')
         return
       }
       
       console.log('📝 Attempting batch withdrawal with:', {
-        nftContracts,
-        tokenIds,
+        gameIds,
         recipients
       })
       
       // Use the ContractService method for batch withdrawal
-      const result = await contractService.adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients)
+      const result = await contractService.adminBatchWithdrawNFTs(gameIds, recipients)
       
       if (result.success) {
         addNotification('success', result.message)

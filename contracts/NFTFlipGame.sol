@@ -323,4 +323,69 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     function unpause() external onlyOwner {
         _unpause();
     }
+    
+    /**
+     * @notice Emergency withdraw NFT (admin only)
+     */
+    function emergencyWithdrawNFT(bytes32 gameId, address recipient) external onlyOwner {
+        NFTDeposit storage nftDep = nftDeposits[gameId];
+        require(nftDep.depositor != address(0), "No NFT deposited");
+        require(!nftDep.claimed, "Already claimed");
+        
+        // Transfer NFT to recipient
+        IERC721(nftDep.nftContract).transferFrom(address(this), recipient, nftDep.tokenId);
+        nftDep.claimed = true;
+        
+        emit AssetsReclaimed(gameId, recipient, "NFT_EMERGENCY");
+    }
+    
+    /**
+     * @notice Emergency withdraw ETH (admin only)
+     */
+    function emergencyWithdrawETH(bytes32 gameId, address recipient) external onlyOwner {
+        ETHDeposit storage ethDep = ethDeposits[gameId];
+        require(ethDep.depositor != address(0), "No ETH deposited");
+        require(!ethDep.claimed, "Already claimed");
+        
+        // Transfer ETH to recipient
+        (bool success,) = recipient.call{value: ethDep.amount}("");
+        require(success, "ETH transfer failed");
+        ethDep.claimed = true;
+        
+        emit AssetsReclaimed(gameId, recipient, "ETH_EMERGENCY");
+    }
+    
+    /**
+     * @notice Emergency withdraw USDC (admin only)
+     */
+    function emergencyWithdrawUSDC(bytes32 gameId, address recipient) external onlyOwner {
+        USDCDeposit storage usdcDep = usdcDeposits[gameId];
+        require(usdcDep.depositor != address(0), "No USDC deposited");
+        require(!usdcDep.claimed, "Already claimed");
+        
+        // Transfer USDC to recipient
+        require(IERC20(usdcToken).transfer(recipient, usdcDep.amount), "USDC transfer failed");
+        usdcDep.claimed = true;
+        
+        emit AssetsReclaimed(gameId, recipient, "USDC_EMERGENCY");
+    }
+    
+    /**
+     * @notice Batch emergency withdraw NFTs (admin only)
+     */
+    function adminBatchWithdrawNFTs(
+        bytes32[] calldata gameIds,
+        address[] calldata recipients
+    ) external onlyOwner {
+        require(gameIds.length == recipients.length, "Array length mismatch");
+        
+        for (uint i = 0; i < gameIds.length; i++) {
+            NFTDeposit storage nftDep = nftDeposits[gameIds[i]];
+            if (nftDep.depositor != address(0) && !nftDep.claimed) {
+                IERC721(nftDep.nftContract).transferFrom(address(this), recipients[i], nftDep.tokenId);
+                nftDep.claimed = true;
+                emit AssetsReclaimed(gameIds[i], recipients[i], "NFT_BATCH");
+            }
+        }
+    }
 } 
