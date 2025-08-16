@@ -376,8 +376,8 @@ class ContractService {
          functionName: 'payFeeAndCreateGame',
          args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
          value: value,
-         gas: 250000n, // Gas limit for game creation
-         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+                   gas: 250000n, // Gas limit for game creation
+          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
          chain: BASE_CHAIN
        })
       
@@ -429,8 +429,8 @@ class ContractService {
          abi: NFT_ABI,
          functionName: 'approve',
          args: [this.contractAddress, tokenId],
-         gas: 80000n, // Gas limit for NFT approval
-         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+                   gas: 80000n, // Gas limit for NFT approval
+          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
          chain: BASE_CHAIN
        })
 
@@ -462,8 +462,8 @@ class ContractService {
          abi: CONTRACT_ABI,
          functionName: 'depositNFT',
          args: [gameIdBytes32],
-         gas: 150000n, // Gas limit for NFT deposit
-         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+                   gas: 150000n, // Gas limit for NFT deposit
+          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
          chain: BASE_CHAIN
        })
       
@@ -513,8 +513,8 @@ class ContractService {
          args: [gameIdBytes32],
          value: ethAmount,
          // Use legacy gas parameters for better MetaMask compatibility
-         gas: 150000n, // Gas limit
-         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+                   gas: 150000n, // Gas limit
+          gasPrice: 100000000n, // 0.1 gwei in wei (much lower gas price for Base)
          // Optional: Add chain to ensure correct network
          chain: BASE_CHAIN
        })
