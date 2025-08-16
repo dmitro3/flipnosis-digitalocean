@@ -1218,9 +1218,24 @@ export default function AdminPanel() {
       const result = await contractService.adminBatchWithdrawNFTs(gameIds, recipients)
       
       if (result.success) {
-        addNotification('success', result.message)
+        addNotification('success', `Successfully withdrew ${gameIds.length} NFTs! Transaction: ${result.transactionHash}`)
         setSelectedNFTsForWithdrawal([])
         setWithdrawalAddress('')
+        
+        // Update database to mark games as cancelled after successful withdrawal
+        try {
+          for (const gameId of gameIds) {
+            await fetch(`${API_URL}/api/admin/games/${gameId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'cancelled' })
+            })
+          }
+          console.log('✅ Database updated for withdrawn games')
+        } catch (dbError) {
+          console.error('⚠️ Database update failed:', dbError)
+          addNotification('warning', 'NFTs withdrawn but database update failed')
+        }
         
         // Wait a bit before reloading to let blockchain state update
         setTimeout(() => {
