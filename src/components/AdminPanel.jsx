@@ -1132,6 +1132,9 @@ export default function AdminPanel() {
       const data = await response.json()
       const games = data.games || []
       
+      console.log('📊 All games in database:', games.length)
+      console.log('📊 Game statuses:', games.map(g => ({ id: g.id, status: g.status, nft_contract: g.nft_contract })))
+      
       // Filter games that have NFTs deposited and are not completed
       const gamesWithNFTs = games.filter(game => 
         game.nft_contract && 
@@ -1139,6 +1142,12 @@ export default function AdminPanel() {
         game.status !== 'completed' &&
         game.status !== 'cancelled'
       )
+      
+      console.log('🔍 Filter criteria:')
+      console.log('  - Has nft_contract:', games.filter(g => g.nft_contract).length)
+      console.log('  - Not zero address:', games.filter(g => g.nft_contract && g.nft_contract !== '0x0000000000000000000000000000000000000000').length)
+      console.log('  - Not completed:', games.filter(g => g.status !== 'completed').length)
+      console.log('  - Not cancelled:', games.filter(g => g.status !== 'cancelled').length)
 
       console.log('📦 Games with NFTs:', gamesWithNFTs)
 
