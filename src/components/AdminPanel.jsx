@@ -1121,68 +1121,45 @@ export default function AdminPanel() {
     try {
       setIsLoadingNFTs(true)
       addNotification('info', 'Loading NFTs from contract...')
-      console.log('🔄 Loading NFTs from contract (Alchemy dynamic fetch)...')
+      console.log('🔄 Loading NFTs from contract (using contract view functions)...')
 
-      const { public: publicClient } = contractService.getCurrentClients()
-      const alchemy = contractService.alchemy
-      const contractAddress = contractService.contractAddress
-
-      if (!alchemy) {
-        addNotification('error', 'Alchemy not initialized')
-        setIsLoadingNFTs(false)
-        return
+      // Get all games from the database that have NFTs deposited
+      const response = await fetch(`${API_URL}/api/admin/games`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch games from database')
       }
+      
+      const games = await response.json()
+      
+      // Filter games that have NFTs deposited and are not completed
+      const gamesWithNFTs = games.filter(game => 
+        game.nft_contract && 
+        game.nft_contract !== '0x0000000000000000000000000000000000000000' &&
+        game.status !== 'completed' &&
+        game.status !== 'cancelled'
+      )
 
-      let allNFTs = []
-      let pageKey = null
-      let totalCount = 0
-      do {
-        const nftsForOwner = await alchemy.nft.getNftsForOwner(contractAddress, {
-          omitMetadata: false,
-          pageKey: pageKey
-        })
-        if (nftsForOwner.ownedNfts && nftsForOwner.ownedNfts.length > 0) {
-          allNFTs = [...allNFTs, ...nftsForOwner.ownedNfts]
-        }
-        pageKey = nftsForOwner.pageKey
-        totalCount = nftsForOwner.totalCount
-      } while (pageKey)
-
-      console.log('📦 All NFTs owned by contract:', allNFTs)
+      console.log('📦 Games with NFTs:', gamesWithNFTs)
 
       // Format for display
-      const nfts = allNFTs.map((nft, idx) => {
-        // Enhanced image URL handling
-        let imageUrl = ''
-        if (nft.media && nft.media.length > 0) {
-          imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
-        } else if (nft.image) {
-          imageUrl = nft.image.originalUrl || nft.image.cachedUrl || ''
-        }
-        if (!imageUrl && nft.metadata && nft.metadata.image) {
-          imageUrl = nft.metadata.image
-        }
-        if (imageUrl && imageUrl.startsWith('ipfs://')) {
-          imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
-        }
-        if (imageUrl && imageUrl.startsWith('http://')) {
-          imageUrl = imageUrl.replace('http://', 'https://')
-        }
+      const nfts = gamesWithNFTs.map(game => {
         return {
-          nftContract: nft.contract.address,
-          tokenId: nft.tokenId,
-          name: nft.title || nft.name || `NFT #${nft.tokenId}`,
+          nftContract: game.nft_contract,
+          tokenId: game.nft_token_id,
+          name: game.nft_name || `NFT #${game.nft_token_id}`,
           metadata: {
-            ...nft.metadata,
-            image: imageUrl
+            image: game.nft_image || '',
+            collection: game.nft_collection || ''
           },
-          uniqueKey: `${nft.contract.address}-${nft.tokenId}`,
-          source: 'alchemy',
+          uniqueKey: `${game.nft_contract}-${game.nft_token_id}`,
+          source: 'database',
+          gameId: game.id,
+          contractGameId: game.contract_game_id
         }
       })
 
       setContractNFTs(nfts)
-      addNotification('success', `Loaded ${nfts.length} NFTs from contract (Alchemy)`)
+      addNotification('success', `Loaded ${nfts.length} NFTs from contract (Database)`)
     } catch (error) {
       console.error('❌ Error loading contract NFTs:', error)
       addNotification('error', 'Failed to load NFTs: ' + error.message)
@@ -1217,9 +1194,12 @@ export default function AdminPanel() {
       
       for (const nft of selectedNFTsForWithdrawal) {
         if (nft.nftContract !== '0x0000000000000000000000000000000000000000') {
-          // Use the game ID from the NFT data
-          gameIds.push(nft.gameId || nft.id)
-          recipients.push(targetAddress)
+          // Use the contract game ID (bytes32 format) from the NFT data
+          const contractGameId = nft.contractGameId || nft.gameId
+          if (contractGameId) {
+            gameIds.push(contractGameId)
+            recipients.push(targetAddress)
+          }
         }
       }
       
