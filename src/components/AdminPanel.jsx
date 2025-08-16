@@ -1129,7 +1129,8 @@ export default function AdminPanel() {
         throw new Error('Failed to fetch games from database')
       }
       
-      const games = await response.json()
+      const data = await response.json()
+      const games = data.games || []
       
       // Filter games that have NFTs deposited and are not completed
       const gamesWithNFTs = games.filter(game => 
