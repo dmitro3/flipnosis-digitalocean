@@ -614,6 +614,32 @@ class ContractService {
       // Convert game IDs to bytes32
       const gameIdsBytes32 = gameIds.map(gameId => this.getGameIdBytes32(gameId))
       
+      // Debug: Check contract state before withdrawal
+      console.log('🔍 Checking contract state before withdrawal...')
+      for (let i = 0; i < gameIds.length; i++) {
+        try {
+          const nftDeposit = await this.publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'nftDeposits',
+            args: [gameIdsBytes32[i]]
+          })
+          console.log(`Game ${i + 1} contract state:`, {
+            gameId: gameIds[i],
+            gameIdBytes32: gameIdsBytes32[i],
+            nftDeposit: {
+              depositor: nftDeposit[0],
+              nftContract: nftDeposit[1],
+              tokenId: nftDeposit[2].toString(),
+              claimed: nftDeposit[3],
+              depositTime: nftDeposit[4].toString()
+            }
+          })
+        } catch (error) {
+          console.error(`Error checking game ${i + 1}:`, error)
+        }
+      }
+      
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,

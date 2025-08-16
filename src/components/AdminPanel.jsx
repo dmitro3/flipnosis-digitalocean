@@ -1214,6 +1214,18 @@ export default function AdminPanel() {
         recipients
       })
       
+      // Debug: Check contract state before withdrawal
+      console.log('🔍 Debugging contract state before withdrawal...')
+      for (let i = 0; i < gameIds.length; i++) {
+        const gameId = gameIds[i]
+        const recipient = recipients[i]
+        console.log(`Game ${i + 1}:`, {
+          gameId,
+          recipient,
+          gameIdBytes32: contractService.getGameIdBytes32(gameId)
+        })
+      }
+      
       // Use the ContractService method for batch withdrawal
       const result = await contractService.adminBatchWithdrawNFTs(gameIds, recipients)
       
