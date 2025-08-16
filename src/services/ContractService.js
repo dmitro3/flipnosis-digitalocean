@@ -489,8 +489,16 @@ class ContractService {
       // Convert USD price to wei units (6 decimals for USD)
       const priceUSDWei = ethers.parseUnits(priceUSD.toString(), 6)
       
-      // Get the ETH amount for this USD price
-      const ethAmount = await this.contract.getETHAmount(priceUSDWei)
+              // Get the ETH amount for this USD price
+        let ethAmount
+        try {
+          ethAmount = await this.contract.getETHAmount(priceUSDWei)
+        } catch (error) {
+          console.warn('⚠️ Error calling getETHAmount, using fallback calculation')
+          // Fallback calculation if contract call fails
+          const ethPriceUSD = 3500 // Conservative estimate
+          ethAmount = (BigInt(priceUSDWei) * BigInt(1e18)) / (BigInt(ethPriceUSD) * BigInt(1000000))
+        }
       
       console.log('💰 Deposit details:', {
         priceUSD: priceUSD,
@@ -499,13 +507,21 @@ class ContractService {
         ethAmountFormatted: ethers.formatEther(ethAmount)
       })
       
-                     // Let MetaMask handle gas estimation automatically
+                     // Ensure ethAmount is properly formatted as BigInt
+        const value = BigInt(ethAmount.toString())
+        
+        console.log('💰 Final transaction value:', {
+          value: value.toString(),
+          valueFormatted: ethers.formatEther(value)
+        })
+        
+        // Let MetaMask handle gas estimation automatically
         const hash = await this.walletClient.writeContract({
           address: this.contractAddress,
           abi: CONTRACT_ABI,
           functionName: 'depositETH',
           args: [gameIdBytes32],
-          value: ethAmount,
+          value: value,
           chain: BASE_CHAIN
         })
       
