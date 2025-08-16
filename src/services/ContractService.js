@@ -369,18 +369,17 @@ class ContractService {
       
       console.log('💸 Transaction value (listing fee only):', ethers.formatEther(value))
       
-      // Use Viem's writeContract with proper gas parameters
-      const hash = await this.walletClient.writeContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'payFeeAndCreateGame',
-        args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
-        value: value,
-        gas: 250000n, // Increased gas limit for game creation
-        maxFeePerGas: 2000000000n, // 2 gwei (increased for Base network)
-        maxPriorityFeePerGas: 200000000n, // 0.2 gwei (increased for Base network)
-        chain: BASE_CHAIN
-      })
+             // Use legacy gas parameters for better MetaMask compatibility
+       const hash = await this.walletClient.writeContract({
+         address: this.contractAddress,
+         abi: CONTRACT_ABI,
+         functionName: 'payFeeAndCreateGame',
+         args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
+         value: value,
+         gas: 250000n, // Gas limit for game creation
+         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+         chain: BASE_CHAIN
+       })
       
       console.log('🔖 Game creation tx hash:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -425,16 +424,15 @@ class ContractService {
       await this.ensureBaseNetwork()
       console.log('🔓 Approving NFT:', { nftContract, tokenId })
 
-      const hash = await this.walletClient.writeContract({
-        address: nftContract,
-        abi: NFT_ABI,
-        functionName: 'approve',
-        args: [this.contractAddress, tokenId],
-        gas: 80000n, // Reduced gas for NFT approval
-        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
-        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
-        chain: BASE_CHAIN
-      })
+             const hash = await this.walletClient.writeContract({
+         address: nftContract,
+         abi: NFT_ABI,
+         functionName: 'approve',
+         args: [this.contractAddress, tokenId],
+         gas: 80000n, // Gas limit for NFT approval
+         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+         chain: BASE_CHAIN
+       })
 
       console.log('🔓 NFT approval tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -459,16 +457,15 @@ class ContractService {
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
-      const hash = await this.walletClient.writeContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'depositNFT',
-        args: [gameIdBytes32],
-        gas: 150000n, // Increased gas for NFT deposit
-        maxFeePerGas: 2000000000n, // 2 gwei (increased for Base network)
-        maxPriorityFeePerGas: 200000000n, // 0.2 gwei (increased for Base network)
-        chain: BASE_CHAIN
-      })
+             const hash = await this.walletClient.writeContract({
+         address: this.contractAddress,
+         abi: CONTRACT_ABI,
+         functionName: 'depositNFT',
+         args: [gameIdBytes32],
+         gas: 150000n, // Gas limit for NFT deposit
+         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+         chain: BASE_CHAIN
+       })
       
       console.log('📦 NFT deposit tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -508,21 +505,19 @@ class ContractService {
         ethAmountFormatted: ethers.formatEther(ethAmount)
       })
       
-      // CRITICAL FIX: Properly structure the transaction for Viem
-      // Viem expects all parameters at the same level, not nested
-      const hash = await this.walletClient.writeContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'depositETH',
-        args: [gameIdBytes32],
-        value: ethAmount,
-        // Gas parameters must be at the same level as other parameters
-        gas: 150000n, // Increased gas limit for ETH deposit
-        maxFeePerGas: 2000000000n, // 2 gwei (increased for Base network)
-        maxPriorityFeePerGas: 200000000n, // 0.2 gwei (increased for Base network)
-        // Optional: Add chain to ensure correct network
-        chain: BASE_CHAIN
-      })
+             // CRITICAL FIX: Use legacy gas parameters for better MetaMask compatibility
+       const hash = await this.walletClient.writeContract({
+         address: this.contractAddress,
+         abi: CONTRACT_ABI,
+         functionName: 'depositETH',
+         args: [gameIdBytes32],
+         value: ethAmount,
+         // Use legacy gas parameters for better MetaMask compatibility
+         gas: 150000n, // Gas limit
+         gasPrice: 2000000000n, // 2 gwei in wei (legacy gas price)
+         // Optional: Add chain to ensure correct network
+         chain: BASE_CHAIN
+       })
       
       console.log('💰 ETH deposit tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
