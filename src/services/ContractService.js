@@ -376,9 +376,9 @@ class ContractService {
         functionName: 'payFeeAndCreateGame',
         args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
         value: value,
-        gas: 200000n, // Reduced gas limit for game creation
-        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
-        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
+        gas: 250000n, // Increased gas limit for game creation
+        maxFeePerGas: 2000000000n, // 2 gwei (increased for Base network)
+        maxPriorityFeePerGas: 200000000n, // 0.2 gwei (increased for Base network)
         chain: BASE_CHAIN
       })
       
@@ -464,9 +464,9 @@ class ContractService {
         abi: CONTRACT_ABI,
         functionName: 'depositNFT',
         args: [gameIdBytes32],
-        gas: 100000n, // Reduced gas for NFT deposit
-        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
-        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
+        gas: 150000n, // Increased gas for NFT deposit
+        maxFeePerGas: 2000000000n, // 2 gwei (increased for Base network)
+        maxPriorityFeePerGas: 200000000n, // 0.2 gwei (increased for Base network)
         chain: BASE_CHAIN
       })
       
@@ -517,9 +517,9 @@ class ContractService {
         args: [gameIdBytes32],
         value: ethAmount,
         // Gas parameters must be at the same level as other parameters
-        gas: 100000n, // Reduced gas limit for ETH deposit
-        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
-        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
+        gas: 150000n, // Increased gas limit for ETH deposit
+        maxFeePerGas: 2000000000n, // 2 gwei (increased for Base network)
+        maxPriorityFeePerGas: 200000000n, // 0.2 gwei (increased for Base network)
         // Optional: Add chain to ensure correct network
         chain: BASE_CHAIN
       })
