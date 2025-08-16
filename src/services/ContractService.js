@@ -376,9 +376,9 @@ class ContractService {
         functionName: 'payFeeAndCreateGame',
         args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
         value: value,
-        gas: 500000n, // Increased gas limit for complex game creation
-        maxFeePerGas: 2000000000n, // 2 gwei
-        maxPriorityFeePerGas: 200000000n, // 0.2 gwei
+        gas: 200000n, // Reduced gas limit for game creation
+        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
+        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
         chain: BASE_CHAIN
       })
       
@@ -430,9 +430,9 @@ class ContractService {
         abi: NFT_ABI,
         functionName: 'approve',
         args: [this.contractAddress, tokenId],
-        gas: 100000n,
-        maxFeePerGas: 2000000000n, // 2 gwei
-        maxPriorityFeePerGas: 200000000n, // 0.2 gwei
+        gas: 80000n, // Reduced gas for NFT approval
+        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
+        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
         chain: BASE_CHAIN
       })
 
@@ -464,9 +464,9 @@ class ContractService {
         abi: CONTRACT_ABI,
         functionName: 'depositNFT',
         args: [gameIdBytes32],
-        gas: 150000n,
-        maxFeePerGas: 2000000000n, // 2 gwei
-        maxPriorityFeePerGas: 200000000n, // 0.2 gwei
+        gas: 100000n, // Reduced gas for NFT deposit
+        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
+        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
         chain: BASE_CHAIN
       })
       
@@ -517,9 +517,9 @@ class ContractService {
         args: [gameIdBytes32],
         value: ethAmount,
         // Gas parameters must be at the same level as other parameters
-        gas: 150000n, // Use BigInt notation (150000n) for cleaner code
-        maxFeePerGas: 2000000000n, // 2 gwei
-        maxPriorityFeePerGas: 200000000n, // 0.2 gwei
+        gas: 100000n, // Reduced gas limit for ETH deposit
+        maxFeePerGas: 1000000000n, // 1 gwei (reduced from 2 gwei)
+        maxPriorityFeePerGas: 100000000n, // 0.1 gwei (reduced from 0.2 gwei)
         // Optional: Add chain to ensure correct network
         chain: BASE_CHAIN
       })
