@@ -3,7 +3,7 @@ const { ethers } = require('hardhat');
 
 async function main() {
   // Contract address on Base network
-  const contractAddress = "0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E";
+  const contractAddress = "0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf";
   
   // Get the contract instance
   const NFTFlipGame = await ethers.getContractFactory("contracts/NFTFlipGame.sol:NFTFlipGame");

@@ -5,7 +5,7 @@ async function main() {
     console.log('🧮 Testing ETH Amount Calculation...');
     console.log('====================================');
     
-    const contractAddress = '0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E';
+    const contractAddress = '0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf';
     const provider = new ethers.JsonRpcProvider('https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3');
     
     // Contract ABI for getETHAmount function

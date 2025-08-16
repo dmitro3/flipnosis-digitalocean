@@ -2,7 +2,7 @@ const { ethers } = require('hardhat');
 
 async function main() {
   // Current deployed contract address
-  const contractAddress = "0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E";
+  const contractAddress = "0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf";
   
   console.log("🔍 Checking contract address on Base Mainnet");
   console.log("=" .repeat(60));
@@ -48,8 +48,8 @@ async function main() {
   }
   
   console.log("\n📝 Summary:");
-          console.log("Current deployed contract: 0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E");
-console.log("Contract is verified on BaseScan: https://basescan.org/address/0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E#code");
+          console.log("Current deployed contract: 0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf");
+console.log("Contract is verified on BaseScan: https://basescan.org/address/0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf#code");
 }
 
 main()
