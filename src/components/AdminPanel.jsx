@@ -1113,7 +1113,7 @@ export default function AdminPanel() {
 
   // NFT Management Functions
   const loadContractNFTs = async () => {
-    if (!contractService.isInitialized()) {
+    if (!contractService.isInitialized) {
       addNotification('error', 'Contract service not initialized')
       return
     }
@@ -1192,7 +1192,7 @@ export default function AdminPanel() {
   }
 
   const withdrawSelectedNFTs = async () => {
-    if (!contractService.isInitialized()) {
+    if (!contractService.isInitialized) {
       addNotification('error', 'Contract service not initialized')
       return
     }
