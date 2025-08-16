@@ -376,7 +376,7 @@ class ContractService {
         functionName: 'payFeeAndCreateGame',
         args: [gameIdBytes32, nftContract, tokenId, priceUSD, paymentToken],
         value: value,
-        gas: 200000n,
+        gas: 500000n, // Increased gas limit for complex game creation
         maxFeePerGas: 2000000000n, // 2 gwei
         maxPriorityFeePerGas: 200000000n, // 0.2 gwei
         chain: BASE_CHAIN
@@ -394,13 +394,23 @@ class ContractService {
       }
     } catch (error) {
       console.error('❌ Error creating game:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        data: error.data,
+        stack: error.stack
+      })
 
       if (error.message?.includes('insufficient funds')) {
         return { success: false, error: 'Insufficient ETH balance for game creation' }
       } else if (error.message?.includes('user rejected')) {
         return { success: false, error: 'Transaction was rejected by user' }
+      } else if (error.message?.includes('execution reverted')) {
+        return { success: false, error: `Contract execution reverted: ${error.message}` }
+      } else if (error.message?.includes('gas')) {
+        return { success: false, error: `Gas estimation failed: ${error.message}` }
       } else {
-        return { success: false, error: error.message }
+        return { success: false, error: error.message || 'Unknown error occurred' }
       }
     }
   }
@@ -521,14 +531,22 @@ class ContractService {
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
       console.error('❌ Error depositing ETH:', error)
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        data: error.data,
+        stack: error.stack
+      })
       
       // Better error handling
       if (error.message?.includes('insufficient funds')) {
         return { success: false, error: 'Insufficient ETH balance. Please add more ETH to your wallet.' }
       } else if (error.message?.includes('user rejected')) {
         return { success: false, error: 'Transaction was cancelled by user' }
+      } else if (error.message?.includes('execution reverted')) {
+        return { success: false, error: `Contract execution reverted: ${error.message}` }
       } else if (error.message?.includes('gas')) {
-        return { success: false, error: 'Gas estimation failed. Please try again with manual gas settings.' }
+        return { success: false, error: `Gas estimation failed: ${error.message}` }
       }
       
       return { success: false, error: error.message || 'Transaction failed' }
