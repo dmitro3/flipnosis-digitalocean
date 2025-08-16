@@ -422,23 +422,7 @@ const CreateFlip = () => {
         throw new Error(errorData.error || 'Failed to register game')
       }
       
-      // Add a small delay to ensure blockchain state is fully updated
-      showInfo('Waiting for blockchain confirmation...')
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      
-      // Step 5: Deposit NFT
-      showInfo('Depositing NFT...')
-      const depositResult = await contractService.depositNFT(
-        gameId,
-        selectedNFT.contractAddress,
-        selectedNFT.tokenId
-      )
-      
-      if (!depositResult.success) {
-        throw new Error(depositResult.error || 'Failed to deposit NFT')
-      }
-      
-      // Mark step 3 as completed
+      // Mark step 3 as completed (NFT was already deposited in createGame)
       setStepStatus(prev => ({ ...prev, depositNFT: true }))
       
       // Step 6: Confirm NFT deposit
@@ -448,7 +432,7 @@ const CreateFlip = () => {
         body: JSON.stringify({
           player: address,
           assetType: 'nft',
-          transactionHash: depositResult.transactionHash
+          transactionHash: createResult.transactionHash
         })
       })
       
