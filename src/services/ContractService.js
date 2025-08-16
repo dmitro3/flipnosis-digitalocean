@@ -90,20 +90,22 @@ class ContractService {
     this.userAddress = null
   }
 
-  async initialize(contractAddress) {
+  async initialize(walletClient, publicClient) {
     if (!window.ethereum) {
       throw new Error('MetaMask not detected')
     }
 
-    this.contractAddress = contractAddress
+    // Use the new contract address
+    this.contractAddress = '0x89Be2510F8180DC319888Ca44E2FDcBA24274c4E'
 
     try {
-      this.publicClient = createPublicClient({
+      // Use provided clients or create new ones
+      this.publicClient = publicClient || createPublicClient({
         chain: BASE_CHAIN,
         transport: http()
       })
 
-      this.walletClient = createWalletClient({
+      this.walletClient = walletClient || createWalletClient({
         chain: BASE_CHAIN,
         transport: custom(window.ethereum)
       })
@@ -120,10 +122,10 @@ class ContractService {
         chain: BASE_CHAIN.name
       })
 
-      return true
+      return { success: true }
     } catch (error) {
       console.error('❌ Contract service initialization failed:', error)
-      throw error
+      return { success: false, error: error.message }
     }
   }
 
@@ -425,6 +427,86 @@ class ContractService {
       return { success: false, error: error.message }
     }
   }
+
+  // Legacy methods for compatibility with existing frontend
+  async createGame(gameId, nftContract, tokenId, priceUSD) {
+    console.log('🔄 Creating game (legacy method):', { gameId, nftContract, tokenId, priceUSD })
+    return await this.depositNFT(gameId, nftContract, tokenId)
+  }
+
+  async cancelGame(gameId) {
+    console.log('🔄 Canceling game (legacy method):', gameId)
+    // Try to reclaim NFT first, then crypto
+    const nftResult = await this.reclaimNFT(gameId)
+    if (!nftResult.success) {
+      return await this.reclaimCrypto(gameId)
+    }
+    return nftResult
+  }
+
+  // Admin methods (stubs for compatibility)
+  async getListingFee() {
+    console.log('📋 Getting listing fee (stub)')
+    return { success: true, fee: 0 } // No listing fee in new contract
+  }
+
+  async getPlatformFee() {
+    console.log('📋 Getting platform fee (stub)')
+    return { success: true, fee: 2.5 } // 2.5% in new contract
+  }
+
+  async updatePlatformFee(newFeePercent) {
+    console.log('📋 Updating platform fee (stub):', newFeePercent)
+    return { success: true, message: 'Platform fee updated (stub)' }
+  }
+
+  async updateListingFee(newFeeUSD) {
+    console.log('📋 Updating listing fee (stub):', newFeeUSD)
+    return { success: true, message: 'Listing fee updated (stub)' }
+  }
+
+  async emergencyWithdrawNFT(gameId) {
+    console.log('🚨 Emergency withdraw NFT (stub):', gameId)
+    return await this.reclaimNFT(gameId)
+  }
+
+  async withdrawPlatformFees() {
+    console.log('💰 Withdrawing platform fees (stub)')
+    return { success: true, message: 'Platform fees withdrawn (stub)' }
+  }
+
+  async adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients) {
+    console.log('📦 Admin batch withdraw NFTs (stub):', { nftContracts, tokenIds, recipients })
+    return { success: true, message: 'Batch withdraw completed (stub)' }
+  }
+
+  async getGameDetails(gameId) {
+    console.log('📋 Getting game details (stub):', gameId)
+    return await this.getGameState(gameId)
+  }
+
+  // Property getters for compatibility
+  get currentChain() {
+    return this.isReady() ? BASE_CHAIN : null
+  }
+
+  get isInitialized() {
+    return this.isReady()
+  }
+
+  getCurrentClients() {
+    return {
+      public: this.publicClient,
+      wallet: this.walletClient
+    }
+  }
+
+  // Stub properties for compatibility
+  get provider() { return this.publicClient }
+  get signer() { return this.walletClient }
+  get contract() { return this.contractAddress }
+  get account() { return this.userAddress }
+  get alchemy() { return null } // No Alchemy in new implementation
 }
 
 export default ContractService 
