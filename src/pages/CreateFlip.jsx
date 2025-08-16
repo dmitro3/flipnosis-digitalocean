@@ -387,7 +387,7 @@ const CreateFlip = () => {
       console.log(`💰 Game price: $${price} (${priceInMicrodollars} microdollars)`)
       console.log(`💸 Listing fee: $0.00 (free)`)
       
-      const createResult = await contractService.payFeeAndCreateGame(
+      const createResult = await contractService.createGame(
         gameId,
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
