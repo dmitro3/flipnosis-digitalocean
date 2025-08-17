@@ -635,7 +635,11 @@ class ContractService {
       })
       
       console.log('🚨 Emergency NFT withdraw tx:', hash)
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await this.publicClient.waitForTransactionReceipt({ 
+        hash,
+        confirmations: 1,
+        timeout: 60_000
+      })
       console.log('✅ Emergency NFT withdraw confirmed')
 
       return { success: true, transactionHash: hash, receipt }
@@ -683,7 +687,7 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('📦 Admin batch withdrawing NFTs:', { nftContracts, tokenIds, recipients })
+      console.log('📦 Admin withdrawing NFTs individually for low gas:', { nftContracts, tokenIds, recipients })
       
       // First, try to restore any missing games
       console.log('🔧 Restoring missing games before withdrawal...')
@@ -713,31 +717,40 @@ class ContractService {
       }
       
       if (validGameIds.length > 0) {
-        console.log(`📦 Batch withdrawing ${validGameIds.length} NFTs...`)
+        console.log(`📦 Withdrawing ${validGameIds.length} NFTs individually for optimal gas...`)
         
-        const gameIdsBytes32 = validGameIds.map(gameId => this.getGameIdBytes32(gameId))
+        const results = []
         
-        const hash = await this.walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'adminBatchWithdrawNFTs',
-          args: [gameIdsBytes32, validRecipients],
-          chain: BASE_CHAIN,
-          account: this.walletClient.account
-        })
+        // Process each NFT individually using emergencyWithdrawNFT for low gas fees
+        for (let i = 0; i < validGameIds.length; i++) {
+          const gameId = validGameIds[i]
+          const recipient = validRecipients[i]
+          
+          console.log(`📦 Processing NFT ${i + 1}/${validGameIds.length}: ${gameId} -> ${recipient}`)
+          
+          const result = await this.emergencyWithdrawNFT(gameId, recipient)
+          results.push(result)
+          
+          if (!result.success) {
+            console.warn(`⚠️ Failed to withdraw NFT for game ${gameId}:`, result.error)
+          } else {
+            console.log(`✅ Successfully withdrew NFT for game ${gameId}`)
+          }
+        }
         
-        const receipt = await this.publicClient.waitForTransactionReceipt({ 
-          hash,
-          confirmations: 1,
-          timeout: 60_000
-        })
-        console.log(`✅ Batch withdrew ${validGameIds.length} NFTs successfully`)
+        const successfulWithdrawals = results.filter(r => r.success).length
         
-        return { 
-          success: true, 
-          transactionHash: hash, 
-          receipt,
-          message: `Successfully withdrew ${validGameIds.length} NFTs`
+        if (successfulWithdrawals > 0) {
+          return { 
+            success: true, 
+            transactionHash: results.find(r => r.success)?.transactionHash,
+            message: `Successfully withdrew ${successfulWithdrawals}/${validGameIds.length} NFTs with low gas fees`
+          }
+        } else {
+          return {
+            success: false,
+            error: 'All NFT withdrawals failed'
+          }
         }
       }
       
@@ -747,7 +760,7 @@ class ContractService {
       }
       
     } catch (error) {
-      console.error('❌ Error admin batch withdrawing NFTs:', error)
+      console.error('❌ Error admin withdrawing NFTs:', error)
       return { success: false, error: error.message }
     }
   }
