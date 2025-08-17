@@ -209,16 +209,16 @@ const CreateFlip = () => {
     isCustom: false
   })
   const [selectedMaterial, setSelectedMaterial] = useState({
-    id: 'poker-chip',
-    name: 'Poker Chip',
-    description: 'Balanced & Classic',
-    edgeColor: '#228B22',
+    id: 'graphite',
+    name: 'Graphite',
+    description: 'Ultra-Light & Swift',
+    edgeColor: '#1a1a1a',
     physics: {
-      weight: 'medium',
-      speedMultiplier: 1.0,
-      durationMultiplier: 1.0,
-      wobbleIntensity: 1.0,
-      predictability: 'medium'
+      weight: 'ultra-light',
+      speedMultiplier: 2.0,
+      durationMultiplier: 0.5,
+      wobbleIntensity: 1.5,
+      predictability: 'very-low'
     }
   })
 

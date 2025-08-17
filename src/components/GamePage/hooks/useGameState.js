@@ -883,16 +883,16 @@ export const useGameState = (gameId, address) => {
       
       // Process material data if available
       const materialData = coinData.material || {
-        id: 'poker-chip',
-        name: 'Poker Chip',
-        description: 'Balanced & Classic',
-        edgeColor: '#0066CC',
+        id: 'graphite',
+        name: 'Graphite',
+        description: 'Ultra-Light & Swift',
+        edgeColor: '#1a1a1a',
         physics: {
-          weight: 'medium',
-          speedMultiplier: 1.0,
-          durationMultiplier: 1.0,
-          wobbleIntensity: 1.0,
-          predictability: 'medium'
+          weight: 'ultra-light',
+          speedMultiplier: 2.0,
+          durationMultiplier: 0.5,
+          wobbleIntensity: 1.5,
+          predictability: 'very-low'
         }
       }
       
@@ -910,16 +910,16 @@ export const useGameState = (gameId, address) => {
         headsImage: '/coins/plainh.png',
         tailsImage: '/coins/plaint.png',
         material: {
-          id: 'poker-chip',
-          name: 'Poker Chip',
-          description: 'Balanced & Classic',
-          edgeColor: '#0066CC',
+          id: 'graphite',
+          name: 'Graphite',
+          description: 'Ultra-Light & Swift',
+          edgeColor: '#1a1a1a',
           physics: {
-            weight: 'medium',
-            speedMultiplier: 1.0,
-            durationMultiplier: 1.0,
-            wobbleIntensity: 1.0,
-            predictability: 'medium'
+            weight: 'ultra-light',
+            speedMultiplier: 2.0,
+            durationMultiplier: 0.5,
+            wobbleIntensity: 1.5,
+            predictability: 'very-low'
           }
         }
       })

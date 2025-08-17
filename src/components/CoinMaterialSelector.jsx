@@ -4,24 +4,10 @@ const CoinMaterialSelector = ({
   onMaterialSelect, 
   selectedMaterial = null 
 }) => {
-  const [selectedMaterialType, setSelectedMaterialType] = useState(selectedMaterial?.id || 'poker-chip')
+  const [selectedMaterialType, setSelectedMaterialType] = useState(selectedMaterial?.id || 'graphite')
 
   // Coin material options with physics properties and visual characteristics
   const coinMaterials = [
-    {
-      id: 'penny',
-      name: 'Penny',
-      description: 'Lightweight & Fast',
-      edgeColor: '#CD7F32', // Copper/bronze
-      physics: {
-        weight: 'light',
-        speedMultiplier: 1.5,
-        durationMultiplier: 0.7,
-        wobbleIntensity: 1.2,
-        predictability: 'low'
-      },
-      characteristics: 'Fast flips, unpredictable bounces, high skill ceiling'
-    },
     {
       id: 'graphite',
       name: 'Graphite',
@@ -37,18 +23,32 @@ const CoinMaterialSelector = ({
       characteristics: 'Ultra-fast flips, chaotic motion, expert level'
     },
     {
-      id: 'poker-chip',
-      name: 'Poker Chip',
-      description: 'Balanced & Classic',
-      edgeColor: '#0066CC', // Blue like poker chips
+      id: 'penny',
+      name: 'Penny',
+      description: 'Lightweight & Fast',
+      edgeColor: '#CD7F32', // Copper/bronze
       physics: {
-        weight: 'medium',
-        speedMultiplier: 1.0,
-        durationMultiplier: 1.0,
-        wobbleIntensity: 1.0,
-        predictability: 'medium'
+        weight: 'light',
+        speedMultiplier: 1.5,
+        durationMultiplier: 0.7,
+        wobbleIntensity: 1.2,
+        predictability: 'low'
       },
-      characteristics: 'Balanced gameplay, reliable physics, all skill levels'
+      characteristics: 'Fast flips, unpredictable bounces, high skill ceiling'
+    },
+    {
+      id: 'glass',
+      name: 'Glass',
+      description: 'Crystal Clear & Elegant',
+      edgeColor: '#87CEEB', // Sky blue for glass edge
+      physics: {
+        weight: 'light',
+        speedMultiplier: 1.3,
+        durationMultiplier: 0.8,
+        wobbleIntensity: 1.1,
+        predictability: 'medium-low'
+      },
+      characteristics: 'Smooth, elegant flips with subtle transparency effects'
     },
     {
       id: 'silver-dollar',
@@ -153,27 +153,19 @@ const CoinMaterialSelector = ({
                 width: '80px',
                 height: '80px',
                 borderRadius: '50%',
-                background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(0,0,0,0.2) 100%)',
-                border: (material.id === 'poker-chip' || material.id === 'penny') ? 'none' : `4px solid ${material.edgeColor}`,
+                background: material.id === 'glass' ? 
+                  'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.2) 50%, rgba(135,206,235,0.1) 100%)' :
+                  'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(0,0,0,0.2) 100%)',
+                border: material.id === 'glass' ? '4px solid rgba(135,206,235,0.6)' : 
+                        (material.id === 'penny') ? 'none' : `4px solid ${material.edgeColor}`,
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: material.id === 'poker-chip' ? '0 0 20px rgba(0, 102, 204, 0.4)' : material.id === 'penny' ? '0 0 20px rgba(205, 127, 50, 0.4)' : `0 0 20px ${material.edgeColor}40`
+                boxShadow: material.id === 'glass' ? '0 0 20px rgba(135,206,235,0.5), inset 0 0 20px rgba(255,255,255,0.1)' : 
+                           material.id === 'penny' ? '0 0 20px rgba(205, 127, 50, 0.4)' : 
+                           `0 0 20px ${material.edgeColor}40`
               }}>
-                {/* Special poker chip edge pattern */}
-                {material.id === 'poker-chip' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    left: '-4px',
-                    right: '-4px',
-                    bottom: '-4px',
-                    borderRadius: '50%',
-                    background: 'conic-gradient(from 0deg, #0066CC 0deg, #0066CC 18deg, #FFFFFF 18deg, #FFFFFF 36deg, #0066CC 36deg, #0066CC 54deg, #FFFFFF 54deg, #FFFFFF 72deg, #0066CC 72deg, #0066CC 90deg, #FFFFFF 90deg, #FFFFFF 108deg, #0066CC 108deg, #0066CC 126deg, #FFFFFF 126deg, #FFFFFF 144deg, #0066CC 144deg, #0066CC 162deg, #FFFFFF 162deg, #FFFFFF 180deg, #0066CC 180deg, #0066CC 198deg, #FFFFFF 198deg, #FFFFFF 216deg, #0066CC 216deg, #0066CC 234deg, #FFFFFF 234deg, #FFFFFF 252deg, #0066CC 252deg, #0066CC 270deg, #FFFFFF 270deg, #FFFFFF 288deg, #0066CC 288deg, #0066CC 306deg, #FFFFFF 306deg, #FFFFFF 324deg, #0066CC 324deg, #0066CC 342deg, #FFFFFF 342deg, #FFFFFF 360deg)',
-                    zIndex: 1
-                  }} />
-                )}
                 {/* Special penny ridged edge pattern */}
                 {material.id === 'penny' && (
                   <div style={{
@@ -192,12 +184,12 @@ const CoinMaterialSelector = ({
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                                   background: material.id === 'penny' ? 'linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)' :
-                            material.id === 'graphite' ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)' :
-                            material.id === 'poker-chip' ? 'linear-gradient(135deg, #0066CC 0%, #0099FF 100%)' :
-                            material.id === 'silver-dollar' ? 'linear-gradient(135deg, #C0C0C0 0%, #E5E4E2 100%)' :
-                            material.id === 'titanium' ? 'linear-gradient(135deg, #2D1B69 0%, #4A148C 100%)' :
-                            'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                  background: material.id === 'penny' ? 'linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)' :
+                           material.id === 'graphite' ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)' :
+                           material.id === 'glass' ? 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(135,206,235,0.2) 50%, rgba(255,255,255,0.1) 100%)' :
+                           material.id === 'silver-dollar' ? 'linear-gradient(135deg, #C0C0C0 0%, #E5E4E2 100%)' :
+                           material.id === 'titanium' ? 'linear-gradient(135deg, #2D1B69 0%, #4A148C 100%)' :
+                           'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -205,16 +197,17 @@ const CoinMaterialSelector = ({
                   fontWeight: 'bold',
                   color: material.id === 'penny' ? '#8B4513' : 
                          material.id === 'graphite' ? '#FFFFFF' :
-                         material.id === 'poker-chip' ? '#FFFFFF' :
+                         material.id === 'glass' ? '#87CEEB' :
                          material.id === 'silver-dollar' ? '#000000' :
                          material.id === 'titanium' ? '#000000' : '#000',
                   zIndex: 2,
                   position: 'relative',
-                  border: material.id === 'poker-chip' ? '2px solid #FFFFFF' : 'none'
+                  border: material.id === 'glass' ? '2px solid rgba(135,206,235,0.4)' : 'none',
+                  backdropFilter: material.id === 'glass' ? 'blur(1px)' : 'none'
                 }}>
                   {material.id === 'penny' && '1¢'}
                   {material.id === 'graphite' && '●'}
-                  {material.id === 'poker-chip' && '♠'}
+                  {material.id === 'glass' && '◆'}
                   {material.id === 'silver-dollar' && '$'}
                   {material.id === 'titanium' && 'Ti'}
                 </div>
