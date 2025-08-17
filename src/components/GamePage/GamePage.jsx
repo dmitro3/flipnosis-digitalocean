@@ -510,11 +510,11 @@ const GamePage = () => {
                 gameData?.status === 'waiting_challenger' || 
                 gameData?.status === 'awaiting_challenger' || 
                 gameData?.status === 'waiting_for_challenger' || 
-                gameData?.status === 'open') ? (
+                gameData?.status === 'open') && wsConnected ? (
                 <OffersContainer
                   gameId={gameId}
                   gameData={gameData}
-                  socket={wsRef.current}
+                  socket={wsRef?.current || null}
                   connected={wsConnected}
                   onOfferSubmitted={handleOfferSubmitted}
                   onOfferAccepted={handleOfferAccepted}
