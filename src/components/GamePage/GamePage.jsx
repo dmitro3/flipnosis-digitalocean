@@ -78,6 +78,8 @@ const ThreeContainerLayout = styled.div`
 
 
 const GamePage = () => {
+  console.log('🚀 GAMEPAGE COMPONENT LOADED - DEPLOYMENT TEST SUCCESSFUL!')
+  
   const { gameId } = useParams()
   const navigate = useNavigate()
   const { address, isMobile, chain } = useWallet()
