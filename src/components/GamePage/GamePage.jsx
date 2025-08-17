@@ -153,19 +153,6 @@ const GamePage = () => {
   // WebSocket management
   const { wsConnected, wsRef, webSocketService } = useWebSocket(gameId, address, gameData)
 
-  // Offer handlers
-  const handleOfferSubmitted = (offerData) => {
-    console.log('Offer submitted:', offerData)
-    showSuccess('Offer submitted successfully!')
-    loadOffers() // Refresh offers list
-  }
-
-  const handleOfferAccepted = (offerData) => {
-    console.log('Offer accepted:', offerData)
-    showSuccess('Offer accepted!')
-    loadOffers() // Refresh offers list
-  }
-
 
 
   // Game data loading
@@ -510,14 +497,18 @@ const GamePage = () => {
                 gameData?.status === 'waiting_challenger' || 
                 gameData?.status === 'awaiting_challenger' || 
                 gameData?.status === 'waiting_for_challenger' || 
-                gameData?.status === 'open') && wsConnected ? (
+                gameData?.status === 'open') ? (
                 <OffersContainer
-                  gameId={gameId}
+                  offers={offers}
+                  isCreator={isCreator()}
+                  address={address}
+                  newOffer={newOffer}
+                  setNewOffer={setNewOffer}
+                  creatingOffer={creatingOffer}
+                  createOffer={createOffer}
+                  acceptOffer={acceptOffer}
+                  rejectOffer={rejectOffer}
                   gameData={gameData}
-                  socket={wsRef?.current || null}
-                  connected={wsConnected}
-                  onOfferSubmitted={handleOfferSubmitted}
-                  onOfferAccepted={handleOfferAccepted}
                 />
               ) : (
                 <div style={{
