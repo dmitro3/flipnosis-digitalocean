@@ -838,3 +838,110 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
     font-size: 1rem;
   }
 }
+
+/* ====== FLIP CARD ANIMATED BORDERS ====== */
+
+/* Rotating color border animation */
+@keyframes rotatingBorder {
+  0% {
+    border-color: rgba(255, 20, 147, 0.8); /* Neon Pink */
+    box-shadow: 
+      0 0 20px rgba(255, 20, 147, 0.6),
+      0 0 40px rgba(255, 20, 147, 0.3),
+      inset 0 0 20px rgba(255, 20, 147, 0.1);
+  }
+  20% {
+    border-color: rgba(255, 255, 0, 0.8); /* Neon Yellow */
+    box-shadow: 
+      0 0 20px rgba(255, 255, 0, 0.6),
+      0 0 40px rgba(255, 255, 0, 0.3),
+      inset 0 0 20px rgba(255, 255, 0, 0.1);
+  }
+  40% {
+    border-color: rgba(0, 255, 65, 0.8); /* Neon Green */
+    box-shadow: 
+      0 0 20px rgba(0, 255, 65, 0.6),
+      0 0 40px rgba(0, 255, 65, 0.3),
+      inset 0 0 20px rgba(0, 255, 65, 0.1);
+  }
+  60% {
+    border-color: rgba(0, 191, 255, 0.8); /* Neon Blue */
+    box-shadow: 
+      0 0 20px rgba(0, 191, 255, 0.6),
+      0 0 40px rgba(0, 191, 255, 0.3),
+      inset 0 0 20px rgba(0, 191, 255, 0.1);
+  }
+  80% {
+    border-color: rgba(138, 43, 226, 0.8); /* Neon Purple */
+    box-shadow: 
+      0 0 20px rgba(138, 43, 226, 0.6),
+      0 0 40px rgba(138, 43, 226, 0.3),
+      inset 0 0 20px rgba(138, 43, 226, 0.1);
+  }
+  100% {
+    border-color: rgba(255, 20, 147, 0.8); /* Back to Neon Pink */
+    box-shadow: 
+      0 0 20px rgba(255, 20, 147, 0.6),
+      0 0 40px rgba(255, 20, 147, 0.3),
+      inset 0 0 20px rgba(255, 20, 147, 0.1);
+  }
+}
+
+/* Pulsing intensity effect */
+@keyframes borderPulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+/* Combined animation class for flip cards */
+.flip-card-animated-border {
+  position: relative;
+  border: 2px solid transparent;
+  animation: 
+    rotatingBorder 3s linear infinite,
+    borderPulse 1.5s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+/* Enhanced hover effect */
+.flip-card-animated-border:hover {
+  animation-duration: 1.5s, 0.8s; /* Speed up on hover */
+  transform: translateY(-2px) !important;
+}
+
+/* Staggered animation delays for wave effect */
+.flip-card-animated-border:nth-child(1) { animation-delay: 0s, 0s; }
+.flip-card-animated-border:nth-child(2) { animation-delay: 0.1s, 0.05s; }
+.flip-card-animated-border:nth-child(3) { animation-delay: 0.2s, 0.1s; }
+.flip-card-animated-border:nth-child(4) { animation-delay: 0.3s, 0.15s; }
+.flip-card-animated-border:nth-child(5) { animation-delay: 0.4s, 0.2s; }
+.flip-card-animated-border:nth-child(6) { animation-delay: 0.5s, 0.25s; }
+.flip-card-animated-border:nth-child(7) { animation-delay: 0.6s, 0.3s; }
+.flip-card-animated-border:nth-child(8) { animation-delay: 0.7s, 0.35s; }
+.flip-card-animated-border:nth-child(9) { animation-delay: 0.8s, 0.4s; }
+.flip-card-animated-border:nth-child(10) { animation-delay: 0.9s, 0.45s; }
+.flip-card-animated-border:nth-child(11) { animation-delay: 1s, 0.5s; }
+.flip-card-animated-border:nth-child(12) { animation-delay: 1.1s, 0.55s; }
+
+/* Continue pattern for more cards */
+.flip-card-animated-border:nth-child(n+13) { 
+  animation-delay: calc((var(--card-index, 0) * 0.1s)), calc((var(--card-index, 0) * 0.05s)); 
+}
+
+/* Mobile optimization - reduce effects on smaller screens */
+@media (max-width: 768px) {
+  .flip-card-animated-border {
+    border-width: 1px;
+    animation-duration: 4s, 2s; /* Slower on mobile for better performance */
+  }
+  
+  .flip-card-animated-border:hover {
+    animation-duration: 3s, 1.5s;
+  }
+}

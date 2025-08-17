@@ -263,33 +263,12 @@ class ContractService {
 
   // Get gas configuration optimized for Base network's low fees
   async getGasConfig() {
-    try {
-      // Base network has extremely low gas costs - enforce this
-      console.log('⛽ Using Base-optimized gas configuration')
-      
-      // Base network typical values (much lower than other networks)
-      const maxPriorityFeePerGas = 1000000n // 0.001 gwei (1 wei) - very low for Base
-      const maxFeePerGas = 1100000n // 0.0011 gwei - slightly higher but still minimal
-      
-      console.log('⛽ Base network gas config:', {
-        maxPriorityFeePerGas: `${maxPriorityFeePerGas} wei (${Number(maxPriorityFeePerGas) / 1e9} gwei)`,
-        maxFeePerGas: `${maxFeePerGas} wei (${Number(maxFeePerGas) / 1e9} gwei)`
-      })
-      
-      return {
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-        gas: 50000n // Lower gas limit for simple approve transactions
-      }
-    } catch (error) {
-      console.warn('⚠️ Using ultra-low fallback for Base network:', error)
-      // Ultra-conservative fallback for Base
-      return {
-        maxFeePerGas: 1100000n, // 0.0011 gwei  
-        maxPriorityFeePerGas: 1000000n, // 0.001 gwei
-        gas: 50000n
-      }
-    }
+    // For Base network, use automatic gas estimation but ensure it's not too high
+    console.log('⛽ Using automatic gas estimation for Base network')
+    
+    // Return empty object to let wallet handle gas estimation
+    // This prevents our custom low values from causing "insufficient gas" errors
+    return {}
   }
 
   // Approve NFT for deposit

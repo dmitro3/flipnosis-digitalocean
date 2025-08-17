@@ -1307,6 +1307,7 @@ const getAllItems = () => {
                       filteredItems.map(item => (
                       <div
                         key={item.id}
+                        className="flip-card-animated-border"
                         onClick={() => {
                           handleItemClick(item)
                         }}
@@ -1316,7 +1317,6 @@ const getAllItems = () => {
                           padding: window.innerWidth <= 768 ? '0.5rem' : '0.75rem',
                           cursor: isGameJoinable(item.status) ? 'pointer' : 'default',
                           transition: 'all 0.2s ease',
-                          border: `1px solid ${isGameJoinable(item.status) ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)'}`,
                           display: 'flex',
                           flexDirection: 'column',
                           gap: window.innerWidth <= 768 ? '0.25rem' : '0.5rem',
@@ -1510,6 +1510,7 @@ const getAllItems = () => {
                       filteredItems.map(item => (
                         <ListViewItem
                           key={item.id}
+                          className="flip-card-animated-border"
                           onClick={() => {
                             handleItemClick(item)
                           }}
