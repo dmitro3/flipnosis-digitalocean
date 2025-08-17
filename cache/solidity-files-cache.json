@@ -311,8 +311,8 @@
       ]
     },
     "C:\\Users\\danie\\Desktop\\Flipnosis - Digital Ocean\\contracts\\NFTFlipGame.sol": {
-      "lastModificationDate": 1755363151314,
-      "contentHash": "bb12d9537345412e016f41ccf248c400",
+      "lastModificationDate": 1755450104184,
+      "contentHash": "56ec05da7841f4b4edf0ed6d7dfbf318",
       "sourceName": "contracts/NFTFlipGame.sol",
       "solcConfig": {
         "version": "0.8.20",

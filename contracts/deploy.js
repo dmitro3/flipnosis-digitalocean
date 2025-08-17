@@ -19,9 +19,8 @@ async function main() {
   console.log("🏗️ Deploying NFTFlipGame...");
   const NFTFlipGame = await ethers.getContractFactory("NFTFlipGame");
   const nftFlipGame = await NFTFlipGame.deploy(
-    BASE_ADDRESSES.ETH_USD_PRICE_FEED, // ETH/USD Price Feed
-    BASE_ADDRESSES.USDC, // USDC Token
-    BASE_ADDRESSES.FEE_RECIPIENT // Fee Recipient
+    BASE_ADDRESSES.FEE_RECIPIENT, // Platform Fee Receiver
+    BASE_ADDRESSES.USDC // USDC Token
   );
 
   await nftFlipGame.waitForDeployment();
@@ -37,9 +36,8 @@ async function main() {
     deployer: deployer.address,
     deploymentTime: new Date().toISOString(),
     constructorArgs: {
-      ethUsdFeed: BASE_ADDRESSES.ETH_USD_PRICE_FEED,
-      usdcToken: BASE_ADDRESSES.USDC,
-      platformFeeReceiver: BASE_ADDRESSES.FEE_RECIPIENT
+      platformFeeReceiver: BASE_ADDRESSES.FEE_RECIPIENT,
+      usdcToken: BASE_ADDRESSES.USDC
     }
   };
 
@@ -60,14 +58,15 @@ async function main() {
   // Verify deployment
   console.log("🔍 Verifying deployment...");
   try {
-    const listingFee = await nftFlipGame.listingFeeUSD();
     const platformFee = await nftFlipGame.platformFeePercent();
-    const nextGameId = await nftFlipGame.nextGameId();
+    const platformFeeReceiver = await nftFlipGame.platformFeeReceiver();
+    const usdcToken = await nftFlipGame.usdcToken();
     
     console.log("✅ Contract verification successful:");
-    console.log("   - Listing fee:", listingFee.toString(), "(in 6 decimals)");
     console.log("   - Platform fee:", platformFee.toString(), "%");
-    console.log("   - Next game ID:", nextGameId.toString());
+    console.log("   - Platform fee receiver:", platformFeeReceiver);
+    console.log("   - USDC token:", usdcToken);
+    console.log("   - New direct transfer functions added!");
   } catch (error) {
     console.error("❌ Contract verification failed:", error.message);
   }
