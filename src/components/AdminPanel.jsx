@@ -6,7 +6,6 @@ import { useWallet } from '../contexts/WalletContext'
 import contractService from '../services/ContractService'
 import { ConnectButton as RainbowConnectButton } from '@rainbow-me/rainbowkit'
 import EmergencyRecovery from './EmergencyRecovery'
-import { base as BASE_CHAIN } from 'viem/chains'
 
 // Contract ABI - Full ABI matching the NFTFlipGame contract
 const CONTRACT_ABI = [
@@ -201,9 +200,6 @@ const CONTRACT_ADDRESSES = {
   'avalanche': '0x...',
   'polygon': '0x...'
 }
-
-// Old contract address that needs NFT recovery
-const OLD_CONTRACT_ADDRESS = '0xF5fdE838AB5aa566AC7d1b9116523268F39CC6D0'
 
 // Chain configurations
 const CHAIN_CONFIGS = {
@@ -1124,83 +1120,62 @@ export default function AdminPanel() {
 
     try {
       setIsLoadingNFTs(true)
-      addNotification('info', 'Loading NFTs from both contracts...')
-      console.log('🔄 Loading NFTs from both contracts...')
+      addNotification('info', 'Loading NFTs directly from smart contract...')
+      console.log('🔄 Loading NFTs directly from smart contract...')
 
-      const { public: publicClient } = contractService.getCurrentClients()
-      const currentContractAddress = contractService.contractAddress
-      let allNFTs = []
-
-      // Method 1: Try to use Alchemy if available (like the reference admin panel)
-      try {
-        // Check if we have Alchemy available
-        const alchemy = contractService.alchemy
-        if (alchemy) {
-          console.log('🔍 Using Alchemy to query NFTs...')
+      // First, get all games from database to get game IDs
+      const response = await fetch(`${API_URL}/api/admin/games`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch games from database')
+      }
+      const data = await response.json()
+      const games = data.games || []
+      
+      console.log('📊 All games in database:', games.length)
+      
+      // Query contract directly for each game to see what's actually deposited
+      const nftsInContract = []
+      
+      for (const game of games) {
+        try {
+          console.log(`🔍 Checking contract for game ${game.id}...`)
           
-          // Query current contract
-          const currentContractNFTs = await alchemy.nft.getNftsForOwner(currentContractAddress, {
-            omitMetadata: false
-          })
+          // Get game state from contract
+          const gameState = await contractService.getGameState(game.id)
           
-          // Query old contract
-          const oldContractNFTs = await alchemy.nft.getNftsForOwner(OLD_CONTRACT_ADDRESS, {
-            omitMetadata: false
-          })
-          
-          // Process current contract NFTs
-          if (currentContractNFTs.ownedNfts && currentContractNFTs.ownedNfts.length > 0) {
-            currentContractNFTs.ownedNfts.forEach(nft => {
-              allNFTs.push({
-                nftContract: nft.contract.address,
-                tokenId: nft.tokenId,
-                name: nft.title || nft.name || `NFT #${nft.tokenId}`,
-                metadata: {
-                  ...nft.metadata,
-                  image: nft.media?.[0]?.gateway || nft.image?.originalUrl || nft.metadata?.image || ''
-                },
-                uniqueKey: `${nft.contract.address}-${nft.tokenId}`,
-                source: 'current_contract',
-                contractAddress: currentContractAddress
-              })
+          if (gameState.success && gameState.gameState.nftDeposit.hasDeposit) {
+            const nftDeposit = gameState.gameState.nftDeposit
+            console.log(`✅ Found NFT in contract for game ${game.id}:`, nftDeposit)
+            
+            nftsInContract.push({
+              nftContract: nftDeposit.nftContract,
+              tokenId: nftDeposit.tokenId,
+              name: `Game ${game.id} NFT`,
+              metadata: {
+                image: game.nft_image || '',
+                collection: game.nft_collection || ''
+              },
+              uniqueKey: `${nftDeposit.nftContract}-${nftDeposit.tokenId}`,
+              source: 'contract',
+              gameId: game.id,
+              contractGameId: game.contract_game_id || game.id,
+              depositor: nftDeposit.depositor,
+              claimed: nftDeposit.claimed,
+              depositTime: nftDeposit.depositTime
             })
+          } else {
+            console.log(`❌ No NFT found in contract for game ${game.id}`)
           }
-          
-          // Process old contract NFTs
-          if (oldContractNFTs.ownedNfts && oldContractNFTs.ownedNfts.length > 0) {
-            oldContractNFTs.ownedNfts.forEach(nft => {
-              allNFTs.push({
-                nftContract: nft.contract.address,
-                tokenId: nft.tokenId,
-                name: nft.title || nft.name || `NFT #${nft.tokenId}`,
-                metadata: {
-                  ...nft.metadata,
-                  image: nft.media?.[0]?.gateway || nft.image?.originalUrl || nft.metadata?.image || ''
-                },
-                uniqueKey: `${nft.contract.address}-${nft.tokenId}`,
-                source: 'old_contract',
-                contractAddress: OLD_CONTRACT_ADDRESS
-              })
-            })
-          }
-          
-          console.log('✅ Alchemy query successful')
-        } else {
-          throw new Error('Alchemy not available')
+        } catch (error) {
+          console.error(`❌ Error checking game ${game.id}:`, error)
         }
-      } catch (alchemyError) {
-        console.log('⚠️ Alchemy not available, using fallback method:', alchemyError.message)
-        
-                 // Fallback Method: Show error if Alchemy fails
-         console.error('❌ Alchemy query failed:', alchemyError)
-         addNotification('error', 'Failed to load NFTs via Alchemy. Please check console for details.')
       }
       
-      console.log('📦 Total NFTs found:', allNFTs.length)
-      console.log('📦 NFT details:', allNFTs)
+      console.log('📦 NFTs found in contract:', nftsInContract.length)
+      console.log('📦 NFT details:', nftsInContract)
       
-      setContractNFTs(allNFTs)
-      addNotification('success', `Loaded ${allNFTs.length} NFTs from both contracts`)
+      setContractNFTs(nftsInContract)
+      addNotification('success', `Loaded ${nftsInContract.length} NFTs from contract (Direct Query)`)
     } catch (error) {
       console.error('❌ Error loading contract NFTs:', error)
       addNotification('error', 'Failed to load NFTs: ' + error.message)
@@ -1229,77 +1204,72 @@ export default function AdminPanel() {
     try {
       addNotification('info', 'Processing NFT withdrawal...')
       
-      // Separate NFTs by contract address
-      const currentContractNFTs = []
-      const oldContractNFTs = []
+      // For each selected NFT, withdraw it individually using adminBatchWithdrawNFTs
+      const gameIds = []
+      const recipients = []
       
       for (const nft of selectedNFTsForWithdrawal) {
         if (nft.nftContract !== '0x0000000000000000000000000000000000000000') {
-          if (nft.source === 'old_contract' || nft.contractAddress === OLD_CONTRACT_ADDRESS) {
-            oldContractNFTs.push(nft)
-          } else {
-            currentContractNFTs.push(nft)
+          // Use the contract game ID (bytes32 format) from the NFT data
+          const contractGameId = nft.contractGameId || nft.gameId
+          if (contractGameId) {
+            gameIds.push(contractGameId)
+            recipients.push(targetAddress)
           }
         }
       }
       
-      let totalWithdrawn = 0
-      
-      // Handle current contract NFTs - need to find the game IDs first
-      if (currentContractNFTs.length > 0) {
-        addNotification('info', `Processing ${currentContractNFTs.length} NFTs from current contract...`)
-        
-        // For current contract, we need to find the game IDs that contain these NFTs
-        // We'll use individual emergency withdrawals since we don't have game IDs
-        for (const nft of currentContractNFTs) {
-          try {
-            // Use individual emergency withdrawal for current contract
-            const result = await contractService.emergencyWithdrawNFTByNFT(nft.nftContract, nft.tokenId, targetAddress)
-            if (result.success) {
-              totalWithdrawn++
-              addNotification('success', `Withdrew NFT from current contract: ${nft.name}`)
-            } else {
-              addNotification('error', `Failed to withdraw NFT ${nft.name} from current contract: ${result.error}`)
-            }
-          } catch (error) {
-            console.error(`Error withdrawing NFT ${nft.name} from current contract:`, error)
-            addNotification('error', `Failed to withdraw NFT ${nft.name} from current contract`)
-          }
-        }
+      if (gameIds.length === 0) {
+        addNotification('error', 'No valid NFTs selected for withdrawal')
+        return
       }
       
-      // Handle old contract NFTs
-      if (oldContractNFTs.length > 0) {
-        addNotification('info', `Processing ${oldContractNFTs.length} NFTs from old contract...`)
-        
-        // For old contract, we need to use individual emergency withdrawals
-        for (const nft of oldContractNFTs) {
-          try {
-            const oldContractResult = await withdrawFromOldContract(nft, targetAddress)
-            if (oldContractResult.success) {
-              totalWithdrawn++
-              addNotification('success', `Withdrew NFT from old contract: ${nft.tokenId}`)
-            } else {
-              addNotification('error', `Failed to withdraw NFT ${nft.tokenId} from old contract: ${oldContractResult.error}`)
-            }
-          } catch (error) {
-            console.error(`Error withdrawing NFT ${nft.tokenId} from old contract:`, error)
-            addNotification('error', `Failed to withdraw NFT ${nft.tokenId} from old contract`)
-          }
-        }
+      console.log('📝 Attempting batch withdrawal with:', {
+        gameIds,
+        recipients
+      })
+      
+      // Debug: Check contract state before withdrawal
+      console.log('🔍 Debugging contract state before withdrawal...')
+      for (let i = 0; i < gameIds.length; i++) {
+        const gameId = gameIds[i]
+        const recipient = recipients[i]
+        console.log(`Game ${i + 1}:`, {
+          gameId,
+          recipient,
+          gameIdBytes32: contractService.getGameIdBytes32(gameId)
+        })
       }
       
-      if (totalWithdrawn > 0) {
-        addNotification('success', `Successfully withdrew ${totalWithdrawn} NFTs total!`)
+      // Use the ContractService method for batch withdrawal
+      const result = await contractService.adminBatchWithdrawNFTs(gameIds, recipients)
+      
+      if (result.success) {
+        addNotification('success', `Successfully withdrew ${gameIds.length} NFTs! Transaction: ${result.transactionHash}`)
         setSelectedNFTsForWithdrawal([])
         setWithdrawalAddress('')
+        
+        // Update database to mark games as cancelled after successful withdrawal
+        try {
+          for (const gameId of gameIds) {
+            await fetch(`${API_URL}/api/admin/games/${gameId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'cancelled' })
+            })
+          }
+          console.log('✅ Database updated for withdrawn games')
+        } catch (dbError) {
+          console.error('⚠️ Database update failed:', dbError)
+          addNotification('warning', 'NFTs withdrawn but database update failed')
+        }
         
         // Wait a bit before reloading to let blockchain state update
         setTimeout(() => {
           loadContractNFTs() // Reload NFTs
         }, 2000)
       } else {
-        addNotification('error', 'No NFTs were successfully withdrawn')
+        throw new Error(result.error)
       }
       
     } catch (error) {
@@ -1307,39 +1277,6 @@ export default function AdminPanel() {
       addNotification('error', 'Failed to withdraw NFTs: ' + error.message)
     }
   }
-
-  // Function to withdraw from old contract
-  const withdrawFromOldContract = async (nft, recipient) => {
-    try {
-      // Create a temporary contract instance for the old contract
-      const oldContractABI = [
-        {
-          "inputs": [{"internalType": "address", "name": "nftContract", "type": "address"}, {"internalType": "uint256", "name": "tokenId", "type": "uint256"}, {"internalType": "address", "name": "to", "type": "address"}],
-          "name": "emergencyWithdrawNFT",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        }
-      ]
-      
-      const hash = await contractService.walletClient.writeContract({
-        address: OLD_CONTRACT_ADDRESS,
-        abi: oldContractABI,
-        functionName: 'emergencyWithdrawNFT',
-        args: [nft.nftContract, BigInt(nft.tokenId), recipient],
-        chain: BASE_CHAIN
-      })
-      
-      const receipt = await contractService.publicClient.waitForTransactionReceipt({ hash })
-      
-      return { success: true, transactionHash: hash, receipt }
-    } catch (error) {
-      console.error('Error withdrawing from old contract:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-
 
   const selectAllNFTs = () => {
     setSelectedNFTsForWithdrawal(contractNFTs.filter(nft => nft.nftContract !== '0x0000000000000000000000000000000000000000'))
@@ -2030,9 +1967,9 @@ export default function AdminPanel() {
                   <Button 
                     onClick={loadContractNFTs}
                     disabled={isLoadingNFTs}
-                    style={{ background: '#00FF41', color: '#000' }}
+                    style={{ background: '#00FF41', color: '#000', marginTop: '1rem' }}
                   >
-                    {isLoadingNFTs ? '🔄 Loading...' : '📥 Load NFTs from Both Contracts'}
+                    {isLoadingNFTs ? '🔄 Loading...' : '📥 Load NFTs'}
                   </Button>
                   {contractNFTs.length > 0 && (
                     <div style={{ marginTop: '1rem', color: '#00FF41' }}>

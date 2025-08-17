@@ -1,7 +1,6 @@
 import { ethers } from 'ethers'
 import { createPublicClient, createWalletClient, custom, http } from 'viem'
 import { base } from 'viem/chains'
-import { Alchemy, Network } from 'alchemy-sdk'
 
 const BASE_CHAIN = base
 
@@ -117,7 +116,6 @@ class ContractService {
     this.publicClient = null
     this.contract = null
     this.userAddress = null
-    this.alchemy = null
   }
 
   async initialize(walletClient, publicClient) {
@@ -146,18 +144,10 @@ class ContractService {
       }
       this.userAddress = accounts[0]
 
-      // Initialize Alchemy
-      const settings = {
-        apiKey: "hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3", // Base mainnet API key
-        network: Network.BASE_MAINNET,
-      }
-      this.alchemy = new Alchemy(settings)
-
       console.log('✅ Contract service initialized:', {
         contractAddress: this.contractAddress,
         userAddress: this.userAddress,
-        chain: BASE_CHAIN.name,
-        alchemy: 'initialized'
+        chain: BASE_CHAIN.name
       })
 
       return { success: true }
@@ -612,106 +602,57 @@ class ContractService {
     return { success: true, message: 'Platform fees withdrawn (stub)' }
   }
 
-  async adminBatchWithdrawNFTs(gameIdsOrNFTContracts, tokenIdsOrRecipients, recipients) {
+  async adminBatchWithdrawNFTs(gameIds, recipients) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
     }
 
     try {
       await this.ensureBaseNetwork()
+      console.log('📦 Admin batch withdrawing NFTs:', { gameIds, recipients })
       
-      // Check if this is the old method (nftContracts, tokenIds, recipients) or new method (gameIds, recipients)
-      if (recipients && tokenIdsOrRecipients && Array.isArray(tokenIdsOrRecipients)) {
-        // Old method: adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients)
-        const nftContracts = gameIdsOrNFTContracts
-        const tokenIds = tokenIdsOrRecipients
-        
-        console.log('📦 Admin batch withdrawing NFTs (old method):', { nftContracts, tokenIds, recipients })
-        
-        // For the old method, we need to use individual emergency withdrawals
-        let successCount = 0
-        let errorCount = 0
-        
-        for (let i = 0; i < nftContracts.length; i++) {
-          try {
-            const hash = await this.walletClient.writeContract({
-              address: this.contractAddress,
-              abi: CONTRACT_ABI,
-              functionName: 'emergencyWithdrawNFT',
-              args: [nftContracts[i], tokenIds[i], recipients[i]],
-              chain: BASE_CHAIN
-            })
-            
-            const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-            console.log(`✅ Withdrew NFT ${i + 1}:`, { nftContract: nftContracts[i], tokenId: tokenIds[i], tx: hash })
-            successCount++
-          } catch (error) {
-            console.error(`❌ Failed to withdraw NFT ${i + 1}:`, error)
-            errorCount++
-          }
+      // Convert game IDs to bytes32
+      const gameIdsBytes32 = gameIds.map(gameId => this.getGameIdBytes32(gameId))
+      
+      // Debug: Check contract state before withdrawal
+      console.log('🔍 Checking contract state before withdrawal...')
+      for (let i = 0; i < gameIds.length; i++) {
+        try {
+          const nftDeposit = await this.publicClient.readContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'nftDeposits',
+            args: [gameIdsBytes32[i]]
+          })
+          console.log(`Game ${i + 1} contract state:`, {
+            gameId: gameIds[i],
+            gameIdBytes32: gameIdsBytes32[i],
+            nftDeposit: {
+              depositor: nftDeposit[0],
+              nftContract: nftDeposit[1],
+              tokenId: nftDeposit[2].toString(),
+              claimed: nftDeposit[3],
+              depositTime: nftDeposit[4].toString()
+            }
+          })
+        } catch (error) {
+          console.error(`Error checking game ${i + 1}:`, error)
         }
-        
-        if (successCount > 0) {
-          return { 
-            success: true, 
-            message: `Successfully withdrew ${successCount} NFTs${errorCount > 0 ? ` (${errorCount} failed)` : ''}`,
-            successCount,
-            errorCount
-          }
-        } else {
-          return { success: false, error: 'All NFT withdrawals failed' }
-        }
-        
-      } else {
-        // New method: adminBatchWithdrawNFTs(gameIds, recipients)
-        const gameIds = gameIdsOrNFTContracts
-        const recipients = tokenIdsOrRecipients
-        
-        console.log('📦 Admin batch withdrawing NFTs (new method):', { gameIds, recipients })
-        
-        // Convert game IDs to bytes32
-        const gameIdsBytes32 = gameIds.map(gameId => this.getGameIdBytes32(gameId))
-        
-        // Debug: Check contract state before withdrawal
-        console.log('🔍 Checking contract state before withdrawal...')
-        for (let i = 0; i < gameIds.length; i++) {
-          try {
-            const nftDeposit = await this.publicClient.readContract({
-              address: this.contractAddress,
-              abi: CONTRACT_ABI,
-              functionName: 'nftDeposits',
-              args: [gameIdsBytes32[i]]
-            })
-            console.log(`Game ${i + 1} contract state:`, {
-              gameId: gameIds[i],
-              gameIdBytes32: gameIdsBytes32[i],
-              nftDeposit: {
-                depositor: nftDeposit[0],
-                nftContract: nftDeposit[1],
-                tokenId: nftDeposit[2].toString(),
-                claimed: nftDeposit[3],
-                depositTime: nftDeposit[4].toString()
-              }
-            })
-          } catch (error) {
-            console.error(`Error checking game ${i + 1}:`, error)
-          }
-        }
-        
-        const hash = await this.walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'adminBatchWithdrawNFTs',
-          args: [gameIdsBytes32, recipients],
-          chain: BASE_CHAIN
-        })
-        
-        console.log('📦 Admin batch withdraw tx:', hash)
-        const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-        console.log('✅ Admin batch withdraw confirmed')
-
-        return { success: true, transactionHash: hash, receipt }
       }
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'adminBatchWithdrawNFTs',
+        args: [gameIdsBytes32, recipients],
+        chain: BASE_CHAIN
+      })
+      
+      console.log('📦 Admin batch withdraw tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Admin batch withdraw confirmed')
+
+      return { success: true, transactionHash: hash, receipt }
     } catch (error) {
       console.error('❌ Error admin batch withdrawing NFTs:', error)
       return { success: false, error: error.message }
@@ -745,7 +686,7 @@ class ContractService {
   get contract() { return this.contractAddress }
   set contract(value) { this.contractAddress = value } // Allow setting contract address
   get account() { return this.userAddress }
-  get alchemy() { return this.alchemy } // Return actual Alchemy instance
+  get alchemy() { return null } // No Alchemy in new implementation
 
   // Additional missing methods for frontend compatibility
   async withdrawRewards() {
@@ -781,39 +722,6 @@ class ContractService {
   async withdrawNFT(nftContract, tokenId) {
     console.log('📦 Withdrawing NFT (stub):', { nftContract, tokenId })
     return { success: true, message: 'NFT withdrawn (stub)' }
-  }
-
-  // Emergency withdraw NFT by NFT contract and token ID (for current contract)
-  async emergencyWithdrawNFTByNFT(nftContract, tokenId, recipient) {
-    if (!this.isReady()) {
-      return { success: false, error: 'Contract service not initialized' }
-    }
-
-    try {
-      await this.ensureBaseNetwork()
-      console.log('🚨 Emergency withdrawing NFT by contract/tokenId:', { nftContract, tokenId, recipient })
-      
-      // For the current contract, we need to find the game ID that contains this NFT
-      // We'll need to scan through the contract to find which game has this NFT
-      // For now, we'll use a direct emergency withdrawal approach
-      
-      const hash = await this.walletClient.writeContract({
-        address: this.contractAddress,
-        abi: CONTRACT_ABI,
-        functionName: 'emergencyWithdrawNFT',
-        args: [nftContract, BigInt(tokenId), recipient],
-        chain: BASE_CHAIN
-      })
-      
-      console.log('🚨 Emergency NFT withdraw tx:', hash)
-      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-      console.log('✅ Emergency NFT withdraw confirmed')
-
-      return { success: true, transactionHash: hash, receipt }
-    } catch (error) {
-      console.error('❌ Error emergency withdrawing NFT:', error)
-      return { success: false, error: error.message }
-    }
   }
 }
 
