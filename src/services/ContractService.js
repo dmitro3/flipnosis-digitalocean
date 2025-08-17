@@ -735,7 +735,8 @@ class ContractService {
         recipient: recipients[0]
       })
       
-      // First, try to restore any missing games
+      // SIMPLE APPROACH: Use database to find existing game IDs like before
+      // but add better error handling for contract issues
       console.log('🔧 Restoring missing games before withdrawal...')
       try {
         const restoreResponse = await fetch('/api/admin/restore-missing-games', {
@@ -749,7 +750,7 @@ class ContractService {
         console.warn('⚠️ Could not restore missing games, continuing')
       }
       
-      // Find game IDs for these NFTs
+      // Find game IDs for these NFTs from database
       const gameIds = await this.findGameIdsOptimized(nftContracts, tokenIds)
       
       const validGameIds = []
@@ -757,8 +758,40 @@ class ContractService {
       
       for (let i = 0; i < gameIds.length; i++) {
         if (gameIds[i]) {
-          validGameIds.push(gameIds[i])
-          validRecipients.push(recipients[i])
+          // Verify this game ID actually has the NFT deposited in the contract
+          const gameId = gameIds[i]
+          const gameIdBytes32 = this.getGameIdBytes32(gameId)
+          
+          try {
+            const nftDepositData = await this.publicClient.readContract({
+              address: this.contractAddress,
+              abi: CONTRACT_ABI,
+              functionName: 'nftDeposits',
+              args: [gameIdBytes32]
+            })
+            
+            if (nftDepositData && Array.isArray(nftDepositData) && nftDepositData.length >= 4) {
+              const [depositor, contractAddr, depositedTokenId, claimed] = nftDepositData
+              
+              console.log(`🔍 Contract state for game ${gameId}:`, {
+                depositor,
+                contractAddr,
+                tokenId: depositedTokenId?.toString(),
+                claimed,
+                hasDepositor: depositor !== '0x0000000000000000000000000000000000000000'
+              })
+              
+              if (depositor !== '0x0000000000000000000000000000000000000000' && !claimed) {
+                validGameIds.push(gameId)
+                validRecipients.push(recipients[i])
+                console.log(`✅ Valid NFT deposit found for game ${gameId}`)
+              } else {
+                console.warn(`⚠️ Game ${gameId} has no valid NFT deposit or already claimed`)
+              }
+            }
+          } catch (e) {
+            console.warn(`⚠️ Could not verify NFT deposit for game ${gameId}:`, e.message)
+          }
         }
       }
       
@@ -795,14 +828,14 @@ class ContractService {
         } else {
           return {
             success: false,
-            error: 'All NFT withdrawals failed'
+            error: 'All NFT withdrawals failed - check contract ownership or NFT state'
           }
         }
       }
       
       return { 
         success: false, 
-        error: 'No valid game IDs found for NFTs' 
+        error: 'No valid NFT deposits found on contract' 
       }
       
     } catch (error) {
