@@ -7,7 +7,7 @@ import styled from '@emotion/styled'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 
-// Component imports
+// Component imports  
 import GameBackground from './GameBackground'
 import GamePlayers from './GamePlayers'
 import GameCoin from './GameCoin'
@@ -18,6 +18,8 @@ import ProfilePicture from '../ProfilePicture'
 import GameStatusAndNFTContainer from './GameStatusAndNFTContainer'
 import ChatContainer from './ChatContainer'
 import OffersContainer from './OffersContainer'
+import GameCountdown from './GameCountdown' // NEW
+import GameRoom from './GameRoom' // NEW
 
 // Hooks and services
 import { useGameState } from './hooks/useGameState'
@@ -80,6 +82,11 @@ const GamePage = () => {
   const navigate = useNavigate()
   const { address, isMobile, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
+  
+  // Add new state for game phases
+  const [showCountdown, setShowCountdown] = useState(false)
+  const [inGameRoom, setInGameRoom] = useState(false)
+  const [countdownTriggered, setCountdownTriggered] = useState(false)
 
   // Tab state for chat/offers
 
@@ -176,6 +183,35 @@ const GamePage = () => {
       })
     }
   }, [gameData, address, depositTimeLeft, ethAmount])
+  
+  // NEW: Watch for game starting (both players deposited)
+  useEffect(() => {
+    // Check if game is active and both players have deposited
+    if (gameData?.status === 'active' && 
+        gameData?.creator_deposited && 
+        gameData?.challenger_deposited &&
+        !countdownTriggered) {
+      
+      // Only show countdown for the two players
+      const isPlayer = isCreator() || isJoiner() || 
+                      (gameData?.challenger && address && 
+                       gameData.challenger.toLowerCase() === address.toLowerCase())
+      
+      if (isPlayer) {
+        console.log('🚀 Game starting! Showing countdown...')
+        setCountdownTriggered(true)
+        setShowCountdown(true)
+      }
+    }
+  }, [gameData, address, isCreator, isJoiner, countdownTriggered])
+  
+  // NEW: Handle countdown completion
+  const handleCountdownComplete = () => {
+    console.log('⚔️ Countdown complete! Entering game room...')
+    setShowCountdown(false)
+    setInGameRoom(true)
+    showInfo('Game started! Choose heads or tails!')
+  }
 
   // Loading state
   if (loading) {
@@ -267,145 +303,66 @@ const GamePage = () => {
       </ThemeProvider>
     )
   }
-
-  return (
-    <ThemeProvider theme={theme}>
-      <Container>
-        <GameBackground isMobile={isMobile} />
+  
+  // Check if current user is a player
+  const isPlayer = isCreator() || isJoiner() || 
+                  (gameData?.challenger && address && 
+                   gameData.challenger.toLowerCase() === address.toLowerCase())
+  
+  // NEW: Render countdown overlay
+  if (showCountdown) {
+    return (
+      <>
+        <Container>
+          <GameBackground />
+        </Container>
+        <GameCountdown
+          isVisible={showCountdown}
+          onComplete={handleCountdownComplete}
+          creatorAddress={getGameCreator()}
+          challengerAddress={getGameJoiner()}
+          currentUserAddress={address}
+        />
+      </>
+    )
+  }
+  
+  // NEW: Render Game Room for active players
+  if (inGameRoom && isPlayer && gameData?.status === 'active') {
+    return (
+      <ThemeProvider theme={theme}>
+        <GameRoom
+          gameData={gameData}
+          gameState={gameState}
+          playerChoices={playerChoices}
+          isCreator={isCreator}
+          isJoiner={isJoiner}
+          getGameCreator={getGameCreator}
+          getGameJoiner={getGameJoiner}
+          isMyTurn={isMyTurn}
+          handlePlayerChoice={handlePlayerChoice}
+          handlePowerChargeStart={handlePowerChargeStart}
+          handlePowerChargeStop={handlePowerChargeStop}
+        >
+          {/* Pass the coin as a child */}
+          <GameCoin
+            gameId={gameId}
+            gameState={gameState}
+            streamedCoinState={streamedCoinState}
+            flipAnimation={flipAnimation}
+            customHeadsImage={customHeadsImage}
+            customTailsImage={customTailsImage}
+            gameCoin={gameCoin}
+            isMobile={isMobile}
+            onPowerChargeStart={handlePowerChargeStart}
+            onPowerChargeStop={handlePowerChargeStop}
+            isMyTurn={isMyTurn}
+            address={address}
+            isCreator={isCreator}
+          />
+        </GameRoom>
         
-        <GameContainer>
-          <GameLayout>
-            <GameCoin 
-              gameId={gameId}
-              gameState={gameState}
-              streamedCoinState={streamedCoinState}
-              flipAnimation={flipAnimation}
-              customHeadsImage={customHeadsImage}
-              customTailsImage={customTailsImage}
-              gameCoin={gameCoin}
-              isMobile={isMobile}
-              onPowerChargeStart={handlePowerChargeStart}
-              onPowerChargeStop={handlePowerChargeStop}
-              isMyTurn={isMyTurn}
-              address={address}
-              isCreator={isCreator}
-            />
-
-            {/* Payment Section - Show prominently when deposit is needed */}
-            {gameData?.status === 'waiting_challenger_deposit' && 
-             gameData?.challenger && 
-             address && 
-             gameData.challenger.toLowerCase() === address.toLowerCase() && (
-              <div style={{ 
-                marginBottom: '2rem',
-                padding: '1.5rem',
-                background: 'rgba(255, 20, 147, 0.1)',
-                border: '2px solid #FF1493',
-                borderRadius: '1rem',
-                animation: 'pulse 2s infinite'
-              }}>
-                <GamePayment 
-                  gameData={gameData}
-                  gameId={gameId}
-                  address={address}
-                  depositTimeLeft={depositTimeLeft}
-                  ethAmount={ethAmount}
-                  contractInitialized={true}
-                  countdownInterval={countdownInterval}
-                  getGameCreator={getGameCreator}
-                  getGameJoiner={getGameJoiner}
-                  getGamePrice={getGamePrice}
-                  getGameNFTImage={getGameNFTImage}
-                  getGameNFTName={getGameNFTName}
-                  getGameNFTCollection={getGameNFTCollection}
-                  isCreator={isCreator}
-                  isJoiner={() => gameData?.challenger && address && 
-                    gameData.challenger.toLowerCase() === address.toLowerCase()}
-                  formatTimeLeft={formatTimeLeft}
-                  startDepositCountdown={startDepositCountdown}
-                  loadGameData={loadGameData}
-                />
-              </div>
-            )}
-
-            {/* Show countdown for creator */}
-            {gameData?.status === 'waiting_challenger_deposit' && 
-             gameData?.creator && 
-             address && 
-             gameData.creator.toLowerCase() === address.toLowerCase() && 
-             depositTimeLeft !== null && (
-              <div style={{
-                marginBottom: '2rem',
-                padding: '1rem',
-                background: 'rgba(255, 165, 0, 0.1)',
-                border: '2px solid #ffa500',
-                borderRadius: '1rem'
-              }}>
-                <h4 style={{ color: '#ffa500', margin: '0 0 0.5rem 0' }}>
-                  ⏰ Waiting for Challenger to Deposit
-                </h4>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: depositTimeLeft < 30 ? '#ff0000' : '#ffa500' }}>
-                  {formatTimeLeft(depositTimeLeft)}
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#CCCCCC', margin: '0.5rem 0 0 0' }}>
-                  If challenger doesn't deposit, listing will reopen for new offers
-                </p>
-              </div>
-            )}
-
-            <ThreeContainerLayout>
-              {/* Combined Game Status & NFT Details Container */}
-              <GameStatusAndNFTContainer 
-                gameData={gameData}
-                isCreator={isCreator}
-                currentTurn={gameState.currentTurn}
-                nftData={{
-                  name: getGameNFTName(),
-                  image: getGameNFTImage(),
-                  contract_address: getGameNFTContract(),
-                  token_id: getGameNFTTokenId(),
-                  verified: gameData?.nft_verified
-                }}
-                currentChain={chain?.name?.toLowerCase() || 'base'}
-              />
-
-              {/* Chat Container */}
-              <ChatContainer 
-                gameId={gameId}
-                gameData={gameData}
-                isCreator={isCreator}
-                connected={wsConnected}
-              />
-
-              {/* Offers Container */}
-              <OffersContainer 
-                gameId={gameId}
-                gameData={gameData}
-                socket={wsRef}
-                connected={wsConnected}
-                onOfferSubmitted={(offerData) => {
-                  console.log('Offer submitted via offers container:', offerData)
-                }}
-                onOfferAccepted={(offer) => {
-                  console.log('Offer accepted via offers container:', offer)
-                }}
-              />
-            </ThreeContainerLayout>
-
-             <GameControls 
-               gameData={gameData}
-               gameState={gameState}
-               playerChoices={playerChoices}
-               isMyTurn={isMyTurn}
-               isCreator={isCreator}
-               isJoiner={isJoiner}
-               onPlayerChoice={handlePlayerChoice}
-               onAutoFlip={handleAutoFlip}
-             />
-          </GameLayout>
-        </GameContainer>
-
-        {/* Result Popup */}
+        {/* Game Result Popup */}
         {showResultPopup && resultData && (
           <GameResultPopup
             resultData={resultData}
@@ -413,6 +370,103 @@ const GamePage = () => {
             onClaimWinnings={resetForNextRound}
           />
         )}
+      </ThemeProvider>
+    )
+  }
+
+  // Regular lobby view for non-players or pre-game
+  return (
+    <ThemeProvider theme={theme}>
+      <Container>
+        <GameBackground />
+        <GameContainer>
+          <GameLayout>
+            {/* Game Status and NFT Display */}
+            <GameStatusAndNFTContainer
+              gameData={gameData}
+              isCreator={isCreator()}
+              currentTurn={gameState?.currentPlayer}
+              nftData={{
+                image: getGameNFTImage(),
+                name: getGameNFTName(),
+                collection: getGameNFTCollection()
+              }}
+              currentChain={chain}
+            />
+            
+            {/* Payment Section - Only show during payment phase */}
+            {(gameData?.status === 'waiting_challenger_deposit' || 
+              gameData?.status === 'pending') && (
+              <GamePayment
+                gameData={gameData}
+                gameId={gameId}
+                address={address}
+                isCreator={isCreator}
+                isJoiner={isJoiner}
+                depositTimeLeft={depositTimeLeft}
+                formatTimeLeft={formatTimeLeft}
+                ethAmount={ethAmount}
+                getGamePrice={getGamePrice}
+                getGameNFTImage={getGameNFTImage}
+                getGameNFTName={getGameNFTName}
+                getGameNFTCollection={getGameNFTCollection}
+                contractInitialized={contractInitialized}
+                loadGameData={loadGameData}
+              />
+            )}
+            
+            {/* Show coin in lobby (spinning slowly) */}
+            {gameData?.status !== 'completed' && (
+              <div style={{ 
+                opacity: 0.7, 
+                transform: 'scale(0.8)',
+                animation: 'float 4s ease-in-out infinite'
+              }}>
+                <GameCoin
+                  gameId={gameId}
+                  gameState={{ ...gameState, phase: 'waiting' }}
+                  streamedCoinState={streamedCoinState}
+                  flipAnimation={null}
+                  customHeadsImage={customHeadsImage}
+                  customTailsImage={customTailsImage}
+                  gameCoin={gameCoin}
+                  isMobile={isMobile}
+                  onPowerChargeStart={() => {}}
+                  onPowerChargeStop={() => {}}
+                  isMyTurn={() => false}
+                  address={address}
+                  isCreator={isCreator}
+                />
+              </div>
+            )}
+            
+            {/* Three Container Layout for Chat/Offers */}
+            <ThreeContainerLayout>
+              {/* Chat Container */}
+              <ChatContainer
+                gameId={gameId}
+                address={address}
+                messages={chatMessages}
+              />
+              
+              {/* Offers Container - Only for listing status */}
+              {gameData?.status === 'listing' && (
+                <OffersContainer
+                  offers={offers}
+                  isCreator={isCreator()}
+                  address={address}
+                  newOffer={newOffer}
+                  setNewOffer={setNewOffer}
+                  creatingOffer={creatingOffer}
+                  createOffer={createOffer}
+                  acceptOffer={acceptOffer}
+                  rejectOffer={rejectOffer}
+                  gameData={gameData}
+                />
+              )}
+            </ThreeContainerLayout>
+          </GameLayout>
+        </GameContainer>
       </Container>
     </ThemeProvider>
   )

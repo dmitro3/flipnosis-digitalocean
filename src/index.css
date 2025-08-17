@@ -951,3 +951,73 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
     animation-duration: 3s, 1.5s;
   }
 }
+
+/* Game Room and Countdown Animations */
+/* Floating animation for lobby coin */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(0.8);
+  }
+  50% {
+    transform: translateY(-20px) scale(0.8);
+  }
+}
+
+/* Power charging animation */
+@keyframes powerCharge {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Power pulse animation */
+@keyframes powerPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Pulse animation for text/buttons */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* Slide in animation for messages/offers */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Glow animation for winning elements */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+  }
+}
