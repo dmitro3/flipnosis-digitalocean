@@ -4,11 +4,15 @@ export const Container = styled.div`
   min-height: 100vh;
   background-color: transparent;
   color: ${props => props.theme.colors.textPrimary};
-  padding: 2rem;
+  padding: 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
 `
 
 export const ContentWrapper = styled.div`
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   padding: 1rem;
   

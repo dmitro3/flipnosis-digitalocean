@@ -261,6 +261,43 @@ class ContractService {
     return ethers.id(gameId)
   }
 
+  // Get proper gas configuration for transactions
+  async getGasConfig() {
+    try {
+      const feeData = await this.publicClient.getGasPrice()
+      const baseFee = await this.publicClient.getBlock({ blockTag: 'latest' }).then(block => block.baseFeePerGas || 0n)
+      
+      // Set priority fee to 1.5 gwei (reasonable for Base)
+      const maxPriorityFeePerGas = 1500000000n // 1.5 gwei
+      
+      // Set max fee to base fee + priority fee + buffer (minimum 2.5 gwei total)
+      const minMaxFee = 2500000000n // 2.5 gwei minimum
+      const calculatedMaxFee = baseFee + maxPriorityFeePerGas + 1000000000n // base + priority + 1 gwei buffer
+      const maxFeePerGas = calculatedMaxFee > minMaxFee ? calculatedMaxFee : minMaxFee
+      
+      console.log('⛽ Gas configuration:', {
+        baseFee: baseFee.toString(),
+        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
+        maxFeePerGas: maxFeePerGas.toString(),
+        gasPrice: feeData.toString()
+      })
+      
+      return {
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        gas: 200000n // Default gas limit
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not get dynamic gas config, using fallback:', error)
+      // Fallback configuration
+      return {
+        maxFeePerGas: 2500000000n, // 2.5 gwei
+        maxPriorityFeePerGas: 1500000000n, // 1.5 gwei  
+        gas: 200000n
+      }
+    }
+  }
+
   // Approve NFT for deposit
   async approveNFT(nftContract, tokenId) {
     if (!this.isReady()) {
@@ -271,12 +308,15 @@ class ContractService {
       await this.ensureBaseNetwork()
       console.log('🔓 Approving NFT:', { nftContract, tokenId })
 
+      const gasConfig = await this.getGasConfig()
+
       const hash = await this.walletClient.writeContract({
         address: nftContract,
         abi: NFT_ABI,
         functionName: 'approve',
         args: [this.contractAddress, tokenId],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        ...gasConfig
       })
 
       console.log('🔓 NFT approval tx:', hash)
@@ -301,6 +341,7 @@ class ContractService {
       console.log('📦 Depositing NFT for game:', { gameId, nftContract, tokenId })
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const gasConfig = await this.getGasConfig()
       
       // Estimate gas first to get accurate gas cost
       const gasEstimate = await this.publicClient.estimateContractGas({
@@ -319,7 +360,8 @@ class ContractService {
         functionName: 'depositNFT',
         args: [gameIdBytes32, nftContract, BigInt(tokenId)],
         chain: BASE_CHAIN,
-        gas: gasEstimate
+        gas: gasEstimate,
+        ...gasConfig
       })
       
       console.log('📦 NFT deposit tx:', hash)
@@ -348,6 +390,7 @@ class ContractService {
       console.log('💰 Starting ETH deposit for game:', gameId, 'Price USD:', priceUSD)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const gasConfig = await this.getGasConfig()
       
       // Convert USD price to ETH with proper decimal handling
       const ethPriceUSD = 3500 // This should come from a price oracle
@@ -370,7 +413,8 @@ class ContractService {
         functionName: 'depositETH',
         args: [gameIdBytes32],
         value: ethAmountWei,
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        ...gasConfig
       })
       
       console.log('💰 ETH deposit tx:', hash)
@@ -502,13 +546,15 @@ class ContractService {
       console.log('🔄 Reclaiming NFT for game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const gasConfig = await this.getGasConfig()
       
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'reclaimNFT',
         args: [gameIdBytes32],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        ...gasConfig
       })
       
       console.log('🔄 NFT reclaim tx:', hash)
@@ -533,13 +579,15 @@ class ContractService {
       console.log('🔄 Reclaiming crypto for game:', gameId)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const gasConfig = await this.getGasConfig()
       
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'reclaimCrypto',
         args: [gameIdBytes32],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        ...gasConfig
       })
       
       console.log('🔄 Crypto reclaim tx:', hash)
@@ -600,13 +648,15 @@ class ContractService {
       console.log('🚨 Emergency withdrawing NFT for game:', gameId, 'to recipient:', recipient)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const gasConfig = await this.getGasConfig()
       
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'emergencyWithdrawNFT',
         args: [gameIdBytes32, recipient],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        ...gasConfig
       })
       
       console.log('🚨 Emergency NFT withdraw tx:', hash)
@@ -630,13 +680,15 @@ class ContractService {
       console.log('🚨 Emergency withdrawing ETH for game:', gameId, 'to recipient:', recipient)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const gasConfig = await this.getGasConfig()
       
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'emergencyWithdrawETH',
         args: [gameIdBytes32, recipient],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        ...gasConfig
       })
       
       console.log('🚨 Emergency ETH withdraw tx:', hash)
@@ -660,13 +712,15 @@ class ContractService {
       console.log('🚨 Emergency withdrawing USDC for game:', gameId, 'to recipient:', recipient)
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      const gasConfig = await this.getGasConfig()
       
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'emergencyWithdrawUSDC',
         args: [gameIdBytes32, recipient],
-        chain: BASE_CHAIN
+        chain: BASE_CHAIN,
+        ...gasConfig
       })
       
       console.log('🚨 Emergency USDC withdraw tx:', hash)
@@ -872,13 +926,15 @@ To fix this, you would need to add emergencyRescueNFT() function to the contract
           console.log(`📦 Batch withdrawing ${validGameIds.length} NFTs with known game IDs...`)
           
           const gameIdsBytes32 = validGameIds.map(gameId => this.getGameIdBytes32(gameId))
+          const gasConfig = await this.getGasConfig()
           
           const hash = await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
             functionName: 'adminBatchWithdrawNFTs',
             args: [gameIdsBytes32, validRecipients],
-            chain: BASE_CHAIN
+            chain: BASE_CHAIN,
+            ...gasConfig
           })
           
           const receipt = await this.publicClient.waitForTransactionReceipt({ hash })

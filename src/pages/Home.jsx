@@ -572,6 +572,11 @@ const getAllItems = () => {
       (item.nft?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (item.nft?.collection?.toLowerCase().includes(searchQuery.toLowerCase()))
     return matchesFilter && matchesSearch
+  }).sort((a, b) => {
+    // Sort by created_at timestamp, most recent first
+    const aTime = new Date(a.created_at || a.createdAt || 0).getTime()
+    const bTime = new Date(b.created_at || b.createdAt || 0).getTime()
+    return bTime - aTime
   })
 }
 
@@ -877,15 +882,19 @@ const getAllItems = () => {
             <div style={{
               display: 'grid',
               gridTemplateColumns: window.innerWidth <= 768 ? '1fr' : 
-                                 window.innerWidth <= 1200 ? '300px 1fr' : '320px 1fr',
-              gap: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+                                 window.innerWidth <= 1200 ? '300px 1fr' : 
+                                 window.innerWidth <= 1600 ? '350px 1fr' :
+                                 '400px 1fr',
+              gap: window.innerWidth <= 768 ? '1.5rem' : 
+                   window.innerWidth <= 1200 ? '2rem' : '2.5rem',
               marginTop: '2rem'
             }}>
               {/* Left Box - Selected Game */}
               <div style={{
                 order: window.innerWidth <= 768 ? 1 : 0,
                 width: window.innerWidth <= 768 ? '100%' : 
-                       window.innerWidth <= 1200 ? '300px' : '320px'
+                       window.innerWidth <= 1200 ? '300px' : 
+                       window.innerWidth <= 1600 ? '350px' : '400px'
               }}>
                 {selectedFlip && (
                   <div style={{
@@ -894,7 +903,8 @@ const getAllItems = () => {
                     padding: window.innerWidth <= 768 ? '1.25rem' : '1.5rem',
                     border: `2px solid ${selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink}`,
                     maxWidth: window.innerWidth <= 768 ? '100%' : 
-                              window.innerWidth <= 1200 ? '300px' : '320px'
+                              window.innerWidth <= 1200 ? '300px' : 
+                              window.innerWidth <= 1600 ? '350px' : '400px'
                   }}>
                     <div style={{ 
                       fontSize: '1.2rem', 
@@ -1248,8 +1258,6 @@ const getAllItems = () => {
                 borderRadius: '1rem',
                 padding: window.innerWidth <= 768 ? '0.75rem' : '1rem',
                 border: `1px solid ${theme.colors.neonBlue}`,
-                maxHeight: window.innerWidth <= 768 ? 'none' : '600px',
-                overflowY: 'auto',
                 order: window.innerWidth <= 768 ? 2 : 0
               }}>
                 <div style={{
@@ -1282,9 +1290,12 @@ const getAllItems = () => {
                     display: 'grid', 
                     gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 
                                        window.innerWidth <= 1200 ? 'repeat(auto-fill, minmax(220px, 1fr))' :
-                                       'repeat(auto-fill, minmax(240px, 1fr))',
+                                       window.innerWidth <= 1600 ? 'repeat(auto-fill, minmax(240px, 1fr))' :
+                                       window.innerWidth <= 2000 ? 'repeat(auto-fill, minmax(260px, 1fr))' :
+                                       'repeat(auto-fill, minmax(280px, 1fr))',
                     gap: window.innerWidth <= 768 ? '0.5rem' : 
-                         window.innerWidth <= 1200 ? '1rem' : '1.25rem',
+                         window.innerWidth <= 1200 ? '1rem' : 
+                         window.innerWidth <= 1600 ? '1.25rem' : '1.5rem',
                     margin: '1rem 0',
                     width: '100%',
                     overflowX: 'hidden',
