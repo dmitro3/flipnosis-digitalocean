@@ -339,6 +339,10 @@ export const useGameData = (
       case 'game_started':
         console.log('🎮 Game started notification:', data)
         showSuccess('🎮 Game is now active! Choose heads or tails to begin!')
+        
+        // Force reload game data to trigger countdown
+        loadGameData()
+        
         setGameState(prev => ({
           ...prev,
           phase: 'choosing',
