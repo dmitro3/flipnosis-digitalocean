@@ -735,7 +735,7 @@ class ContractService {
         if (foundGameId) {
           gameIds.push(foundGameId)
         } else {
-          console.warn(`⚠️ Could not find game ID for NFT ${targetContract}:${targetTokenId}`)
+          console.warn(`⚠️ Could not find game ID for NFT ${targetContract}:${targetTokenId} - likely sent directly to contract`)
           gameIds.push(null)
         }
       }
@@ -744,6 +744,28 @@ class ContractService {
     } catch (error) {
       console.error('❌ Error finding game IDs:', error)
       return []
+    }
+  }
+
+  // Direct NFT rescue method for NFTs sent directly to contract (not part of games)
+  async directNFTRescue(nftContracts, tokenIds, recipients) {
+    console.log('🚨 Attempting direct NFT rescue for orphaned NFTs...')
+    
+    // Since the current contract doesn't have a direct rescue function,
+    // we'll show a helpful error message explaining the situation
+    return {
+      success: false,
+      error: `CONTRACT LIMITATION: These NFTs appear to be sent directly to the contract address (not deposited through games). The current contract only supports withdrawing NFTs that were properly deposited through the game system. 
+
+SOLUTIONS:
+1. If these are test NFTs, you may need to deploy a contract upgrade with rescue functions
+2. Check if any of these NFTs were actually deposited in games that aren't in the database
+3. The NFTs are safely stored in the contract but cannot be withdrawn with current contract functions
+
+NFTs detected: ${nftContracts.length}
+Contract Address: ${this.contractAddress}
+
+To fix this, you would need to add emergencyRescueNFT() function to the contract.`
     }
   }
 
@@ -815,41 +837,21 @@ class ContractService {
         }
       }
       
-      // For NFTs without game IDs, try individual emergency withdrawals with dummy game IDs
-      for (const nft of individualNFTs) {
-        try {
-          console.log(`🚨 Emergency withdrawing NFT individually:`, nft)
-          
-          // Create a dummy game ID based on the NFT
-          const dummyGameId = `${nft.nftContract}-${nft.tokenId}`
-          const gameIdBytes32 = this.getGameIdBytes32(dummyGameId)
-          
-          const hash = await this.walletClient.writeContract({
-            address: this.contractAddress,
-            abi: CONTRACT_ABI,
-            functionName: 'emergencyWithdrawNFT',
-            args: [gameIdBytes32, nft.recipient],
-            chain: BASE_CHAIN
-          })
-          
-          const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
-          results.push({ 
-            success: true, 
-            transactionHash: hash, 
-            receipt,
-            count: 1,
-            type: 'individual'
-          })
-          
-        } catch (error) {
-          console.error('❌ Individual emergency withdraw failed:', error)
-          results.push({ 
-            success: false, 
-            error: error.message,
-            count: 1,
-            type: 'individual'
-          })
-        }
+      // For NFTs without game IDs, these are likely orphaned NFTs sent directly to contract
+      if (individualNFTs.length > 0) {
+        console.log(`⚠️ Found ${individualNFTs.length} orphaned NFTs (not part of any game)`)
+        
+        const orphanedContracts = individualNFTs.map(nft => nft.nftContract)
+        const orphanedTokenIds = individualNFTs.map(nft => nft.tokenId)
+        const orphanedRecipients = individualNFTs.map(nft => nft.recipient)
+        
+        const rescueResult = await this.directNFTRescue(orphanedContracts, orphanedTokenIds, orphanedRecipients)
+        results.push({
+          success: rescueResult.success,
+          error: rescueResult.error,
+          count: individualNFTs.length,
+          type: 'rescue_needed'
+        })
       }
       
       const successCount = results.filter(r => r.success).reduce((sum, r) => sum + r.count, 0)
