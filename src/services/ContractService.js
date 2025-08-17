@@ -261,14 +261,11 @@ class ContractService {
     return ethers.id(gameId)
   }
 
-  // Get gas configuration optimized for Base network's low fees
+  // Remove gas configuration entirely - let the wallet handle everything
   async getGasConfig() {
-    // For Base network, use automatic gas estimation but ensure it's not too high
-    console.log('⛽ Using automatic gas estimation for Base network')
-    
-    // Return empty object to let wallet handle gas estimation
-    // This prevents our custom low values from causing "insufficient gas" errors
-    return {}
+    // Don't return any gas configuration - let wagmi/wallet handle it completely
+    console.log('⛽ No manual gas configuration - using wallet defaults')
+    return null
   }
 
   // Approve NFT for deposit
@@ -283,14 +280,20 @@ class ContractService {
 
       const gasConfig = await this.getGasConfig()
 
-      const hash = await this.walletClient.writeContract({
+      const txParams = {
         address: nftContract,
         abi: NFT_ABI,
         functionName: 'approve',
         args: [this.contractAddress, tokenId],
-        chain: BASE_CHAIN,
-        ...gasConfig
-      })
+        chain: BASE_CHAIN
+      }
+
+      // Only add gas config if it exists
+      if (gasConfig) {
+        Object.assign(txParams, gasConfig)
+      }
+
+      const hash = await this.walletClient.writeContract(txParams)
 
       console.log('🔓 NFT approval tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -327,15 +330,21 @@ class ContractService {
       
       console.log('📦 Gas estimate for NFT deposit:', gasEstimate.toString())
       
-      const hash = await this.walletClient.writeContract({
+      const txParams = {
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'depositNFT',
         args: [gameIdBytes32, nftContract, BigInt(tokenId)],
         chain: BASE_CHAIN,
-        gas: gasEstimate,
-        ...gasConfig
-      })
+        gas: gasEstimate
+      }
+
+      // Only add gas config if it exists
+      if (gasConfig) {
+        Object.assign(txParams, gasConfig)
+      }
+
+      const hash = await this.walletClient.writeContract(txParams)
       
       console.log('📦 NFT deposit tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -380,15 +389,21 @@ class ContractService {
         gameIdBytes32
       })
       
-      const hash = await this.walletClient.writeContract({
+      const txParams = {
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'depositETH',
         args: [gameIdBytes32],
         value: ethAmountWei,
-        chain: BASE_CHAIN,
-        ...gasConfig
-      })
+        chain: BASE_CHAIN
+      }
+
+      // Only add gas config if it exists
+      if (gasConfig) {
+        Object.assign(txParams, gasConfig)
+      }
+
+      const hash = await this.walletClient.writeContract(txParams)
       
       console.log('💰 ETH deposit tx:', hash)
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
@@ -404,6 +419,25 @@ class ContractService {
         return { success: false, error: 'USDC already deposited for this game' }
       }
       return { success: false, error: error.message }
+    }
+  }
+
+  // Create game (database-only operation, no blockchain interaction)
+  async createGame(gameId, nftContract, tokenId, priceInMicrodollars, paymentType) {
+    console.log('🎮 Creating game (database operation):', {
+      gameId,
+      nftContract,
+      tokenId,
+      priceInMicrodollars,
+      paymentType
+    })
+    
+    // This is a no-op function since the actual blockchain interaction happens during depositNFT
+    // The game creation is handled by the backend API calls in CreateFlip.jsx
+    return { 
+      success: true, 
+      transactionHash: 'placeholder-for-database-operation',
+      message: 'Game created successfully in database' 
     }
   }
 

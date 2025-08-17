@@ -26,6 +26,15 @@ body {
   position: relative;
 }
 
+/* Prevent overflow from animated borders */
+html, body {
+  overflow-x: hidden;
+}
+
+#root {
+  overflow-x: hidden;
+}
+
 /* Essential Animations */
 @keyframes coinFlip {
   0% { transform: rotateY(0deg) scale(1); }
@@ -891,11 +900,9 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
 @keyframes borderPulse {
   0%, 100% {
     opacity: 0.8;
-    transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.02);
   }
 }
 
@@ -912,7 +919,6 @@ p[style*="color: rgba(255, 255, 255, 0.5)"] {
 /* Enhanced hover effect */
 .flip-card-animated-border:hover {
   animation-duration: 1.5s, 0.8s; /* Speed up on hover */
-  transform: translateY(-2px) !important;
 }
 
 /* Staggered animation delays for wave effect */

@@ -440,8 +440,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 10000) // Refresh every 10 seconds
-    return () => clearInterval(interval)
+    // Note: Removed auto-refresh interval since WebSocket provides real-time updates
   }, [])
 
   // Auto-select the most recent flip when no flip is selected but flips are available
