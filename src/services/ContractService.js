@@ -638,6 +638,29 @@ class ContractService {
           gameIdBytes32,
           depositData: nftDepositData
         })
+        
+        // Parse the deposit data to understand the issue
+        if (nftDepositData && Array.isArray(nftDepositData) && nftDepositData.length >= 4) {
+          const [depositor, nftContract, tokenId, claimed] = nftDepositData
+          console.log('🔍 Parsed NFT deposit details:', {
+            depositor,
+            nftContract,
+            tokenId: tokenId?.toString(),
+            claimed,
+            depositorIsZero: depositor === '0x0000000000000000000000000000000000000000',
+            alreadyClaimed: claimed === true
+          })
+          
+          if (depositor === '0x0000000000000000000000000000000000000000') {
+            console.error('❌ NFT deposit not found: depositor is zero address')
+            return { success: false, error: 'NFT deposit not found in contract' }
+          }
+          
+          if (claimed === true) {
+            console.error('❌ NFT already claimed: cannot withdraw again')
+            return { success: false, error: 'NFT already claimed/withdrawn' }
+          }
+        }
       } catch (e) {
         console.warn('⚠️ Could not read NFT deposit data:', e.message)
       }
