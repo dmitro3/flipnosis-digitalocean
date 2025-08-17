@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import styled, { keyframes } from '@emotion/styled'
+import styled from '@emotion/styled'
+import { keyframes } from '@emotion/react'
 
 const fadeIn = keyframes`
   from {

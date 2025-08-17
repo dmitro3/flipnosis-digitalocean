@@ -688,7 +688,7 @@ class ContractService {
       // First, try to restore any missing games
       console.log('🔧 Restoring missing games before withdrawal...')
       try {
-        const restoreResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/admin/restore-missing-games', {
+        const restoreResponse = await fetch('/api/admin/restore-missing-games', {
           method: 'POST'
         })
         if (restoreResponse.ok) {
@@ -753,7 +753,7 @@ class ContractService {
     const gameIds = []
     
     try {
-      const response = await fetch('https://cryptoflipz2-production.up.railway.app/api/admin/games')
+      const response = await fetch('/api/admin/games')
       if (!response.ok) {
         console.warn('Could not fetch games from database')
         return []

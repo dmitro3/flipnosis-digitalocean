@@ -478,10 +478,11 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         { id: 'listing_1755362378481_68e63436638e60fc', nft_token_id: 9287, price_usd: 0.15 },
         { id: 'listing_1755362334407_5c7bfe5d205da6c5', nft_token_id: 9289, price_usd: 0.15 },
         { id: 'listing_1755361845873_fc762e5943599768', nft_token_id: 9201, price_usd: 0.14 },
-        { id: 'listing_1755361426703_dce7bf4a68ee978c', nft_token_id: 1271, price_usd: 0.15 }
+        { id: 'listing_1755361426703_dce7bf4a68ee978c', nft_token_id: 1271, price_usd: 0.15 },
+        { id: 'listing_1755432977848_761c57c637678810', nft_token_id: 2378, price_usd: 0.15 }
       ]
 
-      const NFT_CONTRACT = '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f'
+      const NFT_CONTRACT = '0x035003062428fd92384317d7a853d8b4dff9888a'
       const ADMIN_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
       
       let restoredCount = 0
