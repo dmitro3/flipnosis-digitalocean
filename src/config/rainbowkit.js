@@ -20,7 +20,9 @@ if (isChrome) {
   // Disable problematic wallet connectors in Chrome
   console.log('🔍 Chrome detected, applying compatibility fixes...');
   
-  // Override window.ethereum if it's causing issues
+  // TEMPORARILY DISABLED: Override window.ethereum if it's causing issues
+  // This might be causing wallet client conflicts
+  /*
   if (window.ethereum && window.ethereum.providers) {
     // Filter out problematic providers
     const providers = window.ethereum.providers.filter(p => {
@@ -36,6 +38,7 @@ if (isChrome) {
       window.ethereum = providers[0];
     }
   }
+  */
 }
 
 console.log('Initializing Rainbow Kit with:', {

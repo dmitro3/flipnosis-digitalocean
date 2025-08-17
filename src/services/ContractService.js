@@ -1,5 +1,4 @@
 import { ethers } from 'ethers'
-import { createPublicClient, createWalletClient, custom, http } from 'viem'
 import { base } from 'viem/chains'
 import { Alchemy, Network } from 'alchemy-sdk'
 
@@ -187,30 +186,26 @@ class ContractService {
   }
 
   async initialize(walletClient, publicClient) {
-    if (!window.ethereum) {
-      throw new Error('MetaMask not detected')
+    if (!walletClient) {
+      throw new Error('Wallet client is required')
+    }
+    if (!publicClient) {
+      throw new Error('Public client is required')
     }
 
     // Use the deployed contract address from base-deployment.json
     this.contractAddress = '0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf'
 
     try {
-      // Use provided clients or create new ones
-      this.publicClient = publicClient || createPublicClient({
-        chain: BASE_CHAIN,
-        transport: http()
-      })
+      // ONLY use provided clients from Wagmi - never create our own
+      this.publicClient = publicClient
+      this.walletClient = walletClient
 
-      this.walletClient = walletClient || createWalletClient({
-        chain: BASE_CHAIN,
-        transport: custom(window.ethereum)
-      })
-
-      const accounts = await this.walletClient.getAddresses()
-      if (accounts.length === 0) {
-        throw new Error('No accounts connected')
+      // Get address from wallet client account
+      this.userAddress = walletClient.account?.address
+      if (!this.userAddress) {
+        throw new Error('No address found in wallet client')
       }
-      this.userAddress = accounts[0]
 
       // Initialize Alchemy for NFT operations
       try {

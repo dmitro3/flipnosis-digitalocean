@@ -578,7 +578,7 @@ export default function AdminPanel() {
         const chainName = chain?.name?.toLowerCase() || 'base'
         ;(async () => {
           try {
-            await contractService.initialize(walletClient)
+            await contractService.initialize(walletClient, publicClient)
             console.log('✅ Admin contract service initialized')
             loadData()
           } catch (error) {
