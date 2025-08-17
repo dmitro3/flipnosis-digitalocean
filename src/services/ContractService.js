@@ -625,6 +625,23 @@ class ContractService {
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
+      // Check if NFT deposit exists and is valid
+      try {
+        const nftDepositData = await this.publicClient.readContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'nftDeposits',
+          args: [gameIdBytes32]
+        })
+        console.log('🔍 NFT deposit data for game:', {
+          gameId,
+          gameIdBytes32,
+          depositData: nftDepositData
+        })
+      } catch (e) {
+        console.warn('⚠️ Could not read NFT deposit data:', e.message)
+      }
+      
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
@@ -632,7 +649,7 @@ class ContractService {
         args: [gameIdBytes32, recipient],
         chain: BASE_CHAIN,
         account: this.walletClient.account,
-        gas: 100000n  // Set reasonable gas limit like deposit functions
+        gas: 150000n  // Set reasonable gas limit slightly higher for emergency withdraw
       })
       
       console.log('🚨 Emergency NFT withdraw tx:', hash)
@@ -689,6 +706,11 @@ class ContractService {
     try {
       await this.ensureBaseNetwork()
       console.log('📦 Admin withdrawing NFTs individually for low gas:', { nftContracts, tokenIds, recipients })
+      console.log('🔍 Debug: Target NFT details:', {
+        contract: nftContracts[0],
+        tokenId: tokenIds[0],
+        recipient: recipients[0]
+      })
       
       // First, try to restore any missing games
       console.log('🔧 Restoring missing games before withdrawal...')
