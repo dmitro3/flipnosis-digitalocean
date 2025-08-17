@@ -179,13 +179,18 @@ const GamePage = () => {
         currentUser: address,
         isChallenger: gameData.challenger?.toLowerCase() === address?.toLowerCase(),
         depositTimeLeft,
-        ethAmount
+        ethAmount,
+        creator_deposited: gameData.creator_deposited,
+        challenger_deposited: gameData.challenger_deposited,
+        joiner: gameData.joiner
       })
     }
   }, [gameData, address, depositTimeLeft, ethAmount])
   
   // NEW: Watch for game starting (both players deposited)
   useEffect(() => {
+    console.log('🔍 Countdown useEffect running...')
+    
     // Debug logging to see what's happening
     console.log('🔍 Countdown Debug:', {
       gameData: gameData,
