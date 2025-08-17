@@ -190,6 +190,8 @@ const GamePage = () => {
   // NEW: Watch for game starting (both players deposited)
   useEffect(() => {
     console.log('🔍 Countdown useEffect running...')
+    console.log('🔍 gameData exists:', !!gameData)
+    console.log('🔍 gameData keys:', gameData ? Object.keys(gameData) : 'no gameData')
     
     // Debug logging to see what's happening
     console.log('🔍 Countdown Debug:', {

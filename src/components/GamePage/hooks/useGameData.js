@@ -341,7 +341,14 @@ export const useGameData = (
         showSuccess('🎮 Game is now active! Choose heads or tails to begin!')
         
         // Force reload game data to trigger countdown
+        console.log('🔄 Forcing game data reload...')
         loadGameData()
+        
+        // Also manually trigger a countdown check after a short delay
+        setTimeout(() => {
+          console.log('⏰ Delayed countdown check...')
+          loadGameData()
+        }, 1000)
         
         setGameState(prev => ({
           ...prev,
