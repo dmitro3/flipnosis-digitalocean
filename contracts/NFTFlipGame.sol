@@ -388,4 +388,36 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             }
         }
     }
+    
+    /**
+     * @notice Direct NFT transfer - transfer any NFT owned by this contract (admin only)
+     * This bypasses the game system entirely and works for any NFT the contract owns
+     */
+    function directTransferNFT(
+        address nftContract,
+        uint256 tokenId,
+        address recipient
+    ) external onlyOwner {
+        // Transfer NFT directly to recipient
+        IERC721(nftContract).transferFrom(address(this), recipient, tokenId);
+        
+        emit AssetsReclaimed(bytes32(0), recipient, "NFT_DIRECT");
+    }
+    
+    /**
+     * @notice Batch direct NFT transfer - transfer multiple NFTs owned by this contract (admin only)
+     */
+    function directBatchTransferNFTs(
+        address[] calldata nftContracts,
+        uint256[] calldata tokenIds,
+        address[] calldata recipients
+    ) external onlyOwner {
+        require(nftContracts.length == tokenIds.length, "Contracts and tokenIds length mismatch");
+        require(nftContracts.length == recipients.length, "Contracts and recipients length mismatch");
+        
+        for (uint i = 0; i < nftContracts.length; i++) {
+            IERC721(nftContracts[i]).transferFrom(address(this), recipients[i], tokenIds[i]);
+            emit AssetsReclaimed(bytes32(0), recipients[i], "NFT_DIRECT_BATCH");
+        }
+    }
 } 

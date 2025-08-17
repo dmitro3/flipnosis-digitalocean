@@ -126,6 +126,21 @@ const CONTRACT_ABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   },
+  // Direct NFT transfer functions (bypass game system)
+  {
+    "inputs": [{"internalType": "address", "name": "nftContract", "type": "address"}, {"internalType": "uint256", "name": "tokenId", "type": "uint256"}, {"internalType": "address", "name": "recipient", "type": "address"}],
+    "name": "directTransferNFT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address[]", "name": "nftContracts", "type": "address[]"}, {"internalType": "uint256[]", "name": "tokenIds", "type": "uint256[]"}, {"internalType": "address[]", "name": "recipients", "type": "address[]"}],
+    "name": "directBatchTransferNFTs",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
   // Admin settings functions
   {
     "inputs": [{"internalType": "uint256", "name": "_feePercent", "type": "uint256"}],
@@ -728,118 +743,68 @@ class ContractService {
 
     try {
       await this.ensureBaseNetwork()
-      console.log('📦 Admin withdrawing NFTs individually for low gas:', { nftContracts, tokenIds, recipients })
-      console.log('🔍 Debug: Target NFT details:', {
-        contract: nftContracts[0],
-        tokenId: tokenIds[0],
-        recipient: recipients[0]
-      })
+      console.log('📦 Using DIRECT NFT transfer (bypasses game system):', { nftContracts, tokenIds, recipients })
       
-      // SIMPLE APPROACH: Use database to find existing game IDs like before
-      // but add better error handling for contract issues
-      console.log('🔧 Restoring missing games before withdrawal...')
-      try {
-        const restoreResponse = await fetch('/api/admin/restore-missing-games', {
-          method: 'POST'
+      // BULLETPROOF APPROACH: Use direct NFT transfer that bypasses the game system entirely
+      // This works for ANY NFT owned by the contract, regardless of game state
+      
+      if (nftContracts.length === 1) {
+        // Single NFT - use directTransferNFT
+        console.log('📦 Transferring single NFT directly...')
+        
+        const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'directTransferNFT',
+          args: [nftContracts[0], BigInt(tokenIds[0]), recipients[0]],
+          chain: BASE_CHAIN,
+          account: this.walletClient.account,
+          gas: 150000n
         })
-        if (restoreResponse.ok) {
-          const restoreData = await restoreResponse.json()
-          console.log('✅ Restore operation completed:', restoreData)
-        }
-      } catch (restoreError) {
-        console.warn('⚠️ Could not restore missing games, continuing')
-      }
-      
-      // Find game IDs for these NFTs from database
-      const gameIds = await this.findGameIdsOptimized(nftContracts, tokenIds)
-      
-      const validGameIds = []
-      const validRecipients = []
-      
-      for (let i = 0; i < gameIds.length; i++) {
-        if (gameIds[i]) {
-          // Verify this game ID actually has the NFT deposited in the contract
-          const gameId = gameIds[i]
-          const gameIdBytes32 = this.getGameIdBytes32(gameId)
-          
-          try {
-            const nftDepositData = await this.publicClient.readContract({
-              address: this.contractAddress,
-              abi: CONTRACT_ABI,
-              functionName: 'nftDeposits',
-              args: [gameIdBytes32]
-            })
-            
-            if (nftDepositData && Array.isArray(nftDepositData) && nftDepositData.length >= 4) {
-              const [depositor, contractAddr, depositedTokenId, claimed] = nftDepositData
-              
-              console.log(`🔍 Contract state for game ${gameId}:`, {
-                depositor,
-                contractAddr,
-                tokenId: depositedTokenId?.toString(),
-                claimed,
-                hasDepositor: depositor !== '0x0000000000000000000000000000000000000000'
-              })
-              
-              if (depositor !== '0x0000000000000000000000000000000000000000' && !claimed) {
-                validGameIds.push(gameId)
-                validRecipients.push(recipients[i])
-                console.log(`✅ Valid NFT deposit found for game ${gameId}`)
-              } else {
-                console.warn(`⚠️ Game ${gameId} has no valid NFT deposit or already claimed`)
-              }
-            }
-          } catch (e) {
-            console.warn(`⚠️ Could not verify NFT deposit for game ${gameId}:`, e.message)
-          }
-        }
-      }
-      
-      if (validGameIds.length > 0) {
-        console.log(`📦 Withdrawing ${validGameIds.length} NFTs individually for optimal gas...`)
         
-        const results = []
+        const receipt = await this.publicClient.waitForTransactionReceipt({ 
+          hash,
+          confirmations: 1,
+          timeout: 60_000
+        })
         
-        // Process each NFT individually using emergencyWithdrawNFT for low gas fees
-        for (let i = 0; i < validGameIds.length; i++) {
-          const gameId = validGameIds[i]
-          const recipient = validRecipients[i]
-          
-          console.log(`📦 Processing NFT ${i + 1}/${validGameIds.length}: ${gameId} -> ${recipient}`)
-          
-          const result = await this.emergencyWithdrawNFT(gameId, recipient)
-          results.push(result)
-          
-          if (!result.success) {
-            console.warn(`⚠️ Failed to withdraw NFT for game ${gameId}:`, result.error)
-          } else {
-            console.log(`✅ Successfully withdrew NFT for game ${gameId}`)
-          }
+        console.log('✅ Direct NFT transfer successful:', hash)
+        return { 
+          success: true, 
+          transactionHash: hash,
+          message: `Successfully transferred NFT ${nftContracts[0]}:${tokenIds[0]} with low gas fees`
         }
         
-        const successfulWithdrawals = results.filter(r => r.success).length
+      } else {
+        // Multiple NFTs - use directBatchTransferNFTs
+        console.log('📦 Transferring multiple NFTs directly...')
         
-        if (successfulWithdrawals > 0) {
-          return { 
-            success: true, 
-            transactionHash: results.find(r => r.success)?.transactionHash,
-            message: `Successfully withdrew ${successfulWithdrawals}/${validGameIds.length} NFTs with low gas fees`
-          }
-        } else {
-          return {
-            success: false,
-            error: 'All NFT withdrawals failed - check contract ownership or NFT state'
-          }
+        const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: CONTRACT_ABI,
+          functionName: 'directBatchTransferNFTs',
+          args: [nftContracts, tokenIds.map(id => BigInt(id)), recipients],
+          chain: BASE_CHAIN,
+          account: this.walletClient.account,
+          gas: 200000n
+        })
+        
+        const receipt = await this.publicClient.waitForTransactionReceipt({ 
+          hash,
+          confirmations: 1,
+          timeout: 60_000
+        })
+        
+        console.log('✅ Direct batch NFT transfer successful:', hash)
+        return { 
+          success: true, 
+          transactionHash: hash,
+          message: `Successfully transferred ${nftContracts.length} NFTs with low gas fees`
         }
-      }
-      
-      return { 
-        success: false, 
-        error: 'No valid NFT deposits found on contract' 
       }
       
     } catch (error) {
-      console.error('❌ Error admin withdrawing NFTs:', error)
+      console.error('❌ Error in direct NFT transfer:', error)
       return { success: false, error: error.message }
     }
   }
