@@ -130,8 +130,8 @@ if (isMobile) {
     chains,
     connectors,
     transports: {
-      [base.id]: http(),
-      [mainnet.id]: http(),
+      [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'),
+      [mainnet.id]: http(import.meta.env.VITE_ETHEREUM_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'),
       [polygon.id]: http(),
       [arbitrum.id]: http(),
       [optimism.id]: http(),
@@ -140,12 +140,21 @@ if (isMobile) {
     },
   })
 } else {
-  // On desktop, use the default config which handles everything automatically
+  // On desktop, use the default config with custom RPC endpoints
   config = getDefaultConfig({
     appName: 'FLIPNOSIS',
     projectId,
     chains,
     ssr: false,
+    transports: {
+      [base.id]: http(import.meta.env.VITE_BASE_RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'),
+      [mainnet.id]: http(import.meta.env.VITE_ETHEREUM_RPC_URL || 'https://eth-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'),
+      [polygon.id]: http(),
+      [arbitrum.id]: http(),
+      [optimism.id]: http(),
+      [bsc.id]: http(),
+      [avalanche.id]: http(),
+    },
   })
 }
 

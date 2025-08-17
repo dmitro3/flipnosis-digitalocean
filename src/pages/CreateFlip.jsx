@@ -253,36 +253,7 @@ const CreateFlip = () => {
     }
   }, [address, walletClient, isFullyConnected, isConnected, isConnecting, chainId, showInfo])
 
-  // Initialize contract service when wallet is ready
-  useEffect(() => {
-    const initializeContract = async () => {
-      if (isFullyConnected && walletClient && address) {
-        try {
-          console.log('🔧 Initializing contract service...', {
-            isFullyConnected,
-            hasWalletClient: !!walletClient,
-            address
-          })
-          
-          const result = await contractService.initialize(walletClient, publicClient)
-          if (!result.success) {
-            console.error('Failed to initialize contract service:', result.error)
-            showError('Failed to initialize contract service')
-          } else {
-            console.log('✅ Contract service initialized successfully')
-          }
-        } catch (error) {
-          console.error('Error initializing contract service:', error)
-          showError('Failed to initialize contract service')
-        }
-      }
-    }
-    
-    // Add a small delay to ensure wallet is fully ready
-    const timer = setTimeout(initializeContract, 1000)
-    
-    return () => clearTimeout(timer)
-  }, [isFullyConnected, walletClient, address, publicClient, showError])
+  // Contract service is initialized by useWalletConnection - no need to duplicate here
 
   const handleSubmit = async (e) => {
     e.preventDefault()

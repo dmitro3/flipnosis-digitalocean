@@ -193,6 +193,13 @@ class ContractService {
       throw new Error('Public client is required')
     }
 
+    // Avoid re-initialization if already ready with same address
+    const newAddress = walletClient.account?.address
+    if (this.isReady() && this.userAddress === newAddress) {
+      console.log('⚡ Contract service already initialized for this address')
+      return { success: true }
+    }
+
     // Use the deployed contract address from base-deployment.json
     this.contractAddress = '0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf'
 
@@ -202,7 +209,7 @@ class ContractService {
       this.walletClient = walletClient
 
       // Get address from wallet client account
-      this.userAddress = walletClient.account?.address
+      this.userAddress = newAddress
       if (!this.userAddress) {
         throw new Error('No address found in wallet client')
       }
