@@ -3,6 +3,7 @@ import { useAccount, useChainId, useSwitchChain, useWalletClient, usePublicClien
 import { useToast } from './ToastContext'
 import { Alchemy, Network } from 'alchemy-sdk'
 import { ethers } from 'ethers'
+import contractService from '../services/ContractService'
 
 const WalletContext = createContext()
 
@@ -24,6 +25,7 @@ export const WalletProvider = ({ children }) => {
   
   const [nfts, setNfts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [isContractInitialized, setIsContractInitialized] = useState(false)
   
   // Chrome extension conflict detection
   const hasChromeExtensions = typeof window !== 'undefined' && window.chrome && window.chrome.runtime
@@ -41,6 +43,27 @@ export const WalletProvider = ({ children }) => {
 
   // Mobile detection
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+  // Initialize contract service when wallet is ready
+  useEffect(() => {
+    const initializeContract = async () => {
+      if (isConnected && walletClient && publicClient && address && chainId === 8453) {
+        try {
+          console.log('🔧 Initializing contract service from WalletContext...')
+          await contractService.initialize(walletClient, publicClient)
+          console.log('✅ Contract service initialized successfully from WalletContext')
+          setIsContractInitialized(true)
+        } catch (error) {
+          console.error('❌ Failed to initialize contract service:', error)
+          setIsContractInitialized(false)
+        }
+      } else {
+        setIsContractInitialized(false)
+      }
+    }
+
+    initializeContract()
+  }, [isConnected, walletClient, publicClient, address, chainId])
 
   // Switch to Base network
   const switchToBase = async () => {
@@ -411,7 +434,8 @@ export const WalletProvider = ({ children }) => {
     // Connection status helpers
     hasWalletClient: !!walletClient,
     hasPublicClient: !!publicClient,
-    isFullyConnected: isConnected && walletClient && publicClient ? {
+    isContractInitialized,
+    isFullyConnected: isConnected && walletClient && publicClient && isContractInitialized ? {
       address,
       walletClient,
       publicClient,
