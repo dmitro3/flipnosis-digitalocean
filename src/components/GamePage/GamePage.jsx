@@ -410,18 +410,34 @@ const GamePage = () => {
         <GameBackground />
         <GameContainer>
           <GameLayout>
-            {/* Game Status and NFT Display */}
-            <GameStatusAndNFTContainer
-              gameData={gameData}
-              isCreator={isCreator()}
-              currentTurn={gameState?.currentPlayer}
-              nftData={{
-                image: getGameNFTImage(),
-                name: getGameNFTName(),
-                collection: getGameNFTCollection()
-              }}
-              currentChain={chain}
-            />
+            {/* Game Status Display */}
+            <div style={{
+              background: 'rgba(0, 0, 20, 0.95)',
+              border: '2px solid #00FF41',
+              borderRadius: '1rem',
+              padding: '1rem',
+              width: '100%',
+              maxWidth: '1400px',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#00FF41' }}>Game Status</h3>
+              <div style={{ color: '#CCCCCC' }}>
+                <p style={{ margin: '0 0 0.5rem 0' }}>
+                  <strong>Status:</strong> {gameData?.status || 'Unknown'}
+                </p>
+                <p style={{ margin: '0 0 0.5rem 0' }}>
+                  <strong>Creator:</strong> {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
+                </p>
+                {getGameJoiner() && (
+                  <p style={{ margin: '0 0 0.5rem 0' }}>
+                    <strong>Player:</strong> {getGameJoiner().slice(0, 6)}...{getGameJoiner().slice(-4)}
+                  </p>
+                )}
+                <p style={{ margin: '0', color: '#FFD700', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                  Price: ${(getGamePrice() || 0).toFixed(2)} USD
+                </p>
+              </div>
+            </div>
             
             {/* Payment Section - Only show during payment phase */}
             {(gameData?.status === 'waiting_challenger_deposit' || 
@@ -469,14 +485,82 @@ const GamePage = () => {
               </div>
             )}
             
-            {/* Two Container Layout for Chat/Offers */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '2rem',
-              width: '100%',
-              maxWidth: '1400px'
-            }}>
+            {/* Three Container Layout for NFT Details/Chat/Offers */}
+            <ThreeContainerLayout>
+              {/* NFT Details Container */}
+              <div style={{
+                background: 'rgba(0, 0, 20, 0.95)',
+                border: '2px solid #FFD700',
+                borderRadius: '1rem',
+                padding: '1rem',
+                height: '500px',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
+              }}>
+                <h4 style={{ margin: '0 0 1rem 0', color: '#FFD700' }}>NFT Details</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <img 
+                    src={getGameNFTImage()} 
+                    alt={getGameNFTName()} 
+                    style={{ 
+                      width: '60px', 
+                      height: '60px', 
+                      borderRadius: '0.5rem',
+                      border: '2px solid #FFD700'
+                    }} 
+                  />
+                  <div>
+                    <h5 style={{ margin: '0 0 0.25rem 0', color: '#FFFFFF' }}>
+                      {getGameNFTName()}
+                    </h5>
+                    <p style={{ margin: '0', color: '#CCCCCC', fontSize: '0.9rem' }}>
+                      {getGameNFTCollection()}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* External Links */}
+                {getGameNFTContract() && getGameNFTTokenId() && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <a 
+                        href={`https://basescan.org/token/${getGameNFTContract()}?a=${getGameNFTTokenId()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: '#00BFFF',
+                          color: '#000',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          textDecoration: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        Explorer
+                      </a>
+                      <a 
+                        href={`https://opensea.io/assets/base/${getGameNFTContract()}/${getGameNFTTokenId()}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: '#00FF41',
+                          color: '#000',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          textDecoration: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        OpenSea
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               {/* Chat Container */}
               <ChatContainer
                 gameId={gameId}
@@ -535,7 +619,7 @@ const GamePage = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </ThreeContainerLayout>
           </GameLayout>
         </GameContainer>
       </Container>
