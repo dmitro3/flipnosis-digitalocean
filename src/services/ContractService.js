@@ -631,7 +631,8 @@ class ContractService {
         functionName: 'emergencyWithdrawNFT',
         args: [gameIdBytes32, recipient],
         chain: BASE_CHAIN,
-        account: this.walletClient.account
+        account: this.walletClient.account,
+        gas: 100000n  // Set reasonable gas limit like deposit functions
       })
       
       console.log('🚨 Emergency NFT withdraw tx:', hash)
