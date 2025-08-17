@@ -16,6 +16,7 @@ import contractService from '../services/ContractService'
 
 // 5. Component imports
 import ClaimRewards from '../components/ClaimRewards'
+import NFTOfferComponent from '../components/NFTOfferComponent'
 
 // 6. Style imports
 import { theme } from '../styles/theme'
@@ -888,7 +889,7 @@ const getAllItems = () => {
                    window.innerWidth <= 1200 ? '2rem' : '2.5rem',
               marginTop: '2rem'
             }}>
-              {/* Left Box - Selected Game */}
+              {/* Left Box - Selected Game and Offers */}
               <div style={{
                 order: window.innerWidth <= 768 ? 1 : 0,
                 width: window.innerWidth <= 768 ? '100%' : 
@@ -1247,6 +1248,22 @@ const getAllItems = () => {
 
                       </div>
                     </GameInfo>
+                  </div>
+                )}
+                
+                {/* NFT Offers Section - Show for listing games */}
+                {selectedFlip && selectedFlip.type === 'listing' && (
+                  <div style={{ marginTop: '1rem' }}>
+                    <NFTOfferComponent
+                      gameId={selectedFlip.id}
+                      gameData={selectedFlip}
+                      isCreator={selectedFlip.creator?.toLowerCase() === address?.toLowerCase()}
+                      socket={null}
+                      connected={false}
+                      offeredNFTs={[]}
+                      onOfferSubmitted={() => {}}
+                      onOfferAccepted={() => {}}
+                    />
                   </div>
                 )}
               </div>
