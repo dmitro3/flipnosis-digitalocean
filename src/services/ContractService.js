@@ -726,7 +726,11 @@ class ContractService {
           account: this.walletClient.account
         })
         
-        const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+        const receipt = await this.publicClient.waitForTransactionReceipt({ 
+          hash,
+          confirmations: 1,
+          timeout: 60_000
+        })
         console.log(`✅ Batch withdrew ${validGameIds.length} NFTs successfully`)
         
         return { 
