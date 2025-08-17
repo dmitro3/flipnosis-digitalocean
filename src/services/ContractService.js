@@ -261,15 +261,34 @@ class ContractService {
     return ethers.id(gameId)
   }
 
-  // Get gas configuration - let wallet handle gas estimation automatically
+  // Get gas configuration optimized for Base network's low fees
   async getGasConfig() {
-    // For Base network, let the wallet and network handle gas estimation automatically
-    // This avoids the EIP-1559 validation error while using optimal gas prices
-    console.log('⛽ Using automatic gas estimation for Base network')
-    
-    return {
-      // Don't specify gas fees - let wallet estimate automatically
-      // This prevents the maxFeePerGas < maxPriorityFeePerGas error
+    try {
+      // Base network has extremely low gas costs - enforce this
+      console.log('⛽ Using Base-optimized gas configuration')
+      
+      // Base network typical values (much lower than other networks)
+      const maxPriorityFeePerGas = 1000000n // 0.001 gwei (1 wei) - very low for Base
+      const maxFeePerGas = 1100000n // 0.0011 gwei - slightly higher but still minimal
+      
+      console.log('⛽ Base network gas config:', {
+        maxPriorityFeePerGas: `${maxPriorityFeePerGas} wei (${Number(maxPriorityFeePerGas) / 1e9} gwei)`,
+        maxFeePerGas: `${maxFeePerGas} wei (${Number(maxFeePerGas) / 1e9} gwei)`
+      })
+      
+      return {
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        gas: 50000n // Lower gas limit for simple approve transactions
+      }
+    } catch (error) {
+      console.warn('⚠️ Using ultra-low fallback for Base network:', error)
+      // Ultra-conservative fallback for Base
+      return {
+        maxFeePerGas: 1100000n, // 0.0011 gwei  
+        maxPriorityFeePerGas: 1000000n, // 0.001 gwei
+        gas: 50000n
+      }
     }
   }
 
