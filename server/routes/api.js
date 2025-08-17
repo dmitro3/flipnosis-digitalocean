@@ -468,6 +468,61 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     }
   })
 
+  // Temporary endpoint to restore missing games for NFT withdrawal
+  router.post('/admin/restore-missing-games', async (req, res) => {
+    try {
+      console.log('🔄 Restoring missing games for NFT withdrawal...')
+      
+      const missingGames = [
+        { id: 'listing_1755362734367_80a233d43e8c7d33', nft_token_id: 5274, price_usd: 0.15 },
+        { id: 'listing_1755362378481_68e63436638e60fc', nft_token_id: 9287, price_usd: 0.15 },
+        { id: 'listing_1755362334407_5c7bfe5d205da6c5', nft_token_id: 9289, price_usd: 0.15 },
+        { id: 'listing_1755361845873_fc762e5943599768', nft_token_id: 9201, price_usd: 0.14 },
+        { id: 'listing_1755361426703_dce7bf4a68ee978c', nft_token_id: 1271, price_usd: 0.15 }
+      ]
+
+      const NFT_CONTRACT = '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f'
+      const ADMIN_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+      
+      let restoredCount = 0
+      
+      for (const game of missingGames) {
+        await new Promise((resolve, reject) => {
+          db.run(`
+            INSERT OR REPLACE INTO games (
+              id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
+              nft_collection, price_usd, status, created_at, creator_deposited
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            game.id, ADMIN_ADDRESS, NFT_CONTRACT, game.nft_token_id,
+            `NFT #${game.nft_token_id}`, '', 'Unknown Collection',
+            game.price_usd, 'waiting', new Date().toISOString(), 1
+          ], function(err) {
+            if (err) {
+              console.error(`❌ Error restoring game ${game.id}:`, err)
+              reject(err)
+            } else {
+              console.log(`✅ Restored game: ${game.id} (NFT #${game.nft_token_id})`)
+              restoredCount++
+              resolve()
+            }
+          })
+        })
+      }
+      
+      console.log(`🎉 Successfully restored ${restoredCount} games`)
+      res.json({ 
+        success: true, 
+        restored: restoredCount,
+        message: `Restored ${restoredCount} games for NFT withdrawal` 
+      })
+      
+    } catch (error) {
+      console.error('❌ Error restoring games:', error)
+      res.status(500).json({ error: error.message })
+    }
+  })
+
   // Get listing
   router.get('/listings/:listingId', (req, res) => {
     const { listingId } = req.params
