@@ -1113,69 +1113,79 @@ export default function AdminPanel() {
 
   // NFT Management Functions
   const loadContractNFTs = async () => {
-    if (!contractService.isInitialized) {
+    if (!contractService.isReady()) {
       addNotification('error', 'Contract service not initialized')
       return
     }
 
     try {
       setIsLoadingNFTs(true)
-      addNotification('info', 'Loading NFTs directly from smart contract...')
-      console.log('🔄 Loading NFTs directly from smart contract...')
+      addNotification('info', 'Loading NFTs from contract using Alchemy...')
+      console.log('🔄 Loading NFTs from contract using Alchemy...')
 
-      // First, get all games from database to get game IDs
-      const response = await fetch(`${API_URL}/api/admin/games`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch games from database')
-      }
-      const data = await response.json()
-      const games = data.games || []
+      // Use the new Alchemy integration in ContractService
+      const result = await contractService.getContractOwnedNFTs()
       
-      console.log('📊 All games in database:', games.length)
-      
-      // Query contract directly for each game to see what's actually deposited
-      const nftsInContract = []
-      
-      for (const game of games) {
-        try {
-          console.log(`🔍 Checking contract for game ${game.id}...`)
-          
-          // Get game state from contract
-          const gameState = await contractService.getGameState(game.id)
-          
-          if (gameState.success && gameState.gameState.nftDeposit.hasDeposit) {
-            const nftDeposit = gameState.gameState.nftDeposit
-            console.log(`✅ Found NFT in contract for game ${game.id}:`, nftDeposit)
-            
-            nftsInContract.push({
-              nftContract: nftDeposit.nftContract,
-              tokenId: nftDeposit.tokenId,
-              name: `Game ${game.id} NFT`,
-              metadata: {
-                image: game.nft_image || '',
-                collection: game.nft_collection || ''
-              },
-              uniqueKey: `${nftDeposit.nftContract}-${nftDeposit.tokenId}`,
-              source: 'contract',
-              gameId: game.id,
-              contractGameId: game.contract_game_id || game.id,
-              depositor: nftDeposit.depositor,
-              claimed: nftDeposit.claimed,
-              depositTime: nftDeposit.depositTime
-            })
-          } else {
-            console.log(`❌ No NFT found in contract for game ${game.id}`)
-          }
-        } catch (error) {
-          console.error(`❌ Error checking game ${game.id}:`, error)
+      if (result.success) {
+        console.log('📦 NFTs loaded from Alchemy:', result.nfts.length)
+        setContractNFTs(result.nfts)
+        addNotification('success', `Loaded ${result.nfts.length} NFTs from contract (Alchemy)`)
+      } else {
+        // Fallback to old method if Alchemy fails
+        console.log('⚠️ Alchemy method failed, trying fallback method...')
+        addNotification('info', 'Alchemy failed, trying direct contract query...')
+        
+        // Fallback: Query contract directly for each game to see what's actually deposited
+        const response = await fetch(`${API_URL}/api/admin/games`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch games from database')
         }
+        const data = await response.json()
+        const games = data.games || []
+        
+        console.log('📊 All games in database:', games.length)
+        const nftsInContract = []
+        
+        for (const game of games) {
+          try {
+            console.log(`🔍 Checking contract for game ${game.id}...`)
+            
+            // Get game state from contract
+            const gameState = await contractService.getGameState(game.id)
+            
+            if (gameState.success && gameState.gameState.nftDeposit.hasDeposit) {
+              const nftDeposit = gameState.gameState.nftDeposit
+              console.log(`✅ Found NFT in contract for game ${game.id}:`, nftDeposit)
+              
+              nftsInContract.push({
+                nftContract: nftDeposit.nftContract,
+                tokenId: nftDeposit.tokenId,
+                name: `Game ${game.id} NFT`,
+                metadata: {
+                  image: game.nft_image || '',
+                  collection: game.nft_collection || ''
+                },
+                uniqueKey: `${nftDeposit.nftContract}-${nftDeposit.tokenId}`,
+                source: 'contract',
+                gameId: game.id,
+                contractGameId: game.contract_game_id || game.id,
+                depositor: nftDeposit.depositor,
+                claimed: nftDeposit.claimed,
+                depositTime: nftDeposit.depositTime
+              })
+            } else {
+              console.log(`❌ No NFT found in contract for game ${game.id}`)
+            }
+          } catch (error) {
+            console.error(`❌ Error checking game ${game.id}:`, error)
+          }
+        }
+        
+        console.log('📦 NFTs found in contract:', nftsInContract.length)
+        setContractNFTs(nftsInContract)
+        addNotification('success', `Loaded ${nftsInContract.length} NFTs from contract (Direct Query)`)
       }
       
-      console.log('📦 NFTs found in contract:', nftsInContract.length)
-      console.log('📦 NFT details:', nftsInContract)
-      
-      setContractNFTs(nftsInContract)
-      addNotification('success', `Loaded ${nftsInContract.length} NFTs from contract (Direct Query)`)
     } catch (error) {
       console.error('❌ Error loading contract NFTs:', error)
       addNotification('error', 'Failed to load NFTs: ' + error.message)
@@ -1185,7 +1195,7 @@ export default function AdminPanel() {
   }
 
   const withdrawSelectedNFTs = async () => {
-    if (!contractService.isInitialized) {
+    if (!contractService.isReady()) {
       addNotification('error', 'Contract service not initialized')
       return
     }
