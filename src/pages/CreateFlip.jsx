@@ -361,29 +361,13 @@ const CreateFlip = () => {
       const listingResult = await listingResponse.json()
       console.log('✅ Listing created:', listingResult)
       
-      // Step 2: Check NFT approval first
+      // Step 2: Create game on blockchain (approve + deposit NFT)
       setCurrentStep(1)
-      showInfo('Checking NFT approval...')
-      const approvalResult = await contractService.approveNFT(
-        selectedNFT.contractAddress,
-        selectedNFT.tokenId
-      )
-      
-      if (!approvalResult.success) {
-        throw new Error(approvalResult.error || 'Failed to approve NFT')
-      }
-      
-      // Mark step 1 as completed
-      setStepStatus(prev => ({ ...prev, approve: true }))
-      setCurrentStep(2)
-      
-      // Step 3: Pay fee and create game on blockchain
-      showInfo('Paying listing fee and creating game on blockchain...')
+      showInfo('Approving and depositing NFT...')
       
       // Convert price to 6 decimal places (microdollars) for contract
       const priceInMicrodollars = Math.round(parseFloat(price) * 1000000)
       
-      // Note: Listing fee is currently $0.00 in the contract, so no additional fee is added
       console.log(`💰 Game price: $${price} (${priceInMicrodollars} microdollars)`)
       console.log(`💸 Listing fee: $0.00 (free)`)
       
@@ -401,8 +385,8 @@ const CreateFlip = () => {
         throw new Error(createResult.error || 'Failed to create game on blockchain')
       }
       
-      // Mark step 2 as completed
-      setStepStatus(prev => ({ ...prev, payFee: true }))
+      // Mark all steps as completed since createGame now handles everything
+      setStepStatus({ approve: true, payFee: true, depositNFT: true })
       setCurrentStep(3)
       
       // Step 4: Create game record in database
@@ -421,9 +405,6 @@ const CreateFlip = () => {
         console.error('Server error response:', errorData)
         throw new Error(errorData.error || 'Failed to register game')
       }
-      
-      // Mark step 3 as completed (NFT was already deposited in createGame)
-      setStepStatus(prev => ({ ...prev, depositNFT: true }))
       
       // Step 6: Confirm NFT deposit
       const confirmResponse = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
@@ -501,12 +482,12 @@ const CreateFlip = () => {
                 >
                   {stepStatus.approve ? '✓' : '1'}
                 </StepCircle>
-                <StepLabel 
-                  completed={stepStatus.approve}
-                  active={currentStep === 1 && !stepStatus.approve}
-                >
-                  Approve NFT
-                </StepLabel>
+                                  <StepLabel 
+                    completed={stepStatus.approve}
+                    active={currentStep === 1 && !stepStatus.approve}
+                  >
+                    Approve & Deposit
+                  </StepLabel>
               </ProgressStep>
               
               <ProgressStep>
@@ -516,12 +497,12 @@ const CreateFlip = () => {
                 >
                   {stepStatus.payFee ? '✓' : '2'}
                 </StepCircle>
-                <StepLabel 
-                  completed={stepStatus.payFee}
-                  active={currentStep === 2 && !stepStatus.payFee}
-                >
-                  Pay Fee & Create
-                </StepLabel>
+                                  <StepLabel 
+                    completed={stepStatus.payFee}
+                    active={currentStep === 2 && !stepStatus.payFee}
+                  >
+                    Register Game
+                  </StepLabel>
               </ProgressStep>
               
               <ProgressStep>
@@ -531,12 +512,12 @@ const CreateFlip = () => {
                 >
                   {stepStatus.depositNFT ? '✓' : '3'}
                 </StepCircle>
-                <StepLabel 
-                  completed={stepStatus.depositNFT}
-                  active={currentStep === 3 && !stepStatus.depositNFT}
-                >
-                  Deposit NFT
-                </StepLabel>
+                                  <StepLabel 
+                    completed={stepStatus.depositNFT}
+                    active={currentStep === 3 && !stepStatus.depositNFT}
+                  >
+                    Complete Setup
+                  </StepLabel>
               </ProgressStep>
             </ProgressContainer>
 
@@ -635,12 +616,12 @@ const CreateFlip = () => {
                     >
                       {stepStatus.approve ? '✓' : '1'}
                     </StepCircle>
-                    <StepLabel 
-                      completed={stepStatus.approve}
-                      active={currentStep === 1 && !stepStatus.approve}
-                    >
-                      Approve NFT
-                    </StepLabel>
+                                      <StepLabel 
+                    completed={stepStatus.approve}
+                    active={currentStep === 1 && !stepStatus.approve}
+                  >
+                    Approve & Deposit
+                  </StepLabel>
                   </ProgressStep>
                   
                   <ProgressStep>
@@ -650,12 +631,12 @@ const CreateFlip = () => {
                     >
                       {stepStatus.payFee ? '✓' : '2'}
                     </StepCircle>
-                    <StepLabel 
-                      completed={stepStatus.payFee}
-                      active={currentStep === 2 && !stepStatus.payFee}
-                    >
-                      Pay Fee & Create
-                    </StepLabel>
+                                      <StepLabel 
+                    completed={stepStatus.payFee}
+                    active={currentStep === 2 && !stepStatus.payFee}
+                  >
+                    Register Game
+                  </StepLabel>
                   </ProgressStep>
                   
                   <ProgressStep>
@@ -665,12 +646,12 @@ const CreateFlip = () => {
                     >
                       {stepStatus.depositNFT ? '✓' : '3'}
                     </StepCircle>
-                    <StepLabel 
-                      completed={stepStatus.depositNFT}
-                      active={currentStep === 3 && !stepStatus.depositNFT}
-                    >
-                      Deposit NFT
-                    </StepLabel>
+                                      <StepLabel 
+                    completed={stepStatus.depositNFT}
+                    active={currentStep === 3 && !stepStatus.depositNFT}
+                  >
+                    Complete Setup
+                  </StepLabel>
                   </ProgressStep>
                 </ProgressContainer>
               </div>
@@ -682,7 +663,7 @@ const CreateFlip = () => {
                     <LoadingSpinner /> Creating Game...
                   </>
                 ) : (
-                  'Pay Fee & Create Game'
+                  'Create Game'
                 )}
               </SubmitButton>
             </form>
