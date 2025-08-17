@@ -186,6 +186,18 @@ const GamePage = () => {
   
   // NEW: Watch for game starting (both players deposited)
   useEffect(() => {
+    // Debug logging to see what's happening
+    console.log('🔍 Countdown Debug:', {
+      gameData: gameData,
+      status: gameData?.status,
+      creator_deposited: gameData?.creator_deposited,
+      challenger_deposited: gameData?.challenger_deposited,
+      countdownTriggered: countdownTriggered,
+      isCreator: isCreator(),
+      isJoiner: isJoiner(),
+      address: address
+    })
+    
     // Check if game is active and both players have deposited
     if (gameData?.status === 'active' && 
         gameData?.creator_deposited && 
@@ -196,6 +208,14 @@ const GamePage = () => {
       const isPlayer = isCreator() || isJoiner() || 
                       (gameData?.challenger && address && 
                        gameData.challenger.toLowerCase() === address.toLowerCase())
+      
+      console.log('🎯 Countdown conditions met:', {
+        isPlayer: isPlayer,
+        isCreator: isCreator(),
+        isJoiner: isJoiner(),
+        challengerMatch: gameData?.challenger && address && 
+                        gameData.challenger.toLowerCase() === address.toLowerCase()
+      })
       
       if (isPlayer) {
         console.log('🚀 Game starting! Showing countdown...')
