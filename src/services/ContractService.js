@@ -747,6 +747,57 @@ class ContractService {
     }
   }
 
+  // Optimized method that doesn't hit rate limits by searching database first
+  async findGameIdsOptimized(nftContracts, tokenIds) {
+    const gameIds = []
+    
+    try {
+      // Get all games from database first
+      const response = await fetch('https://cryptoflipz2-production.up.railway.app/api/admin/games')
+      if (!response.ok) {
+        console.warn('Could not fetch games from database for game ID lookup')
+        return []
+      }
+      
+      const data = await response.json()
+      const games = data.games || []
+      
+      console.log(`🔍 Searching ${games.length} games for NFT matches in database...`)
+      
+      // For each NFT we want to withdraw, find the game ID that contains it
+      for (let i = 0; i < nftContracts.length; i++) {
+        const targetContract = nftContracts[i].toLowerCase()
+        const targetTokenId = tokenIds[i].toString()
+        
+        let foundGameId = null
+        
+        // Search through database games by NFT info first (much faster)
+        for (const game of games) {
+          // Check if this game has the NFT token ID we're looking for
+          if (game.nft_token_id && game.nft_token_id.toString() === targetTokenId) {
+            // Also check contract if available
+            if (!game.nft_contract || game.nft_contract.toLowerCase() === targetContract) {
+              foundGameId = game.id.toString()
+              console.log(`✅ Found NFT ${targetContract}:${targetTokenId} in database game ${foundGameId}`)
+              break
+            }
+          }
+        }
+        
+        gameIds.push(foundGameId)
+        
+        if (!foundGameId) {
+          console.warn(`⚠️ Could not find game ID for NFT ${targetContract}:${targetTokenId} in database`)
+        }
+      }
+      
+      return gameIds
+    } catch (error) {
+      console.error('❌ Error finding game IDs:', error)
+      return []
+    }
+  }
+
   // Direct NFT rescue method for NFTs sent directly to contract (not part of games)
   async directNFTRescue(nftContracts, tokenIds, recipients) {
     console.log('🚨 Attempting direct NFT rescue for orphaned NFTs...')
@@ -778,8 +829,22 @@ To fix this, you would need to add emergencyRescueNFT() function to the contract
       await this.ensureBaseNetwork()
       console.log('📦 Admin batch withdrawing NFTs:', { nftContracts, tokenIds, recipients })
       
-      // First, try to find the game IDs for these NFTs
-      const gameIds = await this.findGameIdsForNFTs(nftContracts, tokenIds)
+      // First, try to restore any missing games to ensure database is complete
+      console.log('🔧 Restoring missing games before withdrawal...')
+      try {
+        const restoreResponse = await fetch('https://cryptoflipz2-production.up.railway.app/api/admin/restore-missing-games', {
+          method: 'POST'
+        })
+        if (restoreResponse.ok) {
+          const restoreData = await restoreResponse.json()
+          console.log('✅ Restore operation completed:', restoreData)
+        }
+      } catch (restoreError) {
+        console.warn('⚠️ Could not restore missing games, continuing with current database')
+      }
+      
+      // Try to find the game IDs for these NFTs using optimized approach
+      const gameIds = await this.findGameIdsOptimized(nftContracts, tokenIds)
       
       // Filter out NFTs where we found game IDs and use batch withdraw
       const validGameIds = []
