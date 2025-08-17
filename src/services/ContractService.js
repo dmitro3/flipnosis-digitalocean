@@ -261,40 +261,15 @@ class ContractService {
     return ethers.id(gameId)
   }
 
-  // Get proper gas configuration for transactions
+  // Get gas configuration - let wallet handle gas estimation automatically
   async getGasConfig() {
-    try {
-      const feeData = await this.publicClient.getGasPrice()
-      const baseFee = await this.publicClient.getBlock({ blockTag: 'latest' }).then(block => block.baseFeePerGas || 0n)
-      
-      // Set priority fee to 1.5 gwei (reasonable for Base)
-      const maxPriorityFeePerGas = 1500000000n // 1.5 gwei
-      
-      // Set max fee to base fee + priority fee + buffer (minimum 2.5 gwei total)
-      const minMaxFee = 2500000000n // 2.5 gwei minimum
-      const calculatedMaxFee = baseFee + maxPriorityFeePerGas + 1000000000n // base + priority + 1 gwei buffer
-      const maxFeePerGas = calculatedMaxFee > minMaxFee ? calculatedMaxFee : minMaxFee
-      
-      console.log('⛽ Gas configuration:', {
-        baseFee: baseFee.toString(),
-        maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
-        maxFeePerGas: maxFeePerGas.toString(),
-        gasPrice: feeData.toString()
-      })
-      
-      return {
-        maxFeePerGas,
-        maxPriorityFeePerGas,
-        gas: 200000n // Default gas limit
-      }
-    } catch (error) {
-      console.warn('⚠️ Could not get dynamic gas config, using fallback:', error)
-      // Fallback configuration
-      return {
-        maxFeePerGas: 2500000000n, // 2.5 gwei
-        maxPriorityFeePerGas: 1500000000n, // 1.5 gwei  
-        gas: 200000n
-      }
+    // For Base network, let the wallet and network handle gas estimation automatically
+    // This avoids the EIP-1559 validation error while using optimal gas prices
+    console.log('⛽ Using automatic gas estimation for Base network')
+    
+    return {
+      // Don't specify gas fees - let wallet estimate automatically
+      // This prevents the maxFeePerGas < maxPriorityFeePerGas error
     }
   }
 
