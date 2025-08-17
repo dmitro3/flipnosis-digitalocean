@@ -1,6 +1,7 @@
 import { ethers } from 'ethers'
 import { createPublicClient, createWalletClient, custom, http } from 'viem'
 import { base } from 'viem/chains'
+import { Alchemy, Network } from 'alchemy-sdk'
 
 const BASE_CHAIN = base
 
@@ -116,6 +117,7 @@ class ContractService {
     this.publicClient = null
     this.contract = null
     this.userAddress = null
+    this.alchemy = null
   }
 
   async initialize(walletClient, publicClient) {
@@ -144,10 +146,18 @@ class ContractService {
       }
       this.userAddress = accounts[0]
 
+      // Initialize Alchemy
+      const settings = {
+        apiKey: "hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3", // Base mainnet API key
+        network: Network.BASE_MAINNET,
+      }
+      this.alchemy = new Alchemy(settings)
+
       console.log('✅ Contract service initialized:', {
         contractAddress: this.contractAddress,
         userAddress: this.userAddress,
-        chain: BASE_CHAIN.name
+        chain: BASE_CHAIN.name,
+        alchemy: 'initialized'
       })
 
       return { success: true }
@@ -735,7 +745,7 @@ class ContractService {
   get contract() { return this.contractAddress }
   set contract(value) { this.contractAddress = value } // Allow setting contract address
   get account() { return this.userAddress }
-  get alchemy() { return null } // No Alchemy in new implementation
+  get alchemy() { return this.alchemy } // Return actual Alchemy instance
 
   // Additional missing methods for frontend compatibility
   async withdrawRewards() {
@@ -771,6 +781,39 @@ class ContractService {
   async withdrawNFT(nftContract, tokenId) {
     console.log('📦 Withdrawing NFT (stub):', { nftContract, tokenId })
     return { success: true, message: 'NFT withdrawn (stub)' }
+  }
+
+  // Emergency withdraw NFT by NFT contract and token ID (for current contract)
+  async emergencyWithdrawNFTByNFT(nftContract, tokenId, recipient) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🚨 Emergency withdrawing NFT by contract/tokenId:', { nftContract, tokenId, recipient })
+      
+      // For the current contract, we need to find the game ID that contains this NFT
+      // We'll need to scan through the contract to find which game has this NFT
+      // For now, we'll use a direct emergency withdrawal approach
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawNFT',
+        args: [nftContract, BigInt(tokenId), recipient],
+        chain: BASE_CHAIN
+      })
+      
+      console.log('🚨 Emergency NFT withdraw tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Emergency NFT withdraw confirmed')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error emergency withdrawing NFT:', error)
+      return { success: false, error: error.message }
+    }
   }
 }
 

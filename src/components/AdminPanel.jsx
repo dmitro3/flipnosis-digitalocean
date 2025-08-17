@@ -1134,16 +1134,17 @@ export default function AdminPanel() {
       // Method 1: Try to use Alchemy if available (like the reference admin panel)
       try {
         // Check if we have Alchemy available
-        if (window.alchemy && window.alchemy.nft) {
+        const alchemy = contractService.alchemy
+        if (alchemy) {
           console.log('🔍 Using Alchemy to query NFTs...')
           
           // Query current contract
-          const currentContractNFTs = await window.alchemy.nft.getNftsForOwner(currentContractAddress, {
+          const currentContractNFTs = await alchemy.nft.getNftsForOwner(currentContractAddress, {
             omitMetadata: false
           })
           
           // Query old contract
-          const oldContractNFTs = await window.alchemy.nft.getNftsForOwner(OLD_CONTRACT_ADDRESS, {
+          const oldContractNFTs = await alchemy.nft.getNftsForOwner(OLD_CONTRACT_ADDRESS, {
             omitMetadata: false
           })
           
@@ -1190,81 +1191,9 @@ export default function AdminPanel() {
       } catch (alchemyError) {
         console.log('⚠️ Alchemy not available, using fallback method:', alchemyError.message)
         
-        // Fallback Method: Use BaseScan API or direct contract calls
-        try {
-                     // For now, let's add the known NFTs manually based on BaseScan data
-           // Current contract NFTs (Based Ape 2025 collection) - 5 NFTs
-           const currentContractNFTs = [
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f', // Based Ape 2025 contract
-               tokenId: '9186',
-               name: 'Based Ape 2025 #9186'
-             },
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-               tokenId: '9187', 
-               name: 'Based Ape 2025 #9187'
-             },
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-               tokenId: '9188',
-               name: 'Based Ape 2025 #9188'
-             },
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-               tokenId: '9189',
-               name: 'Based Ape 2025 #9189'
-             },
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-               tokenId: '9190',
-               name: 'Based Ape 2025 #9190'
-             }
-           ]
-           
-           // Old contract NFTs (Based Ape 2025 collection) - 3 NFTs
-           const oldContractNFTs = [
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-               tokenId: '9191',
-               name: 'Based Ape 2025 #9191'
-             },
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-               tokenId: '9192',
-               name: 'Based Ape 2025 #9192'
-             },
-             {
-               nftContract: '0x70cdCC990EFBD44a1Cb1C86F7fEB9962d15Ed71f',
-               tokenId: '9193',
-               name: 'Based Ape 2025 #9193'
-             }
-           ]
-          
-          // Add current contract NFTs
-          currentContractNFTs.forEach(nft => {
-            allNFTs.push({
-              ...nft,
-              uniqueKey: `${nft.nftContract}-${nft.tokenId}`,
-              source: 'current_contract',
-              contractAddress: currentContractAddress
-            })
-          })
-          
-          // Add old contract NFTs
-          oldContractNFTs.forEach(nft => {
-            allNFTs.push({
-              ...nft,
-              uniqueKey: `${nft.nftContract}-${nft.tokenId}`,
-              source: 'old_contract',
-              contractAddress: OLD_CONTRACT_ADDRESS
-            })
-          })
-          
-        } catch (fallbackError) {
-          console.error('❌ Fallback method also failed:', fallbackError)
-          addNotification('error', 'Failed to load NFTs. Please check console for details.')
-        }
+                 // Fallback Method: Show error if Alchemy fails
+         console.error('❌ Alchemy query failed:', alchemyError)
+         addNotification('error', 'Failed to load NFTs via Alchemy. Please check console for details.')
       }
       
       console.log('📦 Total NFTs found:', allNFTs.length)
@@ -1316,32 +1245,25 @@ export default function AdminPanel() {
       
       let totalWithdrawn = 0
       
-      // Handle current contract NFTs using the old admin panel method
+      // Handle current contract NFTs - need to find the game IDs first
       if (currentContractNFTs.length > 0) {
-        const nftContracts = []
-        const tokenIds = []
-        const recipients = []
+        addNotification('info', `Processing ${currentContractNFTs.length} NFTs from current contract...`)
         
+        // For current contract, we need to find the game IDs that contain these NFTs
+        // We'll use individual emergency withdrawals since we don't have game IDs
         for (const nft of currentContractNFTs) {
-          nftContracts.push(nft.nftContract)
-          tokenIds.push(nft.tokenId)
-          recipients.push(targetAddress)
-        }
-        
-        if (nftContracts.length > 0) {
-          console.log('📝 Attempting batch withdrawal from current contract:', {
-            nftContracts,
-            tokenIds,
-            recipients
-          })
-          
-          const result = await contractService.adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients)
-          
-          if (result.success) {
-            totalWithdrawn += nftContracts.length
-            addNotification('success', `Withdrew ${nftContracts.length} NFTs from current contract! Transaction: ${result.transactionHash}`)
-          } else {
-            throw new Error(`Current contract withdrawal failed: ${result.error}`)
+          try {
+            // Use individual emergency withdrawal for current contract
+            const result = await contractService.emergencyWithdrawNFTByNFT(nft.nftContract, nft.tokenId, targetAddress)
+            if (result.success) {
+              totalWithdrawn++
+              addNotification('success', `Withdrew NFT from current contract: ${nft.name}`)
+            } else {
+              addNotification('error', `Failed to withdraw NFT ${nft.name} from current contract: ${result.error}`)
+            }
+          } catch (error) {
+            console.error(`Error withdrawing NFT ${nft.name} from current contract:`, error)
+            addNotification('error', `Failed to withdraw NFT ${nft.name} from current contract`)
           }
         }
       }
