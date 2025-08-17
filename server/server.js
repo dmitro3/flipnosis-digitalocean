@@ -54,7 +54,18 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 // ===== STATIC FILES =====
 const distPath = path.join(__dirname, '..', 'dist')
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath))
+  // Configure static file serving with proper MIME types
+  app.use(express.static(distPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+      } else if (path.endsWith('.mjs')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+      } else if (path.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8')
+      }
+    }
+  }))
   console.log('✅ Serving static files from:', distPath)
 } else {
   console.log('⚠️ No dist directory found')
@@ -118,17 +129,23 @@ async function initializeServices() {
     }
   })
 
-  // Serve index.html for all other routes
+  // Serve index.html for all other routes (SPA fallback)
   app.get('*', (req, res) => {
+    // Don't intercept API routes
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ error: 'API endpoint not found' })
+    }
+    
+    // Don't intercept static assets (js, css, images, etc.)
+    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$/)) {
+      return res.status(404).send('Static asset not found')
     }
     
     const indexPath = path.join(distPath, 'index.html')
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath)
     } else {
-      res.status(404).send('Not Found')
+      res.status(404).send('Application not built - run npm run build')
     }
   })
 
