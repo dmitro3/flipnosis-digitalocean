@@ -1214,65 +1214,37 @@ export default function AdminPanel() {
     try {
       addNotification('info', 'Processing NFT withdrawal...')
       
-      // For each selected NFT, withdraw it individually using adminBatchWithdrawNFTs
-      const gameIds = []
+      // For each selected NFT, use its contract address and token ID
+      const nftContracts = []
+      const tokenIds = []
       const recipients = []
       
       for (const nft of selectedNFTsForWithdrawal) {
         if (nft.nftContract !== '0x0000000000000000000000000000000000000000') {
-          // Use the contract game ID (bytes32 format) from the NFT data
-          const contractGameId = nft.contractGameId || nft.gameId
-          if (contractGameId) {
-            gameIds.push(contractGameId)
-            recipients.push(targetAddress)
-          }
+          nftContracts.push(nft.nftContract)
+          tokenIds.push(nft.tokenId)
+          recipients.push(targetAddress)
         }
       }
       
-      if (gameIds.length === 0) {
+      if (nftContracts.length === 0) {
         addNotification('error', 'No valid NFTs selected for withdrawal')
         return
       }
       
       console.log('📝 Attempting batch withdrawal with:', {
-        gameIds,
+        nftContracts,
+        tokenIds,
         recipients
       })
       
-      // Debug: Check contract state before withdrawal
-      console.log('🔍 Debugging contract state before withdrawal...')
-      for (let i = 0; i < gameIds.length; i++) {
-        const gameId = gameIds[i]
-        const recipient = recipients[i]
-        console.log(`Game ${i + 1}:`, {
-          gameId,
-          recipient,
-          gameIdBytes32: contractService.getGameIdBytes32(gameId)
-        })
-      }
-      
-      // Use the ContractService method for batch withdrawal
-      const result = await contractService.adminBatchWithdrawNFTs(gameIds, recipients)
+      // Use the ContractService method for batch withdrawal with NFT contracts and token IDs
+      const result = await contractService.adminBatchWithdrawNFTs(nftContracts, tokenIds, recipients)
       
       if (result.success) {
-        addNotification('success', `Successfully withdrew ${gameIds.length} NFTs! Transaction: ${result.transactionHash}`)
+        addNotification('success', result.message || `Successfully withdrew ${nftContracts.length} NFTs!`)
         setSelectedNFTsForWithdrawal([])
         setWithdrawalAddress('')
-        
-        // Update database to mark games as cancelled after successful withdrawal
-        try {
-          for (const gameId of gameIds) {
-            await fetch(`${API_URL}/api/admin/games/${gameId}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'cancelled' })
-            })
-          }
-          console.log('✅ Database updated for withdrawn games')
-        } catch (dbError) {
-          console.error('⚠️ Database update failed:', dbError)
-          addNotification('warning', 'NFTs withdrawn but database update failed')
-        }
         
         // Wait a bit before reloading to let blockchain state update
         setTimeout(() => {
