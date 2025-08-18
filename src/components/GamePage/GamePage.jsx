@@ -477,7 +477,7 @@ const GamePage = () => {
               </div>
             )}
             
-            {/* Three Container Layout for Lobby - NFT Details, Game Info, and Chat */}
+            {/* Three Container Layout for Lobby - NFT Details, Offers/Game Info, and Chat */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr 1fr',
@@ -511,37 +511,54 @@ const GamePage = () => {
                 />
               </div>
               
-              {/* Game Info Container (Player 2 side) */}
+              {/* Offers Container (Player 2 side) - Show for games that accept offers */}
               <div style={{
-                background: 'rgba(0, 0, 20, 0.95)',
-                border: '2px solid #FFD700',
-                borderRadius: '1rem',
-                padding: '1rem',
-                height: '400px',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
+                height: '400px'
               }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: '#FFD700' }}>Game Info</h4>
-                <div style={{ flex: 1, color: '#CCCCCC' }}>
-                  <p style={{ margin: '0 0 0.5rem 0' }}>
-                    <strong>Creator:</strong> {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
-                  </p>
-                  {getGameJoiner() && (
-                    <p style={{ margin: '0 0 0.5rem 0' }}>
-                      <strong>Player:</strong> {getGameJoiner().slice(0, 6)}...{getGameJoiner().slice(-4)}
-                    </p>
-                  )}
-                  <p style={{ margin: '0 0 0.5rem 0', color: '#FFD700', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                    Price: ${(getGamePrice() || 0).toFixed(2)} USD
-                  </p>
-                  <p style={{ margin: '0', fontSize: '0.9rem' }}>
-                    <strong>Chain:</strong> Base (ETH)
-                  </p>
-                  <p style={{ margin: '1rem 0 0 0', fontSize: '0.9rem' }}>
-                    <strong>Status:</strong> {gameData?.status || 'Unknown'}
-                  </p>
-                </div>
+                {(gameData?.status === 'listing' || 
+                  gameData?.status === 'waiting_challenger' || 
+                  gameData?.status === 'awaiting_challenger' || 
+                  gameData?.status === 'waiting_for_challenger' || 
+                  gameData?.status === 'open') ? (
+                  <OffersContainer
+                    gameId={gameId}
+                    gameData={gameData}
+                    socket={wsRef}
+                    connected={wsConnected}
+                  />
+                ) : (
+                  <div style={{
+                    background: 'rgba(0, 0, 20, 0.95)',
+                    border: '2px solid #FFD700',
+                    borderRadius: '1rem',
+                    padding: '1rem',
+                    height: '400px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
+                  }}>
+                    <h4 style={{ margin: '0 0 1rem 0', color: '#FFD700' }}>Game Info</h4>
+                    <div style={{ flex: 1, color: '#CCCCCC' }}>
+                      <p style={{ margin: '0 0 0.5rem 0' }}>
+                        <strong>Creator:</strong> {getGameCreator().slice(0, 6)}...{getGameCreator().slice(-4)}
+                      </p>
+                      {getGameJoiner() && (
+                        <p style={{ margin: '0 0 0.5rem 0' }}>
+                          <strong>Player:</strong> {getGameJoiner().slice(0, 6)}...{getGameJoiner().slice(-4)}
+                        </p>
+                      )}
+                      <p style={{ margin: '0 0 0.5rem 0', color: '#FFD700', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                        Price: ${(getGamePrice() || 0).toFixed(2)} USD
+                      </p>
+                      <p style={{ margin: '0', fontSize: '0.9rem' }}>
+                        <strong>Chain:</strong> Base (ETH)
+                      </p>
+                      <p style={{ margin: '1rem 0 0 0', fontSize: '0.9rem' }}>
+                        <strong>Status:</strong> {gameData?.status || 'Unknown'}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Chat Container - Third container */}
