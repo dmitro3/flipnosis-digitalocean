@@ -7,7 +7,7 @@ const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz.db')
 
 // Contract configuration
 const RPC_URL = 'https://mainnet.base.org'
-const GAME_CONTRACT_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+const GAME_CONTRACT_ADDRESS = '0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69'
 
 async function fixNFTDepositStatus() {
   console.log('🔧 Fixing NFT Deposit Status...\n')
