@@ -263,6 +263,43 @@ class ContractService {
     return ethers.id(gameId)
   }
 
+  // Get live ETH price from Chainlink oracle on Base
+  async getETHPriceUSD() {
+    try {
+      // Chainlink ETH/USD price feed on Base
+      const priceFeedAddress = '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70'
+      
+      const priceData = await this.publicClient.readContract({
+        address: priceFeedAddress,
+        abi: [{
+          "inputs": [],
+          "name": "latestRoundData",
+          "outputs": [
+            {"internalType": "uint80", "name": "roundId", "type": "uint80"},
+            {"internalType": "int256", "name": "price", "type": "int256"},
+            {"internalType": "uint256", "name": "startedAt", "type": "uint256"},
+            {"internalType": "uint256", "name": "updatedAt", "type": "uint256"},
+            {"internalType": "uint80", "name": "answeredInRound", "type": "uint80"}
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        }],
+        functionName: 'latestRoundData'
+      })
+      
+      // Chainlink returns price with 8 decimals
+      const ethPriceUSD = Number(priceData[1]) / 1e8
+      
+      console.log('💰 Live ETH price from Chainlink:', ethPriceUSD)
+      return ethPriceUSD
+      
+    } catch (error) {
+      console.error('❌ Error fetching ETH price, using fallback:', error)
+      // Fallback to reasonable current price if oracle fails
+      return 4200 // Updated fallback from 3500
+    }
+  }
+
   // Approve NFT for deposit - SIMPLIFIED VERSION
   async approveNFT(nftContract, tokenId) {
     if (!this.isReady()) {
@@ -371,8 +408,8 @@ class ContractService {
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
-      // Convert USD price to ETH with proper decimal handling
-      const ethPriceUSD = 3500 // This should come from a price oracle
+      // Convert USD price to ETH with live price from Chainlink
+      const ethPriceUSD = await this.getETHPriceUSD()
       const ethAmount = parseFloat(priceUSD) / ethPriceUSD
       
       // Round to 6 decimal places to avoid precision issues
@@ -381,7 +418,9 @@ class ContractService {
       
       console.log('💰 Deposit details:', {
         priceUSD,
+        ethPriceUSD,
         ethAmount,
+        ethAmountRounded,
         ethAmountWei: ethAmountWei.toString(),
         gameIdBytes32
       })
