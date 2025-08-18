@@ -12,6 +12,7 @@ const { createApiRoutes } = require('./routes/api')
 const { createWebSocketHandlers } = require('./handlers/websocket')
 const { DatabaseService } = require('./services/database')
 const { BlockchainService } = require('./services/blockchain')
+const CleanupService = require('./services/cleanupService')
 
 console.log('🚀 Starting CryptoFlipz Server...')
 
@@ -83,6 +84,10 @@ async function initializeServices() {
     CONTRACT_ADDRESS,
     CONTRACT_OWNER_KEY
   )
+
+  // Initialize cleanup service
+  const cleanupService = new CleanupService(dbService, blockchainService)
+  cleanupService.start()
 
   // Initialize WebSocket handlers
   const wsHandlers = createWebSocketHandlers(wss, dbService, blockchainService)

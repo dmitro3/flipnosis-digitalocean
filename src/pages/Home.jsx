@@ -17,6 +17,7 @@ import contractService from '../services/ContractService'
 // 5. Component imports
 import ClaimRewards from '../components/ClaimRewards'
 import NFTOfferComponent from '../components/NFTOfferComponent'
+import NFTDepositBadge from '../components/NFTDepositBadge'
 
 // 6. Style imports
 import { theme } from '../styles/theme'
@@ -560,7 +561,12 @@ const getAllItems = () => {
         tokenId: g.nft_token_id
       },
       gameType: 'nft-vs-nft',
-      priceUSD: g.price_usd || 0
+      priceUSD: g.price_usd || 0,
+      // Include NFT deposit tracking fields
+      nft_deposited: g.nft_deposited,
+      nft_deposit_verified: g.nft_deposit_verified,
+      nft_deposit_time: g.nft_deposit_time,
+      nft_deposit_hash: g.nft_deposit_hash
     })
   })
   
@@ -580,9 +586,43 @@ const getAllItems = () => {
   })
 }
 
-  const handleItemClick = (item) => {
+  const handleItemClick = async (item) => {
+    // Check NFT deposit before allowing entry for actual games
+    if (!item.isListing) {
+      const canEnter = await checkNFTDeposit(item)
+      if (!canEnter) {
+        return // Don't allow entry
+      }
+    }
+    
     // Set the selected flip to show details instead of going directly to game page
     handleSelectFlip(item)
+  }
+
+  const checkNFTDeposit = async (item) => {
+    try {
+      // First check database status if available
+      if (item.nft_deposited !== undefined) {
+        if (!item.nft_deposited) {
+          showError('This game is not ready - NFT not deposited')
+          return false
+        }
+        return true
+      }
+      
+      // Fallback to contract check
+      const gameState = await contractService.getGameState(item.id)
+      if (!gameState.success || !gameState.gameState.nftDeposit.hasDeposit) {
+        showError('This game is not ready - NFT not deposited')
+        return false
+      }
+      
+      return true
+    } catch (error) {
+      console.error('Error checking NFT deposit:', error)
+      showError('Unable to verify game status')
+      return false
+    }
   }
 
   const filteredItems = getAllItems()
@@ -1452,6 +1492,20 @@ const getAllItems = () => {
                               🔄 Update
                             </button>
                           )}
+                          
+                          {/* NFT Deposit Badge */}
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '0.25rem',
+                            left: '0.25rem'
+                          }}>
+                            <NFTDepositBadge 
+                              gameId={item.id}
+                              isListing={item.isListing}
+                              nftDeposited={item.nft_deposited}
+                              nftDepositVerified={item.nft_deposit_verified}
+                            />
+                          </div>
                         </div>
                         <div style={{
                           display: 'flex',
@@ -1609,6 +1663,20 @@ const getAllItems = () => {
                                 🔄 Update
                               </button>
                             )}
+                            
+                            {/* NFT Deposit Badge */}
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '0.25rem',
+                              left: '0.25rem'
+                            }}>
+                              <NFTDepositBadge 
+                                gameId={item.id}
+                                isListing={item.isListing}
+                                nftDeposited={item.nft_deposited}
+                                nftDepositVerified={item.nft_deposit_verified}
+                              />
+                            </div>
                           </ListViewImage>
                           <ListViewContent>
                             <ListViewHeader>

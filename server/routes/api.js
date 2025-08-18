@@ -21,6 +21,42 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     })
   })
 
+  // Cleanup service stats
+  router.get('/cleanup/stats', async (req, res) => {
+    try {
+      const cutoffTime = new Date(Date.now() - (10 * 60 * 1000)) // 10 minutes
+      
+      const stats = await new Promise((resolve, reject) => {
+        db.get(`
+          SELECT 
+            COUNT(*) as total_games,
+            SUM(CASE WHEN nft_deposited = false AND created_at < ? THEN 1 ELSE 0 END) as old_games_without_nft,
+            SUM(CASE WHEN nft_deposited = true AND nft_deposit_verified = false THEN 1 ELSE 0 END) as games_needing_verification,
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_games,
+            SUM(CASE WHEN nft_deposited = true AND nft_deposit_verified = true THEN 1 ELSE 0 END) as verified_games
+          FROM games
+        `, [cutoffTime.toISOString()], (err, row) => {
+          if (err) reject(err)
+          else resolve(row || {})
+        })
+      })
+      
+      res.json({
+        success: true,
+        stats,
+        cleanup_config: {
+          max_age_minutes: 10,
+          cleanup_interval_minutes: 5,
+          contract_check_cooldown_minutes: 2
+        },
+        timestamp: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('Error getting cleanup stats:', error)
+      res.status(500).json({ error: 'Failed to get cleanup stats' })
+    }
+  })
+
   // Profile endpoints
   router.get('/profile/:address', async (req, res) => {
     const { address } = req.params
@@ -1133,19 +1169,24 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       const isCreator = player === game.creator
       
       if (assetType === 'nft' && isCreator) {
-        // Update game status to waiting for challenger
+        // Update game status to waiting for challenger and mark NFT as deposited
         db.run(`
           UPDATE games 
           SET creator_deposited = true, 
+              nft_deposited = true,
+              nft_deposit_time = CURRENT_TIMESTAMP,
+              nft_deposit_hash = ?,
+              nft_deposit_verified = true,
+              last_nft_check_time = CURRENT_TIMESTAMP,
               status = 'awaiting_challenger',
               deposit_deadline = datetime('now', '+24 hours')
           WHERE id = ?
-        `, [gameId], (err) => {
+        `, [transactionHash, gameId], (err) => {
           if (err) {
             return res.status(500).json({ error: 'Database error' })
           }
           
-          console.log('✅ NFT deposited, game now awaiting challenger')
+          console.log('✅ NFT deposited and verified, game now awaiting challenger')
           
           // Broadcast to room
           wsHandlers.broadcastToRoom(gameId, {
