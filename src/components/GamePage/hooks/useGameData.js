@@ -462,6 +462,27 @@ export const useGameData = (
         showInfo(`Connected to game room (${data.members} players)`)
         break
 
+      case 'game_engine_ready':
+        console.log('🎮 Game engine ready message received:', data)
+        showSuccess(data.message || 'Game engine is ready! Entering battle...')
+        
+        // Update game state to ready
+        if (data.gameState) {
+          setGameState(prev => ({
+            ...prev,
+            ...data.gameState,
+            engineReady: true
+          }))
+        }
+        
+        // Trigger countdown completion to enter game room
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('gameEngineReady', { 
+            detail: { gameId: data.gameId } 
+          }))
+        }, 1000)
+        break
+
       case 'game_status_changed':
         console.log('🔄 Game status changed:', data)
         if (data.newStatus === 'active') {

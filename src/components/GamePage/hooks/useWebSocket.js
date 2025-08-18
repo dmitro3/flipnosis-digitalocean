@@ -51,8 +51,8 @@ export const useWebSocket = (gameId, address, gameData) => {
       }
     }
 
-    // Check connection state periodically
-    const interval = setInterval(checkConnectionState, 2000)
+    // Check connection state periodically (reduced frequency)
+    const interval = setInterval(checkConnectionState, 5000)
     
     return () => {
       clearInterval(interval)

@@ -1773,6 +1773,37 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             })
           })
           
+          // Get updated game data for engine initialization
+          const gameData = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
+              if (err) reject(err)
+              else resolve(row)
+            })
+          })
+          
+          // Initialize game engine now that both players have deposited
+          if (wsHandlers.gameEngine && gameData) {
+            try {
+              console.log('🎮 Initializing game engine for active game:', gameId)
+              await wsHandlers.gameEngine.initializeGame(gameId, gameData)
+              console.log('✅ Game engine initialized successfully')
+              
+              // Broadcast that game engine is ready
+              wsHandlers.broadcastToRoom(gameId, {
+                type: 'game_engine_ready',
+                gameId,
+                message: 'Game engine initialized! Prepare for battle!',
+                gameState: {
+                  phase: 'waiting_for_choices',
+                  currentRound: 1,
+                  status: 'active'
+                }
+              })
+            } catch (error) {
+              console.error('❌ Failed to initialize game engine:', error)
+            }
+          }
+          
           // Broadcast game started
           wsHandlers.broadcastToRoom(gameId, {
             type: 'game_started',

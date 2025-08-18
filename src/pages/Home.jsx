@@ -675,7 +675,7 @@ const getAllItems = () => {
       case 'in_progress': return 'IN PROGRESS'
       case 'completed': return 'COMPLETE'
       case 'cancelled': return 'CANCELLED'
-      default: return 'UNKNOWN'
+      default: return 'LIVE'
     }
   }
 
@@ -1020,11 +1020,11 @@ const getAllItems = () => {
                           }}>
                             <div style={{ fontSize: '0.7rem', color: theme.colors.textSecondary }}>Type</div>
                             <div style={{ 
-                              fontSize: '0.9rem', 
+                              fontSize: '1.5rem', 
                               fontWeight: 'bold',
-                              color: selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink
+                              color: theme.colors.neonPink
                             }}>
-                              {selectedFlip.gameType === 'nft-vs-nft' ? 'NFT Battle' : 'NFT vs Crypto'}
+                              ${(selectedFlip.priceUSD || 0).toFixed(2)}
                             </div>
                           </div>
                         </div>
@@ -1048,13 +1048,13 @@ const getAllItems = () => {
                           }}>{selectedFlip.nft.name}</GameTitle>
                           <div style={{
                             background: 'rgba(255, 255, 255, 0.1)',
-                            padding: '0.2rem 0.5rem',
+                            padding: '0.3rem 0.6rem',
                             borderRadius: '0.25rem',
-                            fontSize: '0.7rem',
+                            fontSize: '0.8rem',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.2rem'
+                            gap: '0.3rem'
                           }}>
                             <span>{getChainIcon(selectedFlip.nft.chain)}</span>
                             <span>{getChainName(selectedFlip.nft.chain)}</span>
@@ -1093,7 +1093,7 @@ const getAllItems = () => {
                               {selectedFlip.status === 'active' ? 'Accepting offers' :
                                selectedFlip.status === 'in_progress' ? 'Game will start automatically in a few seconds' :
                                selectedFlip.status === 'completed' ? `Winner: ${selectedFlip.winner ? selectedFlip.winner.slice(0, 6) + '...' + selectedFlip.winner.slice(-4) : 'Unknown'}` :
-                               'Status unknown'}
+                               'Accepting offers'}
                             </div>
                           </div>
                         </div>
@@ -1128,11 +1128,7 @@ const getAllItems = () => {
                             <>
                               <GameStat>
                                 <span>Price</span>
-                                <div>${(selectedFlip.priceUSD || 0).toFixed(2)}</div>
-                              </GameStat>
-                              <GameStat>
-                                <span>Type</span>
-                                <div style={{ color: theme.colors.neonPink }}>NFT vs Crypto</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: theme.colors.neonPink }}>${(selectedFlip.priceUSD || 0).toFixed(2)}</div>
                               </GameStat>
                             </>
                           )}
@@ -1543,19 +1539,20 @@ const getAllItems = () => {
                           }}>
                             <div style={{ 
                               fontWeight: 'bold',
-                              color: theme.colors.neonBlue
+                              color: theme.colors.neonPink,
+                              fontSize: '1.2rem'
                             }}>
                               ${(item.priceUSD || 0).toFixed(2)}
                             </div>
                             <div style={{
                               background: 'rgba(255, 255, 255, 0.1)',
-                              padding: '0.1rem 0.3rem',
+                              padding: '0.2rem 0.4rem',
                               borderRadius: '0.2rem',
-                              fontSize: window.innerWidth <= 768 ? '0.4rem' : '0.5rem',
+                              fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
                               border: '1px solid rgba(255, 255, 255, 0.2)',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.1rem'
+                              gap: '0.2rem'
                             }}>
                               <span>{getChainIcon(item.nft?.chain || 'base')}</span>
                               <span>{getChainName(item.nft?.chain || 'base')}</span>
@@ -1684,13 +1681,13 @@ const getAllItems = () => {
                               <ListViewTitle>{item.nft?.name || 'Unknown NFT'}</ListViewTitle>
                               <div style={{
                                 background: 'rgba(255, 255, 255, 0.1)',
-                                padding: '0.2rem 0.5rem',
+                                padding: '0.3rem 0.6rem',
                                 borderRadius: '0.25rem',
-                                fontSize: '0.7rem',
+                                fontSize: '0.8rem',
                                 border: '1px solid rgba(255, 255, 255, 0.2)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.2rem'
+                                gap: '0.3rem'
                               }}>
                                 <span>{getChainIcon(item.nft?.chain || 'base')}</span>
                                 <span>{getChainName(item.nft?.chain || 'base')}</span>
@@ -1699,9 +1696,9 @@ const getAllItems = () => {
                             <ListViewCollection>{item.nft?.collection || 'Unknown Collection'}</ListViewCollection>
                             <ListViewStats>
                               <ListViewStat>
-                                <span>Type</span>
-                                <div style={{ color: item.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink }}>
-                                  {item.gameType === 'nft-vs-nft' ? 'NFT Battle' : 'NFT vs Crypto'}
+                                <span>Price</span>
+                                <div style={{ color: theme.colors.neonPink, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                  ${(item.priceUSD || 0).toFixed(2)}
                                 </div>
                               </ListViewStat>
                               <ListViewStat>
