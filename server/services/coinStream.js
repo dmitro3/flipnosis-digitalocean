@@ -93,6 +93,58 @@ class CoinStreamService {
     }
   }
 
+  // Initialize game scene with custom coin data
+  initializeGameScene(gameId, coinData = {}) {
+    console.log('🎮 Initializing coin scene for game:', gameId, coinData)
+    
+    // Create or get existing scene
+    const sceneData = this.createScene(gameId)
+    
+    // Apply custom coin styling if available
+    if (coinData.headsImage || coinData.tailsImage) {
+      // TODO: Add texture loading for custom coin faces
+      console.log('🎨 Custom coin textures detected (feature coming soon)')
+    }
+    
+    // Start idle animation
+    this.startIdleAnimation(gameId)
+    
+    return sceneData
+  }
+
+  // Start idle coin animation (spinning)
+  startIdleAnimation(gameId) {
+    if (this.scenes.has(gameId)) {
+      const sceneData = this.scenes.get(gameId)
+      let rotation = 0
+      
+      const animate = () => {
+        rotation += 0.05 // Rotation speed
+        sceneData.coin.rotation.y = rotation
+        
+        // Broadcast frame to clients
+        if (this.wsHandlers) {
+          this.wsHandlers.broadcastToRoom(gameId, {
+            type: 'COIN_FRAME',
+            gameId,
+            rotation,
+            timestamp: Date.now()
+          })
+        }
+        
+        // Continue animation
+        setTimeout(animate, 1000/60) // 60fps
+      }
+      
+      animate()
+    }
+  }
+
+  // Set WebSocket handlers for broadcasting
+  setWebSocketHandlers(wsHandlers) {
+    this.wsHandlers = wsHandlers
+  }
+
   cleanupScene(gameId) {
     if (this.scenes.has(gameId)) {
       const sceneData = this.scenes.get(gameId)

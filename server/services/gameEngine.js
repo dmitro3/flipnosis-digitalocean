@@ -7,6 +7,9 @@ class GameEngine {
     this.wsHandlers = wsHandlers
     this.coinStreamService = new CoinStreamService()
     
+    // Set WebSocket handlers for coin streaming
+    this.coinStreamService.setWebSocketHandlers(wsHandlers)
+    
     // Game state tracking
     this.activeGames = new Map() // gameId -> gameState
     this.gameTimers = new Map() // gameId -> timers

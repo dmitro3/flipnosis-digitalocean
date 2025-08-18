@@ -192,69 +192,48 @@ const GamePage = () => {
   
   // NEW: Watch for game starting (both players deposited)
   useEffect(() => {
-    // Only run if we have the required data and haven't triggered countdown yet
-    if (!gameData || !address || countdownTriggered) {
-      return
-    }
-
     console.log('🔍 Countdown useEffect running...')
+    console.log('🔍 gameData exists:', !!gameData)
+    console.log('🔍 gameData keys:', gameData ? Object.keys(gameData) : 'no gameData')
     
-    // Check if game is active and both players have deposited
-    const gameReady = gameData.status === 'active' && 
-                     gameData.creator_deposited && 
-                     gameData.challenger_deposited
-
-    if (!gameReady) {
-      return
-    }
-    
-    // Calculate if current user is a player (using stable calculations)
-    const creatorAddress = gameData?.creator?.toLowerCase()
-    const challengerAddress = (gameData?.challenger || gameData?.joiner)?.toLowerCase()
-    const userAddress = address.toLowerCase()
-    
-    const userIsCreator = creatorAddress === userAddress
-    const userIsChallenger = challengerAddress === userAddress
-    const isPlayer = userIsCreator || userIsChallenger
-    
-    console.log('🎯 Game starting conditions:', {
-      gameReady,
-      isPlayer,
-      userIsCreator,
-      userIsChallenger,
-      creator: creatorAddress,
-      challenger: challengerAddress,
-      user: userAddress
+    // Debug logging to see what's happening
+    console.log('🔍 Countdown Debug:', {
+      gameData: gameData,
+      status: gameData?.status,
+      creator_deposited: gameData?.creator_deposited,
+      challenger_deposited: gameData?.challenger_deposited,
+      countdownTriggered: countdownTriggered,
+      isCreator: isCreator(),
+      isJoiner: isJoiner(),
+      address: address
     })
     
-    if (isPlayer) {
-      console.log('🚀 Game starting! Showing countdown...')
-      setCountdownTriggered(true)
-      setShowCountdown(true)
-    }
-  }, [gameData?.status, gameData?.creator_deposited, gameData?.challenger_deposited, gameData?.creator, gameData?.challenger, gameData?.joiner, address, countdownTriggered])
-  
-  // Listen for game engine ready event
-  useEffect(() => {
-    const handleGameEngineReady = (event) => {
-      const { gameId: eventGameId } = event.detail
-      if (eventGameId === gameId && userIsPlayer) {
-        console.log('🎮 Game engine ready event received, entering game room')
+    // Check if game is active and both players have deposited
+    if (gameData?.status === 'active' && 
+        gameData?.creator_deposited && 
+        gameData?.challenger_deposited &&
+        !countdownTriggered) {
+      
+      // Only show countdown for the two players
+      const isPlayer = isCreator() || isJoiner() || 
+                      (gameData?.challenger && address && 
+                       gameData.challenger.toLowerCase() === address.toLowerCase())
+      
+      console.log('🎯 Countdown conditions met:', {
+        isPlayer: isPlayer,
+        isCreator: isCreator(),
+        isJoiner: isJoiner(),
+        challengerMatch: gameData?.challenger && address && 
+                        gameData.challenger.toLowerCase() === address.toLowerCase()
+      })
+      
+      if (isPlayer) {
+        console.log('🚀 Game starting! Showing countdown...')
         setCountdownTriggered(true)
-        setShowCountdown(false)
-        setInGameRoom(true)
-        showInfo('🎮 Game engine ready! Choose heads or tails!')
-        
-        // Start the first round countdown
-        if (gameData?.status === 'active') {
-          startRoundCountdown()
-        }
+        setShowCountdown(true)
       }
     }
-
-    window.addEventListener('gameEngineReady', handleGameEngineReady)
-    return () => window.removeEventListener('gameEngineReady', handleGameEngineReady)
-  }, [gameId, userIsPlayer, gameData?.status, showInfo, startRoundCountdown])
+  }, [gameData, address, isCreator, isJoiner, countdownTriggered])
   
   // NEW: Handle countdown completion
   const handleCountdownComplete = () => {
@@ -383,14 +362,8 @@ const GamePage = () => {
     )
   }
   
-  // Calculate if user is a player (stable calculation)
-  const creatorAddress = gameData?.creator?.toLowerCase()
-  const challengerAddress = (gameData?.challenger || gameData?.joiner)?.toLowerCase()
-  const userAddress = address?.toLowerCase()
-  const userIsPlayer = userAddress && (creatorAddress === userAddress || challengerAddress === userAddress)
-
   // NEW: Render Game Room for active players
-  if (inGameRoom && userIsPlayer && gameData?.status === 'active') {
+  if (inGameRoom && isPlayer && gameData?.status === 'active') {
     return (
       <ThemeProvider theme={theme}>
         <GameRoom
