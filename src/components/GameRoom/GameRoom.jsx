@@ -2,10 +2,10 @@ import React from 'react'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import ProfilePicture from '../ProfilePicture'
-import GameBackground from './GameBackground'
+import GameBackground from '../GamePage/GameBackground'
 import GameResultPopup from '../GameResultPopup'
-import { useGameRoomState } from '../GameRoom/hooks/useGameRoomState'
-import { useGameRoomWebSocket } from '../GameRoom/hooks/useGameRoomWebSocket'
+import { useGameRoomState } from './hooks/useGameRoomState'
+import { useGameRoomWebSocket } from './hooks/useGameRoomWebSocket'
 import { theme } from '../../styles/theme'
 
 const GameRoomContainer = styled.div`

@@ -1,11 +1,13 @@
 const crypto = require('crypto')
 const CoinStreamService = require('../services/coinStream')
 const GameEngine = require('../services/gameEngine')
+const GameRoom = require('../services/gameRoom')
 
 // Room management
-const rooms = new Map()
-const socketRooms = new Map()
-const userSockets = new Map()
+const rooms = new Map() // General lobby rooms: game_${gameId} -> Set<socketId>
+const gameRooms = new Map() // Private game rooms: game_room_${gameId} -> GameRoom instance
+const socketRooms = new Map() // socketId -> roomId
+const userSockets = new Map() // address -> socket
 
 // Initialize game engine
 let gameEngine = null
@@ -28,16 +30,25 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     socket.on('close', () => {
       console.log(`🔌 WebSocket disconnected: ${socket.id}`)
       
-      // Cleanup
+      // Cleanup lobby rooms
       const room = socketRooms.get(socket.id)
       if (room && rooms.has(room)) {
         rooms.get(room).delete(socket.id)
       }
-      socketRooms.delete(socket.id)
       
+      // Cleanup game rooms
       if (socket.address) {
+        // Check if player was in a game room
+        gameRooms.forEach((gameRoom, roomId) => {
+          if (gameRoom.removePlayer(socket.address, socket)) {
+            console.log(`🏟️ Removed ${socket.address} from game room ${roomId}`)
+          }
+        })
+        
         userSockets.delete(socket.address)
       }
+      
+      socketRooms.delete(socket.id)
     })
 
     socket.on('message', async (message) => {
@@ -57,6 +68,9 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         switch (data.type) {
           case 'join_room':
             handleJoinRoom(socket, data)
+            break
+          case 'join_game_room':
+            handleJoinGameRoom(socket, data, dbService)
             break
           case 'register_user':
             handleRegisterUser(socket, data)
@@ -209,6 +223,77 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
+  // Handle joining game room (private 2-player room)
+  async function handleJoinGameRoom(socket, data, dbService) {
+    const { gameId, address } = data
+    
+    console.log(`🏟️ Player ${address} requesting to join game room for game ${gameId}`)
+    
+    // Verify player is authorized for this game
+    const db = dbService.getDatabase()
+    
+    db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+      if (err || !game) {
+        console.error('❌ Game not found:', gameId)
+        socket.send(JSON.stringify({
+          type: 'game_room_error',
+          error: 'Game not found'
+        }))
+        return
+      }
+      
+      const creator = game.creator
+      const challenger = game.challenger || game.joiner
+      
+      // Check if player is authorized
+      if (address !== creator && address !== challenger) {
+        console.log(`❌ Player ${address} not authorized for game ${gameId}`)
+        socket.send(JSON.stringify({
+          type: 'game_room_error',
+          error: 'Not authorized for this game'
+        }))
+        return
+      }
+      
+      // Get or create game room
+      const roomId = `game_room_${gameId}`
+      let gameRoom = gameRooms.get(roomId)
+      
+      if (!gameRoom) {
+        // Create new game room
+        gameRoom = new GameRoom(gameId, creator, challenger, {
+          broadcastToRoom: (roomId, message) => broadcastToRoom(roomId, message),
+          broadcastToAll: (message) => broadcastToAll(message),
+          sendToUser: (address, message) => sendToUser(address, message)
+        })
+        gameRooms.set(roomId, gameRoom)
+        console.log(`🏟️ Created new game room: ${roomId}`)
+      }
+      
+      // Add player to game room
+      if (gameRoom.addPlayer(address, socket)) {
+        socket.address = address
+        userSockets.set(address, socket)
+        socketRooms.set(socket.id, roomId)
+        
+        socket.send(JSON.stringify({
+          type: 'game_room_joined',
+          roomId,
+          gameId,
+          players: gameRoom.players,
+          status: gameRoom.getStatus()
+        }))
+        
+        console.log(`✅ Player ${address} joined game room ${roomId}`)
+      } else {
+        socket.send(JSON.stringify({
+          type: 'game_room_error',
+          error: 'Failed to join game room'
+        }))
+      }
+    })
+  }
+
   async function handleJoinRoom(socket, data) {
     const { roomId } = data
     
@@ -303,6 +388,16 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     const { gameId, action, choice, player, powerLevel } = data
     console.log('🎯 Processing game action:', { gameId, action, choice, player })
     
+    // Check if this is a game room action first
+    const gameRoomId = `game_room_${gameId}`
+    const gameRoom = gameRooms.get(gameRoomId)
+    
+    if (gameRoom) {
+      // Handle action in game room
+      return await handleGameRoomAction(gameRoom, action, choice, player, powerLevel)
+    }
+    
+    // Fallback to original game engine for lobby games
     if (!gameEngine) {
       console.error('❌ Game engine not initialized')
       return
@@ -337,6 +432,30 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     
     // Handle action with existing game state
     await handleGameActionInternal(gameId, action, choice, player, powerLevel)
+  }
+
+  // Handle game room specific actions
+  async function handleGameRoomAction(gameRoom, action, choice, player, powerLevel) {
+    console.log(`🏟️ Processing game room action: ${action}`)
+    
+    switch (action) {
+      case 'MAKE_CHOICE':
+        return gameRoom.handlePlayerChoice(player, choice)
+        
+      case 'POWER_CHARGE_START':
+        // Game rooms handle power charging differently
+        return true
+        
+      case 'POWER_CHARGED':
+        return gameRoom.handlePowerCharge(player, powerLevel)
+        
+      case 'FORFEIT_GAME':
+        return gameRoom.handleForfeit(player, 'manual')
+        
+      default:
+        console.log('⚠️ Unhandled game room action:', action)
+        return false
+    }
   }
 
   async function handleGameActionInternal(gameId, action, choice, player, powerLevel) {
@@ -585,12 +704,24 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
+  // Cleanup empty game rooms periodically
+  setInterval(() => {
+    gameRooms.forEach((gameRoom, roomId) => {
+      if (gameRoom.isEmpty() && gameRoom.state === 'completed') {
+        console.log(`🧹 Cleaning up empty game room: ${roomId}`)
+        gameRoom.cleanup()
+        gameRooms.delete(roomId)
+      }
+    })
+  }, 60000) // Check every minute
+
   return {
     broadcastToRoom,
     broadcastToAll,
     getUserSocket,
     sendToUser,
-    gameEngine
+    gameEngine,
+    gameRooms
   }
 }
 
