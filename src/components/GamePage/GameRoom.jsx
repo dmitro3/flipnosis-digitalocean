@@ -154,6 +154,21 @@ const ChoiceSection = styled.div`
   margin-top: 2rem;
 `
 
+const OpponentChoosingMessage = styled.div`
+  padding: 1.5rem 3rem;
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 140, 0, 0.1) 100%);
+  border: 2px solid #FFA500;
+  border-radius: 1rem;
+  color: #FFA500;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.3);
+`
+
 const ChoiceButton = styled.button`
   padding: 1.5rem 3rem;
   background: linear-gradient(135deg, 
@@ -388,21 +403,29 @@ const GameRoom = ({
             </CoinContainer>
             
             <ChoiceSection>
-              <ChoiceButton
-                choice="heads"
-                disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
-                onClick={() => canChoose && handlePlayerChoice('heads')}
-              >
-                👑 Heads
-              </ChoiceButton>
-              
-              <ChoiceButton
-                choice="tails"
-                disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
-                onClick={() => canChoose && handlePlayerChoice('tails')}
-              >
-                🗡️ Tails
-              </ChoiceButton>
+              {!isMyTurn() ? (
+                <OpponentChoosingMessage>
+                  🤔 Opponent is choosing...
+                </OpponentChoosingMessage>
+              ) : (
+                <>
+                  <ChoiceButton
+                    choice="heads"
+                    disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
+                    onClick={() => canChoose && handlePlayerChoice('heads')}
+                  >
+                    Heads
+                  </ChoiceButton>
+                  
+                  <ChoiceButton
+                    choice="tails"
+                    disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
+                    onClick={() => canChoose && handlePlayerChoice('tails')}
+                  >
+                    Tails
+                  </ChoiceButton>
+                </>
+              )}
             </ChoiceSection>
             
             <PowerBarContainer show={showPowerBar}>

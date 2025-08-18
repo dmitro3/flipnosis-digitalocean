@@ -55,19 +55,31 @@ const GameLayout = styled.div`
 
 const ThreeContainerLayout = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
   gap: 2rem;
   width: 100%;
   max-width: 1400px;
   
   @media (max-width: 1200px) {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
     gap: 1.5rem;
   }
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+`
+
+const ChatBelowPlayer2 = styled.div`
+  grid-column: 2;
+  grid-row: 2;
+  
+  @media (max-width: 1200px) {
+    grid-column: 1;
+    grid-row: 3;
   }
 `
 
@@ -465,9 +477,9 @@ const GamePage = () => {
               </div>
             )}
             
-            {/* Three Container Layout for NFT Details/Chat/Offers */}
+            {/* Two Column Layout for NFT Details and Player 2 Info */}
             <ThreeContainerLayout>
-              {/* NFT Details Container */}
+              {/* NFT Details Container (Player 1 side) */}
               <div style={{
                 background: 'rgba(0, 0, 20, 0.95)',
                 border: '2px solid #FFD700',
@@ -477,7 +489,9 @@ const GamePage = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                gridColumn: '1',
+                gridRow: '1'
               }}>
                 <GameStatusAndNFTContainer
                   gameData={gameData}
@@ -492,27 +506,21 @@ const GamePage = () => {
                 />
               </div>
               
-              {/* Chat Container */}
-              <ChatContainer
-                gameId={gameId}
-                address={address}
-                messages={chatMessages}
-              />
-              
-              {/* Offers Container - Show for games that accept offers */}
-              {(gameData?.status === 'listing' || 
-                gameData?.status === 'waiting_challenger' || 
-                gameData?.status === 'awaiting_challenger' || 
-                gameData?.status === 'waiting_for_challenger' || 
-                gameData?.status === 'open') ? (
-                <OffersContainer
-                  gameId={gameId}
-                  gameData={gameData}
-                  socket={wsRef}
-                  connected={wsConnected}
-                />
-              ) : (
-                <div style={{
+              {/* Offers Container (Player 2 side) - Show for games that accept offers */}
+              <div style={{ gridColumn: '2', gridRow: '1' }}>
+                {(gameData?.status === 'listing' || 
+                  gameData?.status === 'waiting_challenger' || 
+                  gameData?.status === 'awaiting_challenger' || 
+                  gameData?.status === 'waiting_for_challenger' || 
+                  gameData?.status === 'open') ? (
+                  <OffersContainer
+                    gameId={gameId}
+                    gameData={gameData}
+                    socket={wsRef}
+                    connected={wsConnected}
+                  />
+                ) : (
+                  <div style={{
                   background: 'rgba(0, 0, 20, 0.95)',
                   border: '2px solid #FFD700',
                   borderRadius: '1rem',
@@ -544,6 +552,16 @@ const GamePage = () => {
                   </div>
                 </div>
               )}
+              </div>
+              
+              {/* Chat Container - Below Player 2 */}
+              <ChatBelowPlayer2>
+                <ChatContainer
+                  gameId={gameId}
+                  address={address}
+                  messages={chatMessages}
+                />
+              </ChatBelowPlayer2>
             </ThreeContainerLayout>
           </GameLayout>
         </GameContainer>

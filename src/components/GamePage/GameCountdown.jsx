@@ -64,18 +64,22 @@ const CountdownTitle = styled.h1`
 `
 
 const CountdownNumber = styled.div`
-  font-size: 8rem;
-  font-weight: bold;
+  font-size: 12rem;
+  font-weight: 900;
   margin: 2rem 0;
   animation: ${pulse} 1s ease-in-out infinite;
-  background: linear-gradient(135deg, #00FF41 0%, #00CC33 100%);
+  background: linear-gradient(135deg, #00FFFF 0%, #0080FF 50%, #0040FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 0 60px rgba(0, 255, 65, 0.8);
+  text-shadow: 
+    0 0 20px rgba(0, 255, 255, 0.8),
+    0 0 40px rgba(0, 128, 255, 0.6),
+    0 0 60px rgba(0, 64, 255, 0.4);
+  filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.5));
   
   @media (max-width: 768px) {
-    font-size: 6rem;
+    font-size: 8rem;
   }
 `
 
