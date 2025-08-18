@@ -537,11 +537,12 @@ const getAllItems = () => {
     }
   })
   
-  // Process games
+  // Process games - only show games with NFTs deposited
   games.filter(g => 
     g.status !== 'cancelled' && 
     g.status !== 'waiting_deposits' && 
-    g.status !== 'waiting_challenger_deposit'
+    g.status !== 'waiting_challenger_deposit' &&
+    g.nft_deposited === 1  // Only show games with NFTs actually deposited
     // Note: 'awaiting_challenger' games should be shown - they are open for challengers
   ).forEach(g => {
     // Use the game ID as the key, removing any listing entry
