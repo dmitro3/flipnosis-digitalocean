@@ -396,7 +396,31 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
         </div>
       </Header>
       
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div style={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '0.5rem', 
+        overflow: 'auto', 
+        paddingRight: '0.5rem',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255, 215, 0, 0.3) rgba(255, 255, 255, 0.1)'
+      }}>
+        <style>
+          {`
+            div::-webkit-scrollbar {
+              width: 6px;
+            }
+            div::-webkit-scrollbar-track {
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 3px;
+            }
+            div::-webkit-scrollbar-thumb {
+              background: rgba(255, 215, 0, 0.3);
+              border-radius: 3px;
+            }
+          `}
+        </style>
         {/* Show round containers when game is active, otherwise show NFT details */}
         {isGameActive ? (
           <RoundContainer>

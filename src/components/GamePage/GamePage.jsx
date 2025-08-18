@@ -470,7 +470,7 @@ const GamePage = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
-                overflow: 'auto'
+                overflow: 'hidden'
               }}>
                 <GameStatusAndNFTContainer
                   gameData={gameData}
@@ -499,16 +499,10 @@ const GamePage = () => {
                 gameData?.status === 'waiting_for_challenger' || 
                 gameData?.status === 'open') ? (
                 <OffersContainer
-                  offers={offers}
-                  isCreator={isCreator()}
-                  address={address}
-                  newOffer={newOffer}
-                  setNewOffer={setNewOffer}
-                  creatingOffer={creatingOffer}
-                  createOffer={createOffer}
-                  acceptOffer={acceptOffer}
-                  rejectOffer={rejectOffer}
+                  gameId={gameId}
                   gameData={gameData}
+                  socket={wsRef}
+                  connected={wsConnected}
                 />
               ) : (
                 <div style={{

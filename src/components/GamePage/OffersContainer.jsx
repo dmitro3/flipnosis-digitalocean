@@ -418,7 +418,10 @@ const OffersContainer = ({
 
     try {
       // Try WebSocket first
-      if (socket && socket.readyState === WebSocket.OPEN) {
+      const isSocketConnected = socket && socket.readyState === WebSocket.OPEN
+      console.log('🔍 WebSocket connection check:', isSocketConnected, socket?.readyState)
+      
+      if (isSocketConnected) {
         socket.send(JSON.stringify({
           type: 'crypto_offer',
           listingId: gameData.listing_id,
@@ -629,7 +632,9 @@ const OffersContainer = ({
     minOfferAmount,
     shouldShowInput: shouldShowOfferInput(),
     isConnected,
-    connected
+    connected,
+    hasSocket: !!socket,
+    socketReadyState: socket?.readyState
   })
 
   return (
@@ -637,9 +642,9 @@ const OffersContainer = ({
       <OffersHeader>
         <OffersTitle>💰 Offers</OffersTitle>
         <ConnectionStatus>
-          <StatusDot connected={connected} />
-          <StatusText connected={connected}>
-            {connected ? 'Connected' : 'Disconnected'}
+          <StatusDot connected={connected || (socket?.readyState === WebSocket.OPEN)} />
+          <StatusText connected={connected || (socket?.readyState === WebSocket.OPEN)}>
+            {connected || (socket?.readyState === WebSocket.OPEN) ? 'Connected' : 'Disconnected'}
           </StatusText>
         </ConnectionStatus>
       </OffersHeader>
@@ -692,12 +697,14 @@ const OffersContainer = ({
       </OffersList>
 
       {/* Offer Input - Available to non-creators when game is waiting for challenger */}
+      {console.log('🔍 Rendering offer input, shouldShowOfferInput:', shouldShowOfferInput())}
       {shouldShowOfferInput() && (
         <OfferInputContainer>
           <OfferInput
             type="text"
             value={cryptoOffer}
             onChange={(e) => {
+              console.log('🔍 Input onChange:', e.target.value)
               // Only allow digits and decimal point
               const value = e.target.value.replace(/[^0-9.]/g, '')
               // Prevent multiple decimal points
@@ -707,23 +714,20 @@ const OffersContainer = ({
               }
             }}
             placeholder={`Min $${minOfferAmount.toFixed(2)} USD...`}
-            disabled={false} // Never disable
+            disabled={isSubmittingOffer}
             onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
             style={{
-              borderColor: connected ? '#00FF41' : '#FFA500'
+              borderColor: '#00FF41'
             }}
           />
           <OfferButton
-            onClick={handleSubmitCryptoOffer}
-            disabled={!cryptoOffer.trim() || isSubmittingOffer}
-            style={{
-              background: connected 
-                ? 'linear-gradient(45deg, #FFD700, #FFA500)' 
-                : 'linear-gradient(45deg, #FFA500, #FF8C00)',
-              opacity: (!cryptoOffer.trim() || isSubmittingOffer) ? 0.5 : 1
+            onClick={() => {
+              console.log('🔍 Button clicked, cryptoOffer:', cryptoOffer, 'isSubmittingOffer:', isSubmittingOffer)
+              handleSubmitCryptoOffer()
             }}
+            disabled={!cryptoOffer.trim() || isSubmittingOffer}
           >
-            {isSubmittingOffer ? 'Submitting...' : (connected ? 'Make Offer' : 'Queue Offer')}
+            {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
           </OfferButton>
         </OfferInputContainer>
       )}
