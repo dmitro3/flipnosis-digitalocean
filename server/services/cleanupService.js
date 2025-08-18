@@ -8,6 +8,8 @@ class CleanupService {
     this.CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
     this.MAX_AGE_MINUTES = 10 // 10 minutes for games without NFT deposits
     this.CONTRACT_CHECK_COOLDOWN_MS = 2 * 60 * 1000 // 2 minutes between contract checks
+    this.LATEST_CONTRACT_ADDRESS = '0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69' // Latest contract only
+    this.GRACE_PERIOD_MINUTES = 5 // 5 minutes grace period for new games
   }
 
   /**
@@ -136,29 +138,83 @@ class CleanupService {
   }
 
   /**
-   * Verify NFT deposit by checking the contract
+   * Verify NFT deposit by checking the latest contract
    */
   async verifyNFTDeposit(game) {
     try {
-      if (!this.blockchainService) {
+      // Check if game was created in the last 5 minutes (grace period)
+      const gameCreatedAt = new Date(game.created_at)
+      const fiveMinutesAgo = new Date(Date.now() - this.GRACE_PERIOD_MINUTES * 60 * 1000)
+      
+      if (gameCreatedAt > fiveMinutesAgo) {
+        console.log(`⏰ Game ${game.id}: Created ${Math.round((Date.now() - gameCreatedAt.getTime()) / 60000)} minutes ago - skipping (grace period)`)
+        return true // Don't mark as not deposited during grace period
+      }
+      
+      // Check if NFT exists in the latest contract
+      return await this.verifyNFTInLatestContract(game.nft_contract, game.nft_token_id)
+      
+    } catch (error) {
+      console.error(`❌ Error verifying NFT deposit for game ${game.id}:`, error.message)
+      return false
+    }
+  }
+
+  /**
+   * Verify if NFT exists in the latest contract
+   */
+  async verifyNFTInLatestContract(nftContract, tokenId) {
+    try {
+      if (!this.blockchainService || !this.blockchainService.provider) {
         console.log('⚠️ Blockchain service not available for verification')
         return false
       }
       
-      const gameState = await this.blockchainService.getGameState(game.id)
+      const latestContract = new ethers.Contract(
+        this.LATEST_CONTRACT_ADDRESS,
+        [
+          'function getGameNFT(uint256 gameId) view returns (address nftContract, uint256 tokenId, address owner)',
+          'function getGame(uint256 gameId) view returns (tuple(address creator, address challenger, uint256 creatorDeposit, uint256 challengerDeposit, bool creatorDeposited, bool challengerDeposited, uint256 gameStartTime, uint256 gameEndTime, bool gameEnded, address winner))',
+          'function nextGameId() view returns (uint256)'
+        ],
+        this.blockchainService.provider
+      )
       
-      if (!gameState.success) {
-        console.log(`❌ Failed to get game state for ${game.id}:`, gameState.error)
+      // Get total games in latest contract
+      let totalGamesInContract = 0
+      try {
+        const nextGameId = await latestContract.nextGameId()
+        totalGamesInContract = nextGameId.toString() - 1
+      } catch (e) {
+        console.log(`⚠️ Could not get total games from contract: ${e.message}`)
         return false
       }
       
-      const hasNFT = gameState.gameState.nftDeposit.hasDeposit
-      console.log(`🔍 Game ${game.id} NFT deposit status:`, hasNFT)
+      // Search through all games in the contract to find this NFT
+      for (let gameId = 1; gameId <= totalGamesInContract; gameId++) {
+        try {
+          const gameData = await latestContract.getGame(gameId)
+          const nftData = await latestContract.getGameNFT(gameId)
+          
+          // Check if this game has the same NFT
+          if (nftData.nftContract.toLowerCase() === nftContract.toLowerCase() && 
+              nftData.tokenId.toString() === tokenId &&
+              gameData.creatorDeposited) {
+            
+            console.log(`✅ NFT found in latest contract (Game ID: ${gameId})`)
+            return true
+          }
+        } catch (e) {
+          // Continue to next game if this one fails
+          continue
+        }
+      }
       
-      return hasNFT
+      console.log(`❌ NFT NOT found in latest contract`)
+      return false
       
     } catch (error) {
-      console.error(`❌ Error verifying NFT deposit for game ${game.id}:`, error.message)
+      console.error('❌ Error checking latest contract:', error.message)
       return false
     }
   }

@@ -5,23 +5,24 @@ const path = require('path')
 // Database path
 const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz.db')
 
-// Contract configuration
+// Contract configuration - LATEST CONTRACT ADDRESS ONLY
 const RPC_URL = 'https://mainnet.base.org'
-const GAME_CONTRACT_ADDRESS = '0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69'
+const LATEST_CONTRACT_ADDRESS = '0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69'
 
 async function fixNFTDepositStatus() {
-  console.log('🔧 Fixing NFT Deposit Status...\n')
+  console.log('🔧 Fixing NFT Deposit Status with Latest Contract...\n')
+  console.log(`📍 Using Latest Contract: ${LATEST_CONTRACT_ADDRESS}\n`)
   
   const db = new sqlite3.Database(DATABASE_PATH)
   const provider = new ethers.JsonRpcProvider(RPC_URL)
   
   try {
-    // Get all games that claim to have NFTs deposited
+    // Get all games that need verification (not already verified as deposited)
     const games = await new Promise((resolve, reject) => {
       db.all(`
-        SELECT id, nft_contract, nft_token_id, creator, status, nft_deposited, nft_deposit_verified
+        SELECT id, nft_contract, nft_token_id, creator, status, nft_deposited, nft_deposit_verified, created_at
         FROM games 
-        WHERE nft_deposited = 1 OR nft_deposited IS NULL
+        WHERE (nft_deposited = 0 OR nft_deposited IS NULL OR nft_deposit_verified = 0 OR nft_deposit_verified IS NULL)
         ORDER BY created_at DESC
       `, (err, rows) => {
         if (err) reject(err)
@@ -31,62 +32,75 @@ async function fixNFTDepositStatus() {
     
     console.log(`📋 Found ${games.length} games to verify`)
     
+    // Check the latest contract for NFT deposits
+    const latestContract = new ethers.Contract(
+      LATEST_CONTRACT_ADDRESS,
+      [
+        'function getGameNFT(uint256 gameId) view returns (address nftContract, uint256 tokenId, address owner)',
+        'function getGame(uint256 gameId) view returns (tuple(address creator, address challenger, uint256 creatorDeposit, uint256 challengerDeposit, bool creatorDeposited, bool challengerDeposited, uint256 gameStartTime, uint256 gameEndTime, bool gameEnded, address winner))',
+        'function nextGameId() view returns (uint256)'
+      ],
+      provider
+    )
+    
+    // Get total games in latest contract
+    let totalGamesInContract = 0
+    try {
+      const nextGameId = await latestContract.nextGameId()
+      totalGamesInContract = nextGameId.toString() - 1
+      console.log(`📊 Total games in latest contract: ${totalGamesInContract}`)
+    } catch (e) {
+      console.log(`⚠️ Could not get total games from contract: ${e.message}`)
+    }
+    
     let verifiedCount = 0
     let correctedCount = 0
+    let skippedCount = 0
     
+    // Check each game's NFT against the latest contract
     for (const game of games) {
       try {
-        // Check if this NFT is actually in the game contract
-        const gameContract = new ethers.Contract(
-          GAME_CONTRACT_ADDRESS,
-          [
-            'function getGameNFT(uint256 gameId) view returns (address nftContract, uint256 tokenId, address owner)',
-            'function getGame(uint256 gameId) view returns (tuple(address creator, address challenger, uint256 creatorDeposit, uint256 challengerDeposit, bool creatorDeposited, bool challengerDeposited, uint256 gameStartTime, uint256 gameEndTime, bool gameEnded, address winner))'
-          ],
-          provider
-        )
+        // Check if game was created in the last 5 minutes (grace period)
+        const gameCreatedAt = new Date(game.created_at)
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
         
-        // Try to get the game data from the contract
-        let gameData
-        try {
-          gameData = await gameContract.getGame(game.blockchain_game_id || '0')
-        } catch (e) {
-          // If game doesn't exist in contract, mark as not deposited
-          await updateGameStatus(db, game.id, false, false)
-          correctedCount++
-          console.log(`❌ Game ${game.id}: Not found in contract - marked as not deposited`)
+        if (gameCreatedAt > fiveMinutesAgo) {
+          console.log(`⏰ Game ${game.id}: Created ${Math.round((Date.now() - gameCreatedAt.getTime()) / 60000)} minutes ago - skipping (grace period)`)
+          skippedCount++
           continue
         }
         
-        // Check if creator actually deposited
-        const creatorDeposited = gameData.creatorDeposited
+        // Check if this NFT exists in the latest contract
+        let nftFound = false
         
-        if (creatorDeposited) {
-          // Verify the NFT is actually in the contract
+        // Search through all games in the contract to find this NFT
+        for (let gameId = 1; gameId <= totalGamesInContract; gameId++) {
           try {
-            const nftData = await gameContract.getGameNFT(game.blockchain_game_id || '0')
-            const nftContract = nftData.nftContract
-            const tokenId = nftData.tokenId
+            const gameData = await latestContract.getGame(gameId)
+            const nftData = await latestContract.getGameNFT(gameId)
             
-            if (nftContract.toLowerCase() === game.nft_contract.toLowerCase() && 
-                tokenId.toString() === game.nft_token_id) {
-              await updateGameStatus(db, game.id, true, true)
-              verifiedCount++
-              console.log(`✅ Game ${game.id}: NFT verified in contract`)
-            } else {
-              await updateGameStatus(db, game.id, false, false)
-              correctedCount++
-              console.log(`❌ Game ${game.id}: NFT mismatch - marked as not deposited`)
+            // Check if this game has the same NFT
+            if (nftData.nftContract.toLowerCase() === game.nft_contract.toLowerCase() && 
+                nftData.tokenId.toString() === game.nft_token_id &&
+                gameData.creatorDeposited) {
+              
+              nftFound = true
+              console.log(`✅ Game ${game.id}: NFT found in latest contract (Game ID: ${gameId})`)
+              break
             }
           } catch (e) {
-            await updateGameStatus(db, game.id, false, false)
-            correctedCount++
-            console.log(`❌ Game ${game.id}: NFT verification failed - marked as not deposited`)
+            // Continue to next game if this one fails
+            continue
           }
+        }
+        
+        if (nftFound) {
+          await updateGameStatus(db, game.id, true, true)
+          verifiedCount++
         } else {
           await updateGameStatus(db, game.id, false, false)
           correctedCount++
-          console.log(`❌ Game ${game.id}: Creator not deposited - marked as not deposited`)
+          console.log(`❌ Game ${game.id}: NFT NOT found in latest contract`)
         }
         
       } catch (error) {
@@ -98,17 +112,18 @@ async function fixNFTDepositStatus() {
     }
     
     console.log(`\n📊 Verification Complete:`)
-    console.log(`   Verified as deposited: ${verifiedCount}`)
-    console.log(`   Corrected as not deposited: ${correctedCount}`)
+    console.log(`   ✅ Verified as deposited: ${verifiedCount}`)
+    console.log(`   ❌ Marked as not deposited: ${correctedCount}`)
+    console.log(`   ⏰ Skipped (grace period): ${skippedCount}`)
     
     // Show final statistics
     const stats = await new Promise((resolve, reject) => {
       db.get(`
         SELECT 
           COUNT(*) as total_games,
-          SUM(CASE WHEN nft_deposited = true THEN 1 ELSE 0 END) as games_with_nft,
-          SUM(CASE WHEN nft_deposited = false THEN 1 ELSE 0 END) as games_without_nft,
-          SUM(CASE WHEN nft_deposit_verified = true THEN 1 ELSE 0 END) as verified_games
+          SUM(CASE WHEN nft_deposited = 1 THEN 1 ELSE 0 END) as games_with_nft,
+          SUM(CASE WHEN nft_deposited = 0 THEN 1 ELSE 0 END) as games_without_nft,
+          SUM(CASE WHEN nft_deposit_verified = 1 THEN 1 ELSE 0 END) as verified_games
         FROM games
       `, (err, row) => {
         if (err) reject(err)
