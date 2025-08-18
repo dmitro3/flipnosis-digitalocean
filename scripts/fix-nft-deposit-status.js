@@ -43,15 +43,10 @@ async function fixNFTDepositStatus() {
       provider
     )
     
-    // Get total games in latest contract
-    let totalGamesInContract = 0
-    try {
-      const nextGameId = await latestContract.nextGameId()
-      totalGamesInContract = nextGameId.toString() - 1
-      console.log(`📊 Total games in latest contract: ${totalGamesInContract}`)
-    } catch (e) {
-      console.log(`⚠️ Could not get total games from contract: ${e.message}`)
-    }
+    // Since nextGameId() is failing, let's check a reasonable range
+    // You mentioned there are 3 NFTs in the latest contract, so let's check up to 10 games
+    const totalGamesInContract = 10
+    console.log(`📊 Checking first ${totalGamesInContract} games in latest contract`)
     
     let verifiedCount = 0
     let correctedCount = 0
