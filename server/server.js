@@ -241,65 +241,64 @@ function startAutoBackup(dbService) {
 // ===== SERVER STARTUP =====
 initializeServices()
   .then(({ dbService, blockchainService }) => {
-    // Check if ports are already in use
-    const net = require('net')
-    
-    function checkPort(port) {
-      return new Promise((resolve) => {
-        const tester = net.createServer()
-        tester.once('error', () => resolve(false))
-        tester.once('listening', () => {
-          tester.close()
-          resolve(true)
-        })
-        tester.listen(port)
-      })
-    }
-    
+    // Start the servers
     async function startServer() {
-      // Check if port 80 is available
-      const port80Available = await checkPort(80)
-      if (!port80Available) {
-        console.error('❌ Port 80 is already in use. Please stop the process using port 80 first.')
-        console.error('💡 Try: sudo lsof -i :80 or sudo netstat -tlnp | grep :80')
+      // Check port availability
+      const checkPort = (port) => {
+        return new Promise((resolve) => {
+          const tester = http.createServer()
+          tester.once('error', () => resolve(false))
+          tester.once('listening', () => {
+            tester.close()
+            resolve(true)
+          })
+          tester.listen(port)
+        })
+      }
+      
+      // For production on port 80
+      const isProduction = process.env.NODE_ENV === 'production'
+      const httpPort = isProduction ? 80 : PORT
+      
+      // Check if HTTP port is available
+      const httpPortAvailable = await checkPort(httpPort)
+      if (!httpPortAvailable) {
+        console.error(`⌛ Port ${httpPort} is already in use.`)
+        console.error('💡 Try: sudo lsof -i :' + httpPort + ' or sudo netstat -tlnp | grep :' + httpPort)
         process.exit(1)
       }
       
-      // Check if port 443 is available (if we're using HTTPS)
-      if (sslOptions) {
-        const port443Available = await checkPort(443)
-        if (!port443Available) {
-          console.error('❌ Port 443 is already in use. Please stop the process using port 443 first.')
-          console.error('💡 Try: sudo lsof -i :443 or sudo netstat -tlnp | grep :443')
-          process.exit(1)
-        }
-      }
-      
-      // HTTP Server (port 80)
-      server.listen(PORT, '0.0.0.0', () => {
-        console.log(`🎮 CryptoFlipz HTTP Server running on port ${PORT}`)
-        console.log(`🌐 WebSocket server ready`)
+      // HTTP Server
+      server.listen(httpPort, '0.0.0.0', () => {
+        console.log(`🎮 CryptoFlipz HTTP Server running on port ${httpPort}`)
+        console.log(`🌐 WebSocket server ready on ws://`)
         console.log(`📊 Database: ${DATABASE_PATH}`)
-        console.log(`📝 Contract: ${CONTRACT_ADDRESS}`)
+        console.log(`📄 Contract: ${CONTRACT_ADDRESS}`)
         console.log(`🔑 Contract owner: ${blockchainService.hasOwnerWallet() ? 'Configured' : 'Not configured'}`)
         console.log(`💾 Auto-backup: Enabled (every 6 hours)`)
       })
       
-      // HTTPS Server (port 443) for WSS support - only if SSL certificates exist
-      if (sslOptions) {
-        console.log('⚠️ HTTPS/WSS server temporarily disabled to avoid port conflicts')
-        // const httpsServer = https.createServer(sslOptions, app)
-        // const httpsWss = new WebSocket.Server({ server: httpsServer })
+      // HTTPS Server with WSS support - FIXED VERSION
+      if (sslOptions && isProduction) {
+        const httpsServer = https.createServer(sslOptions, app)
         
-        // // Initialize WebSocket handlers for HTTPS
-        // const httpsWsHandlers = createWebSocketHandlers(httpsWss, dbService, blockchainService)
+        // Create a second WebSocket server for WSS connections
+        const wssSecure = new WebSocket.Server({ server: httpsServer })
         
-        // httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
-        //   console.log(`🔒 CryptoFlipz HTTPS Server running on port ${HTTPS_PORT}`)
-        //   console.log(`🔐 WSS WebSocket server ready`)
-        // })
-      } else {
-        console.log('⚠️ HTTPS/WSS server not started - SSL certificates not found')
+        // Initialize the same WebSocket handlers for HTTPS
+        createWebSocketHandlers(wssSecure, dbService, blockchainService)
+        
+        // Listen on port 443 for HTTPS/WSS
+        httpsServer.listen(443, '0.0.0.0', () => {
+          console.log(`🔒 CryptoFlipz HTTPS Server running on port 443`)
+          console.log(`🔐 WSS WebSocket server ready on wss://`)
+        })
+      } else if (!sslOptions && isProduction) {
+        console.log('⚠️ Production mode but SSL certificates not found!')
+        console.log('🔧 Generate SSL certificates with:')
+        console.log('   sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \\')
+        console.log('   -keyout /etc/ssl/private/selfsigned.key \\')
+        console.log('   -out /etc/ssl/certs/selfsigned.crt')
       }
       
       // Start auto-backup
