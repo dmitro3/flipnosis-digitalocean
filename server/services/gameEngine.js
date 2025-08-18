@@ -31,13 +31,24 @@ class GameEngine {
   // Initialize a new game
   async initializeGame(gameId, gameData) {
     console.log('🎮 Initializing game engine for game:', gameId)
+    console.log('🔍 Game data keys:', Object.keys(gameData))
+    
+    // Handle both challenger and joiner field names for compatibility
+    const challenger = gameData.challenger || gameData.joiner || gameData.joiner_address || gameData.challenger_address
+    
+    if (!challenger) {
+      console.error('❌ No challenger/joiner found in game data:', gameData)
+      throw new Error('Game cannot be initialized without both players')
+    }
+    
+    console.log('✅ Players identified:', { creator: gameData.creator, challenger })
     
     const gameState = {
       id: gameId,
       status: 'active',
       currentRound: 1,
       creator: gameData.creator,
-      challenger: gameData.challenger,
+      challenger: challenger,
       creatorWins: 0,
       challengerWins: 0,
       phase: 'waiting_for_choices', // waiting_for_choices, power_charging, flipping, round_complete
@@ -97,14 +108,26 @@ class GameEngine {
       return false
     }
     
+    // Validate player identity
+    const isCreator = player === gameState.creator
+    const isChallenger = player === gameState.challenger
+    
+    if (!isCreator && !isChallenger) {
+      console.error('❌ Player not recognized:', { player, creator: gameState.creator, challenger: gameState.challenger })
+      return false
+    }
+    
+    console.log('✅ Player identity confirmed:', { player, isCreator, isChallenger })
+    
     // Set player choice
     const choices = this.playerChoices.get(gameId)
-    const isCreator = player === gameState.creator
     
     if (isCreator) {
       choices.creator = choice
+      console.log('📝 Creator choice set:', choice)
     } else {
       choices.challenger = choice
+      console.log('📝 Challenger choice set:', choice)
     }
     
     // Broadcast choice to room
@@ -113,13 +136,17 @@ class GameEngine {
       gameId,
       player,
       choice,
+      isCreator,
       timestamp: Date.now()
     })
     
     // Check if both players have chosen
+    console.log('🔍 Current choices:', choices)
     if (choices.creator && choices.challenger) {
       console.log('✅ Both players have chosen, starting power phase')
       await this.startPowerPhase(gameId)
+    } else {
+      console.log('⏳ Waiting for other player to choose')
     }
     
     return true
@@ -218,7 +245,14 @@ class GameEngine {
     // Switch turns or trigger flip
     if (gameState.currentTurn === gameState.creator) {
       // Creator charged, now challenger's turn
+      if (!gameState.challenger) {
+        console.error('❌ Challenger not found in game state:', gameState)
+        return false
+      }
+      
       gameState.currentTurn = gameState.challenger
+      
+      console.log('🔄 Switching turn to challenger:', gameState.challenger)
       
       this.wsHandlers.broadcastToRoom(gameId, {
         type: 'turn_switched',
@@ -231,6 +265,7 @@ class GameEngine {
       this.startPowerTimer(gameId)
     } else {
       // Challenger charged, both players have charged - trigger flip
+      console.log('🎲 Both players charged, triggering flip')
       await this.triggerFlip(gameId)
     }
     

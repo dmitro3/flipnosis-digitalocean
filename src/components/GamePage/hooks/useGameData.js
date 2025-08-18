@@ -98,6 +98,7 @@ export const useGameData = (
         break
 
       case 'turn_changed':
+      case 'turn_switched':
         console.log('🔄 Turn changed:', data)
         const { currentTurn: newTurn } = data
 
