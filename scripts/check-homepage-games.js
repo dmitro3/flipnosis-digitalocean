@@ -29,7 +29,8 @@ async function checkHomepageGames() {
     const homepageGames = allGames.filter(g => 
       g.status !== 'cancelled' && 
       g.status !== 'waiting_deposits' && 
-      g.status !== 'waiting_challenger_deposit'
+      g.status !== 'waiting_challenger_deposit' &&
+      g.nft_deposited === 1  // Only show games with NFTs deposited
     )
     
     console.log(`📊 Games that should show on homepage: ${homepageGames.length}`)
