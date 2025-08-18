@@ -155,11 +155,11 @@ const GamePage = () => {
 
 
 
-  // Game data loading
+    // Game data loading
   useGameData(
     gameId, 
     gameData, 
-    gameState, 
+    gameState,
     address,
     wsRef,
     setGameState,
@@ -168,7 +168,8 @@ const GamePage = () => {
     handleFlipResult,
     handleGameCompleted,
     loadGameData,
-    playerChoices
+    playerChoices,
+    startRoundCountdown
   )
 
   // Debug logging
@@ -240,6 +241,11 @@ const GamePage = () => {
     setShowCountdown(false)
     setInGameRoom(true)
     showInfo('Game started! Choose heads or tails!')
+    
+    // Start the first round countdown
+    if (gameData?.status === 'active') {
+      startRoundCountdown()
+    }
   }
 
   // Loading state
@@ -372,6 +378,7 @@ const GamePage = () => {
           handlePlayerChoice={handlePlayerChoice}
           handlePowerChargeStart={handlePowerChargeStart}
           handlePowerChargeStop={handlePowerChargeStop}
+          roundCountdown={roundCountdown}
         >
           {/* Pass the coin as a child */}
           <GameCoin

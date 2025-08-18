@@ -1,44 +1,26 @@
 import React from 'react'
 import styled from '@emotion/styled'
 import ProfilePicture from '../ProfilePicture'
+import GameBackground from './GameBackground'
+import ChatContainer from './ChatContainer'
 
 const GameRoomContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 40, 0.98) 100%);
+  position: relative;
+  z-index: 1;
+`
+
+const GameContent = styled.div`
   padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  position: relative;
+  z-index: 2;
   
   @media (max-width: 768px) {
     padding: 1rem;
   }
-`
-
-const GameRoomHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-`
-
-const GameTitle = styled.h2`
-  color: #FFD700;
-  font-size: 1.5rem;
-  margin: 0;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-`
-
-const RoundInfo = styled.div`
-  color: white;
-  font-size: 1.2rem;
-  background: rgba(255, 215, 0, 0.1);
-  padding: 0.5rem 1.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 215, 0, 0.3);
 `
 
 const MainGameArea = styled.div`
@@ -275,25 +257,33 @@ const PowerFill = styled.div`
   animation: ${props => props.charging ? 'powerPulse 0.6s linear infinite' : 'none'};
 `
 
-const GameChat = styled.div`
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 320px;
-  height: 400px;
-  background: rgba(0, 0, 0, 0.9);
+const CountdownContainer = styled.div`
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 1rem;
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  
-  @media (max-width: 768px) {
-    position: static;
-    width: 100%;
-    height: 300px;
-    margin-top: 2rem;
-  }
+  border-radius: 0.5rem;
+  text-align: center;
+`
+
+const CountdownText = styled.div`
+  color: #FFD700;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+`
+
+const TurnIndicator = styled.div`
+  color: ${props => props.isMyTurn ? '#00FF41' : '#FF1493'};
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  font-weight: bold;
+`
+
+const ChatSection = styled.div`
+  margin-top: 2rem;
+  height: 400px;
 `
 
 const GameRoom = ({
@@ -308,10 +298,11 @@ const GameRoom = ({
   handlePlayerChoice,
   handlePowerChargeStart,
   handlePowerChargeStop,
+  roundCountdown,
   children // For coin component
 }) => {
   const currentRound = gameState?.currentRound || 1
-  const totalRounds = 3
+  const totalRounds = 5 // Changed to 5 rounds
   
   const creatorWins = gameState?.creatorWins || 0
   const joinerWins = gameState?.joinerWins || 0
@@ -321,134 +312,169 @@ const GameRoom = ({
   
   const canChoose = gameState?.phase === 'choosing' && isMyTurn()
 
+  // Determine whose turn it is to choose
+  const getCurrentChooser = () => {
+    if (currentRound === 1 || currentRound === 3 || currentRound === 5) {
+      return 'creator' // Player 1 (creator) goes first, third, and fifth
+    } else {
+      return 'joiner' // Player 2 (joiner) goes second and fourth
+    }
+  }
+
+  const currentChooser = getCurrentChooser()
+  const isCreatorTurn = currentChooser === 'creator'
+  const isJoinerTurn = currentChooser === 'joiner'
+
   return (
     <GameRoomContainer>
-      <GameRoomHeader>
-        <GameTitle>⚔️ FLIPNOSIS BATTLE ⚔️</GameTitle>
-        <RoundInfo>Round {currentRound} of {totalRounds}</RoundInfo>
-      </GameRoomHeader>
-      
-      <MainGameArea>
-        {/* Creator Card */}
-        <PlayerCard isCreator={true}>
-          <PlayerHeader>
-            <ProfilePicture 
-              address={getGameCreator()}
-              size={40}
-            />
-            <PlayerLabel isCreator={true}>
-              {isCreator() ? 'You' : 'Creator'}
-            </PlayerLabel>
-          </PlayerHeader>
-          
-          <PlayerStats>
-            <StatRow>
-              <StatLabel>Power</StatLabel>
-              <StatValue>{Number(gameState?.creatorPower) || 0}</StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Choice</StatLabel>
-              <StatValue>
-                {playerChoices?.creator ? playerChoices.creator.toUpperCase() : '-'}
-              </StatValue>
-            </StatRow>
-          </PlayerStats>
-          
-          <RoundWins>
-            {[1, 2, 3].map(round => (
-              <RoundDot 
-                key={round}
-                isCreator={true}
-                isWon={round <= creatorWins}
-                isLost={round <= joinerWins}
-              >
-                {round}
-              </RoundDot>
-            ))}
-          </RoundWins>
-        </PlayerCard>
-        
-        {/* Center Game Area */}
-        <CenterArea>
-          <CoinContainer>
-            {children}
-          </CoinContainer>
-          
-          <ChoiceSection>
-            <ChoiceButton
-              choice="heads"
-              disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
-              onClick={() => canChoose && handlePlayerChoice('heads')}
-            >
-              👑 Heads
-            </ChoiceButton>
-            
-            <ChoiceButton
-              choice="tails"
-              disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
-              onClick={() => canChoose && handlePlayerChoice('tails')}
-            >
-              🗡️ Tails
-            </ChoiceButton>
-          </ChoiceSection>
-          
-          <PowerBarContainer show={showPowerBar}>
-            <PowerBarLabel>
-              {gameState?.chargingPlayer ? '⚡ Charging Power ⚡' : 'Power Level'}
-            </PowerBarLabel>
-            <PowerBar>
-              <PowerFill 
-                power={Math.min(totalPower * 10, 100)}
-                charging={gameState?.chargingPlayer}
+      <GameBackground />
+      <GameContent>
+        <MainGameArea>
+          {/* Creator Card */}
+          <PlayerCard isCreator={true}>
+            <PlayerHeader>
+              <ProfilePicture 
+                address={getGameCreator()}
+                size={40}
               />
-            </PowerBar>
-          </PowerBarContainer>
-        </CenterArea>
-        
-        {/* Challenger Card */}
-        <PlayerCard isCreator={false}>
-          <PlayerHeader>
-            <ProfilePicture 
-              address={getGameJoiner()}
-              size={40}
-            />
-            <PlayerLabel isCreator={false}>
-              {isJoiner() ? 'You' : 'Challenger'}
-            </PlayerLabel>
-          </PlayerHeader>
+              <PlayerLabel isCreator={true}>
+                {isCreator() ? 'You' : 'Creator'}
+              </PlayerLabel>
+            </PlayerHeader>
+            
+            <PlayerStats>
+              <StatRow>
+                <StatLabel>Power</StatLabel>
+                <StatValue>{Number(gameState?.creatorPower) || 0}</StatValue>
+              </StatRow>
+              <StatRow>
+                <StatLabel>Choice</StatLabel>
+                <StatValue>
+                  {playerChoices?.creator ? playerChoices.creator.toUpperCase() : '-'}
+                </StatValue>
+              </StatRow>
+            </PlayerStats>
+            
+            <RoundWins>
+              {[1, 2, 3, 4, 5].map(round => (
+                <RoundDot 
+                  key={round}
+                  isCreator={true}
+                  isWon={round <= creatorWins}
+                  isLost={round <= joinerWins}
+                >
+                  {round}
+                </RoundDot>
+              ))}
+            </RoundWins>
+
+            {/* Countdown beneath creator container */}
+            {gameState?.phase === 'choosing' && isCreatorTurn && (
+              <CountdownContainer>
+                <CountdownText>
+                  {roundCountdown ? `${roundCountdown}s` : '20s'}
+                </CountdownText>
+                <TurnIndicator isMyTurn={isMyTurn()}>
+                  {isMyTurn() ? 'YOUR TURN' : 'OPPONENT\'S TURN'}
+                </TurnIndicator>
+              </CountdownContainer>
+            )}
+          </PlayerCard>
           
-          <PlayerStats>
-            <StatRow>
-              <StatLabel>Power</StatLabel>
-              <StatValue>{Number(gameState?.joinerPower) || 0}</StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Choice</StatLabel>
-              <StatValue>
-                {playerChoices?.joiner ? playerChoices.joiner.toUpperCase() : '-'}
-              </StatValue>
-            </StatRow>
-          </PlayerStats>
-          
-          <RoundWins>
-            {[1, 2, 3].map(round => (
-              <RoundDot 
-                key={round}
-                isCreator={false}
-                isWon={round <= joinerWins}
-                isLost={round <= creatorWins}
+          {/* Center Game Area */}
+          <CenterArea>
+            <CoinContainer>
+              {children}
+            </CoinContainer>
+            
+            <ChoiceSection>
+              <ChoiceButton
+                choice="heads"
+                disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
+                onClick={() => canChoose && handlePlayerChoice('heads')}
               >
-                {round}
-              </RoundDot>
-            ))}
-          </RoundWins>
-        </PlayerCard>
-      </MainGameArea>
-      
-      {/* Game Chat - Floating */}
-      <GameChat>
-        {/* Chat component will be passed as child or integrated here */}
-      </GameChat>
+                👑 Heads
+              </ChoiceButton>
+              
+              <ChoiceButton
+                choice="tails"
+                disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
+                onClick={() => canChoose && handlePlayerChoice('tails')}
+              >
+                🗡️ Tails
+              </ChoiceButton>
+            </ChoiceSection>
+            
+            <PowerBarContainer show={showPowerBar}>
+              <PowerBarLabel>
+                {gameState?.chargingPlayer ? '⚡ Charging Power ⚡' : 'Power Level'}
+              </PowerBarLabel>
+              <PowerBar>
+                <PowerFill 
+                  power={Math.min(totalPower * 10, 100)}
+                  charging={gameState?.chargingPlayer}
+                />
+              </PowerBar>
+            </PowerBarContainer>
+          </CenterArea>
+          
+          {/* Challenger Card */}
+          <PlayerCard isCreator={false}>
+            <PlayerHeader>
+              <ProfilePicture 
+                address={getGameJoiner()}
+                size={40}
+              />
+              <PlayerLabel isCreator={false}>
+                {isJoiner() ? 'You' : 'Challenger'}
+              </PlayerLabel>
+            </PlayerHeader>
+            
+            <PlayerStats>
+              <StatRow>
+                <StatLabel>Power</StatLabel>
+                <StatValue>{Number(gameState?.joinerPower) || 0}</StatValue>
+              </StatRow>
+              <StatRow>
+                <StatLabel>Choice</StatLabel>
+                <StatValue>
+                  {playerChoices?.joiner ? playerChoices.joiner.toUpperCase() : '-'}
+                </StatValue>
+              </StatRow>
+            </PlayerStats>
+            
+            <RoundWins>
+              {[1, 2, 3, 4, 5].map(round => (
+                <RoundDot 
+                  key={round}
+                  isCreator={false}
+                  isWon={round <= joinerWins}
+                  isLost={round <= creatorWins}
+                >
+                  {round}
+                </RoundDot>
+              ))}
+            </RoundWins>
+
+            {/* Countdown beneath challenger container */}
+            {gameState?.phase === 'choosing' && isJoinerTurn && (
+              <CountdownContainer>
+                <CountdownText>
+                  {roundCountdown ? `${roundCountdown}s` : '20s'}
+                </CountdownText>
+                <TurnIndicator isMyTurn={isMyTurn()}>
+                  {isMyTurn() ? 'YOUR TURN' : 'OPPONENT\'S TURN'}
+                </TurnIndicator>
+              </CountdownContainer>
+            )}
+          </PlayerCard>
+        </MainGameArea>
+
+        {/* Chat beneath Player 2's container */}
+        <ChatSection>
+          <ChatContainer />
+        </ChatSection>
+      </GameContent>
     </GameRoomContainer>
   )
 }

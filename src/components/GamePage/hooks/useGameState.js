@@ -391,36 +391,54 @@ export const useGameState = (gameId, address) => {
           clearInterval(interval)
           setRoundCountdownInterval(null)
 
+          // Check if it's round 5 - auto-flip at maximum power
+          if (gameState.currentRound === 5) {
+            handleAutoFlip()
+            return null
+          }
+
           if (isMyTurn()) {
             const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
+            const oppositeChoice = autoChoice === 'heads' ? 'tails' : 'heads'
 
             if (address === getGameCreator()) {
-              setPlayerChoices(prev => ({ ...prev, creator: autoChoice }))
+              setPlayerChoices(prev => ({ 
+                ...prev, 
+                creator: autoChoice,
+                joiner: oppositeChoice
+              }))
               setGameState(prev => ({
                 ...prev,
-                creatorChoice: autoChoice
+                creatorChoice: autoChoice,
+                joinerChoice: oppositeChoice
               }))
             } else if (address === getGameJoiner()) {
-              setPlayerChoices(prev => ({ ...prev, joiner: autoChoice }))
+              setPlayerChoices(prev => ({ 
+                ...prev, 
+                joiner: autoChoice,
+                creator: oppositeChoice
+              }))
               setGameState(prev => ({
                 ...prev,
-                joinerChoice: autoChoice
+                joinerChoice: autoChoice,
+                creatorChoice: oppositeChoice
               }))
             }
 
-            if (wsRef && wsConnected) {
+            if (webSocketService && typeof webSocketService.isConnected === 'function' && webSocketService.isConnected()) {
               const autoFlipMessage = {
                 type: 'GAME_ACTION',
                 gameId: gameId,
                 action: 'AUTO_FLIP_TIMEOUT',
                 choice: autoChoice,
+                oppositeChoice,
                 player: address,
                 powerLevel: 10,
                 timestamp: Date.now()
               }
 
               try {
-                wsRef.send(JSON.stringify(autoFlipMessage))
+                webSocketService.send(autoFlipMessage)
                 showInfo('🎲 Auto-flip triggered due to time limit!')
               } catch (error) {
                 console.error('❌ Failed to send auto-flip:', error)
@@ -467,7 +485,35 @@ export const useGameState = (gameId, address) => {
         return
       }
 
+      // Determine the opposite choice for the other player
+      const oppositeChoice = choice === 'heads' ? 'tails' : 'heads'
+
       showSuccess(`🎯 You chose ${choice.toUpperCase()}!`)
+
+      // Update local state immediately for better UX
+      if (isCreator()) {
+        setPlayerChoices(prev => ({
+          ...prev,
+          creator: choice,
+          joiner: oppositeChoice
+        }))
+        setGameState(prev => ({
+          ...prev,
+          creatorChoice: choice,
+          joinerChoice: oppositeChoice
+        }))
+      } else if (isJoiner()) {
+        setPlayerChoices(prev => ({
+          ...prev,
+          joiner: choice,
+          creator: oppositeChoice
+        }))
+        setGameState(prev => ({
+          ...prev,
+          joinerChoice: choice,
+          creatorChoice: oppositeChoice
+        }))
+      }
 
       // Send choice to server via WebSocket
       webSocketService.send({
@@ -475,6 +521,7 @@ export const useGameState = (gameId, address) => {
         gameId,
         action: 'MAKE_CHOICE',
         choice,
+        oppositeChoice,
         player: address
       })
     } catch (error) {
@@ -485,7 +532,7 @@ export const useGameState = (gameId, address) => {
 
   const handleAutoFlip = () => {
     try {
-      showInfo('Round 5 - Auto-flipping for fairness!')
+      showInfo('Round 5 - Auto-flipping at maximum power!')
 
       const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
 
@@ -495,8 +542,20 @@ export const useGameState = (gameId, address) => {
         joinerChoice: autoChoice
       }))
 
+      setPlayerChoices(prev => ({
+        creator: autoChoice,
+        joiner: autoChoice
+      }))
+
       if (webSocketService && typeof webSocketService.isConnected === 'function' && webSocketService.isConnected()) {
-        webSocketService.sendAutoFlip(gameId, 'system', autoChoice)
+        webSocketService.send({
+          type: 'GAME_ACTION',
+          gameId,
+          action: 'AUTO_FLIP_ROUND_5',
+          choice: autoChoice,
+          powerLevel: 10, // Maximum power for round 5
+          player: 'system'
+        })
       }
     } catch (error) {
       console.error('❌ Error in handleAutoFlip:', error)

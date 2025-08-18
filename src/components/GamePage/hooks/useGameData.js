@@ -14,9 +14,14 @@ export const useGameData = (
   handleFlipResult,
   handleGameCompleted,
   loadGameData, // Added this parameter
-  playerChoices // Added this parameter
+  playerChoices, // Added this parameter
+  startRoundCountdown // Added this parameter
 ) => {
   const { showSuccess, showError, showInfo } = useToast()
+
+  // Helper functions to get player addresses
+  const getGameCreator = () => gameData?.creator || gameData?.creator_address
+  const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
 
   // Handle WebSocket messages
   const handleWebSocketMessage = (data) => {
@@ -32,26 +37,26 @@ export const useGameData = (
     switch (data.type) {
       case 'player_choice_made':
         console.log('🎯 Player choice received:', data)
-        const { player, choice } = data
+        const { player, choice, oppositeChoice } = data
 
-        // Update game state immediately
+        // Update game state immediately with both choices
         setGameState(prev => ({
           ...prev,
-          creatorChoice: player === getGameCreator() ? choice : prev.creatorChoice,
-          joinerChoice: player === getGameJoiner() ? choice : prev.joinerChoice
+          creatorChoice: player === getGameCreator() ? choice : oppositeChoice,
+          joinerChoice: player === getGameJoiner() ? choice : oppositeChoice
         }))
 
-        // Update player choices display
-        setPlayerChoices(prev => ({
-          ...prev,
-          creator: player === getGameCreator() ? choice : prev.creator,
-          joiner: player === getGameJoiner() ? choice : prev.joiner
-        }))
+        // Update player choices display with both choices
+        setPlayerChoices({
+          creator: player === getGameCreator() ? choice : oppositeChoice,
+          joiner: player === getGameJoiner() ? choice : oppositeChoice
+        })
 
         // Show notification only if it's from the other player
         if (player !== address) {
           const playerName = player === getGameCreator() ? 'Player 1' : 'Player 2'
-          showInfo(`🎯 ${playerName} chose ${choice.toUpperCase()}!`)
+          const otherPlayerName = player === getGameCreator() ? 'Player 2' : 'Player 1'
+          showInfo(`🎯 ${playerName} chose ${choice.toUpperCase()}! ${otherPlayerName} is ${oppositeChoice.toUpperCase()}!`)
         }
         break
 
@@ -198,6 +203,43 @@ export const useGameData = (
         } else {
           showInfo(`⚡ ${newCurrentTurn.slice(0, 6)}...'s turn to charge power!`)
         }
+        break
+
+      case 'game_entered_choosing_phase':
+        console.log('🎯 Game entered choosing phase:', data)
+        const { roundNumber: choosingRoundNumber } = data
+        
+        setGameState(prev => ({
+          ...prev,
+          phase: 'choosing',
+          currentRound: choosingRoundNumber,
+          creatorChoice: null,
+          joinerChoice: null
+        }))
+
+        // Reset player choices for new round
+        setPlayerChoices({
+          creator: null,
+          joiner: null
+        })
+
+        // Start the 20-second countdown
+        if (startRoundCountdown) {
+          startRoundCountdown()
+        }
+
+        showInfo(`🎯 Round ${choosingRoundNumber} - Choose heads or tails!`)
+        break
+
+      case 'game_became_active':
+        console.log('🎮 Game became active:', data)
+        
+        // Start the first round countdown if we're in the game room
+        if (startRoundCountdown) {
+          startRoundCountdown()
+        }
+        
+        showInfo('🎮 Game is now active! Choose heads or tails!')
         break
 
       case 'new_round_started':
@@ -466,10 +508,6 @@ export const useGameData = (
         console.log('📨 Unhandled WebSocket message type:', data.type)
     }
   }
-
-  // Helper functions
-  const getGameCreator = () => gameData?.creator || gameData?.creator_address
-  const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
 
   // Set up WebSocket message handlers
   useEffect(() => {
