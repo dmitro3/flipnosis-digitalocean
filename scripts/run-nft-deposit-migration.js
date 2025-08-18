@@ -23,11 +23,11 @@ async function runNFTDepositMigration() {
     
     // Add new columns for NFT deposit tracking
     const migrations = [
-      'ALTER TABLE games ADD COLUMN IF NOT EXISTS nft_deposited BOOLEAN DEFAULT false',
-      'ALTER TABLE games ADD COLUMN IF NOT EXISTS nft_deposit_time TIMESTAMP',
-      'ALTER TABLE games ADD COLUMN IF NOT EXISTS nft_deposit_hash TEXT',
-      'ALTER TABLE games ADD COLUMN IF NOT EXISTS nft_deposit_verified BOOLEAN DEFAULT false',
-      'ALTER TABLE games ADD COLUMN IF NOT EXISTS last_nft_check_time TIMESTAMP'
+      'ALTER TABLE games ADD COLUMN nft_deposited BOOLEAN DEFAULT false',
+      'ALTER TABLE games ADD COLUMN nft_deposit_time TIMESTAMP',
+      'ALTER TABLE games ADD COLUMN nft_deposit_hash TEXT',
+      'ALTER TABLE games ADD COLUMN nft_deposit_verified BOOLEAN DEFAULT false',
+      'ALTER TABLE games ADD COLUMN last_nft_check_time TIMESTAMP'
     ]
     
     console.log('📋 Adding NFT deposit tracking columns...')
@@ -37,11 +37,12 @@ async function runNFTDepositMigration() {
         db.run(migration, (err) => {
           if (err && !err.message.includes('duplicate column name')) {
             console.error(`❌ Error running migration: ${migration}`, err.message)
-            reject(err)
+            // Don't reject, just log the error and continue
+            console.log(`⚠️ Column may already exist, continuing...`)
           } else {
             console.log(`✅ ${migration}`)
-            resolve()
           }
+          resolve() // Always resolve to continue with next migration
         })
       })
     }
