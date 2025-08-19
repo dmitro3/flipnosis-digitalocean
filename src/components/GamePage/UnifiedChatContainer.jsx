@@ -435,21 +435,35 @@ const UnifiedChatContainer = ({
         } else if (messageData.type === 'chat_history') {
           console.log('📚 Chat history received:', messageData)
           if (messageData.messages && Array.isArray(messageData.messages)) {
-            const historyMessages = messageData.messages.map(msg => ({
-              id: msg.id || Date.now() + Math.random(),
-              type: msg.message_type || 'chat',
-              address: msg.sender_address,
-              message: msg.message,
-              timestamp: msg.created_at,
-              cryptoAmount: msg.message_data?.cryptoAmount,
-              nft: msg.message_data?.nft,
-              offerType: msg.message_data?.offerType,
-              acceptedOffer: msg.message_data?.acceptedOffer,
-              rejectedOffer: msg.message_data?.rejectedOffer
-            }))
+            const historyMessages = messageData.messages.map(msg => {
+              console.log('📝 Processing history message:', msg)
+              
+              // Handle different message types from database
+              let messageType = 'chat'
+              if (msg.message_type === 'offer' || msg.message_data?.offerType) {
+                messageType = 'crypto_offer'
+              } else if (msg.message_type === 'nft_offer') {
+                messageType = 'nft_offer'
+              } else if (msg.message_type === 'system') {
+                messageType = 'system'
+              }
+              
+              return {
+                id: msg.id || Date.now() + Math.random(),
+                type: messageType,
+                address: msg.sender_address,
+                message: msg.message,
+                timestamp: msg.created_at || msg.timestamp,
+                cryptoAmount: msg.message_data?.cryptoAmount,
+                nft: msg.message_data?.nft,
+                offerType: msg.message_data?.offerType,
+                acceptedOffer: msg.message_data?.acceptedOffer,
+                rejectedOffer: msg.message_data?.rejectedOffer
+              }
+            })
             
+            console.log(`📚 Processed ${historyMessages.length} chat history messages:`, historyMessages)
             setMessages(historyMessages)
-            console.log(`📚 Loaded ${historyMessages.length} chat history messages`)
           }
         }
       } catch (error) {
@@ -489,7 +503,7 @@ const UnifiedChatContainer = ({
     console.log('📝 Adding message to state:', message)
     setMessages(prev => {
       const newMessages = [...prev, message]
-      console.log('📝 New messages state:', newMessages.length, 'messages')
+      console.log('📝 New messages state:', newMessages.length, 'messages:', newMessages)
       return newMessages
     })
   }
@@ -788,6 +802,7 @@ const UnifiedChatContainer = ({
       )}
 
       <MessagesList>
+        {console.log('🎨 Rendering messages:', messages.length, messages)}
         {messages.length === 0 ? (
           <div style={{
             textAlign: 'center',
@@ -803,6 +818,7 @@ const UnifiedChatContainer = ({
         ) : (
           messages.map((message, index) => {
             const displayName = getDisplayName(message.address)
+            console.log('🎨 Rendering message:', index, message)
             
             return (
               <MessageItem key={index} className={message.type}>
