@@ -351,7 +351,12 @@ const UnifiedChatContainer = ({
 
   // Listen for messages from WebSocket service
   useEffect(() => {
-    if (!socket) return
+    if (!socket) {
+      console.log('❌ Unified Chat: No socket provided')
+      return
+    }
+    
+    console.log('🔌 Unified Chat: Setting up WebSocket message handler with socket:', socket)
     
     const handleMessage = (data) => {
       try {
@@ -434,7 +439,9 @@ const UnifiedChatContainer = ({
           }
         } else if (messageData.type === 'chat_history') {
           console.log('📚 Chat history received:', messageData)
+          console.log('📚 Chat history messages array:', messageData.messages)
           if (messageData.messages && Array.isArray(messageData.messages)) {
+            console.log('📚 Processing chat history messages...')
             const historyMessages = messageData.messages.map(msg => {
               console.log('📝 Processing history message:', msg)
               
@@ -472,9 +479,11 @@ const UnifiedChatContainer = ({
     }
     
     // Register message handler with WebSocket service
+    console.log('🔌 Unified Chat: Registering message handler with socket:', socket)
     socket.on('message', handleMessage)
     
     return () => {
+      console.log('🔌 Unified Chat: Cleaning up message handler')
       socket.off('message', handleMessage)
     }
   }, [socket, address, showSuccess])
