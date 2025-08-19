@@ -11,7 +11,7 @@ import { useToast } from '../../contexts/ToastContext'
 import GameBackground from './GameBackground'
 import GameCoin from './GameCoin'
 import GameCountdown from './GameCountdown'
-import GameLobby from '../GameLobby/GameLobby'
+import GameLobby from '../Lobby/GameLobby'
 import GameRoom from '../GameRoom/GameRoom'
 
 // Simple orchestrator state - no complex game logic needed here

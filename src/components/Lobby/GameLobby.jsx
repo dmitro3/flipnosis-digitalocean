@@ -8,15 +8,15 @@ import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 
 // Component imports  
-import GameBackground from '../GamePage/GameBackground'
-import GameCoin from '../GamePage/GameCoin'
-import GamePayment from '../GamePage/GamePayment'
+import GameBackground from '../GameOrchestrator/GameBackground'
+import GameCoin from '../GameOrchestrator/GameCoin'
+import GamePayment from '../GameOrchestrator/GamePayment'
 import ProfilePicture from '../ProfilePicture'
-import GameStatusAndNFTContainer from '../GamePage/GameStatusAndNFTContainer'
-import ChatContainer from '../GamePage/ChatContainer'
-import OffersContainer from '../GamePage/OffersContainer'
-import CoinContainer from '../GamePage/CoinContainer'
-import GameCountdown from '../GamePage/GameCountdown'
+import NFTDetailsContainer from './NFTDetailsContainer'
+import ChatContainer from './ChatContainer'
+import OffersContainer from './OffersContainer'
+import CoinContainer from '../GameOrchestrator/CoinContainer'
+import GameCountdown from '../GameOrchestrator/GameCountdown'
 
 // Lobby-specific hooks
 import { useLobbyState } from './hooks/useLobbyState'
@@ -401,7 +401,7 @@ const GameLobby = () => {
                   boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
                   overflow: 'hidden'
                 }}>
-                  <GameStatusAndNFTContainer
+                  <NFTDetailsContainer
                     gameData={gameData}
                     isCreator={isCreator()}
                     currentTurn={null}
