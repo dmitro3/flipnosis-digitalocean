@@ -223,6 +223,11 @@ if (typeof window !== 'undefined') {
       return this.socket && this.socket.readyState === WebSocket.OPEN
     },
 
+    // Check if initialized
+    isInitialized: function() {
+      return this.socket !== null
+    },
+
     // Force reconnect
     forceReconnect: function() {
       this.disconnect()

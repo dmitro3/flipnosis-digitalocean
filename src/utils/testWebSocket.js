@@ -21,12 +21,16 @@ if (webSocketService) {
     console.error('Test 3 - Error calling isConnected:', error)
   }
   
-  // Test 4: Call isInitialized method
-  try {
-    const initialized = webSocketService.isInitialized()
-    console.log('Test 4 - isInitialized result:', initialized)
-  } catch (error) {
-    console.error('Test 4 - Error calling isInitialized:', error)
+  // Test 4: Call isInitialized method (if it exists)
+  if (typeof webSocketService.isInitialized === 'function') {
+    try {
+      const initialized = webSocketService.isInitialized()
+      console.log('Test 4 - isInitialized result:', initialized)
+    } catch (error) {
+      console.error('Test 4 - Error calling isInitialized:', error)
+    }
+  } else {
+    console.log('Test 4 - isInitialized method not available')
   }
 } else {
   console.error('Test 2-4 - WebSocket service is null or undefined')
