@@ -13,8 +13,8 @@ import GameCoin from '../GamePage/GameCoin'
 import GamePayment from '../GamePage/GamePayment'
 import ProfilePicture from '../ProfilePicture'
 import GameStatusAndNFTContainer from '../GamePage/GameStatusAndNFTContainer'
-import ChatContainer from '../GamePage/ChatContainer'
-import OffersContainer from '../GamePage/OffersContainer'
+import UnifiedChatContainer from '../GamePage/UnifiedChatContainer'
+import CoinContainer from '../GamePage/CoinContainer'
 import GameCountdown from '../GamePage/GameCountdown'
 
 // Lobby-specific hooks
@@ -377,137 +377,64 @@ const GameLobby = () => {
               />
             )}
             
-            {/* Show coin in lobby (spinning slowly) - preview of what the coin will look like */}
-            {gameData?.status !== 'completed' && (
-              <div style={{ 
-                opacity: 0.7, 
-                transform: 'scale(0.8)',
-                animation: 'float 4s ease-in-out infinite'
-              }}>
-                <GameCoin
-                  gameId={gameId}
-                  gameState={{ phase: 'waiting' }}
-                  streamedCoinState={{ isStreaming: false, frameData: null }}
-                  flipAnimation={null}
-                  customHeadsImage={customHeadsImage}
-                  customTailsImage={customTailsImage}
-                  gameCoin={gameCoin}
-                  isMobile={isMobile}
-                  onPowerChargeStart={() => {}}
-                  onPowerChargeStop={() => {}}
-                  isMyTurn={() => false}
-                  address={address}
-                  isCreator={isCreator}
-                />
-              </div>
-            )}
             
-            {/* Three Container Layout for Lobby - NFT Details, Offers/Game Info, and Chat */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
-              gap: '2rem',
-              width: '100%',
-              maxWidth: '1400px',
-              marginTop: '2rem'
-            }}>
-              {/* NFT Details Container (Player 1 side) */}
-              <div style={{
-                background: 'rgba(0, 0, 20, 0.95)',
-                border: '2px solid #FFD700',
-                borderRadius: '1rem',
-                padding: '1rem',
-                height: '400px',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
-                overflow: 'hidden'
-              }}>
-                <GameStatusAndNFTContainer
-                  gameData={gameData}
-                  isCreator={isCreator()}
-                  currentTurn={null}
-                  nftData={{
-                    image: getGameNFTImage(),
-                    name: getGameNFTName(),
-                    collection: getGameNFTCollection()
-                  }}
-                  currentChain={chain}
-                />
-              </div>
-              
-              {/* Offers Container (Player 2 side) - Show for games that accept offers */}
-              <div style={{
-                height: '400px'
-              }}>
-                {(gameData?.status === 'listing' || 
-                  gameData?.status === 'waiting_challenger' || 
-                  gameData?.status === 'awaiting_challenger' || 
-                  gameData?.status === 'waiting_for_challenger' || 
-                  gameData?.status === 'open') ? (
-                  <OffersContainer
-                    gameId={gameId}
-                    gameData={gameData}
-                    socket={webSocketService}
-                    connected={wsConnected}
-                  />
-                ) : (
-                  <div style={{
-                    background: 'rgba(0, 0, 20, 0.95)',
-                    border: '2px solid #FFD700',
-                    borderRadius: '1rem',
-                    padding: '1rem',
-                    height: '400px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
-                  }}>
-                    <div style={{
-                      fontSize: '1.2rem',
-                      fontWeight: 'bold',
-                      color: '#FFD700',
-                      marginBottom: '1rem',
-                      textAlign: 'center',
-                      textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
-                    }}>
-                      Game Status
-                    </div>
-                    <div style={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                      color: 'white'
-                    }}>
-                      <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-                        {gameData?.status === 'active' ? '🎮' : '⏳'}
-                      </div>
-                      <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                        {gameData?.status === 'active' ? 'Game Active' : 'Waiting for Players'}
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
-                        {gameData?.status === 'active' ? 
-                          'Both players have joined' : 
-                          'Waiting for challenger to join'}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Chat Container */}
-              <div style={{
-                height: '400px'
-              }}>
-                <ChatContainer
-                  gameId={gameId}
-                  address={address}
-                  messages={chatMessages}
-                />
-              </div>
-            </div>
+            
+                         {/* Three Container Layout for Lobby - NFT Details, Coin Preview, and Chat+Offers */}
+             <div style={{
+               display: 'grid',
+               gridTemplateColumns: '1fr 1fr 1fr',
+               gap: '2rem',
+               width: '100%',
+               maxWidth: '1400px',
+               marginTop: '2rem'
+             }}>
+               {/* NFT Details Container */}
+               <div style={{
+                 background: 'rgba(0, 0, 20, 0.95)',
+                 border: '2px solid #FFD700',
+                 borderRadius: '1rem',
+                 padding: '1rem',
+                 height: '500px',
+                 display: 'flex',
+                 flexDirection: 'column',
+                 boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
+                 overflow: 'hidden'
+               }}>
+                 <GameStatusAndNFTContainer
+                   gameData={gameData}
+                   isCreator={isCreator()}
+                   currentTurn={null}
+                   nftData={{
+                     image: getGameNFTImage(),
+                     name: getGameNFTName(),
+                     collection: getGameNFTCollection()
+                   }}
+                   currentChain={chain}
+                 />
+               </div>
+               
+               {/* Coin Preview Container */}
+               {gameData?.status !== 'completed' && (
+                 <CoinContainer
+                   gameId={gameId}
+                   gameData={gameData}
+                   customHeadsImage={customHeadsImage}
+                   customTailsImage={customTailsImage}
+                   gameCoin={gameCoin}
+                   isMobile={isMobile}
+                   address={address}
+                   isCreator={isCreator}
+                 />
+               )}
+               
+               {/* Unified Chat & Offers Container */}
+               <UnifiedChatContainer
+                 gameId={gameId}
+                 gameData={gameData}
+                 socket={webSocketService}
+                 connected={wsConnected}
+               />
+             </div>
           </GameLayout>
         </GameContainer>
       </Container>
