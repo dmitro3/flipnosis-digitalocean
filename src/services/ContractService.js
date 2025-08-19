@@ -423,6 +423,145 @@ class ContractService {
       return { success: false, error: error.message }
     }
   }
+
+  // ADMIN METHODS - Added back for admin panel functionality
+
+  // Get NFTs owned by contract using Alchemy
+  async getContractOwnedNFTs() {
+    if (!this.alchemy || !this.contractAddress) {
+      return { success: false, error: 'Alchemy not initialized' }
+    }
+
+    try {
+      console.log('🔍 Loading NFTs owned by contract:', this.contractAddress)
+      
+      let allNFTs = []
+      let pageKey = null
+      
+      do {
+        const nftsForOwner = await this.alchemy.nft.getNftsForOwner(this.contractAddress, {
+          omitMetadata: false,
+          pageKey: pageKey
+        })
+        
+        if (nftsForOwner.ownedNfts && nftsForOwner.ownedNfts.length > 0) {
+          allNFTs = [...allNFTs, ...nftsForOwner.ownedNfts]
+        }
+        
+        pageKey = nftsForOwner.pageKey
+      } while (pageKey)
+
+      console.log('📦 Found NFTs owned by contract:', allNFTs.length)
+
+      const formattedNFTs = allNFTs.map((nft) => {
+        let imageUrl = ''
+        if (nft.media && nft.media.length > 0) {
+          imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
+        } else if (nft.image) {
+          imageUrl = nft.image.originalUrl || nft.image.cachedUrl || ''
+        }
+        if (!imageUrl && nft.metadata && nft.metadata.image) {
+          imageUrl = nft.metadata.image
+        }
+        if (imageUrl && imageUrl.startsWith('ipfs://')) {
+          imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
+        }
+        if (imageUrl && imageUrl.startsWith('http://')) {
+          imageUrl = imageUrl.replace('http://', 'https://')
+        }
+        
+        return {
+          nftContract: nft.contract.address,
+          tokenId: nft.tokenId,
+          name: nft.title || nft.name || `NFT #${nft.tokenId}`,
+          metadata: {
+            ...nft.metadata,
+            image: imageUrl
+          },
+          uniqueKey: `${nft.contract.address}-${nft.tokenId}`,
+          source: 'alchemy',
+        }
+      })
+
+      return { success: true, nfts: formattedNFTs }
+    } catch (error) {
+      console.error('❌ Error loading contract NFTs:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Check if service is initialized
+  get isInitialized() {
+    return this._initialized
+  }
+
+  // Property getters for compatibility
+  get currentChain() {
+    return this.isReady() ? BASE_CHAIN : null
+  }
+
+  getCurrentClients() {
+    return {
+      public: this.publicClient,
+      wallet: this.walletClient
+    }
+  }
+
+  // Stub properties for compatibility
+  get provider() { return this.publicClient }
+  get signer() { return this.walletClient }
+  get contract() { return this.contractAddress }
+  set contract(value) { this.contractAddress = value }
+  get account() { return this.userAddress }
+
+  // Stub methods for compatibility
+  async getListingFee() {
+    return { success: true, fee: 0 }
+  }
+
+  async getPlatformFee() {
+    return { success: true, fee: 3.5 }
+  }
+
+  async getGameDetails(gameId) {
+    return await this.isGameReady(gameId)
+  }
+
+  // Get detailed game state
+  async getGameState(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      // Get NFT deposit info
+      const nftDeposit = await this.publicClient.readContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'nftDeposits',
+        args: [gameIdBytes32]
+      })
+      
+      const gameState = {
+        nftDeposit: {
+          depositor: nftDeposit[0],
+          nftContract: nftDeposit[1],
+          tokenId: nftDeposit[2].toString(),
+          claimed: nftDeposit[3],
+          depositTime: nftDeposit[4].toString(),
+          hasDeposit: nftDeposit[0] !== '0x0000000000000000000000000000000000000000'
+        }
+      }
+      
+      console.log(`🎮 Game ${gameId} state:`, gameState)
+      return { success: true, gameState }
+    } catch (error) {
+      console.error('❌ Error getting game state:', error)
+      return { success: false, error: error.message }
+    }
+  }
 }
 
 // Export singleton instance
