@@ -501,25 +501,51 @@ const OffersContainer = ({
   }
 
   const handleAcceptOffer = async (offer) => {
-    if (!isCreator() || !connected || !socket) {
-      console.log('❌ Offers: Cannot accept offer:', { isCreator: isCreator(), connected, hasSocket: !!socket })
+    console.log('🔍 Accept offer attempt:', { 
+      isCreator: isCreator(), 
+      connected, 
+      hasSocket: !!socket,
+      offer,
+      gameData: gameData?.id || gameData?.listing_id 
+    })
+    
+    if (!isCreator()) {
+      showError('Only the game creator can accept offers')
+      return
+    }
+    
+    if (!connected || !socket) {
+      showError('Connection required to accept offers')
       return
     }
 
     try {
-      const offerType = offer.cryptoAmount ? 'offer' : 'NFT'
-      showInfo(`Accepting ${offerType} challenge...`)
+      const offerType = offer.cryptoAmount ? 'crypto offer' : 'NFT offer'
+      showInfo(`Accepting ${offerType}...`)
 
       const acceptanceData = {
         type: offer.cryptoAmount ? 'accept_crypto_offer' : 'accept_nft_offer',
-        gameId,
+        gameId: gameId,
+        listingId: gameData?.listing_id || gameData?.id,
         creatorAddress: address,
         acceptedOffer: offer,
         timestamp: new Date().toISOString()
       }
 
       console.log('📤 Offers: Sending offer acceptance:', acceptanceData)
-      socket.send(JSON.stringify(acceptanceData))
+      
+      // Send via WebSocket
+      if (socket && socket.send) {
+        socket.send(acceptanceData)
+      } else {
+        // Fallback to global WebSocket service
+        const ws = window.FlipnosisWS
+        if (ws) {
+          ws.send(acceptanceData)
+        }
+      }
+      
+      showSuccess(`${offerType} accepted! Game starting...`)
       
       // Reload game data after a short delay to get updated status
       setTimeout(() => {
@@ -544,7 +570,8 @@ const OffersContainer = ({
   }
 
   const getDisplayName = (addr) => {
-    if (!addr) return 'Unknown'
+    if (!addr) return 'Anonymous'
+    if (addr === address) return 'You'
     return playerNames[addr] || `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
 
@@ -554,7 +581,7 @@ const OffersContainer = ({
         return (
           <div>
             <OfferAmount>
-              <OfferAmountLabel>💰 Offer Amount:</OfferAmountLabel>
+              <OfferAmountLabel>💰 Crypto Offer:</OfferAmountLabel>
               <OfferAmountValue>${offer.cryptoAmount} USD</OfferAmountValue>
             </OfferAmount>
             {isCreator() && (

@@ -341,7 +341,8 @@ const ChatContainer = () => {
     if (sender === 'System') return 'System'
     if (sender === address) return 'You'
     if (playerNames[sender]) return playerNames[sender]
-    return sender ? `${sender.slice(0, 6)}...${sender.slice(-4)}` : 'Unknown'
+    // Return a more readable truncated address format
+    return sender ? `${sender.slice(0, 6)}...${sender.slice(-4)}` : 'Anonymous'
   }
 
   // Debug logging for render
