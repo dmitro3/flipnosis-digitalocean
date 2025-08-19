@@ -4,7 +4,7 @@ import GameCoin from './GameCoin'
 
 const CoinContainerStyled = styled.div`
   background: transparent;
-  border: 2px solid #FF1493;
+  border: none;
   border-radius: 1rem;
   padding: 1rem;
   height: 100%;
@@ -12,7 +12,7 @@ const CoinContainerStyled = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
+  box-shadow: none;
   position: relative;
   overflow: hidden;
 `

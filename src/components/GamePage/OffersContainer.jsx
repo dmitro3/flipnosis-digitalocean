@@ -10,7 +10,7 @@ const OffersContainerStyled = styled.div`
   border: 1px solid rgba(0, 255, 65, 0.3);
   border-radius: 1rem;
   padding: 1rem;
-  height: 500px;
+  height: 800px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);

@@ -395,7 +395,7 @@ const GameLobby = () => {
                   border: '2px solid #FFD700',
                   borderRadius: '1rem',
                   padding: '1rem',
-                  height: '667px',
+                  height: '800px',
                   display: 'flex',
                   flexDirection: 'column',
                   boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
@@ -415,7 +415,7 @@ const GameLobby = () => {
                 </div>
                 
                 {/* Chat Container */}
-                <div style={{ height: '667px' }}>
+                <div style={{ height: '800px' }}>
                   <ChatContainer
                     gameId={gameId}
                     gameData={gameData}
@@ -425,7 +425,7 @@ const GameLobby = () => {
                 </div>
                 
                 {/* Offers Container */}
-                <div style={{ height: '667px' }}>
+                <div style={{ height: '800px' }}>
                   <OffersContainer
                     gameId={gameId}
                     gameData={gameData}
@@ -442,7 +442,7 @@ const GameLobby = () => {
                 
                 {/* Coin Container */}
                 {gameData?.status !== 'completed' && (
-                  <div style={{ height: '667px' }}>
+                  <div style={{ height: '800px' }}>
                     <CoinContainer
                       gameId={gameId}
                       gameData={gameData}
