@@ -70,11 +70,31 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
     }
   }, [gameId, address, gameData])
 
-  // WebSocket message handler for game room events
+  // FIXED: Better WebSocket message handler for game room events
   const handleWebSocketMessage = (data) => {
     console.log('🎮 Game room message received:', data)
     
     switch (data.type) {
+      case 'GAME_ROOM_JOINED':
+        console.log('✅ Joined game room:', data)
+        showInfo('Joined game room successfully')
+        break
+        
+      case 'OPPONENT_JOINED':
+        console.log('🎮 Opponent joined! Starting game...')
+        showInfo('Opponent joined! Game starting...')
+        break
+        
+      case 'ROUND_STARTED':
+        console.log('🔄 Round started:', data)
+        window.dispatchEvent(new CustomEvent('gameRoomRoundStarted', { detail: data }))
+        break
+        
+      case 'CHOICE_MADE':
+        console.log('🎯 Choice made:', data)
+        window.dispatchEvent(new CustomEvent('gameRoomChoiceMade', { detail: data }))
+        break
+        
       case 'BOTH_CHOICES_MADE':
         console.log('✅ Both player choices made:', data)
         // Trigger an event that the game room state can listen to
@@ -90,9 +110,14 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
         showInfo(`${data.activeChoice.toUpperCase()} vs ${data.otherChoice.toUpperCase()} - Power phase starting!`)
         break
         
-      case 'POWER_PHASE_STARTED':
-        console.log('⚡ Power phase started')
-        window.dispatchEvent(new CustomEvent('gameRoomPowerPhase', { detail: data }))
+      case 'POWER_CHARGED':
+        console.log('⚡ Power charged:', data)
+        window.dispatchEvent(new CustomEvent('gameRoomPowerCharged', { detail: data }))
+        break
+        
+      case 'BOTH_POWERS_CHARGED':
+        console.log('⚡ Both powers charged, executing flip')
+        window.dispatchEvent(new CustomEvent('gameRoomBothPowersCharged', { detail: data }))
         break
         
       case 'FLIP_RESULT':
@@ -139,7 +164,7 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
     }
   }, [wsConnected, webSocketService])
 
-  // Game room specific message handlers
+  // FIXED: Better player choice handling
   const handlePlayerChoice = (choice) => {
     try {
       if (!webSocketService || typeof webSocketService.isConnected !== 'function') {
@@ -161,14 +186,16 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
       // Determine the opposite choice for the other player
       const oppositeChoice = choice === 'heads' ? 'tails' : 'heads'
 
-      // Send choice to server via WebSocket
+      console.log('🎯 Sending choice:', { choice, oppositeChoice, player: address })
+
+      // FIXED: Send choice using the proper message format
       webSocketService.send({
-        type: 'GAME_ACTION',
+        type: 'MAKE_CHOICE',
         gameId,
-        action: 'MAKE_CHOICE',
+        player: address,
         choice,
         oppositeChoice,
-        player: address
+        round: 1 // This will be updated by the server based on current round
       })
     } catch (error) {
       console.error('❌ Error in handlePlayerChoice:', error)
@@ -180,9 +207,8 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
     try {
       if (webSocketService && typeof webSocketService.isConnected === 'function' && webSocketService.isConnected()) {
         webSocketService.send({
-          type: 'GAME_ACTION',
+          type: 'POWER_CHARGE_START',
           gameId,
-          action: 'POWER_CHARGE_START',
           player: address
         })
       }
@@ -192,6 +218,7 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
     }
   }
 
+  // FIXED: Better power charge handling
   const handlePowerChargeStop = async (powerLevel) => {
     try {
       if (!webSocketService || typeof webSocketService.isConnected !== 'function') {
@@ -204,15 +231,17 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
         return
       }
 
-      const validPowerLevel = typeof powerLevel === 'number' && !isNaN(powerLevel) ? powerLevel : 5
+      const validPowerLevel = Math.min(10, Math.max(1, powerLevel || 5))
 
-      // Send power charge completion to server
+      console.log('⚡ Sending power charge:', { powerLevel: validPowerLevel, player: address })
+
+      // FIXED: Send power charge using the proper message format
       webSocketService.send({
-        type: 'GAME_ACTION',
+        type: 'POWER_CHARGED',
         gameId,
-        action: 'POWER_CHARGED',
         player: address,
-        powerLevel: validPowerLevel
+        powerLevel: validPowerLevel,
+        round: 1 // This will be updated by the server based on current round
       })
     } catch (error) {
       console.error('❌ Error in handlePowerChargeStop:', error)
@@ -224,9 +253,8 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
     try {
       if (webSocketService && typeof webSocketService.isConnected === 'function' && webSocketService.isConnected()) {
         webSocketService.send({
-          type: 'GAME_ACTION',
+          type: 'FORFEIT_GAME',
           gameId,
-          action: 'FORFEIT_GAME',
           player: address
         })
         showInfo('Game forfeited. Your opponent wins.')

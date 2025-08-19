@@ -51,6 +51,17 @@ export const useGameRoomState = (gameId, address, gameData) => {
     return address.toLowerCase() === challengerAddress.toLowerCase()
   }
 
+  // FIXED: Better turn determination logic
+  const getChoosingPlayer = (round) => {
+    // Round 1, 3, 5: Creator chooses first
+    // Round 2, 4: Joiner chooses first
+    if (round === 1 || round === 3 || round === 5) {
+      return getGameCreator()
+    } else {
+      return getGameJoiner()
+    }
+  }
+
   const isMyTurn = () => {
     // Don't allow turns if game hasn't started yet
     if (!gameData?.creator_deposited || !gameData?.challenger_deposited || gameData?.status !== 'active') {
@@ -58,12 +69,11 @@ export const useGameRoomState = (gameId, address, gameData) => {
     }
 
     if (gameState.phase === 'choosing') {
-      // Round-based turn system
-      if (gameState.currentRound === 1 || gameState.currentRound === 3 || gameState.currentRound === 5) {
-        return isCreator() && !gameState.creatorChoice
-      } else {
-        return isJoiner() && !gameState.joinerChoice
-      }
+      // FIXED: Use the proper turn determination
+      const choosingPlayer = getChoosingPlayer(gameState.currentRound)
+      return address?.toLowerCase() === choosingPlayer?.toLowerCase() && 
+             !gameState.creatorChoice && 
+             !gameState.joinerChoice
     }
 
     // Charging phase - check if it's this player's turn to charge
@@ -146,23 +156,41 @@ export const useGameRoomState = (gameId, address, gameData) => {
     setRoundCountdown(null)
   }
 
-  // Handle auto flip for round 5
+  // FIXED: Better auto flip for round 5
   const handleAutoFlip = () => {
     try {
       showInfo('Round 5 - Auto-flipping at maximum power!')
 
+      // FIXED: Set both choices to the same for round 5 auto-flip
       const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
 
       setGameState(prev => ({
         ...prev,
         creatorChoice: autoChoice,
-        joinerChoice: autoChoice
+        joinerChoice: autoChoice,
+        creatorPower: 10, // Max power
+        joinerPower: 10   // Max power
       }))
 
       setPlayerChoices(prev => ({
         creator: autoChoice,
         joiner: autoChoice
       }))
+
+      // Trigger the flip immediately
+      setTimeout(() => {
+        const result = Math.random() < 0.5 ? 'heads' : 'tails'
+        const roundWinner = result === autoChoice ? getGameCreator() : getGameJoiner()
+        
+        handleFlipResult({
+          result,
+          roundWinner,
+          creatorChoice: autoChoice,
+          challengerChoice: autoChoice,
+          creatorPower: 10,
+          joinerPower: 10
+        })
+      }, 1000)
     } catch (error) {
       console.error('❌ Error in handleAutoFlip:', error)
       showError('Failed to trigger auto-flip')
@@ -185,13 +213,25 @@ export const useGameRoomState = (gameId, address, gameData) => {
       }
     }
 
+    // FIXED: Update wins count
+    const newCreatorWins = gameState.creatorWins
+    const newJoinerWins = gameState.joinerWins
+    
+    if (safeResult.roundWinner === getGameCreator()) {
+      newCreatorWins++
+    } else if (safeResult.roundWinner === getGameJoiner()) {
+      newJoinerWins++
+    }
+
     setGameState(prev => ({
       ...prev,
       phase: 'flipping',
       flipResult: safeResult.result,
       roundWinner: safeResult.roundWinner,
       creatorPower: safeResult.creatorPower || 0,
-      joinerPower: safeResult.joinerPower || 0
+      joinerPower: safeResult.joinerPower || 0,
+      creatorWins: newCreatorWins,
+      joinerWins: newJoinerWins
     }))
 
     setFlipAnimation({
@@ -279,11 +319,26 @@ export const useGameRoomState = (gameId, address, gameData) => {
     })
   }
 
-  // Reset game state for next round
+  // FIXED: Better reset for next round
   const resetForNextRound = () => {
+    const nextRound = gameState.currentRound + 1
+    const gameOver = gameState.creatorWins >= 3 || gameState.joinerWins >= 3 || nextRound > 5
+
+    if (gameOver) {
+      // Game is complete
+      const winner = gameState.creatorWins > gameState.joinerWins ? getGameCreator() : getGameJoiner()
+      handleGameCompleted({
+        winner,
+        finalResult: gameState.flipResult,
+        playerChoice: isCreator() ? gameState.creatorChoice : gameState.joinerChoice
+      })
+      return
+    }
+
     setGameState(prev => ({
       ...prev,
       phase: 'choosing',
+      currentRound: nextRound,
       creatorChoice: null,
       joinerChoice: null,
       currentTurn: null,
@@ -307,6 +362,11 @@ export const useGameRoomState = (gameId, address, gameData) => {
       flipStartTime: null,
       duration: 3000
     })
+
+    // Start countdown for next round
+    setTimeout(() => {
+      startRoundCountdown()
+    }, 1000)
   }
 
   // Initialize game when both players are present
@@ -386,10 +446,6 @@ export const useGameRoomState = (gameId, address, gameData) => {
       console.log('🏁 Round completed, preparing for next round')
       setTimeout(() => {
         resetForNextRound()
-        // Start countdown for next round
-        if (gameState.currentRound < 5) {
-          startRoundCountdown()
-        }
       }, 2000) // Give time to show results
     }
     
@@ -449,6 +505,7 @@ export const useGameRoomState = (gameId, address, gameData) => {
     isJoiner,
     isMyTurn,
     getGameCreator,
-    getGameJoiner
+    getGameJoiner,
+    getChoosingPlayer // FIXED: Export the turn determination function
   }
 }

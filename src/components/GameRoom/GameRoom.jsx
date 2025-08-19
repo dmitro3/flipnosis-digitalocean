@@ -361,7 +361,8 @@ const GameRoom = ({
     isJoiner,
     isMyTurn,
     getGameCreator,
-    getGameJoiner
+    getGameJoiner,
+    getChoosingPlayer // FIXED: Use the improved turn determination
   } = useGameRoomState(gameId, gameData?.creator || gameData?.creator_address, gameData)
 
   // Use game room WebSocket
@@ -382,20 +383,11 @@ const GameRoom = ({
   const showPowerBar = gameState?.phase === 'charging' || gameState?.chargingPlayer
   const totalPower = (Number(gameState?.creatorPower) || 0) + (Number(gameState?.joinerPower) || 0)
   
+  // FIXED: Better turn determination using the improved logic
   const canChoose = gameState?.phase === 'choosing' && isMyTurn()
-
-  // Determine whose turn it is to choose
-  const getCurrentChooser = () => {
-    if (currentRound === 1 || currentRound === 3 || currentRound === 5) {
-      return 'creator' // Player 1 (creator) goes first, third, and fifth
-    } else {
-      return 'joiner' // Player 2 (joiner) goes second and fourth
-    }
-  }
-
-  const currentChooser = getCurrentChooser()
-  const isCreatorTurn = currentChooser === 'creator'
-  const isJoinerTurn = currentChooser === 'joiner'
+  const currentChooser = getChoosingPlayer(currentRound)
+  const isCreatorTurn = currentChooser === getGameCreator()
+  const isJoinerTurn = currentChooser === getGameJoiner()
 
   // Fetch player names
   useEffect(() => {
@@ -533,7 +525,7 @@ const GameRoom = ({
             </CoinContainer>
             
             <ChoiceSection>
-              {!isMyTurn() ? (
+              {!canChoose ? (
                 <OpponentChoosingMessage>
                   🤔 Opponent is choosing...
                 </OpponentChoosingMessage>
