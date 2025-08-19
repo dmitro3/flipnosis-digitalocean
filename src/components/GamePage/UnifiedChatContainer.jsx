@@ -358,12 +358,16 @@ const UnifiedChatContainer = ({
     
     console.log('🔌 Unified Chat: Setting up WebSocket message handler with socket:', socket)
     
-    const handleMessage = (data) => {
+    // Check if there are any pending messages in the WebSocket service
+    if (socket.messageHandlers && socket.messageHandlers.size > 0) {
+      console.log('🔌 Unified Chat: WebSocket service has existing message handlers')
+    }
+    
+    const handleMessage = (messageData) => {
       try {
-        console.log('💬 Unified Chat: WebSocket message received:', data)
+        console.log('💬 Unified Chat: WebSocket message received:', messageData)
         
-        // Handle both raw WebSocket events and parsed data
-        const messageData = data.data || data
+        // Message data is passed directly from the WebSocket service
         
         if (messageData.type === 'chat_message') {
           console.log('💬 Chat message received:', messageData)
@@ -478,13 +482,25 @@ const UnifiedChatContainer = ({
       }
     }
     
-    // Register message handler with WebSocket service
-    console.log('🔌 Unified Chat: Registering message handler with socket:', socket)
-    socket.on('message', handleMessage)
+    // Register message handlers for specific message types
+    console.log('🔌 Unified Chat: Registering message handlers with socket:', socket)
+    
+    // Register handlers for each message type
+    socket.on('chat_message', handleMessage)
+    socket.on('chat_history', handleMessage)
+    socket.on('crypto_offer', handleMessage)
+    socket.on('nft_offer', handleMessage)
+    socket.on('accept_crypto_offer', handleMessage)
+    socket.on('accept_nft_offer', handleMessage)
     
     return () => {
-      console.log('🔌 Unified Chat: Cleaning up message handler')
-      socket.off('message', handleMessage)
+      console.log('🔌 Unified Chat: Cleaning up message handlers')
+      socket.off('chat_message', handleMessage)
+      socket.off('chat_history', handleMessage)
+      socket.off('crypto_offer', handleMessage)
+      socket.off('nft_offer', handleMessage)
+      socket.off('accept_crypto_offer', handleMessage)
+      socket.off('accept_nft_offer', handleMessage)
     }
   }, [socket, address, showSuccess])
 
