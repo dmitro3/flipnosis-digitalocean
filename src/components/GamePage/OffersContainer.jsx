@@ -363,11 +363,23 @@ const OffersContainer = ({
       }
     }
     
-    // Register message handler with WebSocket service
-    socket.on('message', handleMessage)
+    // Register message handlers for specific message types
+    console.log('🔌 Offers: Registering message handlers with socket:', socket)
+    
+    // Register handlers for each message type
+    socket.on('crypto_offer', handleMessage)
+    socket.on('nft_offer', handleMessage)
+    socket.on('accept_crypto_offer', handleMessage)
+    socket.on('accept_nft_offer', handleMessage)
+    socket.on('chat_history', handleMessage)
     
     return () => {
-      socket.off('message', handleMessage)
+      console.log('🔌 Offers: Cleaning up message handlers')
+      socket.off('crypto_offer', handleMessage)
+      socket.off('nft_offer', handleMessage)
+      socket.off('accept_crypto_offer', handleMessage)
+      socket.off('accept_nft_offer', handleMessage)
+      socket.off('chat_history', handleMessage)
     }
   }, [socket, address, showSuccess])
 
@@ -422,13 +434,17 @@ const OffersContainer = ({
       console.log('🔍 WebSocket connection check:', isSocketConnected)
       
       if (isSocketConnected) {
-        socket.send({
+        const offerData = {
           type: 'crypto_offer',
           listingId: gameData.listing_id,
           address: address,
           cryptoAmount: offerAmount,
           timestamp: new Date().toISOString()
-        })
+        }
+        
+        console.log('📤 Offers: Sending crypto offer:', offerData)
+        console.log('📤 Offers: Socket send method available:', typeof socket.send === 'function')
+        socket.send(offerData)
         
         console.log('💰 Crypto offer sent via WebSocket')
         showSuccess(`Offer of $${offerAmount.toFixed(2)} USD sent!`)

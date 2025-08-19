@@ -4,15 +4,15 @@ import GameCoin from './GameCoin'
 
 const CoinContainerStyled = styled.div`
   background: transparent;
-  border: 2px solid #FFD700;
+  border: 2px solid #FF1493;
   border-radius: 1rem;
   padding: 1rem;
-  height: 667px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
   position: relative;
   overflow: hidden;
 `

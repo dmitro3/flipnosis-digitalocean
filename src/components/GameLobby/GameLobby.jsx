@@ -381,75 +381,81 @@ const GameLobby = () => {
             
             
             
-                         {/* Four Container Layout for Lobby - NFT Details, Chat, Offers, and Coin */}
-             <div style={{
-               display: 'grid',
-               gridTemplateColumns: '1fr 1fr 1fr 1fr',
-               gap: '2rem',
-               width: '100%',
-               marginTop: '2rem'
-             }}>
-               {/* NFT Details Container */}
-               <div style={{
-                 background: 'rgba(0, 0, 20, 0.95)',
-                 border: '2px solid #FFD700',
-                 borderRadius: '1rem',
-                 padding: '1rem',
-                 height: '667px',
-                 display: 'flex',
-                 flexDirection: 'column',
-                 boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
-                 overflow: 'hidden'
-               }}>
-                 <GameStatusAndNFTContainer
-                   gameData={gameData}
-                   isCreator={isCreator()}
-                   currentTurn={null}
-                   nftData={{
-                     image: getGameNFTImage(),
-                     name: getGameNFTName(),
-                     collection: getGameNFTCollection()
-                   }}
-                   currentChain={chain}
-                 />
-               </div>
-               
-               {/* Chat Container */}
-               <ChatContainer
-                 gameId={gameId}
-                 gameData={gameData}
-                 socket={webSocketService}
-                 connected={wsConnected}
-               />
-               
-               {/* Offers Container */}
-               <OffersContainer
-                 gameId={gameId}
-                 gameData={gameData}
-                 socket={webSocketService}
-                 connected={wsConnected}
-                 onOfferSubmitted={(offerData) => {
-                   console.log('Offer submitted via offers container:', offerData)
-                 }}
-                 onOfferAccepted={(offer) => {
-                   console.log('Offer accepted via offers container:', offer)
-                 }}
-               />
-               
-               {/* Coin Container */}
-               {gameData?.status !== 'completed' && (
-                 <CoinContainer
-                   gameId={gameId}
-                   gameData={gameData}
-                   customHeadsImage={customHeadsImage}
-                   customTailsImage={customTailsImage}
-                   gameCoin={gameCoin}
-                   isMobile={isMobile}
-                   address={address}
-                   isCreator={isCreator}
-                 />
-               )}
-             </div>
+                                                   {/* Four Container Layout for Lobby - NFT Details, Chat, Offers, and Coin */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr 0.8fr',
+                gap: '2rem',
+                width: '100%',
+                marginTop: '2rem'
+              }}>
+                {/* NFT Details Container */}
+                <div style={{
+                  background: 'rgba(0, 0, 20, 0.95)',
+                  border: '2px solid #FFD700',
+                  borderRadius: '1rem',
+                  padding: '1rem',
+                  height: '667px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
+                  overflow: 'hidden'
+                }}>
+                  <GameStatusAndNFTContainer
+                    gameData={gameData}
+                    isCreator={isCreator()}
+                    currentTurn={null}
+                    nftData={{
+                      image: getGameNFTImage(),
+                      name: getGameNFTName(),
+                      collection: getGameNFTCollection()
+                    }}
+                    currentChain={chain}
+                  />
+                </div>
+                
+                {/* Chat Container */}
+                <div style={{ height: '667px' }}>
+                  <ChatContainer
+                    gameId={gameId}
+                    gameData={gameData}
+                    socket={webSocketService}
+                    connected={wsConnected}
+                  />
+                </div>
+                
+                {/* Offers Container */}
+                <div style={{ height: '667px' }}>
+                  <OffersContainer
+                    gameId={gameId}
+                    gameData={gameData}
+                    socket={webSocketService}
+                    connected={wsConnected}
+                    onOfferSubmitted={(offerData) => {
+                      console.log('Offer submitted via offers container:', offerData)
+                    }}
+                    onOfferAccepted={(offer) => {
+                      console.log('Offer accepted via offers container:', offer)
+                    }}
+                  />
+                </div>
+                
+                {/* Coin Container */}
+                {gameData?.status !== 'completed' && (
+                  <div style={{ height: '667px' }}>
+                    <CoinContainer
+                      gameId={gameId}
+                      gameData={gameData}
+                      customHeadsImage={customHeadsImage}
+                      customTailsImage={customTailsImage}
+                      gameCoin={gameCoin}
+                      isMobile={isMobile}
+                      address={address}
+                      isCreator={isCreator}
+                    />
+                  </div>
+                )}
+              </div>
           </GameLayout>
         </GameContainer>
       </Container>
