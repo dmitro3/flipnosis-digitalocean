@@ -1199,6 +1199,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         })
       } else if (assetType === 'eth' && !isCreator) {
         // Challenger deposited crypto
+        console.log(`💰 Challenger ${player} deposited ETH for game ${gameId}`)
+        
         db.run(`
           UPDATE games 
           SET challenger_deposited = true,
@@ -1206,16 +1208,27 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           WHERE id = ?
         `, [gameId], (err) => {
           if (err) {
+            console.error('❌ Database error updating challenger deposit:', err)
             return res.status(500).json({ error: 'Database error' })
           }
           
           console.log('🎮 Both assets deposited - game is now active!')
+          console.log(`✅ Updated game ${gameId}: challenger_deposited = true, status = active`)
           
           // Notify all players
           wsHandlers.broadcastToRoom(gameId, {
             type: 'game_started',
             gameId,
             message: 'Both assets deposited - game starting!'
+          })
+          
+          // Also broadcast deposit received message
+          wsHandlers.broadcastToRoom(gameId, {
+            type: 'deposit_received',
+            gameId,
+            player,
+            assetType: 'eth',
+            bothDeposited: true
           })
           
           res.json({ success: true })

@@ -71,6 +71,37 @@ export const useLobbyWebSocket = (gameId, address, gameData) => {
     }
   }, [gameId, address, gameData])
 
+  // Listen for WebSocket messages about game state changes
+  useEffect(() => {
+    if (!webSocketService || typeof webSocketService.getWebSocket !== 'function') {
+      return
+    }
+
+    const handleMessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log('🏠 Lobby WebSocket message:', data)
+        
+        // Handle messages that affect lobby state
+        if (data.type === 'game_started' || data.type === 'deposit_received') {
+          console.log('💰 Deposit/Game started message received, triggering countdown check')
+          // Trigger a custom event to notify the lobby to check countdown
+          window.dispatchEvent(new CustomEvent('lobbyRefresh', { detail: data }))
+        }
+      } catch (error) {
+        console.error('❌ Error parsing lobby WebSocket message:', error)
+      }
+    }
+
+    const ws = webSocketService.getWebSocket()
+    if (ws) {
+      ws.addEventListener('message', handleMessage)
+      return () => {
+        ws.removeEventListener('message', handleMessage)
+      }
+    }
+  }, [webSocketService, wsConnected])
+
   // Send lobby-specific messages
   const sendOfferMessage = (offerData) => {
     if (webSocketService && typeof webSocketService.send === 'function') {

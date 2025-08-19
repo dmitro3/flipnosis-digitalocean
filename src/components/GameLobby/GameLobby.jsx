@@ -126,6 +126,17 @@ const GameLobby = () => {
     }
   }, [gameData])
 
+  // Listen for lobby refresh events from WebSocket
+  useEffect(() => {
+    const handleLobbyRefresh = (event) => {
+      console.log('🔄 Lobby refresh triggered:', event.detail)
+      loadGameData() // Refresh game data to check for countdown
+    }
+
+    window.addEventListener('lobbyRefresh', handleLobbyRefresh)
+    return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
+  }, [loadGameData])
+
   // Watch for game starting (both players deposited)
   useEffect(() => {
     console.log('🔍 Countdown useEffect running...')
@@ -144,10 +155,10 @@ const GameLobby = () => {
       address: address
     })
     
-    // Check if game is active and both players have deposited
-    if (gameData?.status === 'active' && 
+    // Check if both players have deposited (regardless of status field)
+    if ((gameData?.status === 'active' || gameData?.status === 'waiting_challenger_deposit') && 
         gameData?.creator_deposited && 
-        gameData?.challenger_deposited &&
+        (gameData?.challenger_deposited || gameData?.joiner_deposited) &&
         !countdownTriggered) {
       
       // Only show countdown for the two players
