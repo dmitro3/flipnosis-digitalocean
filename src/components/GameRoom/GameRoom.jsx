@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import ProfilePicture from '../ProfilePicture'
@@ -6,6 +6,7 @@ import GameBackground from '../GamePage/GameBackground'
 import GameResultPopup from '../GameResultPopup'
 import { useGameRoomState } from './hooks/useGameRoomState'
 import { useGameRoomWebSocket } from './hooks/useGameRoomWebSocket'
+import { useProfile } from '../../contexts/ProfileContext'
 import { theme } from '../../styles/theme'
 
 const GameRoomContainer = styled.div`
@@ -44,17 +45,17 @@ const MainGameArea = styled.div`
 const PlayerCard = styled.div`
   background: linear-gradient(135deg, 
     ${props => props.isCreator ? 
-      'rgba(255, 215, 0, 0.15)' : 
+      'rgba(255, 20, 147, 0.15)' : 
       'rgba(0, 255, 65, 0.15)'
     } 0%, 
     rgba(0, 0, 0, 0.5) 100%
   );
-  border: 2px solid ${props => props.isCreator ? '#FFD700' : '#00FF41'};
+  border: 2px solid ${props => props.isCreator ? '#FF1493' : '#00FF41'};
   border-radius: 1rem;
   padding: 1.5rem;
   height: fit-content;
   box-shadow: 0 0 30px ${props => props.isCreator ? 
-    'rgba(255, 215, 0, 0.3)' : 
+    'rgba(255, 20, 147, 0.4)' : 
     'rgba(0, 255, 65, 0.3)'
   };
 `
@@ -70,7 +71,7 @@ const PlayerHeader = styled.div`
 
 const PlayerLabel = styled.div`
   flex: 1;
-  color: ${props => props.isCreator ? '#FFD700' : '#00FF41'};
+  color: ${props => props.isCreator ? '#FF1493' : '#00FF41'};
   font-weight: bold;
   font-size: 1.1rem;
   text-transform: uppercase;
@@ -286,18 +287,35 @@ const CountdownContainer = styled.div`
 `
 
 const CountdownText = styled.div`
-  color: #FFD700;
-  font-size: 1.2rem;
+  color: #00BFFF;
+  font-size: 2.5rem;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px #00BFFF, 0 0 40px #00BFFF, 0 0 60px #00BFFF;
+  animation: neonPulse 2s linear infinite;
+  
+  @keyframes neonPulse {
+    0%, 100% { 
+      text-shadow: 0 0 20px #00BFFF, 0 0 40px #00BFFF, 0 0 60px #00BFFF;
+    }
+    50% { 
+      text-shadow: 0 0 30px #00BFFF, 0 0 60px #00BFFF, 0 0 90px #00BFFF;
+    }
+  }
 `
 
 const TurnIndicator = styled.div`
-  color: ${props => props.isMyTurn ? '#00FF41' : '#FF1493'};
-  font-size: 0.9rem;
+  color: ${props => props.isMyTurn ? '#00BFFF' : '#FF1493'};
+  font-size: 1.5rem;
   margin-top: 0.5rem;
   font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: ${props => props.isMyTurn ? 
+    '0 0 15px #00BFFF, 0 0 30px #00BFFF' : 
+    '0 0 15px #FF1493, 0 0 30px #FF1493'
+  };
 `
 
 const ChatSection = styled.div`
@@ -314,6 +332,13 @@ const GameRoom = ({
   customTailsImage,
   gameCoin
 }) => {
+  // Get profile functions
+  const { getPlayerName } = useProfile()
+  
+  // State for player names
+  const [creatorName, setCreatorName] = useState('')
+  const [joinerName, setJoinerName] = useState('')
+  
   // Use game room specific hooks
   const {
     gameState,
@@ -372,6 +397,36 @@ const GameRoom = ({
   const isCreatorTurn = currentChooser === 'creator'
   const isJoinerTurn = currentChooser === 'joiner'
 
+  // Fetch player names
+  useEffect(() => {
+    const fetchPlayerNames = async () => {
+      const creatorAddress = getGameCreator()
+      const joinerAddress = getGameJoiner()
+      
+      if (creatorAddress) {
+        try {
+          const name = await getPlayerName(creatorAddress)
+          setCreatorName(name || `${creatorAddress.slice(0, 6)}...${creatorAddress.slice(-4)}`)
+        } catch (error) {
+          console.error('Error fetching creator name:', error)
+          setCreatorName(`${creatorAddress.slice(0, 6)}...${creatorAddress.slice(-4)}`)
+        }
+      }
+      
+      if (joinerAddress) {
+        try {
+          const name = await getPlayerName(joinerAddress)
+          setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+        } catch (error) {
+          console.error('Error fetching joiner name:', error)
+          setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+        }
+      }
+    }
+
+    fetchPlayerNames()
+  }, [getGameCreator, getGameJoiner, getPlayerName])
+
   // Add forfeit button styles
   const ForfeitButton = styled.button`
     position: fixed;
@@ -428,7 +483,7 @@ const GameRoom = ({
                 size={40}
               />
               <PlayerLabel isCreator={true}>
-                {isCreator() ? 'You' : 'Creator'}
+                {creatorName || 'Creator'}
               </PlayerLabel>
             </PlayerHeader>
             
@@ -524,7 +579,7 @@ const GameRoom = ({
                 size={40}
               />
               <PlayerLabel isCreator={false}>
-                {isJoiner() ? 'You' : 'Challenger'}
+                {joinerName || 'Challenger'}
               </PlayerLabel>
             </PlayerHeader>
             
