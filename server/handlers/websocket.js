@@ -385,8 +385,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   }
 
   async function handleGameAction(socket, data, dbService) {
-    const { gameId, action, choice, player, powerLevel } = data
-    console.log('🎯 Processing game action:', { gameId, action, choice, player })
+    const { gameId, action, choice, player, powerLevel, oppositeChoice } = data
+    console.log('🎯 Processing game action:', { gameId, action, choice, player, oppositeChoice })
     
     // Check if this is a game room action first
     const gameRoomId = `game_room_${gameId}`
@@ -394,7 +394,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     
     if (gameRoom) {
       // Handle action in game room
-      return await handleGameRoomAction(gameRoom, action, choice, player, powerLevel)
+      return await handleGameRoomAction(gameRoom, action, choice, player, powerLevel, oppositeChoice)
     }
     
     // Fallback to original game engine for lobby games
@@ -435,12 +435,12 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   }
 
   // Handle game room specific actions
-  async function handleGameRoomAction(gameRoom, action, choice, player, powerLevel) {
+  async function handleGameRoomAction(gameRoom, action, choice, player, powerLevel, oppositeChoice) {
     console.log(`🏟️ Processing game room action: ${action}`)
     
     switch (action) {
       case 'MAKE_CHOICE':
-        return gameRoom.handlePlayerChoice(player, choice)
+        return gameRoom.handlePlayerChoice(player, choice, oppositeChoice)
         
       case 'POWER_CHARGE_START':
         // Game rooms handle power charging differently

@@ -155,10 +155,10 @@ const GameLobby = () => {
       address: address
     })
     
-    // Check if both players have deposited (regardless of status field)
-    if ((gameData?.status === 'active' || gameData?.status === 'waiting_challenger_deposit') && 
+    // Check if both players have deposited - only trigger once when status becomes 'active'
+    if (gameData?.status === 'active' && 
         gameData?.creator_deposited && 
-        (gameData?.challenger_deposited || gameData?.joiner_deposited) &&
+        gameData?.challenger_deposited &&
         !countdownTriggered) {
       
       // Only show countdown for the two players
@@ -171,7 +171,10 @@ const GameLobby = () => {
         isCreator: isCreator(),
         isJoiner: isJoiner(),
         challengerMatch: gameData?.challenger && address && 
-                        gameData.challenger.toLowerCase() === address.toLowerCase()
+                        gameData.challenger.toLowerCase() === address.toLowerCase(),
+        gameStatus: gameData?.status,
+        creatorDeposited: gameData?.creator_deposited,
+        challengerDeposited: gameData?.challenger_deposited
       })
       
       if (isPlayer) {

@@ -139,30 +139,38 @@ class GameRoom {
     })
   }
 
-  // Handle player choice
-  handlePlayerChoice(address, choice) {
+  // Handle player choice with automatic opposite assignment
+  handlePlayerChoice(address, choice, oppositeChoice) {
     if (!this.players.includes(address)) {
       return false
     }
 
     console.log(`🎯 Player choice in room ${this.gameId}: ${address} chose ${choice}`)
 
+    // Set the current player's choice
     this.playerChoices.set(address, choice)
+    
+    // Automatically assign opposite choice to the other player
+    const otherPlayer = this.players.find(p => p !== address)
+    if (otherPlayer && oppositeChoice) {
+      this.playerChoices.set(otherPlayer, oppositeChoice)
+      console.log(`🔄 Auto-assigned ${oppositeChoice} to ${otherPlayer}`)
+    }
 
-    // Broadcast choice made
+    // Broadcast both choices made
     this.broadcast({
-      type: 'PLAYER_CHOICE_MADE',
+      type: 'BOTH_CHOICES_MADE',
       gameId: this.gameId,
-      player: address,
-      choice,
+      activePlayer: address,
+      activeChoice: choice,
+      otherPlayer: otherPlayer,
+      otherChoice: oppositeChoice,
       round: this.currentRound,
       timestamp: Date.now()
     })
 
-    // Check if both players have chosen
-    if (this.playerChoices.size === 2) {
-      this.startPowerPhase()
-    }
+    // Since both choices are now made, start power phase
+    this.startPowerPhase()
 
     return true
   }

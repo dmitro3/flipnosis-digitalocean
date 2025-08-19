@@ -70,6 +70,75 @@ export const useGameRoomWebSocket = (gameId, address, gameData) => {
     }
   }, [gameId, address, gameData])
 
+  // WebSocket message handler for game room events
+  const handleWebSocketMessage = (data) => {
+    console.log('🎮 Game room message received:', data)
+    
+    switch (data.type) {
+      case 'BOTH_CHOICES_MADE':
+        console.log('✅ Both player choices made:', data)
+        // Trigger an event that the game room state can listen to
+        window.dispatchEvent(new CustomEvent('gameRoomChoicesMade', { 
+          detail: {
+            activePlayer: data.activePlayer,
+            activeChoice: data.activeChoice,
+            otherPlayer: data.otherPlayer,
+            otherChoice: data.otherChoice,
+            round: data.round
+          }
+        }))
+        showInfo(`${data.activeChoice.toUpperCase()} vs ${data.otherChoice.toUpperCase()} - Power phase starting!`)
+        break
+        
+      case 'POWER_PHASE_STARTED':
+        console.log('⚡ Power phase started')
+        window.dispatchEvent(new CustomEvent('gameRoomPowerPhase', { detail: data }))
+        break
+        
+      case 'FLIP_RESULT':
+        console.log('🎲 Flip result received:', data)
+        window.dispatchEvent(new CustomEvent('gameRoomFlipResult', { detail: data }))
+        break
+        
+      case 'ROUND_COMPLETED':
+        console.log('🏁 Round completed:', data)
+        window.dispatchEvent(new CustomEvent('gameRoomRoundComplete', { detail: data }))
+        break
+        
+      case 'GAME_COMPLETED':
+        console.log('🏆 Game completed:', data)
+        window.dispatchEvent(new CustomEvent('gameRoomGameComplete', { detail: data }))
+        break
+        
+      default:
+        console.log('📨 Unhandled game room message:', data.type)
+    }
+  }
+
+  // Set up WebSocket message listeners
+  useEffect(() => {
+    if (wsConnected && webSocketService) {
+      // Add event listener for raw WebSocket messages
+      const ws = webSocketService.getWebSocket()
+      if (ws) {
+        const messageHandler = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            handleWebSocketMessage(data)
+          } catch (error) {
+            console.error('❌ Error parsing game room WebSocket message:', error)
+          }
+        }
+
+        ws.addEventListener('message', messageHandler)
+        
+        return () => {
+          ws.removeEventListener('message', messageHandler)
+        }
+      }
+    }
+  }, [wsConnected, webSocketService])
+
   // Game room specific message handlers
   const handlePlayerChoice = (choice) => {
     try {

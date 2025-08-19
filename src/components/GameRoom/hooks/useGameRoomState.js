@@ -309,6 +309,111 @@ export const useGameRoomState = (gameId, address, gameData) => {
     })
   }
 
+  // Initialize game when both players are present
+  useEffect(() => {
+    console.log('🎮 Game room initialization check:', {
+      gameData,
+      creatorDeposited: gameData?.creator_deposited,
+      challengerDeposited: gameData?.challenger_deposited,
+      status: gameData?.status,
+      phase: gameState.phase,
+      roundCountdown,
+      currentRound: gameState.currentRound
+    })
+
+    // Auto-start the game when both players have deposited and we're in choosing phase
+    if (gameData?.creator_deposited && 
+        gameData?.challenger_deposited && 
+        gameData?.status === 'active' && 
+        gameState.phase === 'choosing' && 
+        !roundCountdown && 
+        gameState.currentRound <= 5) {
+      
+      console.log('🚀 Auto-starting game countdown!')
+      startRoundCountdown()
+    }
+  }, [gameData, gameState.phase, roundCountdown, gameState.currentRound])
+
+  // Listen for game room events from WebSocket
+  useEffect(() => {
+    const handleChoicesMade = (event) => {
+      const { activePlayer, activeChoice, otherPlayer, otherChoice } = event.detail
+      console.log('🎯 Handling choices made event:', event.detail)
+      
+      // Update player choices
+      const creatorAddress = getGameCreator()
+      const joinerAddress = getGameJoiner()
+      
+      let creatorChoice, joinerChoice
+      if (activePlayer === creatorAddress) {
+        creatorChoice = activeChoice
+        joinerChoice = otherChoice
+      } else {
+        creatorChoice = otherChoice
+        joinerChoice = activeChoice
+      }
+      
+      setPlayerChoices({
+        creator: creatorChoice,
+        joiner: joinerChoice
+      })
+      
+      setGameState(prev => ({
+        ...prev,
+        phase: 'charging',
+        creatorChoice,
+        joinerChoice
+      }))
+      
+      // Stop the countdown since choices are made
+      stopRoundCountdown()
+    }
+    
+    const handlePowerPhase = (event) => {
+      console.log('⚡ Power phase started')
+      setGameState(prev => ({
+        ...prev,
+        phase: 'charging'
+      }))
+    }
+    
+    const handleFlipResult = (event) => {
+      console.log('🎲 Handling flip result:', event.detail)
+      handleFlipResult(event.detail)
+    }
+    
+    const handleRoundComplete = (event) => {
+      console.log('🏁 Round completed, preparing for next round')
+      setTimeout(() => {
+        resetForNextRound()
+        // Start countdown for next round
+        if (gameState.currentRound < 5) {
+          startRoundCountdown()
+        }
+      }, 2000) // Give time to show results
+    }
+    
+    const handleGameComplete = (event) => {
+      console.log('🏆 Game completed!')
+      handleGameCompleted(event.detail)
+    }
+
+    // Add event listeners
+    window.addEventListener('gameRoomChoicesMade', handleChoicesMade)
+    window.addEventListener('gameRoomPowerPhase', handlePowerPhase)
+    window.addEventListener('gameRoomFlipResult', handleFlipResult)
+    window.addEventListener('gameRoomRoundComplete', handleRoundComplete)
+    window.addEventListener('gameRoomGameComplete', handleGameComplete)
+    
+    return () => {
+      window.removeEventListener('gameRoomChoicesMade', handleChoicesMade)
+      window.removeEventListener('gameRoomPowerPhase', handlePowerPhase)
+      window.removeEventListener('gameRoomFlipResult', handleFlipResult)
+      window.removeEventListener('gameRoomRoundComplete', handleRoundComplete)
+      window.removeEventListener('gameRoomGameComplete', handleGameComplete)
+    }
+  }, [gameState.currentRound, getGameCreator, getGameJoiner])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
