@@ -92,6 +92,7 @@ const GameLobby = () => {
 
   // Lobby WebSocket management
   const [wsConnected, setWsConnected] = useState(false)
+  const [wsRef, setWsRef] = useState(null)
 
   // Connect to lobby when component mounts
   useEffect(() => {
@@ -99,8 +100,9 @@ const GameLobby = () => {
       if (!gameId || !address) return
       
       const lobbyRoomId = `game_${gameId}`
-      await webSocketService.connect(lobbyRoomId, address)
+      const ws = await webSocketService.connect(lobbyRoomId, address)
       setWsConnected(true)
+      setWsRef(ws)
     }
     
     initLobby()
@@ -446,7 +448,7 @@ const GameLobby = () => {
                   <OffersContainer
                     gameId={gameId}
                     gameData={gameData}
-                    socket={wsRef}
+                    socket={webSocketService}
                     connected={wsConnected}
                   />
                 ) : (
