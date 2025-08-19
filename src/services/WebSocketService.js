@@ -11,9 +11,9 @@ if (typeof window !== 'undefined') {
     connected: false,
     gameId: null,
     address: null,
-    currentRoom: null, // ADD this
+    currentRoom: null,
     reconnectAttempts: 0,
-    maxReconnectAttempts: 10, // Increased from 5
+    maxReconnectAttempts: 10,
     reconnectDelay: 2000,
     messageHandlers: new Map(),
     connectionPromise: null,
@@ -28,9 +28,9 @@ if (typeof window !== 'undefined') {
         this.disconnect()
       }
       
-      this.gameId = roomId  // Use roomId instead of gameId
-      this.address = address
       this.currentRoom = roomId  // Track current room
+      this.address = address
+      this.gameId = roomId.replace('game_room_', '').replace('game_', '')  // Extract actual gameId
 
       // Clear any existing reconnect timer
       if (this.reconnectTimer) {
@@ -106,7 +106,7 @@ if (typeof window !== 'undefined') {
               this.reconnectTimer = setTimeout(() => {
                 this.reconnectAttempts++
                 console.log(`🔄 Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-                this.connect(this.gameId, this.address)
+                this.connect(this.currentRoom, this.address)
               }, delay)
             } else {
               console.error('❌ Max reconnection attempts reached')
@@ -169,7 +169,7 @@ if (typeof window !== 'undefined') {
       console.warn('⚠️ Cannot send message - WebSocket not connected')
       
       // Try to reconnect
-      this.connect(this.gameId, this.address)
+      this.connect(this.currentRoom, this.address)
       return false
     },
 
@@ -227,7 +227,7 @@ if (typeof window !== 'undefined') {
     forceReconnect: function() {
       this.disconnect()
       this.reconnectAttempts = 0
-      return this.connect(this.gameId, this.address)
+      return this.connect(this.currentRoom, this.address)
     }
   }
 
