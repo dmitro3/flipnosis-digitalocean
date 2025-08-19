@@ -156,8 +156,7 @@ const SendButton = styled.button`
   }
 `
 
-const ChatContainer = () => {
-  const { gameId } = useParams()
+const ChatContainer = ({ gameId, gameData, socket, connected }) => {
   const { address } = useAccount()
   const { getPlayerName } = useProfile()
   const [messages, setMessages] = useState([])
@@ -184,6 +183,7 @@ const ChatContainer = () => {
         if (!names[addr] && addr && addr !== 'System') {
           try {
             const name = await getPlayerName(addr)
+            // Use the same logic as GameRoom: if name is empty, use truncated address
             names[addr] = name || `${addr.slice(0, 6)}...${addr.slice(-4)}`
           } catch (error) {
             console.error('Error loading player name for:', addr, error)
@@ -202,8 +202,8 @@ const ChatContainer = () => {
   useEffect(() => {
     if (!gameId || !address) return
 
-    // Use the global WebSocket service
-    const ws = window.FlipnosisWS
+    // Use the passed socket prop if available, otherwise fall back to global WebSocket service
+    const ws = socket || window.FlipnosisWS
     if (!ws) {
       console.error('❌ WebSocket service not available')
       return
@@ -211,16 +211,22 @@ const ChatContainer = () => {
 
     console.log('🔌 Connecting to WebSocket for chat...')
     
-    // Connect to WebSocket
-    ws.connect(gameId, address)
-      .then(() => {
-        console.log('✅ Connected to WebSocket for chat')
-        setIsConnected(true)
-      })
-      .catch((error) => {
-        console.error('❌ Failed to connect to WebSocket:', error)
-        setIsConnected(false)
-      })
+    // If we have a socket prop, assume it's already connected
+    if (socket && connected) {
+      console.log('✅ Using passed socket connection for chat')
+      setIsConnected(true)
+    } else {
+      // Connect to WebSocket using global service
+      ws.connect(gameId, address)
+        .then(() => {
+          console.log('✅ Connected to WebSocket for chat')
+          setIsConnected(true)
+        })
+        .catch((error) => {
+          console.error('❌ Failed to connect to WebSocket:', error)
+          setIsConnected(false)
+        })
+    }
 
     // Set up message handlers
     const handleChatMessage = (data) => {
@@ -309,9 +315,9 @@ const ChatContainer = () => {
 
   const sendMessage = (e) => {
     e.preventDefault()
-    if (!newMessage.trim() || !isConnected) return
+    if (!newMessage.trim() || !(connected || isConnected)) return
 
-    const ws = window.FlipnosisWS
+    const ws = socket || window.FlipnosisWS
     if (!ws) {
       console.error('❌ WebSocket service not available')
       return
@@ -340,8 +346,9 @@ const ChatContainer = () => {
   const getDisplayName = (sender) => {
     if (sender === 'System') return 'System'
     if (sender === address) return 'You'
+    // Check if we have a name for this sender (including empty string fallback)
     if (playerNames[sender]) return playerNames[sender]
-    // Return a more readable truncated address format
+    // Fallback to truncated address if no name found
     return sender ? `${sender.slice(0, 6)}...${sender.slice(-4)}` : 'Anonymous'
   }
 
@@ -354,9 +361,9 @@ const ChatContainer = () => {
       <ChatHeader>
         <ChatTitle>💬 Game Chat</ChatTitle>
         <ConnectionStatus>
-          <StatusDot connected={isConnected} />
-          <StatusText connected={isConnected}>
-            {isConnected ? 'Connected' : 'Disconnected'}
+          <StatusDot connected={connected || isConnected} />
+          <StatusText connected={connected || isConnected}>
+            {(connected || isConnected) ? 'Connected' : 'Disconnected'}
           </StatusText>
         </ConnectionStatus>
       </ChatHeader>
@@ -418,7 +425,7 @@ const ChatContainer = () => {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder={isConnected ? "Type your message..." : "Reconnecting... (you can still type)"}
+          placeholder={(connected || isConnected) ? "Type your message..." : "Reconnecting... (you can still type)"}
           disabled={false}
           onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
         />
@@ -426,11 +433,11 @@ const ChatContainer = () => {
           onClick={sendMessage}
           disabled={!newMessage.trim()}
           style={{
-            background: isConnected ? '#00BFFF' : '#FFA500',
+            background: (connected || isConnected) ? '#00BFFF' : '#FFA500',
             cursor: newMessage.trim() ? 'pointer' : 'not-allowed'
           }}
         >
-          {isConnected ? 'Send' : 'Queue'}
+          {(connected || isConnected) ? 'Send' : 'Queue'}
         </SendButton>
       </InputContainer>
     </ChatContainerStyled>
