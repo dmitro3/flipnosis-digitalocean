@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useProfile } from '../../contexts/ProfileContext'
+import ProfilePicture from '../ProfilePicture'
 import styled from '@emotion/styled'
 
 const ChatContainerStyled = styled.div`
@@ -100,6 +101,12 @@ const MessageHeader = styled.div`
   color: ${props => props.isCurrentUser ? '#00BFFF' : '#FFD700'};
 `
 
+const MessageSender = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`
+
 const MessageContent = styled.div`
   color: #fff;
   word-break: break-word;
@@ -138,7 +145,7 @@ const Input = styled.input`
 
 const SendButton = styled.button`
   padding: 0.75rem 1rem;
-  background: #00BFFF;
+  background: #00FF41;
   color: #000;
   border: none;
   border-radius: 0.5rem;
@@ -147,7 +154,7 @@ const SendButton = styled.button`
   transition: all 0.2s ease;
   
   &:hover:not(:disabled) {
-    background: #0099CC;
+    background: #00CC33;
   }
   
   &:disabled {
@@ -409,7 +416,13 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
             return (
               <Message key={msg.id || index} isCurrentUser={isCurrentUser}>
                 <MessageHeader isCurrentUser={isCurrentUser}>
-                  <span>💬 {displayName}</span>
+                  <MessageSender>
+                    <ProfilePicture 
+                      address={msg.sender}
+                      size={24}
+                    />
+                    <span>💬 {displayName}</span>
+                  </MessageSender>
                   <span>{formatTimestamp(msg.timestamp)}</span>
                 </MessageHeader>
                 <MessageContent>{msg.message}</MessageContent>
@@ -433,7 +446,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
           onClick={sendMessage}
           disabled={!newMessage.trim()}
           style={{
-            background: (connected || isConnected) ? '#00BFFF' : '#FFA500',
+            background: (connected || isConnected) ? '#00FF41' : '#FFA500',
             cursor: newMessage.trim() ? 'pointer' : 'not-allowed'
           }}
         >
