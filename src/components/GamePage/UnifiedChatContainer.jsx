@@ -9,7 +9,7 @@ const ChatContainerStyled = styled.div`
   border: 1px solid rgba(0, 255, 65, 0.3);
   border-radius: 1rem;
   padding: 1rem;
-  height: 500px;
+  height: 667px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
@@ -332,49 +332,52 @@ const UnifiedChatContainer = ({
       try {
         console.log('💬 Unified Chat: WebSocket message received:', data)
         
-        if (data.type === 'chat_message') {
-          console.log('💬 Chat message received:', data)
+        // Handle both raw WebSocket events and parsed data
+        const messageData = data.data || data
+        
+        if (messageData.type === 'chat_message') {
+          console.log('💬 Chat message received:', messageData)
           addMessage({
             id: Date.now() + Math.random(),
             type: 'chat',
-            address: data.from,
-            message: data.message,
-            timestamp: data.timestamp || new Date().toISOString()
+            address: messageData.from,
+            message: messageData.message,
+            timestamp: messageData.timestamp || new Date().toISOString()
           })
-        } else if (data.type === 'nft_offer') {
-          console.log('💎 NFT offer received:', data)
+        } else if (messageData.type === 'nft_offer') {
+          console.log('💎 NFT offer received:', messageData)
           addMessage({
             id: Date.now() + Math.random(),
             type: 'nft_offer',
-            address: data.offererAddress,
-            nft: data.nft,
-            timestamp: data.timestamp || new Date().toISOString(),
-            offerId: data.offerId,
-            offerText: data.offerText
+            address: messageData.offererAddress,
+            nft: messageData.nft,
+            timestamp: messageData.timestamp || new Date().toISOString(),
+            offerId: messageData.offerId,
+            offerText: messageData.offerText
           })
-        } else if (data.type === 'crypto_offer') {
-          console.log('💰 Crypto offer received:', data)
+        } else if (messageData.type === 'crypto_offer') {
+          console.log('💰 Crypto offer received:', messageData)
           addMessage({
             id: Date.now() + Math.random(),
             type: 'crypto_offer',
-            address: data.offererAddress,
-            cryptoAmount: data.cryptoAmount,
-            timestamp: data.timestamp || new Date().toISOString(),
-            offerId: data.offerId
+            address: messageData.offererAddress,
+            cryptoAmount: messageData.cryptoAmount,
+            timestamp: messageData.timestamp || new Date().toISOString(),
+            offerId: messageData.offerId
           })
           
           // Show success message to the offerer
-          if (data.offererAddress === address) {
-            showSuccess(`Your offer of $${data.cryptoAmount} USD has been submitted!`)
+          if (messageData.offererAddress === address) {
+            showSuccess(`Your offer of $${messageData.cryptoAmount} USD has been submitted!`)
           }
-        } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
-          console.log('✅ Offer accepted:', data)
+        } else if (messageData.type === 'accept_nft_offer' || messageData.type === 'accept_crypto_offer') {
+          console.log('✅ Offer accepted:', messageData)
           addMessage({
             id: Date.now() + Math.random(),
             type: 'offer_accepted',
-            address: data.creatorAddress,
-            acceptedOffer: data.acceptedOffer,
-            timestamp: data.timestamp || new Date().toISOString()
+            address: messageData.creatorAddress,
+            acceptedOffer: messageData.acceptedOffer,
+            timestamp: messageData.timestamp || new Date().toISOString()
           })
           
           // Force reload game data to get updated status
@@ -385,19 +388,19 @@ const UnifiedChatContainer = ({
           }
           
           // Add a system message to prompt the joiner to load their crypto
-          if (data.type === 'accept_crypto_offer' && data.acceptedOffer?.cryptoAmount) {
+          if (messageData.type === 'accept_crypto_offer' && messageData.acceptedOffer?.cryptoAmount) {
             addMessage({
               id: Date.now() + Math.random() + 1,
               type: 'system',
               address: 'system',
-              message: `🎮 Game accepted! Player 2, please load your ${data.acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`,
+              message: `🎮 Game accepted! Player 2, please load your ${messageData.acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`,
               timestamp: new Date().toISOString()
             })
           }
-        } else if (data.type === 'chat_history') {
-          console.log('📚 Chat history received:', data)
-          if (data.messages && Array.isArray(data.messages)) {
-            const historyMessages = data.messages.map(msg => ({
+        } else if (messageData.type === 'chat_history') {
+          console.log('📚 Chat history received:', messageData)
+          if (messageData.messages && Array.isArray(messageData.messages)) {
+            const historyMessages = messageData.messages.map(msg => ({
               id: msg.id || Date.now() + Math.random(),
               type: msg.message_type || 'chat',
               address: msg.sender_address,
@@ -469,13 +472,16 @@ const UnifiedChatContainer = ({
       console.log('🔍 WebSocket connection check for chat:', isSocketConnected)
       
       if (isSocketConnected) {
-        socket.send({
+        const messageData = {
           type: 'chat_message',
           gameId,
           message: chatMessage.trim(),
           from: address,
           timestamp: new Date().toISOString()
-        })
+        }
+        
+        console.log('📤 Sending chat message:', messageData)
+        socket.send(messageData)
         
         console.log('💬 Chat message sent via WebSocket')
         setChatMessage('')
@@ -512,13 +518,16 @@ const UnifiedChatContainer = ({
       console.log('🔍 WebSocket connection check for offer:', isSocketConnected)
       
       if (isSocketConnected) {
-        socket.send({
+        const messageData = {
           type: 'crypto_offer',
           listingId: gameData.listing_id,
           address: address,
           cryptoAmount: offerAmount,
           timestamp: new Date().toISOString()
-        })
+        }
+        
+        console.log('📤 Sending crypto offer:', messageData)
+        socket.send(messageData)
         
         console.log('💰 Crypto offer sent via WebSocket')
         showSuccess(`Offer of $${offerAmount.toFixed(2)} USD sent!`)

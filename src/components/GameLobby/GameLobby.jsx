@@ -394,7 +394,7 @@ const GameLobby = () => {
                  border: '2px solid #FFD700',
                  borderRadius: '1rem',
                  padding: '1rem',
-                 height: '500px',
+                                   height: '667px',
                  display: 'flex',
                  flexDirection: 'column',
                  boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',

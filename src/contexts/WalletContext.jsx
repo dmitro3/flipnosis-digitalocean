@@ -219,10 +219,10 @@ export const WalletProvider = ({ children }) => {
     }
   }, [address, loadNFTs])
 
-  // Show connection success
+  // Show connection success (removed debug message)
   useEffect(() => {
     if (isConnected && address && !lastInitializedAddress.current) {
-      showSuccess(`Connected: ${address.slice(0, 6)}...${address.slice(-4)}`)
+      // Connection success handled silently to avoid spam
     }
   }, [isConnected, address, showSuccess])
 

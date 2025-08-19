@@ -7,7 +7,7 @@ const CoinContainerStyled = styled.div`
   border: 2px solid #FFD700;
   border-radius: 1rem;
   padding: 1rem;
-  height: 500px;
+  height: 667px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,11 +19,15 @@ const CoinContainerStyled = styled.div`
 
 const CoinTitle = styled.h3`
   margin: 0 0 1rem 0;
-  color: #FFD700;
+  color: #FF1493;
   font-size: 1.2rem;
   font-weight: bold;
   text-align: center;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
+  background: rgba(0, 0, 139, 0.8);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 20, 147, 0.3);
 `
 
 const CoinWrapper = styled.div`
@@ -46,7 +50,7 @@ const CoinContainer = ({
 }) => {
   return (
     <CoinContainerStyled>
-      <CoinTitle>🎲 Game Coin Preview</CoinTitle>
+      <CoinTitle>Game Coin</CoinTitle>
       <CoinWrapper>
         <div style={{ 
           transform: 'scale(0.8)',
