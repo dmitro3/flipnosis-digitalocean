@@ -384,7 +384,7 @@ const GameLobby = () => {
                                                    {/* Four Container Layout for Lobby - NFT Details, Chat, Offers, and Coin */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr 0.8fr',
+                gridTemplateColumns: '1.2fr 1fr 0.8fr 0.8fr',
                 gap: '2rem',
                 width: '100%',
                 marginTop: '2rem'
