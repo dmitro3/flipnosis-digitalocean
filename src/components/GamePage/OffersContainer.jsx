@@ -397,8 +397,13 @@ const OffersContainer = ({
       
       for (const addr of uniqueAddresses) {
         if (!names[addr] && addr) {
-          const name = await getPlayerName(addr)
-          names[addr] = name || `${addr.slice(0, 6)}...${addr.slice(-4)}`
+          try {
+            const name = await getPlayerName(addr)
+            names[addr] = name || `${addr.slice(0, 6)}...${addr.slice(-4)}`
+          } catch (error) {
+            console.error('Error loading player name for:', addr, error)
+            names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
+          }
         }
       }
       setPlayerNames(names)
@@ -552,7 +557,7 @@ const OffersContainer = ({
               <OfferAmountLabel>💰 Offer Amount:</OfferAmountLabel>
               <OfferAmountValue>${offer.cryptoAmount} USD</OfferAmountValue>
             </OfferAmount>
-            {isCreator() && gameData?.status !== 'waiting_challenger_deposit' && (
+            {isCreator() && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -583,7 +588,7 @@ const OffersContainer = ({
                 <div style={{ color: '#fff', marginTop: '0.25rem' }}>{offer.offerText}</div>
               </div>
             )}
-            {isCreator() && gameData?.status !== 'waiting_challenger_deposit' && (
+            {isCreator() && (
               <OfferActions>
                 <ActionButton 
                   className="accept"

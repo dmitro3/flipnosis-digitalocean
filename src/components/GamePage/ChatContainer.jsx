@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAccount } from 'wagmi'
+import { useProfile } from '../../contexts/ProfileContext'
 import styled from '@emotion/styled'
 
 const ChatContainerStyled = styled.div`
@@ -158,9 +159,11 @@ const SendButton = styled.button`
 const ChatContainer = () => {
   const { gameId } = useParams()
   const { address } = useAccount()
+  const { getPlayerName } = useProfile()
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [isConnected, setIsConnected] = useState(false)
+  const [playerNames, setPlayerNames] = useState({})
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -170,6 +173,31 @@ const ChatContainer = () => {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Load player names for messages
+  useEffect(() => {
+    const loadPlayerNames = async () => {
+      const names = {}
+      const uniqueAddresses = [...new Set(messages.map(m => m.sender).filter(Boolean))]
+      
+      for (const addr of uniqueAddresses) {
+        if (!names[addr] && addr && addr !== 'System') {
+          try {
+            const name = await getPlayerName(addr)
+            names[addr] = name || `${addr.slice(0, 6)}...${addr.slice(-4)}`
+          } catch (error) {
+            console.error('Error loading player name for:', addr, error)
+            names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
+          }
+        }
+      }
+      setPlayerNames(names)
+    }
+
+    if (messages.length > 0) {
+      loadPlayerNames()
+    }
+  }, [messages, getPlayerName])
 
   useEffect(() => {
     if (!gameId || !address) return
@@ -312,6 +340,7 @@ const ChatContainer = () => {
   const getDisplayName = (sender) => {
     if (sender === 'System') return 'System'
     if (sender === address) return 'You'
+    if (playerNames[sender]) return playerNames[sender]
     return sender ? `${sender.slice(0, 6)}...${sender.slice(-4)}` : 'Unknown'
   }
 
