@@ -241,6 +241,7 @@ const OffersContainer = ({
   gameData, 
   socket, 
   connected,
+  offers: initialOffers = [],
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
@@ -248,7 +249,7 @@ const OffersContainer = ({
   const { getPlayerName } = useProfile()
   const { showError, showSuccess, showInfo } = useToast()
   
-  const [offers, setOffers] = useState([])
+  const [offers, setOffers] = useState(initialOffers)
   const [cryptoOffer, setCryptoOffer] = useState('')
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
   const [playerNames, setPlayerNames] = useState({})
@@ -259,6 +260,11 @@ const OffersContainer = ({
   const gamePrice = gameData?.payment_amount || gameData?.price_usd || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || 0
   const minOfferAmount = gamePrice * 0.8 // 80% of the game price
   
+  // Update offers when initialOffers prop changes
+  useEffect(() => {
+    setOffers(initialOffers)
+  }, [initialOffers])
+
   // Auto scroll to bottom when new offers arrive
   useEffect(() => {
     offersEndRef.current?.scrollIntoView({ behavior: 'smooth' })
