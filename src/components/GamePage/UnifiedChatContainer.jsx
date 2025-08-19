@@ -315,6 +315,8 @@ const UnifiedChatContainer = ({
   connected,
   onOfferAccepted 
 }) => {
+  console.log('🚀 UNIFIED CHAT CONTAINER RENDERED!', { gameId, hasGameData: !!gameData, hasSocket: !!socket, connected })
+  
   const { address, isConnected } = useWallet()
   const { getPlayerName } = useProfile()
   const { showError, showSuccess, showInfo } = useToast()
@@ -919,4 +921,5 @@ const UnifiedChatContainer = ({
   )
 }
 
+console.log('📦 UNIFIED CHAT CONTAINER MODULE LOADED!')
 export default UnifiedChatContainer
