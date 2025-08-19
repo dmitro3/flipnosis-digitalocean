@@ -11,6 +11,7 @@ if (typeof window !== 'undefined') {
     connected: false,
     gameId: null,
     address: null,
+    currentRoom: null, // ADD this
     reconnectAttempts: 0,
     maxReconnectAttempts: 10, // Increased from 5
     reconnectDelay: 2000,
@@ -20,9 +21,16 @@ if (typeof window !== 'undefined') {
     pingInterval: null,
 
     // Connect to WebSocket
-    connect: function(gameId, address) {
-      this.gameId = gameId
+    connect: function(roomId, address) {
+      // If connecting to a different room, disconnect first
+      if (this.currentRoom && this.currentRoom !== roomId) {
+        console.log(`🔄 Switching from room ${this.currentRoom} to ${roomId}`)
+        this.disconnect()
+      }
+      
+      this.gameId = roomId  // Use roomId instead of gameId
       this.address = address
+      this.currentRoom = roomId  // Track current room
 
       // Clear any existing reconnect timer
       if (this.reconnectTimer) {
@@ -51,7 +59,7 @@ if (typeof window !== 'undefined') {
           this.socket = new WebSocket(wsUrl)
           
           this.socket.onopen = () => {
-            console.log('✅ WebSocket connected')
+            console.log('✅ WebSocket connected to room:', roomId)
             this.connected = true
             this.reconnectAttempts = 0
             this.connectionPromise = null
@@ -59,20 +67,13 @@ if (typeof window !== 'undefined') {
             // Setup ping-pong to keep connection alive
             this.setupPingPong()
             
-            // Join room and register user
-            if (this.gameId) {
-              this.socket.send(JSON.stringify({
-                type: 'join_room',
-                roomId: this.gameId
-              }))
-            }
-            
-            if (this.address) {
-              this.socket.send(JSON.stringify({
-                type: 'register_user',
-                address: this.address
-              }))
-            }
+            // Join the specific room
+            this.socket.send(JSON.stringify({
+              type: roomId.startsWith('game_room_') ? 'join_game_room' : 'join_room',
+              roomId,
+              gameId: roomId.replace('game_room_', '').replace('game_', ''),
+              address
+            }))
             
             resolve(this.socket)
           }

@@ -5,7 +5,7 @@ import ProfilePicture from '../ProfilePicture'
 import GameBackground from '../GamePage/GameBackground'
 import GameResultPopup from '../GameResultPopup'
 import { useGameRoomState } from './hooks/useGameRoomState'
-import { useGameRoomWebSocket } from './hooks/useGameRoomWebSocket'
+import webSocketService from '../../services/WebSocketService'
 import { useProfile } from '../../contexts/ProfileContext'
 import { theme } from '../../styles/theme'
 
@@ -332,8 +332,8 @@ const GameRoom = ({
   customTailsImage,
   gameCoin
 }) => {
-  // Get profile functions
-  const { getPlayerName } = useProfile()
+  const { address, getPlayerName } = useProfile()
+  const [wsConnected, setWsConnected] = useState(false)
   
   // State for player names
   const [creatorName, setCreatorName] = useState('')
@@ -365,14 +365,95 @@ const GameRoom = ({
     getChoosingPlayer // FIXED: Use the improved turn determination
   } = useGameRoomState(gameId, gameData?.creator || gameData?.creator_address, gameData)
 
-  // Use game room WebSocket
-  const {
-    wsConnected,
-    handlePlayerChoice,
-    handlePowerChargeStart,
-    handlePowerChargeStop,
-    handleForfeit
-  } = useGameRoomWebSocket(gameId, gameData?.creator || gameData?.creator_address, gameData)
+  // Connect to game room when component mounts
+  useEffect(() => {
+    const initGameRoom = async () => {
+      if (!gameId || !address) return
+      
+      const gameRoomId = `game_room_${gameId}`
+      await webSocketService.connect(gameRoomId, address)
+      setWsConnected(true)
+      
+      // Set up message handling
+      const handleMessage = (data) => {
+        console.log('🎮 Game room message:', data)
+        
+        switch (data.type) {
+          case 'CHOICES_MADE':
+            // Update UI with both player choices
+            setPlayerChoices({
+              creator: data.player1Choice,
+              joiner: data.player2Choice  
+            })
+            setGameState(prev => ({
+              ...prev,
+              phase: 'charging',
+              currentTurn: data.currentTurn
+            }))
+            break
+            
+          case 'POWER_PHASE_STARTED':
+            setGameState(prev => ({
+              ...prev,
+              phase: 'charging',
+              currentTurn: data.currentTurn
+            }))
+            break
+            
+          // ... other message handlers
+        }
+      }
+      
+      webSocketService.on('CHOICES_MADE', handleMessage)
+      webSocketService.on('POWER_PHASE_STARTED', handleMessage)
+      // ... register other handlers
+    }
+    
+    initGameRoom()
+  }, [gameId, address])
+  
+  // Choice handler
+  const handlePlayerChoice = (choice) => {
+    const oppositeChoice = choice === 'heads' ? 'tails' : 'heads'
+    
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'MAKE_CHOICE',
+      player: address,
+      choice,
+      oppositeChoice
+    })
+  }
+
+  // Power charge handlers
+  const handlePowerChargeStart = () => {
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'POWER_CHARGE_START',
+      player: address
+    })
+  }
+
+  const handlePowerChargeStop = (powerLevel) => {
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'POWER_CHARGED',
+      player: address,
+      powerLevel
+    })
+  }
+
+  const handleForfeit = () => {
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'FORFEIT_GAME',
+      player: address
+    })
+  }
 
   const currentRound = gameState?.currentRound || 1
   const totalRounds = 5

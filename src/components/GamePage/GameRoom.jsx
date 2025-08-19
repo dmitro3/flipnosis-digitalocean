@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { ThemeProvider } from '@emotion/react'
 import ProfilePicture from '../ProfilePicture'
 import GameBackground from './GameBackground'
 import GameResultPopup from '../GameResultPopup'
 import { useGameRoomState } from '../GameRoom/hooks/useGameRoomState'
-import { useGameRoomWebSocket } from '../GameRoom/hooks/useGameRoomWebSocket'
+import webSocketService from '../../services/WebSocketService'
 import { theme } from '../../styles/theme'
 
 const GameRoomContainer = styled.div`
@@ -339,14 +339,64 @@ const GameRoom = ({
     getGameJoiner
   } = useGameRoomState(gameId, gameData?.creator || gameData?.creator_address, gameData)
 
-  // Use game room WebSocket
-  const {
-    wsConnected,
-    handlePlayerChoice,
-    handlePowerChargeStart,
-    handlePowerChargeStop,
-    handleForfeit
-  } = useGameRoomWebSocket(gameId, gameData?.creator || gameData?.creator_address, gameData)
+  // WebSocket connection state
+  const [wsConnected, setWsConnected] = useState(false)
+
+  // Connect to game room when component mounts
+  useEffect(() => {
+    const initGameRoom = async () => {
+      if (!gameId || !gameData?.creator) return
+      
+      const gameRoomId = `game_room_${gameId}`
+      await webSocketService.connect(gameRoomId, gameData.creator)
+      setWsConnected(true)
+    }
+    
+    initGameRoom()
+  }, [gameId, gameData?.creator])
+
+  // Choice handler
+  const handlePlayerChoice = (choice) => {
+    const oppositeChoice = choice === 'heads' ? 'tails' : 'heads'
+    
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'MAKE_CHOICE',
+      player: gameData.creator,
+      choice,
+      oppositeChoice
+    })
+  }
+
+  // Power charge handlers
+  const handlePowerChargeStart = () => {
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'POWER_CHARGE_START',
+      player: gameData.creator
+    })
+  }
+
+  const handlePowerChargeStop = (powerLevel) => {
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'POWER_CHARGED',
+      player: gameData.creator,
+      powerLevel
+    })
+  }
+
+  const handleForfeit = () => {
+    webSocketService.send({
+      type: 'GAME_ACTION',
+      gameId,
+      action: 'FORFEIT_GAME',
+      player: gameData.creator
+    })
+  }
 
   const currentRound = gameState?.currentRound || 1
   const totalRounds = 5

@@ -140,38 +140,59 @@ class GameRoom {
   }
 
   // Handle player choice with automatic opposite assignment
-  handlePlayerChoice(address, choice, oppositeChoice) {
-    if (!this.players.includes(address)) {
+  handlePlayerChoice(player, choice, oppositeChoice) {
+    console.log(`🎯 Player ${player} choosing ${choice}`)
+    
+    // Determine which player this is
+    const isPlayer1 = player === this.player1
+    const isPlayer2 = player === this.player2
+    
+    if (!isPlayer1 && !isPlayer2) {
+      console.error('❌ Invalid player making choice:', player)
       return false
     }
-
-    console.log(`🎯 Player choice in room ${this.gameId}: ${address} chose ${choice}`)
-
-    // Set the current player's choice
-    this.playerChoices.set(address, choice)
     
-    // Automatically assign opposite choice to the other player
-    const otherPlayer = this.players.find(p => p !== address)
-    if (otherPlayer && oppositeChoice) {
-      this.playerChoices.set(otherPlayer, oppositeChoice)
-      console.log(`🔄 Auto-assigned ${oppositeChoice} to ${otherPlayer}`)
+    // Check if it's this player's turn (based on round)
+    const isPlayer1Turn = this.currentRound % 2 === 1 // Odd rounds = Player 1
+    const isValidTurn = (isPlayer1 && isPlayer1Turn) || (isPlayer2 && !isPlayer1Turn)
+    
+    if (!isValidTurn) {
+      console.log('⚠️ Not this player\'s turn')
+      return false
     }
-
-    // Broadcast both choices made
+    
+    // Set player choices
+    if (isPlayer1) {
+      this.playerChoices.set(this.player1, choice)
+      this.playerChoices.set(this.player2, oppositeChoice)
+    } else {
+      this.playerChoices.set(this.player2, choice)  
+      this.playerChoices.set(this.player1, oppositeChoice)
+    }
+    
+    // Broadcast choices made
     this.broadcast({
-      type: 'BOTH_CHOICES_MADE',
+      type: 'CHOICES_MADE',
       gameId: this.gameId,
-      activePlayer: address,
-      activeChoice: choice,
-      otherPlayer: otherPlayer,
-      otherChoice: oppositeChoice,
+      player1Choice: this.playerChoices.get(this.player1),
+      player2Choice: this.playerChoices.get(this.player2),
+      activePlayer: player,
       round: this.currentRound,
       timestamp: Date.now()
     })
-
-    // Since both choices are now made, start power phase
-    this.startPowerPhase()
-
+    
+    // Move to power charging phase
+    this.state = 'power_charging'
+    this.currentTurn = this.player1 // Player 1 always charges first
+    
+    this.broadcast({
+      type: 'POWER_PHASE_STARTED', 
+      gameId: this.gameId,
+      currentTurn: this.currentTurn,
+      round: this.currentRound,
+      timestamp: Date.now()
+    })
+    
     return true
   }
 

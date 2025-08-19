@@ -1,6 +1,5 @@
 const crypto = require('crypto')
 const CoinStreamService = require('../services/coinStream')
-const GameEngine = require('../services/gameEngine')
 const GameRoom = require('../services/gameRoom')
 
 // Room management
@@ -9,17 +8,8 @@ const gameRooms = new Map() // Private game rooms: game_room_${gameId} -> GameRo
 const socketRooms = new Map() // socketId -> roomId
 const userSockets = new Map() // address -> socket
 
-// Initialize game engine
-let gameEngine = null
-
 // Create WebSocket handlers
 function createWebSocketHandlers(wss, dbService, blockchainService) {
-  // Initialize game engine
-  gameEngine = new GameEngine(dbService, {
-    broadcastToRoom: (roomId, message) => broadcastToRoom(roomId, message),
-    broadcastToAll: (message) => broadcastToAll(message),
-    sendToUser: (address, message) => sendToUser(address, message)
-  })
   // Handle WebSocket connections
   wss.on('connection', (socket, req) => {
     socket.id = crypto.randomBytes(16).toString('hex')
@@ -388,50 +378,19 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     const { gameId, action, choice, player, powerLevel, oppositeChoice } = data
     console.log('🎯 Processing game action:', { gameId, action, choice, player, oppositeChoice })
     
-    // Check if this is a game room action first
+    // Only handle game room actions
     const gameRoomId = `game_room_${gameId}`
     const gameRoom = gameRooms.get(gameRoomId)
     
     if (gameRoom) {
-      // Handle action in game room
       return await handleGameRoomAction(gameRoom, action, choice, player, powerLevel, oppositeChoice)
+    } else {
+      console.error('❌ Game room not found:', gameRoomId)
+      socket.send(JSON.stringify({
+        type: 'game_room_error',
+        error: 'Game room not found'
+      }))
     }
-    
-    // Fallback to original game engine for lobby games
-    if (!gameEngine) {
-      console.error('❌ Game engine not initialized')
-      return
-    }
-    
-    // Get game state from engine
-    let gameState = gameEngine.getGameState(gameId)
-    
-    // If game not in engine, try to initialize it
-    if (!gameState) {
-      console.log('🔄 Game not in engine, initializing...')
-      const db = dbService.getDatabase()
-      
-      db.get('SELECT * FROM games WHERE id = ?', [gameId], async (err, game) => {
-        if (err || !game) {
-          console.error('❌ Game not found in database:', gameId)
-          return
-        }
-        
-        // Initialize game in engine
-        gameState = await gameEngine.initializeGame(gameId, game)
-        if (!gameState) {
-          console.error('❌ Failed to initialize game in engine')
-          return
-        }
-        
-        // Now handle the action
-        await handleGameActionInternal(gameId, action, choice, player, powerLevel)
-      })
-      return
-    }
-    
-    // Handle action with existing game state
-    await handleGameActionInternal(gameId, action, choice, player, powerLevel)
   }
 
   // Handle game room specific actions
@@ -458,35 +417,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
   }
 
-  async function handleGameActionInternal(gameId, action, choice, player, powerLevel) {
-    console.log('🎯 Processing game action with engine:', { gameId, action, choice, player })
-    
-    switch (action) {
-      case 'MAKE_CHOICE':
-        console.log('🎯 Player making choice:', { player, choice, gameId })
-        await gameEngine.handlePlayerChoice(gameId, player, choice)
-        break
-        
-      case 'POWER_CHARGE_START':
-        console.log('⚡ Power charge started:', { player, gameId })
-        await gameEngine.handlePowerChargeStart(gameId, player)
-        break
-        
-      case 'POWER_CHARGED':
-        console.log('⚡ Power charged:', { player, powerLevel, gameId })
-        await gameEngine.handlePowerChargeComplete(gameId, player, powerLevel)
-        break
-        
-      case 'AUTO_FLIP':
-      case 'AUTO_FLIP_TIMEOUT':
-        console.log('🎲 Auto flip triggered:', { player, choice, gameId })
-        // Auto-flip is handled by timers in the game engine
-        break
-        
-      default:
-        console.log('⚠️ Unhandled game action:', action)
-    }
-  }
+
 
 
 
@@ -720,7 +651,6 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     broadcastToAll,
     getUserSocket,
     sendToUser,
-    gameEngine,
     gameRooms
   }
 }

@@ -19,7 +19,7 @@ import GameCountdown from '../GamePage/GameCountdown'
 
 // Lobby-specific hooks
 import { useLobbyState } from './hooks/useLobbyState'
-import { useLobbyWebSocket } from './hooks/useLobbyWebSocket'
+import webSocketService from '../../services/WebSocketService'
 
 // Styles
 import { theme } from '../../styles/theme'
@@ -91,7 +91,39 @@ const GameLobby = () => {
   } = useLobbyState(gameId, address)
 
   // Lobby WebSocket management
-  const { wsConnected, wsRef, sendOfferMessage, sendChatMessage } = useLobbyWebSocket(gameId, address, gameData)
+  const [wsConnected, setWsConnected] = useState(false)
+
+  // Connect to lobby when component mounts
+  useEffect(() => {
+    const initLobby = async () => {
+      if (!gameId || !address) return
+      
+      const lobbyRoomId = `game_${gameId}`
+      await webSocketService.connect(lobbyRoomId, address)
+      setWsConnected(true)
+    }
+    
+    initLobby()
+  }, [gameId, address])
+
+  // Message handlers
+  const sendOfferMessage = (message) => {
+    webSocketService.send({
+      type: 'chat_message',
+      gameId,
+      message,
+      from: address
+    })
+  }
+
+  const sendChatMessage = (message) => {
+    webSocketService.send({
+      type: 'chat_message',
+      gameId,
+      message,
+      from: address
+    })
+  }
 
   // Placeholder for coin display (since we don't need the complex game logic in lobby)
   const [customHeadsImage, setCustomHeadsImage] = useState('/coins/plainh.png')
