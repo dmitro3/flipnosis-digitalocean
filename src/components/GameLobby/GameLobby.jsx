@@ -13,7 +13,8 @@ import GameCoin from '../GamePage/GameCoin'
 import GamePayment from '../GamePage/GamePayment'
 import ProfilePicture from '../ProfilePicture'
 import GameStatusAndNFTContainer from '../GamePage/GameStatusAndNFTContainer'
-import UnifiedChatContainer from '../GamePage/UnifiedChatContainer'
+import ChatContainer from '../GamePage/ChatContainer'
+import OffersContainer from '../GamePage/OffersContainer'
 import CoinContainer from '../GamePage/CoinContainer'
 import GameCountdown from '../GamePage/GameCountdown'
 
@@ -32,7 +33,8 @@ const Container = styled.div`
 `
 
 const GameContainer = styled.div`
-  max-width: 1400px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   padding: 2rem;
   
@@ -379,13 +381,12 @@ const GameLobby = () => {
             
             
             
-                         {/* Three Container Layout for Lobby - NFT Details, Coin Preview, and Chat+Offers */}
+                         {/* Four Container Layout for Lobby - NFT Details, Chat, Offers, and Coin */}
              <div style={{
                display: 'grid',
-               gridTemplateColumns: '1fr 1fr 1fr',
+               gridTemplateColumns: '1fr 1fr 1fr 1fr',
                gap: '2rem',
                width: '100%',
-               maxWidth: '1400px',
                marginTop: '2rem'
              }}>
                {/* NFT Details Container */}
@@ -394,7 +395,7 @@ const GameLobby = () => {
                  border: '2px solid #FFD700',
                  borderRadius: '1rem',
                  padding: '1rem',
-                                   height: '667px',
+                 height: '667px',
                  display: 'flex',
                  flexDirection: 'column',
                  boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
@@ -413,7 +414,29 @@ const GameLobby = () => {
                  />
                </div>
                
-               {/* Coin Preview Container */}
+               {/* Chat Container */}
+               <ChatContainer
+                 gameId={gameId}
+                 gameData={gameData}
+                 socket={webSocketService}
+                 connected={wsConnected}
+               />
+               
+               {/* Offers Container */}
+               <OffersContainer
+                 gameId={gameId}
+                 gameData={gameData}
+                 socket={webSocketService}
+                 connected={wsConnected}
+                 onOfferSubmitted={(offerData) => {
+                   console.log('Offer submitted via offers container:', offerData)
+                 }}
+                 onOfferAccepted={(offer) => {
+                   console.log('Offer accepted via offers container:', offer)
+                 }}
+               />
+               
+               {/* Coin Container */}
                {gameData?.status !== 'completed' && (
                  <CoinContainer
                    gameId={gameId}
@@ -426,14 +449,6 @@ const GameLobby = () => {
                    isCreator={isCreator}
                  />
                )}
-               
-               {/* Unified Chat & Offers Container */}
-               <UnifiedChatContainer
-                 gameId={gameId}
-                 gameData={gameData}
-                 socket={webSocketService}
-                 connected={wsConnected}
-               />
              </div>
           </GameLayout>
         </GameContainer>
