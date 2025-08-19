@@ -290,9 +290,13 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     // Normalize room ID - remove any double prefixes
     let targetRoomId = roomId
     
-    // If roomId already has a prefix, use it as is
-    if (targetRoomId.startsWith('game_') || targetRoomId.startsWith('game_room_')) {
-      // Use as is
+    // Remove any existing game_ prefix to avoid double prefixes
+    if (targetRoomId.startsWith('game_game_')) {
+      targetRoomId = targetRoomId.replace('game_game_', 'game_')
+    } else if (targetRoomId.startsWith('game_room_')) {
+      // Keep game_room_ prefix as is
+    } else if (targetRoomId.startsWith('game_')) {
+      // Keep single game_ prefix as is
     } else {
       // Add lobby prefix for chat messages
       targetRoomId = `game_${targetRoomId}`
@@ -367,9 +371,13 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     // Normalize room ID - remove any double prefixes
     let targetRoomId = roomId || gameId
     
-    // If roomId already has a prefix, use it as is
-    if (targetRoomId.startsWith('game_') || targetRoomId.startsWith('game_room_')) {
-      // Use as is
+    // Remove any existing game_ prefix to avoid double prefixes
+    if (targetRoomId.startsWith('game_game_')) {
+      targetRoomId = targetRoomId.replace('game_game_', 'game_')
+    } else if (targetRoomId.startsWith('game_room_')) {
+      // Keep game_room_ prefix as is
+    } else if (targetRoomId.startsWith('game_')) {
+      // Keep single game_ prefix as is
     } else {
       // Add lobby prefix for chat messages
       targetRoomId = `game_${targetRoomId}`
