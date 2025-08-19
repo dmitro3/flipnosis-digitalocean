@@ -668,13 +668,27 @@ class ContractService {
           
           // Check if the error message contains a transaction hash (sometimes RPC errors still return hash)
           const errorMessage = writeError.message || writeError.toString()
+          
+          // Improved hash extraction - look for a proper 64-character hex hash
           const hashMatch = errorMessage.match(/0x[a-fA-F0-9]{64}/)
           
           if (hashMatch) {
-            hash = hashMatch[0]
-            console.log('🔍 Found transaction hash in error message:', hash)
+            const extractedHash = hashMatch[0]
+            // Validate that this looks like a real transaction hash
+            if (extractedHash.length === 66 && extractedHash.startsWith('0x')) {
+              hash = extractedHash
+              console.log('🔍 Found valid transaction hash in error message:', hash)
+            } else {
+              console.log('⚠️ Found hash-like string but it appears invalid:', extractedHash)
+              hash = null
+            }
           } else {
-            // If no hash found, try individual transfers
+            console.log('❌ No valid transaction hash found in error message')
+            hash = null
+          }
+          
+          if (!hash) {
+            // If no valid hash found, try individual transfers
             console.log('🔄 Trying individual NFT transfers...')
             const results = []
             
@@ -724,36 +738,39 @@ class ContractService {
           }
         }
         
-        // Wait for confirmation even if we got an RPC error
-        let receipt
-        try {
-          receipt = await this.publicClient.waitForTransactionReceipt({ 
-            hash,
-            confirmations: 1,
-            timeout: 60_000
-          })
-        } catch (receiptError) {
-          console.warn('⚠️ RPC error waiting for receipt, but transaction may have succeeded:', receiptError)
-          // Try to get the receipt anyway
+        // If we have a valid hash, wait for confirmation
+        if (hash) {
+          let receipt
           try {
-            receipt = await this.publicClient.getTransactionReceipt({ hash })
-            console.log('✅ Got transaction receipt despite RPC error:', receipt)
-          } catch (finalError) {
-            console.error('❌ Could not get transaction receipt:', finalError)
-            // Even if we can't get the receipt, if we have a hash, the transaction was likely sent
-            return { 
-              success: true, 
-              transactionHash: hash,
-              message: `Transaction sent (hash: ${hash}) but could not confirm receipt. Check blockchain explorer.`
+            receipt = await this.publicClient.waitForTransactionReceipt({ 
+              hash,
+              confirmations: 1,
+              timeout: 60_000
+            })
+            console.log('✅ Got transaction receipt:', receipt)
+          } catch (receiptError) {
+            console.warn('⚠️ RPC error waiting for receipt, but transaction may have succeeded:', receiptError)
+            // Try to get the receipt anyway
+            try {
+              receipt = await this.publicClient.getTransactionReceipt({ hash })
+              console.log('✅ Got transaction receipt despite RPC error:', receipt)
+            } catch (finalError) {
+              console.error('❌ Could not get transaction receipt:', finalError)
+              // Even if we can't get the receipt, if we have a hash, the transaction was likely sent
+              return { 
+                success: true, 
+                transactionHash: hash,
+                message: `Transaction sent (hash: ${hash}) but could not confirm receipt. Check blockchain explorer.`
+              }
             }
           }
-        }
-        
-        console.log('✅ Direct batch NFT transfer successful:', hash)
-        return { 
-          success: true, 
-          transactionHash: hash,
-          message: `Successfully transferred ${nftContracts.length} NFTs with low gas fees`
+          
+          console.log('✅ Direct batch NFT transfer successful:', hash)
+          return { 
+            success: true, 
+            transactionHash: hash,
+            message: `Successfully transferred ${nftContracts.length} NFTs with low gas fees`
+          }
         }
       }
       
@@ -765,12 +782,17 @@ class ContractService {
       const hashMatch = errorMessage.match(/0x[a-fA-F0-9]{64}/)
       
       if (hashMatch) {
-        const hash = hashMatch[0]
-        console.log('🔍 Found transaction hash in error, transaction may have succeeded:', hash)
-        return { 
-          success: true, 
-          transactionHash: hash,
-          message: `Transaction sent (hash: ${hash}) but RPC returned error. Check blockchain explorer to confirm.`
+        const extractedHash = hashMatch[0]
+        // Validate that this looks like a real transaction hash
+        if (extractedHash.length === 66 && extractedHash.startsWith('0x')) {
+          console.log('🔍 Found valid transaction hash in error, transaction may have succeeded:', extractedHash)
+          return { 
+            success: true, 
+            transactionHash: extractedHash,
+            message: `Transaction sent (hash: ${extractedHash}) but RPC returned error. Check blockchain explorer to confirm.`
+          }
+        } else {
+          console.log('⚠️ Found hash-like string but it appears invalid:', extractedHash)
         }
       }
       
