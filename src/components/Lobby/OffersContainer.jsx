@@ -242,6 +242,7 @@ const OffersContainer = ({
   socket, 
   connected,
   offers: initialOffers = [],
+  isCreator: isCreatorProp,
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
@@ -271,6 +272,12 @@ const OffersContainer = ({
   }, [offers])
 
   const isCreator = () => {
+    // Use prop if available (preferred)
+    if (isCreatorProp && typeof isCreatorProp === 'function') {
+      return isCreatorProp()
+    }
+    
+    // Fallback to local implementation
     if (!gameData || !address) return false
     
     // Check both possible creator field names
@@ -576,6 +583,17 @@ const OffersContainer = ({
   }
 
   const renderOfferContent = (offer) => {
+    const creatorCheck = isCreator()
+    console.log('🔍 Rendering offer:', {
+      offerType: offer.type,
+      isCreator: creatorCheck,
+      currentAddress: address,
+      gameCreator: gameData?.creator || gameData?.creator_address,
+      willShowAcceptButton: creatorCheck && (offer.type === 'crypto_offer' || offer.type === 'nft_offer'),
+      hasIsCreatorProp: !!isCreatorProp,
+      usingPropFunction: isCreatorProp && typeof isCreatorProp === 'function'
+    })
+    
     switch (offer.type) {
       case 'crypto_offer':
         return (
@@ -584,7 +602,18 @@ const OffersContainer = ({
               <OfferAmountLabel>💰 Crypto Offer:</OfferAmountLabel>
               <OfferAmountValue>${offer.cryptoAmount} USD</OfferAmountValue>
             </OfferAmount>
-            {isCreator() && (
+            {/* Accept button - show for creators with detailed logging */}
+            {(() => {
+              const shouldShowAccept = isCreator()
+              console.log('🔍 Crypto offer accept button decision:', {
+                shouldShowAccept,
+                isCreatorResult: isCreator(),
+                currentAddress: address,
+                gameCreator: gameData?.creator || gameData?.creator_address,
+                gameStatus: gameData?.status
+              })
+              return shouldShowAccept
+            })() && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -615,7 +644,18 @@ const OffersContainer = ({
                 <div style={{ color: '#fff', marginTop: '0.25rem' }}>{offer.offerText}</div>
               </div>
             )}
-            {isCreator() && (
+            {/* Accept button - show for creators with detailed logging */}
+            {(() => {
+              const shouldShowAccept = isCreator()
+              console.log('🔍 NFT offer accept button decision:', {
+                shouldShowAccept,
+                isCreatorResult: isCreator(),
+                currentAddress: address,
+                gameCreator: gameData?.creator || gameData?.creator_address,
+                gameStatus: gameData?.status
+              })
+              return shouldShowAccept
+            })() && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -688,7 +728,15 @@ const OffersContainer = ({
     isConnected,
     connected,
     hasSocket: !!socket,
-    socketReadyState: socket?.readyState
+    socketReadyState: socket?.readyState,
+    // Additional debug info
+    currentAddress: address,
+    gameCreator: gameData?.creator,
+    gameCreatorAddress: gameData?.creator_address,
+    gameDataKeys: gameData ? Object.keys(gameData) : 'no gameData',
+    offerCount: offers?.length || 0,
+    hasIsCreatorProp: !!isCreatorProp,
+    isCreatorPropType: typeof isCreatorProp
   })
 
   return (

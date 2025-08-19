@@ -432,6 +432,7 @@ const GameLobby = () => {
                     socket={webSocketService}
                     connected={wsConnected}
                     offers={offers}
+                    isCreator={isCreator}
                     onOfferSubmitted={(offerData) => {
                       console.log('Offer submitted via offers container:', offerData)
                     }}
