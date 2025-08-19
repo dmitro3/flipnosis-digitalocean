@@ -661,7 +661,7 @@ class ContractService {
             args: [nftContracts, tokenIds.map(id => BigInt(id)), recipients],
             chain: BASE_CHAIN,
             account: this.walletClient.account,
-            gas: 200000n
+            gas: 300000n // Increased gas limit for batch transfer
           })
         } catch (writeError) {
           console.error('❌ Error writing contract:', writeError)
@@ -674,7 +674,53 @@ class ContractService {
             hash = hashMatch[0]
             console.log('🔍 Found transaction hash in error message:', hash)
           } else {
-            return { success: false, error: writeError.message || 'Failed to send transaction' }
+            // If no hash found, try individual transfers
+            console.log('🔄 Trying individual NFT transfers...')
+            const results = []
+            
+            for (let i = 0; i < nftContracts.length; i++) {
+              try {
+                console.log(`📦 Transferring NFT ${i + 1}/${nftContracts.length}: ${nftContracts[i]}:${tokenIds[i]}`)
+                
+                const individualHash = await this.walletClient.writeContract({
+                  address: this.contractAddress,
+                  abi: CONTRACT_ABI,
+                  functionName: 'directTransferNFT',
+                  args: [nftContracts[i], BigInt(tokenIds[i]), recipients[i]],
+                  chain: BASE_CHAIN,
+                  account: this.walletClient.account,
+                  gas: 150000n
+                })
+                
+                results.push({
+                  success: true,
+                  hash: individualHash,
+                  nft: `${nftContracts[i]}:${tokenIds[i]}`
+                })
+                
+                console.log(`✅ Individual transfer successful: ${individualHash}`)
+                
+                // Wait a bit between transfers
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                
+              } catch (individualError) {
+                console.error(`❌ Individual transfer failed for ${nftContracts[i]}:${tokenIds[i]}:`, individualError)
+                results.push({
+                  success: false,
+                  error: individualError.message,
+                  nft: `${nftContracts[i]}:${tokenIds[i]}`
+                })
+              }
+            }
+            
+            const successfulTransfers = results.filter(r => r.success)
+            const failedTransfers = results.filter(r => !r.success)
+            
+            return {
+              success: successfulTransfers.length > 0,
+              message: `Individual transfers: ${successfulTransfers.length} successful, ${failedTransfers.length} failed`,
+              results: results
+            }
           }
         }
         
