@@ -1,8 +1,8 @@
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 
-// Database path
-const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz.db')
+// Database path  
+const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz-clean.db')
 
 async function runNFTDepositMigration() {
   console.log('🔧 Running NFT Deposit Tracking Migration...\n')

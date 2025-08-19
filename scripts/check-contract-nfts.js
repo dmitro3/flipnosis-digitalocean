@@ -10,41 +10,55 @@ const CREATOR_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
   try {
     const provider = new ethers.JsonRpcProvider(RPC_URL)
     
-    // Check the game contract for NFT deposits
+    // Check the game contract for NFT deposits using correct ABI
     const gameContract = new ethers.Contract(
       GAME_CONTRACT_ADDRESS,
       [
-        'function getGameNFT(uint256 gameId) view returns (address nftContract, uint256 tokenId, address owner)',
-        'function getGame(uint256 gameId) view returns (tuple(address creator, address challenger, uint256 creatorDeposit, uint256 challengerDeposit, bool creatorDeposited, bool challengerDeposited, uint256 gameStartTime, uint256 gameEndTime, bool gameEnded, address winner))',
-        'function nextGameId() view returns (uint256)'
+        'function nftDeposits(bytes32) view returns (address depositor, address nftContract, uint256 tokenId, bool claimed, uint256 depositTime)',
+        'function ethDeposits(bytes32) view returns (address depositor, uint256 amount, bool claimed, uint256 depositTime)',
+        'function gameResults(bytes32) view returns (address winner, bool completed, uint256 completionTime)',
+        'function isGameReady(bytes32) view returns (bool)'
       ],
       provider
     )
     
-    // Get the next game ID to see how many games exist
-    const nextGameId = await gameContract.nextGameId()
     console.log(`📊 Game contract info:`)
-    console.log(`   Next Game ID: ${nextGameId.toString()}`)
-    console.log(`   Total games created: ${nextGameId.toString() - 1}`)
+    console.log(`   Contract Address: ${GAME_CONTRACT_ADDRESS}`)
+    console.log(`   Network: Base Mainnet`)
     
-    // Check a few recent games to see if they have NFTs deposited
-    const gamesToCheck = Math.min(5, nextGameId.toString() - 1)
-    console.log(`\n🔍 Checking last ${gamesToCheck} games for NFT deposits:`)
+    // Check your recent game using the actual gameId from logs
+    const recentGameIds = [
+      'game_1755600380520_17c8607d519972b6', // From the logs you provided
+    ]
     
-    for (let i = 1; i <= gamesToCheck; i++) {
+    console.log(`\n🔍 Checking specific games for NFT deposits:`)
+    
+    for (const gameId of recentGameIds) {
       try {
-        const gameId = nextGameId.toString() - i
-        const gameData = await gameContract.getGame(gameId)
-        const nftData = await gameContract.getGameNFT(gameId)
+        console.log(`\n   Checking Game: ${gameId}`)
         
-        console.log(`   Game ${gameId}:`)
-        console.log(`     Creator: ${gameData.creator}`)
-        console.log(`     Creator Deposited: ${gameData.creatorDeposited}`)
-        console.log(`     NFT Contract: ${nftData.nftContract}`)
-        console.log(`     Token ID: ${nftData.tokenId}`)
-        console.log(`     NFT Owner: ${nftData.owner}`)
+        // Convert to bytes32 hash 
+        const gameIdBytes32 = ethers.keccak256(ethers.toUtf8Bytes(gameId))
+        
+        const nftDeposit = await gameContract.nftDeposits(gameIdBytes32)
+        const ethDeposit = await gameContract.ethDeposits(gameIdBytes32)
+        const gameResult = await gameContract.gameResults(gameIdBytes32)
+        const isReady = await gameContract.isGameReady(gameIdBytes32)
+        
+        console.log(`     Game ID (bytes32): ${gameIdBytes32}`)
+        console.log(`     NFT Depositor: ${nftDeposit.depositor}`)
+        console.log(`     NFT Contract: ${nftDeposit.nftContract}`)
+        console.log(`     Token ID: ${nftDeposit.tokenId}`)
+        console.log(`     NFT Claimed: ${nftDeposit.claimed}`)
+        console.log(`     Deposit Time: ${new Date(Number(nftDeposit.depositTime) * 1000).toISOString()}`)
+        console.log(`     ETH Depositor: ${ethDeposit.depositor}`)
+        console.log(`     ETH Amount: ${ethers.formatEther(ethDeposit.amount)}`)
+        console.log(`     Game Ready: ${isReady}`)
+        console.log(`     Game Completed: ${gameResult.completed}`)
+        console.log(`     Winner: ${gameResult.winner}`)
+        
       } catch (e) {
-        console.log(`   Game ${nextGameId.toString() - i}: Error - ${e.message}`)
+        console.log(`   Game ${gameId}: Error - ${e.message}`)
       }
     }
     
