@@ -277,10 +277,34 @@ const Tab = styled.button`
   cursor: pointer;
   font-weight: bold;
   transition: all 0.2s ease;
+  position: relative;
   
   &:hover {
     background: rgba(0, 255, 65, 0.1);
     color: #00FF41;
+  }
+`
+
+const NotificationBadge = styled.div`
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #FF1493;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
   }
 `
 
@@ -302,6 +326,7 @@ const UnifiedChatContainer = ({
   const [isSubmittingChat, setIsSubmittingChat] = useState(false)
   const [playerNames, setPlayerNames] = useState({})
   const [activeTab, setActiveTab] = useState('chat') // 'chat' or 'offer'
+  const [unreadOffers, setUnreadOffers] = useState(0)
   
   const messagesEndRef = useRef(null)
   
@@ -355,6 +380,11 @@ const UnifiedChatContainer = ({
             offerId: messageData.offerId,
             offerText: messageData.offerText
           })
+          
+          // Increment unread offers count if not the active tab
+          if (activeTab !== 'offer') {
+            setUnreadOffers(prev => prev + 1)
+          }
         } else if (messageData.type === 'crypto_offer') {
           console.log('💰 Crypto offer received:', messageData)
           addMessage({
@@ -365,6 +395,11 @@ const UnifiedChatContainer = ({
             timestamp: messageData.timestamp || new Date().toISOString(),
             offerId: messageData.offerId
           })
+          
+          // Increment unread offers count if not the active tab
+          if (activeTab !== 'offer') {
+            setUnreadOffers(prev => prev + 1)
+          }
           
           // Show success message to the offerer
           if (messageData.offererAddress === address) {
@@ -711,23 +746,27 @@ const UnifiedChatContainer = ({
         </ConnectionStatus>
       </ChatHeader>
 
-      {/* Tab Navigation */}
-      <TabContainer>
-        <Tab 
-          active={activeTab === 'chat'} 
-          onClick={() => setActiveTab('chat')}
-        >
-          💬 Chat
-        </Tab>
-        {shouldShowOfferInput() && (
-          <Tab 
-            active={activeTab === 'offer'} 
-            onClick={() => setActiveTab('offer')}
-          >
-            💰 Make Offer
-          </Tab>
-        )}
-      </TabContainer>
+             {/* Tab Navigation */}
+       <TabContainer>
+         <Tab 
+           active={activeTab === 'chat'} 
+           onClick={() => setActiveTab('chat')}
+         >
+           💬 Chat
+         </Tab>
+         {shouldShowOfferInput() && (
+           <Tab 
+             active={activeTab === 'offer'} 
+             onClick={() => {
+               setActiveTab('offer')
+               setUnreadOffers(0) // Clear unread offers when switching to offer tab
+             }}
+           >
+             💰 Make Offer
+             {unreadOffers > 0 && <NotificationBadge>{unreadOffers}</NotificationBadge>}
+           </Tab>
+         )}
+       </TabContainer>
 
       {/* Game Price Info for Offer Tab */}
       {activeTab === 'offer' && gamePrice > 0 && (

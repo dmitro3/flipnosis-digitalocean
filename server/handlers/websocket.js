@@ -287,7 +287,18 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   async function handleJoinRoom(socket, data) {
     const { roomId } = data
     
-    console.log(`👥 Socket ${socket.id} requesting to join room ${roomId}`)
+    // Normalize room ID - remove any double prefixes
+    let targetRoomId = roomId
+    
+    // If roomId already has a prefix, use it as is
+    if (targetRoomId.startsWith('game_') || targetRoomId.startsWith('game_room_')) {
+      // Use as is
+    } else {
+      // Add lobby prefix for chat messages
+      targetRoomId = `game_${targetRoomId}`
+    }
+    
+    console.log(`👥 Socket ${socket.id} requesting to join room ${targetRoomId} (original: ${roomId})`)
     console.log(`🏠 Current rooms:`, Array.from(rooms.keys()))
     console.log(`👥 Current room members:`, Array.from(rooms.values()).map(room => room.size))
     
@@ -299,16 +310,16 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
     
     // Join new room
-    if (!rooms.has(roomId)) {
-      rooms.set(roomId, new Set())
-      console.log(`🏠 Created new room: ${roomId}`)
+    if (!rooms.has(targetRoomId)) {
+      rooms.set(targetRoomId, new Set())
+      console.log(`🏠 Created new room: ${targetRoomId}`)
     }
     
-    const room = rooms.get(roomId)
+    const room = rooms.get(targetRoomId)
     room.add(socket.id)
-    socketRooms.set(socket.id, roomId)
+    socketRooms.set(socket.id, targetRoomId)
     
-    console.log(`👥 Socket ${socket.id} joined room ${roomId} (${room.size} members total)`)
+    console.log(`👥 Socket ${socket.id} joined room ${targetRoomId} (${room.size} members total)`)
     console.log(`🏠 All rooms after join:`, Array.from(rooms.keys()))
     console.log(`👥 All room members:`, Array.from(rooms.entries()).map(([roomId, members]) => ({ roomId, memberCount: members.size, members: Array.from(members) })))
     
@@ -316,23 +327,23 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     try {
       socket.send(JSON.stringify({
         type: 'room_joined',
-        roomId: roomId,
+        roomId: targetRoomId,
         members: room.size
       }))
       
       // Load and send chat history to the new player
       try {
-        const chatHistory = await dbService.getChatHistory(roomId, 50) // Load last 50 messages
-        console.log(`📚 Loading chat history for room ${roomId}: ${chatHistory.length} messages`)
+        const chatHistory = await dbService.getChatHistory(targetRoomId, 50) // Load last 50 messages
+        console.log(`📚 Loading chat history for room ${targetRoomId}: ${chatHistory.length} messages`)
         
         if (chatHistory.length > 0) {
           // Send chat history to the new player
           socket.send(JSON.stringify({
             type: 'chat_history',
-            roomId: roomId,
+            roomId: targetRoomId,
             messages: chatHistory
           }))
-          console.log(`📤 Sent chat history to new player in room ${roomId}`)
+          console.log(`📤 Sent chat history to new player in room ${targetRoomId}`)
         }
       } catch (error) {
         console.error('❌ Error loading chat history:', error)
@@ -353,10 +364,26 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
   async function handleChatMessage(socket, data) {
     const { roomId, gameId, message, from } = data
     
-    // Use gameId as roomId if roomId is not provided
-    const targetRoomId = roomId || gameId
+    // Normalize room ID - remove any double prefixes
+    let targetRoomId = roomId || gameId
+    
+    // If roomId already has a prefix, use it as is
+    if (targetRoomId.startsWith('game_') || targetRoomId.startsWith('game_room_')) {
+      // Use as is
+    } else {
+      // Add lobby prefix for chat messages
+      targetRoomId = `game_${targetRoomId}`
+    }
     
     const senderAddress = socket.address || from || 'anonymous'
+    
+    console.log('💬 Processing chat message:', {
+      originalRoomId: roomId,
+      gameId,
+      targetRoomId,
+      senderAddress,
+      message: message.substring(0, 50) + '...'
+    })
     
     try {
       // Save to database
@@ -526,9 +553,12 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       
       const actualGameId = game?.id || gameId
       
+      // Normalize room ID for lobby
+      const lobbyRoomId = `game_${actualGameId}`
+      
       // Also save as chat message for real-time display
       await dbService.saveChatMessage(
-        actualGameId, 
+        lobbyRoomId, 
         offererAddress, 
         `Crypto offer of $${cryptoAmount} USD`, 
         'offer', 
@@ -546,7 +576,7 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
       }
       
       console.log('📢 Broadcasting crypto offer:', broadcastMessage)
-      broadcastToRoom(actualGameId, broadcastMessage)
+      broadcastToRoom(lobbyRoomId, broadcastMessage)
       console.log('✅ Crypto offer broadcasted successfully to room', actualGameId)
     } catch (error) {
       console.error('❌ Error saving crypto offer:', error)
