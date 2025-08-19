@@ -274,14 +274,13 @@ const OffersContainer = ({
     return address.toLowerCase() === creatorAddress.toLowerCase()
   }
 
-  // Listen for offers from socket
+  // Listen for offers from WebSocket service
   useEffect(() => {
     if (!socket) return
     
-    const handleMessage = (event) => {
+    const handleMessage = (data) => {
       try {
-        const data = JSON.parse(event.data)
-        console.log('💰 Offers: Raw WebSocket message received:', data)
+        console.log('💰 Offers: WebSocket message received:', data)
         
         if (data.type === 'nft_offer') {
           console.log('💎 Offers: Received NFT offer:', data)
@@ -364,10 +363,11 @@ const OffersContainer = ({
       }
     }
     
-    socket.addEventListener('message', handleMessage)
+    // Register message handler with WebSocket service
+    socket.on('message', handleMessage)
     
     return () => {
-      socket.removeEventListener('message', handleMessage)
+      socket.off('message', handleMessage)
     }
   }, [socket, address, showSuccess])
 
@@ -417,18 +417,18 @@ const OffersContainer = ({
     setIsSubmittingOffer(true)
 
     try {
-      // Try WebSocket first
-      const isSocketConnected = socket && socket.readyState === WebSocket.OPEN
-      console.log('🔍 WebSocket connection check:', isSocketConnected, socket?.readyState)
+      // Try WebSocket service first
+      const isSocketConnected = socket && socket.isConnected && socket.isConnected()
+      console.log('🔍 WebSocket connection check:', isSocketConnected)
       
       if (isSocketConnected) {
-        socket.send(JSON.stringify({
+        socket.send({
           type: 'crypto_offer',
           listingId: gameData.listing_id,
           address: address,
           cryptoAmount: offerAmount,
           timestamp: new Date().toISOString()
-        }))
+        })
         
         console.log('💰 Crypto offer sent via WebSocket')
         showSuccess(`Offer of $${offerAmount.toFixed(2)} USD sent!`)
