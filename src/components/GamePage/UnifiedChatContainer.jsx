@@ -394,16 +394,21 @@ const UnifiedChatContainer = ({
           if (activeTab !== 'offer') {
             setUnreadOffers(prev => prev + 1)
           }
-        } else if (messageData.type === 'crypto_offer') {
-          console.log('💰 Crypto offer received:', messageData)
-          addMessage({
-            id: Date.now() + Math.random(),
-            type: 'crypto_offer',
-            address: messageData.offererAddress,
-            cryptoAmount: messageData.cryptoAmount,
-            timestamp: messageData.timestamp || new Date().toISOString(),
-            offerId: messageData.offerId
-          })
+                 } else if (messageData.type === 'crypto_offer') {
+           console.log('💰 Crypto offer received:', messageData)
+           console.log('💰 Processing crypto offer with data:', {
+             offererAddress: messageData.offererAddress,
+             cryptoAmount: messageData.cryptoAmount,
+             offerId: messageData.offerId
+           })
+           addMessage({
+             id: Date.now() + Math.random(),
+             type: 'crypto_offer',
+             address: messageData.offererAddress,
+             cryptoAmount: messageData.cryptoAmount,
+             timestamp: messageData.timestamp || new Date().toISOString(),
+             offerId: messageData.offerId
+           })
           
           // Increment unread offers count if not the active tab
           if (activeTab !== 'offer') {
@@ -441,41 +446,42 @@ const UnifiedChatContainer = ({
               timestamp: new Date().toISOString()
             })
           }
-        } else if (messageData.type === 'chat_history') {
-          console.log('📚 Chat history received:', messageData)
-          console.log('📚 Chat history messages array:', messageData.messages)
-          if (messageData.messages && Array.isArray(messageData.messages)) {
-            console.log('📚 Processing chat history messages...')
-            const historyMessages = messageData.messages.map(msg => {
-              console.log('📝 Processing history message:', msg)
-              
-              // Handle different message types from database
-              let messageType = 'chat'
-              if (msg.message_type === 'offer' || msg.message_data?.offerType) {
-                messageType = 'crypto_offer'
-              } else if (msg.message_type === 'nft_offer') {
-                messageType = 'nft_offer'
-              } else if (msg.message_type === 'system') {
-                messageType = 'system'
-              }
-              
-              return {
-                id: msg.id || Date.now() + Math.random(),
-                type: messageType,
-                address: msg.sender_address,
-                message: msg.message,
-                timestamp: msg.created_at || msg.timestamp,
-                cryptoAmount: msg.message_data?.cryptoAmount,
-                nft: msg.message_data?.nft,
-                offerType: msg.message_data?.offerType,
-                acceptedOffer: msg.message_data?.acceptedOffer,
-                rejectedOffer: msg.message_data?.rejectedOffer
-              }
-            })
-            
-            console.log(`📚 Processed ${historyMessages.length} chat history messages:`, historyMessages)
-            setMessages(historyMessages)
-          }
+                          } else if (messageData.type === 'chat_history') {
+           console.log('📚 Chat history received:', messageData)
+           console.log('📚 Chat history messages array:', messageData.messages)
+           if (messageData.messages && Array.isArray(messageData.messages)) {
+             console.log('📚 Processing chat history messages...')
+             const historyMessages = messageData.messages.map(msg => {
+               console.log('📝 Processing history message:', msg)
+               
+               // Handle different message types from database
+               let messageType = 'chat'
+               if (msg.message_type === 'offer' || msg.message_data?.offerType) {
+                 messageType = 'crypto_offer'
+               } else if (msg.message_type === 'nft_offer') {
+                 messageType = 'nft_offer'
+               } else if (msg.message_type === 'system') {
+                 messageType = 'system'
+               }
+               
+               return {
+                 id: msg.id || Date.now() + Math.random(),
+                 type: messageType,
+                 address: msg.sender_address,
+                 message: msg.message,
+                 timestamp: msg.created_at || msg.timestamp,
+                 cryptoAmount: msg.message_data?.cryptoAmount,
+                 nft: msg.message_data?.nft,
+                 offerType: msg.message_data?.offerType,
+                 acceptedOffer: msg.message_data?.acceptedOffer,
+                 rejectedOffer: msg.message_data?.rejectedOffer
+               }
+             })
+             
+             console.log(`📚 Processed ${historyMessages.length} chat history messages:`, historyMessages)
+             setMessages(historyMessages)
+           }
+         }
         }
       } catch (error) {
         console.error('Unified Chat: Error parsing message:', error)
@@ -600,10 +606,11 @@ const UnifiedChatContainer = ({
           timestamp: new Date().toISOString()
         }
         
-        console.log('📤 Sending crypto offer:', messageData)
-        socket.send(messageData)
-        
-        console.log('💰 Crypto offer sent via WebSocket')
+                 console.log('📤 Sending crypto offer:', messageData)
+         console.log('📤 WebSocket send method available:', typeof socket.send === 'function')
+         socket.send(messageData)
+         
+         console.log('💰 Crypto offer sent via WebSocket')
         showSuccess(`Offer of $${offerAmount.toFixed(2)} USD sent!`)
         setCryptoOffer('')
       } else {
