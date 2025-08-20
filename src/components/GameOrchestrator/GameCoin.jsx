@@ -26,18 +26,6 @@ const GameCoin = ({
   address,
   isCreator
 }) => {
-  // Debug logging
-  console.log('🪙 GameCoin props received:', {
-    gameId,
-    gameStatePhase: gameState?.phase,
-    isStreaming: streamedCoinState?.isStreaming,
-    flipAnimation,
-    isFlipping: !!flipAnimation,
-    flipResult: flipAnimation?.result,
-    isMobile,
-    address
-  })
-
   return (
     <CoinSection style={{ position: 'relative' }}>
       {streamedCoinState.isStreaming ? (

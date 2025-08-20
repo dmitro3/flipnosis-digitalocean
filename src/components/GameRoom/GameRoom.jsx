@@ -330,8 +330,7 @@ const GameRoom = ({
   onExitRoom, // Callback to exit back to lobby or home
   customHeadsImage,
   customTailsImage,
-  gameCoin,
-  onStateUpdate // Callback to update parent with game state
+  gameCoin
 }) => {
   const { address, getPlayerName } = useProfile()
   const [wsConnected, setWsConnected] = useState(false)
@@ -365,21 +364,6 @@ const GameRoom = ({
     getGameJoiner,
     getChoosingPlayer // FIXED: Use the improved turn determination
   } = useGameRoomState(gameId, gameData?.creator, gameData)
-
-  // Update parent component with current state
-  useEffect(() => {
-    if (onStateUpdate) {
-      onStateUpdate({
-        gameState,
-        playerChoices,
-        flipAnimation,
-        streamedCoinState,
-        isMyTurn,
-        isCreator,
-        isJoiner
-      })
-    }
-  }, [gameState, playerChoices, flipAnimation, streamedCoinState, isMyTurn, isCreator, isJoiner, onStateUpdate])
 
   // Connect to game room when component mounts
   useEffect(() => {
@@ -542,28 +526,6 @@ const GameRoom = ({
     }
   `
 
-  const TestButton = styled.button`
-    padding: 1rem 2rem;
-    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 150, 255, 0.5) 100%);
-    border: 2px solid #00FFFF;
-    border-radius: 0.5rem;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 1rem;
-    
-    &:hover {
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.4) 0%, rgba(0, 150, 255, 0.7) 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
-  `
-
   const handleForfeitClick = () => {
     const confirmed = window.confirm(
       'Are you sure you want to forfeit? Your opponent will win both the NFT and crypto.'
@@ -573,71 +535,6 @@ const GameRoom = ({
       if (onExitRoom) onExitRoom()
     }
   }
-
-  // Test flip function
-  const handleTestFlip = () => {
-    console.log('🧪 Test flip triggered!')
-    
-    // Generate random test data
-    const testCreatorPower = Math.floor(Math.random() * 10) + 1 // 1-10
-    const testJoinerPower = Math.floor(Math.random() * 10) + 1 // 1-10
-    const testCreatorChoice = Math.random() < 0.5 ? 'heads' : 'tails'
-    const testJoinerChoice = Math.random() < 0.5 ? 'heads' : 'tails'
-    const testFlipResult = Math.random() < 0.5 ? 'heads' : 'tails'
-    const testRoundWinner = testFlipResult === testCreatorChoice ? getGameCreator() : getGameJoiner()
-    
-    console.log('🧪 Test data generated:', {
-      creatorPower: testCreatorPower,
-      joinerPower: testJoinerPower,
-      creatorChoice: testCreatorChoice,
-      joinerChoice: testJoinerChoice,
-      flipResult: testFlipResult,
-      roundWinner: testRoundWinner
-    })
-    
-    // Set up test choices
-    setPlayerChoices({
-      creator: testCreatorChoice,
-      joiner: testJoinerChoice
-    })
-    
-    // Set game state to charging phase
-    setGameState(prev => ({
-      ...prev,
-      phase: 'charging',
-      creatorChoice: testCreatorChoice,
-      joinerChoice: testJoinerChoice,
-      creatorPower: testCreatorPower,
-      joinerPower: testJoinerPower
-    }))
-    
-    // Trigger the flip after a short delay
-    setTimeout(() => {
-      console.log('🧪 Triggering flip animation...')
-      console.log('🧪 Current flipAnimation state before:', flipAnimation)
-      
-      handleFlipResult({
-        result: testFlipResult,
-        roundWinner: testRoundWinner,
-        creatorChoice: testCreatorChoice,
-        challengerChoice: testJoinerChoice,
-        creatorPower: testCreatorPower,
-        joinerPower: testJoinerPower
-      })
-      
-      console.log('🧪 Flip result called, flipAnimation should be set now')
-    }, 1000)
-  }
-
-  // Debug: Log current state for GameCoin
-  useEffect(() => {
-    console.log('🎮 GameRoom state for GameCoin:', {
-      gameState,
-      flipAnimation,
-      streamedCoinState,
-      playerChoices
-    })
-  }, [gameState, flipAnimation, streamedCoinState, playerChoices])
 
   return (
     <ThemeProvider theme={theme}>
@@ -707,11 +604,6 @@ const GameRoom = ({
             <CoinContainer>
               {children}
             </CoinContainer>
-            
-            {/* Test Button beneath the coin */}
-            <TestButton onClick={handleTestFlip}>
-              🧪 Test Flip
-            </TestButton>
             
             <ChoiceSection>
               {!canChoose ? (
