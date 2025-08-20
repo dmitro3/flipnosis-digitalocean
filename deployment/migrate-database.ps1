@@ -4,7 +4,7 @@
 param(
     [string]$ServerIP = "159.69.242.154",
     [string]$ServerUser = "root",
-    [string]$LocalDbPath = "server/flipz-clean.db"
+    [string]$LocalDbPath = "server/flipz.db"
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,7 +26,7 @@ $dbSize = (Get-Item $LocalDbPath).Length
 Write-Info "Local database size: $($dbSize / 1KB) KB"
 
 # Create backup of local database
-$backupName = "flipz-clean.db.backup.$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+$backupName = "flipz.db.backup.$(Get-Date -Format 'yyyyMMdd_HHmmss')"
 $backupPath = "server/$backupName"
 Copy-Item $LocalDbPath $backupPath
 Write-Ok "Created local backup: $backupPath"
@@ -46,7 +46,7 @@ try {
 
     # Upload database file
     Write-Info "Uploading database file to server..."
-    $remoteDbPath = "/opt/flipnosis/app/server/flipz-clean.db"
+    $remoteDbPath = "/opt/flipnosis/app/server/flipz.db"
     & scp $LocalDbPath "${ServerUser}@${ServerIP}:$remoteDbPath"
     
     if ($LASTEXITCODE -ne 0) {
@@ -72,7 +72,7 @@ cd /opt/flipnosis/app/server
 if command -v node >/dev/null 2>&1; then
     node -e "
         const sqlite3 = require('sqlite3').verbose();
-        const db = new sqlite3.Database('./flipz-clean.db', (err) => {
+        const db = new sqlite3.Database('./flipz.db', (err) => {
             if (err) {
                 console.error('Database connection failed:', err.message);
                 process.exit(1);

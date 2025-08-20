@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // Database path
-const dbPath = path.join(__dirname, '../server/flipz-clean.db');
+const dbPath = '/opt/flipnosis/app/server/flipz.db';
 
 console.log('🔍 Checking games table structure...');
 

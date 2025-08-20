@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 
 // Database path - adjust this to match your server setup
-const databasePath = path.join(__dirname, '../server/flipz-clean.db')
+const databasePath = '/opt/flipnosis/app/server/flipz.db'
 
 console.log('🔧 Fixing deposit_deadline column issue...')
 console.log('📁 Database path:', databasePath)

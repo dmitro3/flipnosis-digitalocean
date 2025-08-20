@@ -5,7 +5,7 @@ This is the **MASTER DATABASE REFERENCE** for the NFT Flip Game Platform. This d
 
 **Last Updated**: December 2024  
 **Database Type**: SQLite3  
-**Primary Database**: `server/flipz-clean.db` (consolidated)  
+**Primary Database**: `/opt/flipnosis/app/server/flipz.db` (consolidated)  
 **Status**: ✅ **IMPLEMENTED AND TESTED**
 
 ---
@@ -525,7 +525,7 @@ CREATE INDEX idx_admin_actions_created ON admin_actions(created_at);
 - [x] Testing and verification
 
 ### 🎯 **READY FOR PRODUCTION:**
-- **Primary Database**: `server/flipz-clean.db`
+- **Primary Database**: `/opt/flipnosis/app/server/flipz.db`
 - **XP System**: Fully functional with award messages
 - **API Integration**: Complete with all endpoints
 - **Performance**: Optimized with indexes
@@ -538,7 +538,7 @@ CREATE INDEX idx_admin_actions_created ON admin_actions(created_at);
 ### **For Developers:**
 ```javascript
 // Use the consolidated database
-const dbPath = './server/flipz-clean.db';
+const dbPath = '/opt/flipnosis/app/server/flipz.db';
 
 // XP Service usage
 const { XPService } = require('./server/services/xpService');

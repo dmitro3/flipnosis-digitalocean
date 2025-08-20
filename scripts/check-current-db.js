@@ -4,7 +4,7 @@ const path = require('path');
 // Database path - try different possible locations
 const possiblePaths = [
   path.join(__dirname, '../server/flipz.db'),
-  path.join(__dirname, '../server/flipz-clean.db'),
+  '/opt/flipnosis/app/server/flipz.db',
   path.join(__dirname, '../server/games.db')
 ];
 

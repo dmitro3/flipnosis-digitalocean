@@ -3,7 +3,7 @@ const { ethers } = require('ethers')
 const path = require('path')
 
 // Database path
-const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz-clean.db')
+const DATABASE_PATH = '/opt/flipnosis/app/server/flipz.db'
 
 // Contract configuration - LATEST CONTRACT ADDRESS ONLY
 const RPC_URL = 'https://mainnet.base.org'

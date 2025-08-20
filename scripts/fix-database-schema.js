@@ -4,7 +4,7 @@ const path = require('path');
 class DatabaseSchemaFixer {
   constructor() {
     this.databases = [
-      './server/flipz-clean.db',
+      '/opt/flipnosis/app/server/flipz.db',
       './server/games.db',
       './server/games-v2.db',
       './server/local-dev.db'

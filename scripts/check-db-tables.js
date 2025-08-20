@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose()
 const path = require('path')
 
-const DATABASE_PATH = path.join(__dirname, '..', 'server', 'flipz-clean.db')
+const DATABASE_PATH = '/opt/flipnosis/app/server/flipz.db'
 
 const db = new sqlite3.Database(DATABASE_PATH)
 

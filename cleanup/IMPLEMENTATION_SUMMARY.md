@@ -10,7 +10,7 @@ This document summarizes the complete implementation of the database consolidati
 ### ✅ **Completed Actions:**
 
 1. **Database Analysis** - Analyzed all 4 database files:
-   - `flipz-clean.db` (empty)
+   - `flipz.db` (server database)
    - `games.db` (most complete - 10 tables)
    - `local-dev.db` (development - 8 tables)
    - `games-v2.db` (minimal)
@@ -22,7 +22,7 @@ This document summarizes the complete implementation of the database consolidati
    - Standardized field names
 
 3. **Database Consolidation** - Merged all databases into one:
-   - **Primary Database**: `server/flipz-clean.db`
+   - **Primary Database**: `/opt/flipnosis/app/server/flipz.db`
    - **Consolidated Data**: All existing data from other databases
    - **Complete Schema**: All 17 tables with proper structure
 
@@ -204,7 +204,7 @@ showNotification("🎉 **+250 XP!** You've claimed your identity!");
 #### **1. Database Access:**
 ```javascript
 // Use the consolidated database
-const dbPath = './server/flipz-clean.db';
+const dbPath = '/opt/flipnosis/app/server/flipz.db';
 ```
 
 #### **2. XP Service Usage:**

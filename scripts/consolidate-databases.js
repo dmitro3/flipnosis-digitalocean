@@ -9,7 +9,7 @@ class DatabaseConsolidator {
       './server/local-dev.db',
       './server/games-v2.db'
     ];
-    this.targetDatabase = './server/flipz-clean.db';
+    this.targetDatabase = '/opt/flipnosis/app/server/flipz.db';
   }
 
   async consolidate() {

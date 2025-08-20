@@ -5,7 +5,7 @@ const path = require('path')
 async function testChatAndOffers() {
   console.log('🧪 Testing Chat and Offer System...')
   
-  const dbPath = path.join(__dirname, '../server/flipz-clean.db')
+  const dbPath = '/opt/flipnosis/app/server/flipz.db'
   console.log('📁 Database path:', dbPath)
   
   // Check if database file exists

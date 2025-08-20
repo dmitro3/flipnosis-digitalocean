@@ -27,7 +27,7 @@ echo "Checking current database schema..."
 # Use Node.js to run schema migration
 node -e "
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./flipz-clean.db');
+const db = new sqlite3.Database('./flipz.db');
 
 console.log('Connected to database');
 
