@@ -84,21 +84,18 @@ const GamePage = () => {
   
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { address, isMobile } = useWallet()
-  const { showInfo } = useToast()
+  const { address, isMobile, chain } = useWallet()
+  const { showSuccess, showError, showInfo } = useToast()
   
-  // Orchestrator state - manages which component to show
-  const [currentPhase, setCurrentPhase] = useState('lobby') // 'lobby', 'countdown', 'game_room'
+  // Game state from GameRoom
+  const [gameRoomState, setGameRoomState] = useState(null)
+  
+  // Add new state for game phases
+  const [currentPhase, setCurrentPhase] = useState('lobby')
   const [gameData, setGameData] = useState(null)
-  const [customHeadsImage, setCustomHeadsImage] = useState('/coins/plainh.png')
-  const [customTailsImage, setCustomTailsImage] = useState('/coins/plaint.png')
-  const [gameCoin, setGameCoin] = useState({
-    id: 'plain',
-    type: 'default',
-    name: 'Classic',
-    headsImage: '/coins/plainh.png',
-    tailsImage: '/coins/plaint.png'
-  })
+  const [customHeadsImage, setCustomHeadsImage] = useState(null)
+  const [customTailsImage, setCustomTailsImage] = useState(null)
+  const [gameCoin, setGameCoin] = useState(null)
 
   // Listen for game room entry event from lobby
   useEffect(() => {
@@ -149,6 +146,11 @@ const GamePage = () => {
     setCurrentPhase('lobby')
   }
 
+  // Handle game room state updates
+  const handleGameRoomStateUpdate = (newState) => {
+    setGameRoomState(newState)
+  }
+
   // Orchestrator rendering based on phase
   const renderCurrentPhase = () => {
     switch (currentPhase) {
@@ -177,20 +179,21 @@ const GamePage = () => {
             customHeadsImage={customHeadsImage}
             customTailsImage={customTailsImage}
             gameCoin={gameCoin}
+            onStateUpdate={handleGameRoomStateUpdate}
           >
-            {/* Pass the coin as a child */}
+            {/* Pass the coin as a child with actual game state */}
             <GameCoin
               gameId={gameId}
-              gameState={{ phase: 'choosing' }}
-              streamedCoinState={{ isStreaming: false, frameData: null }}
-              flipAnimation={null}
+              gameState={gameRoomState || { phase: 'choosing' }}
+              streamedCoinState={gameRoomState?.streamedCoinState || { isStreaming: false, frameData: null }}
+              flipAnimation={gameRoomState?.flipAnimation || null}
               customHeadsImage={customHeadsImage}
               customTailsImage={customTailsImage}
               gameCoin={gameCoin}
               isMobile={isMobile}
               onPowerChargeStart={() => {}}
               onPowerChargeStop={() => {}}
-              isMyTurn={() => false}
+              isMyTurn={() => gameRoomState?.isMyTurn?.() || false}
               address={address}
               isCreator={() => address === gameData?.creator}
             />

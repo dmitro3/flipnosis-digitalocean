@@ -330,7 +330,8 @@ const GameRoom = ({
   onExitRoom, // Callback to exit back to lobby or home
   customHeadsImage,
   customTailsImage,
-  gameCoin
+  gameCoin,
+  onStateUpdate // Callback to update parent with game state
 }) => {
   const { address, getPlayerName } = useProfile()
   const [wsConnected, setWsConnected] = useState(false)
@@ -364,6 +365,21 @@ const GameRoom = ({
     getGameJoiner,
     getChoosingPlayer // FIXED: Use the improved turn determination
   } = useGameRoomState(gameId, gameData?.creator, gameData)
+
+  // Update parent component with current state
+  useEffect(() => {
+    if (onStateUpdate) {
+      onStateUpdate({
+        gameState,
+        playerChoices,
+        flipAnimation,
+        streamedCoinState,
+        isMyTurn,
+        isCreator,
+        isJoiner
+      })
+    }
+  }, [gameState, playerChoices, flipAnimation, streamedCoinState, isMyTurn, isCreator, isJoiner, onStateUpdate])
 
   // Connect to game room when component mounts
   useEffect(() => {
@@ -527,10 +543,7 @@ const GameRoom = ({
   `
 
   const TestButton = styled.button`
-    position: fixed;
-    top: 2rem;
-    left: 2rem;
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 2rem;
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 150, 255, 0.5) 100%);
     border: 2px solid #00FFFF;
     border-radius: 0.5rem;
@@ -538,7 +551,7 @@ const GameRoom = ({
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 1000;
+    margin-top: 1rem;
     
     &:hover {
       background: linear-gradient(135deg, rgba(0, 255, 255, 0.4) 0%, rgba(0, 150, 255, 0.7) 100%);
@@ -573,6 +586,15 @@ const GameRoom = ({
     const testFlipResult = Math.random() < 0.5 ? 'heads' : 'tails'
     const testRoundWinner = testFlipResult === testCreatorChoice ? getGameCreator() : getGameJoiner()
     
+    console.log('🧪 Test data generated:', {
+      creatorPower: testCreatorPower,
+      joinerPower: testJoinerPower,
+      creatorChoice: testCreatorChoice,
+      joinerChoice: testJoinerChoice,
+      flipResult: testFlipResult,
+      roundWinner: testRoundWinner
+    })
+    
     // Set up test choices
     setPlayerChoices({
       creator: testCreatorChoice,
@@ -591,6 +613,7 @@ const GameRoom = ({
     
     // Trigger the flip after a short delay
     setTimeout(() => {
+      console.log('🧪 Triggering flip animation...')
       handleFlipResult({
         result: testFlipResult,
         roundWinner: testRoundWinner,
@@ -606,11 +629,6 @@ const GameRoom = ({
     <ThemeProvider theme={theme}>
       <GameRoomContainer>
         <GameBackground />
-        
-        {/* Test Button */}
-        <TestButton onClick={handleTestFlip}>
-          🧪 Test Flip
-        </TestButton>
         
         {/* Forfeit Button */}
         <ForfeitButton onClick={handleForfeitClick}>
@@ -675,6 +693,11 @@ const GameRoom = ({
             <CoinContainer>
               {children}
             </CoinContainer>
+            
+            {/* Test Button beneath the coin */}
+            <TestButton onClick={handleTestFlip}>
+              🧪 Test Flip
+            </TestButton>
             
             <ChoiceSection>
               {!canChoose ? (
