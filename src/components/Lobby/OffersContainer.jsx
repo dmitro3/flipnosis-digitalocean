@@ -382,20 +382,45 @@ const isCreator = () => {
     // Register message handlers for specific message types
     console.log('🔌 Offers: Registering message handlers with socket:', socket)
     
-    // Register handlers for each message type
-    socket.on('crypto_offer', handleMessage)
-    socket.on('nft_offer', handleMessage)
-    socket.on('accept_crypto_offer', handleMessage)
-    socket.on('accept_nft_offer', handleMessage)
-    socket.on('chat_history', handleMessage)
+    // Get the actual WebSocket object or use the wrapper
+    const actualSocket = socket?.socket || socket
     
-    return () => {
-      console.log('🔌 Offers: Cleaning up message handlers')
-      socket.off('crypto_offer', handleMessage)
-      socket.off('nft_offer', handleMessage)
-      socket.off('accept_crypto_offer', handleMessage)
-      socket.off('accept_nft_offer', handleMessage)
-      socket.off('chat_history', handleMessage)
+    if (actualSocket && typeof actualSocket.addEventListener === 'function') {
+      // Use addEventListener for WebSocket
+      const messageHandler = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          handleMessage(data)
+        } catch (error) {
+          console.error('Offers: Error parsing WebSocket message:', error)
+        }
+      }
+      
+      actualSocket.addEventListener('message', messageHandler)
+      
+      return () => {
+        console.log('🔌 Offers: Cleaning up WebSocket message handler')
+        actualSocket.removeEventListener('message', messageHandler)
+      }
+    } else if (actualSocket && typeof actualSocket.on === 'function') {
+      // Use .on/.off for socket.io style
+      actualSocket.on('crypto_offer', handleMessage)
+      actualSocket.on('nft_offer', handleMessage)
+      actualSocket.on('accept_crypto_offer', handleMessage)
+      actualSocket.on('accept_nft_offer', handleMessage)
+      actualSocket.on('chat_history', handleMessage)
+      
+      return () => {
+        console.log('🔌 Offers: Cleaning up socket.io message handlers')
+        actualSocket.off('crypto_offer', handleMessage)
+        actualSocket.off('nft_offer', handleMessage)
+        actualSocket.off('accept_crypto_offer', handleMessage)
+        actualSocket.off('accept_nft_offer', handleMessage)
+        actualSocket.off('chat_history', handleMessage)
+      }
+    } else {
+      console.warn('🔌 Offers: No valid socket found for message handling')
+      return () => {}
     }
   }, [socket, address, showSuccess])
 
@@ -515,6 +540,8 @@ const isCreator = () => {
       isCreator: isCreator(), 
       connected, 
       hasSocket: !!socket,
+      socketConnected: socket?.connected,
+      socketObject: socket,
       offer,
       gameData: gameData?.id || gameData?.listing_id 
     })
@@ -524,7 +551,9 @@ const isCreator = () => {
       return
     }
     
-    if (!connected || !socket) {
+    // Check if we have a valid socket connection
+    const isSocketConnected = socket?.connected || (socket?.socket && socket.socket.readyState === WebSocket.OPEN)
+    if (!isSocketConnected) {
       showError('Connection required to accept offers')
       return
     }
@@ -544,14 +573,25 @@ const isCreator = () => {
 
       console.log('📤 Offers: Sending offer acceptance:', acceptanceData)
       
-      // Send via WebSocket
-      if (socket && socket.send) {
+      // Send via WebSocket - handle both direct socket and wrapper object
+      if (socket?.socket && socket.socket.send) {
+        // Use the actual WebSocket object
+        socket.socket.send(JSON.stringify(acceptanceData))
+        console.log('📤 Offer acceptance sent via socket.socket.send')
+      } else if (socket?.send) {
+        // Direct socket object
         socket.send(acceptanceData)
+        console.log('📤 Offer acceptance sent via socket.send')
       } else {
         // Fallback to global WebSocket service
         const ws = window.FlipnosisWS
         if (ws) {
           ws.send(acceptanceData)
+          console.log('📤 Offer acceptance sent via global WebSocket service')
+        } else {
+          console.error('❌ No WebSocket connection available for offer acceptance')
+          showError('WebSocket connection not available')
+          return
         }
       }
       
@@ -746,9 +786,9 @@ const isCreator = () => {
       <OffersHeader>
         <OffersTitle>💰 Offers</OffersTitle>
         <ConnectionStatus>
-          <StatusDot connected={connected || (socket?.readyState === WebSocket.OPEN)} />
-          <StatusText connected={connected || (socket?.readyState === WebSocket.OPEN)}>
-            {connected || (socket?.readyState === WebSocket.OPEN) ? 'Connected' : 'Disconnected'}
+          <StatusDot connected={connected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN)} />
+          <StatusText connected={connected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN)}>
+            {connected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN) ? 'Connected' : 'Disconnected'}
           </StatusText>
         </ConnectionStatus>
       </OffersHeader>
