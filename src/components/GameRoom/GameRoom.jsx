@@ -526,6 +526,31 @@ const GameRoom = ({
     }
   `
 
+  const TestButton = styled.button`
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 150, 255, 0.5) 100%);
+    border: 2px solid #00FFFF;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    
+    &:hover {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.4) 0%, rgba(0, 150, 255, 0.7) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  `
+
   const handleForfeitClick = () => {
     const confirmed = window.confirm(
       'Are you sure you want to forfeit? Your opponent will win both the NFT and crypto.'
@@ -536,10 +561,56 @@ const GameRoom = ({
     }
   }
 
+  // Test flip function
+  const handleTestFlip = () => {
+    console.log('🧪 Test flip triggered!')
+    
+    // Generate random test data
+    const testCreatorPower = Math.floor(Math.random() * 10) + 1 // 1-10
+    const testJoinerPower = Math.floor(Math.random() * 10) + 1 // 1-10
+    const testCreatorChoice = Math.random() < 0.5 ? 'heads' : 'tails'
+    const testJoinerChoice = Math.random() < 0.5 ? 'heads' : 'tails'
+    const testFlipResult = Math.random() < 0.5 ? 'heads' : 'tails'
+    const testRoundWinner = testFlipResult === testCreatorChoice ? getGameCreator() : getGameJoiner()
+    
+    // Set up test choices
+    setPlayerChoices({
+      creator: testCreatorChoice,
+      joiner: testJoinerChoice
+    })
+    
+    // Set game state to charging phase
+    setGameState(prev => ({
+      ...prev,
+      phase: 'charging',
+      creatorChoice: testCreatorChoice,
+      joinerChoice: testJoinerChoice,
+      creatorPower: testCreatorPower,
+      joinerPower: testJoinerPower
+    }))
+    
+    // Trigger the flip after a short delay
+    setTimeout(() => {
+      handleFlipResult({
+        result: testFlipResult,
+        roundWinner: testRoundWinner,
+        creatorChoice: testCreatorChoice,
+        challengerChoice: testJoinerChoice,
+        creatorPower: testCreatorPower,
+        joinerPower: testJoinerPower
+      })
+    }, 1000)
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <GameRoomContainer>
         <GameBackground />
+        
+        {/* Test Button */}
+        <TestButton onClick={handleTestFlip}>
+          🧪 Test Flip
+        </TestButton>
         
         {/* Forfeit Button */}
         <ForfeitButton onClick={handleForfeitClick}>
