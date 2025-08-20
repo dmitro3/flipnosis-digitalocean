@@ -77,7 +77,7 @@ export const useGameState = (gameId, address) => {
   const RPC_COOLDOWN = 2000 // 2 seconds between RPC calls
 
   // Helper functions
-  const getGameCreator = () => gameData?.creator || gameData?.creator_address
+  const getGameCreator = () => gameData?.creator
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
   const getGamePrice = () => gameData?.payment_amount || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || gameData?.price_usd || 0
   const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'

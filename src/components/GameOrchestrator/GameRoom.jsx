@@ -337,7 +337,7 @@ const GameRoom = ({
     isMyTurn,
     getGameCreator,
     getGameJoiner
-  } = useGameRoomState(gameId, gameData?.creator || gameData?.creator_address, gameData)
+  } = useGameRoomState(gameId, gameData?.creator, gameData)
 
   // WebSocket connection state
   const [wsConnected, setWsConnected] = useState(false)

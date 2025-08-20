@@ -292,7 +292,7 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
 
   const getCurrentPlayer = () => {
     if (!gameData) return 'Unknown'
-    if (currentTurn === gameData.creator_address) {
+            if (currentTurn === gameData.creator) {
       return isCreator ? 'You (Creator)' : 'Creator'
     } else {
       return isCreator ? 'Challenger' : 'You (Challenger)'
@@ -332,11 +332,11 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
     if (!gameData?.rounds) return { creator: 0, challenger: 0 }
     
     const creatorWins = gameData.rounds.filter(round => 
-      round.winner === gameData.creator_address
+      round.winner === gameData.creator
     ).length
     
     const challengerWins = gameData.rounds.filter(round => 
-      round.winner && round.winner !== gameData.creator_address
+              round.winner && round.winner !== gameData.creator
     ).length
     
     return { creator: creatorWins, challenger: challengerWins }

@@ -23,15 +23,23 @@ export const useLobbyState = (gameId, address) => {
   // ETH amount state
   const [ethAmount, setEthAmount] = useState(null)
 
-  // Helper functions
-  const getGameCreator = () => gameData?.creator || gameData?.creator_address
+  // Helper functions - only use 'creator' field
+  const getGameCreator = () => gameData?.creator
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
   const getGamePrice = () => gameData?.payment_amount || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || gameData?.price_usd || 0
   const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
   const getGameNFTName = () => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
   const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
 
-  const isCreator = () => address === getGameCreator()
+  const isCreator = () => {
+    if (!gameData || !address) return false
+    
+    // Use 'creator' field which is what your database actually has
+    const creatorAddress = gameData.creator
+    if (!creatorAddress) return false
+    
+    return address.toLowerCase() === creatorAddress.toLowerCase()
+  }
   const isJoiner = () => {
     if (!address || !gameData) return false
     

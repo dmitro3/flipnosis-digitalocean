@@ -36,7 +36,7 @@ export const useGameRoomState = (gameId, address, gameData) => {
   })
 
   // Helper functions
-  const getGameCreator = () => gameData?.creator || gameData?.creator_address
+  const getGameCreator = () => gameData?.creator
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
 
   const isCreator = () => address === getGameCreator()

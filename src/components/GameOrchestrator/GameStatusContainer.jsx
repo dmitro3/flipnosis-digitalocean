@@ -117,7 +117,7 @@ const GameStatusContainer = ({ gameData, isCreator, currentTurn }) => {
 
   const getCurrentPlayer = () => {
     if (!gameData) return 'Unknown'
-    if (currentTurn === gameData.creator_address) {
+            if (currentTurn === gameData.creator) {
       return isCreator ? 'You (Creator)' : 'Creator'
     } else {
       return isCreator ? 'Challenger' : 'You (Challenger)'
@@ -168,7 +168,7 @@ const GameStatusContainer = ({ gameData, isCreator, currentTurn }) => {
             <StatusLabel>Winner:</StatusLabel>
             <StatusValue style={{ color: '#00FF41' }}>
               {gameData?.winner_address ? 
-                (gameData.winner_address === gameData.creator_address ? 'Creator' : 'Challenger') : 
+                (gameData.winner_address === gameData.creator ? 'Creator' : 'Challenger') : 
                 'N/A'
               }
             </StatusValue>

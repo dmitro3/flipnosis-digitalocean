@@ -1118,6 +1118,11 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         return
       }
       
+      // Add creator_address for compatibility if it doesn't exist
+      if (game.creator && !game.creator_address) {
+        game.creator_address = game.creator
+      }
+      
       // Parse coin_data if it's a string
       let coinData = null
       try {

@@ -271,21 +271,21 @@ const OffersContainer = ({
     offersEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [offers])
 
-  const isCreator = () => {
-    // Use prop if available (preferred)
-    if (isCreatorProp && typeof isCreatorProp === 'function') {
-      return isCreatorProp()
-    }
-    
-    // Fallback to local implementation
-    if (!gameData || !address) return false
-    
-    // Check both possible creator field names
-    const creatorAddress = gameData.creator || gameData.creator_address
-    if (!creatorAddress) return false
-    
-    return address.toLowerCase() === creatorAddress.toLowerCase()
+const isCreator = () => {
+  // Use prop if available (preferred)
+  if (isCreatorProp && typeof isCreatorProp === 'function') {
+    return isCreatorProp()
   }
+  
+  // Fallback to local implementation
+  if (!gameData || !address) return false
+  
+  // Check the creator field (your DB uses 'creator' not 'creator_address')
+  const creatorAddress = gameData.creator
+  if (!creatorAddress) return false
+  
+  return address.toLowerCase() === creatorAddress.toLowerCase()
+}
 
   // Listen for offers from WebSocket service
   useEffect(() => {
@@ -588,10 +588,9 @@ const OffersContainer = ({
       offerType: offer.type,
       isCreator: creatorCheck,
       currentAddress: address,
-      gameCreator: gameData?.creator || gameData?.creator_address,
-      willShowAcceptButton: creatorCheck && (offer.type === 'crypto_offer' || offer.type === 'nft_offer'),
-      hasIsCreatorProp: !!isCreatorProp,
-      usingPropFunction: isCreatorProp && typeof isCreatorProp === 'function'
+      gameCreator: gameData?.creator,
+      gameDataKeys: Object.keys(gameData || {}),
+      willShowAcceptButton: creatorCheck && (offer.type === 'crypto_offer' || offer.type === 'nft_offer')
     })
     
     switch (offer.type) {
@@ -609,7 +608,7 @@ const OffersContainer = ({
                 shouldShowAccept,
                 isCreatorResult: isCreator(),
                 currentAddress: address,
-                gameCreator: gameData?.creator || gameData?.creator_address,
+                gameCreator: gameData?.creator,
                 gameStatus: gameData?.status
               })
               return shouldShowAccept
@@ -651,7 +650,7 @@ const OffersContainer = ({
                 shouldShowAccept,
                 isCreatorResult: isCreator(),
                 currentAddress: address,
-                gameCreator: gameData?.creator || gameData?.creator_address,
+                gameCreator: gameData?.creator,
                 gameStatus: gameData?.status
               })
               return shouldShowAccept
@@ -732,7 +731,7 @@ const OffersContainer = ({
     // Additional debug info
     currentAddress: address,
     gameCreator: gameData?.creator,
-    gameCreatorAddress: gameData?.creator_address,
+          gameCreatorAddress: gameData?.creator,
     gameDataKeys: gameData ? Object.keys(gameData) : 'no gameData',
     offerCount: offers?.length || 0,
     hasIsCreatorProp: !!isCreatorProp,

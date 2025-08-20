@@ -363,7 +363,7 @@ const GameRoom = ({
     getGameCreator,
     getGameJoiner,
     getChoosingPlayer // FIXED: Use the improved turn determination
-  } = useGameRoomState(gameId, gameData?.creator || gameData?.creator_address, gameData)
+  } = useGameRoomState(gameId, gameData?.creator, gameData)
 
   // Connect to game room when component mounts
   useEffect(() => {
