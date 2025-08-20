@@ -614,6 +614,8 @@ const GameRoom = ({
     // Trigger the flip after a short delay
     setTimeout(() => {
       console.log('🧪 Triggering flip animation...')
+      console.log('🧪 Current flipAnimation state before:', flipAnimation)
+      
       handleFlipResult({
         result: testFlipResult,
         roundWinner: testRoundWinner,
@@ -622,8 +624,20 @@ const GameRoom = ({
         creatorPower: testCreatorPower,
         joinerPower: testJoinerPower
       })
+      
+      console.log('🧪 Flip result called, flipAnimation should be set now')
     }, 1000)
   }
+
+  // Debug: Log current state for GameCoin
+  useEffect(() => {
+    console.log('🎮 GameRoom state for GameCoin:', {
+      gameState,
+      flipAnimation,
+      streamedCoinState,
+      playerChoices
+    })
+  }, [gameState, flipAnimation, streamedCoinState, playerChoices])
 
   return (
     <ThemeProvider theme={theme}>

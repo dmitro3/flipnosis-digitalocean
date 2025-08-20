@@ -426,17 +426,41 @@ const OptimizedGoldCoin = ({
 
   // MODIFICATION 2: Replace your existing flipCoin function
   useEffect(() => {
-    if (!isFlipping || !flipResult || !coinRef.current) return
+    console.log('🪙 OptimizedGoldCoin flip useEffect triggered:', {
+      isFlipping,
+      flipResult,
+      hasCoinRef: !!coinRef.current,
+      creatorPower,
+      joinerPower
+    })
+    
+    if (!isFlipping || !flipResult || !coinRef.current) {
+      console.log('🪙 Flip conditions not met, returning early')
+      return
+    }
+    
+    console.log('🪙 Starting flip animation!')
     
     const flipCoin = () => {
-      if (isAnimatingRef.current) return;
+      if (isAnimatingRef.current) {
+        console.log('🪙 Animation already in progress, skipping')
+        return;
+      }
       
+      console.log('🪙 Creating flip animation...')
       isAnimatingRef.current = true;
       const coin = coinRef.current;
       
       // Calculate power level from creator and joiner power (1-10)
       const totalPower = (creatorPower || 0) + (joinerPower || 0);
       const powerLevel = Math.max(1, Math.min(10, Math.ceil(totalPower)));
+      
+      console.log('🪙 Flip animation params:', {
+        totalPower,
+        powerLevel,
+        flipResult,
+        coinVisible: coin.visible
+      })
       
       // Get power configuration based on current power level and apply material physics
       const baseConfig = powerConfigs[Math.max(0, powerLevel - 1)];
@@ -468,6 +492,15 @@ const OptimizedGoldCoin = ({
       const launchHeight = (5 + (powerLevel * 0.5)) / 2; // Reduced height by half
       const spinSpeed = speed;
       
+      console.log('🪙 Animation config:', {
+        minFlips,
+        duration,
+        speed,
+        totalRotation: (totalRotation * 180 / Math.PI).toFixed(0) + '°',
+        launchHeight,
+        spinSpeed
+      })
+      
       const animateFlip = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
@@ -490,6 +523,7 @@ const OptimizedGoldCoin = ({
         if (progress < 1) {
           requestAnimationFrame(animateFlip);
         } else {
+          console.log('🪙 Flip animation complete, starting landing sequence')
           // Start landing sequence
           landOnEdge(targetEdgeRotation, isHeads);
         }
