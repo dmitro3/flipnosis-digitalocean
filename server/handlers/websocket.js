@@ -600,6 +600,8 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
     }
     
     try {
+      console.log('🎯 Processing offer acceptance:', { gameId, creatorAddress, acceptedOffer })
+      
       // Determine the offer type and broadcast accordingly
       const offerType = acceptedOffer.cryptoAmount ? 'accept_crypto_offer' : 'accept_nft_offer'
       
@@ -629,47 +631,94 @@ function createWebSocketHandlers(wss, dbService, blockchainService) {
         const depositDeadline = new Date(Date.now() + 2 * 60 * 1000) // 2 minutes from now
         const db = dbService.getDatabase()
         
-        db.run(
-          'UPDATE games SET status = ?, deposit_deadline = ?, challenger = ?, payment_amount = ? WHERE id = ?',
-          ['waiting_challenger_deposit', depositDeadline.toISOString(), acceptedOffer.address, acceptedOffer.cryptoAmount, gameId],
-          async (err) => {
-            if (err) {
-              console.error('❌ Error updating game status:', err)
-            } else {
-              console.log('✅ Game status updated to waiting_challenger_deposit with payment amount:', acceptedOffer.cryptoAmount)
-              
-              // Save system message to database
-              await dbService.saveChatMessage(
-                gameId, 
-                'system', 
-                `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`, 
-                'system'
-              )
-              
-              // Broadcast game status update to trigger countdown
-              broadcastToRoom(gameId, {
-                type: 'game_awaiting_challenger_deposit',
-                gameId,
-                status: 'waiting_challenger_deposit',
-                deposit_deadline: depositDeadline.toISOString(),
-                challenger: acceptedOffer.address,
-                cryptoAmount: acceptedOffer.cryptoAmount,
-                payment_amount: acceptedOffer.cryptoAmount
-              })
-              
-              // Broadcast a system message to prompt the joiner to load their crypto
-              broadcastToRoom(gameId, {
-                type: 'chat_message',
-                message: `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`,
-                from: 'system',
-                timestamp: new Date().toISOString()
-              })
-            }
+        console.log('🔧 Updating game status with data:', {
+          gameId,
+          status: 'waiting_challenger_deposit',
+          depositDeadline: depositDeadline.toISOString(),
+          challenger: acceptedOffer.address,
+          paymentAmount: acceptedOffer.cryptoAmount
+        })
+        
+        // First, let's check if the game exists and get its current status
+        db.get('SELECT status, challenger FROM games WHERE id = ?', [gameId], (err, game) => {
+          if (err) {
+            console.error('❌ Error checking game status:', err)
+            return
           }
-        )
+          
+          if (!game) {
+            console.error('❌ Game not found:', gameId)
+            return
+          }
+          
+          console.log('📊 Current game status:', game)
+          
+          // Now update the game status
+          db.run(
+            'UPDATE games SET status = ?, deposit_deadline = ?, challenger = ?, payment_amount = ? WHERE id = ?',
+            ['waiting_challenger_deposit', depositDeadline.toISOString(), acceptedOffer.address, acceptedOffer.cryptoAmount, gameId],
+            function(err) {
+              if (err) {
+                console.error('❌ Error updating game status:', err)
+                console.error('❌ SQL Error details:', {
+                  message: err.message,
+                  code: err.code,
+                  errno: err.errno
+                })
+              } else {
+                console.log('✅ Game status updated successfully:', {
+                  gameId,
+                  rowsAffected: this.changes,
+                  newStatus: 'waiting_challenger_deposit',
+                  challenger: acceptedOffer.address,
+                  paymentAmount: acceptedOffer.cryptoAmount
+                })
+                
+                // Verify the update worked
+                db.get('SELECT status, challenger, payment_amount FROM games WHERE id = ?', [gameId], (verifyErr, updatedGame) => {
+                  if (verifyErr) {
+                    console.error('❌ Error verifying game update:', verifyErr)
+                  } else {
+                    console.log('✅ Game update verified:', updatedGame)
+                  }
+                })
+                
+                // Save system message to database
+                dbService.saveChatMessage(
+                  gameId, 
+                  'system', 
+                  `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`, 
+                  'system'
+                ).catch(err => {
+                  console.error('❌ Error saving system message:', err)
+                })
+                
+                // Broadcast game status update to trigger countdown
+                broadcastToRoom(gameId, {
+                  type: 'game_awaiting_challenger_deposit',
+                  gameId,
+                  status: 'waiting_challenger_deposit',
+                  deposit_deadline: depositDeadline.toISOString(),
+                  challenger: acceptedOffer.address,
+                  cryptoAmount: acceptedOffer.cryptoAmount,
+                  payment_amount: acceptedOffer.cryptoAmount
+                })
+                
+                // Broadcast a system message to prompt the joiner to load their crypto
+                broadcastToRoom(gameId, {
+                  type: 'chat_message',
+                  message: `🎮 Game accepted! Player 2, please load your ${acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`,
+                  from: 'system',
+                  timestamp: new Date().toISOString()
+                })
+              }
+            }
+          )
+        })
       }
     } catch (error) {
       console.error('❌ Error saving offer acceptance:', error)
+      console.error('❌ Error stack:', error.stack)
     }
   }
 

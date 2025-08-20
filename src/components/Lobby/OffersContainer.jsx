@@ -547,6 +547,7 @@ const isCreator = () => {
     })
     
     if (!isCreator()) {
+      console.error('❌ Cannot accept offer: not creator')
       showError('Only the game creator can accept offers')
       return
     }
@@ -554,12 +555,14 @@ const isCreator = () => {
     // Check if we have a valid socket connection
     const isSocketConnected = socket?.connected || (socket?.socket && socket.socket.readyState === WebSocket.OPEN)
     if (!isSocketConnected) {
+      console.error('❌ Cannot accept offer: no socket connection')
       showError('Connection required to accept offers')
       return
     }
 
     try {
       const offerType = offer.cryptoAmount ? 'crypto offer' : 'NFT offer'
+      console.log('🎯 Starting offer acceptance process for:', offerType)
       showInfo(`Accepting ${offerType}...`)
 
       const acceptanceData = {
@@ -576,14 +579,17 @@ const isCreator = () => {
       // Send via WebSocket - handle both direct socket and wrapper object
       if (socket?.socket && socket.socket.send) {
         // Use the actual WebSocket object
+        console.log('📤 Using socket.socket.send method')
         socket.socket.send(JSON.stringify(acceptanceData))
         console.log('📤 Offer acceptance sent via socket.socket.send')
       } else if (socket?.send) {
         // Direct socket object
+        console.log('📤 Using socket.send method')
         socket.send(acceptanceData)
         console.log('📤 Offer acceptance sent via socket.send')
       } else {
         // Fallback to global WebSocket service
+        console.log('📤 Using global WebSocket service fallback')
         const ws = window.FlipnosisWS
         if (ws) {
           ws.send(acceptanceData)
@@ -595,21 +601,25 @@ const isCreator = () => {
         }
       }
       
+      console.log('✅ Offer acceptance message sent successfully')
       showSuccess(`${offerType} accepted! Game starting...`)
       
       // Reload game data after a short delay to get updated status
       setTimeout(() => {
+        console.log('🔄 Reloading game data after offer acceptance')
         if (window.location.pathname.includes('/game/')) {
           window.location.reload() // Force reload to get updated game status
         }
       }, 1000)
       
       if (onOfferAccepted) {
+        console.log('📞 Calling onOfferAccepted callback')
         onOfferAccepted(offer)
       }
       
     } catch (error) {
       console.error('Offers: Error accepting offer:', error)
+      console.error('Offers: Error stack:', error.stack)
       showError('Failed to accept offer: ' + error.message)
     }
   }
@@ -627,16 +637,20 @@ const isCreator = () => {
 
   const renderOfferContent = (offer) => {
     const creatorCheck = isCreator()
-    const offerType = offer.type || 'crypto_offer' // Default to crypto_offer if type is missing
     
     console.log('🔍 Rendering offer:', {
-      offerType: offerType,
+      offerType: offer.type,
       isCreator: creatorCheck,
       currentAddress: address,
-      gameCreator: gameData?.creator || gameData?.creator_address,
+      gameCreator: gameData?.creator,
       gameDataKeys: Object.keys(gameData || {}),
-      willShowAcceptButton: creatorCheck && offerType === 'crypto_offer'
+      offer: offer
     })
+    
+    // Determine offer type
+    let offerType = offer.type
+    if (offer.cryptoAmount && !offerType) offerType = 'crypto_offer'
+    if (offer.nft && !offerType) offerType = 'nft_offer'
     
     // Format timestamp properly
     const offerTime = offer.timestamp || offer.created_at || new Date().toISOString()
@@ -645,6 +659,8 @@ const isCreator = () => {
       minute: '2-digit',
       hour12: true
     })
+    
+    console.log('🔍 Rendering offer input, shouldShowOfferInput:', shouldShowOfferInput())
     
     switch (offerType) {
       case 'crypto_offer':
@@ -659,7 +675,10 @@ const isCreator = () => {
               <OfferActions>
                 <ActionButton 
                   className="accept"
-                  onClick={() => handleAcceptOffer(offer)}
+                  onClick={() => {
+                    console.log('🔘 Accept button clicked for crypto offer:', offer)
+                    handleAcceptOffer(offer)
+                  }}
                 >
                   ✅ Accept
                 </ActionButton>
@@ -701,7 +720,10 @@ const isCreator = () => {
               <OfferActions>
                 <ActionButton 
                   className="accept"
-                  onClick={() => handleAcceptOffer(offer)}
+                  onClick={() => {
+                    console.log('🔘 Accept button clicked for NFT offer:', offer)
+                    handleAcceptOffer(offer)
+                  }}
                 >
                   ✅ Accept
                 </ActionButton>
