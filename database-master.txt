@@ -3,7 +3,7 @@
 # Server: 159.69.242.154
 # Generated: August 12, 2025
 # Updated: January 2025 - Single Server Migration Complete
-# Last Verified: January 2025 - Current Schema Audit Complete + Code Integration Complete
+# Last Verified: January 2025 - Current Schema Audit Complete + Code Integration Complete + Missing Fields Added
 
 ================================================================================
 DATABASE OVERVIEW
@@ -198,10 +198,16 @@ CREATE TABLE listings (
         coin_data TEXT,
         listing_fee_paid BOOLEAN DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        creator_online BOOLEAN DEFAULT false,          -- NEW FIELD
+        min_offer_price DECIMAL(20,8) DEFAULT 0        -- NEW FIELD
       );
 
 Purpose: NFT listings for sale
+
+NEW FIELDS ADDED:
+- creator_online: Tracks if the listing creator is currently online
+- min_offer_price: Minimum price for offers on this listing
 
 6. MESSAGES TABLE
 ================================================================================
@@ -385,6 +391,8 @@ CURRENT STATUS
 ✅ New indexes for performance optimization
 ✅ **CODE INTEGRATION COMPLETE**: All NFT deposit tracking fields are now populated by CreateFlip page
 ✅ **API ENDPOINTS UPDATED**: Database operations now include NFT deposit tracking
+✅ **MISSING FIELDS ADDED**: creator_online and min_offer_price fields added to listings table
+✅ **ALL COMPONENTS VERIFIED**: Dashboard, AdminPanel, DatabaseAdmin, ProfileWithNotifications, MyFlipsDropdown, OfferModal, NFTOfferComponent, ChatContainer, and ShareButton all have required database fields
 
 The database is now fully synchronized with the application requirements and includes the latest NFT deposit tracking features. The CreateFlip page and API endpoints are fully integrated with the NFT deposit tracking system.
 
@@ -413,3 +421,4 @@ Recent Updates (January 2025):
 - Updated field types for better precision and performance
 - **CODE INTEGRATION COMPLETE**: CreateFlip.jsx and API endpoints now populate all NFT deposit tracking fields
 - **API ENDPOINTS UPDATED**: /games/:gameId/create-from-listing and /games/:gameId/deposit-confirmed now handle NFT deposit tracking
+- **MISSING FIELDS ADDED**: Added creator_online and min_offer_price fields to listings table for Dashboard and OfferModal components
