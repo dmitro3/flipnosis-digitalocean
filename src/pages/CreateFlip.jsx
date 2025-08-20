@@ -360,14 +360,19 @@ const CreateFlip = () => {
       setStepStatus({ approve: true, payFee: true, depositNFT: true })
       setCurrentStep(3)
       
-      // Step 4: Create game record in database
+      // Step 4: Create game record in database with NFT deposit tracking
       showInfo('Registering game...')
       const gameResponse = await fetch(getApiUrl(`/games/${gameId}/create-from-listing`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listingId: listingResult.id,
-          transactionHash: createResult.transactionHash
+          transactionHash: createResult.transactionHash,
+          nftDeposited: true,
+          nftDepositTime: new Date().toISOString(),
+          nftDepositHash: createResult.transactionHash,
+          nftDepositVerified: false,
+          lastNftCheckTime: new Date().toISOString()
         })
       })
       
@@ -377,14 +382,19 @@ const CreateFlip = () => {
         throw new Error(errorData.error || 'Failed to register game')
       }
       
-      // Step 6: Confirm NFT deposit
+      // Step 6: Confirm NFT deposit with all tracking fields
       const confirmResponse = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           player: address,
           assetType: 'nft',
-          transactionHash: createResult.transactionHash
+          transactionHash: createResult.transactionHash,
+          nftDeposited: true,
+          nftDepositTime: new Date().toISOString(),
+          nftDepositHash: createResult.transactionHash,
+          nftDepositVerified: false,
+          lastNftCheckTime: new Date().toISOString()
         })
       })
       

@@ -423,7 +423,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   // Add a new endpoint to create game when NFT is deposited:
   router.post('/games/:gameId/create-from-listing', async (req, res) => {
     const { gameId } = req.params
-    const { listingId, transactionHash } = req.body
+    const { listingId, transactionHash, nftDeposited, nftDepositTime, nftDepositHash, nftDepositVerified, lastNftCheckTime } = req.body
     
     try {
       // Get listing details
@@ -460,14 +460,15 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       }
       
-      // Create game record with proper status
+      // Create game record with proper status and NFT deposit tracking
       await new Promise((resolve, reject) => {
         db.run(`
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator, challenger,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            price_usd, coin_data, status, creator_deposited, game_type, chain, payment_token
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            price_usd, coin_data, status, creator_deposited, game_type, chain, payment_token,
+            nft_deposited, nft_deposit_time, nft_deposit_hash, nft_deposit_verified, last_nft_check_time
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listing.id, ethers.id(gameId), listing.creator, '', // challenger is empty initially
           listing.nft_contract, listing.nft_token_id, listing.nft_name, 
@@ -477,7 +478,12 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           false, // creator_deposited
           'nft-vs-crypto', // game_type
           'base', // chain
-          'ETH' // payment_token
+          'ETH', // payment_token
+          nftDeposited || false, // nft_deposited
+          nftDepositTime || null, // nft_deposit_time
+          nftDepositHash || null, // nft_deposit_hash
+          nftDepositVerified || false, // nft_deposit_verified
+          lastNftCheckTime || null // last_nft_check_time
         ], function(err) {
           if (err) {
             console.error('Database error details:', err)
@@ -1754,7 +1760,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   // New route: Confirm deposit received (called by frontend after successful deposit)
   router.post('/games/:gameId/deposit-confirmed', async (req, res) => {
     const { gameId } = req.params
-    const { player, assetType, transactionHash } = req.body
+    const { player, assetType, transactionHash, nftDeposited, nftDepositTime, nftDepositHash, nftDepositVerified, lastNftCheckTime } = req.body
     
     try {
       console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash })
@@ -1771,18 +1777,34 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         return res.status(404).json({ error: 'Game not found' })
       }
       
-      // Update deposit status in database
-      let updateField = ''
+      // Update deposit status in database with NFT tracking fields
+      let updateFields = []
+      let updateValues = []
+      
       if (assetType === 'nft' && player.toLowerCase() === game.creator.toLowerCase()) {
-        updateField = 'creator_deposited = true'
+        updateFields.push('creator_deposited = true')
+        // Also update NFT deposit tracking fields if provided
+        if (nftDeposited !== undefined) updateFields.push('nft_deposited = ?')
+        if (nftDepositTime !== undefined) updateFields.push('nft_deposit_time = ?')
+        if (nftDepositHash !== undefined) updateFields.push('nft_deposit_hash = ?')
+        if (nftDepositVerified !== undefined) updateFields.push('nft_deposit_verified = ?')
+        if (lastNftCheckTime !== undefined) updateFields.push('last_nft_check_time = ?')
+        
+        if (nftDeposited !== undefined) updateValues.push(nftDeposited)
+        if (nftDepositTime !== undefined) updateValues.push(nftDepositTime)
+        if (nftDepositHash !== undefined) updateValues.push(nftDepositHash)
+        if (nftDepositVerified !== undefined) updateValues.push(nftDepositVerified)
+        if (lastNftCheckTime !== undefined) updateValues.push(lastNftCheckTime)
       } else if (assetType === 'eth' && player.toLowerCase() === game.challenger.toLowerCase()) {
-        updateField = 'challenger_deposited = true'
+        updateFields.push('challenger_deposited = true')
       } else {
         return res.status(400).json({ error: 'Invalid deposit confirmation' })
       }
       
+      updateValues.push(gameId)
+      
       await new Promise((resolve, reject) => {
-        db.run(`UPDATE games SET ${updateField} WHERE id = ?`, [gameId], function(err) {
+        db.run(`UPDATE games SET ${updateFields.join(', ')} WHERE id = ?`, updateValues, function(err) {
           if (err) reject(err)
           else resolve()
         })
