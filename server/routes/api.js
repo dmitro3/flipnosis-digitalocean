@@ -665,7 +665,15 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       if (err) {
         return res.status(500).json({ error: 'Database error' })
       }
-      res.json(offers)
+      
+      // Add type field to each offer based on offer_price
+      const transformedOffers = offers.map(offer => ({
+        ...offer,
+        type: 'crypto_offer', // All offers in this table are crypto offers
+        timestamp: offer.created_at || new Date().toISOString()
+      }))
+      
+      res.json(transformedOffers)
     })
   })
 
@@ -1100,27 +1108,31 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             type: 'listing',
             game_type: 'nft-vs-crypto',
             creator: listing.creator,
-            creator_address: listing.creator, // Add for compatibility
+            creator_address: listing.creator, // Ensure both fields exist
             nft_contract: listing.nft_contract,
             nft_token_id: listing.nft_token_id,
             nft_name: listing.nft_name,
             nft_image: listing.nft_image,
             nft_collection: listing.nft_collection,
             asking_price: listing.asking_price,
-            price_usd: listing.asking_price, // Add for consistency
+            price_usd: listing.asking_price,
             coin_data: listing.coin_data,
-            coinData: coinData, // Parsed coin data
-            status: listing.status === 'open' ? 'awaiting_challenger' : listing.status, // Map 'open' to 'awaiting_challenger'
-            creator_deposited: true, // Assume NFT is deposited if listing exists
-            challenger_deposited: false
+            coinData: coinData,
+            status: listing.status === 'open' ? 'awaiting_challenger' : listing.status,
+            creator_deposited: true,
+            challenger_deposited: false,
+            listing_id: listing.id
           })
         })
         return
       }
       
-      // Add creator_address for compatibility if it doesn't exist
-      if (game.creator && !game.creator_address) {
+      // Ensure both creator and creator_address fields exist
+      if (!game.creator_address && game.creator) {
         game.creator_address = game.creator
+      }
+      if (!game.creator && game.creator_address) {
+        game.creator = game.creator_address
       }
       
       // Parse coin_data if it's a string

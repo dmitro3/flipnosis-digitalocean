@@ -280,9 +280,12 @@ const isCreator = () => {
   // Fallback to local implementation
   if (!gameData || !address) return false
   
-  // Check the creator field (your DB uses 'creator' not 'creator_address')
-  const creatorAddress = gameData.creator
-  if (!creatorAddress) return false
+  // Check both possible creator field names
+  const creatorAddress = gameData.creator || gameData.creator_address
+  if (!creatorAddress) {
+    console.warn('No creator field found in gameData:', Object.keys(gameData))
+    return false
+  }
   
   return address.toLowerCase() === creatorAddress.toLowerCase()
 }
@@ -584,35 +587,35 @@ const isCreator = () => {
 
   const renderOfferContent = (offer) => {
     const creatorCheck = isCreator()
+    const offerType = offer.type || 'crypto_offer' // Default to crypto_offer if type is missing
+    
     console.log('🔍 Rendering offer:', {
-      offerType: offer.type,
+      offerType: offerType,
       isCreator: creatorCheck,
       currentAddress: address,
-      gameCreator: gameData?.creator,
+      gameCreator: gameData?.creator || gameData?.creator_address,
       gameDataKeys: Object.keys(gameData || {}),
-      willShowAcceptButton: creatorCheck && (offer.type === 'crypto_offer' || offer.type === 'nft_offer')
+      willShowAcceptButton: creatorCheck && offerType === 'crypto_offer'
     })
     
-    switch (offer.type) {
+    // Format timestamp properly
+    const offerTime = offer.timestamp || offer.created_at || new Date().toISOString()
+    const formattedTime = new Date(offerTime).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+    
+    switch (offerType) {
       case 'crypto_offer':
         return (
           <div>
             <OfferAmount>
               <OfferAmountLabel>💰 Crypto Offer:</OfferAmountLabel>
-              <OfferAmountValue>${offer.cryptoAmount} USD</OfferAmountValue>
+              <OfferAmountValue>${offer.offer_price || offer.cryptoAmount || 0} USD</OfferAmountValue>
             </OfferAmount>
-            {/* Accept button - show for creators with detailed logging */}
-            {(() => {
-              const shouldShowAccept = isCreator()
-              console.log('🔍 Crypto offer accept button decision:', {
-                shouldShowAccept,
-                isCreatorResult: isCreator(),
-                currentAddress: address,
-                gameCreator: gameData?.creator,
-                gameStatus: gameData?.status
-              })
-              return shouldShowAccept
-            })() && (
+            {/* Accept button - show for creators */}
+            {creatorCheck && (
               <OfferActions>
                 <ActionButton 
                   className="accept"
@@ -777,19 +780,23 @@ const isCreator = () => {
           </div>
         ) : (
           offers.map((offer, index) => {
-            const displayName = getDisplayName(offer.address)
+            const playerName = playerNames[offer.offerer_address || offer.address] || 'Anonymous'
+            const offerTime = offer.timestamp || offer.created_at || new Date().toISOString()
+            const formattedTime = new Date(offerTime).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            })
             
             return (
-              <OfferItem key={index}>
+              <OfferItem key={offer.id || index}>
                 <OfferHeader>
-                  <span>
-                    {offer.type === 'crypto_offer' ? '💰' : 
-                     offer.type === 'nft_offer' ? '💎' : 
-                     offer.type === 'offer_accepted' ? '✅' : '⚡'} {displayName}
-                  </span>
-                  <span>{formatTimestamp(offer.timestamp)}</span>
+                  <span>⚡ {playerName}</span>
+                  <span>{formattedTime}</span>
                 </OfferHeader>
-                {renderOfferContent(offer)}
+                <OfferContent>
+                  {renderOfferContent(offer)}
+                </OfferContent>
               </OfferItem>
             )
           })
