@@ -207,18 +207,23 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-         // Enhanced lighting for glossy effect
-     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+         // Enhanced lighting for vibrant glossy effect
+     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
      scene.add(ambientLight)
      
-     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
+     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
      directionalLight.position.set(5, 5, 5)
      scene.add(directionalLight)
      
      // Add a second light for better highlights
-     const fillLight = new THREE.DirectionalLight(0xffffff, 0.6)
+     const fillLight = new THREE.DirectionalLight(0xffffff, 0.8)
      fillLight.position.set(-3, 3, 2)
      scene.add(fillLight)
+     
+     // Add a warm rim light for extra vibrancy
+     const rimLight = new THREE.DirectionalLight(0xffd700, 0.4)
+     rimLight.position.set(0, -2, 3)
+     scene.add(rimLight)
 
     // Create coin geometry (cylinder)
     const geometry = new THREE.CylinderGeometry(
@@ -228,26 +233,29 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-         // Create materials array [edge, heads, tails] - glossy finish
+         // Create materials array [edge, heads, tails] - vibrant glossy finish
      const materials = [
        new THREE.MeshPhongMaterial({ 
          map: createTexture('edge'),
          color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFD700,
-         shininess: 200,
-         specular: 0x888888,
-         reflectivity: 0.3
+         shininess: 300,
+         specular: 0xffffff,
+         reflectivity: 0.5,
+         emissive: 0x111111
        }),
        new THREE.MeshPhongMaterial({ 
          map: createTexture('heads', customHeadsImage),
-         shininess: 200,
-         specular: 0x888888,
-         reflectivity: 0.3
+         shininess: 300,
+         specular: 0xffffff,
+         reflectivity: 0.5,
+         emissive: 0x111111
        }),
        new THREE.MeshPhongMaterial({ 
          map: createTexture('tails', customTailsImage),
-         shininess: 200,
-         specular: 0x888888,
-         reflectivity: 0.3
+         shininess: 300,
+         specular: 0xffffff,
+         reflectivity: 0.5,
+         emissive: 0x111111
        })
      ]
 

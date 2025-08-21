@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styled from '@emotion/styled'
 import FinalCoin from '../FinalCoin'
 
@@ -15,13 +15,36 @@ const LobbyCoin = ({
   customTailsImage = null,
   material = null 
 }) => {
+  const [testFlip, setTestFlip] = useState(null)
+  const [isTestFlipping, setIsTestFlipping] = useState(false)
+  
+  const handleCoinClick = () => {
+    if (isTestFlipping) return
+    
+    setIsTestFlipping(true)
+    const result = Math.random() < 0.5 ? 'heads' : 'tails'
+    setTestFlip({
+      isActive: true,
+      result,
+      duration: 3000
+    })
+    
+    // Reset after animation completes
+    setTimeout(() => {
+      setTestFlip(null)
+      setIsTestFlipping(false)
+    }, 4000)
+  }
+  
   return (
-    <CoinContainer>
+    <CoinContainer onClick={handleCoinClick} style={{ cursor: 'pointer' }}>
       <FinalCoin
-        isFlipping={false}
-        flipResult={null}
-        flipDuration={3000}
-        onFlipComplete={() => {}}
+        isFlipping={testFlip?.isActive || false}
+        flipResult={testFlip?.result || null}
+        flipDuration={testFlip?.duration || 3000}
+        onFlipComplete={() => {
+          console.log('Lobby coin flip complete')
+        }}
         onPowerCharge={() => {}}
         onPowerRelease={() => {}}
         isPlayerTurn={false}
