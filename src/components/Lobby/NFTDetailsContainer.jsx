@@ -377,7 +377,7 @@ const ShareButton = styled.button`
 
 const VerificationElement = styled.div`
   position: absolute;
-  top: -0.5rem;
+  top: -1rem;
   right: -0.5rem;
   background: ${props => props.verified ? 'rgba(0, 255, 65, 0.9)' : 'rgba(255, 149, 0, 0.9)'};
   color: #000;
