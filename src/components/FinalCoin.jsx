@@ -309,13 +309,13 @@ const FinalCoin = ({
           const scale = 1 + Math.sin(time * 5) * 0.05 * intensity
           coin.scale.set(scale, scale, scale)
           
-          // Slow rotation during charge (around Y axis for visual effect)
-          coin.rotation.y += 0.02 * intensity
-        } else {
-          // Gentle idle rotation (around Y axis for visual interest)
-          coin.rotation.y += 0.005
-          coin.scale.set(1, 1, 1)
-        }
+                     // Slow rotation during charge (around Y axis for visual effect) - clockwise direction
+           coin.rotation.y -= 0.02 * intensity
+                 } else {
+           // Gentle idle rotation (around Y axis for visual interest) - clockwise direction
+           coin.rotation.y -= 0.005
+           coin.scale.set(1, 1, 1)
+         }
         }
 
         renderer.render(scene, camera)
@@ -341,7 +341,10 @@ const FinalCoin = ({
 
   // Flip animation
   useEffect(() => {
-    if (!isFlipping || !coinRef.current || isAnimatingRef.current) return
+    if (!isFlipping || !coinRef.current || isAnimatingRef.current) {
+      console.log('🔄 Flip animation blocked:', { isFlipping, hasCoin: !!coinRef.current, isAnimating: isAnimatingRef.current })
+      return
+    }
 
     const coin = coinRef.current
     const physics = getMaterialPhysics(material)
@@ -376,9 +379,10 @@ const FinalCoin = ({
     const startRotationX = coin.rotation.x
     const maxHeight = 2 * physics.height * (totalPower / 10) // Subtle height based on power and weight
     
-    isAnimatingRef.current = true
+         isAnimatingRef.current = true
+     console.log('🎲 Starting flip animation:', { flipResult, totalRotations, finalRotation })
 
-    const animateFlip = () => {
+     const animateFlip = () => {
       try {
         const elapsed = Date.now() - startTime
         const progress = Math.min(elapsed / flipDuration, 1)

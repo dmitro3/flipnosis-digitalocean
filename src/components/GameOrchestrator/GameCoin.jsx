@@ -104,11 +104,11 @@ const GameCoin = ({
       duration: 3000
     })
     
-    // Reset after animation
+    // Reset after animation completes
     setTimeout(() => {
       setTestFlip(null)
       setIsTestFlipping(false)
-    }, 3000)
+    }, 3500) // Slightly longer to ensure animation completes
   }
   
   const coinFaces = getCoinFaces()
