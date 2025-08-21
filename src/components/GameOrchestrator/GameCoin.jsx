@@ -138,7 +138,7 @@ const GameCoin = ({
         joinerPower={gameState.joinerPower || 5}
         customHeadsImage={coinFaces.headsImage}
         customTailsImage={coinFaces.tailsImage}
-        size={isMobile ? 300 : 400}
+        size={isMobile ? 225 : 300}
         material={coinFaces.material}
         seed={flipSeed || Math.random() * 10000}
       />

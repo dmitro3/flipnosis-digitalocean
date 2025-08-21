@@ -207,23 +207,31 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-         // Enhanced lighting for vibrant glossy effect
-     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-     scene.add(ambientLight)
-     
-     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
-     directionalLight.position.set(5, 5, 5)
-     scene.add(directionalLight)
-     
-     // Add a second light for better highlights
-     const fillLight = new THREE.DirectionalLight(0xffffff, 0.8)
-     fillLight.position.set(-3, 3, 2)
-     scene.add(fillLight)
-     
-     // Add a warm rim light for extra vibrancy
-     const rimLight = new THREE.DirectionalLight(0xffd700, 0.4)
-     rimLight.position.set(0, -2, 3)
-     scene.add(rimLight)
+                   // Enhanced lighting for rich, vibrant appearance
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+      scene.add(ambientLight)
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5)
+      directionalLight.position.set(5, 5, 5)
+      scene.add(directionalLight)
+      
+      // Add a second light for better highlights
+      const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
+      fillLight.position.set(-3, 3, 2)
+      scene.add(fillLight)
+      
+      // Add a warm rim light for extra vibrancy
+      const rimLight = new THREE.DirectionalLight(0xffd700, 0.6)
+      rimLight.position.set(0, -2, 3)
+      scene.add(rimLight)
+      
+      // Add a bright spotlight for extra richness
+      const spotLight = new THREE.SpotLight(0xffffff, 0.8)
+      spotLight.position.set(0, 5, 5)
+      spotLight.angle = Math.PI / 6
+      spotLight.penumbra = 0.1
+      spotLight.target = coin
+      scene.add(spotLight)
 
     // Create coin geometry (cylinder)
     const geometry = new THREE.CylinderGeometry(
@@ -233,31 +241,31 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-         // Create materials array [edge, heads, tails] - vibrant glossy finish
-     const materials = [
-       new THREE.MeshPhongMaterial({ 
-         map: createTexture('edge'),
-         color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFD700,
-         shininess: 300,
-         specular: 0xffffff,
-         reflectivity: 0.5,
-         emissive: 0x111111
-       }),
-       new THREE.MeshPhongMaterial({ 
-         map: createTexture('heads', customHeadsImage),
-         shininess: 300,
-         specular: 0xffffff,
-         reflectivity: 0.5,
-         emissive: 0x111111
-       }),
-       new THREE.MeshPhongMaterial({ 
-         map: createTexture('tails', customTailsImage),
-         shininess: 300,
-         specular: 0xffffff,
-         reflectivity: 0.5,
-         emissive: 0x111111
-       })
-     ]
+                   // Create materials array [edge, heads, tails] - rich, vibrant finish
+      const materials = [
+        new THREE.MeshPhongMaterial({ 
+          map: createTexture('edge'),
+          color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFD700,
+          shininess: 500,
+          specular: 0xffffff,
+          reflectivity: 0.8,
+          emissive: 0x222222
+        }),
+        new THREE.MeshPhongMaterial({ 
+          map: createTexture('heads', customHeadsImage),
+          shininess: 500,
+          specular: 0xffffff,
+          reflectivity: 0.8,
+          emissive: 0x222222
+        }),
+        new THREE.MeshPhongMaterial({ 
+          map: createTexture('tails', customTailsImage),
+          shininess: 500,
+          specular: 0xffffff,
+          reflectivity: 0.8,
+          emissive: 0x222222
+        })
+      ]
 
     // Create coin mesh
     const coin = new THREE.Mesh(geometry, materials)
