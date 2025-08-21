@@ -225,13 +225,12 @@ const FinalCoin = ({
       rimLight.position.set(0, -2, 3)
       scene.add(rimLight)
       
-      // Add a bright spotlight for extra richness
-      const spotLight = new THREE.SpotLight(0xffffff, 0.8)
-      spotLight.position.set(0, 5, 5)
-      spotLight.angle = Math.PI / 6
-      spotLight.penumbra = 0.1
-      spotLight.target = coin
-      scene.add(spotLight)
+             // Add a bright spotlight for extra richness
+       const spotLight = new THREE.SpotLight(0xffffff, 0.8)
+       spotLight.position.set(0, 5, 5)
+       spotLight.angle = Math.PI / 6
+       spotLight.penumbra = 0.1
+       scene.add(spotLight)
 
     // Create coin geometry (cylinder)
     const geometry = new THREE.CylinderGeometry(
@@ -273,8 +272,11 @@ const FinalCoin = ({
     coin.rotation.x = Math.PI / 2 // Rotate 90 degrees on X axis to face camera
     coin.rotation.y = 0
     coin.rotation.z = 0
-    scene.add(coin)
-    coinRef.current = coin
+         scene.add(coin)
+     coinRef.current = coin
+     
+     // Set spotlight target after coin is created
+     spotLight.target = coin
 
     // Cleanup
     return () => {
