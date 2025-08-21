@@ -207,13 +207,18 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-    scene.add(ambientLight)
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-    directionalLight.position.set(5, 5, 5)
-    scene.add(directionalLight)
+         // Enhanced lighting for glossy effect
+     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+     scene.add(ambientLight)
+     
+     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
+     directionalLight.position.set(5, 5, 5)
+     scene.add(directionalLight)
+     
+     // Add a second light for better highlights
+     const fillLight = new THREE.DirectionalLight(0xffffff, 0.6)
+     fillLight.position.set(-3, 3, 2)
+     scene.add(fillLight)
 
     // Create coin geometry (cylinder)
     const geometry = new THREE.CylinderGeometry(
@@ -223,25 +228,28 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-    // Create materials array [edge, heads, tails]
-    const materials = [
-      new THREE.MeshPhongMaterial({ 
-        map: createTexture('edge'),
-        color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFD700,
-        shininess: 100,
-        specular: 0x444444
-      }),
-      new THREE.MeshPhongMaterial({ 
-        map: createTexture('heads', customHeadsImage),
-        shininess: 100,
-        specular: 0x444444
-      }),
-      new THREE.MeshPhongMaterial({ 
-        map: createTexture('tails', customTailsImage),
-        shininess: 100,
-        specular: 0x444444
-      })
-    ]
+         // Create materials array [edge, heads, tails] - glossy finish
+     const materials = [
+       new THREE.MeshPhongMaterial({ 
+         map: createTexture('edge'),
+         color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFD700,
+         shininess: 200,
+         specular: 0x888888,
+         reflectivity: 0.3
+       }),
+       new THREE.MeshPhongMaterial({ 
+         map: createTexture('heads', customHeadsImage),
+         shininess: 200,
+         specular: 0x888888,
+         reflectivity: 0.3
+       }),
+       new THREE.MeshPhongMaterial({ 
+         map: createTexture('tails', customTailsImage),
+         shininess: 200,
+         specular: 0x888888,
+         reflectivity: 0.3
+       })
+     ]
 
     // Create coin mesh
     const coin = new THREE.Mesh(geometry, materials)
@@ -443,10 +451,8 @@ const FinalCoin = ({
 
     animateFlip()
 
-         return () => {
-       console.log('🔄 Cleaning up flip animation')
-       isAnimatingRef.current = false
-     }
+         // Don't cleanup on unmount to prevent stuttering
+     // The animation will complete naturally
   }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower, material, seed])
 
   // Mouse interaction handlers
