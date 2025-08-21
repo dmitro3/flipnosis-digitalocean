@@ -377,19 +377,17 @@ const ShareButton = styled.button`
 
 const VerificationElement = styled.div`
   position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  top: -0.5rem;
+  right: -0.5rem;
+  background: ${props => props.verified ? 'rgba(0, 255, 65, 0.9)' : 'rgba(255, 149, 0, 0.9)'};
+  color: #000;
   padding: 0.25rem 0.5rem;
-  background: ${props => props.verified ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 149, 0, 0.2)'};
-  border: 1px solid ${props => props.verified ? 'rgba(0, 255, 65, 0.4)' : 'rgba(255, 149, 0, 0.4)'};
   border-radius: 0.5rem;
-  color: ${props => props.verified ? '#00FF41' : '#FF9500'};
   font-size: 0.7rem;
   font-weight: bold;
+  border: 1px solid ${props => props.verified ? 'rgba(0, 255, 65, 0.4)' : 'rgba(255, 149, 0, 0.4)'};
   cursor: ${props => props.verified ? 'default' : 'help'};
+  z-index: 10;
   transition: all 0.2s ease;
   
   &:hover {
