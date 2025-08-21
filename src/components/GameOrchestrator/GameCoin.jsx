@@ -102,6 +102,8 @@ const GameCoin = ({
     console.log('🎲 Starting test flip...')
     setIsTestFlipping(true)
     const result = Math.random() < 0.5 ? 'heads' : 'tails'
+    
+    // Set the flip state
     setTestFlip({
       isActive: true,
       result,
@@ -113,7 +115,7 @@ const GameCoin = ({
       console.log('🎲 Test flip completed, resetting...')
       setTestFlip(null)
       setIsTestFlipping(false)
-    }, 3500) // Slightly longer to ensure animation completes
+    }, 4000) // Give more time for animation to complete
   }
   
   const coinFaces = getCoinFaces()

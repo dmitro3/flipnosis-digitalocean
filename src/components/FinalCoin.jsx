@@ -57,15 +57,33 @@ const FinalCoin = ({
     canvas.height = 512
     const ctx = canvas.getContext('2d')
 
-    if (customImage) {
-      // Use custom image
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.src = customImage
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, 512, 512)
-        texture.needsUpdate = true
-      }
+         if (customImage) {
+       // Use custom image
+       const img = new Image()
+       img.crossOrigin = 'anonymous'
+       img.src = customImage
+       img.onload = () => {
+         // Rotate the image based on type
+         if (type === 'heads') {
+           // Rotate heads 90 degrees to the left
+           ctx.save()
+           ctx.translate(256, 256)
+           ctx.rotate(-Math.PI / 2) // 90 degrees left
+           ctx.drawImage(img, -256, -256, 512, 512)
+           ctx.restore()
+         } else if (type === 'tails') {
+           // Rotate tails 90 degrees to the right
+           ctx.save()
+           ctx.translate(256, 256)
+           ctx.rotate(Math.PI / 2) // 90 degrees right
+           ctx.drawImage(img, -256, -256, 512, 512)
+           ctx.restore()
+         } else {
+           // Edge texture - no rotation
+           ctx.drawImage(img, 0, 0, 512, 512)
+         }
+         texture.needsUpdate = true
+       }
       img.onerror = () => {
         console.warn('Failed to load custom image, using default')
         // Fall back to default texture
@@ -341,12 +359,12 @@ const FinalCoin = ({
 
   // Flip animation
   useEffect(() => {
-    if (!isFlipping || !coinRef.current || isAnimatingRef.current) {
-      console.log('🔄 Flip animation blocked:', { isFlipping, hasCoin: !!coinRef.current, isAnimating: isAnimatingRef.current })
+    if (!isFlipping || !coinRef.current) {
+      console.log('🔄 Flip animation blocked:', { isFlipping, hasCoin: !!coinRef.current })
       return
     }
     
-    // Prevent multiple animations with a more robust check
+    // Prevent multiple animations
     if (isAnimatingRef.current) {
       console.log('🔄 Animation already in progress, skipping...')
       return
@@ -368,17 +386,15 @@ const FinalCoin = ({
       return Math.random()
     }
 
-    // Calculate flip parameters
-    const baseRotations = 5 + Math.floor(totalPower / 2) // 5-10 rotations
-    const extraRotations = getRandom() * 2 // 0-2 extra rotations
-    const totalRotations = baseRotations + extraRotations
-    
-    // Final rotation to show result
-    // When X rotation is at PI/2 (90°), we see heads
-    // When X rotation is at 3PI/2 (270°), we see tails
-    const basePosition = Math.PI / 2 // Starting position (heads visible)
-    const finalRotation = flipResult === 'heads' ? basePosition : basePosition + Math.PI
-    const totalRotation = (totalRotations * Math.PI * 2) + (finalRotation - basePosition)
+         // Calculate flip parameters - simplified for test flip
+     const totalRotations = 3 // Fixed number of rotations for consistent animation
+     
+     // Final rotation to show result
+     // When X rotation is at PI/2 (90°), we see heads
+     // When X rotation is at 3PI/2 (270°), we see tails
+     const basePosition = Math.PI / 2 // Starting position (heads visible)
+     const finalRotation = flipResult === 'heads' ? basePosition : basePosition + Math.PI
+     const totalRotation = (totalRotations * Math.PI * 2) + (finalRotation - basePosition)
     
     // Animation parameters
     const startTime = Date.now()
