@@ -430,15 +430,14 @@ const FinalCoin = ({
           ? 4 * progress * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 3) / 2
         
-              // Rotation animation (applying material physics)
-      coin.rotation.x = startRotationX + (totalRotation * easeInOutCubic * physics.rotationSpeed)
-      
-      // Height animation (parabolic arc)
-      const heightProgress = Math.sin(progress * Math.PI)
-      coin.position.y = heightProgress * maxHeight
-      
-      // Apply resistance (slowing down near the end)
-      const resistanceEffect = 1 - (progress * (1 - physics.resistance))
+                       // Rotation animation (applying material physics) - no height movement
+         coin.rotation.x = startRotationX + (totalRotation * easeInOutCubic * physics.rotationSpeed)
+         
+         // Keep coin at ground level (no height animation)
+         coin.position.y = 0
+         
+         // Apply resistance (slowing down near the end)
+         const resistanceEffect = 1 - (progress * (1 - physics.resistance))
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip)
