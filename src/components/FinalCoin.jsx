@@ -21,6 +21,7 @@ const FinalCoin = ({
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
   const rendererRef = useRef(null)
+  const cameraRef = useRef(null)
   const coinRef = useRef(null)
   const animationRef = useRef(null)
   const isAnimatingRef = useRef(false)
@@ -114,6 +115,12 @@ const FinalCoin = ({
   // Initialize Three.js scene
   useEffect(() => {
     if (!mountRef.current) return
+    
+    // Prevent multiple initializations
+    if (sceneRef.current) {
+      console.warn('⚠️ Scene already initialized, skipping...')
+      return
+    }
 
     // Scene setup
     const scene = new THREE.Scene()
@@ -129,6 +136,7 @@ const FinalCoin = ({
     )
     camera.position.z = 10
     camera.position.y = 0
+    cameraRef.current = camera
 
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ 
@@ -207,6 +215,12 @@ const FinalCoin = ({
         texture.dispose()
       })
       textureCache.current = {}
+      
+      // Clear refs
+      sceneRef.current = null
+      rendererRef.current = null
+      cameraRef.current = null
+      coinRef.current = null
     }
   }, [size, material?.edgeColor])
 
@@ -233,36 +247,45 @@ const FinalCoin = ({
 
   // Main animation loop
   useEffect(() => {
-    if (!coinRef.current || !rendererRef.current || !sceneRef.current) return
+    if (!coinRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current) return
 
     const coin = coinRef.current
     const renderer = rendererRef.current
     const scene = sceneRef.current
-    const camera = scene.children.find(child => child instanceof THREE.PerspectiveCamera)
+    const camera = cameraRef.current
 
     const animate = () => {
-      // Idle animation when not flipping
-      if (!isAnimatingRef.current) {
-        if (isCharging) {
-          // Charging animation
-          const time = Date.now() * 0.001
-          const intensity = Math.min(1, (creatorPower + joinerPower) / 20)
-          
-          // Gentle pulsing
-          const scale = 1 + Math.sin(time * 5) * 0.05 * intensity
-          coin.scale.set(scale, scale, scale)
-          
-          // Slow rotation during charge
-          coin.rotation.x += 0.02 * intensity
-        } else {
-          // Gentle idle rotation
-          coin.rotation.x += 0.005
-          coin.scale.set(1, 1, 1)
+      try {
+        // Idle animation when not flipping
+        if (!isAnimatingRef.current) {
+          if (isCharging) {
+            // Charging animation
+            const time = Date.now() * 0.001
+            const intensity = Math.min(1, (creatorPower + joinerPower) / 20)
+            
+            // Gentle pulsing
+            const scale = 1 + Math.sin(time * 5) * 0.05 * intensity
+            coin.scale.set(scale, scale, scale)
+            
+            // Slow rotation during charge
+            coin.rotation.x += 0.02 * intensity
+          } else {
+            // Gentle idle rotation
+            coin.rotation.x += 0.005
+            coin.scale.set(1, 1, 1)
+          }
+        }
+
+        renderer.render(scene, camera)
+        animationRef.current = requestAnimationFrame(animate)
+      } catch (error) {
+        console.error('❌ Three.js animation error:', error)
+        // Stop animation on error
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current)
+          animationRef.current = null
         }
       }
-
-      renderer.render(scene, camera)
-      animationRef.current = requestAnimationFrame(animate)
     }
 
     animate()
@@ -311,31 +334,38 @@ const FinalCoin = ({
     isAnimatingRef.current = true
 
     const animateFlip = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / flipDuration, 1)
-      
-      // Easing function for smooth animation
-      const easeInOutCubic = progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2
-      
-      // Rotation animation (applying material physics)
-      coin.rotation.x = startRotation + (totalRotation * easeInOutCubic * physics.rotationSpeed)
-      
-      // Height animation (parabolic arc)
-      const heightProgress = Math.sin(progress * Math.PI)
-      coin.position.y = heightProgress * maxHeight
-      
-      // Apply resistance (slowing down near the end)
-      const resistanceEffect = 1 - (progress * (1 - physics.resistance))
-      coin.rotation.x *= resistanceEffect
-      
-      if (progress < 1) {
-        requestAnimationFrame(animateFlip)
-      } else {
-        // Ensure final rotation is exact
-        coin.rotation.x = startRotation + totalRotation
-        coin.position.y = 0
+      try {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / flipDuration, 1)
+        
+        // Easing function for smooth animation
+        const easeInOutCubic = progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2
+        
+        // Rotation animation (applying material physics)
+        coin.rotation.x = startRotation + (totalRotation * easeInOutCubic * physics.rotationSpeed)
+        
+        // Height animation (parabolic arc)
+        const heightProgress = Math.sin(progress * Math.PI)
+        coin.position.y = heightProgress * maxHeight
+        
+        // Apply resistance (slowing down near the end)
+        const resistanceEffect = 1 - (progress * (1 - physics.resistance))
+        coin.rotation.x *= resistanceEffect
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateFlip)
+        } else {
+          // Ensure final rotation is exact
+          coin.rotation.x = startRotation + totalRotation
+          coin.position.y = 0
+          isAnimatingRef.current = false
+          onFlipComplete(flipResult)
+        }
+      } catch (error) {
+        console.error('❌ Three.js flip animation error:', error)
+        // Stop animation on error
         isAnimatingRef.current = false
         onFlipComplete(flipResult)
       }
