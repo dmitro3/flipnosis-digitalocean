@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styled from '@emotion/styled'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -109,21 +109,173 @@ const VerificationBadge = styled.div`
 `
 
 const NFTImage = styled.div`
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
   border: 2px solid rgba(255, 20, 147, 0.3);
   overflow: hidden;
+  flex-shrink: 0;
   
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+`
+
+const NFTHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+`
+
+const NFTInfoSection = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`
+
+const NFTImageSection = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+`
+
+const VerificationIcon = styled.div`
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: ${props => props.verified ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 149, 0, 0.2)'};
+  border: 1px solid ${props => props.verified ? 'rgba(0, 255, 65, 0.4)' : 'rgba(255, 149, 0, 0.4)'};
+  color: ${props => props.verified ? '#00FF41' : '#FF9500'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: ${props => props.verified ? 'default' : 'help'};
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+`
+
+const Tooltip = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 149, 0, 0.4);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  width: 250px;
+  z-index: 1000;
+  opacity: ${props => props.show ? 1 : 0};
+  visibility: ${props => props.show ? 'visible' : 'hidden'};
+  transition: all 0.2s ease;
+  transform: ${props => props.show ? 'translateY(0)' : 'translateY(-10px)'};
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: 10px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid rgba(255, 149, 0, 0.4);
+  }
+`
+
+const TooltipTitle = styled.div`
+  color: #FF9500;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+`
+
+const TooltipText = styled.div`
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.3;
+`
+
+const ActionButtons = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`
+
+const ActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  justify-content: center;
+  
+  &.twitter {
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid #333333;
+    
+    &:hover {
+      background: #333333;
+    }
+  }
+  
+  &.telegram {
+    background: #0088cc;
+    color: white;
+    
+    &:hover {
+      background: #0077b3;
+    }
+  }
+  
+  &.opensea {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+  
+  &.explorer {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `
 
@@ -238,6 +390,7 @@ const ShareButton = styled.button`
 const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, currentChain }) => {
   const { address } = useWallet()
   const { showSuccess, showError } = useToast()
+  const [showTooltip, setShowTooltip] = useState(false)
   
   const handleCopyContract = async () => {
     const contractAddress = getNFTContract()
@@ -404,9 +557,6 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
           <StatusBadge status={gameData?.status}>
             {getStatusText(gameData?.status)}
           </StatusBadge>
-          <VerificationBadge verified={isNFTVerified()}>
-            {isNFTVerified() ? '✅ Verified' : '⚠️ Unverified'}
-          </VerificationBadge>
         </div>
       </Header>
       
@@ -473,177 +623,146 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
           </RoundContainer>
         ) : (
           <>
-            {/* NFT Details Section */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-              <NFTImage>
-                <img src={getNFTImage()} alt={getNFTName()} />
-              </NFTImage>
-            </div>
-            
-            <Item>
-              <Label>Name:</Label>
-              <Value>{getNFTName()}</Value>
-            </Item>
-            
-                         <Item>
-               <Label>Contract:</Label>
-               <Value 
-                 style={{ 
-                   fontSize: '0.8rem',
-                   cursor: getNFTContract() !== 'N/A' ? 'pointer' : 'default',
-                   color: getNFTContract() !== 'N/A' ? '#00FF41' : '#fff',
-                   textDecoration: getNFTContract() !== 'N/A' ? 'underline' : 'none',
-                   transition: 'all 0.2s ease'
-                 }}
-                 onClick={handleCopyContract}
-                 title={getNFTContract() !== 'N/A' ? 'Click to copy contract address' : ''}
-               >
-                 {getNFTContract() !== 'N/A' ? (
-                   <>
-                     {getNFTContract().slice(0, 8)}...{getNFTContract().slice(-6)}
-                     <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem' }}>📋</span>
-                   </>
-                 ) : (
-                   'N/A'
-                 )}
-               </Value>
-             </Item>
-            
-            <Item>
-              <Label>Token ID:</Label>
-              <Value>{getNFTTokenId()}</Value>
-            </Item>
-            
-            <Item>
-              <Label>Chain:</Label>
-              <Value>{gameData?.chain || 'Base'}</Value>
-            </Item>
-            
-            {gameData?.nft_collection && (
-              <Item>
-                <Label>Collection:</Label>
-                <Value>{gameData.nft_collection}</Value>
-              </Item>
-            )}
-            
-            {/* Explorer and OpenSea Links */}
-            <div style={{ 
-              display: 'flex', 
-              gap: '0.5rem', 
-              marginBottom: '1rem'
-            }}>
-              <a
-                href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
-                  `${getExplorerUrl(currentChain)}/token/${getNFTContract()}?a=${getNFTTokenId()}` :
-                  '#'
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
-                    e.preventDefault()
-                    showError('NFT contract details not available')
-                  }
-                }}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.8rem',
-                  textDecoration: 'none',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  transition: 'all 0.3s ease',
-                  flex: 1,
-                  justifyContent: 'center'
-                }}
-              >
-                🔍 Explorer
-              </a>
-              <a
-                href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
-                  `${getMarketplaceUrl(currentChain)}/${getNFTContract()}/${getNFTTokenId()}` :
-                  '#'
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
-                    e.preventDefault()
-                    showError('NFT contract details not available')
-                  }
-                }}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.8rem',
-                  textDecoration: 'none',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  transition: 'all 0.3s ease',
-                  flex: 1,
-                  justifyContent: 'center'
-                }}
-              >
-                <img 
-                  src="/images/opensea.png" 
-                  alt="OpenSea" 
-                  style={{ 
-                    width: '16px', 
-                    height: '16px',
-                    objectFit: 'contain'
-                  }} 
-                />
-                OpenSea
-              </a>
-            </div>
-            
-            {!isNFTVerified() && (
-              <div style={{ 
-                marginTop: '1rem', 
-                padding: '0.75rem', 
-                background: 'rgba(255, 149, 0, 0.1)', 
-                borderRadius: '0.5rem',
-                border: '1px solid rgba(255, 149, 0, 0.3)'
-              }}>
-                <div style={{ color: '#FF9500', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                  ⚠️ NFT Not Verified
+            {/* New NFT Header with Image and Buttons */}
+            <NFTHeader>
+              <NFTInfoSection>
+                {/* Action Buttons */}
+                <ActionButtons>
+                  <ActionButton 
+                    className="twitter"
+                    onClick={() => handleShare('twitter')}
+                    disabled={!address}
+                  >
+                    Share on X
+                  </ActionButton>
+                  <ActionButton 
+                    className="telegram"
+                    onClick={() => handleShare('telegram')}
+                    disabled={!address}
+                  >
+                    Share on TG
+                  </ActionButton>
+                  <a
+                    href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
+                      `${getMarketplaceUrl(currentChain)}/${getNFTContract()}/${getNFTTokenId()}` :
+                      '#'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
+                        e.preventDefault()
+                        showError('NFT contract details not available')
+                      }
+                    }}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <ActionButton className="opensea">
+                      <img 
+                        src="/images/opensea.png" 
+                        alt="OpenSea" 
+                        style={{ 
+                          width: '16px', 
+                          height: '16px',
+                          objectFit: 'contain'
+                        }} 
+                      />
+                      OpenSea
+                    </ActionButton>
+                  </a>
+                  <a
+                    href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
+                      `${getExplorerUrl(currentChain)}/token/${getNFTContract()}?a=${getNFTTokenId()}` :
+                      '#'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
+                        e.preventDefault()
+                        showError('NFT contract details not available')
+                      }
+                    }}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <ActionButton className="explorer">
+                      🔍 Explorer
+                    </ActionButton>
+                  </a>
+                </ActionButtons>
+                
+                {/* NFT Details */}
+                <Item>
+                  <Label>Name:</Label>
+                  <Value>{getNFTName()}</Value>
+                </Item>
+                
+                <Item>
+                  <Label>Contract:</Label>
+                  <Value 
+                    style={{ 
+                      fontSize: '0.8rem',
+                      cursor: getNFTContract() !== 'N/A' ? 'pointer' : 'default',
+                      color: getNFTContract() !== 'N/A' ? '#00FF41' : '#fff',
+                      textDecoration: getNFTContract() !== 'N/A' ? 'underline' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={handleCopyContract}
+                    title={getNFTContract() !== 'N/A' ? 'Click to copy contract address' : ''}
+                  >
+                    {getNFTContract() !== 'N/A' ? (
+                      <>
+                        {getNFTContract().slice(0, 8)}...{getNFTContract().slice(-6)}
+                        <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem' }}>📋</span>
+                      </>
+                    ) : (
+                      'N/A'
+                    )}
+                  </Value>
+                </Item>
+                
+                <Item>
+                  <Label>Token ID:</Label>
+                  <Value>{getNFTTokenId()}</Value>
+                </Item>
+                
+                <Item>
+                  <Label>Chain:</Label>
+                  <Value>{gameData?.chain || 'Base'}</Value>
+                </Item>
+                
+                {gameData?.nft_collection && (
+                  <Item>
+                    <Label>Collection:</Label>
+                    <Value>{gameData.nft_collection}</Value>
+                  </Item>
+                )}
+              </NFTInfoSection>
+              
+              {/* NFT Image Section */}
+              <NFTImageSection>
+                <div style={{ position: 'relative' }}>
+                  <NFTImage>
+                    <img src={getNFTImage()} alt={getNFTName()} />
+                  </NFTImage>
+                  <VerificationIcon 
+                    verified={isNFTVerified()}
+                    onMouseEnter={() => !isNFTVerified() && setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                  >
+                    {isNFTVerified() ? '✅' : '⚠️'}
+                    {!isNFTVerified() && (
+                      <Tooltip show={showTooltip}>
+                        <TooltipTitle>⚠️ NFT Not Verified</TooltipTitle>
+                        <TooltipText>
+                          This NFT has not been verified on-chain. Proceed with caution.
+                        </TooltipText>
+                      </Tooltip>
+                    )}
+                  </VerificationIcon>
                 </div>
-                <div style={{ color: '#fff', fontSize: '0.8rem' }}>
-                  This NFT has not been verified on-chain. Proceed with caution.
-                </div>
-              </div>
-            )}
-
-            {/* Share Buttons */}
-            <ShareButtonsContainer>
-              <ShareButton 
-                className="twitter"
-                onClick={() => handleShare('twitter')}
-                disabled={!address}
-                style={{
-                  background: '#000000',
-                  color: '#ffffff',
-                  border: '1px solid #333333'
-                }}
-              >
-                Share on X
-              </ShareButton>
-              <ShareButton 
-                className="telegram"
-                onClick={() => handleShare('telegram')}
-                disabled={!address}
-              >
-                Share on TG
-              </ShareButton>
-            </ShareButtonsContainer>
+              </NFTImageSection>
+            </NFTHeader>
           </>
         )}
       </div>

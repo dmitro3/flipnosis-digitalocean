@@ -50,6 +50,83 @@ const GameLayout = styled.div`
   align-items: center;
 `
 
+// New unified background container
+const LobbyBackgroundContainer = styled.div`
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid #FFD700;
+  border-radius: 1rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.05) 50%, transparent 70%);
+    animation: shimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  
+  @keyframes shimmer {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+  }
+`
+
+const LobbyContent = styled.div`
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr;
+  gap: 2rem;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+`
+
+const NFTAndCoinSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 800px;
+`
+
+const NFTDetailsWrapper = styled.div`
+  background: rgba(0, 0, 40, 0.95);
+  border: 2px solid #FF1493;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.3), inset 0 0 20px rgba(255, 20, 147, 0.1);
+  overflow: hidden;
+`
+
+const CoinSection = styled.div`
+  background: rgba(0, 0, 40, 0.95);
+  border: 2px solid #FFD700;
+  border-radius: 1rem;
+  padding: 1rem;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+`
+
 const GameLobby = () => {
   console.log('🏠 GAMELOBBY COMPONENT LOADED!')
   
@@ -379,40 +456,42 @@ const GameLobby = () => {
               />
             )}
             
-            
-            
-                                                   {/* Four Container Layout for Lobby - NFT Details, Chat, Offers, and Coin */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1.2fr 1fr 0.8fr 0.8fr',
-                gap: '2rem',
-                width: '100%',
-                marginTop: '2rem'
-              }}>
-                {/* NFT Details Container */}
-                <div style={{
-                  background: 'rgba(0, 0, 20, 0.95)',
-                  border: '2px solid #FFD700',
-                  borderRadius: '1rem',
-                  padding: '1rem',
-                  height: '800px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)',
-                  overflow: 'hidden'
-                }}>
-                  <NFTDetailsContainer
-                    gameData={gameData}
-                    isCreator={isCreator()}
-                    currentTurn={null}
-                    nftData={{
-                      image: getGameNFTImage(),
-                      name: getGameNFTName(),
-                      collection: getGameNFTCollection()
-                    }}
-                    currentChain={chain}
-                  />
-                </div>
+            {/* Unified Lobby Background Container */}
+            <LobbyBackgroundContainer>
+              <LobbyContent>
+                {/* NFT Details and Coin Section */}
+                <NFTAndCoinSection>
+                  {/* NFT Details Container */}
+                  <NFTDetailsWrapper>
+                    <NFTDetailsContainer
+                      gameData={gameData}
+                      isCreator={isCreator()}
+                      currentTurn={null}
+                      nftData={{
+                        image: getGameNFTImage(),
+                        name: getGameNFTName(),
+                        collection: getGameNFTCollection()
+                      }}
+                      currentChain={chain}
+                    />
+                  </NFTDetailsWrapper>
+                  
+                  {/* Coin Container */}
+                  {gameData?.status !== 'completed' && (
+                    <CoinSection>
+                      <CoinContainer
+                        gameId={gameId}
+                        gameData={gameData}
+                        customHeadsImage={customHeadsImage}
+                        customTailsImage={customTailsImage}
+                        gameCoin={gameCoin}
+                        isMobile={isMobile}
+                        address={address}
+                        isCreator={isCreator}
+                      />
+                    </CoinSection>
+                  )}
+                </NFTAndCoinSection>
                 
                 {/* Chat Container */}
                 <div style={{ height: '800px' }}>
@@ -441,23 +520,8 @@ const GameLobby = () => {
                     }}
                   />
                 </div>
-                
-                {/* Coin Container */}
-                {gameData?.status !== 'completed' && (
-                  <div style={{ height: '800px' }}>
-                    <CoinContainer
-                      gameId={gameId}
-                      gameData={gameData}
-                      customHeadsImage={customHeadsImage}
-                      customTailsImage={customTailsImage}
-                      gameCoin={gameCoin}
-                      isMobile={isMobile}
-                      address={address}
-                      isCreator={isCreator}
-                    />
-                  </div>
-                )}
-              </div>
+              </LobbyContent>
+            </LobbyBackgroundContainer>
           </GameLayout>
         </GameContainer>
       </Container>

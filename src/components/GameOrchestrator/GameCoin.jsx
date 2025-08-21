@@ -7,8 +7,8 @@ const CoinSection = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 2rem 0;
-  min-height: 400px;
+  margin: 1rem 0;
+  min-height: 200px;
 `
 
 const GameCoin = ({
@@ -36,7 +36,7 @@ const GameCoin = ({
           onFlipComplete={() => {
             // This will be handled by the parent component
           }}
-          size={isMobile ? 250 : 400}
+          size={isMobile ? 150 : 200}
           material={gameCoin?.material}
         />
       ) : (
@@ -56,7 +56,7 @@ const GameCoin = ({
           customHeadsImage={customHeadsImage}
           customTailsImage={customTailsImage}
           gamePhase={gameState.phase}
-          size={isMobile ? 250 : 400}
+          size={isMobile ? 150 : 200}
           material={gameCoin?.material}
         />
       )}
