@@ -181,7 +181,7 @@ const GamePage = () => {
             {/* Pass the coin as a child */}
             <GameCoin
               gameId={gameId}
-              gameState={{ phase: 'choosing' }}
+              gameState={{ phase: 'waiting' }}
               gameData={gameData}
               flipAnimation={null}
               customHeadsImage={customHeadsImage}
@@ -190,7 +190,7 @@ const GamePage = () => {
               isMobile={isMobile}
               onPowerChargeStart={() => {}}
               onPowerChargeStop={() => {}}
-              isMyTurn={() => false}
+              isMyTurn={() => true}
               address={address}
               isCreator={() => address === gameData?.creator}
             />

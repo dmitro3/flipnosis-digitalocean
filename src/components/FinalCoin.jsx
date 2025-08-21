@@ -60,9 +60,47 @@ const FinalCoin = ({
     if (customImage) {
       // Use custom image
       const img = new Image()
+      img.crossOrigin = 'anonymous'
       img.src = customImage
       img.onload = () => {
         ctx.drawImage(img, 0, 0, 512, 512)
+        texture.needsUpdate = true
+      }
+      img.onerror = () => {
+        console.warn('Failed to load custom image, using default')
+        // Fall back to default texture
+        if (type === 'heads') {
+          // Gold gradient background
+          const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
+          gradient.addColorStop(0, '#FFD700')
+          gradient.addColorStop(0.5, '#FFA500')
+          gradient.addColorStop(1, '#FF8C00')
+          ctx.fillStyle = gradient
+          ctx.fillRect(0, 0, 512, 512)
+          
+          // Add "HEADS" text
+          ctx.fillStyle = '#8B4513'
+          ctx.font = 'bold 72px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('HEADS', 256, 256)
+        } else if (type === 'tails') {
+          // Silver gradient background
+          const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
+          gradient.addColorStop(0, '#E5E5E5')
+          gradient.addColorStop(0.5, '#C0C0C0')
+          gradient.addColorStop(1, '#A9A9A9')
+          ctx.fillStyle = gradient
+          ctx.fillRect(0, 0, 512, 512)
+          
+          // Add "TAILS" text
+          ctx.fillStyle = '#4B4B4B'
+          ctx.font = 'bold 72px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('TAILS', 256, 256)
+        }
+        texture.needsUpdate = true
       }
     } else {
       // Default designs

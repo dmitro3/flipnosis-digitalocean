@@ -60,11 +60,18 @@ const GameCoin = ({
   
   // Parse coin data from game data to get custom faces
   const getCoinFaces = () => {
+    console.log('🔍 GameCoin - gameData:', gameData)
+    console.log('🔍 GameCoin - gameData.coin_data:', gameData?.coin_data)
+    console.log('🔍 GameCoin - customHeadsImage:', customHeadsImage)
+    console.log('🔍 GameCoin - customTailsImage:', customTailsImage)
+    
     if (gameData?.coin_data) {
       try {
         const coinData = typeof gameData.coin_data === 'string' 
           ? JSON.parse(gameData.coin_data) 
           : gameData.coin_data
+        
+        console.log('🔍 GameCoin - parsed coinData:', coinData)
         
         return {
           headsImage: coinData.headsImage || customHeadsImage,
@@ -76,11 +83,14 @@ const GameCoin = ({
       }
     }
     
-    return {
+    const result = {
       headsImage: customHeadsImage,
       tailsImage: customTailsImage,
       material: gameCoin?.material
     }
+    
+    console.log('🔍 GameCoin - final coin faces:', result)
+    return result
   }
   
   const handleTestFlip = () => {
