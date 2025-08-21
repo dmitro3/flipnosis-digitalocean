@@ -3,7 +3,7 @@ import styled from '@emotion/styled'
 import LobbyCoin from '../Lobby/LobbyCoin'
 
 const CoinContainerStyled = styled.div`
-  background: transparent;
+  background: #FFE135;
   border: none;
   border-radius: 1rem;
   padding: 0.5rem;

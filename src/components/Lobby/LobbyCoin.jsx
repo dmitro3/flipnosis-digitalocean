@@ -7,19 +7,10 @@ const CoinWrapper = styled.div`
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: transform 0.2s ease;
-  
-  &:hover {
-    transform: scale(1.02);
-  }
-  
-  &:active {
-    transform: scale(0.98);
-  }
 `
 
 const CoinContainer = styled.div`
-  transform: ${props => `scale(${props.size / 100}) rotateY(${props.rotation}deg)`};
+  transform: ${props => `scale(${props.size / 100}) rotateX(${props.rotation}deg)`};
   transition: transform 1.5s ease-in-out;
 `
 
@@ -59,7 +50,7 @@ const LobbyCoin = ({
     setIsFlipping(true)
     setFlipResult(null)
     
-    // Slow simple flip - 2 full rotations
+    // Slow simple flip - 2 full rotations (vertical flip)
     const targetRotation = rotation + 720 // 2 full rotations (720 degrees)
     setRotation(targetRotation)
     
