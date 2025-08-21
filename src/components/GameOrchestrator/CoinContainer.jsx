@@ -3,7 +3,7 @@ import styled from '@emotion/styled'
 import LobbyCoin from '../Lobby/LobbyCoin'
 
 const CoinContainerStyled = styled.div`
-  background: #FFE135;
+  background: transparent;
   border: none;
   border-radius: 1rem;
   padding: 0.5rem;
@@ -28,6 +28,22 @@ const CoinTitle = styled.h3`
   padding: 0.25rem 0.75rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 215, 0, 0.3);
+`
+
+const ClickItText = styled.div`
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  color: #00FF41;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+  animation: pulse 2s infinite;
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
 `
 
 const CoinWrapper = styled.div`
@@ -58,6 +74,7 @@ const CoinContainer = ({
           size={isMobile ? 250 : 300}
         />
       </CoinWrapper>
+      <ClickItText>Click It!!</ClickItText>
     </CoinContainerStyled>
   )
 }
