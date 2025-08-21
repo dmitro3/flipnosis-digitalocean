@@ -347,10 +347,9 @@ const GameRoom = ({
     resultData,
     showResultPopup,
     roundCountdown,
-    streamedCoinState,
     setGameState,
     setPlayerChoices,
-    setStreamedCoinState,
+    setFlipAnimation,
     handleFlipResult,
     handleGameCompleted,
     resetForNextRound,
@@ -602,7 +601,9 @@ const GameRoom = ({
           {/* Center Game Area */}
           <CenterArea>
             <CoinContainer>
-              {children}
+              {React.cloneElement(children, {
+                flipSeed: gameState.flipSeed
+              })}
             </CoinContainer>
             
             <ChoiceSection>

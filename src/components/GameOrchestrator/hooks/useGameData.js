@@ -10,7 +10,7 @@ export const useGameData = (
   wsRef, // This is no longer used, kept for compatibility
   setGameState,
   setPlayerChoices,
-  setStreamedCoinState,
+  setFlipAnimation,
   handleFlipResult,
   handleGameCompleted,
   loadGameData, // Added this parameter
@@ -243,6 +243,29 @@ export const useGameData = (
         showInfo('🎮 Game is now active! Choose heads or tails!')
         break
 
+      case 'NEW_ROUND_STARTED':
+        console.log('🔄 New round started:', data)
+        // Reset for new round
+        setGameState(prev => ({
+          ...prev,
+          phase: 'choosing',
+          creatorChoice: null,
+          joinerChoice: null,
+          creatorPower: 0,
+          joinerPower: 0,
+          creatorReady: false,
+          joinerReady: false,
+          currentRound: data.roundNumber
+        }))
+        
+        setPlayerChoices({
+          creator: null,
+          joiner: null
+        })
+        
+        setFlipAnimation(null)
+        break
+
       case 'new_round_started':
         console.log('🔄 New round started:', data)
         const { roundNumber: newRoundNumber, creatorWins, challengerWins } = data
@@ -291,6 +314,34 @@ export const useGameData = (
         showInfo('🎲 Auto-flip triggered due to time limit!')
         break
 
+      case 'PLAYER_CHOICE_MADE':
+        console.log('👤 Player made choice:', data)
+        // Update UI to show player has made their choice (without revealing it)
+        if (data.player === getGameCreator()) {
+          setGameState(prev => ({ ...prev, creatorReady: true }))
+        } else if (data.player === getGameJoiner()) {
+          setGameState(prev => ({ ...prev, joinerReady: true }))
+        }
+        break
+
+      case 'POWER_PHASE_STARTED':
+        console.log('⚡ Power phase started')
+        setGameState(prev => ({ 
+          ...prev, 
+          phase: 'charging',
+          chargingPlayer: address // Current player charges
+        }))
+        break
+
+      case 'POWER_CHARGED':
+        console.log('⚡ Power charged:', data)
+        if (data.player === getGameCreator()) {
+          setGameState(prev => ({ ...prev, creatorPower: data.powerLevel }))
+        } else if (data.player === getGameJoiner()) {
+          setGameState(prev => ({ ...prev, joinerPower: data.powerLevel }))
+        }
+        break
+
       case 'PLAYER_CHOICE':
         console.log('👤 Player made choice:', data)
         // Update UI to show player has made their choice
@@ -305,44 +356,35 @@ export const useGameData = (
 
       case 'FLIP_RESULT':
         console.log('🎲 Flip result received:', data)
-        // Stop streaming mode
-        setStreamedCoinState(prev => ({
-          ...prev,
-          isStreaming: false,
-          frameData: null
-        }))
-        // Reset flip state
+        // Animation should already be complete by now
         setGameState(prev => ({
           ...prev,
-          isFlipping: false, // Stop the flip animation
-          phase: 'choosing' // Return to choosing phase for next round
+          isFlipping: false,
+          phase: 'result'
         }))
+        
+        // Handle the result
         handleFlipResult(data)
         break
 
-      case 'FLIP_STARTED':
-        console.log('🎬 Server-side flip started:', data)
-        setStreamedCoinState(prev => ({
-          ...prev,
-          isStreaming: true,
-          flipStartTime: Date.now(),
-          duration: data.duration || 3000
-        }))
+      case 'FLIP_START':
+        console.log('🎬 Flip animation starting:', data)
+        // Start the flip animation with deterministic seed
         setGameState(prev => ({
           ...prev,
           phase: 'flipping',
-          isFlipping: true, // Add this to trigger coin animation
-          flipResult: data.result, // Add the flip result
-          flipDuration: data.duration || 3000 // Add flip duration
+          isFlipping: true,
+          flipSeed: data.seed, // Use this for deterministic animation
+          flipDuration: data.duration || 3000
         }))
-        break
-
-      case 'COIN_FRAME':
-        console.log('🎬 Received coin frame:', data.timestamp)
-        setStreamedCoinState(prev => ({
-          ...prev,
-          frameData: data.frameData
-        }))
+        
+        // Set flip animation data
+        setFlipAnimation({
+          isActive: true,
+          result: data.result,
+          duration: data.duration || 3000,
+          seed: data.seed
+        })
         break
 
       case 'GAME_COMPLETED':
@@ -526,9 +568,12 @@ export const useGameData = (
       webSocketService.on('choice_update', handleWebSocketMessage)
       webSocketService.on('auto_flip_triggered', handleWebSocketMessage)
       webSocketService.on('PLAYER_CHOICE', handleWebSocketMessage)
+      webSocketService.on('PLAYER_CHOICE_MADE', handleWebSocketMessage)
+      webSocketService.on('POWER_PHASE_STARTED', handleWebSocketMessage)
+      webSocketService.on('POWER_CHARGED', handleWebSocketMessage)
+      webSocketService.on('FLIP_START', handleWebSocketMessage)
       webSocketService.on('FLIP_RESULT', handleWebSocketMessage)
-      webSocketService.on('FLIP_STARTED', handleWebSocketMessage)
-      webSocketService.on('COIN_FRAME', handleWebSocketMessage)
+      webSocketService.on('NEW_ROUND_STARTED', handleWebSocketMessage)
       webSocketService.on('GAME_COMPLETED', handleWebSocketMessage)
       webSocketService.on('your_offer_accepted', handleWebSocketMessage)
       webSocketService.on('game_awaiting_challenger_deposit', handleWebSocketMessage)
@@ -554,9 +599,12 @@ export const useGameData = (
         webSocketService.off('choice_update', handleWebSocketMessage)
         webSocketService.off('auto_flip_triggered', handleWebSocketMessage)
         webSocketService.off('PLAYER_CHOICE', handleWebSocketMessage)
+        webSocketService.off('PLAYER_CHOICE_MADE', handleWebSocketMessage)
+        webSocketService.off('POWER_PHASE_STARTED', handleWebSocketMessage)
+        webSocketService.off('POWER_CHARGED', handleWebSocketMessage)
+        webSocketService.off('FLIP_START', handleWebSocketMessage)
         webSocketService.off('FLIP_RESULT', handleWebSocketMessage)
-        webSocketService.off('FLIP_STARTED', handleWebSocketMessage)
-        webSocketService.off('COIN_FRAME', handleWebSocketMessage)
+        webSocketService.off('NEW_ROUND_STARTED', handleWebSocketMessage)
         webSocketService.off('GAME_COMPLETED', handleWebSocketMessage)
         webSocketService.off('your_offer_accepted', handleWebSocketMessage)
         webSocketService.off('game_awaiting_challenger_deposit', handleWebSocketMessage)
@@ -568,7 +616,7 @@ export const useGameData = (
         webSocketService.off('game_status_changed', handleWebSocketMessage)
       }
     }
-  }, [gameId, address, gameData, gameState, playerChoices, setGameState, setPlayerChoices, setStreamedCoinState, handleFlipResult, handleGameCompleted, loadGameData])
+  }, [gameId, address, gameData, gameState, playerChoices, setGameState, setPlayerChoices, setFlipAnimation, handleFlipResult, handleGameCompleted, loadGameData])
 
   return {
     handleWebSocketMessage

@@ -1,32 +1,35 @@
 import React from 'react'
 import styled from '@emotion/styled'
-import OptimizedGoldCoin from '../OptimizedGoldCoin'
+import FinalCoin from '../FinalCoin'
 
-const CoinWrapper = styled.div`
+const CoinContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 1rem 0;
 `
 
-const LobbyCoin = ({ 
-  customHeadsImage, 
-  customTailsImage, 
-  size = 200 
-}) => {
+const LobbyCoin = ({ size = 150 }) => {
   return (
-    <CoinWrapper>
-      <div style={{ 
-        transform: `scale(${size / 100})`,
-        animation: 'float 4s ease-in-out infinite'
-      }}>
-        <OptimizedGoldCoin
-          customHeadsImage={customHeadsImage}
-          customTailsImage={customTailsImage}
-          flipResult={null}
-          isFlipping={false}
-        />
-      </div>
-    </CoinWrapper>
+    <CoinContainer>
+      <FinalCoin
+        isFlipping={false}
+        flipResult={null}
+        flipDuration={3000}
+        onFlipComplete={() => {}}
+        onPowerCharge={() => {}}
+        onPowerRelease={() => {}}
+        isPlayerTurn={false}
+        isCharging={false}
+        creatorPower={0}
+        joinerPower={0}
+        customHeadsImage={null}
+        customTailsImage={null}
+        size={size}
+        material={null}
+        seed={null}
+      />
+    </CoinContainer>
   )
 }
 

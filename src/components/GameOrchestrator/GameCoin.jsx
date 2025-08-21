@@ -1,7 +1,6 @@
 import React from 'react'
 import styled from '@emotion/styled'
-import OptimizedGoldCoin from '../OptimizedGoldCoin'
-import StreamedCoin from '../StreamedCoin'
+import FinalCoin from '../FinalCoin'
 
 const CoinSection = styled.div`
   display: flex;
@@ -14,7 +13,6 @@ const CoinSection = styled.div`
 const GameCoin = ({
   gameId,
   gameState,
-  streamedCoinState,
   flipAnimation,
   customHeadsImage,
   customTailsImage,
@@ -24,42 +22,31 @@ const GameCoin = ({
   onPowerChargeStop,
   isMyTurn,
   address,
-  isCreator
+  isCreator,
+  flipSeed // Pass this from the server for deterministic animations
 }) => {
   return (
-    <CoinSection style={{ position: 'relative' }}>
-      {streamedCoinState.isStreaming ? (
-        <StreamedCoin
-          gameId={gameId}
-          isStreaming={streamedCoinState.isStreaming}
-          frameData={streamedCoinState.frameData}
-          onFlipComplete={() => {
-            // This will be handled by the parent component
-          }}
-          size={isMobile ? 150 : 200}
-          material={gameCoin?.material}
-        />
-      ) : (
-        <OptimizedGoldCoin
-          isFlipping={!!flipAnimation}
-          flipResult={flipAnimation?.result}
-          onPowerCharge={onPowerChargeStart}
-          onPowerRelease={onPowerChargeStop}
-          isPlayerTurn={isMyTurn()}
-          isCharging={gameState.chargingPlayer === address}
-          chargingPlayer={gameState.chargingPlayer}
-          creatorPower={gameState.creatorPower}
-          joinerPower={gameState.joinerPower}
-          creatorChoice={gameState.creatorChoice}
-          joinerChoice={gameState.joinerChoice}
-          isCreator={isCreator()}
-          customHeadsImage={customHeadsImage}
-          customTailsImage={customTailsImage}
-          gamePhase={gameState.phase}
-          size={isMobile ? 150 : 200}
-          material={gameCoin?.material}
-        />
-      )}
+    <CoinSection>
+      <FinalCoin
+        isFlipping={!!flipAnimation}
+        flipResult={flipAnimation?.result}
+        flipDuration={flipAnimation?.duration || 3000}
+        onFlipComplete={() => {
+          // Handle flip completion
+          console.log('Flip animation complete')
+        }}
+        onPowerCharge={onPowerChargeStart}
+        onPowerRelease={onPowerChargeStop}
+        isPlayerTurn={isMyTurn()}
+        isCharging={gameState.chargingPlayer === address}
+        creatorPower={gameState.creatorPower}
+        joinerPower={gameState.joinerPower}
+        customHeadsImage={customHeadsImage}
+        customTailsImage={customTailsImage}
+        size={isMobile ? 150 : 200}
+        material={gameCoin?.material}
+        seed={flipSeed}
+      />
     </CoinSection>
   )
 }

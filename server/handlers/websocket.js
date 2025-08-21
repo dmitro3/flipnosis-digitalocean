@@ -1,5 +1,4 @@
 const crypto = require('crypto')
-const CoinStreamService = require('../services/coinStream')
 const GameRoom = require('../services/gameRoom')
 
 // Room management

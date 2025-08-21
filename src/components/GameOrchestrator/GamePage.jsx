@@ -182,7 +182,6 @@ const GamePage = () => {
             <GameCoin
               gameId={gameId}
               gameState={{ phase: 'choosing' }}
-              streamedCoinState={{ isStreaming: false, frameData: null }}
               flipAnimation={null}
               customHeadsImage={customHeadsImage}
               customTailsImage={customTailsImage}

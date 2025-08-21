@@ -41,13 +41,8 @@ export const useGameState = (gameId, address) => {
   const [customTailsImage, setCustomTailsImage] = useState(null)
   const [gameCoin, setGameCoin] = useState(null)
 
-  // Streamed coin state
-  const [streamedCoinState, setStreamedCoinState] = useState({
-    isStreaming: false,
-    frameData: null,
-    flipStartTime: null,
-    duration: 3000
-  })
+  // Flip animation state
+  const [flipAnimation, setFlipAnimation] = useState(null)
 
   // UI state
   const [showResultPopup, setShowResultPopup] = useState(false)
@@ -687,13 +682,6 @@ export const useGameState = (gameId, address) => {
     setFlipAnimation(null)
     setShowResultPopup(false)
     setResultData(null)
-
-    setStreamedCoinState({
-      isStreaming: false,
-      frameData: null,
-      flipStartTime: null,
-      duration: 3000
-    })
   }
 
   // Handle game completed
@@ -1049,7 +1037,6 @@ export const useGameState = (gameId, address) => {
     error,
     gameState,
     playerChoices,
-    streamedCoinState,
     flipAnimation,
     resultData,
     showResultPopup,
@@ -1097,7 +1084,7 @@ export const useGameState = (gameId, address) => {
     // Setters
     setNewOffer,
     setCreatingOffer,
-    setStreamedCoinState,
+    setFlipAnimation,
     setGameState,
     setPlayerChoices,
     

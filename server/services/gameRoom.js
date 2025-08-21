@@ -22,6 +22,7 @@ class GameRoom {
     this.wins = new Map()
     this.wins.set(player1, 0)
     this.wins.set(player2, 0)
+    this.flipSeed = null
     
     console.log(`🏟️ GameRoom created for game ${gameId}:`, {
       roomId: this.roomId,
@@ -98,101 +99,65 @@ class GameRoom {
     this.disconnectTimers.set(address, timer)
   }
 
-  // Handle forfeit
-  handleForfeit(forfeitingPlayer, reason = 'manual') {
-    console.log(`🏳️ Forfeit in game ${this.gameId}: ${forfeitingPlayer} (${reason})`)
-
-    const winner = this.players.find(p => p !== forfeitingPlayer)
-    
-    this.state = 'forfeited'
-    
-    // Broadcast forfeit result
-    this.broadcast({
-      type: 'GAME_FORFEITED',
-      gameId: this.gameId,
-      forfeitingPlayer,
-      winner,
-      reason,
-      timestamp: Date.now()
-    })
-
-    // Winner takes all - update database
-    this.updateGameResult(winner, 'forfeit')
-
-    // Cleanup room after short delay
-    setTimeout(() => {
-      this.cleanup()
-    }, 5000)
-  }
-
   // Start the game
   startGame() {
-    console.log(`🚀 Starting game in room ${this.gameId}`)
+    console.log(`🎮 Starting game in room ${this.gameId}`)
     this.state = 'active'
     
+    // Broadcast game start
     this.broadcast({
-      type: 'GAME_ROOM_STARTED',
+      type: 'GAME_STARTED',
       gameId: this.gameId,
-      players: this.players,
-      currentRound: this.currentRound,
+      roundNumber: this.currentRound,
+      timestamp: Date.now()
+    })
+
+    // Start first round
+    this.startNewRound()
+  }
+
+  // Start a new round
+  startNewRound() {
+    console.log(`🔄 Starting round ${this.currentRound} in game room ${this.gameId}`)
+    
+    // Reset round state
+    this.playerChoices.clear()
+    this.playerPower.clear()
+    this.flipSeed = null
+
+    this.broadcast({
+      type: 'NEW_ROUND_STARTED',
+      gameId: this.gameId,
+      roundNumber: this.currentRound,
+      player1Wins: this.wins.get(this.player1),
+      player2Wins: this.wins.get(this.player2),
       timestamp: Date.now()
     })
   }
 
-  // Handle player choice with automatic opposite assignment
-  handlePlayerChoice(player, choice, oppositeChoice) {
-    console.log(`🎯 Player ${player} choosing ${choice}`)
-    
-    // Determine which player this is
-    const isPlayer1 = player === this.player1
-    const isPlayer2 = player === this.player2
-    
-    if (!isPlayer1 && !isPlayer2) {
-      console.error('❌ Invalid player making choice:', player)
+  // Handle player choice
+  handlePlayerChoice(address, choice) {
+    if (!this.players.includes(address)) {
       return false
     }
-    
-    // Check if it's this player's turn (based on round)
-    const isPlayer1Turn = this.currentRound % 2 === 1 // Odd rounds = Player 1
-    const isValidTurn = (isPlayer1 && isPlayer1Turn) || (isPlayer2 && !isPlayer1Turn)
-    
-    if (!isValidTurn) {
-      console.log('⚠️ Not this player\'s turn')
-      return false
-    }
-    
-    // Set player choices
-    if (isPlayer1) {
-      this.playerChoices.set(this.player1, choice)
-      this.playerChoices.set(this.player2, oppositeChoice)
-    } else {
-      this.playerChoices.set(this.player2, choice)  
-      this.playerChoices.set(this.player1, oppositeChoice)
-    }
-    
-    // Broadcast choices made
+
+    console.log(`👤 Player ${address} chose ${choice} in room ${this.gameId}`)
+    this.playerChoices.set(address, choice)
+
+    // Broadcast choice made (without revealing the choice)
     this.broadcast({
-      type: 'CHOICES_MADE',
+      type: 'PLAYER_CHOICE_MADE',
       gameId: this.gameId,
-      player1Choice: this.playerChoices.get(this.player1),
-      player2Choice: this.playerChoices.get(this.player2),
-      activePlayer: player,
+      player: address,
       round: this.currentRound,
       timestamp: Date.now()
     })
-    
-    // Move to power charging phase
-    this.state = 'power_charging'
-    this.currentTurn = this.player1 // Player 1 always charges first
-    
-    this.broadcast({
-      type: 'POWER_PHASE_STARTED', 
-      gameId: this.gameId,
-      currentTurn: this.currentTurn,
-      round: this.currentRound,
-      timestamp: Date.now()
-    })
-    
+
+    // Check if both players have chosen
+    if (this.playerChoices.size === 2) {
+      this.startPowerPhase()
+    }
+
     return true
   }
 
@@ -215,7 +180,6 @@ class GameRoom {
     }
 
     console.log(`⚡ Power charge in room ${this.gameId}: ${address} charged ${powerLevel}`)
-
     this.playerPower.set(address, powerLevel)
 
     // Broadcast power charged
@@ -236,10 +200,14 @@ class GameRoom {
     return true
   }
 
-  // Trigger coin flip
+  // Trigger coin flip with deterministic seed
   triggerFlip() {
     console.log(`🎲 Triggering flip for game room ${this.gameId}`)
 
+    // Generate deterministic seed based on game state
+    // This ensures both clients can reproduce the same animation
+    this.flipSeed = this.generateFlipSeed()
+    
     // Generate flip result
     const result = Math.random() < 0.5 ? 'heads' : 'tails'
     
@@ -251,12 +219,42 @@ class GameRoom {
     const roundWinner = player1Wins ? this.player1 : this.player2
     
     // Update wins
-    const currentWins = this.wins.get(roundWinner)
+    const currentWins = this.wins.get(roundWinner) || 0
     this.wins.set(roundWinner, currentWins + 1)
 
     console.log(`🎲 Flip result: ${result}, Round winner: ${roundWinner}`)
 
-    // Broadcast flip result
+    // Broadcast flip start - clients will handle animation
+    this.broadcast({
+      type: 'FLIP_START',
+      gameId: this.gameId,
+      result,
+      seed: this.flipSeed, // Send seed for deterministic animation
+      duration: 3000, // Animation duration
+      player1Power: this.playerPower.get(this.player1),
+      player2Power: this.playerPower.get(this.player2),
+      timestamp: Date.now()
+    })
+
+    // Schedule result announcement after animation
+    setTimeout(() => {
+      this.announceFlipResult(result, roundWinner, player1Choice, player2Choice)
+    }, 3000)
+  }
+
+  // Generate deterministic seed for flip animation
+  generateFlipSeed() {
+    // Create seed from game state
+    const player1Power = this.playerPower.get(this.player1) || 0
+    const player2Power = this.playerPower.get(this.player2) || 0
+    const roundSeed = this.currentRound * 1000
+    const timeSeed = Date.now() % 1000
+    
+    return roundSeed + player1Power + player2Power + timeSeed
+  }
+
+  // Announce flip result after animation
+  announceFlipResult(result, roundWinner, player1Choice, player2Choice) {
     this.broadcast({
       type: 'FLIP_RESULT',
       gameId: this.gameId,
@@ -286,6 +284,7 @@ class GameRoom {
     this.currentRound++
     this.playerChoices.clear()
     this.playerPower.clear()
+    this.flipSeed = null
 
     console.log(`🔄 Starting round ${this.currentRound} in game room ${this.gameId}`)
 
@@ -301,7 +300,7 @@ class GameRoom {
 
   // Complete the game
   completeGame() {
-    console.log(`🏁 Completing game in room ${this.gameId}`)
+    console.log(`🏆 Completing game in room ${this.gameId}`)
 
     const player1Wins = this.wins.get(this.player1)
     const player2Wins = this.wins.get(this.player2)
@@ -319,8 +318,27 @@ class GameRoom {
       timestamp: Date.now()
     })
 
-    // Winner takes all - update database
-    this.updateGameResult(winner, 'victory')
+    // Cleanup room after short delay
+    setTimeout(() => {
+      this.cleanup()
+    }, 10000)
+  }
+
+  // Handle forfeit
+  handleForfeit(address, reason) {
+    console.log(`🏳️ Player ${address} forfeited: ${reason}`)
+    
+    const winner = this.players.find(p => p !== address)
+    this.state = 'completed'
+
+    this.broadcast({
+      type: 'GAME_COMPLETED',
+      gameId: this.gameId,
+      winner,
+      forfeitReason: reason,
+      forfeitedPlayer: address,
+      timestamp: Date.now()
+    })
 
     // Cleanup room after short delay
     setTimeout(() => {
@@ -328,52 +346,11 @@ class GameRoom {
     }, 10000)
   }
 
-  // Update game result in database - Winner takes all
-  async updateGameResult(winner, resultType) {
-    console.log(`💾 Winner Takes All: ${winner} wins by ${resultType}`)
-    
-    try {
-      // Update game status in database
-      // The winner gets both the NFT and the crypto
-      // This would be handled by the smart contract in a real implementation
-      
-      // Mark game as completed with winner
-      // The smart contract should:
-      // 1. Transfer the NFT from escrow to winner
-      // 2. Transfer the crypto amount from escrow to winner
-      // 3. Update game status to completed
-      
-      console.log(`🏆 Winner Takes All Implemented:`)
-      console.log(`   Winner: ${winner}`)
-      console.log(`   Gets: NFT + Crypto Amount`)
-      console.log(`   Result Type: ${resultType}`)
-      
-      // This is where we would call the smart contract method
-      // to execute the winner-takes-all transfer
-      
-      // For now, log the transaction that should happen
-      console.log(`📝 Transaction to execute:`)
-      console.log(`   - Transfer NFT to: ${winner}`)
-      console.log(`   - Transfer crypto to: ${winner}`)
-      console.log(`   - Mark game as completed`)
-      
-    } catch (error) {
-      console.error('❌ Error updating winner takes all result:', error)
-    }
-  }
-
   // Send message to specific player
   sendToPlayer(address, message) {
     const socket = this.playerSockets.get(address)
-    if (socket && socket.readyState === 1) { // WebSocket.OPEN
-      try {
-        socket.send(JSON.stringify(message))
-        console.log(`📤 Sent message to ${address}:`, message.type)
-      } catch (error) {
-        console.error(`❌ Failed to send message to ${address}:`, error)
-      }
-    } else {
-      console.log(`⚠️ Cannot send message to ${address} - not connected`)
+    if (socket) {
+      socket.emit('game_message', message)
     }
   }
 
@@ -386,37 +363,35 @@ class GameRoom {
     })
   }
 
-  // Check if room is empty
-  isEmpty() {
-    return this.connectedSockets.size === 0
-  }
-
-  // Get room status
-  getStatus() {
-    return {
-      gameId: this.gameId,
-      roomId: this.roomId,
-      state: this.state,
-      players: this.players,
-      connectedPlayers: Array.from(this.playerSockets.keys()),
-      currentRound: this.currentRound,
-      wins: Object.fromEntries(this.wins)
-    }
-  }
-
   // Cleanup room
   cleanup() {
     console.log(`🧹 Cleaning up game room ${this.gameId}`)
+    this.playerChoices.clear()
+    this.playerPower.clear()
+    this.wins.clear()
     
-    // Clear all timers
+    // Clear disconnect timers
     this.disconnectTimers.forEach(timer => clearTimeout(timer))
     this.disconnectTimers.clear()
     
-    // Clear collections
-    this.connectedSockets.clear()
-    this.playerSockets.clear()
-    this.playerChoices.clear()
-    this.playerPower.clear()
+    // Remove from room manager
+    if (this.wsHandlers && this.wsHandlers.removeRoom) {
+      this.wsHandlers.removeRoom(this.gameId)
+    }
+  }
+
+  // Get room info
+  getRoomInfo() {
+    return {
+      gameId: this.gameId,
+      state: this.state,
+      currentRound: this.currentRound,
+      player1: this.player1,
+      player2: this.player2,
+      player1Wins: this.wins.get(this.player1),
+      player2Wins: this.wins.get(this.player2),
+      connectedPlayers: this.connectedSockets.size
+    }
   }
 }
 

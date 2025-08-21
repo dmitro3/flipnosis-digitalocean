@@ -17,23 +17,18 @@ export const useGameRoomState = (gameId, address, gameData) => {
     flipResult: null,
     roundWinner: null,
     creatorWins: 0,
-    joinerWins: 0
+    joinerWins: 0,
+    flipSeed: null // For deterministic animations
   })
 
   const [playerChoices, setPlayerChoices] = useState({ creator: null, joiner: null })
-  const [flipAnimation, setFlipAnimation] = useState(null)
   const [resultData, setResultData] = useState(null)
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [roundCountdown, setRoundCountdown] = useState(null)
   const [roundCountdownInterval, setRoundCountdownInterval] = useState(null)
 
-  // Coin state
-  const [streamedCoinState, setStreamedCoinState] = useState({
-    isStreaming: false,
-    frameData: null,
-    flipStartTime: null,
-    duration: 3000
-  })
+  // Flip animation state
+  const [flipAnimation, setFlipAnimation] = useState(null)
 
   // Helper functions
   const getGameCreator = () => gameData?.creator
@@ -356,13 +351,6 @@ export const useGameRoomState = (gameId, address, gameData) => {
     setShowResultPopup(false)
     setResultData(null)
 
-    setStreamedCoinState({
-      isStreaming: false,
-      frameData: null,
-      flipStartTime: null,
-      duration: 3000
-    })
-
     // Start countdown for next round
     setTimeout(() => {
       startRoundCountdown()
@@ -487,12 +475,11 @@ export const useGameRoomState = (gameId, address, gameData) => {
     resultData,
     showResultPopup,
     roundCountdown,
-    streamedCoinState,
 
     // Actions
     setGameState,
     setPlayerChoices,
-    setStreamedCoinState,
+    setFlipAnimation,
     handleFlipResult,
     handleGameCompleted,
     resetForNextRound,
