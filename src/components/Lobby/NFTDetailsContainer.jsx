@@ -105,6 +105,7 @@ const NFTImage = styled.div`
   border: 2px solid rgba(255, 20, 147, 0.3);
   overflow: hidden;
   flex-shrink: 0;
+  margin-bottom: 0.5rem;
   
   img {
     width: 100%;
@@ -216,23 +217,21 @@ const ActionButton = styled.button`
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: bold;
-  font-size: 0.75rem;
+  font-size: 1rem;
   transition: all 0.2s ease;
-  text-decoration: none;
+  width: 80%;
   justify-content: center;
-  width: 100%;
   
-  &.twitter {
-    background: #000000;
-    color: #ffffff;
-    border: 1px solid #333333;
+  &.share-x {
+    background: #1DA1F2;
+    color: white;
     
     &:hover {
-      background: #333333;
+      background: #0d8bd9;
     }
   }
   
-  &.telegram {
+  &.share-tg {
     background: #0088cc;
     color: white;
     
@@ -242,22 +241,20 @@ const ActionButton = styled.button`
   }
   
   &.opensea {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #2081e2;
+    color: white;
     
     &:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: #1a6bc7;
     }
   }
   
   &.explorer {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #6c757d;
+    color: white;
     
     &:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: #5a6268;
     }
   }
   
@@ -375,10 +372,55 @@ const ShareButton = styled.button`
   }
 `
 
+const CreatorSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+`
+
+const CreatorLabel = styled.span`
+  color: #FFD700;
+  font-weight: bold;
+  font-size: 0.9rem;
+`
+
+const CreatorName = styled.span`
+  color: #fff;
+  font-size: 0.9rem;
+`
+
+const CreatorAvatar = styled.div`
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  overflow: hidden;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+`
+
 const VerificationElement = styled.div`
-  position: absolute;
-  top: -1rem;
-  right: -0.5rem;
+  position: relative;
   background: ${props => props.verified ? 'rgba(0, 255, 65, 0.9)' : 'rgba(255, 149, 0, 0.9)'};
   color: #000;
   padding: 0.25rem 0.5rem;
@@ -389,6 +431,7 @@ const VerificationElement = styled.div`
   cursor: ${props => props.verified ? 'default' : 'help'};
   z-index: 10;
   transition: all 0.2s ease;
+  margin-top: 0.5rem;
   
   &:hover {
     transform: scale(1.05);
@@ -486,6 +529,26 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
 
   const isNFTVerified = () => {
     return gameData?.nft_verified === true || nftData?.verified === true
+  }
+
+  const getCreatorName = () => {
+    const creatorAddress = gameData?.creator || gameData?.creator_address
+    if (!creatorAddress) return 'Unknown Creator'
+    
+    // For now, return truncated address, later we can fetch profile names
+    return `${creatorAddress.slice(0, 6)}...${creatorAddress.slice(-4)}`
+  }
+
+  const getCreatorAvatar = () => {
+    // For now, return a placeholder. Later we can fetch from profile system
+    return '/placeholder-nft.svg'
+  }
+
+  const navigateToCreatorProfile = () => {
+    const creatorAddress = gameData?.creator || gameData?.creator_address
+    if (creatorAddress) {
+      window.open(`/profile/${creatorAddress}`, '_blank')
+    }
   }
 
   // Calculate round wins for best of 5
@@ -614,14 +677,14 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
                 {/* Action Buttons */}
                 <ActionButtons>
                   <ActionButton 
-                    className="twitter"
+                    className="share-x"
                     onClick={() => handleShare('twitter')}
                     disabled={!address}
                   >
                     Share on X
                   </ActionButton>
                   <ActionButton 
-                    className="telegram"
+                    className="share-tg"
                     onClick={() => handleShare('telegram')}
                     disabled={!address}
                   >
@@ -724,34 +787,41 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
                 )}
               </NFTInfoSection>
               
-              {/* NFT Image Section */}
-              <NFTImageSection>
-                <div style={{ position: 'relative' }}>
-                  <NFTImage>
-                    <img src={getNFTImage()} alt={getNFTName()} />
-                  </NFTImage>
-                </div>
-              </NFTImageSection>
-            </NFTHeader>
-            
-            {/* Verification Element at Bottom Right */}
-            <div style={{ position: 'relative', marginTop: 'auto' }}>
-              <VerificationElement 
-                verified={isNFTVerified()}
-                onMouseEnter={() => !isNFTVerified() && setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-              >
-                {isNFTVerified() ? '✅ Verified' : '⚠️ Unverified'}
-                {!isNFTVerified() && (
-                  <Tooltip show={showTooltip}>
-                    <TooltipTitle>⚠️ NFT Not Verified</TooltipTitle>
-                    <TooltipText>
-                      This NFT has not been verified on-chain. Proceed with caution.
-                    </TooltipText>
-                  </Tooltip>
-                )}
-              </VerificationElement>
-            </div>
+                             {/* NFT Image Section */}
+               <NFTImageSection>
+                 <div style={{ position: 'relative' }}>
+                   <NFTImage>
+                     <img src={getNFTImage()} alt={getNFTName()} />
+                   </NFTImage>
+                   
+                   {/* Verification Element beneath the image */}
+                   <VerificationElement 
+                     verified={isNFTVerified()}
+                     onMouseEnter={() => !isNFTVerified() && setShowTooltip(true)}
+                     onMouseLeave={() => setShowTooltip(false)}
+                   >
+                     {isNFTVerified() ? '✅ Verified' : '⚠️ Unverified'}
+                     {!isNFTVerified() && (
+                       <Tooltip show={showTooltip}>
+                         <TooltipTitle>⚠️ NFT Not Verified</TooltipTitle>
+                         <TooltipText>
+                           This NFT has not been verified on-chain. Proceed with caution.
+                         </TooltipText>
+                       </Tooltip>
+                     )}
+                   </VerificationElement>
+                 </div>
+               </NFTImageSection>
+             </NFTHeader>
+             
+             {/* Creator Section */}
+             <CreatorSection onClick={() => navigateToCreatorProfile()}>
+               <CreatorLabel>👤 Creator:</CreatorLabel>
+               <CreatorAvatar>
+                 <img src={getCreatorAvatar()} alt="Creator" />
+               </CreatorAvatar>
+               <CreatorName>{getCreatorName()}</CreatorName>
+             </CreatorSection>
           </>
         )}
       </div>
