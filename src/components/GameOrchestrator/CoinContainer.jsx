@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styled from '@emotion/styled'
 import GameCoin from './GameCoin'
 
@@ -36,6 +36,16 @@ const CoinWrapper = styled.div`
   justify-content: center;
   flex: 1;
   width: 100%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
 `
 
 const CoinContainer = ({ 
@@ -48,19 +58,41 @@ const CoinContainer = ({
   address, 
   isCreator 
 }) => {
+  const [isFlipping, setIsFlipping] = useState(false)
+  const [flipResult, setFlipResult] = useState(null)
+
+  const handleCoinClick = () => {
+    if (isFlipping) return // Prevent multiple clicks during flip
+    
+    setIsFlipping(true)
+    setFlipResult(null)
+    
+    // Simulate flip animation
+    setTimeout(() => {
+      const result = Math.random() < 0.5 ? 'heads' : 'tails'
+      setFlipResult(result)
+      
+      // Reset after showing result
+      setTimeout(() => {
+        setIsFlipping(false)
+        setFlipResult(null)
+      }, 2000)
+    }, 1500)
+  }
+
   return (
     <CoinContainerStyled>
       <CoinTitle>Game Coin</CoinTitle>
-      <CoinWrapper>
+      <CoinWrapper onClick={handleCoinClick}>
         <div style={{ 
-          transform: 'scale(0.6)',
+          transform: 'scale(1.2)',
           animation: 'float 4s ease-in-out infinite'
         }}>
           <GameCoin
             gameId={gameId}
             gameState={{ phase: 'waiting' }}
             streamedCoinState={{ isStreaming: false, frameData: null }}
-            flipAnimation={null}
+            flipAnimation={isFlipping ? { result: flipResult } : null}
             customHeadsImage={customHeadsImage}
             customTailsImage={customTailsImage}
             gameCoin={gameCoin}

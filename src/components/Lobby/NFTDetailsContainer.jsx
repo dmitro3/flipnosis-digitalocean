@@ -109,8 +109,8 @@ const VerificationBadge = styled.div`
 `
 
 const NFTImage = styled.div`
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
   border-radius: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   display: flex;
@@ -218,21 +218,23 @@ const ActionButtons = styled.div`
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  width: 100%;
 `
 
 const ActionButton = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.6rem;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: bold;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   transition: all 0.2s ease;
   text-decoration: none;
   justify-content: center;
+  width: 100%;
   
   &.twitter {
     background: #000000;
@@ -384,6 +386,28 @@ const ShareButton = styled.button`
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+`
+
+const VerificationElement = styled.div`
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: ${props => props.verified ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 149, 0, 0.2)'};
+  border: 1px solid ${props => props.verified ? 'rgba(0, 255, 65, 0.4)' : 'rgba(255, 149, 0, 0.4)'};
+  border-radius: 0.5rem;
+  color: ${props => props.verified ? '#00FF41' : '#FF9500'};
+  font-size: 0.7rem;
+  font-weight: bold;
+  cursor: ${props => props.verified ? 'default' : 'help'};
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.05);
   }
 `
 
@@ -739,30 +763,34 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
                 )}
               </NFTInfoSection>
               
-              {/* NFT Image Section */}
-              <NFTImageSection>
-                <div style={{ position: 'relative' }}>
-                  <NFTImage>
-                    <img src={getNFTImage()} alt={getNFTName()} />
-                  </NFTImage>
-                  <VerificationIcon 
-                    verified={isNFTVerified()}
-                    onMouseEnter={() => !isNFTVerified() && setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
-                  >
-                    {isNFTVerified() ? '✅' : '⚠️'}
-                    {!isNFTVerified() && (
-                      <Tooltip show={showTooltip}>
-                        <TooltipTitle>⚠️ NFT Not Verified</TooltipTitle>
-                        <TooltipText>
-                          This NFT has not been verified on-chain. Proceed with caution.
-                        </TooltipText>
-                      </Tooltip>
-                    )}
-                  </VerificationIcon>
-                </div>
-              </NFTImageSection>
-            </NFTHeader>
+                                            {/* NFT Image Section */}
+               <NFTImageSection>
+                 <div style={{ position: 'relative' }}>
+                   <NFTImage>
+                     <img src={getNFTImage()} alt={getNFTName()} />
+                   </NFTImage>
+                 </div>
+               </NFTImageSection>
+             </NFTHeader>
+             
+             {/* Verification Element at Bottom Right */}
+             <div style={{ position: 'relative', marginTop: 'auto' }}>
+               <VerificationElement 
+                 verified={isNFTVerified()}
+                 onMouseEnter={() => !isNFTVerified() && setShowTooltip(true)}
+                 onMouseLeave={() => setShowTooltip(false)}
+               >
+                 {isNFTVerified() ? '✅ Verified' : '⚠️ Unverified'}
+                 {!isNFTVerified() && (
+                   <Tooltip show={showTooltip}>
+                     <TooltipTitle>⚠️ NFT Not Verified</TooltipTitle>
+                     <TooltipText>
+                       This NFT has not been verified on-chain. Proceed with caution.
+                     </TooltipText>
+                   </Tooltip>
+                 )}
+               </VerificationElement>
+             </div>
           </>
         )}
       </div>
