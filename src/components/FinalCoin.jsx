@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import './FinalCoin.css'
 
 const FinalCoin = ({
   isFlipping = false,

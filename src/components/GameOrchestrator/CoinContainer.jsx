@@ -55,6 +55,7 @@ const CoinContainer = ({
         <LobbyCoin
           customHeadsImage={customHeadsImage}
           customTailsImage={customTailsImage}
+          material={gameCoin?.material}
           size={isMobile ? 250 : 300}
         />
       </CoinWrapper>

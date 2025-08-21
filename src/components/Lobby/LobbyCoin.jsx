@@ -9,7 +9,12 @@ const CoinContainer = styled.div`
   margin: 1rem 0;
 `
 
-const LobbyCoin = ({ size = 150 }) => {
+const LobbyCoin = ({ 
+  size = 150, 
+  customHeadsImage = null, 
+  customTailsImage = null,
+  material = null 
+}) => {
   return (
     <CoinContainer>
       <FinalCoin
@@ -23,10 +28,10 @@ const LobbyCoin = ({ size = 150 }) => {
         isCharging={false}
         creatorPower={0}
         joinerPower={0}
-        customHeadsImage={null}
-        customTailsImage={null}
+        customHeadsImage={customHeadsImage}
+        customTailsImage={customTailsImage}
         size={size}
-        material={null}
+        material={material}
         seed={null}
       />
     </CoinContainer>
