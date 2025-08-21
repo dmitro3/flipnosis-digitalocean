@@ -188,7 +188,10 @@ const FinalCoin = ({
 
     // Create coin mesh
     const coin = new THREE.Mesh(geometry, materials)
-    coin.rotation.z = Math.PI / 2 // Rotate 90 degrees so it faces forward
+    // Set initial rotation - coin faces forward (heads/tails visible)
+    coin.rotation.x = Math.PI / 2 // Rotate 90 degrees on X axis to face camera
+    coin.rotation.y = 0
+    coin.rotation.z = 0
     scene.add(coin)
     coinRef.current = coin
 
@@ -258,22 +261,22 @@ const FinalCoin = ({
       try {
         // Idle animation when not flipping
         if (!isAnimatingRef.current) {
-          if (isCharging) {
-            // Charging animation
-            const time = Date.now() * 0.001
-            const intensity = Math.min(1, (creatorPower + joinerPower) / 20)
-            
-            // Gentle pulsing
-            const scale = 1 + Math.sin(time * 5) * 0.05 * intensity
-            coin.scale.set(scale, scale, scale)
-            
-            // Slow rotation during charge
-            coin.rotation.x += 0.02 * intensity
-          } else {
-            // Gentle idle rotation
-            coin.rotation.x += 0.005
-            coin.scale.set(1, 1, 1)
-          }
+                  if (isCharging) {
+          // Charging animation
+          const time = Date.now() * 0.001
+          const intensity = Math.min(1, (creatorPower + joinerPower) / 20)
+          
+          // Gentle pulsing
+          const scale = 1 + Math.sin(time * 5) * 0.05 * intensity
+          coin.scale.set(scale, scale, scale)
+          
+          // Slow rotation during charge (around Y axis for visual effect)
+          coin.rotation.y += 0.02 * intensity
+        } else {
+          // Gentle idle rotation (around Y axis for visual interest)
+          coin.rotation.y += 0.005
+          coin.scale.set(1, 1, 1)
+        }
         }
 
         renderer.render(scene, camera)
@@ -323,12 +326,15 @@ const FinalCoin = ({
     const totalRotations = baseRotations + extraRotations
     
     // Final rotation to show result
-    const finalRotation = flipResult === 'heads' ? 0 : Math.PI
-    const totalRotation = (totalRotations * Math.PI * 2) + finalRotation
+    // When X rotation is at PI/2 (90°), we see heads
+    // When X rotation is at 3PI/2 (270°), we see tails
+    const basePosition = Math.PI / 2 // Starting position (heads visible)
+    const finalRotation = flipResult === 'heads' ? basePosition : basePosition + Math.PI
+    const totalRotation = (totalRotations * Math.PI * 2) + (finalRotation - basePosition)
     
     // Animation parameters
     const startTime = Date.now()
-    const startRotation = coin.rotation.x
+    const startRotationX = coin.rotation.x
     const maxHeight = 2 * physics.height * (totalPower / 10) // Subtle height based on power and weight
     
     isAnimatingRef.current = true
@@ -343,22 +349,21 @@ const FinalCoin = ({
           ? 4 * progress * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 3) / 2
         
-        // Rotation animation (applying material physics)
-        coin.rotation.x = startRotation + (totalRotation * easeInOutCubic * physics.rotationSpeed)
-        
-        // Height animation (parabolic arc)
-        const heightProgress = Math.sin(progress * Math.PI)
-        coin.position.y = heightProgress * maxHeight
-        
-        // Apply resistance (slowing down near the end)
-        const resistanceEffect = 1 - (progress * (1 - physics.resistance))
-        coin.rotation.x *= resistanceEffect
+              // Rotation animation (applying material physics)
+      coin.rotation.x = startRotationX + (totalRotation * easeInOutCubic * physics.rotationSpeed)
+      
+      // Height animation (parabolic arc)
+      const heightProgress = Math.sin(progress * Math.PI)
+      coin.position.y = heightProgress * maxHeight
+      
+      // Apply resistance (slowing down near the end)
+      const resistanceEffect = 1 - (progress * (1 - physics.resistance))
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip)
         } else {
           // Ensure final rotation is exact
-          coin.rotation.x = startRotation + totalRotation
+          coin.rotation.x = finalRotation
           coin.position.y = 0
           isAnimatingRef.current = false
           onFlipComplete(flipResult)

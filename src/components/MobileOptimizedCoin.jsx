@@ -227,7 +227,7 @@ const MobileOptimizedCoin = ({
     return material
   }
 
-  // MODIFICATION 3: Mobile landing function to make coin stand on edge
+  // MODIFICATION 3: Mobile landing function to make coin face forward
   const landOnEdgeMobile = (targetRotation, isHeads) => {
     if (!coinRef.current) return
     
@@ -236,28 +236,24 @@ const MobileOptimizedCoin = ({
     const coin = coinRef.current
     const startRotationX = coin.rotation.x;
     
-    // Calculate nearest edge position
-    const currentRotations = Math.floor(startRotationX / (Math.PI * 2));
-    const finalRotationX = currentRotations * Math.PI * 2 + targetRotation;
-    
     const animateLanding = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / landingDuration, 1);
       const easeOut = 1 - Math.pow(1 - progress, 2);
       
-      // Rotate to edge position (X-axis only)
-      coin.rotation.x = startRotationX + (finalRotationX - startRotationX) * easeOut;
+      // Rotate to final position (X-axis only)
+      coin.rotation.x = startRotationX + (targetRotation - startRotationX) * easeOut;
       coin.position.y = 0;
       
-      // Always maintain proper orientation
-      coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
+      // Maintain proper orientation
+      coin.rotation.y = 0; // Keep coin facing forward
       coin.rotation.z = 0;
       
       if (progress < 1) {
         requestAnimationFrame(animateLanding);
       } else {
-        coin.rotation.x = finalRotationX;
-        coin.rotation.y = Math.PI / 2; // Maintain 90-degree left rotation
+        coin.rotation.x = targetRotation;
+        coin.rotation.y = 0; // Keep coin facing forward
         coin.rotation.z = 0;
         currentCoinSideRef.current = isHeads ? 'heads' : 'tails';
         isAnimatingRef.current = false;
@@ -324,7 +320,10 @@ const MobileOptimizedCoin = ({
     const totalRotation = minFlips * rotationsPerFlip + (Math.random() * Math.PI * 2);
     
     const isHeads = result === 'heads';
-    const targetEdgeRotation = isHeads ? 0 : Math.PI;
+    // When X rotation is at PI/2 (90°), we see heads
+    // When X rotation is at 3PI/2 (270°), we see tails
+    const basePosition = Math.PI / 2 // Starting position (heads visible)
+    const targetRotation = isHeads ? basePosition : basePosition + Math.PI;
     
     const startTime = Date.now();
     const startRotation = coin.rotation.x;
@@ -356,7 +355,7 @@ const MobileOptimizedCoin = ({
         requestAnimationFrame(animateFlip);
       } else {
         // Mobile landing
-        landOnEdgeMobile(targetEdgeRotation, isHeads);
+        landOnEdgeMobile(targetRotation, isHeads);
       }
     };
     
@@ -415,10 +414,10 @@ const MobileOptimizedCoin = ({
     scene.add(coin)
     coinRef.current = coin
 
-    // Initial position - clean wheel-like orientation
-    coin.rotation.x = 0 // Start flat
-    coin.rotation.y = Math.PI / 2 // Rotated 90 degrees left for proper facing
-    coin.rotation.z = 0 // No tilt
+    // Set initial rotation - coin faces forward (heads/tails visible)
+    coin.rotation.x = Math.PI / 2 // Rotate 90 degrees on X axis to face camera
+    coin.rotation.y = 0
+    coin.rotation.z = 0
     coin.visible = true // Ensure initial visibility
     currentCoinSideRef.current = 'heads'
     
@@ -456,10 +455,14 @@ const MobileOptimizedCoin = ({
           const intensity = (creatorPower + joinerPower) / 20
           coin.position.y = Math.sin(time * 6) * 0.1 * intensity
           coin.scale.set(1 + intensity * 0.05, 1 + intensity * 0.05, 1 + intensity * 0.05)
+          // Slow rotation during charge (around Y axis for visual effect)
+          coin.rotation.y += 0.02 * intensity
         } else {
           coin.scale.set(1, 1, 1)
           coin.position.set(0, 0, 0)
           coin.position.y = Math.sin(time * 2) * 0.02
+          // Gentle idle rotation (around Y axis for visual interest)
+          coin.rotation.y += 0.005
         }
       }
 
