@@ -176,9 +176,10 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+  // Remove auto-scroll on new messages to prevent page jumping
+  // useEffect(() => {
+  //   scrollToBottom()
+  // }, [messages])
 
   // Load player names for messages
   useEffect(() => {

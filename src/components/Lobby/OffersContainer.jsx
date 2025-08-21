@@ -267,9 +267,9 @@ const OffersContainer = ({
   }, [initialOffers])
 
   // Auto scroll to bottom when new offers arrive
-  useEffect(() => {
-    offersEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [offers])
+  // useEffect(() => {
+  //   offersEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  // }, [offers])
 
 const isCreator = () => {
   // Use prop if available (preferred)

@@ -10,8 +10,8 @@ const CoinContainerStyled = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   box-shadow: none;
   position: relative;
   overflow: hidden;
@@ -22,7 +22,7 @@ const CoinTitle = styled.h3`
   color: #FFD700;
   font-size: 1rem;
   font-weight: bold;
-  text-align: center;
+  text-align: left;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
   background: rgba(0, 0, 139, 0.8);
   padding: 0.25rem 0.75rem;
@@ -67,7 +67,7 @@ const CoinContainer = ({
     setIsFlipping(true)
     setFlipResult(null)
     
-    // Simulate flip animation
+    // Simple flip animation - just rotate
     setTimeout(() => {
       const result = Math.random() < 0.5 ? 'heads' : 'tails'
       setFlipResult(result)
@@ -76,8 +76,8 @@ const CoinContainer = ({
       setTimeout(() => {
         setIsFlipping(false)
         setFlipResult(null)
-      }, 2000)
-    }, 1500)
+      }, 1500)
+    }, 1000)
   }
 
   return (
@@ -85,7 +85,7 @@ const CoinContainer = ({
       <CoinTitle>Game Coin</CoinTitle>
       <CoinWrapper onClick={handleCoinClick}>
         <div style={{ 
-          transform: 'scale(1.2)',
+          transform: 'scale(1.8)',
           animation: 'float 4s ease-in-out infinite'
         }}>
           <GameCoin

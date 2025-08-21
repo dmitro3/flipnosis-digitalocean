@@ -14,21 +14,7 @@ const CombinedContainer = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-y: auto;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255, 20, 147, 0.3);
-    border-radius: 3px;
-  }
+  overflow: hidden;
 
   &::before {
     content: '';
@@ -218,7 +204,7 @@ const ActionButtons = styled.div`
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
-  width: 100%;
+  width: 80%;
 `
 
 const ActionButton = styled.button`
@@ -577,11 +563,6 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
     <CombinedContainer>
       <Header>
         <Title>💎 NFT Details</Title>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <StatusBadge status={gameData?.status}>
-            {getStatusText(gameData?.status)}
-          </StatusBadge>
-        </div>
       </Header>
       
       <div style={{ 
@@ -589,26 +570,8 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
         display: 'flex', 
         flexDirection: 'column', 
         gap: '0.5rem', 
-        overflow: 'auto', 
-        paddingRight: '0.5rem',
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(255, 215, 0, 0.3) rgba(255, 255, 255, 0.1)'
+        overflow: 'hidden'
       }}>
-        <style>
-          {`
-            div::-webkit-scrollbar {
-              width: 6px;
-            }
-            div::-webkit-scrollbar-track {
-              background: rgba(255, 255, 255, 0.1);
-              border-radius: 3px;
-            }
-            div::-webkit-scrollbar-thumb {
-              background: rgba(255, 215, 0, 0.3);
-              border-radius: 3px;
-            }
-          `}
-        </style>
         {/* Show round containers when game is active, otherwise show NFT details */}
         {isGameActive ? (
           <RoundContainer>
@@ -763,34 +726,34 @@ const GameStatusAndNFTContainer = ({ gameData, isCreator, currentTurn, nftData, 
                 )}
               </NFTInfoSection>
               
-                                            {/* NFT Image Section */}
-               <NFTImageSection>
-                 <div style={{ position: 'relative' }}>
-                   <NFTImage>
-                     <img src={getNFTImage()} alt={getNFTName()} />
-                   </NFTImage>
-                 </div>
-               </NFTImageSection>
-             </NFTHeader>
-             
-             {/* Verification Element at Bottom Right */}
-             <div style={{ position: 'relative', marginTop: 'auto' }}>
-               <VerificationElement 
-                 verified={isNFTVerified()}
-                 onMouseEnter={() => !isNFTVerified() && setShowTooltip(true)}
-                 onMouseLeave={() => setShowTooltip(false)}
-               >
-                 {isNFTVerified() ? '✅ Verified' : '⚠️ Unverified'}
-                 {!isNFTVerified() && (
-                   <Tooltip show={showTooltip}>
-                     <TooltipTitle>⚠️ NFT Not Verified</TooltipTitle>
-                     <TooltipText>
-                       This NFT has not been verified on-chain. Proceed with caution.
-                     </TooltipText>
-                   </Tooltip>
-                 )}
-               </VerificationElement>
-             </div>
+              {/* NFT Image Section */}
+              <NFTImageSection>
+                <div style={{ position: 'relative' }}>
+                  <NFTImage>
+                    <img src={getNFTImage()} alt={getNFTName()} />
+                  </NFTImage>
+                </div>
+              </NFTImageSection>
+            </NFTHeader>
+            
+            {/* Verification Element at Bottom Right */}
+            <div style={{ position: 'relative', marginTop: 'auto' }}>
+              <VerificationElement 
+                verified={isNFTVerified()}
+                onMouseEnter={() => !isNFTVerified() && setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                {isNFTVerified() ? '✅ Verified' : '⚠️ Unverified'}
+                {!isNFTVerified() && (
+                  <Tooltip show={showTooltip}>
+                    <TooltipTitle>⚠️ NFT Not Verified</TooltipTitle>
+                    <TooltipText>
+                      This NFT has not been verified on-chain. Proceed with caution.
+                    </TooltipText>
+                  </Tooltip>
+                )}
+              </VerificationElement>
+            </div>
           </>
         )}
       </div>
