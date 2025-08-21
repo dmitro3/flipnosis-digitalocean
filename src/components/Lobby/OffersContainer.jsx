@@ -7,7 +7,7 @@ import styled from '@emotion/styled'
 
 const OffersContainerStyled = styled.div`
   background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(0, 255, 65, 0.3);
+  border: 2px solid rgba(0, 255, 65, 0.3);
   border-radius: 1rem;
   padding: 1rem;
   height: 800px;

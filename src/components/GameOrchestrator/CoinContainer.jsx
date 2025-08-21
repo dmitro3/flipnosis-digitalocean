@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 import styled from '@emotion/styled'
-import GameCoin from './GameCoin'
+import LobbyCoin from '../Lobby/LobbyCoin'
 
 const CoinContainerStyled = styled.div`
   background: transparent;
@@ -30,22 +30,28 @@ const CoinTitle = styled.h3`
   border: 1px solid rgba(255, 215, 0, 0.3);
 `
 
+const ClickItText = styled.div`
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  color: #00FF41;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+  animation: pulse 2s infinite;
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+`
+
 const CoinWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1;
   width: 100%;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  
-  &:hover {
-    transform: scale(1.05);
-  }
-  
-  &:active {
-    transform: scale(0.95);
-  }
 `
 
 const CoinContainer = ({ 
@@ -58,53 +64,17 @@ const CoinContainer = ({
   address, 
   isCreator 
 }) => {
-  const [isFlipping, setIsFlipping] = useState(false)
-  const [flipResult, setFlipResult] = useState(null)
-
-  const handleCoinClick = () => {
-    if (isFlipping) return // Prevent multiple clicks during flip
-    
-    setIsFlipping(true)
-    setFlipResult(null)
-    
-    // Simple flip animation - just rotate
-    setTimeout(() => {
-      const result = Math.random() < 0.5 ? 'heads' : 'tails'
-      setFlipResult(result)
-      
-      // Reset after showing result
-      setTimeout(() => {
-        setIsFlipping(false)
-        setFlipResult(null)
-      }, 1500)
-    }, 1000)
-  }
-
   return (
     <CoinContainerStyled>
       <CoinTitle>Game Coin</CoinTitle>
-      <CoinWrapper onClick={handleCoinClick}>
-        <div style={{ 
-          transform: 'scale(1.8)',
-          animation: 'float 4s ease-in-out infinite'
-        }}>
-          <GameCoin
-            gameId={gameId}
-            gameState={{ phase: 'waiting' }}
-            streamedCoinState={{ isStreaming: false, frameData: null }}
-            flipAnimation={isFlipping ? { result: flipResult } : null}
-            customHeadsImage={customHeadsImage}
-            customTailsImage={customTailsImage}
-            gameCoin={gameCoin}
-            isMobile={isMobile}
-            onPowerChargeStart={() => {}}
-            onPowerChargeStop={() => {}}
-            isMyTurn={() => false}
-            address={address}
-            isCreator={isCreator}
-          />
-        </div>
+      <CoinWrapper>
+        <LobbyCoin
+          customHeadsImage={customHeadsImage}
+          customTailsImage={customTailsImage}
+          size={isMobile ? 250 : 300}
+        />
       </CoinWrapper>
+      <ClickItText>Click It!!</ClickItText>
     </CoinContainerStyled>
   )
 }
