@@ -94,8 +94,12 @@ const GameCoin = ({
   }
   
   const handleTestFlip = () => {
-    if (isTestFlipping) return
+    if (isTestFlipping) {
+      console.log('🔄 Test flip already in progress, ignoring...')
+      return
+    }
     
+    console.log('🎲 Starting test flip...')
     setIsTestFlipping(true)
     const result = Math.random() < 0.5 ? 'heads' : 'tails'
     setTestFlip({
@@ -106,6 +110,7 @@ const GameCoin = ({
     
     // Reset after animation completes
     setTimeout(() => {
+      console.log('🎲 Test flip completed, resetting...')
       setTestFlip(null)
       setIsTestFlipping(false)
     }, 3500) // Slightly longer to ensure animation completes

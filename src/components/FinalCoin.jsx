@@ -309,11 +309,11 @@ const FinalCoin = ({
           const scale = 1 + Math.sin(time * 5) * 0.05 * intensity
           coin.scale.set(scale, scale, scale)
           
-                     // Slow rotation during charge (around Y axis for visual effect) - clockwise direction
-           coin.rotation.y -= 0.02 * intensity
+                     // Slow rotation during charge - rotate forward (like falling towards us)
+           coin.rotation.x += 0.02 * intensity
                  } else {
-           // Gentle idle rotation (around Y axis for visual interest) - clockwise direction
-           coin.rotation.y -= 0.005
+           // Gentle idle rotation - rotate forward (like falling towards us)
+           coin.rotation.x += 0.005
            coin.scale.set(1, 1, 1)
          }
         }
@@ -343,6 +343,12 @@ const FinalCoin = ({
   useEffect(() => {
     if (!isFlipping || !coinRef.current || isAnimatingRef.current) {
       console.log('🔄 Flip animation blocked:', { isFlipping, hasCoin: !!coinRef.current, isAnimating: isAnimatingRef.current })
+      return
+    }
+    
+    // Prevent multiple animations with a more robust check
+    if (isAnimatingRef.current) {
+      console.log('🔄 Animation already in progress, skipping...')
       return
     }
 
@@ -421,9 +427,10 @@ const FinalCoin = ({
 
     animateFlip()
 
-    return () => {
-      isAnimatingRef.current = false
-    }
+         return () => {
+       console.log('🔄 Cleaning up flip animation')
+       isAnimatingRef.current = false
+     }
   }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower, material, seed])
 
   // Mouse interaction handlers
