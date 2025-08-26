@@ -186,7 +186,35 @@ const OfferAcceptanceOverlay = ({
     try {
       showInfo('Processing deposit...')
       
-      const depositAmount = acceptedOffer.cryptoAmount || gameData.payment_amount
+      // Debug the price extraction
+      console.log('🎯 Deposit debug:', {
+        acceptedOfferKeys: Object.keys(acceptedOffer),
+        acceptedOfferData: acceptedOffer,
+        gameDataPaymentAmount: gameData.payment_amount,
+        gameDataPriceUsd: gameData.price_usd,
+        cryptoAmount: acceptedOffer.cryptoAmount,
+        offerPrice: acceptedOffer.offer_price,
+        amount: acceptedOffer.amount
+      })
+      
+      // Try multiple price sources with better fallback logic
+      let depositAmount = null
+      
+      if (acceptedOffer.cryptoAmount && !isNaN(acceptedOffer.cryptoAmount)) {
+        depositAmount = acceptedOffer.cryptoAmount
+      } else if (acceptedOffer.offer_price && !isNaN(acceptedOffer.offer_price)) {
+        depositAmount = acceptedOffer.offer_price
+      } else if (acceptedOffer.amount && !isNaN(acceptedOffer.amount)) {
+        depositAmount = acceptedOffer.amount
+      } else if (gameData.payment_amount && !isNaN(gameData.payment_amount)) {
+        depositAmount = gameData.payment_amount
+      } else if (gameData.price_usd && !isNaN(gameData.price_usd)) {
+        depositAmount = gameData.price_usd
+      } else {
+        throw new Error('Could not determine deposit amount')
+      }
+      
+      console.log('🎯 Final deposit amount:', depositAmount)
       
       const result = await contractService.depositETH(gameId, depositAmount)
 
