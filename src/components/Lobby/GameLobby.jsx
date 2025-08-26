@@ -257,6 +257,21 @@ const GameLobby = () => {
     loadGameData() // Refresh game data to check for deposit status
   }
 
+  // Handle deposit confirmed transition
+  const handleDepositTransition = () => {
+    console.log('🎬 Starting smooth transition to game...')
+    setTransitionState('transitioning')
+    
+    // Fade out offers box
+    setShowOffersBox(false)
+    
+    // After offers box fades out, show game coin and complete transition
+    setTimeout(() => {
+      setShowGameCoin(true)
+      setTransitionState('game')
+    }, 500) // Match the CSS transition duration
+  }
+
   const sendOfferMessage = (message) => {
     webSocketService.send({
       type: 'chat_message',
@@ -308,25 +323,10 @@ const GameLobby = () => {
     }
   }, [gameData])
 
-  // Handle deposit confirmed transition
-  const handleDepositConfirmed = () => {
-    console.log('🎬 Starting smooth transition to game...')
-    setTransitionState('transitioning')
-    
-    // Fade out offers box
-    setShowOffersBox(false)
-    
-    // After offers box fades out, show game coin and complete transition
-    setTimeout(() => {
-      setShowGameCoin(true)
-      setTransitionState('game')
-    }, 500) // Match the CSS transition duration
-  }
-
   // Listen for deposit confirmed events
   useEffect(() => {
     if (gameData?.challenger_deposited && gameData?.creator_deposited && transitionState === 'lobby') {
-      handleDepositConfirmed()
+      handleDepositTransition()
     }
   }, [gameData?.challenger_deposited, gameData?.creator_deposited, transitionState])
 
@@ -404,27 +404,7 @@ const GameLobby = () => {
     }))
   }
 
-  // Handle deposit confirmed transition
-  const handleDepositConfirmed = () => {
-    console.log('🎬 Starting smooth transition to game...')
-    setTransitionState('transitioning')
-    
-    // Fade out offers box
-    setShowOffersBox(false)
-    
-    // After offers box fades out, show game coin and complete transition
-    setTimeout(() => {
-      setShowGameCoin(true)
-      setTransitionState('game')
-    }, 500) // Match the CSS transition duration
-  }
 
-  // Listen for deposit confirmed events
-  useEffect(() => {
-    if (gameData?.challenger_deposited && gameData?.creator_deposited && transitionState === 'lobby') {
-      handleDepositConfirmed()
-    }
-  }, [gameData?.challenger_deposited, gameData?.creator_deposited, transitionState])
 
   // Loading state
   if (loading) {
