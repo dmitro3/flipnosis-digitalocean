@@ -414,6 +414,7 @@ module.exports = {
         console.log('📡 Received WebSocket message:', data)
         console.log('🔍 Message type:', data.type)
         
+        console.log('🔍 Processing message type:', data.type)
         switch (data.type) {
           case 'join_game':
             await handleJoinGame(ws, data, dbService)
