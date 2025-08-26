@@ -335,12 +335,8 @@ const isCreator = () => {
             timestamp: data.timestamp || new Date().toISOString()
           })
           
-          // Force reload game data to get updated status
-          if (window.location.pathname.includes('/game/')) {
-            setTimeout(() => {
-              window.location.reload() // Force page reload to ensure fresh data
-            }, 500)
-          }
+          // Don't reload - let the WebSocket handle updates
+          console.log('🎯 Offer accepted via WebSocket - waiting for updates')
           
           // Add a system message to prompt the joiner to load their crypto
           if (data.type === 'accept_crypto_offer' && data.acceptedOffer?.cryptoAmount) {
@@ -604,13 +600,8 @@ const isCreator = () => {
       console.log('✅ Offer acceptance message sent successfully')
       showSuccess(`${offerType} accepted! Game starting...`)
       
-      // Reload game data after a short delay to get updated status
-      setTimeout(() => {
-        console.log('🔄 Reloading game data after offer acceptance')
-        if (window.location.pathname.includes('/game/')) {
-          window.location.reload() // Force reload to get updated game status
-        }
-      }, 1000)
+      // Don't reload - let the WebSocket handle updates
+      console.log('🎯 Offer accepted - waiting for WebSocket updates')
       
       if (onOfferAccepted) {
         console.log('📞 Calling onOfferAccepted callback')
