@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import './FinalCoin.css'
+import MobileOptimizedCoin from './MobileOptimizedCoin'
 
 const FinalCoin = ({
   isFlipping = false,
@@ -17,7 +18,8 @@ const FinalCoin = ({
   customTailsImage = null,
   size = 200,
   material = null, // Material config with weight property
-  seed = null // For deterministic animations
+  seed = null, // For deterministic animations
+  isMobile = false // Add mobile detection
 }) => {
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
@@ -501,6 +503,26 @@ const FinalCoin = ({
     onPowerRelease(5) // Default power for touch
   }
 
+  // Use MobileOptimizedCoin for mobile devices
+  if (isMobile) {
+    return (
+      <MobileOptimizedCoin
+        isFlipping={isFlipping}
+        flipResult={flipResult}
+        customHeadsImage={customHeadsImage}
+        customTailsImage={customTailsImage}
+        size={size}
+        onPowerCharge={onPowerCharge}
+        onPowerRelease={onPowerRelease}
+        isPlayerTurn={isPlayerTurn}
+        isCharging={isCharging}
+        creatorPower={creatorPower}
+        joinerPower={joinerPower}
+      />
+    )
+  }
+
+  // Desktop uses Three.js
   return (
     <div 
       ref={mountRef}

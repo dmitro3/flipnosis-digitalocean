@@ -87,8 +87,16 @@ const GamePage = () => {
   const { address, isMobile } = useWallet()
   const { showInfo } = useToast()
   
-  // Orchestrator state - manages which component to show
-  const [currentPhase, setCurrentPhase] = useState('lobby') // 'lobby', 'countdown', 'game_room'
+  // Simplified unified state management
+  const [gameSession, setGameSession] = useState({
+    phase: 'lobby', // 'lobby' | 'countdown' | 'game_room'
+    players: {
+      creator: null,
+      joiner: null,
+    },
+    locked: false,
+    deposited: false
+  })
   const [gameData, setGameData] = useState(null)
   const [customHeadsImage, setCustomHeadsImage] = useState('/coins/plainh.png')
   const [customTailsImage, setCustomTailsImage] = useState('/coins/plaint.png')
@@ -106,7 +114,17 @@ const GamePage = () => {
       console.log('🎯 Received enterGameRoom event:', event.detail)
       const { gameData: eventGameData } = event.detail
       setGameData(eventGameData)
-      setCurrentPhase('countdown')
+      
+      // Cleaner state transition
+      setGameSession(prev => ({
+        ...prev,
+        phase: 'countdown',
+        players: {
+          creator: eventGameData?.creator,
+          joiner: eventGameData?.joiner || eventGameData?.challenger
+        },
+        locked: true
+      }))
     }
 
     window.addEventListener('enterGameRoom', handleEnterGameRoom)
@@ -139,19 +157,35 @@ const GamePage = () => {
   // Handle countdown completion
   const handleCountdownComplete = () => {
     console.log('⚔️ Countdown complete! Entering game room...')
-    setCurrentPhase('game_room')
+    setGameSession(prev => ({
+      ...prev,
+      phase: 'game_room',
+      deposited: true
+    }))
     showInfo('Game started! Choose heads or tails!')
   }
 
   // Handle exiting game room
   const handleExitGameRoom = () => {
     console.log('🏠 Exiting game room back to lobby')
-    setCurrentPhase('lobby')
+    setGameSession(prev => ({
+      ...prev,
+      phase: 'lobby',
+      locked: false,
+      deposited: false
+    }))
   }
+
+  // Create a persistent coin config
+  const coinConfig = React.useMemo(() => ({
+    headsImage: customHeadsImage || gameData?.coinData?.headsImage || '/coins/plainh.png',
+    tailsImage: customTailsImage || gameData?.coinData?.tailsImage || '/coins/plaint.png',
+    material: gameData?.coinData?.material || 'gold'
+  }), [customHeadsImage, customTailsImage, gameData])
 
   // Orchestrator rendering based on phase
   const renderCurrentPhase = () => {
-    switch (currentPhase) {
+    switch (gameSession.phase) {
       case 'countdown':
         return (
           <>
@@ -174,9 +208,7 @@ const GamePage = () => {
             gameId={gameId}
             gameData={gameData}
             onExitRoom={handleExitGameRoom}
-            customHeadsImage={customHeadsImage}
-            customTailsImage={customTailsImage}
-            gameCoin={gameCoin}
+            coinConfig={coinConfig}
           >
             {/* Pass the coin as a child */}
             <GameCoin
@@ -184,8 +216,8 @@ const GamePage = () => {
               gameState={{ phase: 'waiting' }}
               gameData={gameData}
               flipAnimation={null}
-              customHeadsImage={customHeadsImage}
-              customTailsImage={customTailsImage}
+              customHeadsImage={coinConfig.headsImage}
+              customTailsImage={coinConfig.tailsImage}
               gameCoin={gameCoin}
               isMobile={isMobile}
               onPowerChargeStart={() => {}}
@@ -199,7 +231,7 @@ const GamePage = () => {
       
       case 'lobby':
       default:
-        return <GameLobby />
+        return <GameLobby coinConfig={coinConfig} />
     }
   }
 

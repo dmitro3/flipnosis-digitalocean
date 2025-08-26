@@ -51,7 +51,7 @@ const applyMaterialPhysics = (config, material) => {
   }
 }
 
-const OptimizedGoldCoin = ({
+const OptimizedGoldCoin = React.memo(({
   isFlipping = false,
   flipResult = null,
   flipDuration = 2000,
@@ -70,6 +70,15 @@ const OptimizedGoldCoin = ({
   gamePhase = 'choosing',
   material = null,
 }) => {
+  // Add performance throttling for mobile
+  const [frameRate, setFrameRate] = useState(60)
+  
+  useEffect(() => {
+    // Detect if performance is poor
+    if (window.navigator.hardwareConcurrency < 4) {
+      setFrameRate(30) // Reduce to 30 FPS on weaker devices
+    }
+  }, [])
   // Add missing state variables
   const [currentPower, setCurrentPower] = useState(0)
   const [powerInterval, setPowerInterval] = useState(null)
@@ -287,24 +296,23 @@ const OptimizedGoldCoin = ({
       animationIdRef.current = requestAnimationFrame(animate)
     }
 
-    // Start animation with optional frame limiting for low performance
-    if (performanceRef.current.level === 'low') {
-      let lastRender = 0
-      const targetFPS = 30
-      const frameDelay = 1000 / targetFPS
+    // Start animation with frame rate throttling
+    let lastTime = 0
+    const targetFPS = frameRate
+    const frameInterval = 1000 / targetFPS
 
-      const limitedAnimate = (timestamp) => {
-        if (timestamp - lastRender >= frameDelay) {
-          animate()
-          lastRender = timestamp
-        }
-        animationIdRef.current = requestAnimationFrame(limitedAnimate)
+    const throttledAnimate = (currentTime) => {
+      const deltaTime = currentTime - lastTime
+      
+      if (deltaTime > frameInterval) {
+        animate()
+        lastTime = currentTime - (deltaTime % frameInterval)
       }
       
-      limitedAnimate(0)
-    } else {
-      animate()
+      animationIdRef.current = requestAnimationFrame(throttledAnimate)
     }
+    
+    animationIdRef.current = requestAnimationFrame(throttledAnimate)
 
     return () => {
       if (animationIdRef.current) {
@@ -786,5 +794,16 @@ const OptimizedGoldCoin = ({
     </div>
   )
 }
+
+}, (prevProps, nextProps) => {
+  // Only re-render if these specific props change
+  return prevProps.isFlipping === nextProps.isFlipping &&
+         prevProps.flipResult === nextProps.flipResult &&
+         prevProps.customHeadsImage === nextProps.customHeadsImage &&
+         prevProps.customTailsImage === nextProps.customTailsImage &&
+         prevProps.isPlayerTurn === nextProps.isPlayerTurn &&
+         prevProps.isCharging === nextProps.isCharging &&
+         prevProps.size === nextProps.size
+})
 
 export default OptimizedGoldCoin 

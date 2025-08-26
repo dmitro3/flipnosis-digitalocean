@@ -179,15 +179,41 @@ const GameLobby = () => {
       if (!gameId || !address) return
       
       const lobbyRoomId = `game_${gameId}`
-      const ws = await webSocketService.connect(lobbyRoomId, address)
+      // Make sure to properly await connection
+      await webSocketService.connect(lobbyRoomId, address)
       setWsConnected(true)
-      setWsRef(ws)
+      
+      // Register message handlers
+      webSocketService.on('chat_message', handleChatMessage)
+      webSocketService.on('offer_made', handleOfferMessage)
+      webSocketService.on('offer_accepted', handleOfferAccepted)
     }
     
     initLobby()
+    
+    return () => {
+      webSocketService.off('chat_message')
+      webSocketService.off('offer_made')
+      webSocketService.off('offer_accepted')
+    }
   }, [gameId, address])
 
   // Message handlers
+  const handleChatMessage = (data) => {
+    console.log('Chat message received:', data)
+    // Handle chat message
+  }
+
+  const handleOfferMessage = (data) => {
+    console.log('Offer message received:', data)
+    // Handle offer message
+  }
+
+  const handleOfferAccepted = (data) => {
+    console.log('Offer accepted:', data)
+    // Handle offer accepted
+  }
+
   const sendOfferMessage = (message) => {
     webSocketService.send({
       type: 'chat_message',

@@ -55,6 +55,13 @@ const GameCoin = ({
   isCreator,
   flipSeed // Pass this from the server for deterministic animations
 }) => {
+  // Add debug logging
+  console.log('GameCoin props:', {
+    customHeadsImage,
+    customTailsImage,
+    gameCoin,
+    gameData: gameData?.coinData || gameData?.coin_data
+  })
   const [testFlip, setTestFlip] = useState(null)
   const [isTestFlipping, setIsTestFlipping] = useState(false)
   
@@ -136,11 +143,13 @@ const GameCoin = ({
         isCharging={gameState.chargingPlayer === address}
         creatorPower={gameState.creatorPower || 5}
         joinerPower={gameState.joinerPower || 5}
-        customHeadsImage={coinFaces.headsImage}
-        customTailsImage={coinFaces.tailsImage}
+        // Explicitly pass these to ensure they're not lost
+        customHeadsImage={customHeadsImage || coinFaces.headsImage || gameCoin?.headsImage}
+        customTailsImage={customTailsImage || coinFaces.tailsImage || gameCoin?.tailsImage}
         size={isMobile ? 225 : 300}
         material={coinFaces.material}
         seed={flipSeed || Math.random() * 10000}
+        isMobile={isMobile}
       />
       
       {/* Test Button - only show in development or when not in active game */}
