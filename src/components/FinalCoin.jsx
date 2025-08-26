@@ -154,15 +154,21 @@ const FinalCoin = ({
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('TAILS', 256, 256)
-      } else if (type === 'edge') {
-        // Edge texture
-        const gradient = ctx.createLinearGradient(0, 0, 512, 0)
-        gradient.addColorStop(0, '#8B7355')
-        gradient.addColorStop(0.5, '#A0826D')
-        gradient.addColorStop(1, '#8B7355')
-        ctx.fillStyle = gradient
-        ctx.fillRect(0, 0, 512, 512)
-      }
+             } else if (type === 'edge') {
+         // White edge texture with subtle lines
+         ctx.fillStyle = '#F8F8F8' // Slightly off-white
+         ctx.fillRect(0, 0, 512, 512)
+         
+         // Add subtle vertical lines for coin edge texture
+         ctx.strokeStyle = '#E0E0E0' // Very light gray lines
+         ctx.lineWidth = 2
+         for (let i = 0; i < 512; i += 12) {
+           ctx.beginPath()
+           ctx.moveTo(i, 0)
+           ctx.lineTo(i, 512)
+           ctx.stroke()
+         }
+       }
     }
 
     const texture = new THREE.CanvasTexture(canvas)
