@@ -84,7 +84,7 @@ const LobbyBackgroundContainer = styled.div`
 
 const LobbyContent = styled.div`
   display: grid;
-  grid-template-columns: ${props => props.transitionState === 'game' ? '1fr 2fr 0fr' : '1.2fr 1fr 0.8fr'};
+  grid-template-columns: 1.2fr 1fr 0.8fr;
   gap: 2rem;
   width: 100%;
   position: relative;
@@ -136,10 +136,7 @@ const GameLobby = () => {
   const { address, isMobile, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   
-  // Add transition state for smooth animation when player 2 deposits
-  const [transitionState, setTransitionState] = useState('lobby') // 'lobby' | 'transitioning' | 'game'
-  const [showOffersBox, setShowOffersBox] = useState(true)
-  const [showGameCoin, setShowGameCoin] = useState(false)
+  // REMOVED: Transition state variables - not needed anymore
   
   // Offer acceptance overlay state
   const [showOfferOverlay, setShowOfferOverlay] = useState(false)
@@ -257,20 +254,7 @@ const GameLobby = () => {
     loadGameData() // Refresh game data to check for deposit status
   }
 
-  // Handle deposit confirmed transition
-  const handleDepositTransition = () => {
-    console.log('🎬 Starting smooth transition to game...')
-    setTransitionState('transitioning')
-    
-    // Fade out offers box
-    setShowOffersBox(false)
-    
-    // After offers box fades out, show game coin and complete transition
-    setTimeout(() => {
-      setShowGameCoin(true)
-      setTransitionState('game')
-    }, 500) // Match the CSS transition duration
-  }
+  // REMOVED: handleDepositTransition function - not needed anymore
 
   const sendOfferMessage = (message) => {
     webSocketService.send({
@@ -323,19 +307,8 @@ const GameLobby = () => {
     }
   }, [gameData])
 
-  // Listen for deposit confirmed events - trigger transition only when current user has deposited
-  useEffect(() => {
-    if (transitionState !== 'lobby') return
-    const currentIsCreator = isCreator()
-    const currentIsChallenger = isJoiner()
-    const creatorDeposited = !!gameData?.creator_deposited
-    const challengerDeposited = !!gameData?.challenger_deposited
-
-    if ((currentIsCreator && creatorDeposited) || (currentIsChallenger && challengerDeposited)) {
-      console.log('🎬 Current user deposited - triggering transition')
-      handleDepositTransition()
-    }
-  }, [transitionState, isCreator, isJoiner, gameData?.creator_deposited, gameData?.challenger_deposited])
+  // REMOVED: Transition logic that was hiding offers box
+  // Offers box should always be visible until countdown starts
 
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
@@ -558,7 +531,7 @@ const GameLobby = () => {
             
             {/* Unified Lobby Background Container */}
             <LobbyBackgroundContainer>
-              <LobbyContent transitionState={transitionState}>
+              <LobbyContent>
                 {/* NFT Details and Coin Section */}
                 <NFTAndCoinSection>
                   {/* NFT Details Container - Always visible on the left */}
@@ -599,9 +572,9 @@ const GameLobby = () => {
                     />
                   </NFTDetailsWrapper>
                   
-                  {/* Coin Container - Show during transition and game */}
-                  {(transitionState === 'transitioning' || transitionState === 'game' || gameData?.status !== 'completed') && (
-                    <CoinSection show={showGameCoin || gameData?.status !== 'completed'}>
+                  {/* Coin Container - Show when game is active */}
+                  {gameData?.status === 'active' && (
+                    <CoinSection show={true}>
                       <CoinContainer
                         gameId={gameId}
                         gameData={gameData}
@@ -626,8 +599,8 @@ const GameLobby = () => {
                   />
                 </div>
                 
-                {/* Offers Container - Fade out during transition */}
-                <OffersSection show={showOffersBox}>
+                {/* Offers Container - Always visible until countdown */}
+                <OffersSection show={true}>
                   <OffersContainer
                     gameId={gameId}
                     gameData={gameData}
