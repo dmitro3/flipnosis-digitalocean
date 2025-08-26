@@ -403,7 +403,7 @@ class ContractService {
   async getETHPriceUSD() {
     // For now, return a hardcoded value or fetch from an API
     // In production, use Chainlink oracle or similar
-    return 2500 // $2500 per ETH as fallback
+    return 3500 // $3500 per ETH as fallback (updated to current price)
   }
 
   // Check if game is ready (both assets deposited)
