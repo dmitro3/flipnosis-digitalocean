@@ -145,6 +145,7 @@ const OfferAcceptanceOverlay = ({
   // Set deadline when overlay becomes visible
   useEffect(() => {
     if (isVisible && acceptedOffer) {
+      console.log('🎯 OfferAcceptanceOverlay: Setting deadline for offer:', acceptedOffer)
       const newDeadline = new Date(Date.now() + 120000) // 2 minutes from now
       setDeadline(newDeadline)
       setTimeLeft(120)
@@ -208,6 +209,8 @@ const OfferAcceptanceOverlay = ({
     }
   }
 
+  console.log('🎯 OfferAcceptanceOverlay render:', { isVisible, acceptedOffer: !!acceptedOffer, timeLeft })
+  
   if (!isVisible || !acceptedOffer) return null
 
   const isUrgent = timeLeft <= 30

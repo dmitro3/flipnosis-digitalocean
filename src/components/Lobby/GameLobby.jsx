@@ -143,6 +143,7 @@ const GameLobby = () => {
   // Offer acceptance overlay state
   const [showOfferOverlay, setShowOfferOverlay] = useState(false)
   const [acceptedOffer, setAcceptedOffer] = useState(null)
+  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false)
 
   // Lobby state management
   const {
@@ -506,25 +507,28 @@ const GameLobby = () => {
                       currentChain={chain}
                     />
                     
-                    {/* Offer Acceptance Overlay */}
-                    <OfferAcceptanceOverlay
-                      isVisible={showOfferOverlay}
-                      acceptedOffer={acceptedOffer}
-                      gameData={gameData}
-                      gameId={gameId}
-                      address={address}
-                      onClose={() => {
-                        setShowOfferOverlay(false)
-                        setAcceptedOffer(null)
-                      }}
-                      onDepositComplete={(offer) => {
-                        setShowOfferOverlay(false)
-                        setAcceptedOffer(null)
-                        // Reload game data to update status
-                        loadGameData()
-                        showInfo('Game starting!')
-                      }}
-                    />
+                                         {/* Offer Acceptance Overlay */}
+                     <OfferAcceptanceOverlay
+                       isVisible={showOfferOverlay && isProcessingDeposit}
+                       acceptedOffer={acceptedOffer}
+                       gameData={gameData}
+                       gameId={gameId}
+                       address={address}
+                       onClose={() => {
+                         console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
+                         setShowOfferOverlay(false)
+                         setAcceptedOffer(null)
+                         setIsProcessingDeposit(false)
+                       }}
+                       onDepositComplete={(offer) => {
+                         console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
+                         setShowOfferOverlay(false)
+                         setAcceptedOffer(null)
+                         setIsProcessingDeposit(false)
+                         // Don't reload game data immediately - let the WebSocket handle updates
+                         showInfo('Deposit successful! Game starting...')
+                       }}
+                     />
                   </NFTDetailsWrapper>
                   
                   {/* Coin Container */}
@@ -567,9 +571,10 @@ const GameLobby = () => {
                       console.log('Offer submitted via offers container:', offerData)
                     }}
                     onOfferAccepted={(offer) => {
-                      console.log('Offer accepted via offers container:', offer)
+                      console.log('🎯 Offer accepted via offers container:', offer)
                       setAcceptedOffer(offer)
                       setShowOfferOverlay(true)
+                      setIsProcessingDeposit(true)
                     }}
                   />
                 </div>
