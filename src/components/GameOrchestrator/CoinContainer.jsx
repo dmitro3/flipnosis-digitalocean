@@ -53,7 +53,6 @@ const CoinContainer = ({
 }) => {
   return (
     <CoinContainerStyled>
-      <CoinTitle>Game Coin</CoinTitle>
       <CoinWrapper>
         <LobbyCoin
           customHeadsImage={customHeadsImage}

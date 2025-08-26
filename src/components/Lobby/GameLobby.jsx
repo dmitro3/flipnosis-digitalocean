@@ -563,7 +563,7 @@ const GameLobby = () => {
                          {/* Unified Lobby Background Container */}
              <LobbyBackgroundContainer>
                <LobbyContent transitionState={transitionState}>
-                 {/* Left Column - NFT Details and Chat */}
+                 {/* Left Column - NFT Details and Coin */}
                  <NFTAndCoinSection>
                    {/* NFT Details Container - Always visible on the left */}
                    <NFTDetailsWrapper style={{ position: 'relative' }}>
@@ -603,6 +603,22 @@ const GameLobby = () => {
                      />
                    </NFTDetailsWrapper>
                    
+                   {/* Coin Container - Show beneath NFT details during lobby */}
+                   {transitionState === 'lobby' && (
+                     <CoinSection show={true}>
+                       <CoinContainer
+                         gameId={gameId}
+                         gameData={gameData}
+                         customHeadsImage={customHeadsImage}
+                         customTailsImage={customTailsImage}
+                         gameCoin={gameCoin}
+                         isMobile={isMobile}
+                         address={address}
+                         isCreator={isCreator}
+                       />
+                     </CoinSection>
+                   )}
+                   
                    {/* Chat Container - Move beneath NFT details after transition */}
                    {transitionState === 'game' && (
                      <div style={{ height: '600px', width: '100%' }}>
@@ -616,40 +632,40 @@ const GameLobby = () => {
                    )}
                  </NFTAndCoinSection>
                  
-                 {/* Right Column - Chat (lobby) or Game (after transition) */}
+                 {/* Center Column - Chat (during lobby) */}
+                 {transitionState === 'lobby' && (
+                   <div style={{ height: '800px' }}>
+                     <ChatContainer
+                       gameId={gameId}
+                       gameData={gameData}
+                       socket={webSocketService}
+                       connected={wsConnected}
+                     />
+                   </div>
+                 )}
+                 
+                 {/* Right Column - Offers (during lobby) or Game (after transition) */}
                  {transitionState === 'lobby' ? (
-                   <>
-                     {/* Chat Container - During lobby */}
-                     <div style={{ height: '800px' }}>
-                       <ChatContainer
-                         gameId={gameId}
-                         gameData={gameData}
-                         socket={webSocketService}
-                         connected={wsConnected}
-                       />
-                     </div>
-                     
-                     {/* Offers Container - Show for all players during lobby */}
-                     <OffersSection show={showOffersBox}>
-                       <OffersContainer
-                         gameId={gameId}
-                         gameData={gameData}
-                         socket={webSocketService}
-                         connected={wsConnected}
-                         offers={offers}
-                         isCreator={isCreator}
-                         onOfferSubmitted={(offerData) => {
-                           console.log('Offer submitted via offers container:', offerData)
-                         }}
-                         onOfferAccepted={(offer) => {
-                           console.log('🎯 Offer accepted via offers container:', offer)
-                           setAcceptedOffer(offer)
-                           setShowOfferOverlay(true)
-                           setIsProcessingDeposit(true)
-                         }}
-                       />
-                     </OffersSection>
-                   </>
+                   /* Offers Container - Show for all players during lobby */
+                   <OffersSection show={showOffersBox}>
+                     <OffersContainer
+                       gameId={gameId}
+                       gameData={gameData}
+                       socket={webSocketService}
+                       connected={wsConnected}
+                       offers={offers}
+                       isCreator={isCreator}
+                       onOfferSubmitted={(offerData) => {
+                         console.log('Offer submitted via offers container:', offerData)
+                       }}
+                       onOfferAccepted={(offer) => {
+                         console.log('🎯 Offer accepted via offers container:', offer)
+                         setAcceptedOffer(offer)
+                         setShowOfferOverlay(true)
+                         setIsProcessingDeposit(true)
+                       }}
+                     />
+                   </OffersSection>
                  ) : (
                    /* Game Section - After transition */
                    <GameSection>

@@ -215,23 +215,23 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-                   // Enhanced lighting for rich, vibrant appearance
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
-      scene.add(ambientLight)
+                                       // Enhanced lighting for white coin
+       const ambientLight = new THREE.AmbientLight(0xffffff, 1.3)
+       scene.add(ambientLight)
+       
+       const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
+       directionalLight.position.set(5, 5, 5)
+       scene.add(directionalLight)
       
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5)
-      directionalLight.position.set(5, 5, 5)
-      scene.add(directionalLight)
-      
-      // Add a second light for better highlights
-      const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
-      fillLight.position.set(-3, 3, 2)
-      scene.add(fillLight)
-      
-      // Add a warm rim light for extra vibrancy
-      const rimLight = new THREE.DirectionalLight(0xffd700, 0.6)
-      rimLight.position.set(0, -2, 3)
-      scene.add(rimLight)
+             // Add a second light for better highlights
+       const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
+       fillLight.position.set(-3, 3, 2)
+       scene.add(fillLight)
+       
+       // Add a subtle rim light for definition
+       const rimLight = new THREE.DirectionalLight(0xffffff, 0.4)
+       rimLight.position.set(0, -2, 3)
+       scene.add(rimLight)
       
              // Add a bright spotlight for extra richness
        const spotLight = new THREE.SpotLight(0xffffff, 0.8)
@@ -248,33 +248,33 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-                   // Create materials array [edge, heads, tails] - white coin with better reflectivity
-      const materials = [
-        new THREE.MeshStandardMaterial({ 
-          map: createTexture('edge'),
-          metalness: 0.3,
-          roughness: 0.2,
-          color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF,
-          emissive: 0x222222,
-          emissiveIntensity: 0.1
-        }),
-        new THREE.MeshStandardMaterial({ 
-          map: createTexture('heads', customHeadsImage),
-          metalness: 0.3,
-          roughness: 0.2,
-          color: 0xFFFFFF,
-          emissive: 0x222222,
-          emissiveIntensity: 0.1
-        }),
-        new THREE.MeshStandardMaterial({ 
-          map: createTexture('tails', customTailsImage),
-          metalness: 0.3,
-          roughness: 0.2,
-          color: 0xFFFFFF,
-          emissive: 0x222222,
-          emissiveIntensity: 0.1
-        })
-      ]
+                                       // Create materials array [edge, heads, tails] - white coin with better reflectivity
+       const materials = [
+         new THREE.MeshStandardMaterial({ 
+           map: createTexture('edge'),
+           metalness: 0.4,
+           roughness: 0.15,
+           color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF,
+           emissive: 0x333333,
+           emissiveIntensity: 0.15
+         }),
+         new THREE.MeshStandardMaterial({ 
+           map: createTexture('heads', customHeadsImage),
+           metalness: 0.4,
+           roughness: 0.15,
+           color: 0xFFFFFF,
+           emissive: 0x333333,
+           emissiveIntensity: 0.15
+         }),
+         new THREE.MeshStandardMaterial({ 
+           map: createTexture('tails', customTailsImage),
+           metalness: 0.4,
+           roughness: 0.15,
+           color: 0xFFFFFF,
+           emissive: 0x333333,
+           emissiveIntensity: 0.15
+         })
+       ]
 
     // Create coin mesh
     const coin = new THREE.Mesh(geometry, materials)
