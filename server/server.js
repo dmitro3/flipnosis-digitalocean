@@ -280,7 +280,9 @@ initializeServices()
         const wssSecure = new WebSocket.Server({ server: httpsServer })
         
         // Initialize the same WebSocket handlers for HTTPS
-        createWebSocketHandlers(wssSecure, dbService, blockchainService)
+        wssSecure.on('connection', (ws, req) => {
+          handleConnection(ws, dbService)
+        })
         
         // Listen on port 443 for HTTPS/WSS
         httpsServer.listen(443, '0.0.0.0', () => {
