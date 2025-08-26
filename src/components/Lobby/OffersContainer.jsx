@@ -762,6 +762,14 @@ const isCreator = () => {
     // Don't show if game is waiting for deposit
     if (gameData?.status === 'waiting_challenger_deposit') return false
     
+    // Check if any offer has been accepted recently (within 5 minutes)
+    const hasRecentAcceptance = offers.some(offer => 
+      offer.status === 'accepted' && 
+      new Date(offer.accepted_at || offer.timestamp).getTime() > Date.now() - 300000 // 5 minutes
+    )
+    
+    if (hasRecentAcceptance) return false
+    
     // Check if game is in a state where offers are accepted
     const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger', 'open']
     

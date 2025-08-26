@@ -17,6 +17,7 @@ import ChatContainer from './ChatContainer'
 import OffersContainer from './OffersContainer'
 import CoinContainer from '../GameOrchestrator/CoinContainer'
 import GameCountdown from '../GameOrchestrator/GameCountdown'
+import OfferAcceptanceOverlay from './OfferAcceptanceOverlay'
 
 // Lobby-specific hooks
 import { useLobbyState } from './hooks/useLobbyState'
@@ -138,6 +139,10 @@ const GameLobby = () => {
   // Add new state for game phases
   const [showCountdown, setShowCountdown] = useState(false)
   const [countdownTriggered, setCountdownTriggered] = useState(false)
+  
+  // Offer acceptance overlay state
+  const [showOfferOverlay, setShowOfferOverlay] = useState(false)
+  const [acceptedOffer, setAcceptedOffer] = useState(null)
 
   // Lobby state management
   const {
@@ -488,7 +493,7 @@ const GameLobby = () => {
                 {/* NFT Details and Coin Section */}
                 <NFTAndCoinSection>
                   {/* NFT Details Container */}
-                  <NFTDetailsWrapper>
+                  <NFTDetailsWrapper style={{ position: 'relative' }}>
                     <NFTDetailsContainer
                       gameData={gameData}
                       isCreator={isCreator()}
@@ -499,6 +504,26 @@ const GameLobby = () => {
                         collection: getGameNFTCollection()
                       }}
                       currentChain={chain}
+                    />
+                    
+                    {/* Offer Acceptance Overlay */}
+                    <OfferAcceptanceOverlay
+                      isVisible={showOfferOverlay}
+                      acceptedOffer={acceptedOffer}
+                      gameData={gameData}
+                      gameId={gameId}
+                      address={address}
+                      onClose={() => {
+                        setShowOfferOverlay(false)
+                        setAcceptedOffer(null)
+                      }}
+                      onDepositComplete={(offer) => {
+                        setShowOfferOverlay(false)
+                        setAcceptedOffer(null)
+                        // Reload game data to update status
+                        loadGameData()
+                        showInfo('Game starting!')
+                      }}
                     />
                   </NFTDetailsWrapper>
                   
@@ -543,6 +568,8 @@ const GameLobby = () => {
                     }}
                     onOfferAccepted={(offer) => {
                       console.log('Offer accepted via offers container:', offer)
+                      setAcceptedOffer(offer)
+                      setShowOfferOverlay(true)
                     }}
                   />
                 </div>
