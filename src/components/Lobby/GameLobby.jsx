@@ -182,22 +182,37 @@ const GameLobby = () => {
   // Connect to lobby when component mounts
   useEffect(() => {
     const initLobby = async () => {
-      if (!gameId || !address) return
+      console.log('🔌 GameLobby: Attempting WebSocket connection...', { gameId, address })
+      
+      if (!gameId || !address) {
+        console.log('🔌 GameLobby: Missing gameId or address, skipping connection')
+        return
+      }
       
       const lobbyRoomId = `game_${gameId}`
-      // Make sure to properly await connection
-      await webSocketService.connect(lobbyRoomId, address)
-      setWsConnected(true)
+      console.log('🔌 GameLobby: Connecting to room:', lobbyRoomId)
       
-      // Register message handlers
-      webSocketService.on('chat_message', handleChatMessage)
-      webSocketService.on('offer_made', handleOfferMessage)
-      webSocketService.on('offer_accepted', handleOfferAccepted)
+      try {
+        // Make sure to properly await connection
+        await webSocketService.connect(lobbyRoomId, address)
+        console.log('✅ GameLobby: WebSocket connected successfully')
+        setWsConnected(true)
+        
+        // Register message handlers
+        webSocketService.on('chat_message', handleChatMessage)
+        webSocketService.on('offer_made', handleOfferMessage)
+        webSocketService.on('offer_accepted', handleOfferAccepted)
+        console.log('✅ GameLobby: Message handlers registered')
+      } catch (error) {
+        console.error('❌ GameLobby: WebSocket connection failed:', error)
+        setWsConnected(false)
+      }
     }
     
     initLobby()
     
     return () => {
+      console.log('🔌 GameLobby: Cleaning up WebSocket handlers')
       webSocketService.off('chat_message')
       webSocketService.off('offer_made')
       webSocketService.off('offer_accepted')

@@ -242,4 +242,13 @@ if (typeof window !== 'undefined') {
 // Export the global service for direct access
 const webSocketService = typeof window !== 'undefined' ? window.FlipnosisWS : null
 
+// Add debugging for service export
+if (typeof window !== 'undefined') {
+  console.log('🔌 WebSocketService export:', {
+    hasService: !!webSocketService,
+    serviceKeys: webSocketService ? Object.keys(webSocketService) : [],
+    globalService: !!window.FlipnosisWS
+  })
+}
+
 export default webSocketService
