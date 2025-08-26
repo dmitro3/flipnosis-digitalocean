@@ -323,12 +323,19 @@ const GameLobby = () => {
     }
   }, [gameData])
 
-  // Listen for deposit confirmed events
+  // Listen for deposit confirmed events - trigger transition only when current user has deposited
   useEffect(() => {
-    if (gameData?.challenger_deposited && gameData?.creator_deposited && transitionState === 'lobby') {
+    if (transitionState !== 'lobby') return
+    const currentIsCreator = isCreator()
+    const currentIsChallenger = isJoiner()
+    const creatorDeposited = !!gameData?.creator_deposited
+    const challengerDeposited = !!gameData?.challenger_deposited
+
+    if ((currentIsCreator && creatorDeposited) || (currentIsChallenger && challengerDeposited)) {
+      console.log('🎬 Current user deposited - triggering transition')
       handleDepositTransition()
     }
-  }, [gameData?.challenger_deposited, gameData?.creator_deposited, transitionState])
+  }, [transitionState, isCreator, isJoiner, gameData?.creator_deposited, gameData?.challenger_deposited])
 
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
