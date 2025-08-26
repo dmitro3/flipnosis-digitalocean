@@ -10,6 +10,9 @@ const CoinSection = styled.div`
   margin: 1rem 0;
   min-height: 200px;
   gap: 1rem;
+  width: 100%;
+  height: 100%;
+  position: relative;
 `
 
 const TestButton = styled.button`
@@ -146,7 +149,7 @@ const GameCoin = ({
         // Explicitly pass these to ensure they're not lost
         customHeadsImage={customHeadsImage || coinFaces.headsImage || gameCoin?.headsImage}
         customTailsImage={customTailsImage || coinFaces.tailsImage || gameCoin?.tailsImage}
-        size={isMobile ? 225 : 300}
+        size={isMobile ? 180 : 240}
         material={coinFaces.material}
         seed={flipSeed || Math.random() * 10000}
         isMobile={isMobile}

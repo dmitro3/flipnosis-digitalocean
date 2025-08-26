@@ -36,6 +36,8 @@ const CoinWrapper = styled.div`
   justify-content: center;
   flex: 1;
   width: 100%;
+  height: 100%;
+  position: relative;
 `
 
 const CoinContainer = ({ 
@@ -56,7 +58,7 @@ const CoinContainer = ({
           customHeadsImage={customHeadsImage}
           customTailsImage={customTailsImage}
           material={gameCoin?.material}
-          size={isMobile ? 250 : 300}
+          size={isMobile ? 200 : 250}
         />
       </CoinWrapper>
     </CoinContainerStyled>

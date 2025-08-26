@@ -7,6 +7,9 @@ const CoinContainer = styled.div`
   justify-content: center;
   align-items: center;
   margin: 1rem 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
 `
 
 const LobbyCoin = ({ 
