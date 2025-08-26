@@ -51,7 +51,7 @@ const applyMaterialPhysics = (config, material) => {
   }
 }
 
-const OptimizedGoldCoin = React.memo(({
+const OptimizedGoldCoin = ({
   isFlipping = false,
   flipResult = null,
   flipDuration = 2000,
@@ -70,15 +70,6 @@ const OptimizedGoldCoin = React.memo(({
   gamePhase = 'choosing',
   material = null,
 }) => {
-  // Add performance throttling for mobile
-  const [frameRate, setFrameRate] = useState(60)
-  
-  useEffect(() => {
-    // Detect if performance is poor
-    if (window.navigator.hardwareConcurrency < 4) {
-      setFrameRate(30) // Reduce to 30 FPS on weaker devices
-    }
-  }, [])
   // Add missing state variables
   const [currentPower, setCurrentPower] = useState(0)
   const [powerInterval, setPowerInterval] = useState(null)
@@ -158,19 +149,9 @@ const OptimizedGoldCoin = React.memo(({
     const ctx = canvas.getContext('2d')
 
     if (type === 'edge') {
-      // Clean white edge pattern with subtle texture
-      ctx.fillStyle = '#F8F8F8' // Slightly off-white for depth
+      // Restore clean white edge pattern
+      ctx.fillStyle = '#F5F5F5'
       ctx.fillRect(0, 0, size, size)
-      
-      // Add subtle vertical lines for coin edge texture
-      ctx.strokeStyle = '#E0E0E0' // Very light gray lines
-      ctx.lineWidth = 2
-      for (let i = 0; i < size; i += 12) {
-        ctx.beginPath()
-        ctx.moveTo(i, 0)
-        ctx.lineTo(i, size)
-        ctx.stroke()
-      }
     } else {
       // For heads/tails, keep transparent if no custom image
       ctx.clearRect(0, 0, size, size)
@@ -214,56 +195,36 @@ const OptimizedGoldCoin = React.memo(({
     sceneRef.current = scene
     rendererRef.current = renderer
 
-    // Enhanced lighting setup for white coin
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3) // Good ambient lighting
+    // Brighter lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2) // Increased from 0.8 to 1.2
     scene.add(ambientLight)
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0) // Main directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0) // Increased from 0.6 to 1.0
     directionalLight.position.set(5, 5, 5)
     scene.add(directionalLight)
-
-    // Add subtle spot light for definition
-    const spotLight = new THREE.SpotLight(0xffffff, 0.6) // White spot light
-    spotLight.position.set(0, 10, 5)
-    spotLight.angle = Math.PI / 6
-    spotLight.penumbra = 0.1
-    spotLight.decay = 2
-    spotLight.distance = 20
-    scene.add(spotLight)
-
-    // Add fill light from below for better definition
-    const fillLight = new THREE.DirectionalLight(0xFFFFFF, 0.4)
-    fillLight.position.set(0, -3, 5)
-    scene.add(fillLight)
 
     // Get material edge color or default to white
     const edgeColor = material?.edgeColor ? parseInt(material.edgeColor.replace('#', '0x')) : 0xFFFFFF
     
-    // Create materials with better reflectivity for white coin
+    // Create materials with material-specific edge color and better reflectivity
     const materials = [
-      new THREE.MeshStandardMaterial({ 
+      new THREE.MeshPhongMaterial({ 
         map: createOptimizedTexture('edge'),
-        metalness: 0.3,
-        roughness: 0.2,
         color: edgeColor, // Use material's edge color
-        emissive: 0x222222, // Subtle glow
-        emissiveIntensity: 0.1
+        shininess: 80,
+        specular: 0x444444
       }),
-      new THREE.MeshStandardMaterial({ 
+      new THREE.MeshPhongMaterial({ 
         map: createOptimizedTexture('heads', customHeadsImage),
-        metalness: 0.3,
-        roughness: 0.2,
-        color: 0xFFFFFF, // Pure white
-        emissive: 0x222222, // Subtle glow
-        emissiveIntensity: 0.1
+        color: 0xFFFFFF, // WHITE COIN - NO DUPLICATES
+        shininess: 80,
+        specular: 0x444444
       }),
-      new THREE.MeshStandardMaterial({ 
+      new THREE.MeshPhongMaterial({ 
         map: createOptimizedTexture('tails', customTailsImage),
-        metalness: 0.3,
-        roughness: 0.2,
-        color: 0xFFFFFF, // Pure white
-        emissive: 0x222222, // Subtle glow
-        emissiveIntensity: 0.1
+        color: 0xFFFFFF, // WHITE COIN - NO DUPLICATES
+        shininess: 80,
+        specular: 0x444444
       })
     ]
 
@@ -326,23 +287,24 @@ const OptimizedGoldCoin = React.memo(({
       animationIdRef.current = requestAnimationFrame(animate)
     }
 
-    // Start animation with frame rate throttling
-    let lastTime = 0
-    const targetFPS = frameRate
-    const frameInterval = 1000 / targetFPS
+    // Start animation with optional frame limiting for low performance
+    if (performanceRef.current.level === 'low') {
+      let lastRender = 0
+      const targetFPS = 30
+      const frameDelay = 1000 / targetFPS
 
-    const throttledAnimate = (currentTime) => {
-      const deltaTime = currentTime - lastTime
-      
-      if (deltaTime > frameInterval) {
-        animate()
-        lastTime = currentTime - (deltaTime % frameInterval)
+      const limitedAnimate = (timestamp) => {
+        if (timestamp - lastRender >= frameDelay) {
+          animate()
+          lastRender = timestamp
+        }
+        animationIdRef.current = requestAnimationFrame(limitedAnimate)
       }
       
-      animationIdRef.current = requestAnimationFrame(throttledAnimate)
+      limitedAnimate(0)
+    } else {
+      animate()
     }
-    
-    animationIdRef.current = requestAnimationFrame(throttledAnimate)
 
     return () => {
       if (animationIdRef.current) {
@@ -824,16 +786,5 @@ const OptimizedGoldCoin = React.memo(({
     </div>
   )
 }
-
-}, (prevProps, nextProps) => {
-  // Only re-render if these specific props change
-  return prevProps.isFlipping === nextProps.isFlipping &&
-         prevProps.flipResult === nextProps.flipResult &&
-         prevProps.customHeadsImage === nextProps.customHeadsImage &&
-         prevProps.customTailsImage === nextProps.customTailsImage &&
-         prevProps.isPlayerTurn === nextProps.isPlayerTurn &&
-         prevProps.isCharging === nextProps.isCharging &&
-         prevProps.size === nextProps.size
-})
 
 export default OptimizedGoldCoin 

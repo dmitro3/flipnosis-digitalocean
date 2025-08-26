@@ -84,11 +84,12 @@ const LobbyBackgroundContainer = styled.div`
 
 const LobbyContent = styled.div`
   display: grid;
-  grid-template-columns: 1.2fr 1fr 0.8fr;
+  grid-template-columns: ${props => props.transitionState === 'game' ? '1fr 2fr 0fr' : '1.2fr 1fr 0.8fr'};
   gap: 2rem;
   width: 100%;
   position: relative;
   z-index: 2;
+  transition: grid-template-columns 0.5s ease-in-out;
   
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
@@ -99,33 +100,32 @@ const LobbyContent = styled.div`
 const NFTAndCoinSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  height: 800px;
+  gap: 2rem;
+  align-items: center;
 `
 
 const NFTDetailsWrapper = styled.div`
-  background: rgba(0, 0, 40, 0.95);
-  border: 2px solid #FF1493;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 0 30px rgba(255, 20, 147, 0.3), inset 0 0 20px rgba(255, 20, 147, 0.1);
-  overflow: hidden;
+  width: 100%;
+  max-width: 400px;
 `
 
 const CoinSection = styled.div`
-  background: rgba(0, 0, 40, 0.95);
-  border: 2px solid #FFD700;
-  border-radius: 1rem;
-  padding: 1rem;
-  height: 300px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  align-items: center;
+  min-height: 300px;
+  width: 100%;
+  opacity: ${props => props.show ? 1 : 0};
+  transform: ${props => props.show ? 'scale(1)' : 'scale(0.8)'};
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+`
+
+const OffersSection = styled.div`
+  height: 800px;
+  opacity: ${props => props.show ? 1 : 0};
+  transform: ${props => props.show ? 'translateX(0)' : 'translateX(20px)'};
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+  pointer-events: ${props => props.show ? 'auto' : 'none'};
 `
 
 const GameLobby = () => {
@@ -136,14 +136,19 @@ const GameLobby = () => {
   const { address, isMobile, chain } = useWallet()
   const { showSuccess, showError, showInfo } = useToast()
   
-  // Add new state for game phases
-  const [showCountdown, setShowCountdown] = useState(false)
-  const [countdownTriggered, setCountdownTriggered] = useState(false)
+  // Add transition state for smooth animation when player 2 deposits
+  const [transitionState, setTransitionState] = useState('lobby') // 'lobby' | 'transitioning' | 'game'
+  const [showOffersBox, setShowOffersBox] = useState(true)
+  const [showGameCoin, setShowGameCoin] = useState(false)
   
   // Offer acceptance overlay state
   const [showOfferOverlay, setShowOfferOverlay] = useState(false)
   const [acceptedOffer, setAcceptedOffer] = useState(null)
   const [isProcessingDeposit, setIsProcessingDeposit] = useState(false)
+  
+  // Add new state for game phases
+  const [showCountdown, setShowCountdown] = useState(false)
+  const [countdownTriggered, setCountdownTriggered] = useState(false)
 
   // Lobby state management
   const {
@@ -202,6 +207,8 @@ const GameLobby = () => {
         webSocketService.on('chat_message', handleChatMessage)
         webSocketService.on('offer_made', handleOfferMessage)
         webSocketService.on('offer_accepted', handleOfferAccepted)
+        webSocketService.on('deposit_confirmed', handleDepositConfirmed)
+        webSocketService.on('game_started', handleGameStarted)
         console.log('✅ GameLobby: Message handlers registered')
       } catch (error) {
         console.error('❌ GameLobby: WebSocket connection failed:', error)
@@ -216,6 +223,8 @@ const GameLobby = () => {
       webSocketService.off('chat_message')
       webSocketService.off('offer_made')
       webSocketService.off('offer_accepted')
+      webSocketService.off('deposit_confirmed')
+      webSocketService.off('game_started')
     }
   }, [gameId, address])
 
@@ -233,6 +242,19 @@ const GameLobby = () => {
   const handleOfferAccepted = (data) => {
     console.log('Offer accepted:', data)
     // Handle offer accepted
+    loadGameData() // Refresh game data to check for deposit status
+  }
+
+  const handleDepositConfirmed = (data) => {
+    console.log('Deposit confirmed:', data)
+    showSuccess('Deposit confirmed! Game starting...')
+    loadGameData() // Refresh game data to check for deposit status
+  }
+
+  const handleGameStarted = (data) => {
+    console.log('Game started:', data)
+    showSuccess('Game started! Both players deposited.')
+    loadGameData() // Refresh game data to check for deposit status
   }
 
   const sendOfferMessage = (message) => {
@@ -285,6 +307,28 @@ const GameLobby = () => {
       setGameCoin(coinData)
     }
   }, [gameData])
+
+  // Handle deposit confirmed transition
+  const handleDepositConfirmed = () => {
+    console.log('🎬 Starting smooth transition to game...')
+    setTransitionState('transitioning')
+    
+    // Fade out offers box
+    setShowOffersBox(false)
+    
+    // After offers box fades out, show game coin and complete transition
+    setTimeout(() => {
+      setShowGameCoin(true)
+      setTransitionState('game')
+    }, 500) // Match the CSS transition duration
+  }
+
+  // Listen for deposit confirmed events
+  useEffect(() => {
+    if (gameData?.challenger_deposited && gameData?.creator_deposited && transitionState === 'lobby') {
+      handleDepositConfirmed()
+    }
+  }, [gameData?.challenger_deposited, gameData?.creator_deposited, transitionState])
 
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
@@ -359,6 +403,28 @@ const GameLobby = () => {
       detail: { gameId, gameData }
     }))
   }
+
+  // Handle deposit confirmed transition
+  const handleDepositConfirmed = () => {
+    console.log('🎬 Starting smooth transition to game...')
+    setTransitionState('transitioning')
+    
+    // Fade out offers box
+    setShowOffersBox(false)
+    
+    // After offers box fades out, show game coin and complete transition
+    setTimeout(() => {
+      setShowGameCoin(true)
+      setTransitionState('game')
+    }, 500) // Match the CSS transition duration
+  }
+
+  // Listen for deposit confirmed events
+  useEffect(() => {
+    if (gameData?.challenger_deposited && gameData?.creator_deposited && transitionState === 'lobby') {
+      handleDepositConfirmed()
+    }
+  }, [gameData?.challenger_deposited, gameData?.creator_deposited, transitionState])
 
   // Loading state
   if (loading) {
@@ -505,10 +571,10 @@ const GameLobby = () => {
             
             {/* Unified Lobby Background Container */}
             <LobbyBackgroundContainer>
-              <LobbyContent>
+              <LobbyContent transitionState={transitionState}>
                 {/* NFT Details and Coin Section */}
                 <NFTAndCoinSection>
-                  {/* NFT Details Container */}
+                  {/* NFT Details Container - Always visible on the left */}
                   <NFTDetailsWrapper style={{ position: 'relative' }}>
                     <NFTDetailsContainer
                       gameData={gameData}
@@ -522,33 +588,33 @@ const GameLobby = () => {
                       currentChain={chain}
                     />
                     
-                                         {/* Offer Acceptance Overlay */}
-                     <OfferAcceptanceOverlay
-                       isVisible={showOfferOverlay && isProcessingDeposit}
-                       acceptedOffer={acceptedOffer}
-                       gameData={gameData}
-                       gameId={gameId}
-                       address={address}
-                       onClose={() => {
-                         console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
-                         setShowOfferOverlay(false)
-                         setAcceptedOffer(null)
-                         setIsProcessingDeposit(false)
-                       }}
-                       onDepositComplete={(offer) => {
-                         console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
-                         setShowOfferOverlay(false)
-                         setAcceptedOffer(null)
-                         setIsProcessingDeposit(false)
-                         // Don't reload game data immediately - let the WebSocket handle updates
-                         showInfo('Deposit successful! Game starting...')
-                       }}
-                     />
+                    {/* Offer Acceptance Overlay */}
+                    <OfferAcceptanceOverlay
+                      isVisible={showOfferOverlay && isProcessingDeposit}
+                      acceptedOffer={acceptedOffer}
+                      gameData={gameData}
+                      gameId={gameId}
+                      address={address}
+                      onClose={() => {
+                        console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
+                        setShowOfferOverlay(false)
+                        setAcceptedOffer(null)
+                        setIsProcessingDeposit(false)
+                      }}
+                      onDepositComplete={(offer) => {
+                        console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
+                        setShowOfferOverlay(false)
+                        setAcceptedOffer(null)
+                        setIsProcessingDeposit(false)
+                        // Don't reload game data immediately - let the WebSocket handle updates
+                        showInfo('Deposit successful! Game starting...')
+                      }}
+                    />
                   </NFTDetailsWrapper>
                   
-                  {/* Coin Container */}
-                  {gameData?.status !== 'completed' && (
-                    <CoinSection>
+                  {/* Coin Container - Show during transition and game */}
+                  {(transitionState === 'transitioning' || transitionState === 'game' || gameData?.status !== 'completed') && (
+                    <CoinSection show={showGameCoin || gameData?.status !== 'completed'}>
                       <CoinContainer
                         gameId={gameId}
                         gameData={gameData}
@@ -573,8 +639,8 @@ const GameLobby = () => {
                   />
                 </div>
                 
-                {/* Offers Container */}
-                <div style={{ height: '800px' }}>
+                {/* Offers Container - Fade out during transition */}
+                <OffersSection show={showOffersBox}>
                   <OffersContainer
                     gameId={gameId}
                     gameData={gameData}
@@ -592,7 +658,7 @@ const GameLobby = () => {
                       setIsProcessingDeposit(true)
                     }}
                   />
-                </div>
+                </OffersSection>
               </LobbyContent>
             </LobbyBackgroundContainer>
           </GameLayout>
