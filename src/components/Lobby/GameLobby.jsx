@@ -572,9 +572,8 @@ const GameLobby = () => {
                     />
                   </NFTDetailsWrapper>
                   
-                  {/* Coin Container - Show when game is active */}
-                  {gameData?.status === 'active' && (
-                    <CoinSection show={true}>
+                  {/* Coin Container - Always show the streaming coin */}
+                  <CoinSection show={true}>
                       <CoinContainer
                         gameId={gameId}
                         gameData={gameData}
