@@ -9,6 +9,7 @@ import { useToast } from '../../contexts/ToastContext'
 
 // Component imports  
 import GameBackground from '../GameOrchestrator/GameBackground'
+import GameCoin from '../GameOrchestrator/GameCoin'
 import GamePayment from '../GameOrchestrator/GamePayment'
 import ProfilePicture from '../ProfilePicture'
 import NFTDetailsContainer from './NFTDetailsContainer'
@@ -83,7 +84,7 @@ const LobbyBackgroundContainer = styled.div`
 
 const LobbyContent = styled.div`
   display: grid;
-  grid-template-columns: ${props => props.transitionState === 'game' ? '1fr 2fr' : '1.2fr 1fr 0.8fr'};
+  grid-template-columns: ${props => props.transitionState === 'game' ? '1fr 2fr 0fr' : '1.2fr 1fr 0.8fr'};
   gap: 2rem;
   width: 100%;
   position: relative;
@@ -97,13 +98,6 @@ const LobbyContent = styled.div`
 `
 
 const NFTAndCoinSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  align-items: center;
-`
-
-const GameSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -331,15 +325,18 @@ const GameLobby = () => {
 
   // Listen for deposit confirmed events - trigger transition when current user deposits
   useEffect(() => {
-    const currentUserDeposited = 
-      (isCreator() && gameData?.creator_deposited) || 
-      (isJoiner() && gameData?.challenger_deposited)
+    const isCreator = gameData?.creator?.toLowerCase() === address?.toLowerCase()
+    const isChallenger = gameData?.challenger?.toLowerCase() === address?.toLowerCase()
     
-    if (currentUserDeposited && transitionState === 'lobby') {
-      console.log('🎬 Current user deposited, triggering transition...')
+    // Trigger transition when current user has deposited
+    if (transitionState === 'lobby' && (
+      (isCreator && gameData?.creator_deposited) ||
+      (isChallenger && gameData?.challenger_deposited)
+    )) {
+      console.log('🎬 Current user deposited - triggering transition')
       handleDepositTransition()
     }
-  }, [gameData?.creator_deposited, gameData?.challenger_deposited, transitionState, isCreator, isJoiner])
+  }, [gameData?.creator_deposited, gameData?.challenger_deposited, gameData?.creator, gameData?.challenger, address, transitionState])
 
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
@@ -560,148 +557,98 @@ const GameLobby = () => {
               />
             )}
             
-                         {/* Unified Lobby Background Container */}
-             <LobbyBackgroundContainer>
-               <LobbyContent transitionState={transitionState}>
-                 {/* Left Column - NFT Details and Coin */}
-                 <NFTAndCoinSection>
-                   {/* NFT Details Container - Always visible on the left */}
-                   <NFTDetailsWrapper style={{ position: 'relative' }}>
-                     <NFTDetailsContainer
-                       gameData={gameData}
-                       isCreator={isCreator()}
-                       currentTurn={null}
-                       nftData={{
-                         image: getGameNFTImage(),
-                         name: getGameNFTName(),
-                         collection: getGameNFTCollection()
-                       }}
-                       currentChain={chain}
-                     />
-                     
-                     {/* Offer Acceptance Overlay */}
-                     <OfferAcceptanceOverlay
-                       isVisible={showOfferOverlay && isProcessingDeposit}
-                       acceptedOffer={acceptedOffer}
-                       gameData={gameData}
-                       gameId={gameId}
-                       address={address}
-                       onClose={() => {
-                         console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
-                         setShowOfferOverlay(false)
-                         setAcceptedOffer(null)
-                         setIsProcessingDeposit(false)
-                       }}
-                       onDepositComplete={(offer) => {
-                         console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
-                         setShowOfferOverlay(false)
-                         setAcceptedOffer(null)
-                         setIsProcessingDeposit(false)
-                         // Don't reload game data immediately - let the WebSocket handle updates
-                         showInfo('Deposit successful! Game starting...')
-                       }}
-                     />
-                   </NFTDetailsWrapper>
-                   
-                   {/* Coin Container - Show beneath NFT details during lobby */}
-                   {transitionState === 'lobby' && (
-                     <CoinSection show={true}>
-                       <CoinContainer
-                         gameId={gameId}
-                         gameData={gameData}
-                         customHeadsImage={customHeadsImage}
-                         customTailsImage={customTailsImage}
-                         gameCoin={gameCoin}
-                         isMobile={isMobile}
-                         address={address}
-                         isCreator={isCreator}
-                       />
-                     </CoinSection>
-                   )}
-                   
-                   {/* Chat Container - Move beneath NFT details after transition */}
-                   {transitionState === 'game' && (
-                     <div style={{ height: '600px', width: '100%' }}>
-                       <ChatContainer
-                         gameId={gameId}
-                         gameData={gameData}
-                         socket={webSocketService}
-                         connected={wsConnected}
-                       />
-                     </div>
-                   )}
-                 </NFTAndCoinSection>
-                 
-                 {/* Center Column - Chat (during lobby) */}
-                 {transitionState === 'lobby' && (
-                   <div style={{ height: '800px' }}>
-                     <ChatContainer
-                       gameId={gameId}
-                       gameData={gameData}
-                       socket={webSocketService}
-                       connected={wsConnected}
-                     />
-                   </div>
-                 )}
-                 
-                 {/* Right Column - Offers (during lobby) or Game (after transition) */}
-                 {transitionState === 'lobby' ? (
-                   /* Offers Container - Show for all players during lobby */
-                   <OffersSection show={showOffersBox}>
-                     <OffersContainer
-                       gameId={gameId}
-                       gameData={gameData}
-                       socket={webSocketService}
-                       connected={wsConnected}
-                       offers={offers}
-                       isCreator={isCreator}
-                       onOfferSubmitted={(offerData) => {
-                         console.log('Offer submitted via offers container:', offerData)
-                       }}
-                       onOfferAccepted={(offer) => {
-                         console.log('🎯 Offer accepted via offers container:', offer)
-                         setAcceptedOffer(offer)
-                         setShowOfferOverlay(true)
-                         setIsProcessingDeposit(true)
-                       }}
-                     />
-                   </OffersSection>
-                 ) : (
-                   /* Game Section - After transition */
-                   <GameSection>
-                     {/* Coin Container - Main game area */}
-                     <CoinSection show={showGameCoin || gameData?.status !== 'completed'}>
-                       <CoinContainer
-                         gameId={gameId}
-                         gameData={gameData}
-                         customHeadsImage={customHeadsImage}
-                         customTailsImage={customTailsImage}
-                         gameCoin={gameCoin}
-                         isMobile={isMobile}
-                         address={address}
-                         isCreator={isCreator}
-                       />
-                     </CoinSection>
-                     
-                     {/* Game controls will be added here later */}
-                     <div style={{ 
-                       display: 'flex', 
-                       gap: '1rem', 
-                       justifyContent: 'center',
-                       alignItems: 'center',
-                       padding: '1rem',
-                       background: 'rgba(255, 215, 0, 0.1)',
-                       borderRadius: '0.5rem',
-                       border: '1px solid rgba(255, 215, 0, 0.3)'
-                     }}>
-                       <span style={{ color: '#FFD700', fontWeight: 'bold' }}>
-                         Game Controls Coming Soon
-                       </span>
-                     </div>
-                   </GameSection>
-                 )}
-               </LobbyContent>
-             </LobbyBackgroundContainer>
+            {/* Unified Lobby Background Container */}
+            <LobbyBackgroundContainer>
+              <LobbyContent transitionState={transitionState}>
+                {/* NFT Details and Coin Section */}
+                <NFTAndCoinSection>
+                  {/* NFT Details Container - Always visible on the left */}
+                  <NFTDetailsWrapper style={{ position: 'relative' }}>
+                    <NFTDetailsContainer
+                      gameData={gameData}
+                      isCreator={isCreator()}
+                      currentTurn={null}
+                      nftData={{
+                        image: getGameNFTImage(),
+                        name: getGameNFTName(),
+                        collection: getGameNFTCollection()
+                      }}
+                      currentChain={chain}
+                    />
+                    
+                    {/* Offer Acceptance Overlay */}
+                    <OfferAcceptanceOverlay
+                      isVisible={showOfferOverlay && isProcessingDeposit}
+                      acceptedOffer={acceptedOffer}
+                      gameData={gameData}
+                      gameId={gameId}
+                      address={address}
+                      onClose={() => {
+                        console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
+                        setShowOfferOverlay(false)
+                        setAcceptedOffer(null)
+                        setIsProcessingDeposit(false)
+                      }}
+                      onDepositComplete={(offer) => {
+                        console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
+                        setShowOfferOverlay(false)
+                        setAcceptedOffer(null)
+                        setIsProcessingDeposit(false)
+                        // Don't reload game data immediately - let the WebSocket handle updates
+                        showInfo('Deposit successful! Game starting...')
+                      }}
+                    />
+                  </NFTDetailsWrapper>
+                  
+                  {/* Coin Container - Show during transition and game */}
+                  {(transitionState === 'transitioning' || transitionState === 'game' || gameData?.status !== 'completed') && (
+                    <CoinSection show={showGameCoin || gameData?.status !== 'completed'}>
+                      <CoinContainer
+                        gameId={gameId}
+                        gameData={gameData}
+                        customHeadsImage={customHeadsImage}
+                        customTailsImage={customTailsImage}
+                        gameCoin={gameCoin}
+                        isMobile={isMobile}
+                        address={address}
+                        isCreator={isCreator}
+                      />
+                    </CoinSection>
+                  )}
+                </NFTAndCoinSection>
+                
+                {/* Chat Container */}
+                <div style={{ height: '800px' }}>
+                  <ChatContainer
+                    gameId={gameId}
+                    gameData={gameData}
+                    socket={webSocketService}
+                    connected={wsConnected}
+                  />
+                </div>
+                
+                {/* Offers Container - Fade out during transition */}
+                <OffersSection show={showOffersBox}>
+                  <OffersContainer
+                    gameId={gameId}
+                    gameData={gameData}
+                    socket={webSocketService}
+                    connected={wsConnected}
+                    offers={offers}
+                    isCreator={isCreator}
+                    onOfferSubmitted={(offerData) => {
+                      console.log('Offer submitted via offers container:', offerData)
+                    }}
+                    onOfferAccepted={(offer) => {
+                      console.log('🎯 Offer accepted via offers container:', offer)
+                      setAcceptedOffer(offer)
+                      setShowOfferOverlay(true)
+                      setIsProcessingDeposit(true)
+                    }}
+                  />
+                </OffersSection>
+              </LobbyContent>
+            </LobbyBackgroundContainer>
           </GameLayout>
         </GameContainer>
       </Container>
