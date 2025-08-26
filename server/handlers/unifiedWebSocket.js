@@ -675,8 +675,22 @@ function handleChatMessage(ws, data) {
   const { gameId, message } = data
   console.log('💬 Extracted gameId:', gameId, 'message:', message)
   
-  const room = gameRooms.get(gameId)
-  console.log('💬 Found room:', room ? 'yes' : 'no')
+  // Try different gameId formats
+  let room = gameRooms.get(gameId)
+  if (!room) {
+    // Try without game_ prefix
+    const gameIdWithoutPrefix = gameId.replace('game_', '')
+    room = gameRooms.get(gameIdWithoutPrefix)
+    console.log('💬 Trying without prefix:', gameIdWithoutPrefix, 'Found:', room ? 'yes' : 'no')
+  }
+  if (!room) {
+    // Try with just the numeric part
+    const numericGameId = gameId.replace(/^game_/, '').split('_')[0]
+    room = gameRooms.get(numericGameId)
+    console.log('💬 Trying numeric part:', numericGameId, 'Found:', room ? 'yes' : 'no')
+  }
+  
+  console.log('💬 Final room found:', room ? 'yes' : 'no')
   
   if (!room) {
     console.log('💬 No room found for gameId:', gameId)
