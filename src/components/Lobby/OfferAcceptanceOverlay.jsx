@@ -137,7 +137,7 @@ const OfferAcceptanceOverlay = ({
   onDepositComplete 
 }) => {
   const { showSuccess, showError, showInfo } = useToast()
-  const { depositToGame } = useContractService()
+  const { contractService } = useContractService()
   const [timeLeft, setTimeLeft] = useState(120) // 2 minutes
   const [isDepositing, setIsDepositing] = useState(false)
   const [deadline, setDeadline] = useState(null)
@@ -188,12 +188,7 @@ const OfferAcceptanceOverlay = ({
       
       const depositAmount = acceptedOffer.cryptoAmount || gameData.payment_amount
       
-      const result = await depositToGame(
-        gameId,
-        depositAmount,
-        address,
-        acceptedOffer.offerer_address
-      )
+      const result = await contractService.depositETH(gameId, depositAmount)
 
       if (result.success) {
         showSuccess('Deposit successful! Game starting...')
