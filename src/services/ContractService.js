@@ -361,12 +361,28 @@ class ContractService {
         gameIdBytes32
       })
       
+      // Estimate gas first to avoid high gas costs
+      const gasEstimate = await this.publicClient.estimateContractGas({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'depositETH',
+        args: [gameIdBytes32],
+        value: ethAmountWei,
+        account: this.walletClient.account
+      })
+      
+      console.log('💰 Gas estimate:', gasEstimate.toString())
+      
+      // Add 20% buffer to gas estimate
+      const gasLimit = BigInt(Math.floor(Number(gasEstimate) * 1.2))
+      
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: CONTRACT_ABI,
         functionName: 'depositETH',
         args: [gameIdBytes32],
         value: ethAmountWei,
+        gas: gasLimit,
         chain: BASE_CHAIN,
         account: this.walletClient.account
       })
