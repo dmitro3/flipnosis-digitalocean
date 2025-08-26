@@ -209,12 +209,26 @@ const OfferAcceptanceOverlay = ({
     }
   }
 
-  console.log('🎯 OfferAcceptanceOverlay render:', { isVisible, acceptedOffer: !!acceptedOffer, timeLeft })
+  console.log('🎯 OfferAcceptanceOverlay render:', { 
+    isVisible, 
+    acceptedOffer: !!acceptedOffer, 
+    timeLeft,
+    acceptedOfferKeys: acceptedOffer ? Object.keys(acceptedOffer) : [],
+    acceptedOfferData: acceptedOffer,
+    gameDataPrice: gameData?.payment_amount,
+    gameDataPriceUsd: gameData?.price_usd
+  })
   
   if (!isVisible || !acceptedOffer) return null
 
   const isUrgent = timeLeft <= 30
-  const offerAmount = acceptedOffer.cryptoAmount || gameData?.payment_amount || 0
+  // Try multiple possible price sources
+  const offerAmount = acceptedOffer.cryptoAmount || 
+                     acceptedOffer.offer_price || 
+                     acceptedOffer.amount || 
+                     gameData?.payment_amount || 
+                     gameData?.price_usd || 
+                     0
 
   return (
     <OverlayContainer>

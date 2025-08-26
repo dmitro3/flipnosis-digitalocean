@@ -327,13 +327,26 @@ const isCreator = () => {
           }
         } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
           console.log('✅ Offers: Offer accepted:', data)
-          addOffer({
+          
+          // Create the accepted offer object
+          const acceptedOfferData = {
             id: Date.now() + Math.random(),
             type: 'offer_accepted',
             address: data.creatorAddress,
             acceptedOffer: data.acceptedOffer,
             timestamp: data.timestamp || new Date().toISOString()
-          })
+          }
+          
+          addOffer(acceptedOfferData)
+          
+          // Trigger overlay for Player 2 (the offerer) if they're the current user
+          if (data.acceptedOffer?.offerer_address === address) {
+            console.log('🎯 Player 2 received offer acceptance - triggering overlay')
+            // Call the onOfferAccepted callback to show the overlay
+            if (onOfferAccepted) {
+              onOfferAccepted(data.acceptedOffer)
+            }
+          }
           
           // Don't reload - let the WebSocket handle updates
           console.log('🎯 Offer accepted via WebSocket - waiting for updates')
