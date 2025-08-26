@@ -9,7 +9,7 @@ const fs = require('fs')
 
 // Import route handlers
 const { createApiRoutes } = require('./routes/api')
-const { createWebSocketHandlers } = require('./handlers/websocket')
+const { handleConnection, broadcastToRoom } = require('./handlers/unifiedWebSocket')
 const { DatabaseService } = require('./services/database')
 const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
@@ -90,10 +90,12 @@ async function initializeServices() {
   cleanupService.start()
 
   // Initialize WebSocket handlers
-  const wsHandlers = createWebSocketHandlers(wss, dbService, blockchainService)
+  wss.on('connection', (ws, req) => {
+    handleConnection(ws, dbService)
+  })
 
   // Initialize API routes
-  const apiRouter = createApiRoutes(dbService, blockchainService, wsHandlers)
+  const apiRouter = createApiRoutes(dbService, blockchainService, { broadcastToRoom })
   app.use('/api', apiRouter)
 
   // Health check endpoint
@@ -159,7 +161,7 @@ async function initializeServices() {
     try {
       const expiredGames = await dbService.getExpiredDepositGames()
       for (const game of expiredGames) {
-        await handleGameTimeout(game, dbService, wsHandlers)
+        await handleGameTimeout(game, dbService, { broadcastToRoom })
       }
     } catch (error) {
       console.error('❌ Error checking timeouts:', error)
@@ -170,7 +172,7 @@ async function initializeServices() {
 }
 
 // Handle game timeout
-async function handleGameTimeout(game, dbService, wsHandlers) {
+async function handleGameTimeout(game, dbService, { broadcastToRoom }) {
   try {
     console.log('⏰ Handling timeout for game:', game.id)
     
@@ -180,20 +182,12 @@ async function handleGameTimeout(game, dbService, wsHandlers) {
       await dbService.expireOffer(game.offer_id)
     }
     
-    // Notify users
-    wsHandlers.sendToUser(game.creator, {
+    // Notify users via broadcast
+    broadcastToRoom(`game_${game.id}`, {
       type: 'challenger_timeout',
       gameId: game.id,
       message: 'Challenger didn\'t deposit in time. Your listing is now open for new offers!'
     })
-    
-    if (game.challenger) {
-      wsHandlers.sendToUser(game.challenger, {
-        type: 'deposit_timeout',
-        gameId: game.id,
-        message: 'You missed the deposit deadline. The offer has expired.'
-      })
-    }
     
     console.log('✅ Game reset for new offers after timeout:', game.id)
   } catch (error) {

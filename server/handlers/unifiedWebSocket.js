@@ -11,17 +11,25 @@ class GameRoom {
     this.creator = creator
     this.joiner = null
     this.spectators = new Set()
-    this.phase = 'waiting' // waiting | locked | countdown | playing | completed
+    this.phase = 'waiting' // waiting | locked | deposit | countdown | choosing | flipping | result | completed
     this.offers = []
     this.messages = []
     this.currentRound = 1
+    this.maxRounds = 5
     this.scores = { creator: 0, joiner: 0 }
     this.choices = { creator: null, joiner: null }
     this.powers = { creator: 0, joiner: 0 }
-    this.currentTurn = creator
+    this.currentTurn = 'creator' // creator always goes first
     this.depositTimer = null
     this.roundTimer = null
+    this.choiceTimer = null
     this.coinStream = new CoinStreamService()
+    this.serverCoinState = {
+      rotation: 0,
+      result: null,
+      flipping: false
+    }
+    this.depositsConfirmed = { creator: false, joiner: false }
   }
 
   addPlayer(address, socket, role) {
@@ -46,9 +54,10 @@ class GameRoom {
 
   startDepositTimer() {
     this.depositTimer = setTimeout(() => {
-      if (this.phase === 'locked') {
+      if (this.phase === 'locked' || this.phase === 'deposit') {
         this.phase = 'waiting'
         this.joiner = null
+        this.depositsConfirmed = { creator: false, joiner: false }
         this.broadcast({
           type: 'deposit_timeout',
           message: 'Player 2 failed to deposit in time'
@@ -64,43 +73,250 @@ class GameRoom {
     }
   }
 
-  startRound() {
-    this.choices = { creator: null, joiner: null }
-    this.powers = { creator: 0, joiner: 0 }
+  confirmDeposit(playerAddress, assetType) {
+    // Determine if it's creator or joiner
+    const isCreator = playerAddress === this.creator
+    const isJoiner = playerAddress === this.joiner
     
-    // 30 second timer for choices
-    this.roundTimer = setTimeout(() => {
-      this.autoFlip()
-    }, 30000)
+    if (!isCreator && !isJoiner) {
+      return false
+    }
+    
+    // Update deposit status
+    if (isCreator && assetType === 'nft') {
+      this.depositsConfirmed.creator = true
+    } else if (isJoiner && assetType === 'eth') {
+      this.depositsConfirmed.joiner = true
+    }
+    
+    // Check if both deposits are confirmed
+    if (this.depositsConfirmed.creator && this.depositsConfirmed.joiner) {
+      this.clearDepositTimer()
+      this.startGameTransition()
+      return true
+    }
+    
+    // Update phase to deposit if one player has deposited
+    if (this.phase === 'locked') {
+      this.phase = 'deposit'
+    }
+    
+    return false
   }
 
-  autoFlip() {
-    // Auto-select choices if not made
-    if (!this.choices.creator) {
-      this.choices.creator = Math.random() > 0.5 ? 'heads' : 'tails'
-    }
-    if (!this.choices.joiner) {
-      this.choices.joiner = Math.random() > 0.5 ? 'heads' : 'tails'
+  startGameTransition() {
+    console.log('🎮 Starting game transition for room:', this.gameId)
+    
+    // Hide offers box immediately
+    this.phase = 'countdown'
+    
+    // Broadcast transition start
+    this.broadcast({
+      type: 'game_transition_started',
+      hideOffers: true,
+      moveChat: true,
+      currentRound: 1,
+      players: {
+        creator: this.creator,
+        joiner: this.joiner
+      }
+    })
+    
+    // Start 3-second countdown
+    let countdown = 3
+    const countdownInterval = setInterval(() => {
+      this.broadcast({
+        type: 'countdown_update',
+        count: countdown
+      })
+      
+      countdown--
+      if (countdown < 0) {
+        clearInterval(countdownInterval)
+        this.startGame()
+      }
+    }, 1000)
+  }
+
+  startGame() {
+    console.log('🎮 Game starting in room:', this.gameId)
+    this.phase = 'choosing'
+    this.currentRound = 1
+    this.currentTurn = 'creator' // Creator always goes first
+    
+    // Initialize server-side coin
+    this.serverCoinState = {
+      rotation: 0,
+      result: null,
+      flipping: false
     }
     
-    // Set power to 50 for auto-flip (or 100 for round 5)
-    const autoPower = this.currentRound === 5 && this.scores.creator === 2 && this.scores.joiner === 2 ? 100 : 50
-    if (this.powers.creator === 0) this.powers.creator = autoPower
-    if (this.powers.joiner === 0) this.powers.joiner = autoPower
+    this.broadcast({
+      type: 'game_started',
+      phase: 'choosing',
+      currentTurn: this.currentTurn,
+      currentRound: this.currentRound,
+      maxRounds: this.maxRounds,
+      serverCoin: true,
+      layout: {
+        chatPosition: 'top-left',
+        nftDetailsPosition: 'left-below-chat',
+        gameAreaPosition: 'center',
+        offersHidden: true
+      }
+    })
+    
+    this.startChoiceTimer()
+  }
+
+  startChoiceTimer() {
+    // Clear any existing timer
+    if (this.choiceTimer) {
+      clearTimeout(this.choiceTimer)
+    }
+    
+    // 30 seconds for both players to make choices
+    this.choiceTimer = setTimeout(() => {
+      this.autoCompleteChoices()
+    }, 30000)
+    
+    this.broadcast({
+      type: 'choice_timer_started',
+      duration: 30000,
+      currentTurn: this.currentTurn
+    })
+  }
+
+  handleChoice(playerAddress, choice) {
+    const isCreator = playerAddress === this.creator
+    const isJoiner = playerAddress === this.joiner
+    
+    if (!isCreator && !isJoiner) {
+      return false
+    }
+    
+    // Check if it's their turn
+    const playerRole = isCreator ? 'creator' : 'joiner'
+    if (this.currentTurn !== playerRole) {
+      return false
+    }
+    
+    // Store choice
+    this.choices[playerRole] = choice
+    
+    this.broadcast({
+      type: 'choice_made',
+      player: playerRole,
+      choiceMade: true // Don't reveal the actual choice
+    })
+    
+    // Switch turns
+    if (this.currentTurn === 'creator') {
+      this.currentTurn = 'joiner'
+      this.broadcast({
+        type: 'turn_changed',
+        currentTurn: 'joiner'
+      })
+    } else {
+      // Both players have chosen, move to power phase
+      this.phase = 'power'
+      this.broadcast({
+        type: 'power_phase_started',
+        bothChosen: true
+      })
+    }
+    
+    return true
+  }
+
+  handlePowerCharge(playerAddress, powerLevel) {
+    const isCreator = playerAddress === this.creator
+    const isJoiner = playerAddress === this.joiner
+    
+    if (!isCreator && !isJoiner) {
+      return false
+    }
+    
+    const playerRole = isCreator ? 'creator' : 'joiner'
+    this.powers[playerRole] = powerLevel
+    
+    this.broadcast({
+      type: 'power_charged',
+      player: playerRole,
+      powerLevel
+    })
+    
+    // Check if both players have charged
+    if (this.powers.creator > 0 && this.powers.joiner > 0) {
+      this.executeFlip()
+    }
+    
+    return true
+  }
+
+  autoCompleteChoices() {
+    // Auto-select for players who haven't chosen
+    if (!this.choices.creator) {
+      this.choices.creator = Math.random() > 0.5 ? 'heads' : 'tails'
+      this.broadcast({
+        type: 'auto_choice',
+        player: 'creator',
+        choice: this.choices.creator
+      })
+    }
+    
+    if (!this.choices.joiner) {
+      this.choices.joiner = Math.random() > 0.5 ? 'heads' : 'tails'
+      this.broadcast({
+        type: 'auto_choice',
+        player: 'joiner',
+        choice: this.choices.joiner
+      })
+    }
+    
+    // Auto-set power for final round if needed
+    const isFinalRound = this.currentRound === 5 && 
+                        this.scores.creator === 2 && 
+                        this.scores.joiner === 2
+    
+    const autoPower = isFinalRound ? 100 : 50
+    
+    if (this.powers.creator === 0) {
+      this.powers.creator = autoPower
+    }
+    if (this.powers.joiner === 0) {
+      this.powers.joiner = autoPower
+    }
     
     this.executeFlip()
   }
 
   executeFlip() {
-    clearTimeout(this.roundTimer)
+    clearTimeout(this.choiceTimer)
+    this.phase = 'flipping'
     
-    // Start streaming coin flip
-    const flipDuration = 2000
+    // Server determines the result
+    const flipResult = Math.random() > 0.5 ? 'heads' : 'tails'
+    this.serverCoinState.result = flipResult
+    this.serverCoinState.flipping = true
+    
+    // Stream coin flip animation from server
+    const flipDuration = 3000
     const startTime = Date.now()
+    const fps = 30
     
     this.broadcast({
       type: 'flip_started',
-      duration: flipDuration
+      duration: flipDuration,
+      serverControlled: true,
+      choices: {
+        creator: this.choices.creator,
+        joiner: this.choices.joiner
+      },
+      powers: {
+        creator: this.powers.creator,
+        joiner: this.powers.joiner
+      }
     })
     
     // Stream coin frames
@@ -110,156 +326,167 @@ class GameRoom {
       
       if (progress >= 1) {
         clearInterval(frameInterval)
+        this.serverCoinState.flipping = false
         this.determineWinner()
       } else {
+        // Calculate rotation for this frame
         const rotation = progress * Math.PI * 10 // 5 full rotations
-        const frameData = this.coinStream.renderFrame(this.gameId, rotation)
+        this.serverCoinState.rotation = rotation
+        
+        // Generate frame data
+        const frameData = this.coinStream.renderFrame(this.gameId, rotation, flipResult)
         
         this.broadcast({
           type: 'coin_frame',
           frameData,
+          rotation,
+          progress,
           timestamp: Date.now()
         })
       }
-    }, 1000 / 30) // 30 FPS
+    }, 1000 / fps)
   }
 
   determineWinner() {
-    // Calculate winner based on choices and power
-    const result = Math.random() > 0.5 ? 'heads' : 'tails'
+    const result = this.serverCoinState.result
     
-    // Determine round winner (simplified - you can add power logic here)
-    let winner
+    // Determine round winner
+    let roundWinner
     if (this.choices.creator === result) {
-      winner = this.creator
+      roundWinner = 'creator'
       this.scores.creator++
     } else {
-      winner = this.joiner
+      roundWinner = 'joiner'
       this.scores.joiner++
     }
+    
+    this.phase = 'result'
     
     this.broadcast({
       type: 'flip_result',
       result,
-      winner,
+      roundWinner,
+      winner: roundWinner === 'creator' ? this.creator : this.joiner,
       scores: this.scores,
-      round: this.currentRound
+      round: this.currentRound,
+      choices: this.choices,
+      powers: this.powers
     })
     
     // Check for game winner
-    if (this.scores.creator === 3 || this.scores.joiner === 3 || this.currentRound === 5) {
-      this.endGame()
+    const creatorWins = this.scores.creator >= 3
+    const joinerWins = this.scores.joiner >= 3
+    const maxRoundsReached = this.currentRound >= this.maxRounds
+    
+    if (creatorWins || joinerWins || maxRoundsReached) {
+      setTimeout(() => this.endGame(), 3000)
     } else {
-      // Next round
-      this.currentRound++
-      this.currentTurn = this.currentTurn === this.creator ? this.joiner : this.creator
-      setTimeout(() => {
-        this.startRound()
-        this.broadcast({
-          type: 'next_round',
-          round: this.currentRound,
-          currentTurn: this.currentTurn
-        })
-      }, 3000)
+      // Next round after delay
+      setTimeout(() => this.startNextRound(), 3000)
     }
+  }
+
+  startNextRound() {
+    this.currentRound++
+    this.phase = 'choosing'
+    this.currentTurn = 'creator' // Creator always goes first each round
+    this.choices = { creator: null, joiner: null }
+    this.powers = { creator: 0, joiner: 0 }
+    
+    this.broadcast({
+      type: 'next_round',
+      round: this.currentRound,
+      currentTurn: this.currentTurn,
+      scores: this.scores
+    })
+    
+    this.startChoiceTimer()
   }
 
   endGame() {
-    const winner = this.scores.creator > this.scores.joiner ? this.creator : this.joiner
     this.phase = 'completed'
+    
+    const gameWinner = this.scores.creator > this.scores.joiner ? 'creator' : 'joiner'
+    const winnerAddress = gameWinner === 'creator' ? this.creator : this.joiner
     
     this.broadcast({
       type: 'game_completed',
-      winner,
-      finalScores: this.scores
+      winner: gameWinner,
+      winnerAddress,
+      finalScores: this.scores,
+      totalRounds: this.currentRound
     })
     
-    // Clean up
-    this.coinStream.cleanupScene(this.gameId)
+    // Clean up timers
+    this.clearDepositTimer()
+    if (this.choiceTimer) {
+      clearTimeout(this.choiceTimer)
+    }
+    if (this.roundTimer) {
+      clearTimeout(this.roundTimer)
+    }
   }
 
   broadcast(message) {
-    const messageStr = JSON.stringify(message)
-    
-    // Send to creator
-    const creatorSocket = userSockets.get(this.creator)
-    if (creatorSocket?.readyState === 1) {
-      creatorSocket.send(messageStr)
+    const fullMessage = {
+      ...message,
+      gameId: this.gameId,
+      timestamp: Date.now()
     }
     
-    // Send to joiner
-    if (this.joiner) {
-      const joinerSocket = userSockets.get(this.joiner)
-      if (joinerSocket?.readyState === 1) {
-        joinerSocket.send(messageStr)
-      }
-    }
-    
-    // Send to spectators
-    this.spectators.forEach(address => {
-      const socket = userSockets.get(address)
-      if (socket?.readyState === 1) {
-        socket.send(messageStr)
+    // Send to all connected players and spectators
+    const allAddresses = [this.creator, this.joiner, ...this.spectators]
+    allAddresses.forEach(address => {
+      if (address) {
+        const socket = userSockets.get(address)
+        if (socket && socket.readyState === 1) {
+          socket.send(JSON.stringify(fullMessage))
+        }
       }
     })
   }
 }
 
-function createUnifiedWebSocketHandlers(wss, dbService) {
-  wss.on('connection', (socket, req) => {
-    socket.id = crypto.randomBytes(16).toString('hex')
-    console.log(`🔌 New connection: ${socket.id}`)
+// Export the handlers
+module.exports = {
+  gameRooms,
+  userSockets,
+  GameRoom,
+  
+  handleConnection(ws, dbService) {
+    console.log('🔌 New WebSocket connection')
     
-    socket.on('close', () => {
-      console.log(`🔌 Disconnected: ${socket.id}`)
-      
-      // Clean up
-      if (socket.address) {
-        userSockets.delete(socket.address)
-        
-        // Remove from game rooms
-        gameRooms.forEach((room, gameId) => {
-          room.removePlayer(socket.address)
-        })
-      }
-    })
-
-    socket.on('message', async (message) => {
+    ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message)
         
-        // Handle different message types
         switch (data.type) {
           case 'join_game':
-            handleJoinGame(socket, data, dbService)
+            await handleJoinGame(ws, data, dbService)
             break
             
           case 'make_offer':
-            handleMakeOffer(socket, data)
+            handleMakeOffer(ws, data)
             break
             
           case 'accept_offer':
-            handleAcceptOffer(socket, data)
+            handleAcceptOffer(ws, data)
             break
             
           case 'deposit_confirmed':
-            handleDepositConfirmed(socket, data)
+            handleDepositConfirmed(ws, data)
             break
             
           case 'choice_made':
-            handleChoiceMade(socket, data)
+            handleChoiceMade(ws, data)
             break
             
           case 'power_charged':
-            handlePowerCharged(socket, data)
-            break
-            
-          case 'trigger_flip':
-            handleTriggerFlip(socket, data)
+            handlePowerCharged(ws, data)
             break
             
           case 'chat_message':
-            handleChatMessage(socket, data)
+            handleChatMessage(ws, data)
             break
             
           default:
@@ -269,241 +496,220 @@ function createUnifiedWebSocketHandlers(wss, dbService) {
         console.error('Message handling error:', error)
       }
     })
-  })
-
-  // Message handlers
-  async function handleJoinGame(socket, data, dbService) {
-    const { gameId, address } = data
     
-    // Store socket reference
-    socket.address = address
-    userSockets.set(address, socket)
-    
-    // Get or create game room
-    let room = gameRooms.get(gameId)
-    
-    if (!room) {
-      // Verify game exists in database
-      const db = dbService.getDatabase()
-      const game = await new Promise((resolve) => {
-        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
-          resolve(row)
-        })
-      })
-      
-      if (!game) {
-        socket.send(JSON.stringify({
-          type: 'error',
-          message: 'Game not found'
-        }))
-        return
-      }
-      
-      room = new GameRoom(gameId, game.creator)
-      gameRooms.set(gameId, room)
-    }
-    
-    // Determine player role
-    let role = 'spectator'
-    if (address === room.creator) {
-      role = 'creator'
-    } else if (!room.joiner && room.phase === 'waiting') {
-      role = 'joiner_candidate'
-    } else if (address === room.joiner) {
-      role = 'joiner'
-    }
-    
-    // Send initial state
-    socket.send(JSON.stringify({
-      type: 'game_joined',
-      gameId,
-      role,
-      phase: room.phase,
-      offers: room.offers,
-      messages: room.messages,
-      players: {
-        creator: room.creator,
-        joiner: room.joiner
-      },
-      scores: room.scores,
-      currentRound: room.currentRound
-    }))
-    
-    // Notify others
-    room.broadcast({
-      type: 'player_joined',
-      address,
-      role
+    ws.on('close', () => {
+      handleDisconnect(ws)
     })
-  }
-
-  function handleMakeOffer(socket, data) {
-    const { gameId, offer } = data
+  },
+  
+  // Broadcast to specific room
+  broadcastToRoom(gameId, message) {
     const room = gameRooms.get(gameId)
-    
-    if (!room || room.phase !== 'waiting') {
-      socket.send(JSON.stringify({
-        type: 'error',
-        message: 'Cannot make offers now'
-      }))
-      return
+    if (room) {
+      room.broadcast(message)
     }
-    
-    const newOffer = {
-      id: crypto.randomBytes(8).toString('hex'),
-      from: socket.address,
-      ...offer,
-      timestamp: Date.now()
-    }
-    
-    room.offers.push(newOffer)
-    room.broadcast({
-      type: 'offer_made',
-      offer: newOffer
-    })
-  }
-
-  function handleAcceptOffer(socket, data) {
-    const { gameId, offerId } = data
-    const room = gameRooms.get(gameId)
-    
-    if (!room || socket.address !== room.creator) {
-      socket.send(JSON.stringify({
-        type: 'error',
-        message: 'Only creator can accept offers'
-      }))
-      return
-    }
-    
-    const offer = room.offers.find(o => o.id === offerId)
-    if (!offer) {
-      socket.send(JSON.stringify({
-        type: 'error',
-        message: 'Offer not found'
-      }))
-      return
-    }
-    
-    // Lock in the joiner
-    room.addPlayer(offer.from, userSockets.get(offer.from), 'joiner')
-    
-    room.broadcast({
-      type: 'offer_accepted',
-      offerId,
-      joinerAddress: offer.from,
-      joinerName: offer.fromName || 'Player 2'
-    })
-  }
-
-  function handleDepositConfirmed(socket, data) {
-    const { gameId } = data
-    const room = gameRooms.get(gameId)
-    
-    if (!room || socket.address !== room.joiner) {
-      return
-    }
-    
-    room.clearDepositTimer()
-    room.phase = 'countdown'
-    
-    room.broadcast({
-      type: 'deposit_confirmed'
-    })
-    
-    // Start game after countdown
-    setTimeout(() => {
-      room.phase = 'playing'
-      room.startRound()
-      room.broadcast({
-        type: 'game_started',
-        currentTurn: room.currentTurn
-      })
-    }, 3000)
-  }
-
-  function handleChoiceMade(socket, data) {
-    const { gameId, choice } = data
-    const room = gameRooms.get(gameId)
-    
-    if (!room || room.phase !== 'playing') {
-      return
-    }
-    
-    // Store choice
-    if (socket.address === room.creator) {
-      room.choices.creator = choice
-    } else if (socket.address === room.joiner) {
-      room.choices.joiner = choice
-    }
-    
-    room.broadcast({
-      type: 'choice_made',
-      player: socket.address,
-      choice: '?' // Don't reveal choice to opponent
-    })
-    
-    // Check if both choices made
-    if (room.choices.creator && room.choices.joiner) {
-      room.executeFlip()
-    }
-  }
-
-  function handlePowerCharged(socket, data) {
-    const { gameId, power } = data
-    const room = gameRooms.get(gameId)
-    
-    if (!room || room.phase !== 'playing') {
-      return
-    }
-    
-    // Store power
-    if (socket.address === room.creator) {
-      room.powers.creator = power
-    } else if (socket.address === room.joiner) {
-      room.powers.joiner = power
-    }
-    
-    room.broadcast({
-      type: 'power_charged',
-      player: socket.address,
-      power
-    })
-  }
-
-  function handleTriggerFlip(socket, data) {
-    const { gameId } = data
-    const room = gameRooms.get(gameId)
-    
-    if (!room) return
-    
-    // This is called when both choices are made
-    room.executeFlip()
-  }
-
-  function handleChatMessage(socket, data) {
-    const { gameId, message } = data
-    const room = gameRooms.get(gameId)
-    
-    if (!room) return
-    
-    const chatMessage = {
-      id: crypto.randomBytes(8).toString('hex'),
-      from: socket.address,
-      message,
-      timestamp: Date.now()
-    }
-    
-    room.messages.push(chatMessage)
-    room.broadcast({
-      type: 'chat_message',
-      ...chatMessage
-    })
-  }
-
-  return {
-    gameRooms,
-    userSockets
   }
 }
 
-module.exports = createUnifiedWebSocketHandlers
+// Message handlers
+async function handleJoinGame(ws, data, dbService) {
+  const { gameId, address } = data
+  
+  // Store socket reference
+  ws.address = address
+  userSockets.set(address, ws)
+  
+  // Get or create game room
+  let room = gameRooms.get(gameId)
+  
+  if (!room) {
+    // Verify game exists in database
+    const db = dbService.getDatabase()
+    const game = await new Promise((resolve) => {
+      db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
+        resolve(row)
+      })
+    })
+    
+    if (!game) {
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Game not found'
+      }))
+      return
+    }
+    
+    room = new GameRoom(gameId, game.creator)
+    gameRooms.set(gameId, room)
+  }
+  
+  // Determine player role
+  let role = 'spectator'
+  if (address === room.creator) {
+    role = 'creator'
+  } else if (address === room.joiner) {
+    role = 'joiner'
+  } else if (!room.joiner && room.phase === 'waiting') {
+    role = 'joiner_candidate'
+  }
+  
+  // Add spectator if not a player
+  if (role === 'spectator') {
+    room.spectators.add(address)
+  }
+  
+  // Send initial state
+  ws.send(JSON.stringify({
+    type: 'game_joined',
+    gameId,
+    role,
+    phase: room.phase,
+    offers: room.offers,
+    messages: room.messages,
+    players: {
+      creator: room.creator,
+      joiner: room.joiner
+    },
+    scores: room.scores,
+    currentRound: room.currentRound,
+    currentTurn: room.currentTurn
+  }))
+  
+  // Notify others
+  room.broadcast({
+    type: 'player_joined',
+    address,
+    role
+  })
+}
+
+function handleMakeOffer(ws, data) {
+  const { gameId, offer } = data
+  const room = gameRooms.get(gameId)
+  
+  if (!room || room.phase !== 'waiting') {
+    ws.send(JSON.stringify({
+      type: 'error',
+      message: 'Cannot make offers now'
+    }))
+    return
+  }
+  
+  const newOffer = {
+    id: crypto.randomBytes(8).toString('hex'),
+    from: ws.address,
+    ...offer,
+    timestamp: Date.now()
+  }
+  
+  room.offers.push(newOffer)
+  room.broadcast({
+    type: 'offer_made',
+    offer: newOffer
+  })
+}
+
+function handleAcceptOffer(ws, data) {
+  const { gameId, offerId } = data
+  const room = gameRooms.get(gameId)
+  
+  if (!room || ws.address !== room.creator) {
+    ws.send(JSON.stringify({
+      type: 'error',
+      message: 'Only creator can accept offers'
+    }))
+    return
+  }
+  
+  const offer = room.offers.find(o => o.id === offerId)
+  if (!offer) {
+    ws.send(JSON.stringify({
+      type: 'error',
+      message: 'Offer not found'
+    }))
+    return
+  }
+  
+  // Lock in the joiner
+  room.addPlayer(offer.from, userSockets.get(offer.from), 'joiner')
+  
+  room.broadcast({
+    type: 'offer_accepted',
+    offerId,
+    joinerAddress: offer.from,
+    joinerName: offer.fromName || 'Player 2'
+  })
+}
+
+function handleDepositConfirmed(ws, data) {
+  const { gameId, assetType } = data
+  const room = gameRooms.get(gameId)
+  
+  if (!room) {
+    return
+  }
+  
+  // Confirm the deposit and check if both are ready
+  const bothDeposited = room.confirmDeposit(ws.address, assetType)
+  
+  room.broadcast({
+    type: 'deposit_received',
+    player: ws.address,
+    assetType,
+    bothDeposited
+  })
+}
+
+function handleChoiceMade(ws, data) {
+  const { gameId, choice } = data
+  const room = gameRooms.get(gameId)
+  
+  if (!room || room.phase !== 'choosing') {
+    return
+  }
+  
+  room.handleChoice(ws.address, choice)
+}
+
+function handlePowerCharged(ws, data) {
+  const { gameId, powerLevel } = data
+  const room = gameRooms.get(gameId)
+  
+  if (!room || room.phase !== 'power') {
+    return
+  }
+  
+  room.handlePowerCharge(ws.address, powerLevel)
+}
+
+function handleChatMessage(ws, data) {
+  const { gameId, message } = data
+  const room = gameRooms.get(gameId)
+  
+  if (!room) {
+    return
+  }
+  
+  const chatMessage = {
+    from: ws.address,
+    message,
+    timestamp: Date.now()
+  }
+  
+  room.messages.push(chatMessage)
+  room.broadcast({
+    type: 'chat_message',
+    ...chatMessage
+  })
+}
+
+function handleDisconnect(ws) {
+  if (ws.address) {
+    userSockets.delete(ws.address)
+    
+    // Remove from any game rooms
+    gameRooms.forEach(room => {
+      room.removePlayer(ws.address)
+    })
+  }
+}
