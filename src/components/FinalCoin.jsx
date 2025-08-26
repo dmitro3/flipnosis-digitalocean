@@ -88,33 +88,33 @@ const FinalCoin = ({
        }
       img.onerror = () => {
         console.warn('Failed to load custom image, using default')
-        // Fall back to default texture
+        // Fall back to default texture - white coin
         if (type === 'heads') {
-          // Gold gradient background
+          // White gradient background
           const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-          gradient.addColorStop(0, '#FFD700')
-          gradient.addColorStop(0.5, '#FFA500')
-          gradient.addColorStop(1, '#FF8C00')
+          gradient.addColorStop(0, '#FFFFFF')
+          gradient.addColorStop(0.7, '#F8F8F8')
+          gradient.addColorStop(1, '#F0F0F0')
           ctx.fillStyle = gradient
           ctx.fillRect(0, 0, 512, 512)
           
           // Add "HEADS" text
-          ctx.fillStyle = '#8B4513'
+          ctx.fillStyle = '#333333'
           ctx.font = 'bold 72px Arial'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
           ctx.fillText('HEADS', 256, 256)
         } else if (type === 'tails') {
-          // Silver gradient background
+          // White gradient background
           const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-          gradient.addColorStop(0, '#E5E5E5')
-          gradient.addColorStop(0.5, '#C0C0C0')
-          gradient.addColorStop(1, '#A9A9A9')
+          gradient.addColorStop(0, '#FFFFFF')
+          gradient.addColorStop(0.7, '#F8F8F8')
+          gradient.addColorStop(1, '#F0F0F0')
           ctx.fillStyle = gradient
           ctx.fillRect(0, 0, 512, 512)
           
           // Add "TAILS" text
-          ctx.fillStyle = '#4B4B4B'
+          ctx.fillStyle = '#333333'
           ctx.font = 'bold 72px Arial'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
@@ -123,33 +123,33 @@ const FinalCoin = ({
         texture.needsUpdate = true
       }
     } else {
-      // Default designs
+      // Default designs - white coin
       if (type === 'heads') {
-        // Gold gradient background
+        // White background with subtle gradient
         const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-        gradient.addColorStop(0, '#FFD700')
-        gradient.addColorStop(0.5, '#FFA500')
-        gradient.addColorStop(1, '#FF8C00')
+        gradient.addColorStop(0, '#FFFFFF')
+        gradient.addColorStop(0.7, '#F8F8F8')
+        gradient.addColorStop(1, '#F0F0F0')
         ctx.fillStyle = gradient
         ctx.fillRect(0, 0, 512, 512)
         
         // Add "HEADS" text
-        ctx.fillStyle = '#8B4513'
+        ctx.fillStyle = '#333333'
         ctx.font = 'bold 72px Arial'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('HEADS', 256, 256)
       } else if (type === 'tails') {
-        // Silver gradient background
+        // White background with subtle gradient
         const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-        gradient.addColorStop(0, '#E5E5E5')
-        gradient.addColorStop(0.5, '#C0C0C0')
-        gradient.addColorStop(1, '#A9A9A9')
+        gradient.addColorStop(0, '#FFFFFF')
+        gradient.addColorStop(0.7, '#F8F8F8')
+        gradient.addColorStop(1, '#F0F0F0')
         ctx.fillStyle = gradient
         ctx.fillRect(0, 0, 512, 512)
         
         // Add "TAILS" text
-        ctx.fillStyle = '#4B4B4B'
+        ctx.fillStyle = '#333333'
         ctx.font = 'bold 72px Arial'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
@@ -242,29 +242,31 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-                   // Create materials array [edge, heads, tails] - rich, vibrant finish
+                   // Create materials array [edge, heads, tails] - white coin with better reflectivity
       const materials = [
-        new THREE.MeshPhongMaterial({ 
+        new THREE.MeshStandardMaterial({ 
           map: createTexture('edge'),
-          color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFD700,
-          shininess: 500,
-          specular: 0xffffff,
-          reflectivity: 0.8,
-          emissive: 0x222222
+          metalness: 0.3,
+          roughness: 0.2,
+          color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF,
+          emissive: 0x222222,
+          emissiveIntensity: 0.1
         }),
-        new THREE.MeshPhongMaterial({ 
+        new THREE.MeshStandardMaterial({ 
           map: createTexture('heads', customHeadsImage),
-          shininess: 500,
-          specular: 0xffffff,
-          reflectivity: 0.8,
-          emissive: 0x222222
+          metalness: 0.3,
+          roughness: 0.2,
+          color: 0xFFFFFF,
+          emissive: 0x222222,
+          emissiveIntensity: 0.1
         }),
-        new THREE.MeshPhongMaterial({ 
+        new THREE.MeshStandardMaterial({ 
           map: createTexture('tails', customTailsImage),
-          shininess: 500,
-          specular: 0xffffff,
-          reflectivity: 0.8,
-          emissive: 0x222222
+          metalness: 0.3,
+          roughness: 0.2,
+          color: 0xFFFFFF,
+          emissive: 0x222222,
+          emissiveIntensity: 0.1
         })
       ]
 

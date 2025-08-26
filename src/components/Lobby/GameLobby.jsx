@@ -9,7 +9,6 @@ import { useToast } from '../../contexts/ToastContext'
 
 // Component imports  
 import GameBackground from '../GameOrchestrator/GameBackground'
-import GameCoin from '../GameOrchestrator/GameCoin'
 import GamePayment from '../GameOrchestrator/GamePayment'
 import ProfilePicture from '../ProfilePicture'
 import NFTDetailsContainer from './NFTDetailsContainer'
@@ -323,12 +322,17 @@ const GameLobby = () => {
     }
   }, [gameData])
 
-  // Listen for deposit confirmed events
+  // Listen for deposit confirmed events - trigger transition when current user deposits
   useEffect(() => {
-    if (gameData?.challenger_deposited && gameData?.creator_deposited && transitionState === 'lobby') {
+    const currentUserDeposited = 
+      (isCreator() && gameData?.creator_deposited) || 
+      (isJoiner() && gameData?.challenger_deposited)
+    
+    if (currentUserDeposited && transitionState === 'lobby') {
+      console.log('🎬 Current user deposited, triggering transition...')
       handleDepositTransition()
     }
-  }, [gameData?.challenger_deposited, gameData?.creator_deposited, transitionState])
+  }, [gameData?.creator_deposited, gameData?.challenger_deposited, transitionState, isCreator, isJoiner])
 
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
