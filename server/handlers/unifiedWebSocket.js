@@ -415,11 +415,27 @@ module.exports = {
             await handleJoinGame(ws, data, dbService)
             break
             
+          case 'join_room':
+            await handleJoinRoom(ws, data, dbService)
+            break
+            
+          case 'join_game_room':
+            await handleJoinGameRoom(ws, data, dbService)
+            break
+            
+          case 'register_user':
+            handleRegisterUser(ws, data)
+            break
+            
           case 'make_offer':
+          case 'nft_offer':
+          case 'crypto_offer':
             handleMakeOffer(ws, data)
             break
             
           case 'accept_offer':
+          case 'accept_nft_offer':
+          case 'accept_crypto_offer':
             handleAcceptOffer(ws, data)
             break
             
@@ -437,6 +453,10 @@ module.exports = {
             
           case 'chat_message':
             handleChatMessage(ws, data)
+            break
+            
+          case 'GAME_ACTION':
+            handleGameAction(ws, data, dbService)
             break
             
           case 'ping':
@@ -685,4 +705,148 @@ function handleDisconnect(ws) {
   
   socketRooms.delete(ws.id)
   console.log(`🔌 WebSocket disconnected: ${ws.id}`)
+}
+
+// Additional handlers for old message types
+async function handleJoinRoom(ws, data, dbService) {
+  const { roomId } = data
+  
+  // Normalize room ID - remove any double prefixes
+  let targetRoomId = roomId
+  
+  // Remove any existing game_ prefix to avoid double prefixes
+  if (targetRoomId.startsWith('game_game_')) {
+    targetRoomId = targetRoomId.replace('game_game_', 'game_')
+  } else if (targetRoomId.startsWith('game_room_')) {
+    // Keep game_room_ prefix as is
+  } else if (targetRoomId.startsWith('game_')) {
+    // Keep single game_ prefix as is
+  } else {
+    // Add lobby prefix for chat messages
+    targetRoomId = `game_${targetRoomId}`
+  }
+  
+  console.log(`👥 Socket ${ws.id} requesting to join room ${targetRoomId} (original: ${roomId})`)
+  
+  // Leave previous room if any
+  const oldRoom = socketRooms.get(ws.id)
+  if (oldRoom && rooms.has(oldRoom)) {
+    rooms.get(oldRoom).delete(ws.id)
+    console.log(`👋 Socket ${ws.id} left old room ${oldRoom}`)
+  }
+  
+  // Join new room
+  if (!rooms.has(targetRoomId)) {
+    rooms.set(targetRoomId, new Set())
+    console.log(`🏠 Created new room: ${targetRoomId}`)
+  }
+  
+  const room = rooms.get(targetRoomId)
+  room.add(ws.id)
+  socketRooms.set(ws.id, targetRoomId)
+  
+  console.log(`✅ Socket ${ws.id} joined room ${targetRoomId}`)
+  
+  // Send confirmation
+  ws.send(JSON.stringify({
+    type: 'room_joined',
+    roomId: targetRoomId
+  }))
+}
+
+async function handleJoinGameRoom(ws, data, dbService) {
+  const { gameId, address } = data
+  
+  // Store user socket
+  userSockets.set(address, ws)
+  ws.address = address
+  
+  const roomId = `game_room_${gameId}`
+  if (!rooms.has(roomId)) {
+    rooms.set(roomId, new Set())
+  }
+  
+  const room = rooms.get(roomId)
+  room.add(ws.id)
+  socketRooms.set(ws.id, roomId)
+  
+  console.log(`✅ ${address} joined game room ${roomId}`)
+  
+  // Get or create game room
+  let gameRoom = gameRooms.get(gameId)
+  if (!gameRoom) {
+    gameRoom = new GameRoom(gameId, address)
+    gameRooms.set(gameId, gameRoom)
+  } else {
+    // Add as joiner or spectator
+    if (address !== gameRoom.creator) {
+      if (!gameRoom.joiner) {
+        gameRoom.addPlayer(address, ws, 'joiner')
+      } else {
+        gameRoom.addPlayer(address, ws, 'spectator')
+      }
+    }
+  }
+  
+  // Send game room joined confirmation
+  ws.send(JSON.stringify({
+    type: 'game_room_joined',
+    roomId,
+    gameId,
+    players: {
+      creator: gameRoom.creator,
+      joiner: gameRoom.joiner
+    },
+    status: {
+      phase: gameRoom.phase,
+      currentRound: gameRoom.currentRound,
+      scores: gameRoom.scores,
+      currentTurn: gameRoom.currentTurn
+    }
+  }))
+}
+
+function handleRegisterUser(ws, data) {
+  const { address } = data
+  
+  // Store user socket
+  userSockets.set(address, ws)
+  ws.address = address
+  
+  console.log(`✅ User registered: ${address}`)
+  
+  // Send confirmation
+  ws.send(JSON.stringify({
+    type: 'user_registered',
+    address: address
+  }))
+}
+
+function handleGameAction(ws, data, dbService) {
+  const { gameId, action, player, choice, powerLevel } = data
+  
+  console.log(`🎮 Game action: ${action} for game ${gameId} by ${player}`)
+  
+  const room = gameRooms.get(gameId)
+  if (!room) {
+    console.log(`⚠️ Game room not found for game ${gameId}`)
+    return
+  }
+  
+  switch (action) {
+    case 'MAKE_CHOICE':
+      room.handleChoice(player, choice)
+      break
+      
+    case 'POWER_CHARGE_START':
+      // Handle power charge start
+      break
+      
+    case 'POWER_CHARGE_STOP':
+      room.handlePowerCharge(player, powerLevel || 50)
+      break
+      
+    default:
+      console.log(`⚠️ Unknown game action: ${action}`)
+  }
 }
