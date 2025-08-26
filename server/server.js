@@ -89,6 +89,9 @@ async function initializeServices() {
   const cleanupService = new CleanupService(dbService, blockchainService)
   cleanupService.start()
 
+  // Set global wss reference for unified handlers
+  global.wss = wss
+  
   // Initialize WebSocket handlers
   wss.on('connection', (ws, req) => {
     handleConnection(ws, dbService)
