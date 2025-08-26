@@ -408,7 +408,11 @@ module.exports = {
     
     ws.on('message', async (message) => {
       try {
+        console.log(`📨 Raw message from ${ws.id}:`, message.toString())
         const data = JSON.parse(message)
+        
+        console.log('📡 Received WebSocket message:', data)
+        console.log('🔍 Message type:', data.type)
         
         switch (data.type) {
           case 'join_game':
@@ -667,10 +671,18 @@ function handlePowerCharged(ws, data) {
 }
 
 function handleChatMessage(ws, data) {
+  console.log('💬 Handling chat message:', data)
   const { gameId, message } = data
-  const room = gameRooms.get(gameId)
+  console.log('💬 Extracted gameId:', gameId, 'message:', message)
   
-  if (!room) return
+  const room = gameRooms.get(gameId)
+  console.log('💬 Found room:', room ? 'yes' : 'no')
+  
+  if (!room) {
+    console.log('💬 No room found for gameId:', gameId)
+    console.log('💬 Available gameRooms:', Array.from(gameRooms.keys()))
+    return
+  }
   
   const chatMessage = {
     from: ws.address,
@@ -678,11 +690,15 @@ function handleChatMessage(ws, data) {
     timestamp: Date.now()
   }
   
+  console.log('💬 Created chat message:', chatMessage)
+  
   room.messages.push(chatMessage)
   room.broadcast({
     type: 'chat_message',
     ...chatMessage
   })
+  
+  console.log('💬 Chat message broadcasted')
 }
 
 function handleDisconnect(ws) {
