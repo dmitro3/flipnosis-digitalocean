@@ -18,7 +18,6 @@ console.log('🚀 Starting CryptoFlipz Server...')
 
 const app = express()
 const server = http.createServer(app)
-const wss = new WebSocket.Server({ server })
 
 // ===== SERVER CONFIGURATION =====
 const PORT = process.env.PORT || 3000
@@ -123,7 +122,6 @@ async function initializeServices() {
       status: 'ok', 
       server: 'single-server', 
       timestamp: new Date().toISOString(),
-      wsClients: wss.clients.size,
       database: DATABASE_PATH
     })
   })
@@ -357,13 +355,8 @@ initializeServices()
       if (sslOptions && isProduction) {
         const httpsServer = https.createServer(sslOptions, app)
         
-        // Create a second WebSocket server for WSS connections
-        const wssSecure = new WebSocket.Server({ server: httpsServer })
-        
-        // Initialize the same WebSocket handlers for HTTPS
-        wssSecure.on('connection', (ws, req) => {
-          // The new WebSocket handler will be initialized automatically
-        })
+        // Initialize WebSocket for HTTPS server
+        initializeWebSocket(httpsServer)
         
         // Listen on port 443 for HTTPS/WSS
         httpsServer.listen(443, '0.0.0.0', () => {
