@@ -60,11 +60,14 @@ const FinalCoin = ({
     const ctx = canvas.getContext('2d')
 
          if (customImage) {
-       // Use custom image
+       // Use custom image with enhancement
        const img = new Image()
        img.crossOrigin = 'anonymous'
        img.src = customImage
        img.onload = () => {
+         // Apply image enhancement filters
+         ctx.filter = 'brightness(1.2) contrast(1.3) saturate(1.1)'
+         
          // Rotate the image based on type
          if (type === 'heads') {
            // Rotate heads 90 degrees to the left
@@ -84,6 +87,10 @@ const FinalCoin = ({
            // Edge texture - no rotation
            ctx.drawImage(img, 0, 0, 512, 512)
          }
+         
+         // Reset filter
+         ctx.filter = 'none'
+         
          texture.needsUpdate = true
        }
       img.onerror = () => {
