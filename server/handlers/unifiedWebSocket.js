@@ -516,7 +516,7 @@ module.exports = {
             break
             
           case 'chat_message':
-            handleChatMessage(ws, data)
+            handleChatMessage(ws, data, dbService)
             break
             
           case 'GAME_ACTION':
