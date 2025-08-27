@@ -470,6 +470,8 @@ module.exports = {
         
         console.log('📡 Received WebSocket message:', data)
         console.log('🔍 Message type:', data.type)
+        console.log('🔍 Socket ID:', ws.id)
+        console.log('🔍 Client address:', data.address)
         
         console.log('🔍 Processing message type:', data.type)
         switch (data.type) {
@@ -1025,7 +1027,15 @@ function handleDisconnect(ws) {
 
 // Additional handlers for old message types
 async function handleJoinRoom(ws, data, dbService) {
-  const { roomId } = data
+  const { roomId, address } = data
+  
+  console.log('🔍 handleJoinRoom called with:', { roomId, address, socketId: ws.id })
+  
+  // Store user socket if address is provided
+  if (address) {
+    userSockets.set(address, ws)
+    ws.address = address
+  }
   
   // Normalize room ID - remove any double prefixes
   let targetRoomId = roomId

@@ -68,12 +68,14 @@ if (typeof window !== 'undefined') {
             this.setupPingPong()
             
             // Join the specific room
-            this.socket.send(JSON.stringify({
+            const joinMessage = {
               type: roomId.startsWith('game_room_') ? 'join_game_room' : 'join_room',
               roomId,
               gameId: roomId.replace('game_room_', '').replace('game_', ''),
               address
-            }))
+            }
+            console.log('🔌 Sending join room message:', joinMessage)
+            this.socket.send(JSON.stringify(joinMessage))
             
             resolve(this.socket)
           }
@@ -121,6 +123,11 @@ if (typeof window !== 'undefined') {
               // Handle pong messages
               if (data.type === 'pong') {
                 return // Just a keepalive response
+              }
+              
+              // Debug: Log room joined confirmations
+              if (data.type === 'room_joined') {
+                console.log('✅ Room joined confirmation received:', data)
               }
               
               // Call registered handlers

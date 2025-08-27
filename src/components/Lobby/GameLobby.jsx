@@ -200,16 +200,34 @@ const GameLobby = () => {
         console.log('✅ GameLobby: WebSocket connected successfully')
         setWsConnected(true)
         
-        // Register message handlers
-        webSocketService.on('chat_message', handleChatMessage)
-        webSocketService.on('offer_made', handleOfferMessage)
-        webSocketService.on('offer_accepted', handleOfferAccepted)
-        webSocketService.on('accept_crypto_offer', handleOfferAccepted) // Handle both message types
-        webSocketService.on('accept_nft_offer', handleOfferAccepted)
+        // Register message handlers for game state changes only
         webSocketService.on('game_awaiting_challenger_deposit', handleGameAwaitingDeposit)
         webSocketService.on('deposit_confirmed', handleDepositConfirmed)
         webSocketService.on('game_started', handleGameStarted)
-        console.log('✅ GameLobby: Message handlers registered')
+        console.log('✅ GameLobby: Game state message handlers registered')
+        
+        // Debug: Log all incoming messages to see what we're receiving
+        webSocketService.on('room_joined', (data) => {
+          console.log('✅ GameLobby: Room joined confirmation received:', data)
+        })
+        
+        // Debug: Log any other messages we might be missing
+        webSocketService.on('crypto_offer', (data) => {
+          console.log('💰 GameLobby: Crypto offer received:', data)
+        })
+        
+        webSocketService.on('system', (data) => {
+          console.log('🔧 GameLobby: System message received:', data)
+        })
+        
+        // Debug: Check what room we're connected to
+        console.log('🔍 GameLobby: Connected to room:', lobbyRoomId)
+        console.log('🔍 GameLobby: WebSocket service state:', {
+          connected: webSocketService.connected,
+          currentRoom: webSocketService.currentRoom,
+          gameId: webSocketService.gameId,
+          address: webSocketService.address
+        })
       } catch (error) {
         console.error('❌ GameLobby: WebSocket connection failed:', error)
         setWsConnected(false)
@@ -220,50 +238,16 @@ const GameLobby = () => {
     
     return () => {
       console.log('🔌 GameLobby: Cleaning up WebSocket handlers')
-      webSocketService.off('chat_message')
-      webSocketService.off('offer_made')
-      webSocketService.off('offer_accepted')
-      webSocketService.off('accept_crypto_offer')
-      webSocketService.off('accept_nft_offer')
       webSocketService.off('game_awaiting_challenger_deposit')
       webSocketService.off('deposit_confirmed')
       webSocketService.off('game_started')
+      webSocketService.off('room_joined')
+      webSocketService.off('crypto_offer')
+      webSocketService.off('system')
     }
   }, [gameId, address])
 
-  // Message handlers
-  const handleChatMessage = (data) => {
-    console.log('Chat message received:', data)
-    // Handle chat message
-  }
-
-  const handleOfferMessage = (data) => {
-    console.log('Offer message received:', data)
-    // Handle offer message
-  }
-
-  const handleOfferAccepted = (data) => {
-    console.log('🎯 Offer accepted message received:', data)
-    
-    // Check if current user is the offerer (Player 2) who needs to deposit
-    if (data.acceptedOffer?.offerer_address && address && 
-        data.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
-      console.log('🎯 Current user is the offerer - showing deposit overlay')
-      
-      // Show deposit overlay for Player 2
-      setAcceptedOffer(data.acceptedOffer)
-      setShowOfferOverlay(true)
-      setIsProcessingDeposit(true)
-      
-      // Show info message
-      showInfo('Your offer was accepted! Please deposit your crypto.')
-    } else {
-      console.log('🎯 Current user is not the offerer - just refreshing data')
-    }
-    
-    // Always refresh game data to check for status changes
-    loadGameData()
-  }
+  // Game state message handlers only
 
   const handleDepositConfirmed = (data) => {
     console.log('Deposit confirmed:', data)
@@ -279,6 +263,8 @@ const GameLobby = () => {
 
   const handleGameAwaitingDeposit = (data) => {
     console.log('🎯 Game awaiting challenger deposit:', data)
+    console.log('🎯 Current user address:', address)
+    console.log('🎯 Challenger address from data:', data.challenger)
     
     // Check if current user is the challenger who needs to deposit
     if (data.challenger && address && 
@@ -299,6 +285,13 @@ const GameLobby = () => {
       
       // Show info message
       showInfo(`Your offer was accepted! Please deposit $${acceptedOffer.cryptoAmount} USD worth of ETH.`)
+    } else {
+      console.log('🎯 Current user is not the challenger - challenger comparison failed:', {
+        currentAddress: address,
+        challengerAddress: data.challenger,
+        match: data.challenger && address && 
+               data.challenger.toLowerCase() === address.toLowerCase()
+      })
     }
     
     // Always refresh game data
@@ -662,8 +655,25 @@ const GameLobby = () => {
                     }}
                     onOfferAccepted={(offer) => {
                       console.log('🎯 Offer accepted via offers container:', offer)
-                      setAcceptedOffer(offer)
-                      setShowOfferOverlay(true)
+                      
+                      // Check if current user is the offerer (Player 2) who needs to deposit
+                      if (offer.acceptedOffer?.offerer_address && address && 
+                          offer.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
+                        console.log('🎯 Current user is the offerer - showing deposit overlay')
+                        
+                        // Show deposit overlay for Player 2
+                        setAcceptedOffer(offer.acceptedOffer)
+                        setShowOfferOverlay(true)
+                        setIsProcessingDeposit(true)
+                        
+                        // Show info message
+                        showInfo('Your offer was accepted! Please deposit your crypto.')
+                      } else {
+                        console.log('🎯 Current user is not the offerer - just refreshing data')
+                      }
+                      
+                      // Always refresh game data to check for status changes
+                      loadGameData()
                       setIsProcessingDeposit(true)
                     }}
                   />
