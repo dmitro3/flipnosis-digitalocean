@@ -204,6 +204,9 @@ const GameLobby = () => {
         webSocketService.on('chat_message', handleChatMessage)
         webSocketService.on('offer_made', handleOfferMessage)
         webSocketService.on('offer_accepted', handleOfferAccepted)
+        webSocketService.on('accept_crypto_offer', handleOfferAccepted) // Handle both message types
+        webSocketService.on('accept_nft_offer', handleOfferAccepted)
+        webSocketService.on('game_awaiting_challenger_deposit', handleGameAwaitingDeposit)
         webSocketService.on('deposit_confirmed', handleDepositConfirmed)
         webSocketService.on('game_started', handleGameStarted)
         console.log('✅ GameLobby: Message handlers registered')
@@ -220,6 +223,9 @@ const GameLobby = () => {
       webSocketService.off('chat_message')
       webSocketService.off('offer_made')
       webSocketService.off('offer_accepted')
+      webSocketService.off('accept_crypto_offer')
+      webSocketService.off('accept_nft_offer')
+      webSocketService.off('game_awaiting_challenger_deposit')
       webSocketService.off('deposit_confirmed')
       webSocketService.off('game_started')
     }
@@ -237,9 +243,26 @@ const GameLobby = () => {
   }
 
   const handleOfferAccepted = (data) => {
-    console.log('Offer accepted:', data)
-    // Handle offer accepted
-    loadGameData() // Refresh game data to check for deposit status
+    console.log('🎯 Offer accepted message received:', data)
+    
+    // Check if current user is the offerer (Player 2) who needs to deposit
+    if (data.acceptedOffer?.offerer_address && address && 
+        data.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
+      console.log('🎯 Current user is the offerer - showing deposit overlay')
+      
+      // Show deposit overlay for Player 2
+      setAcceptedOffer(data.acceptedOffer)
+      setShowOfferOverlay(true)
+      setIsProcessingDeposit(true)
+      
+      // Show info message
+      showInfo('Your offer was accepted! Please deposit your crypto.')
+    } else {
+      console.log('🎯 Current user is not the offerer - just refreshing data')
+    }
+    
+    // Always refresh game data to check for status changes
+    loadGameData()
   }
 
   const handleDepositConfirmed = (data) => {
@@ -252,6 +275,34 @@ const GameLobby = () => {
     console.log('Game started:', data)
     showSuccess('Game started! Both players deposited.')
     loadGameData() // Refresh game data to check for deposit status
+  }
+
+  const handleGameAwaitingDeposit = (data) => {
+    console.log('🎯 Game awaiting challenger deposit:', data)
+    
+    // Check if current user is the challenger who needs to deposit
+    if (data.challenger && address && 
+        data.challenger.toLowerCase() === address.toLowerCase()) {
+      console.log('🎯 Current user is the challenger - needs to deposit')
+      
+      // Create accepted offer object for consistency
+      const acceptedOffer = {
+        offerer_address: data.challenger,
+        cryptoAmount: data.cryptoAmount || data.payment_amount,
+        timestamp: new Date().toISOString()
+      }
+      
+      // Show deposit overlay for Player 2
+      setAcceptedOffer(acceptedOffer)
+      setShowOfferOverlay(true)
+      setIsProcessingDeposit(true)
+      
+      // Show info message
+      showInfo(`Your offer was accepted! Please deposit $${acceptedOffer.cryptoAmount} USD worth of ETH.`)
+    }
+    
+    // Always refresh game data
+    loadGameData()
   }
 
   // REMOVED: handleDepositTransition function - not needed anymore

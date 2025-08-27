@@ -339,17 +339,9 @@ const isCreator = () => {
           
           addOffer(acceptedOfferData)
           
-          // Trigger overlay for Player 2 (the offerer) if they're the current user
-          if (data.acceptedOffer?.offerer_address === address) {
-            console.log('🎯 Player 2 received offer acceptance - triggering overlay')
-            // Call the onOfferAccepted callback to show the overlay
-            if (onOfferAccepted) {
-              onOfferAccepted(data.acceptedOffer)
-            }
-          }
-          
-          // Don't reload - let the WebSocket handle updates
-          console.log('🎯 Offer accepted via WebSocket - waiting for updates')
+          // Note: We're NOT triggering the overlay here anymore because
+          // the GameLobby component now handles this via its WebSocket handlers
+          console.log('🎯 Offer accepted message processed - GameLobby will handle overlay')
           
           // Add a system message to prompt the joiner to load their crypto
           if (data.type === 'accept_crypto_offer' && data.acceptedOffer?.cryptoAmount) {

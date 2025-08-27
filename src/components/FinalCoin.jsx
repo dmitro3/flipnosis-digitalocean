@@ -88,72 +88,134 @@ const FinalCoin = ({
        }
       img.onerror = () => {
         console.warn('Failed to load custom image, using default')
-        // Fall back to default texture - white coin
+        // Fall back to default texture - rich white coin faces
         if (type === 'heads') {
-          // White gradient background
+          // Rich white gradient background
           const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-          gradient.addColorStop(0, '#FFFFFF')
-          gradient.addColorStop(0.7, '#F8F8F8')
-          gradient.addColorStop(1, '#F0F0F0')
+          gradient.addColorStop(0, '#FFFFFF') // Bright center
+          gradient.addColorStop(0.4, '#F8F8F8') // Light gray
+          gradient.addColorStop(0.7, '#F0F0F0') // Medium gray
+          gradient.addColorStop(1, '#E8E8E8') // Darker edge
           ctx.fillStyle = gradient
           ctx.fillRect(0, 0, 512, 512)
           
-          // Add "HEADS" text
-          ctx.fillStyle = '#333333'
-          ctx.font = 'bold 72px Arial'
+          // Crown symbol - positioned higher
+          ctx.fillStyle = '#666666' // Dark gray for contrast
+          ctx.font = 'bold 120px serif'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
-          ctx.fillText('HEADS', 256, 256)
+          ctx.fillText('♔', 256, 256 - 60) // Crown above center
+          
+          // "HEADS" text below crown
+          ctx.fillStyle = '#333333'
+          ctx.font = 'bold 80px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('HEADS', 256, 256 + 60) // Text below center
+          
+          // Decorative border - more prominent
+          ctx.strokeStyle = '#CCCCCC'
+          ctx.lineWidth = 8 // Thicker border
+          ctx.beginPath()
+          ctx.arc(256, 256, 220, 0, Math.PI * 2)
+          ctx.stroke()
+          
         } else if (type === 'tails') {
-          // White gradient background
+          // Rich white gradient background
           const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-          gradient.addColorStop(0, '#FFFFFF')
-          gradient.addColorStop(0.7, '#F8F8F8')
-          gradient.addColorStop(1, '#F0F0F0')
+          gradient.addColorStop(0, '#FFFFFF') // Bright center
+          gradient.addColorStop(0.4, '#F8F8F8') // Light gray
+          gradient.addColorStop(0.7, '#F0F0F0') // Medium gray
+          gradient.addColorStop(1, '#E8E8E8') // Darker edge
           ctx.fillStyle = gradient
           ctx.fillRect(0, 0, 512, 512)
           
-          // Add "TAILS" text
-          ctx.fillStyle = '#333333'
-          ctx.font = 'bold 72px Arial'
+          // Diamond symbol - positioned higher
+          ctx.fillStyle = '#666666' // Dark gray for contrast
+          ctx.font = 'bold 120px serif'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
-          ctx.fillText('TAILS', 256, 256)
+          ctx.fillText('♦', 256, 256 - 60) // Diamond above center
+          
+          // "TAILS" text below diamond
+          ctx.fillStyle = '#333333'
+          ctx.font = 'bold 80px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('TAILS', 256, 256 + 60) // Text below center
+          
+          // Decorative border - more prominent
+          ctx.strokeStyle = '#CCCCCC'
+          ctx.lineWidth = 8 // Thicker border
+          ctx.beginPath()
+          ctx.arc(256, 256, 220, 0, Math.PI * 2)
+          ctx.stroke()
         }
         texture.needsUpdate = true
       }
     } else {
-      // Default designs - white coin
+      // Default designs - rich white coin faces
       if (type === 'heads') {
-        // White background with subtle gradient
+        // Rich white gradient background
         const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-        gradient.addColorStop(0, '#FFFFFF')
-        gradient.addColorStop(0.7, '#F8F8F8')
-        gradient.addColorStop(1, '#F0F0F0')
+        gradient.addColorStop(0, '#FFFFFF') // Bright center
+        gradient.addColorStop(0.4, '#F8F8F8') // Light gray
+        gradient.addColorStop(0.7, '#F0F0F0') // Medium gray
+        gradient.addColorStop(1, '#E8E8E8') // Darker edge
         ctx.fillStyle = gradient
         ctx.fillRect(0, 0, 512, 512)
         
-        // Add "HEADS" text
-        ctx.fillStyle = '#333333'
-        ctx.font = 'bold 72px Arial'
+        // Crown symbol - positioned higher
+        ctx.fillStyle = '#666666' // Dark gray for contrast
+        ctx.font = 'bold 120px serif'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText('HEADS', 256, 256)
+        ctx.fillText('♔', 256, 256 - 60) // Crown above center
+        
+        // "HEADS" text below crown
+        ctx.fillStyle = '#333333'
+        ctx.font = 'bold 80px Arial'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('HEADS', 256, 256 + 60) // Text below center
+        
+        // Decorative border - more prominent
+        ctx.strokeStyle = '#CCCCCC'
+        ctx.lineWidth = 8 // Thicker border
+        ctx.beginPath()
+        ctx.arc(256, 256, 220, 0, Math.PI * 2)
+        ctx.stroke()
+        
       } else if (type === 'tails') {
-        // White background with subtle gradient
+        // Rich white gradient background
         const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256)
-        gradient.addColorStop(0, '#FFFFFF')
-        gradient.addColorStop(0.7, '#F8F8F8')
-        gradient.addColorStop(1, '#F0F0F0')
+        gradient.addColorStop(0, '#FFFFFF') // Bright center
+        gradient.addColorStop(0.4, '#F8F8F8') // Light gray
+        gradient.addColorStop(0.7, '#F0F0F0') // Medium gray
+        gradient.addColorStop(1, '#E8E8E8') // Darker edge
         ctx.fillStyle = gradient
         ctx.fillRect(0, 0, 512, 512)
         
-        // Add "TAILS" text
-        ctx.fillStyle = '#333333'
-        ctx.font = 'bold 72px Arial'
+        // Diamond symbol - positioned higher
+        ctx.fillStyle = '#666666' // Dark gray for contrast
+        ctx.font = 'bold 120px serif'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText('TAILS', 256, 256)
+        ctx.fillText('♦', 256, 256 - 60) // Diamond above center
+        
+        // "TAILS" text below diamond
+        ctx.fillStyle = '#333333'
+        ctx.font = 'bold 80px Arial'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('TAILS', 256, 256 + 60) // Text below center
+        
+        // Decorative border - more prominent
+        ctx.strokeStyle = '#CCCCCC'
+        ctx.lineWidth = 8 // Thicker border
+        ctx.beginPath()
+        ctx.arc(256, 256, 220, 0, Math.PI * 2)
+        ctx.stroke()
              } else if (type === 'edge') {
          // White edge texture with subtle lines
          ctx.fillStyle = '#F8F8F8' // Slightly off-white
