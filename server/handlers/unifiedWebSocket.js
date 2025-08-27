@@ -500,7 +500,7 @@ module.exports = {
           case 'accept_offer':
           case 'accept_nft_offer':
           case 'accept_crypto_offer':
-            handleAcceptOffer(ws, data)
+            handleAcceptOffer(ws, data, dbService)
             break
             
           case 'deposit_confirmed':
@@ -789,16 +789,61 @@ function handleMakeOffer(ws, data) {
   })
 }
 
-function handleAcceptOffer(ws, data) {
-  const { gameId, offerId } = data
-  const room = gameRooms.get(gameId)
+async function handleAcceptOffer(ws, data, dbService) {
+  const { gameId, offerId, acceptedOffer } = data
+  console.log('🎯 Handling offer acceptance:', { gameId, offerId, acceptedOffer })
   
-  if (!room) return
-  
-  room.broadcast({
-    type: 'offer_accepted',
-    offerId: offerId
-  })
+  // Get the offer details from the database
+  try {
+    const db = dbService.getDatabase()
+    const offer = await new Promise((resolve, reject) => {
+      db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, result) => {
+        if (err) reject(err)
+        else resolve(result)
+      })
+    })
+    
+    if (!offer) {
+      console.error('❌ Offer not found:', offerId)
+      return
+    }
+    
+    console.log('📋 Found offer:', offer)
+    
+    // Create the acceptance message for Player 2 (the offerer)
+    const acceptanceMessage = {
+      type: 'accept_crypto_offer',
+      gameId: gameId,
+      offerId: offerId,
+      creatorAddress: ws.address, // Player 1 (creator)
+      acceptedOffer: {
+        offerer_address: offer.offerer_address,
+        cryptoAmount: offer.offer_price,
+        offerId: offerId,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date().toISOString()
+    }
+    
+    console.log('📢 Broadcasting offer acceptance to Player 2:', acceptanceMessage)
+    
+    // Broadcast to the room so Player 2 receives it
+    const roomId = `game_${gameId}`
+    broadcastToRoom(roomId, acceptanceMessage)
+    
+    // Also save as a chat message for persistence
+    await dbService.saveChatMessage(
+      roomId,
+      ws.address,
+      `Offer accepted! Game starting...`,
+      'offer_accepted',
+      { acceptedOffer: acceptanceMessage.acceptedOffer }
+    )
+    
+    console.log('✅ Offer acceptance broadcasted successfully')
+  } catch (error) {
+    console.error('❌ Error handling offer acceptance:', error)
+  }
 }
 
 function handleDepositConfirmed(ws, data) {

@@ -55,8 +55,8 @@ const FinalCoin = ({
     }
 
     const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 512
+    canvas.width = 1024
+    canvas.height = 1024
     const ctx = canvas.getContext('2d')
 
          if (customImage) {
@@ -65,27 +65,27 @@ const FinalCoin = ({
        img.crossOrigin = 'anonymous'
        img.src = customImage
        img.onload = () => {
-         // Apply image enhancement filters
-         ctx.filter = 'brightness(1.2) contrast(1.3) saturate(1.1)'
+                   // Apply subtle image enhancement filters
+          ctx.filter = 'brightness(1.1) contrast(1.1) saturate(1.05)'
          
          // Rotate the image based on type
          if (type === 'heads') {
            // Rotate heads 90 degrees to the left
            ctx.save()
-           ctx.translate(256, 256)
+           ctx.translate(512, 512)
            ctx.rotate(-Math.PI / 2) // 90 degrees left
-           ctx.drawImage(img, -256, -256, 512, 512)
+           ctx.drawImage(img, -512, -512, 1024, 1024)
            ctx.restore()
          } else if (type === 'tails') {
            // Rotate tails 90 degrees to the right
            ctx.save()
-           ctx.translate(256, 256)
+           ctx.translate(512, 512)
            ctx.rotate(Math.PI / 2) // 90 degrees right
-           ctx.drawImage(img, -256, -256, 512, 512)
+           ctx.drawImage(img, -512, -512, 1024, 1024)
            ctx.restore()
          } else {
            // Edge texture - no rotation
-           ctx.drawImage(img, 0, 0, 512, 512)
+           ctx.drawImage(img, 0, 0, 1024, 1024)
          }
          
          // Reset filter
@@ -222,26 +222,26 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-                                       // Enhanced lighting for white coin
-       const ambientLight = new THREE.AmbientLight(0xffffff, 1.3)
+                                                                               // Softer lighting for better image quality
+       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
        scene.add(ambientLight)
        
-       const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
+       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
        directionalLight.position.set(5, 5, 5)
        scene.add(directionalLight)
       
              // Add a second light for better highlights
-       const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
+       const fillLight = new THREE.DirectionalLight(0xffffff, 0.4)
        fillLight.position.set(-3, 3, 2)
        scene.add(fillLight)
        
        // Add a subtle rim light for definition
-       const rimLight = new THREE.DirectionalLight(0xffffff, 0.4)
+       const rimLight = new THREE.DirectionalLight(0xffffff, 0.2)
        rimLight.position.set(0, -2, 3)
        scene.add(rimLight)
       
-             // Add a bright spotlight for extra richness
-       const spotLight = new THREE.SpotLight(0xffffff, 0.8)
+             // Add a softer spotlight
+       const spotLight = new THREE.SpotLight(0xffffff, 0.4)
        spotLight.position.set(0, 5, 5)
        spotLight.angle = Math.PI / 6
        spotLight.penumbra = 0.1
