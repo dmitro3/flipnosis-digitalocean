@@ -58,7 +58,7 @@ const LobbyBackgroundContainer = styled.div`
   border-radius: 1rem;
   padding: 2rem;
   width: 100%;
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
   box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
   position: relative;
@@ -84,7 +84,7 @@ const LobbyBackgroundContainer = styled.div`
 
 const LobbyContent = styled.div`
   display: grid;
-  grid-template-columns: 1.2fr 1fr 0.8fr;
+  grid-template-columns: 1.5fr 1fr 1fr;
   gap: 2rem;
   width: 100%;
   position: relative;
@@ -585,7 +585,6 @@ const GameLobby = () => {
                         isCreator={isCreator}
                       />
                     </CoinSection>
-                  )}
                 </NFTAndCoinSection>
                 
                 {/* Chat Container */}

@@ -828,7 +828,7 @@ function handlePowerCharged(ws, data) {
   room.handlePowerCharge(ws.address, powerLevel)
 }
 
-async function handleChatMessage(ws, data) {
+async function handleChatMessage(ws, data, dbService) {
   console.log('💬 Handling chat message:', data)
   const { gameId, message, sender } = data
   console.log('💬 Extracted gameId:', gameId, 'message:', message, 'sender:', sender)
