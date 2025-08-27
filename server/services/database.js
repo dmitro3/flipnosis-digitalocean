@@ -89,6 +89,15 @@ class DatabaseService {
     })
   }
 
+  async getGameByBlockchainId(blockchainGameId) {
+    return new Promise((resolve, reject) => {
+      this.db.get('SELECT * FROM games WHERE blockchain_game_id = ?', [blockchainGameId], (err, game) => {
+        if (err) reject(err)
+        else resolve(game)
+      })
+    })
+  }
+
   async updateGameStatus(gameId, status) {
     return new Promise((resolve, reject) => {
       this.db.run('UPDATE games SET status = ? WHERE id = ?', [status, gameId], function(err) {

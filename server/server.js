@@ -85,6 +85,27 @@ async function initializeServices() {
     CONTRACT_OWNER_KEY
   )
 
+  // Set up blockchain event listeners
+  blockchainService.setupEventListeners((event) => {
+    console.log('🔔 Blockchain event received:', event.type, event)
+    
+    if (event.type === 'GameReady') {
+      // Convert bytes32 gameId to string
+      const gameId = event.gameId
+      const nftDepositor = event.nftDepositor
+      const cryptoDepositor = event.cryptoDepositor
+      
+      console.log('🎮 GameReady event - both deposits confirmed:', {
+        gameId,
+        nftDepositor,
+        cryptoDepositor
+      })
+      
+      // Find the game in our database and update status
+      handleGameReady(gameId, nftDepositor, cryptoDepositor, dbService, { broadcastToRoom })
+    }
+  })
+
   // Initialize cleanup service
   const cleanupService = new CleanupService(dbService, blockchainService)
   cleanupService.start()
@@ -195,6 +216,73 @@ async function handleGameTimeout(game, dbService, { broadcastToRoom }) {
     console.log('✅ Game reset for new offers after timeout:', game.id)
   } catch (error) {
     console.error('❌ Error handling timeout:', error)
+  }
+}
+
+// Handle GameReady event from blockchain (both deposits confirmed)
+async function handleGameReady(gameId, nftDepositor, cryptoDepositor, dbService, { broadcastToRoom }) {
+  try {
+    console.log('🎮 Handling GameReady event:', { gameId, nftDepositor, cryptoDepositor })
+    
+    // Find the game in our database using the blockchain gameId
+    const game = await dbService.getGameByBlockchainId(gameId)
+    if (!game) {
+      console.error('❌ Game not found in database for blockchain gameId:', gameId)
+      return
+    }
+    
+    console.log('📊 Found game in database:', game)
+    
+    // Use the original gameId (string) for our operations
+    const originalGameId = game.id
+    
+    // Update game status to 'active' since both deposits are confirmed
+    await dbService.updateGameStatus(originalGameId, 'active')
+    
+    // Get or create the GameRoom for this game
+    const { gameRooms } = require('./handlers/unifiedWebSocket')
+    let gameRoom = gameRooms.get(originalGameId)
+    
+    if (!gameRoom) {
+      // Create new game room with the NFT depositor as creator
+      const GameRoom = require('./handlers/unifiedWebSocket').GameRoom
+      gameRoom = new GameRoom(originalGameId, nftDepositor)
+      gameRooms.set(originalGameId, gameRoom)
+      console.log('🏠 Created new GameRoom for GameReady event:', originalGameId)
+    }
+    
+    // Set up the game room with both players
+    gameRoom.joiner = cryptoDepositor
+    gameRoom.phase = 'deposit'
+    gameRoom.depositsConfirmed = { creator: true, joiner: true }
+    
+    // Clear any existing deposit timer and start game transition
+    gameRoom.clearDepositTimer()
+    
+    console.log('🎯 Game room set up for GameReady event:', {
+      gameId: originalGameId,
+      creator: gameRoom.creator,
+      joiner: gameRoom.joiner,
+      phase: gameRoom.phase,
+      depositsConfirmed: gameRoom.depositsConfirmed
+    })
+    
+    // Start the game transition (countdown and game start)
+    gameRoom.startGameTransition()
+    
+    // Broadcast the game ready event to all connected clients
+    const roomId = `game_${originalGameId}`
+    broadcastToRoom(roomId, {
+      type: 'game_ready',
+      gameId: originalGameId,
+      nftDepositor,
+      cryptoDepositor,
+      message: 'Both deposits confirmed! Game is ready to start!'
+    })
+    
+    console.log('✅ GameReady handled successfully for game:', originalGameId)
+  } catch (error) {
+    console.error('❌ Error handling GameReady event:', error)
   }
 }
 

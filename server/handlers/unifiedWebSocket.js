@@ -904,6 +904,26 @@ async function handleAcceptOffer(ws, data, dbService) {
         )
       })
       
+      // Create or get the GameRoom instance for this game
+      let gameRoom = gameRooms.get(gameId)
+      if (!gameRoom) {
+        // Create new game room with the creator (Player 1) as the creator
+        gameRoom = new GameRoom(gameId, ws.address)
+        gameRooms.set(gameId, gameRoom)
+        console.log('🏠 Created new GameRoom for game:', gameId)
+      }
+      
+      // Add the challenger (Player 2) as the joiner
+      if (gameRoom.joiner !== offer.offerer_address) {
+        gameRoom.joiner = offer.offerer_address
+        gameRoom.phase = 'locked'
+        console.log('👥 Added challenger as joiner in GameRoom:', offer.offerer_address)
+      }
+      
+      // Start the deposit timer for Player 2 (the challenger)
+      gameRoom.startDepositTimer()
+      console.log('⏰ Started deposit timer for Player 2')
+      
       // Save system message to database
       await dbService.saveChatMessage(
         roomId, 
