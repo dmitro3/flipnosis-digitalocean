@@ -255,31 +255,25 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-                                       // Create materials array [edge, heads, tails] - white coin with better reflectivity
+                                       // Create materials array [edge, heads, tails] - pure white coin
        const materials = [
          new THREE.MeshStandardMaterial({ 
            map: createTexture('edge'),
-           metalness: 0.4,
-           roughness: 0.15,
-           color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF,
-           emissive: 0x333333,
-           emissiveIntensity: 0.15
+           metalness: 0.3,
+           roughness: 0.2,
+           color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF
          }),
          new THREE.MeshStandardMaterial({ 
            map: createTexture('heads', customHeadsImage),
-           metalness: 0.4,
-           roughness: 0.15,
-           color: 0xFFFFFF,
-           emissive: 0x333333,
-           emissiveIntensity: 0.15
+           metalness: 0.3,
+           roughness: 0.2,
+           color: 0xFFFFFF
          }),
          new THREE.MeshStandardMaterial({ 
            map: createTexture('tails', customTailsImage),
-           metalness: 0.4,
-           roughness: 0.15,
-           color: 0xFFFFFF,
-           emissive: 0x333333,
-           emissiveIntensity: 0.15
+           metalness: 0.3,
+           roughness: 0.2,
+           color: 0xFFFFFF
          })
        ]
 

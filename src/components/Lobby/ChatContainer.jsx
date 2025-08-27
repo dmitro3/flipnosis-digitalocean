@@ -74,7 +74,7 @@ const MessagesContainer = styled.div`
 
 const Message = styled.div`
   margin-bottom: 0.75rem;
-  padding: 0.75rem;
+  padding: 1rem;
   border-radius: 0.5rem;
   background: ${props => props.isCurrentUser ? 'rgba(0, 191, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
   border: 1px solid ${props => props.isCurrentUser ? 'rgba(0, 191, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)'};
@@ -96,8 +96,8 @@ const MessageHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
   color: ${props => props.isCurrentUser ? '#00BFFF' : '#FFD700'};
 `
 
@@ -110,6 +110,8 @@ const MessageSender = styled.div`
 const MessageContent = styled.div`
   color: #fff;
   word-break: break-word;
+  font-size: 1.1rem;
+  line-height: 1.4;
 `
 
 const InputContainer = styled.div`
@@ -420,11 +422,15 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
                   <MessageSender>
                     <ProfilePicture 
                       address={msg.sender}
-                      size={24}
+                      size={40}
+                      style={{
+                        borderRadius: '8px',
+                        border: '2px solid rgba(255, 255, 255, 0.2)'
+                      }}
                     />
-                    <span>💬 {displayName}</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>💬 {displayName}</span>
                   </MessageSender>
-                  <span>{formatTimestamp(msg.timestamp)}</span>
+                  <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>{formatTimestamp(msg.timestamp)}</span>
                 </MessageHeader>
                 <MessageContent>{msg.message}</MessageContent>
               </Message>

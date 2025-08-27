@@ -849,6 +849,87 @@ async function handleAcceptOffer(ws, data, dbService) {
       { acceptedOffer: acceptanceMessage.acceptedOffer }
     )
     
+    // If this is a crypto offer acceptance, trigger the game start process
+    if (offer.offer_price) {
+      console.log('🎮 Crypto offer accepted, triggering game start process for game:', gameId)
+      
+      // Update game status to waiting for challenger deposit
+      const depositDeadline = new Date(Date.now() + 2 * 60 * 1000) // 2 minutes from now
+      
+      console.log('🔧 Updating game status with data:', {
+        gameId,
+        status: 'waiting_challenger_deposit',
+        depositDeadline: depositDeadline.toISOString(),
+        challenger: offer.offerer_address,
+        paymentAmount: offer.offer_price
+      })
+      
+      // First, let's check if the game exists and get its current status
+      const game = await new Promise((resolve, reject) => {
+        db.get('SELECT status, challenger FROM games WHERE id = ?', [gameId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (!game) {
+        console.error('❌ Game not found:', gameId)
+        return
+      }
+      
+      console.log('📊 Current game status:', game)
+      
+      // Now update the game status
+      await new Promise((resolve, reject) => {
+        db.run(
+          'UPDATE games SET status = ?, deposit_deadline = ?, challenger = ?, payment_amount = ? WHERE id = ?',
+          ['waiting_challenger_deposit', depositDeadline.toISOString(), offer.offerer_address, offer.offer_price, gameId],
+          function(err) {
+            if (err) {
+              console.error('❌ Error updating game status:', err)
+              reject(err)
+            } else {
+              console.log('✅ Game status updated successfully:', {
+                gameId,
+                rowsAffected: this.changes,
+                newStatus: 'waiting_challenger_deposit',
+                challenger: offer.offerer_address,
+                paymentAmount: offer.offer_price
+              })
+              resolve()
+            }
+          }
+        )
+      })
+      
+      // Save system message to database
+      await dbService.saveChatMessage(
+        roomId, 
+        'system', 
+        `🎮 Game accepted! Player 2, please load your ${offer.offer_price} USD worth of ETH to start the game!`, 
+        'system'
+      )
+      
+      // Broadcast game status update to trigger countdown
+      broadcastToRoom(roomId, {
+        type: 'game_awaiting_challenger_deposit',
+        gameId,
+        status: 'waiting_challenger_deposit',
+        deposit_deadline: depositDeadline.toISOString(),
+        challenger: offer.offerer_address,
+        cryptoAmount: offer.offer_price,
+        payment_amount: offer.offer_price
+      })
+      
+      // Broadcast a system message to prompt the joiner to load their crypto
+      broadcastToRoom(roomId, {
+        type: 'chat_message',
+        message: `🎮 Game accepted! Player 2, please load your ${offer.offer_price} USD worth of ETH to start the game!`,
+        from: 'system',
+        timestamp: new Date().toISOString()
+      })
+    }
+    
     console.log('✅ Offer acceptance broadcasted successfully')
   } catch (error) {
     console.error('❌ Error handling offer acceptance:', error)
