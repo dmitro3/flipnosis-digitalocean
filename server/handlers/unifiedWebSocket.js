@@ -396,11 +396,68 @@ class GameRoom {
   }
 }
 
+// Broadcast to room (same as old system)
+function broadcastToRoom(roomId, message) {
+  if (!rooms.has(roomId)) {
+    console.log(`⚠️ Room ${roomId} not found, creating it`)
+    rooms.set(roomId, new Set())
+  }
+  
+  const room = rooms.get(roomId)
+  const messageStr = JSON.stringify(message)
+  
+  console.log(`📢 Broadcasting to room ${roomId}:`, {
+    messageType: message.type,
+    roomSize: room.size,
+    message: message
+  })
+  
+  let successfulBroadcasts = 0
+  let failedBroadcasts = 0
+  
+  // Get all active WebSocket clients from the global wss
+  const activeClients = Array.from(global.wss.clients).filter(client => 
+    client.readyState === 1 // WebSocket.OPEN
+  )
+  
+  console.log(`🔍 Active clients: ${activeClients.length}, Room members: ${room.size}`)
+  
+  // Broadcast to room members
+  room.forEach(socketId => {
+    const client = activeClients.find(s => s.id === socketId)
+    if (client) {
+      try {
+        client.send(messageStr)
+        successfulBroadcasts++
+        console.log(`✅ Sent message to client ${socketId}`)
+      } catch (error) {
+        console.error(`❌ Failed to send to client ${socketId}:`, error)
+        failedBroadcasts++
+        // Remove failed client from room
+        room.delete(socketId)
+      }
+    } else {
+      console.log(`⚠️ Client ${socketId} not found or not connected, removing from room`)
+      room.delete(socketId)
+      failedBroadcasts++
+    }
+  })
+  
+  console.log(`✅ Broadcast complete: ${successfulBroadcasts} successful, ${failedBroadcasts} failed`)
+  
+  // Clean up empty rooms
+  if (room.size === 0) {
+    rooms.delete(roomId)
+    console.log(`🧹 Cleaned up empty room: ${roomId}`)
+  }
+}
+
 // Export the handlers
 module.exports = {
   gameRooms,
   userSockets,
   GameRoom,
+  broadcastToRoom,
   
   handleConnection(ws, dbService) {
     ws.id = crypto.randomBytes(16).toString('hex')
@@ -434,8 +491,10 @@ module.exports = {
             
           case 'make_offer':
           case 'nft_offer':
-          case 'crypto_offer':
             handleMakeOffer(ws, data)
+            break
+          case 'crypto_offer':
+            handleCryptoOffer(ws, data, dbService)
             break
             
           case 'accept_offer':
@@ -614,6 +673,104 @@ async function handleJoinGame(ws, data, dbService) {
   }))
 }
 
+// Handle crypto offer (for NFT-vs-crypto games)
+async function handleCryptoOffer(ws, data, dbService) {
+  // Accept both field name variations for compatibility
+  const gameId = data.gameId || data.listingId
+  const offererAddress = data.offererAddress || data.address
+  const cryptoAmount = data.cryptoAmount || data.amount
+  const timestamp = data.timestamp
+  
+  if (!gameId || !offererAddress || !cryptoAmount) {
+    console.error('❌ Invalid crypto offer data:', data)
+    return
+  }
+  
+  console.log('🎯 Processing crypto offer:', { gameId, offererAddress, cryptoAmount })
+  console.log('🏠 Available rooms:', Array.from(rooms.keys()))
+  console.log('👥 Room members for this game:', rooms.has(gameId) ? Array.from(rooms.get(gameId)) : 'Room not found')
+  
+  try {
+    // Get the listing_id for this game
+    const db = dbService.getDatabase()
+    let listingId = gameId
+    
+    // If the gameId looks like a listing ID (starts with 'listing_'), use it directly
+    if (gameId.startsWith('listing_')) {
+      listingId = gameId
+      console.log('📋 Using provided listing ID directly:', listingId)
+    } else {
+      // Otherwise, try to find the game and get its listing_id
+      const game = await new Promise((resolve, reject) => {
+        db.get('SELECT listing_id FROM games WHERE id = ?', [gameId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (!game || !game.listing_id) {
+        console.error('❌ Game not found or no listing_id:', gameId)
+        return
+      }
+      
+      listingId = game.listing_id
+      console.log('📋 Found listing ID from game:', listingId)
+    }
+    
+    // Create offer ID
+    const offerId = `offer_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+    
+    // Save offer to offers table
+    await dbService.createOffer({
+      id: offerId,
+      listing_id: listingId,
+      offerer_address: offererAddress,
+      offer_price: cryptoAmount,
+      message: `Crypto offer of $${cryptoAmount} USD`
+    })
+    
+    console.log('✅ Offer saved to database:', offerId)
+    
+    // Find the actual game ID for this listing to save chat message and broadcast
+    const game = await new Promise((resolve, reject) => {
+      db.get('SELECT id FROM games WHERE listing_id = ?', [listingId], (err, result) => {
+        if (err) reject(err)
+        else resolve(result)
+      })
+    })
+    
+    const actualGameId = game?.id || gameId
+    
+    // Normalize room ID for lobby
+    const lobbyRoomId = `game_${actualGameId}`
+    
+    // Also save as chat message for real-time display
+    await dbService.saveChatMessage(
+      lobbyRoomId, 
+      offererAddress, 
+      `Crypto offer of $${cryptoAmount} USD`, 
+      'offer', 
+      { cryptoAmount, offerType: 'crypto', offerId }
+    )
+    
+    // Broadcast to the game room
+    const broadcastMessage = {
+      type: 'crypto_offer',
+      gameId: actualGameId,
+      offererAddress,
+      cryptoAmount,
+      offerId,
+      timestamp: timestamp || new Date().toISOString()
+    }
+    
+    console.log('📢 Broadcasting crypto offer:', broadcastMessage)
+    broadcastToRoom(lobbyRoomId, broadcastMessage)
+    console.log('✅ Crypto offer broadcasted successfully to room', actualGameId)
+  } catch (error) {
+    console.error('❌ Error saving crypto offer:', error)
+  }
+}
+
 function handleMakeOffer(ws, data) {
   const { gameId, offer } = data
   const room = gameRooms.get(gameId)
@@ -671,49 +828,42 @@ function handlePowerCharged(ws, data) {
   room.handlePowerCharge(ws.address, powerLevel)
 }
 
-function handleChatMessage(ws, data) {
+async function handleChatMessage(ws, data) {
   console.log('💬 Handling chat message:', data)
-  const { gameId, message } = data
-  console.log('💬 Extracted gameId:', gameId, 'message:', message)
+  const { gameId, message, sender } = data
+  console.log('💬 Extracted gameId:', gameId, 'message:', message, 'sender:', sender)
   
-  // Try different gameId formats
-  let room = gameRooms.get(gameId)
-  if (!room) {
-    // Try without game_ prefix
-    const gameIdWithoutPrefix = gameId.replace('game_', '')
-    room = gameRooms.get(gameIdWithoutPrefix)
-    console.log('💬 Trying without prefix:', gameIdWithoutPrefix, 'Found:', room ? 'yes' : 'no')
-  }
-  if (!room) {
-    // Try with just the numeric part
-    const numericGameId = gameId.replace(/^game_/, '').split('_')[0]
-    room = gameRooms.get(numericGameId)
-    console.log('💬 Trying numeric part:', numericGameId, 'Found:', room ? 'yes' : 'no')
-  }
+  // Use the sender from the message or fall back to ws.address
+  const senderAddress = sender || ws.address
   
-  console.log('💬 Final room found:', room ? 'yes' : 'no')
-  
-  if (!room) {
-    console.log('💬 No room found for gameId:', gameId)
-    console.log('💬 Available gameRooms:', Array.from(gameRooms.keys()))
+  if (!senderAddress) {
+    console.error('💬 No sender address found')
     return
   }
   
-  const chatMessage = {
-    from: ws.address,
-    message,
-    timestamp: Date.now()
+  try {
+    // Save to database first
+    if (dbService && dbService.saveChatMessage) {
+      await dbService.saveChatMessage(
+        gameId, 
+        senderAddress, 
+        message, 
+        'chat'
+      )
+    }
+    
+    // Broadcast to the room using the old system's broadcastToRoom
+    broadcastToRoom(gameId, {
+      type: 'chat_message',
+      message,
+      from: senderAddress,
+      timestamp: new Date().toISOString()
+    })
+    
+    console.log('💬 Chat message saved and broadcasted successfully')
+  } catch (error) {
+    console.error('❌ Error saving chat message:', error)
   }
-  
-  console.log('💬 Created chat message:', chatMessage)
-  
-  room.messages.push(chatMessage)
-  room.broadcast({
-    type: 'chat_message',
-    ...chatMessage
-  })
-  
-  console.log('💬 Chat message broadcasted')
 }
 
 function handleDisconnect(ws) {
