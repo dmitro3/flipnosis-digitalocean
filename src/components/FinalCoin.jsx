@@ -55,42 +55,35 @@ const FinalCoin = ({
     }
 
     const canvas = document.createElement('canvas')
-    canvas.width = 1024
-    canvas.height = 1024
+    canvas.width = 512
+    canvas.height = 512
     const ctx = canvas.getContext('2d')
 
          if (customImage) {
-       // Use custom image with enhancement
+       // Use custom image
        const img = new Image()
        img.crossOrigin = 'anonymous'
        img.src = customImage
        img.onload = () => {
-                   // Apply subtle image enhancement filters
-          ctx.filter = 'brightness(1.1) contrast(1.1) saturate(1.05)'
-         
          // Rotate the image based on type
          if (type === 'heads') {
            // Rotate heads 90 degrees to the left
            ctx.save()
-           ctx.translate(512, 512)
+           ctx.translate(256, 256)
            ctx.rotate(-Math.PI / 2) // 90 degrees left
-           ctx.drawImage(img, -512, -512, 1024, 1024)
+           ctx.drawImage(img, -256, -256, 512, 512)
            ctx.restore()
          } else if (type === 'tails') {
            // Rotate tails 90 degrees to the right
            ctx.save()
-           ctx.translate(512, 512)
+           ctx.translate(256, 256)
            ctx.rotate(Math.PI / 2) // 90 degrees right
-           ctx.drawImage(img, -512, -512, 1024, 1024)
+           ctx.drawImage(img, -256, -256, 512, 512)
            ctx.restore()
          } else {
            // Edge texture - no rotation
-           ctx.drawImage(img, 0, 0, 1024, 1024)
+           ctx.drawImage(img, 0, 0, 512, 512)
          }
-         
-         // Reset filter
-         ctx.filter = 'none'
-         
          texture.needsUpdate = true
        }
       img.onerror = () => {
@@ -222,26 +215,26 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-                                                                               // Softer lighting for better image quality
-       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+                                       // Enhanced lighting for white coin
+       const ambientLight = new THREE.AmbientLight(0xffffff, 1.3)
        scene.add(ambientLight)
        
-       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+       const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
        directionalLight.position.set(5, 5, 5)
        scene.add(directionalLight)
       
              // Add a second light for better highlights
-       const fillLight = new THREE.DirectionalLight(0xffffff, 0.4)
+       const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
        fillLight.position.set(-3, 3, 2)
        scene.add(fillLight)
        
        // Add a subtle rim light for definition
-       const rimLight = new THREE.DirectionalLight(0xffffff, 0.2)
+       const rimLight = new THREE.DirectionalLight(0xffffff, 0.4)
        rimLight.position.set(0, -2, 3)
        scene.add(rimLight)
       
-             // Add a softer spotlight
-       const spotLight = new THREE.SpotLight(0xffffff, 0.4)
+             // Add a bright spotlight for extra richness
+       const spotLight = new THREE.SpotLight(0xffffff, 0.8)
        spotLight.position.set(0, 5, 5)
        spotLight.angle = Math.PI / 6
        spotLight.penumbra = 0.1
@@ -255,25 +248,31 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-                                       // Create materials array [edge, heads, tails] - pure white coin
+                                       // Create materials array [edge, heads, tails] - white coin with better reflectivity
        const materials = [
          new THREE.MeshStandardMaterial({ 
            map: createTexture('edge'),
-           metalness: 0.3,
-           roughness: 0.2,
-           color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF
+           metalness: 0.4,
+           roughness: 0.15,
+           color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF,
+           emissive: 0x333333,
+           emissiveIntensity: 0.15
          }),
          new THREE.MeshStandardMaterial({ 
            map: createTexture('heads', customHeadsImage),
-           metalness: 0.3,
-           roughness: 0.2,
-           color: 0xFFFFFF
+           metalness: 0.4,
+           roughness: 0.15,
+           color: 0xFFFFFF,
+           emissive: 0x333333,
+           emissiveIntensity: 0.15
          }),
          new THREE.MeshStandardMaterial({ 
            map: createTexture('tails', customTailsImage),
-           metalness: 0.3,
-           roughness: 0.2,
-           color: 0xFFFFFF
+           metalness: 0.4,
+           roughness: 0.15,
+           color: 0xFFFFFF,
+           emissive: 0x333333,
+           emissiveIntensity: 0.15
          })
        ]
 
