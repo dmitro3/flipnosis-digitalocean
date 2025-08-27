@@ -793,18 +793,27 @@ async function handleAcceptOffer(ws, data, dbService) {
   const { gameId, offerId, acceptedOffer } = data
   console.log('🎯 Handling offer acceptance:', { gameId, offerId, acceptedOffer })
   
+  // Extract offerId from acceptedOffer if not provided directly
+  const actualOfferId = offerId || (acceptedOffer && acceptedOffer.id)
+  console.log('🎯 Using offerId:', actualOfferId)
+  
+  if (!actualOfferId) {
+    console.error('❌ No offerId found in acceptance data')
+    return
+  }
+  
   // Get the offer details from the database
   try {
     const db = dbService.getDatabase()
     const offer = await new Promise((resolve, reject) => {
-      db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, result) => {
+      db.get('SELECT * FROM offers WHERE id = ?', [actualOfferId], (err, result) => {
         if (err) reject(err)
         else resolve(result)
       })
     })
     
     if (!offer) {
-      console.error('❌ Offer not found:', offerId)
+      console.error('❌ Offer not found:', actualOfferId)
       return
     }
     
@@ -814,12 +823,12 @@ async function handleAcceptOffer(ws, data, dbService) {
     const acceptanceMessage = {
       type: 'accept_crypto_offer',
       gameId: gameId,
-      offerId: offerId,
+      offerId: actualOfferId,
       creatorAddress: ws.address, // Player 1 (creator)
       acceptedOffer: {
         offerer_address: offer.offerer_address,
         cryptoAmount: offer.offer_price,
-        offerId: offerId,
+        offerId: actualOfferId,
         timestamp: new Date().toISOString()
       },
       timestamp: new Date().toISOString()
