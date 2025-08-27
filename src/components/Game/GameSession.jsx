@@ -1,106 +1,208 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import styled from 'styled-components'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useWallet } from '../../contexts/WalletContext'
-import { useToast } from '../../contexts/ToastContext'
-import webSocketService from '../../services/WebSocketService'
-import OptimizedCoinWrapper from './OptimizedCoinWrapper'
+import { useAccount } from 'wagmi'
+import useGameData from './hooks/useGameData'
+import useWebSocket from '../../hooks/useWebSocket'
+import GameChat from './GameChat'
+import GamePayment from './GamePayment'
 import PlayerCard from './PlayerCard'
-import ChatContainer from '../Lobby/ChatContainer'
-import OffersContainer from '../Lobby/OffersContainer'
-import NFTDetailsContainer from '../Lobby/NFTDetailsContainer'
-import { getApiUrl } from '../../config/api'
+import OptimizedCoinWrapper from './OptimizedCoinWrapper'
+import { useNotification } from '../../contexts/NotificationContext'
+import { detectDevice } from '../../utils/deviceDetection'
 
+// Container that transforms based on game state
 const GameContainer = styled.div`
-  width: 100%;
-  height: 100vh;
   display: flex;
-  flex-direction: ${props => props.layout === 'game' ? 'row' : 'column'};
-  gap: 20px;
-  padding: 20px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
-  position: relative;
-  overflow: hidden;
+  gap: 2rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  ${props => props.$gameMode && `
+    .left-panel {
+      width: 350px;
+      transition: width 0.5s ease;
+    }
+    
+    .center-panel {
+      display: none;
+    }
+    
+    .right-panel {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  `}
 `
 
 const LeftPanel = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  width: ${props => props.expanded ? '350px' : '300px'};
-  transition: all 0.3s ease;
-  opacity: ${props => props.show ? 1 : 0};
-  transform: ${props => props.show ? 'translateX(0)' : 'translateX(-20px)'};
+  gap: 1rem;
+  width: ${props => props.$gameMode ? '350px' : '400px'};
+  transition: all 0.5s ease;
 `
 
-const CenterArea = styled.div`
+const CenterPanel = styled.div`
   flex: 1;
+  display: ${props => props.$gameMode ? 'none' : 'flex'};
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.5s ease;
+  opacity: ${props => props.$gameMode ? 0 : 1};
+`
+
+const RightPanel = styled.div`
+  width: ${props => props.$gameMode ? 'calc(100% - 400px)' : '400px'};
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 30px;
-  position: relative;
+  gap: 1rem;
+  transition: all 0.5s ease;
 `
 
-const GameArea = styled.div`
-  width: 100%;
-  max-width: 800px;
-  display: flex;
+const GameBoard = styled.div`
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.1), rgba(30, 144, 255, 0.1));
+  border: 2px solid rgba(138, 43, 226, 0.3);
+  border-radius: 1rem;
+  padding: 2rem;
+  display: ${props => props.$show ? 'flex' : 'none'};
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 2rem;
+  animation: ${props => props.$show ? 'slideIn 0.5s ease' : 'none'};
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
 `
 
-const PlayersContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  gap: 40px;
+const NFTDetailsBox = styled.div`
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: all 0.5s ease;
+  
+  ${props => props.$compact && `
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    
+    h3 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+  `}
 `
 
-const CoinContainer = styled.div`
-  width: ${props => props.size || '300px'};
-  height: ${props => props.size || '300px'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+const OffersContainer = styled.div`
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: ${props => props.$hide ? 'none' : 'block'};
+  transition: all 0.5s ease;
+  opacity: ${props => props.$hide ? 0 : 1};
 `
 
-const ControlsContainer = styled.div`
-  display: flex;
+const CountdownOverlay = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  display: ${props => props.$show ? 'flex' : 'none'};
   flex-direction: column;
   align-items: center;
-  gap: 15px;
-  width: 100%;
-  max-width: 400px;
+  gap: 1rem;
+  animation: ${props => props.$show ? 'pulse 1s ease-in-out' : 'none'};
+`
+
+const CountdownNumber = styled.div`
+  font-size: 8rem;
+  font-weight: bold;
+  background: linear-gradient(45deg, #FF1493, #00BFFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(255, 20, 147, 0.5);
+`
+
+const GameStartingText = styled.div`
+  font-size: 2rem;
+  color: #00BFFF;
+  animation: glow 2s ease-in-out infinite;
+  
+  @keyframes glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+`
+
+const ControlPanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(138, 43, 226, 0.3);
 `
 
 const ChoiceButtons = styled.div`
   display: flex;
-  gap: 20px;
-  opacity: ${props => props.show ? 1 : 0.5};
-  pointer-events: ${props => props.show ? 'auto' : 'none'};
-  transition: all 0.3s ease;
+  gap: 1rem;
+  justify-content: center;
 `
 
 const ChoiceButton = styled.button`
-  padding: 15px 30px;
-  font-size: 18px;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
   font-weight: bold;
-  border: 2px solid ${props => props.selected ? '#00ff88' : '#444'};
-  border-radius: 10px;
-  background: ${props => props.selected ? 
-    'linear-gradient(45deg, #00ff88, #00ff44)' : 
-    'linear-gradient(45deg, #2a2a2a, #1a1a1a)'};
-  color: ${props => props.selected ? '#000' : '#fff'};
+  border: 2px solid ${props => props.$selected ? '#00BFFF' : 'rgba(138, 43, 226, 0.5)'};
+  background: ${props => props.$selected 
+    ? 'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(138, 43, 226, 0.3))'
+    : 'rgba(0, 0, 0, 0.5)'};
+  color: white;
+  border-radius: 0.75rem;
   cursor: pointer;
   transition: all 0.3s ease;
   
-  &:hover {
+  &:hover:not(:disabled) {
     transform: scale(1.05);
-    box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
+const PowerButton = styled.button`
+  padding: 1rem;
+  font-size: 1.2rem;
+  background: linear-gradient(135deg, #FF1493, #FFD700);
+  border: none;
+  border-radius: 0.75rem;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.5);
   }
   
   &:disabled {
@@ -111,603 +213,450 @@ const ChoiceButton = styled.button`
 
 const PowerBar = styled.div`
   width: 100%;
-  height: 40px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 20px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(138, 43, 226, 0.3);
+  border-radius: 15px;
   overflow: hidden;
-  position: relative;
 `
 
 const PowerFill = styled.div`
   height: 100%;
-  width: ${props => props.power}%;
-  background: linear-gradient(90deg, #ff1493, #ff69b4);
+  width: ${props => props.$power}%;
+  background: linear-gradient(90deg, #FFD700, #FF1493);
   transition: width 0.1s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  color: #fff;
-`
-
-const PowerButton = styled.button`
-  padding: 12px 30px;
-  font-size: 16px;
-  font-weight: bold;
-  background: linear-gradient(45deg, #ff1493, #ff69b4);
-  border: none;
-  border-radius: 10px;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 5px 20px rgba(255, 20, 147, 0.4);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`
-
-const CountdownOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: ${props => props.show ? 1 : 0};
-  pointer-events: ${props => props.show ? 'auto' : 'none'};
-  transition: opacity 0.5s ease;
-`
-
-const CountdownNumber = styled.div`
-  font-size: 120px;
-  font-weight: bold;
-  color: #00ff88;
-  text-shadow: 0 0 40px rgba(0, 255, 136, 0.8);
-  animation: pulse 1s ease-in-out infinite;
-  
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-  }
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 `
 
 const RoundIndicator = styled.div`
   display: flex;
-  gap: 10px;
-  padding: 10px 20px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 20px;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 1rem 0;
 `
 
 const RoundDot = styled.div`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: ${props => props.active ? '#00ff88' : 
-               props.won ? '#ffd700' : '#444'};
-  transition: all 0.3s ease;
+  background: ${props => props.$won === 'creator' ? '#00FF00' : props.$won === 'joiner' ? '#FF0000' : '#333'};
+  border: 2px solid ${props => props.$active ? '#FFD700' : '#666'};
 `
 
-const StatusMessage = styled.div`
-  padding: 15px 30px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 10px;
-  text-align: center;
-  font-size: 18px;
-  color: #fff;
-  border: 1px solid #444;
-`
-
-const GameSession = () => {
+export default function GameSession() {
   const { gameId } = useParams()
   const navigate = useNavigate()
-  const { address, isMobile } = useWallet()
-  const { showSuccess, showError, showInfo } = useToast()
+  const { address } = useAccount()
+  const { showSuccess, showError, showInfo } = useNotification()
+  const { isMobile } = detectDevice()
   
-  // Game state
-  const [gameData, setGameData] = useState(null)
-  const [gamePhase, setGamePhase] = useState('waiting')
-  const [players, setPlayers] = useState({ creator: null, joiner: null })
-  const [scores, setScores] = useState({ creator: 0, joiner: 0 })
-  const [currentRound, setCurrentRound] = useState(1)
-  const [currentTurn, setCurrentTurn] = useState('creator')
-  const [myRole, setMyRole] = useState('spectator')
+  // Game data and WebSocket
+  const {
+    gameData,
+    gameState,
+    offers,
+    messages,
+    depositTimeLeft,
+    isCreator,
+    isJoiner,
+    loadGameData,
+    handleAcceptOffer,
+    sendMessage
+  } = useGameData(gameId)
   
-  // UI state
-  const [showOffers, setShowOffers] = useState(true)
+  const { sendMessage: wsSend, lastMessage } = useWebSocket()
+  
+  // Local state
+  const [isGameMode, setIsGameMode] = useState(false)
   const [showCountdown, setShowCountdown] = useState(false)
   const [countdownNumber, setCountdownNumber] = useState(3)
-  const [layoutMode, setLayoutMode] = useState('lobby') // lobby | game
-  
-  // Game interaction state
-  const [choice, setChoice] = useState(null)
+  const [playerChoice, setPlayerChoice] = useState(null)
   const [opponentChoice, setOpponentChoice] = useState(null)
   const [powerLevel, setPowerLevel] = useState(0)
   const [isCharging, setIsCharging] = useState(false)
+  const [currentRound, setCurrentRound] = useState(1)
+  const [roundResults, setRoundResults] = useState([])
+  const [scores, setScores] = useState({ creator: 0, joiner: 0 })
+  const [isFlipping, setIsFlipping] = useState(false)
   const [flipResult, setFlipResult] = useState(null)
   
-  // Chat and offers
-  const [chatMessages, setChatMessages] = useState([])
-  const [offers, setOffers] = useState([])
-  
-  // Coin state
-  const [serverCoinRotation, setServerCoinRotation] = useState(0)
-  const [coinFlipping, setCoinFlipping] = useState(false)
-  
-  // Timer refs
   const chargeInterval = useRef(null)
-  const countdownInterval = useRef(null)
   
-  // Load initial game data
+  // WebSocket message handler
   useEffect(() => {
-    loadGameData()
-  }, [gameId])
+    if (!lastMessage) return
+    
+    const data = JSON.parse(lastMessage.data)
+    console.log('📨 GameSession received:', data.type, data)
+    
+    switch (data.type) {
+      case 'game_phase_transition':
+        handlePhaseTransition(data)
+        break
+        
+      case 'countdown_start':
+        startCountdown(data.count || 3)
+        break
+        
+      case 'round_start':
+        handleRoundStart(data)
+        break
+        
+      case 'opponent_choice':
+        setOpponentChoice(data.choice)
+        break
+        
+      case 'coin_flip_start':
+        handleCoinFlipStart(data)
+        break
+        
+      case 'coin_flip_frame':
+        // This is handled by OptimizedCoinWrapper
+        break
+        
+      case 'round_result':
+        handleRoundResult(data)
+        break
+        
+      case 'game_complete':
+        handleGameComplete(data)
+        break
+    }
+  }, [lastMessage])
   
-  const loadGameData = async () => {
-    try {
-      const response = await fetch(getApiUrl(`/games/${gameId}`))
-      const data = await response.json()
-      setGameData(data)
+  // Phase transition handler
+  const handlePhaseTransition = (data) => {
+    console.log('🎮 Phase transition:', data)
+    
+    if (data.phase === 'game_active') {
+      setIsGameMode(true)
+      showSuccess('Game is starting!')
       
-      // Set players
-      setPlayers({
-        creator: data.creator,
-        joiner: data.challenger || data.joiner
-      })
-    } catch (error) {
-      console.error('Error loading game:', error)
-      showError('Failed to load game')
+      // Start the countdown
+      setTimeout(() => {
+        startCountdown(3)
+      }, 500)
     }
   }
   
-  // WebSocket connection
-  useEffect(() => {
-    if (!gameId || !address) return
-    
-    const connectWebSocket = async () => {
-      try {
-        await webSocketService.connect(`game_${gameId}`, address)
-        
-        // Join game
-        webSocketService.send({
-          type: 'join_game',
-          gameId,
-          address
-        })
-        
-        // Register handlers
-        webSocketService.on('game_joined', handleGameJoined)
-        webSocketService.on('game_transition_started', handleGameTransition)
-        webSocketService.on('countdown_update', handleCountdownUpdate)
-        webSocketService.on('game_started', handleGameStarted)
-        webSocketService.on('turn_changed', handleTurnChanged)
-        webSocketService.on('choice_made', handleChoiceMade)
-        webSocketService.on('power_phase_started', handlePowerPhase)
-        webSocketService.on('power_charged', handlePowerCharged)
-        webSocketService.on('flip_started', handleFlipStarted)
-        webSocketService.on('coin_frame', handleCoinFrame)
-        webSocketService.on('flip_result', handleFlipResult)
-        webSocketService.on('next_round', handleNextRound)
-        webSocketService.on('game_completed', handleGameCompleted)
-        webSocketService.on('deposit_received', handleDepositReceived)
-        webSocketService.on('chat_message', handleChatMessage)
-        webSocketService.on('offer_made', handleOfferMade)
-        webSocketService.on('offer_accepted', handleOfferAccepted)
-        
-      } catch (error) {
-        console.error('WebSocket connection failed:', error)
-        showError('Failed to connect to game')
-      }
-    }
-    
-    connectWebSocket()
-    
-    return () => {
-      // Clean up
-      webSocketService.disconnect()
-      if (chargeInterval.current) clearInterval(chargeInterval.current)
-      if (countdownInterval.current) clearInterval(countdownInterval.current)
-    }
-  }, [gameId, address])
-  
-  // Message handlers
-  const handleGameJoined = (data) => {
-    setMyRole(data.role)
-    setGamePhase(data.phase)
-    setScores(data.scores)
-    setCurrentRound(data.currentRound)
-    setCurrentTurn(data.currentTurn || 'creator')
-    setOffers(data.offers || [])
-    setChatMessages(data.messages || [])
-    
-    if (data.players) {
-      setPlayers(data.players)
-    }
-  }
-  
-  const handleGameTransition = (data) => {
-    console.log('🎮 Game transition started!')
-    setShowOffers(false)
-    setLayoutMode('game')
+  // Countdown logic
+  const startCountdown = (count) => {
     setShowCountdown(true)
-    setCountdownNumber(3)
-    showInfo('Game starting!')
-  }
-  
-  const handleCountdownUpdate = (data) => {
-    setCountdownNumber(data.count)
-    if (data.count === 0) {
-      setShowCountdown(false)
-    }
-  }
-  
-  const handleGameStarted = (data) => {
-    setGamePhase('choosing')
-    setLayoutMode('game')
-    setShowOffers(false)
-    setCurrentTurn(data.currentTurn)
-    showSuccess('Game started! Player 1 goes first.')
-  }
-  
-  const handleTurnChanged = (data) => {
-    setCurrentTurn(data.currentTurn)
-    if (data.currentTurn === myRole) {
-      showInfo('Your turn!')
-    }
-  }
-  
-  const handleChoiceMade = (data) => {
-    if (data.player !== myRole) {
-      setOpponentChoice(true) // Just show they made a choice
-    }
-  }
-  
-  const handlePowerPhase = (data) => {
-    setGamePhase('power')
-    showInfo('Both players chosen! Charge your power!')
-  }
-  
-  const handlePowerCharged = (data) => {
-    if (data.player !== myRole) {
-      // Update opponent power display if needed
-    }
-  }
-  
-  const handleFlipStarted = (data) => {
-    setGamePhase('flipping')
-    setCoinFlipping(true)
-    setChoice(data.choices[myRole])
-    setOpponentChoice(data.choices[myRole === 'creator' ? 'joiner' : 'creator'])
-    showInfo('Flipping coin!')
-  }
-  
-  const handleCoinFrame = (data) => {
-    setServerCoinRotation(data.rotation)
-  }
-  
-  const handleFlipResult = (data) => {
-    setCoinFlipping(false)
-    setFlipResult(data.result)
-    setScores(data.scores)
+    setCountdownNumber(count)
     
-    const winner = data.roundWinner === myRole ? 'You' : 'Opponent'
-    showInfo(`${winner} won this round! Result: ${data.result}`)
-    
-    // Reset for next round
-    setTimeout(() => {
-      setChoice(null)
-      setOpponentChoice(null)
-      setPowerLevel(0)
-      setFlipResult(null)
-    }, 3000)
+    const interval = setInterval(() => {
+      setCountdownNumber(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setTimeout(() => {
+            setShowCountdown(false)
+            // Request round start from server
+            wsSend({
+              type: 'request_round_start',
+              gameId,
+              round: currentRound
+            })
+          }, 1000)
+          return 'GO!'
+        }
+        return prev - 1
+      })
+    }, 1000)
   }
   
-  const handleNextRound = (data) => {
+  // Round start handler
+  const handleRoundStart = (data) => {
+    console.log('🎲 Round start:', data)
     setCurrentRound(data.round)
-    setCurrentTurn(data.currentTurn)
-    setGamePhase('choosing')
-    setScores(data.scores)
+    setPlayerChoice(null)
+    setOpponentChoice(null)
+    setPowerLevel(0)
+    setIsFlipping(false)
+    setFlipResult(null)
+    showInfo(`Round ${data.round} - Make your choice!`)
   }
   
-  const handleGameCompleted = (data) => {
-    setGamePhase('completed')
-    const winner = data.winner === myRole ? 'You' : 'Opponent'
-    showSuccess(`Game Over! ${winner} won!`)
-  }
-  
-  const handleDepositReceived = (data) => {
-    if (data.bothDeposited) {
-      showSuccess('Both players deposited! Game starting...')
-    } else {
-      showInfo(`${data.player === address ? 'Your' : 'Opponent'} deposit confirmed`)
-    }
-  }
-  
-  const handleChatMessage = (data) => {
-    setChatMessages(prev => [...prev, data])
-  }
-  
-  const handleOfferMade = (data) => {
-    setOffers(prev => [...prev, data.offer])
-  }
-  
-  const handleOfferAccepted = (data) => {
-    showInfo('Offer accepted! Waiting for deposit...')
-    setGamePhase('deposit')
-  }
-  
-  // Game actions
-  const makeChoice = (selectedChoice) => {
-    if (currentTurn !== myRole) {
-      showError('Not your turn!')
-      return
-    }
+  // Player choice handler
+  const handleChoice = (choice) => {
+    if (playerChoice || !isMyTurn()) return
     
-    setChoice(selectedChoice)
-    webSocketService.send({
-      type: 'choice_made',
+    setPlayerChoice(choice)
+    
+    // Send choice to server
+    wsSend({
+      type: 'player_choice',
       gameId,
-      choice: selectedChoice
+      choice,
+      player: address
     })
+    
+    showInfo(`You chose ${choice}!`)
   }
   
+  // Power charge handlers
   const startCharging = () => {
-    if (!choice) {
-      showError('Make a choice first!')
-      return
-    }
+    if (!playerChoice || isCharging) return
     
     setIsCharging(true)
     chargeInterval.current = setInterval(() => {
       setPowerLevel(prev => {
-        if (prev >= 100) {
+        const newPower = Math.min(100, prev + 2)
+        if (newPower >= 100) {
           releasePower()
-          return 100
         }
-        return prev + 2
+        return newPower
       })
     }, 50)
   }
   
   const releasePower = () => {
-    if (chargeInterval.current) {
-      clearInterval(chargeInterval.current)
-      chargeInterval.current = null
-    }
+    if (!chargeInterval.current) return
     
+    clearInterval(chargeInterval.current)
+    chargeInterval.current = null
     setIsCharging(false)
     
-    webSocketService.send({
-      type: 'power_charged',
+    // Send power level to server
+    wsSend({
+      type: 'power_release',
       gameId,
-      powerLevel
+      power: powerLevel,
+      player: address
     })
+    
+    showSuccess(`Power released at ${powerLevel}%!`)
   }
   
-  const sendChatMessage = (message) => {
-    webSocketService.send({
-      type: 'chat_message',
-      gameId,
-      message
-    })
+  // Coin flip handler
+  const handleCoinFlipStart = (data) => {
+    setIsFlipping(true)
+    showInfo('Flipping coin...')
   }
   
-  const confirmDeposit = () => {
-    webSocketService.send({
-      type: 'deposit_confirmed',
-      gameId,
-      assetType: myRole === 'creator' ? 'nft' : 'eth'
+  // Round result handler
+  const handleRoundResult = (data) => {
+    console.log('🏆 Round result:', data)
+    
+    setFlipResult(data.result)
+    setRoundResults(prev => [...prev, {
+      round: data.round,
+      winner: data.winner
+    }])
+    
+    setScores({
+      creator: data.scores.creator,
+      joiner: data.scores.joiner
     })
+    
+    const winnerText = data.winner === address ? 'You won!' : 'You lost!'
+    showInfo(`Round ${data.round}: ${winnerText}`)
+    
+    // Reset for next round
+    setTimeout(() => {
+      if (data.round < 5 && Math.max(data.scores.creator, data.scores.joiner) < 3) {
+        handleRoundStart({ round: data.round + 1 })
+      }
+    }, 3000)
   }
   
-  // Render helpers
-  const isMyTurn = currentTurn === myRole
-  const isPlayer = myRole === 'creator' || myRole === 'joiner'
-  const canInteract = isPlayer && gamePhase === 'choosing' && isMyTurn
+  // Game complete handler
+  const handleGameComplete = (data) => {
+    console.log('🎊 Game complete:', data)
+    
+    const didWin = data.winner === address
+    if (didWin) {
+      showSuccess('🎉 Congratulations! You won the game!')
+    } else {
+      showError('😔 You lost this game. Better luck next time!')
+    }
+    
+    // Show claim button or redirect
+    setTimeout(() => {
+      if (didWin) {
+        navigate(`/claim/${gameId}`)
+      } else {
+        navigate('/marketplace')
+      }
+    }, 5000)
+  }
   
-  // Coin configuration
-  const coinConfig = useMemo(() => ({
-    gamePhase,
-    isFlipping: coinFlipping,
-    flipResult,
-    customHeadsImage: gameData?.coinData?.headsImage || '/coins/plainh.png',
-    customTailsImage: gameData?.coinData?.tailsImage || '/coins/plaint.png',
-    size: isMobile ? 200 : 300
-  }), [gameData, coinFlipping, flipResult, gamePhase, isMobile])
+  // Helper functions
+  const isMyTurn = () => {
+    // In this game, both players choose simultaneously
+    return !playerChoice && isGameMode && !showCountdown
+  }
+  
+  const canCharge = () => {
+    return playerChoice && !opponentChoice && !isFlipping
+  }
+  
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (chargeInterval.current) {
+        clearInterval(chargeInterval.current)
+      }
+    }
+  }, [])
+  
+  if (!gameData) {
+    return <div>Loading game...</div>
+  }
   
   return (
-    <GameContainer layout={layoutMode}>
+    <>
       {/* Countdown Overlay */}
-      <CountdownOverlay show={showCountdown}>
-        <CountdownNumber>{countdownNumber > 0 ? countdownNumber : 'GO!'}</CountdownNumber>
+      <CountdownOverlay $show={showCountdown}>
+        {countdownNumber === 'GO!' ? (
+          <GameStartingText>Game Starting!</GameStartingText>
+        ) : (
+          <CountdownNumber>{countdownNumber}</CountdownNumber>
+        )}
       </CountdownOverlay>
       
-      {/* Left Panel */}
-      <LeftPanel show={true} expanded={layoutMode === 'game'}>
-        {/* Chat - Always visible, moves to top-left in game mode */}
-        <ChatContainer
-          gameId={gameId}
-          gameData={gameData}
-          socket={webSocketService}
-          connected={true}
-        />
-        
-        {/* NFT Details - Only in game mode */}
-        {layoutMode === 'game' && gameData && (
-          <NFTDetailsContainer
-            gameData={gameData}
-            isCreator={myRole === 'creator'}
-            currentTurn={currentTurn}
-            nftData={{
-              image: gameData?.nft_image,
-              name: gameData?.nft_name,
-              contract_address: gameData?.nft_contract_address,
-              token_id: gameData?.nft_token_id
-            }}
-            currentChain={gameData?.chain || 'base'}
+      <GameContainer $gameMode={isGameMode}>
+        {/* Left Panel - Chat and NFT Details */}
+        <LeftPanel className="left-panel" $gameMode={isGameMode}>
+          {/* NFT Details - Compact in game mode */}
+          <NFTDetailsBox $compact={isGameMode}>
+            <h3>{gameData.nft_name || 'NFT'}</h3>
+            <p>{gameData.nft_collection}</p>
+            <p>${gameData.price_usd} USD</p>
+          </NFTDetailsBox>
+          
+          {/* Chat - Always visible */}
+          <GameChat
+            messages={messages}
+            onSendMessage={sendMessage}
+            isCompact={isGameMode}
           />
-        )}
-      </LeftPanel>
-      
-      {/* Center Area */}
-      <CenterArea>
-        {layoutMode === 'lobby' ? (
-          <>
-            {/* Lobby Mode - Offers visible */}
-            {showOffers && (
-              <OffersContainer
-                gameId={gameId}
-                gameData={gameData}
-                socket={webSocketService}
-                connected={true}
-                offers={offers}
-                isCreator={() => myRole === 'creator'}
-                onOfferSubmitted={(offerData) => {
-                  console.log('Offer submitted:', offerData)
-                }}
-                onOfferAccepted={(offer) => {
-                  webSocketService.send({
-                    type: 'accept_offer',
-                    gameId,
-                    offerId: offer.id
-                  })
-                }}
-              />
-            )}
-          </>
-        ) : (
-          <>
-            {/* Game Mode */}
-            <GameArea>
-              {/* Round Indicator */}
+        </LeftPanel>
+        
+        {/* Center Panel - Offers/Display Coin (hidden in game mode) */}
+        <CenterPanel className="center-panel" $gameMode={isGameMode}>
+          {!isGameMode && (
+            <>
+              {/* Offers Container */}
+              <OffersContainer $hide={isGameMode}>
+                <h3>Active Offers</h3>
+                {offers.map(offer => (
+                  <div key={offer.id}>
+                    {/* Offer display logic */}
+                  </div>
+                ))}
+              </OffersContainer>
+              
+              {/* Display Coin */}
+              {gameData.status === 'waiting_for_challenger' && (
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <OptimizedCoinWrapper
+                    size={200}
+                    headsImage={gameData.coin_heads_image}
+                    tailsImage={gameData.coin_tails_image}
+                    isDisplay={true}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </CenterPanel>
+        
+        {/* Right Panel - Payment/Game Board */}
+        <RightPanel className="right-panel" $gameMode={isGameMode}>
+          {!isGameMode ? (
+            // Payment Section
+            <GamePayment
+              gameData={gameData}
+              onDepositComplete={() => {
+                showSuccess('Deposit confirmed!')
+              }}
+            />
+          ) : (
+            // Game Board
+            <GameBoard $show={isGameMode}>
+              {/* Round Indicators */}
               <RoundIndicator>
                 {[1, 2, 3, 4, 5].map(round => (
                   <RoundDot
                     key={round}
-                    active={round === currentRound}
-                    won={round < currentRound && scores[myRole] > 0}
+                    $active={round === currentRound}
+                    $won={roundResults.find(r => r.round === round)?.winner}
                   />
                 ))}
               </RoundIndicator>
               
-              {/* Players */}
-              <PlayersContainer>
+              {/* Player Cards */}
+              <div style={{ display: 'flex', gap: '2rem', width: '100%', justifyContent: 'space-around' }}>
                 <PlayerCard
-                  player={{
-                    name: "Player 1",
-                    address: players.creator
-                  }}
+                  player="creator"
+                  address={gameData.creator}
                   score={scores.creator}
-                  choice={gamePhase === 'flipping' && myRole === 'creator' ? choice : null}
-                  power={myRole === 'creator' ? powerLevel : 0}
-                  isActive={currentTurn === 'creator'}
+                  choice={isCreator() ? playerChoice : opponentChoice}
+                  power={isCreator() ? powerLevel : 0}
+                  isActive={true}
                 />
                 
                 <PlayerCard
-                  player={{
-                    name: "Player 2",
-                    address: players.joiner
-                  }}
+                  player="joiner"
+                  address={gameData.challenger || gameData.joiner}
                   score={scores.joiner}
-                  choice={gamePhase === 'flipping' && myRole === 'joiner' ? choice : null}
-                  power={myRole === 'joiner' ? powerLevel : 0}
-                  isActive={currentTurn === 'joiner'}
+                  choice={isJoiner() ? playerChoice : opponentChoice}
+                  power={isJoiner() ? powerLevel : 0}
+                  isActive={true}
                 />
-              </PlayersContainer>
+              </div>
               
-              {/* Coin */}
-              <CoinContainer>
-                <OptimizedCoinWrapper
-                  {...coinConfig}
-                  isMobile={isMobile}
-                />
-              </CoinContainer>
+              {/* Game Coin */}
+              <OptimizedCoinWrapper
+                size={isMobile ? 200 : 300}
+                headsImage={gameData.coin_heads_image}
+                tailsImage={gameData.coin_tails_image}
+                isFlipping={isFlipping}
+                result={flipResult}
+                serverControlled={true}
+                gameId={gameId}
+              />
               
-              {/* Controls */}
-              {isPlayer && (
-                <ControlsContainer>
-                  {gamePhase === 'choosing' && (
-                    <>
-                      <StatusMessage>
-                        {isMyTurn ? 'Your turn! Choose heads or tails' : 'Waiting for opponent...'}
-                      </StatusMessage>
-                      
-                      <ChoiceButtons show={isMyTurn}>
-                        <ChoiceButton
-                          selected={choice === 'heads'}
-                          onClick={() => makeChoice('heads')}
-                          disabled={!isMyTurn || choice !== null}
-                        >
-                          HEADS
-                        </ChoiceButton>
-                        
-                        <ChoiceButton
-                          selected={choice === 'tails'}
-                          onClick={() => makeChoice('tails')}
-                          disabled={!isMyTurn || choice !== null}
-                        >
-                          TAILS
-                        </ChoiceButton>
-                      </ChoiceButtons>
-                    </>
-                  )}
-                  
-                  {gamePhase === 'power' && (
-                    <>
-                      <StatusMessage>Charge your power!</StatusMessage>
-                      
-                      <PowerBar>
-                        <PowerFill power={powerLevel}>
-                          {powerLevel}%
-                        </PowerFill>
-                      </PowerBar>
-                      
-                      <PowerButton
-                        onMouseDown={startCharging}
-                        onMouseUp={releasePower}
-                        onTouchStart={startCharging}
-                        onTouchEnd={releasePower}
-                        disabled={!choice}
-                      >
-                        {isCharging ? 'RELEASE!' : 'HOLD TO CHARGE'}
-                      </PowerButton>
-                    </>
-                  )}
-                  
-                  {gamePhase === 'flipping' && (
-                    <StatusMessage>Flipping coin...</StatusMessage>
-                  )}
-                  
-                  {gamePhase === 'completed' && (
-                    <StatusMessage>
-                      Game Over! {scores.creator > scores.joiner ? 'Player 1' : 'Player 2'} wins!
-                    </StatusMessage>
-                  )}
-                </ControlsContainer>
-              )}
-              
-              {/* Spectator Message */}
-              {!isPlayer && (
-                <StatusMessage>
-                  Watching as spectator. Round {currentRound} of 5
-                </StatusMessage>
-              )}
-            </GameArea>
-          </>
-        )}
-      </CenterArea>
-    </GameContainer>
+              {/* Control Panel */}
+              <ControlPanel>
+                <ChoiceButtons>
+                  <ChoiceButton
+                    onClick={() => handleChoice('heads')}
+                    disabled={!isMyTurn()}
+                    $selected={playerChoice === 'heads'}
+                  >
+                    HEADS
+                  </ChoiceButton>
+                  <ChoiceButton
+                    onClick={() => handleChoice('tails')}
+                    disabled={!isMyTurn()}
+                    $selected={playerChoice === 'tails'}
+                  >
+                    TAILS
+                  </ChoiceButton>
+                </ChoiceButtons>
+                
+                {canCharge() && (
+                  <>
+                    <PowerBar>
+                      <PowerFill $power={powerLevel} />
+                    </PowerBar>
+                    <PowerButton
+                      onMouseDown={startCharging}
+                      onMouseUp={releasePower}
+                      onTouchStart={startCharging}
+                      onTouchEnd={releasePower}
+                      disabled={!playerChoice || isFlipping}
+                    >
+                      {isCharging ? 'CHARGING...' : 'HOLD TO CHARGE'}
+                    </PowerButton>
+                  </>
+                )}
+              </ControlPanel>
+            </GameBoard>
+          )}
+        </RightPanel>
+      </GameContainer>
+    </>
   )
 }
-
-export default GameSession

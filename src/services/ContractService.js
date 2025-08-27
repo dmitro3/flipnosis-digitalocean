@@ -925,6 +925,27 @@ class ContractService {
     }
   }
 
+  // Get ETH amount for a given USD amount
+  async getETHAmount(usdAmount) {
+    if (!this.isReady()) {
+      throw new Error('Contract service not initialized')
+    }
+
+    try {
+      const ethPriceUSD = await this.getETHPriceUSD()
+      const ethAmount = parseFloat(usdAmount) / ethPriceUSD
+      
+      // Round to 6 decimal places to avoid precision issues
+      const ethAmountRounded = Math.round(ethAmount * 1000000) / 1000000
+      const ethAmountWei = ethers.parseEther(ethAmountRounded.toString())
+      
+      return ethAmountWei
+    } catch (error) {
+      console.error('❌ Error calculating ETH amount:', error)
+      throw error
+    }
+  }
+
   // Helper method to find game IDs
   async findGameIdsOptimized(nftContracts, tokenIds) {
     const gameIds = []

@@ -1,15 +1,15 @@
 import React from 'react'
-import styled from '@emotion/styled'
+import styled from 'styled-components'
 
 const Card = styled.div`
   background: rgba(0, 0, 0, 0.8);
-  border: 2px solid ${props => props.isActive ? '#00FF41' : 'rgba(255, 255, 255, 0.3)'};
+  border: 2px solid ${props => props.$isActive ? '#00FF41' : 'rgba(255, 255, 255, 0.3)'};
   border-radius: 1rem;
   padding: 1.5rem;
   text-align: center;
   transition: all 0.3s;
   
-  ${props => props.isActive && `
+  ${props => props.$isActive && `
     box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
     animation: activePulse 2s ease-in-out infinite;
     
@@ -46,7 +46,7 @@ const Choice = styled.div`
   border-radius: 0.5rem;
   padding: 0.5rem;
   margin: 0.5rem 0;
-  color: ${props => props.choice ? '#00FF41' : 'rgba(255, 255, 255, 0.5)'};
+  color: ${props => props.$choice ? '#00FF41' : 'rgba(255, 255, 255, 0.5)'};
   font-weight: bold;
 `
 
@@ -62,7 +62,7 @@ const PowerBar = styled.div`
 const PowerFill = styled.div`
   height: 100%;
   background: linear-gradient(90deg, #00FF41, #00BFFF);
-  width: ${props => props.power}%;
+  width: ${props => props.$power}%;
   transition: width 0.3s ease;
 `
 
@@ -88,8 +88,10 @@ const TurnIndicator = styled.div`
   }
 `
 
-const PlayerCard = ({ player, isActive, score, choice, power }) => {
-  if (!player || !player.address) {
+const PlayerCard = ({ player, address, isActive, score, choice, power }) => {
+  const playerName = player === 'creator' ? 'Player 1' : 'Player 2'
+  
+  if (!address) {
     return (
       <Card>
         <PlayerName>Waiting for player...</PlayerName>
@@ -98,20 +100,20 @@ const PlayerCard = ({ player, isActive, score, choice, power }) => {
   }
 
   return (
-    <Card isActive={isActive}>
-      <PlayerName>{player.name || 'Unknown Player'}</PlayerName>
-      <PlayerAddress>{player.address}</PlayerAddress>
+    <Card $isActive={isActive}>
+      <PlayerName>{playerName}</PlayerName>
+      <PlayerAddress>{address}</PlayerAddress>
       
       <Score>{score || 0}</Score>
       
       {choice && (
-        <Choice choice={choice}>
+        <Choice $choice={choice}>
           {choice.toUpperCase()}
         </Choice>
       )}
       
       <PowerBar>
-        <PowerFill power={power || 0} />
+        <PowerFill $power={power || 0} />
       </PowerBar>
       <PowerText>Power: {power || 0}%</PowerText>
       

@@ -1,35 +1,89 @@
 // utils/useWebSocket.js
 // Stable WebSocket service hook that's resistant to minification
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import webSocketService from '../services/WebSocketService'
 
-// Create a stable reference to the WebSocket service
-const WS_SERVICE = {
-  // Explicit method references that won't be minified
-  connect: (gameId, address) => webSocketService.connect(gameId, address),
-  send: (message) => webSocketService.send(message),
-  sendAutoFlip: (gameId, player, choice) => webSocketService.sendAutoFlip(gameId, player, choice),
-  on: (messageType, handler) => webSocketService.on(messageType, handler),
-  off: (messageType, handler) => webSocketService.off(messageType, handler),
-  disconnect: () => webSocketService.disconnect(),
-  getWebSocket: () => webSocketService.getWebSocket(),
-  isConnected: () => webSocketService.isConnected(),
-  isInitialized: () => webSocketService.isInitialized()
-}
-
 export function useWebSocket() {
-  const serviceRef = useRef(WS_SERVICE)
-  
-  // Ensure the service is properly initialized
+  const [lastMessage, setLastMessage] = useState(null)
+  const [isConnected, setIsConnected] = useState(false)
+  const messageHandlers = useRef(new Map())
+
   useEffect(() => {
-    if (!serviceRef.current.isInitialized()) {
-      console.warn('⚠️ WebSocket service not properly initialized')
+    // Set up message handler
+    const handleMessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        setLastMessage(event)
+        
+        // Call any registered handlers
+        if (messageHandlers.current.has(data.type)) {
+          messageHandlers.current.get(data.type).forEach(handler => {
+            try {
+              handler(data)
+            } catch (error) {
+              console.error('Error in message handler:', error)
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error)
+      }
+    }
+
+    // Set up connection status handler
+    const handleConnectionChange = (connected) => {
+      setIsConnected(connected)
+    }
+
+    // Register with WebSocket service
+    webSocketService.on('message', handleMessage)
+    webSocketService.on('connection_change', handleConnectionChange)
+
+    // Check initial connection status
+    setIsConnected(webSocketService.isConnected())
+
+    return () => {
+      webSocketService.off('message', handleMessage)
+      webSocketService.off('connection_change', handleConnectionChange)
     }
   }, [])
-  
-  return serviceRef.current
-}
 
-// Export the stable service reference for direct use
-export { WS_SERVICE as webSocketService }
+  const sendMessage = (message) => {
+    if (!isConnected) {
+      console.warn('WebSocket not connected, attempting to send message:', message)
+    }
+    webSocketService.send(message)
+  }
+
+  const connect = (gameId, address) => {
+    return webSocketService.connect(gameId, address)
+  }
+
+  const disconnect = () => {
+    webSocketService.disconnect()
+  }
+
+  const on = (messageType, handler) => {
+    if (!messageHandlers.current.has(messageType)) {
+      messageHandlers.current.set(messageType, new Set())
+    }
+    messageHandlers.current.get(messageType).add(handler)
+  }
+
+  const off = (messageType, handler) => {
+    if (messageHandlers.current.has(messageType)) {
+      messageHandlers.current.get(messageType).delete(handler)
+    }
+  }
+
+  return {
+    lastMessage,
+    isConnected,
+    sendMessage,
+    connect,
+    disconnect,
+    on,
+    off
+  }
+}

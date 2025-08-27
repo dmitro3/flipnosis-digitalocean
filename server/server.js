@@ -9,7 +9,7 @@ const fs = require('fs')
 
 // Import route handlers
 const { createApiRoutes } = require('./routes/api')
-const { handleConnection, broadcastToRoom } = require('./handlers/unifiedWebSocket')
+const { initializeWebSocket, broadcastToRoom } = require('./handlers/unifiedWebSocket')
 const { DatabaseService } = require('./services/database')
 const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
@@ -110,13 +110,8 @@ async function initializeServices() {
   const cleanupService = new CleanupService(dbService, blockchainService)
   cleanupService.start()
 
-  // Set global wss reference for unified handlers
-  global.wss = wss
-  
   // Initialize WebSocket handlers
-  wss.on('connection', (ws, req) => {
-    handleConnection(ws, dbService)
-  })
+  initializeWebSocket(server)
 
   // Initialize API routes
   const apiRouter = createApiRoutes(dbService, blockchainService, { broadcastToRoom })
@@ -245,7 +240,7 @@ async function handleGameReady(gameId, nftDepositor, cryptoDepositor, dbService,
     
     if (!gameRoom) {
       // Create new game room with the NFT depositor as creator
-      const GameRoom = require('./handlers/unifiedWebSocket').GameRoom
+      const { GameRoom } = require('./handlers/unifiedWebSocket')
       gameRoom = new GameRoom(originalGameId, nftDepositor)
       gameRooms.set(originalGameId, gameRoom)
       console.log('🏠 Created new GameRoom for GameReady event:', originalGameId)
@@ -253,22 +248,17 @@ async function handleGameReady(gameId, nftDepositor, cryptoDepositor, dbService,
     
     // Set up the game room with both players
     gameRoom.joiner = cryptoDepositor
-    gameRoom.phase = 'deposit'
-    gameRoom.depositsConfirmed = { creator: true, joiner: true }
+    gameRoom.phase = 'locked'
     
-    // Clear any existing deposit timer and start game transition
-    gameRoom.clearDepositTimer()
+    // Start the game
+    gameRoom.startGame()
     
     console.log('🎯 Game room set up for GameReady event:', {
       gameId: originalGameId,
       creator: gameRoom.creator,
       joiner: gameRoom.joiner,
-      phase: gameRoom.phase,
-      depositsConfirmed: gameRoom.depositsConfirmed
+      phase: gameRoom.phase
     })
-    
-    // Start the game transition (countdown and game start)
-    gameRoom.startGameTransition()
     
     // Broadcast the game ready event to all connected clients
     const roomId = `game_${originalGameId}`
@@ -372,7 +362,7 @@ initializeServices()
         
         // Initialize the same WebSocket handlers for HTTPS
         wssSecure.on('connection', (ws, req) => {
-          handleConnection(ws, dbService)
+          // The new WebSocket handler will be initialized automatically
         })
         
         // Listen on port 443 for HTTPS/WSS
