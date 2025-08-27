@@ -1,5 +1,5 @@
 const WebSocket = require('ws')
-const dbService = require('../services/databaseService')
+const dbService = require('../services/database')
 
 // Game rooms storage
 const gameRooms = new Map()
