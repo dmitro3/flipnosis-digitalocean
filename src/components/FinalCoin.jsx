@@ -299,26 +299,26 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-    // Warm amber lighting for rich coin appearance
-    const ambientLight = new THREE.AmbientLight(0xFFD700, 0.4)
+    // Clean white lighting for vibrant coin appearance
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
     scene.add(ambientLight)
     
-    const directionalLight = new THREE.DirectionalLight(0xFFA500, 0.8)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
     directionalLight.position.set(5, 5, 5)
     scene.add(directionalLight)
     
     // Add a second light for better highlights
-    const fillLight = new THREE.DirectionalLight(0xFFD700, 0.5)
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6)
     fillLight.position.set(-3, 3, 2)
     scene.add(fillLight)
     
     // Add a subtle rim light for definition
-    const rimLight = new THREE.DirectionalLight(0xFF8C00, 0.3)
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3)
     rimLight.position.set(0, -2, 3)
     scene.add(rimLight)
     
-    // Add a warm spotlight for extra richness
-    const spotLight = new THREE.SpotLight(0xFFD700, 0.4)
+    // Add a bright spotlight for extra richness
+    const spotLight = new THREE.SpotLight(0xffffff, 0.5)
     spotLight.position.set(0, 5, 5)
     spotLight.angle = Math.PI / 6
     spotLight.penumbra = 0.1
