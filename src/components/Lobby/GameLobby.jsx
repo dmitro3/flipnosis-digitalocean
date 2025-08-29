@@ -84,7 +84,7 @@ const LobbyBackgroundContainer = styled.div`
 
 const LobbyContent = styled.div`
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 3rem;
   width: 100%;
   position: relative;
@@ -106,7 +106,7 @@ const NFTAndCoinSection = styled.div`
 
 const NFTDetailsWrapper = styled.div`
   width: 100%;
-  max-width: 400px;
+  max-width: 600px;
 `
 
 const CoinSection = styled.div`

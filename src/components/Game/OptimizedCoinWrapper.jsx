@@ -28,8 +28,8 @@ const CoinFace = styled.div`
   backface-visibility: hidden;
   background-size: cover;
   background-position: center;
-  box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
-  filter: brightness(1.1) contrast(1.1);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  filter: brightness(1.1) contrast(1.1) sepia(0.1) hue-rotate(10deg);
 `
 
 const HeadsFace = styled(CoinFace)`
@@ -147,16 +147,16 @@ export default function OptimizedCoinWrapper({
       containerRef.current.appendChild(renderer.domElement)
     }
     
-    // Enhanced lighting for vibrant coin appearance
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+    // Warm amber lighting for rich coin appearance
+    const ambientLight = new THREE.AmbientLight(0xFFD700, 0.4)
     scene.add(ambientLight)
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
+    const directionalLight = new THREE.DirectionalLight(0xFFA500, 0.8)
     directionalLight.position.set(1, 1, 0.5)
     scene.add(directionalLight)
     
     // Add fill light for better highlights
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6)
+    const fillLight = new THREE.DirectionalLight(0xFFD700, 0.5)
     fillLight.position.set(-1, 1, 0.5)
     scene.add(fillLight)
     
