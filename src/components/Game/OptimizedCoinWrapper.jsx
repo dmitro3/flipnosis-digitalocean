@@ -29,6 +29,7 @@ const CoinFace = styled.div`
   background-size: cover;
   background-position: center;
   box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+  filter: brightness(1.1) contrast(1.1);
 `
 
 const HeadsFace = styled(CoinFace)`
@@ -146,13 +147,18 @@ export default function OptimizedCoinWrapper({
       containerRef.current.appendChild(renderer.domElement)
     }
     
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+    // Enhanced lighting for vibrant coin appearance
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
     scene.add(ambientLight)
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
     directionalLight.position.set(1, 1, 0.5)
     scene.add(directionalLight)
+    
+    // Add fill light for better highlights
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6)
+    fillLight.position.set(-1, 1, 0.5)
+    scene.add(fillLight)
     
     // Create coin geometry
     const geometry = new THREE.CylinderGeometry(1, 1, 0.1, 64)
@@ -162,11 +168,23 @@ export default function OptimizedCoinWrapper({
     const headsTexture = textureLoader.load(headsImage)
     const tailsTexture = textureLoader.load(tailsImage)
     
-    // Materials
+    // Enhanced materials for vibrant coin appearance
     const materials = [
-      new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.8, roughness: 0.2 }), // Edge
-      new THREE.MeshStandardMaterial({ map: headsTexture }), // Top (heads)
-      new THREE.MeshStandardMaterial({ map: tailsTexture }) // Bottom (tails)
+      new THREE.MeshStandardMaterial({ 
+        color: 0xFFD700, 
+        metalness: 0.6, 
+        roughness: 0.3 
+      }), // Edge
+      new THREE.MeshStandardMaterial({ 
+        map: headsTexture,
+        metalness: 0.2,
+        roughness: 0.25
+      }), // Top (heads)
+      new THREE.MeshStandardMaterial({ 
+        map: tailsTexture,
+        metalness: 0.2,
+        roughness: 0.25
+      }) // Bottom (tails)
     ]
     
     // Create coin mesh

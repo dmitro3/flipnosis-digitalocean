@@ -35,7 +35,7 @@ const Container = styled.div`
 
 const GameContainer = styled.div`
   width: 100%;
-  max-width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
   
@@ -47,7 +47,7 @@ const GameContainer = styled.div`
 const GameLayout = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 3rem;
   align-items: center;
 `
 
@@ -56,9 +56,9 @@ const LobbyBackgroundContainer = styled.div`
   background: rgba(0, 0, 20, 0.95);
   border: 2px solid #FFD700;
   border-radius: 1rem;
-  padding: 2rem;
+  padding: 2.5rem;
   width: 100%;
-  max-width: 1800px;
+  max-width: 1400px;
   margin: 0 auto;
   box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
   position: relative;
@@ -85,7 +85,7 @@ const LobbyBackgroundContainer = styled.div`
 const LobbyContent = styled.div`
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr;
-  gap: 2rem;
+  gap: 3rem;
   width: 100%;
   position: relative;
   z-index: 2;
@@ -93,14 +93,14 @@ const LobbyContent = styled.div`
   
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 2rem;
   }
 `
 
 const NFTAndCoinSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 3rem;
   align-items: center;
 `
 
@@ -121,7 +121,7 @@ const CoinSection = styled.div`
 `
 
 const OffersSection = styled.div`
-  height: 800px;
+  height: 750px;
   opacity: ${props => props.show ? 1 : 0};
   transform: ${props => props.show ? 'translateX(0)' : 'translateX(20px)'};
   transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
@@ -632,7 +632,7 @@ const GameLobby = () => {
                 </NFTAndCoinSection>
                 
                 {/* Chat Container */}
-                <div style={{ height: '800px' }}>
+                <div style={{ height: '750px' }}>
                   <ChatContainer
                     gameId={gameId}
                     gameData={gameData}

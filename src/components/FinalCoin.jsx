@@ -59,33 +59,55 @@ const FinalCoin = ({
     canvas.height = 512
     const ctx = canvas.getContext('2d')
 
-         if (customImage) {
-       // Use custom image
-       const img = new Image()
-       img.crossOrigin = 'anonymous'
-       img.src = customImage
-       img.onload = () => {
-         // Rotate the image based on type
-         if (type === 'heads') {
-           // Rotate heads 90 degrees to the left
-           ctx.save()
-           ctx.translate(256, 256)
-           ctx.rotate(-Math.PI / 2) // 90 degrees left
-           ctx.drawImage(img, -256, -256, 512, 512)
-           ctx.restore()
-         } else if (type === 'tails') {
-           // Rotate tails 90 degrees to the right
-           ctx.save()
-           ctx.translate(256, 256)
-           ctx.rotate(Math.PI / 2) // 90 degrees right
-           ctx.drawImage(img, -256, -256, 512, 512)
-           ctx.restore()
-         } else {
-           // Edge texture - no rotation
-           ctx.drawImage(img, 0, 0, 512, 512)
-         }
-         texture.needsUpdate = true
-       }
+    if (customImage) {
+      // Use custom image with enhanced brightness and contrast
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.src = customImage
+      img.onload = () => {
+        // Clear canvas first
+        ctx.clearRect(0, 0, 512, 512)
+        
+        // Rotate the image based on type
+        if (type === 'heads') {
+          // Rotate heads 90 degrees to the left
+          ctx.save()
+          ctx.translate(256, 256)
+          ctx.rotate(-Math.PI / 2) // 90 degrees left
+          ctx.drawImage(img, -256, -256, 512, 512)
+          ctx.restore()
+        } else if (type === 'tails') {
+          // Rotate tails 90 degrees to the right
+          ctx.save()
+          ctx.translate(256, 256)
+          ctx.rotate(Math.PI / 2) // 90 degrees right
+          ctx.drawImage(img, -256, -256, 512, 512)
+          ctx.restore()
+        } else {
+          // Edge texture - no rotation
+          ctx.drawImage(img, 0, 0, 512, 512)
+        }
+        
+        // Enhance brightness and contrast for custom images
+        const imageData = ctx.getImageData(0, 0, 512, 512)
+        const data = imageData.data
+        
+        for (let i = 0; i < data.length; i += 4) {
+          // Enhance brightness (add 20 to each RGB channel)
+          data[i] = Math.min(255, data[i] + 20)     // Red
+          data[i + 1] = Math.min(255, data[i + 1] + 20) // Green
+          data[i + 2] = Math.min(255, data[i + 2] + 20) // Blue
+          
+          // Enhance contrast slightly
+          const factor = 1.1
+          data[i] = Math.min(255, Math.max(0, (data[i] - 128) * factor + 128))
+          data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * factor + 128))
+          data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * factor + 128))
+        }
+        
+        ctx.putImageData(imageData, 0, 0)
+        texture.needsUpdate = true
+      }
       img.onerror = () => {
         console.warn('Failed to load custom image, using default')
         // Fall back to default texture - rich white coin faces
@@ -277,30 +299,30 @@ const FinalCoin = ({
     rendererRef.current = renderer
     mountRef.current.appendChild(renderer.domElement)
 
-                                       // Enhanced lighting for white coin
-       const ambientLight = new THREE.AmbientLight(0xffffff, 1.3)
-       scene.add(ambientLight)
-       
-       const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
-       directionalLight.position.set(5, 5, 5)
-       scene.add(directionalLight)
-      
-             // Add a second light for better highlights
-       const fillLight = new THREE.DirectionalLight(0xffffff, 1.0)
-       fillLight.position.set(-3, 3, 2)
-       scene.add(fillLight)
-       
-       // Add a subtle rim light for definition
-       const rimLight = new THREE.DirectionalLight(0xffffff, 0.4)
-       rimLight.position.set(0, -2, 3)
-       scene.add(rimLight)
-      
-             // Add a bright spotlight for extra richness
-       const spotLight = new THREE.SpotLight(0xffffff, 0.8)
-       spotLight.position.set(0, 5, 5)
-       spotLight.angle = Math.PI / 6
-       spotLight.penumbra = 0.1
-       scene.add(spotLight)
+    // Enhanced lighting for vibrant coin appearance
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+    scene.add(ambientLight)
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
+    directionalLight.position.set(5, 5, 5)
+    scene.add(directionalLight)
+    
+    // Add a second light for better highlights
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.6)
+    fillLight.position.set(-3, 3, 2)
+    scene.add(fillLight)
+    
+    // Add a subtle rim light for definition
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3)
+    rimLight.position.set(0, -2, 3)
+    scene.add(rimLight)
+    
+    // Add a bright spotlight for extra richness
+    const spotLight = new THREE.SpotLight(0xffffff, 0.5)
+    spotLight.position.set(0, 5, 5)
+    spotLight.angle = Math.PI / 6
+    spotLight.penumbra = 0.1
+    scene.add(spotLight)
 
     // Create coin geometry (cylinder)
     const geometry = new THREE.CylinderGeometry(
@@ -310,33 +332,27 @@ const FinalCoin = ({
       64      // segments for smooth edges
     )
 
-                                       // Create materials array [edge, heads, tails] - white coin with better reflectivity
-       const materials = [
-         new THREE.MeshStandardMaterial({ 
-           map: createTexture('edge'),
-           metalness: 0.4,
-           roughness: 0.15,
-           color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF,
-           emissive: 0x333333,
-           emissiveIntensity: 0.15
-         }),
-         new THREE.MeshStandardMaterial({ 
-           map: createTexture('heads', customHeadsImage),
-           metalness: 0.4,
-           roughness: 0.15,
-           color: 0xFFFFFF,
-           emissive: 0x333333,
-           emissiveIntensity: 0.15
-         }),
-         new THREE.MeshStandardMaterial({ 
-           map: createTexture('tails', customTailsImage),
-           metalness: 0.4,
-           roughness: 0.15,
-           color: 0xFFFFFF,
-           emissive: 0x333333,
-           emissiveIntensity: 0.15
-         })
-       ]
+    // Create materials array [edge, heads, tails] - vibrant coin with better reflectivity
+    const materials = [
+      new THREE.MeshStandardMaterial({ 
+        map: createTexture('edge'),
+        metalness: 0.3,
+        roughness: 0.2,
+        color: material?.edgeColor ? new THREE.Color(material.edgeColor) : 0xFFFFFF
+      }),
+      new THREE.MeshStandardMaterial({ 
+        map: createTexture('heads', customHeadsImage),
+        metalness: 0.2,
+        roughness: 0.25,
+        color: 0xFFFFFF
+      }),
+      new THREE.MeshStandardMaterial({ 
+        map: createTexture('tails', customTailsImage),
+        metalness: 0.2,
+        roughness: 0.25,
+        color: 0xFFFFFF
+      })
+    ]
 
     // Create coin mesh
     const coin = new THREE.Mesh(geometry, materials)
