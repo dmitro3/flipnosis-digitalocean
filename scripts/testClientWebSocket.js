@@ -22,7 +22,7 @@ async function testClientWebSocket() {
     // Test registering a user
     const registerMessage = {
       type: 'register_user',
-      address: '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+      address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
     }
     
     console.log('📤 Sending register user message:', registerMessage)
@@ -34,7 +34,7 @@ async function testClientWebSocket() {
       gameId: 'game_1754297289484_9a67344dea0dc111',
       action: 'MAKE_CHOICE',
       choice: 'heads',
-      player: '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+      player: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
     }
     
     console.log('📤 Sending game action message:', gameActionMessage)

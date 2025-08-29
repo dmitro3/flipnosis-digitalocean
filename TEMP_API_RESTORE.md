@@ -18,7 +18,7 @@ router.post('/admin/restore-games', async (req, res) => {
     ];
 
     const NFT_CONTRACT = '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f';
-    const ADMIN_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28';
+    const ADMIN_ADDRESS = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628';
     
     for (const game of missingGames) {
       await new Promise((resolve, reject) => {
@@ -50,9 +50,9 @@ If you have database admin access, run:
 
 ```sql
 INSERT OR REPLACE INTO games (id, creator, nft_contract, nft_token_id, nft_name, price_usd, status, created_at, creator_deposited) VALUES
-('listing_1755362734367_80a233d43e8c7d33', '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 5274, 'NFT #5274', 0.15, 'waiting', datetime('now'), 1),
-('listing_1755362378481_68e63436638e60fc', '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 9287, 'NFT #9287', 0.15, 'waiting', datetime('now'), 1),
-('listing_1755362334407_5c7bfe5d205da6c5', '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 9289, 'NFT #9289', 0.15, 'waiting', datetime('now'), 1),
-('listing_1755361845873_fc762e5943599768', '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 9201, 'NFT #9201', 0.14, 'waiting', datetime('now'), 1),
-('listing_1755361426703_dce7bf4a68ee978c', '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 1271, 'NFT #1271', 0.15, 'waiting', datetime('now'), 1);
+('listing_1755362734367_80a233d43e8c7d33', '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 5274, 'NFT #5274', 0.15, 'waiting', datetime('now'), 1),
+('listing_1755362378481_68e63436638e60fc', '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 9287, 'NFT #9287', 0.15, 'waiting', datetime('now'), 1),
+('listing_1755362334407_5c7bfe5d205da6c5', '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 9289, 'NFT #9289', 0.15, 'waiting', datetime('now'), 1),
+('listing_1755361845873_fc762e5943599768', '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 9201, 'NFT #9201', 0.14, 'waiting', datetime('now'), 1),
+('listing_1755361426703_dce7bf4a68ee978c', '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f', 1271, 'NFT #1271', 0.15, 'waiting', datetime('now'), 1);
 ```

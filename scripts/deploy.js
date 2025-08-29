@@ -6,7 +6,7 @@ async function main() {
   // Base USDC address (if needed, otherwise use address(0))
   const USDC_TOKEN = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
   // Your platform fee receiver
-  const PLATFORM_FEE_RECEIVER = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+  const PLATFORM_FEE_RECEIVER = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
   
   console.log('🚀 Deploying NFTFlipGame with 5-minute deposit timeout...')
   

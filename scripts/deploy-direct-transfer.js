@@ -7,7 +7,7 @@ async function main() {
   const NFTFlipGame = await ethers.getContractFactory("NFTFlipGame");
   
   // Deploy with the same constructor parameters as the current contract
-  const platformFeeReceiver = "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28"; // Admin address
+  const platformFeeReceiver = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628"; // Admin address
   const usdcToken = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // USDC on Base
   
   console.log("📋 Deploying with parameters:");

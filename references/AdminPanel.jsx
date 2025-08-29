@@ -211,7 +211,7 @@ const CHAIN_CONFIGS = {
 }
 
 // Admin wallet address (update this)
-const ADMIN_WALLET = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28' // Admin wallet address
+const ADMIN_WALLET = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628' // Admin wallet address
 
 // Styled Components
 const AdminContainer = styled.div`

@@ -524,8 +524,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         { id: 'listing_1755432977848_761c57c637678810', nft_token_id: 2378, price_usd: 0.15 }
       ]
 
-      const NFT_CONTRACT = '0x035003062428fd92384317d7a853d8b4dff9888a'
-      const ADMIN_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+      const ADMIN_ADDRESS = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
       
       let restoredCount = 0
       
@@ -537,7 +536,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
               nft_collection, price_usd, status, created_at, creator_deposited
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, [
-            game.id, ADMIN_ADDRESS, NFT_CONTRACT, game.nft_token_id,
+            game.id, ADMIN_ADDRESS, '0x0000000000000000000000000000000000000000', game.nft_token_id,
             `NFT #${game.nft_token_id}`, '', 'Unknown Collection',
             game.price_usd, 'waiting', new Date().toISOString(), 1
           ], function(err) {

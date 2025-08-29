@@ -4,7 +4,7 @@ async function main() {
   console.log("🚀 Deploying updated NFTFlipGame contract...");
 
   const USDC_TOKEN = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base mainnet USDC
-  const PLATFORM_FEE_RECEIVER = "0xF5980979c1B0B43f78c8EeAaB697d25C611c0E0a"; // Your fee receiver address
+  const PLATFORM_FEE_RECEIVER = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628"; // Your fee receiver address
 
   console.log("📋 Deployment parameters:");
   console.log("  - Platform Fee Receiver:", PLATFORM_FEE_RECEIVER);

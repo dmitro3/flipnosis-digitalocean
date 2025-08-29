@@ -2,7 +2,7 @@
 
 ## ✅ **Credentials Ready**
 - **Private Key**: `f19dd56173918d384a2ff2d73905ebc666034b6abd34312a074b4a80ddb2e80c`
-- **Wallet Address**: `0x47d80671bcb7ec368ef4d3ca6e1c20173ccc9a28`
+- **Wallet Address**: `0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`
 - **Contract**: `0x6527c1e6b12cd0F6d354B15CF7935Dc5516DEcaf`
 - **Server IP**: `143.198.166.196`
 

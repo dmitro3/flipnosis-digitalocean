@@ -58,7 +58,7 @@ const missingGames = [
 
 // NFT contract address (from console output)
 const NFT_CONTRACT = '0x70cdcc990efbd44a1cb1c86f7feb9962d15ed71f';
-const ADMIN_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28';
+const ADMIN_ADDRESS = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628';
 
 async function restoreMissingGames() {
   return new Promise((resolve, reject) => {

@@ -5,7 +5,7 @@ async function checkContractNFTs() {
   
   const RPC_URL = 'https://mainnet.base.org'
 const GAME_CONTRACT_ADDRESS = '0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69'
-const CREATOR_ADDRESS = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+const CREATOR_ADDRESS = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
   
   try {
     const provider = new ethers.JsonRpcProvider(RPC_URL)

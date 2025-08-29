@@ -17,8 +17,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
 // Game data from the frontend
 const gameId = 'game_1755622348054_dd45ba7e57f10cf6';
 const listingId = 'listing_1755622345767_2309eb50f48e54fe';
-const creatorAddress = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'; // From console logs
-const nftContract = '0x035003062428fD92384317d7a853d8b4Dff9888a'; // BASE APE TEAM contract
+const creatorAddress = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'; // From console logs
+const nftContract = '0x0000000000000000000000000000000000000000'; // Placeholder - should be dynamic
 const nftTokenId = '7639';
 const nftName = 'BASE APE TEAM #7639';
 const nftCollection = 'BASE APE TEAM';

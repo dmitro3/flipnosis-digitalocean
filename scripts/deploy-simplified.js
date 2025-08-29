@@ -14,7 +14,7 @@ async function main() {
   // Contract configuration for Base mainnet
   const ETH_USD_FEED = "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70"; // Base mainnet ETH/USD
   const USDC_TOKEN = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base mainnet USDC
-  const PLATFORM_FEE_RECEIVER = "0xF5980979c1B0B43f78c8EeAaB697d25C611c0E0a"; // Your fee receiver address
+  const PLATFORM_FEE_RECEIVER = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628"; // Your fee receiver address
 
   console.log("📋 Contract parameters:");
   console.log("  ETH/USD Feed:", ETH_USD_FEED);

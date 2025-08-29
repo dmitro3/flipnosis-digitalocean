@@ -194,7 +194,7 @@ const PortalMenu = ({ isOpen, onClose }) => {
   const { isConnected, address, chain } = useWallet();
 
   // Admin wallet address
-  const ADMIN_WALLET = '0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28'
+  const ADMIN_WALLET = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
   const isAdmin = isConnected && address && address.toLowerCase() === ADMIN_WALLET.toLowerCase()
 
   const handleInfoClick = () => {

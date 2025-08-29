@@ -62,7 +62,7 @@ The admin panel's NFT Management tab was not displaying any NFTs from the contra
 
 ## Testing Recommendations
 
-1. **Connect Admin Wallet**: Use the admin wallet (`0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28`)
+1. **Connect Admin Wallet**: Use the admin wallet (`0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`)
 2. **Load NFTs**: Click "Load NFTs" in the NFT Management tab
 3. **Verify Display**: Check that NFTs show with proper images and metadata
 4. **Test Withdrawal**: Select NFTs and test withdrawal to admin wallet
