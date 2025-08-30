@@ -365,24 +365,55 @@ const clients = new Map() // socketId -> { socket, address, gameId }
 const userSockets = new Map() // address -> socketId
 
 // Broadcast to room
-function broadcastToRoom(gameId, message) {
-  const roomId = `game_${gameId}`
+function broadcastToRoom(roomId, message) {
   const messageStr = JSON.stringify(message)
   
   console.log(`📢 Broadcasting to room ${roomId}:`, message.type)
   
   let sentCount = 0
-  clients.forEach((client, socketId) => {
-    if (client.gameId === gameId && client.socket.readyState === WebSocket.OPEN) {
-      try {
-        client.socket.send(messageStr)
-        sentCount++
-      } catch (error) {
-        console.error(`❌ Failed to send to client ${socketId}:`, error)
-        clients.delete(socketId)
-      }
+  
+  // Check if this is a chat room (has 'game_' prefix)
+  if (roomId.startsWith('game_')) {
+    const room = rooms.get(roomId)
+    if (room) {
+      // Get all active WebSocket clients
+      const activeClients = Array.from(wss.clients).filter(client => 
+        client.readyState === WebSocket.OPEN
+      )
+      
+      // Broadcast to room members
+      room.forEach(socketId => {
+        const client = activeClients.find(s => s.id === socketId)
+        if (client) {
+          try {
+            client.send(messageStr)
+            sentCount++
+            console.log(`✅ Sent message to client ${socketId}`)
+          } catch (error) {
+            console.error(`❌ Failed to send to client ${socketId}:`, error)
+            // Remove failed client from room
+            room.delete(socketId)
+          }
+        } else {
+          console.log(`⚠️ Client ${socketId} not found or not connected, removing from room`)
+          room.delete(socketId)
+        }
+      })
     }
-  })
+  } else {
+    // Handle game room broadcasting (existing logic)
+    clients.forEach((client, socketId) => {
+      if (client.gameId === roomId && client.socket.readyState === WebSocket.OPEN) {
+        try {
+          client.socket.send(messageStr)
+          sentCount++
+        } catch (error) {
+          console.error(`❌ Failed to send to client ${socketId}:`, error)
+          clients.delete(socketId)
+        }
+      }
+    })
+  }
   
   console.log(`✅ Broadcast sent to ${sentCount} clients`)
 }
@@ -477,6 +508,124 @@ function handleRequestRoundStart(socket, data) {
   }
 }
 
+// Chat functionality
+const rooms = new Map() // General lobby rooms: game_${gameId} -> Set<socketId>
+const socketRooms = new Map() // socketId -> roomId
+
+async function handleJoinRoom(socket, data, dbService) {
+  const { roomId } = data
+  
+  // Normalize room ID - remove any double prefixes
+  let targetRoomId = roomId
+  
+  // Remove any existing game_ prefix to avoid double prefixes
+  if (targetRoomId.startsWith('game_game_')) {
+    targetRoomId = targetRoomId.replace('game_game_', 'game_')
+  } else if (targetRoomId.startsWith('game_room_')) {
+    // Keep game_room_ prefix as is
+  } else if (targetRoomId.startsWith('game_')) {
+    // Keep single game_ prefix as is
+  } else {
+    // Add lobby prefix for chat messages
+    targetRoomId = `game_${targetRoomId}`
+  }
+  
+  console.log(`👥 Socket ${socket.id} requesting to join room ${targetRoomId} (original: ${roomId})`)
+  
+  // Leave previous room if any
+  const oldRoom = socketRooms.get(socket.id)
+  if (oldRoom && rooms.has(oldRoom)) {
+    rooms.get(oldRoom).delete(socket.id)
+    console.log(`👋 Socket ${socket.id} left old room ${oldRoom}`)
+  }
+  
+  // Join new room
+  if (!rooms.has(targetRoomId)) {
+    rooms.set(targetRoomId, new Set())
+    console.log(`🏠 Created new room: ${targetRoomId}`)
+  }
+  
+  const room = rooms.get(targetRoomId)
+  room.add(socket.id)
+  socketRooms.set(socket.id, targetRoomId)
+  
+  console.log(`👥 Socket ${socket.id} joined room ${targetRoomId} (${room.size} members total)`)
+  
+  // Send confirmation
+  try {
+    socket.send(JSON.stringify({
+      type: 'room_joined',
+      roomId: targetRoomId,
+      members: room.size
+    }))
+    
+    // Load and send chat history to the new player
+    try {
+      const chatHistory = await dbService.getChatHistory(targetRoomId, 50) // Load last 50 messages
+      console.log(`📚 Loading chat history for room ${targetRoomId}: ${chatHistory.length} messages`)
+      
+      if (chatHistory.length > 0) {
+        // Send chat history to the new player
+        socket.send(JSON.stringify({
+          type: 'chat_history',
+          roomId: targetRoomId,
+          messages: chatHistory
+        }))
+        console.log(`📤 Sent chat history to new player in room ${targetRoomId}`)
+      }
+    } catch (error) {
+      console.error('❌ Error loading chat history:', error)
+    }
+    
+  } catch (error) {
+    console.error('❌ Failed to send room join confirmation:', error)
+  }
+}
+
+async function handleChatMessage(socket, data, dbService) {
+  const { roomId, gameId, message, from } = data
+  
+  // Normalize room ID - remove any double prefixes
+  let targetRoomId = roomId || gameId
+  
+  // Remove any existing game_ prefix to avoid double prefixes
+  if (targetRoomId.startsWith('game_game_')) {
+    targetRoomId = targetRoomId.replace('game_game_', 'game_')
+  } else if (targetRoomId.startsWith('game_room_')) {
+    // Keep game_room_ prefix as is
+  } else if (targetRoomId.startsWith('game_')) {
+    // Keep single game_ prefix as is
+  } else {
+    // Add lobby prefix for chat messages
+    targetRoomId = `game_${targetRoomId}`
+  }
+  
+  const senderAddress = socket.address || from || 'anonymous'
+  
+  console.log('💬 Processing chat message:', {
+    originalRoomId: roomId,
+    gameId,
+    targetRoomId,
+    senderAddress,
+    message: message.substring(0, 50) + '...'
+  })
+  
+  try {
+    // Save to database
+    await dbService.saveChatMessage(targetRoomId, senderAddress, message, 'chat')
+    
+    // Broadcast to room
+    broadcastToRoom(targetRoomId, {
+      type: 'chat_message',
+      message,
+      from: senderAddress,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('❌ Error saving chat message:', error)
+  }
+}
+
 function handleDepositConfirmed(socket, data) {
   const { gameId, player, assetType } = data
   const gameRoom = gameRooms.get(gameId)
@@ -513,6 +662,14 @@ function handleConnection(ws, dbService) {
       switch (data.type) {
         case 'join_game':
           handleJoinGame(ws, data)
+          break
+          
+        case 'join_room':
+          handleJoinRoom(ws, data, dbService)
+          break
+          
+        case 'chat_message':
+          handleChatMessage(ws, data, dbService)
           break
           
         case 'player_choice':
