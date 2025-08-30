@@ -83,9 +83,8 @@ const VerificationBadge = styled.div`
   &:hover::after {
     content: ${props => props.verified ? 'none' : '"⚠️ This NFT has not been verified on our platform"'};
     position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 100%;
+    left: 0;
     background: rgba(255, 149, 0, 0.9);
     color: white;
     padding: 0.5rem;
@@ -93,7 +92,9 @@ const VerificationBadge = styled.div`
     font-size: 0.7rem;
     white-space: nowrap;
     z-index: 1000;
-    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    max-width: 200px;
+    word-wrap: break-word;
   }
 `
 
@@ -180,15 +181,14 @@ const NFTValue = styled.span`
 `
 
 const CoinSection = styled.div`
-  background: rgba(0, 0, 0, 0.7);
-  border: 3px solid rgba(255, 215, 0, 0.3);
+  background: transparent;
+  border: none;
   border-radius: 1rem;
   padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
   height: fit-content;
   max-height: 500px;
   flex: 1;
@@ -570,35 +570,26 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
       </NFTSection>
       
        {/* Coin Display Section - Right Side */}
-       <CoinSection>
-         <div style={{ 
-           display: 'flex', 
-           justifyContent: 'center', 
-           alignItems: 'center',
-           width: '100%',
-           height: '100%',
-           transform: 'translate(0.8rem, 0.4rem)' // Move 2cm right, 1cm down
-         }}>
-           {coinData ? (
-             <CoinContainer
-               gameId={gameId}
-               gameData={gameData}
-               customHeadsImage={coinData.headsImage}
-               customTailsImage={coinData.tailsImage}
-               gameCoin={coinData}
-               isMobile={window.innerWidth <= 768}
-               address={address}
-               isCreator={isCreator}
-             />
-           ) : (
-             <div style={{ color: 'white', textAlign: 'center' }}>
-               <p>Loading coin...</p>
-               <p>Coin data: {JSON.stringify(coinData)}</p>
-               <p>Coin config: {JSON.stringify(coinConfig)}</p>
-             </div>
-           )}
-         </div>
-       </CoinSection>
+               <CoinSection>
+          {coinData ? (
+            <CoinContainer
+              gameId={gameId}
+              gameData={gameData}
+              customHeadsImage={coinData.headsImage}
+              customTailsImage={coinData.tailsImage}
+              gameCoin={coinData}
+              isMobile={window.innerWidth <= 768}
+              address={address}
+              isCreator={isCreator}
+            />
+          ) : (
+            <div style={{ color: 'white', textAlign: 'center' }}>
+              <p>Loading coin...</p>
+              <p>Coin data: {JSON.stringify(coinData)}</p>
+              <p>Coin config: {JSON.stringify(coinConfig)}</p>
+            </div>
+          )}
+        </CoinSection>
     </TabContainer>
   )
 }
