@@ -301,13 +301,13 @@ function handleConnection(ws, dbService) {
 
 // ===== INITIALIZATION =====
 let wss = null
+let dbService = null
 
-function initializeWebSocket(server) {
+function initializeWebSocket(server, databaseService) {
   wss = new WebSocket.Server({ server })
+  dbService = databaseService
   
   wss.on('connection', (ws) => {
-    // Get dbService from server context
-    const dbService = require('../services/database')
     handleConnection(ws, dbService)
   })
   

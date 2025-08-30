@@ -109,8 +109,8 @@ async function initializeServices() {
   const cleanupService = new CleanupService(dbService, blockchainService)
   cleanupService.start()
 
-  // Initialize WebSocket handlers
-  initializeWebSocket(server)
+  // Initialize WebSocket handlers with database service
+  initializeWebSocket(server, dbService)
 
   // Initialize API routes
   const apiRouter = createApiRoutes(dbService, blockchainService, { broadcastToRoom })
