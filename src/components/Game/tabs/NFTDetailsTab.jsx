@@ -79,11 +79,31 @@ const CoinInstructions = styled.div`
   z-index: 2;
 `
 
-const NFTDetailsTab = ({ gameData, gameId, isCreator, isJoiner }) => {
+const NFTDetailsTab = ({ 
+  gameData, 
+  gameId, 
+  isCreator, 
+  isJoiner, 
+  getGameNFTImage, 
+  getGameNFTName, 
+  getGameNFTCollection 
+}) => {
   const { address } = useAccount()
   const { showSuccess, showError } = useNotification()
   const [isNFTVerified, setIsNFTVerified] = useState(false)
   const [verificationChecked, setVerificationChecked] = useState(false)
+
+  // Debug logging
+  console.log('🔍 NFTDetailsTab Debug:', {
+    gameData,
+    gameId,
+    isCreator,
+    isJoiner,
+    getGameNFTImage: getGameNFTImage(),
+    getGameNFTName: getGameNFTName(),
+    getGameNFTCollection: getGameNFTCollection(),
+    address
+  })
 
   useEffect(() => {
     // Check NFT verification status
@@ -96,19 +116,6 @@ const NFTDetailsTab = ({ gameData, gameId, isCreator, isJoiner }) => {
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text)
     showSuccess(`${label} copied to clipboard!`)
-  }
-
-  // Helper functions to get NFT data - matching original GameLobby pattern
-  const getGameNFTImage = () => {
-    return gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
-  }
-
-  const getGameNFTName = () => {
-    return gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
-  }
-
-  const getGameNFTCollection = () => {
-    return gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
   }
 
   // Create nftData object in the format expected by NFTDetailsContainer

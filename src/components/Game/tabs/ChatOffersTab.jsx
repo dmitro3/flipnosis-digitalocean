@@ -139,7 +139,8 @@ const ChatOffersTab = ({
   isConnected, 
   isCreator, 
   isJoiner, 
-  address 
+  address,
+  offers = []
 }) => {
   return (
     <TabContainer>
@@ -188,7 +189,7 @@ const ChatOffersTab = ({
                 gameData={gameData}
                 socket={null} // Will be handled by the parent WebSocket
                 connected={isConnected}
-                offers={[]} // Will be loaded by the component
+                offers={offers} // Will be loaded by the component
                 isCreator={isCreator}
                 onOfferSubmitted={(offerData) => {
                   console.log('Offer submitted via offers container:', offerData)

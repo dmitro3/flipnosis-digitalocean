@@ -4,7 +4,7 @@ import styled from '@emotion/styled'
 import { useAccount } from 'wagmi'
 
 // Import existing components
-import useGameData from './hooks/useGameData'
+import { useLobbyState } from '../Lobby/hooks/useLobbyState'
 import useWebSocket from '../../utils/useWebSocket'
 import { useNotification } from '../../contexts/NotificationContext'
 
@@ -171,8 +171,50 @@ const TabbedGamePage = () => {
   const { showSuccess, showError, showInfo } = useNotification()
   
   // Game data and WebSocket - use your existing architecture
-  const gameData = useGameData(gameId)
+  const {
+    gameData,
+    loading,
+    error,
+    offers,
+    chatMessages,
+    ethAmount,
+    depositTimeLeft,
+    newOffer,
+    creatingOffer,
+    createOffer,
+    acceptOffer,
+    rejectOffer,
+    formatTimeLeft,
+    loadGameData,
+    loadOffers,
+    setNewOffer,
+    setCreatingOffer,
+    setChatMessages,
+    isCreator,
+    isJoiner,
+    getGameCreator,
+    getGameJoiner,
+    getGamePrice,
+    getGameNFTImage,
+    getGameNFTName,
+    getGameNFTCollection
+  } = useLobbyState(gameId, address)
+  
   const { isConnected, lastMessage, sendMessage, connect } = useWebSocket()
+  
+  // Debug logging
+  console.log('🔍 TabbedGamePage Debug:', {
+    gameId,
+    address,
+    gameData,
+    loading,
+    error,
+    isCreator: isCreator(),
+    isJoiner: isJoiner(),
+    getGameNFTImage: getGameNFTImage(),
+    getGameNFTName: getGameNFTName(),
+    getGameNFTCollection: getGameNFTCollection()
+  })
   
   // Initialize WebSocket connection
   useEffect(() => {
@@ -183,7 +225,7 @@ const TabbedGamePage = () => {
   }, [gameId, address, connect])
   
   // Extract messages from game data (your existing pattern)
-  const messages = gameData?.messages || []
+  const messages = chatMessages || []
   
   // Tab state
   const [activeTab, setActiveTab] = useState('nft-details')
@@ -210,10 +252,7 @@ const TabbedGamePage = () => {
     }
   }, [gameData])
   
-  // Helper functions
-  const isCreator = () => gameData?.creator?.toLowerCase() === address?.toLowerCase()
-  const isJoiner = () => gameData?.joiner?.toLowerCase() === address?.toLowerCase() || 
-                          gameData?.challenger?.toLowerCase() === address?.toLowerCase()
+  
   
   const tabs = [
     {
@@ -252,6 +291,9 @@ const TabbedGamePage = () => {
             gameId={gameId}
             isCreator={isCreator()}
             isJoiner={isJoiner()}
+            getGameNFTImage={getGameNFTImage}
+            getGameNFTName={getGameNFTName}
+            getGameNFTCollection={getGameNFTCollection}
           />
         )
       case 'chat-offers':
@@ -265,6 +307,7 @@ const TabbedGamePage = () => {
             isCreator={isCreator()}
             isJoiner={isJoiner()}
             address={address}
+            offers={offers}
           />
         )
       case 'game-room':
@@ -284,11 +327,11 @@ const TabbedGamePage = () => {
     }
   }
   
-  if (!gameData) {
+  if (!gameData || loading) {
     return (
       <GamePageContainer>
         <LoadingContainer>
-          Loading game data...
+          {loading ? 'Loading game data...' : 'Game not found'}
         </LoadingContainer>
       </GamePageContainer>
     )
