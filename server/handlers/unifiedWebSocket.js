@@ -210,15 +210,44 @@ async function handleCryptoOffer(socket, data, dbService) {
   console.log(`💰 Crypto offer in ${targetRoomId} from ${senderAddress}: $${cryptoAmount}`)
   
   try {
-    // Save to database
+    // Save to offers table
+    const offerId = `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    
+    // Use the database service to save to offers table
+    await new Promise((resolve, reject) => {
+      dbService.db.run(`
+        INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [
+        offerId,
+        listingId,
+        senderAddress,
+        cryptoAmount,
+        `💰 Offered $${cryptoAmount} USD`,
+        'pending',
+        new Date().toISOString()
+      ], function(err) {
+        if (err) {
+          console.error('❌ Error saving offer to offers table:', err)
+          reject(err)
+        } else {
+          console.log(`✅ Offer saved to offers table with ID: ${offerId}`)
+          resolve()
+        }
+      })
+    })
+    
+    // Also save as chat message for chat display
     await dbService.saveChatMessage(targetRoomId, senderAddress, `💰 Offered $${cryptoAmount} USD`, 'crypto_offer', {
       cryptoAmount,
-      listingId
+      listingId,
+      offerId
     })
     
     // Broadcast to room
     broadcastToRoom(targetRoomId, {
       type: 'crypto_offer',
+      id: offerId,
       address: senderAddress,
       cryptoAmount,
       listingId,

@@ -331,13 +331,24 @@ const OffersContainer = ({
           id: data.id || Date.now() + Math.random(),
           type: data.type,
           address: data.address || data.offerer_address,
+          offerer_address: data.address || data.offerer_address,
           cryptoAmount: data.cryptoAmount || data.amount,
+          offer_price: data.cryptoAmount || data.amount,
           nftData: data.nftData,
-          timestamp: data.timestamp || new Date().toISOString()
+          timestamp: data.timestamp || new Date().toISOString(),
+          created_at: data.timestamp || new Date().toISOString()
         }
         
         console.log('📝 Adding real-time offer:', newOffer)
-        setOffers(prev => [...prev, newOffer])
+        setOffers(prev => {
+          // Check if offer already exists
+          const exists = prev.find(o => o.id === newOffer.id)
+          if (exists) {
+            console.log('📝 Offer already exists, not adding duplicate')
+            return prev
+          }
+          return [...prev, newOffer]
+        })
       }
     }
 
