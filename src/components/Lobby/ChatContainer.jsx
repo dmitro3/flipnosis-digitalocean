@@ -222,113 +222,15 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
     }
   }, [messages])
 
+  // Auto-refresh chat every 2 seconds as fallback
   useEffect(() => {
-    if (!gameId || !address) return
+    if (!gameId) return
 
-    // Use the passed socket prop if available, otherwise fall back to global WebSocket service
-    const ws = socket || window.FlipnosisWS
-    if (!ws) {
-      console.error('❌ WebSocket service not available')
-      return
-    }
-
-    console.log('🔌 Connecting to WebSocket for chat...')
-    
-    // If we have a socket prop, assume it's already connected
-    if (socket && connected) {
-      console.log('✅ Using passed socket connection for chat')
-      setIsConnected(true)
-    } else {
-      // Connect to WebSocket using global service
-      ws.connect(`game_${gameId}`, address)
-        .then(() => {
-          console.log('✅ Connected to WebSocket for chat')
-          setIsConnected(true)
-        })
-        .catch((error) => {
-          console.error('❌ Failed to connect to WebSocket:', error)
-          setIsConnected(false)
-        })
-    }
-
-    // Set up message handlers
-    const handleChatMessage = (data) => {
-      console.log('📨 Chat message received:', data)
-      console.log('🔍 Message type check:', data.type === 'chat_message')
-      console.log('🔍 Current address:', address)
-      console.log('🔍 Message sender:', data.from || data.sender)
-      
-      if (data.type === 'chat_message') {
-        const newMessageObj = {
-          id: Date.now() + Math.random(), // Ensure unique ID
-          sender: data.from || data.sender,
-          message: data.message,
-          timestamp: new Date().toLocaleTimeString(),
-          isCurrentUser: (data.from || data.sender) === address
-        }
-        console.log('📝 Adding message to state:', newMessageObj)
-        setMessages(prev => {
-          const newMessages = [...prev, newMessageObj]
-          console.log('📝 New messages state:', newMessages.length, 'messages')
-          return newMessages
-        })
-      } else {
-        console.log('⚠️ Received message with wrong type:', data.type)
-      }
-    }
-
-    const handleUserJoined = (data) => {
-      console.log('👤 User joined:', data)
-      if (data.type === 'user_joined') {
-        const systemMessage = {
-          id: Date.now() + Math.random(),
-          sender: 'System',
-          message: `${data.address} joined the game`,
-          timestamp: new Date().toLocaleTimeString(),
-          isSystem: true
-        }
-        setMessages(prev => [...prev, systemMessage])
-      }
-    }
-
-    const handleUserLeft = (data) => {
-      console.log('👤 User left:', data)
-      if (data.type === 'user_left') {
-        const systemMessage = {
-          id: Date.now() + Math.random(),
-          sender: 'System',
-          message: `${data.address} left the game`,
-          timestamp: new Date().toLocaleTimeString(),
-          isSystem: true
-        }
-        setMessages(prev => [...prev, systemMessage])
-      }
-    }
-
-    // Register handlers
-    ws.on('chat_message', handleChatMessage)
-    ws.on('chat_history', (data) => {
-      console.log('📚 Chat history received from server:', data)
-      if (data.messages && data.messages.length > 0) {
-        const historyMessages = data.messages.map(msg => ({
-          id: msg.id || Date.now() + Math.random(),
-          sender: msg.sender_address || msg.sender,
-          message: msg.message,
-          timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
-          isCurrentUser: (msg.sender_address || msg.sender) === address
-        }))
-        console.log('📚 Setting history messages from WebSocket:', historyMessages)
-        setMessages(historyMessages)
-      }
-    })
-    ws.on('user_joined', handleUserJoined)
-    ws.on('user_left', handleUserLeft)
-
-    // Load chat history
-    fetch(`/api/chat/${gameId}`)
-      .then(response => response.json())
-      .then(data => {
-        console.log('📚 Chat history loaded:', data)
+    const refreshChat = async () => {
+      try {
+        const response = await fetch(`/api/chat/${gameId}`)
+        const data = await response.json()
+        
         if (data.messages && data.messages.length > 0) {
           const historyMessages = data.messages.map(msg => ({
             id: msg.id || Date.now() + Math.random(),
@@ -337,58 +239,126 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
             timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
             isCurrentUser: (msg.sender_address || msg.sender) === address
           }))
-          console.log('📚 Setting history messages:', historyMessages)
-          // Always set history messages when they exist
-          setMessages(historyMessages)
-        } else {
-          console.log('📚 No chat history found')
+          
+          // Only update if we have new messages
+          setMessages(prev => {
+            if (prev.length !== historyMessages.length) {
+              console.log('🔄 Auto-refresh: Found new messages, updating...')
+              return historyMessages
+            }
+            return prev
+          })
         }
-      })
-      .catch(error => {
-        console.error('Error loading chat history:', error)
-      })
-
-    // Cleanup
-    return () => {
-      ws.off('chat_message', handleChatMessage)
-      ws.off('chat_history')
-      ws.off('user_joined', handleUserJoined)
-      ws.off('user_left', handleUserLeft)
+      } catch (error) {
+        console.error('❌ Auto-refresh error:', error)
+      }
     }
+
+    // Initial load
+    refreshChat()
+    
+    // Set up interval for auto-refresh
+    const interval = setInterval(refreshChat, 2000)
+    
+    return () => clearInterval(interval)
   }, [gameId, address])
 
-  const sendMessage = (e) => {
-    e.preventDefault()
-    if (!newMessage.trim() || !(connected || isConnected)) return
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    if (!gameId || !address) return
 
+    console.log('🔌 Setting up WebSocket for real-time chat...')
+    
     const ws = socket || window.FlipnosisWS
     if (!ws) {
       console.error('❌ WebSocket service not available')
       return
     }
 
-    // Fix: Send both gameId and roomId to ensure server can handle it properly
-    const messageData = {
-      type: 'chat_message',
-      gameId: gameId,
-      roomId: `game_${gameId}`, // Add explicit roomId for server
-      message: newMessage.trim(),
-      sender: address
+    // Connect to WebSocket
+    const connectToWebSocket = async () => {
+      try {
+        if (!ws.isConnected()) {
+          console.log('🔌 Connecting to WebSocket...')
+          await ws.connect(`game_${gameId}`, address)
+          console.log('✅ WebSocket connected for real-time chat')
+        }
+        setIsConnected(true)
+      } catch (error) {
+        console.error('❌ WebSocket connection failed:', error)
+        setIsConnected(false)
+      }
     }
 
-    console.log('📤 Sending chat message:', messageData)
-    console.log('🔍 WebSocket state:', {
-      connected: ws.connected,
-      readyState: ws.socket?.readyState,
-      currentRoom: ws.currentRoom
-    })
-    
-    if (ws.send(messageData)) {
-      console.log('✅ Message sent successfully')
-      setNewMessage('')
-    } else {
-      console.error('❌ Failed to send message')
+    connectToWebSocket()
+
+    // Real-time message handler
+    const handleChatMessage = (data) => {
+      console.log('📨 Real-time message received:', data)
+      
+      if (data.type === 'chat_message') {
+        const newMessageObj = {
+          id: Date.now() + Math.random(),
+          sender: data.from || data.sender,
+          message: data.message,
+          timestamp: new Date().toLocaleTimeString(),
+          isCurrentUser: (data.from || data.sender) === address
+        }
+        
+        console.log('📝 Adding real-time message:', newMessageObj)
+        setMessages(prev => [...prev, newMessageObj])
+      }
     }
+
+    // Register real-time handler
+    ws.on('chat_message', handleChatMessage)
+
+    return () => {
+      ws.off('chat_message', handleChatMessage)
+    }
+  }, [gameId, address, socket])
+
+  const sendMessage = (e) => {
+    e.preventDefault()
+    if (!newMessage.trim()) return
+
+    console.log('📤 Sending message:', newMessage.trim())
+
+    // Try WebSocket first
+    const ws = socket || window.FlipnosisWS
+    if (ws && ws.isConnected()) {
+      const messageData = {
+        type: 'chat_message',
+        gameId: gameId,
+        roomId: `game_${gameId}`,
+        message: newMessage.trim(),
+        from: address
+      }
+      
+      if (ws.send(messageData)) {
+        console.log('✅ Message sent via WebSocket')
+        setNewMessage('')
+        return
+      }
+    }
+
+    // Fallback: Send via API
+    fetch(`/api/chat/${gameId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: newMessage.trim(),
+        sender: address
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('✅ Message sent via API:', data)
+      setNewMessage('')
+    })
+    .catch(error => {
+      console.error('❌ Failed to send message:', error)
+    })
   }
 
   const formatTimestamp = (timestamp) => {
@@ -434,7 +404,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
             </div>
           </div>
         ) : (
-          messages.map((msg, index) => {
+          messages.slice().reverse().map((msg, index) => {
             const isCurrentUser = msg.sender === address
             const displayName = getDisplayName(msg.sender)
             
