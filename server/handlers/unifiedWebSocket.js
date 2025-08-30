@@ -322,11 +322,13 @@ function initializeWebSocket(server, databaseService) {
   wss = new WebSocket.Server({ server })
   dbService = databaseService
   
+  console.log('🚀 WebSocket server initialized')
+  console.log('🔍 Database service passed:', !!dbService)
+  console.log('🔍 Database service methods:', dbService ? Object.keys(dbService) : 'undefined')
+  
   wss.on('connection', (ws) => {
     handleConnection(ws, dbService)
   })
-  
-  console.log('🚀 WebSocket server initialized')
 }
 
 module.exports = {
