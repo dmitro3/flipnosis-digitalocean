@@ -88,24 +88,7 @@ const FinalCoin = ({
           ctx.drawImage(img, 0, 0, 512, 512)
         }
         
-        // Enhance brightness and contrast for custom images
-        const imageData = ctx.getImageData(0, 0, 512, 512)
-        const data = imageData.data
-        
-        for (let i = 0; i < data.length; i += 4) {
-          // Enhance brightness (add 20 to each RGB channel)
-          data[i] = Math.min(255, data[i] + 20)     // Red
-          data[i + 1] = Math.min(255, data[i + 1] + 20) // Green
-          data[i + 2] = Math.min(255, data[i + 2] + 20) // Blue
-          
-          // Enhance contrast slightly
-          const factor = 1.1
-          data[i] = Math.min(255, Math.max(0, (data[i] - 128) * factor + 128))
-          data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * factor + 128))
-          data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * factor + 128))
-        }
-        
-        ctx.putImageData(imageData, 0, 0)
+        // No enhancement - use original image colors
         texture.needsUpdate = true
       }
       img.onerror = () => {
