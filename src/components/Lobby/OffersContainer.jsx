@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useWallet } from '../../contexts/WalletContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
-import { useContractService } from '../../contexts/ContractServiceContext'
 import OfferAcceptanceOverlay from './OfferAcceptanceOverlay'
 import styled from '@emotion/styled'
 // Using global WebSocket service to avoid minification issues
