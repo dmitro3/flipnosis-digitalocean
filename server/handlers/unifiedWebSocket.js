@@ -122,6 +122,8 @@ async function handleJoinRoom(socket, data, dbService) {
   const targetRoomId = roomId.startsWith('game_') ? roomId : `game_${roomId}`
   
   console.log(`👥 Socket ${socket.id} joining room ${targetRoomId}`)
+  console.log(`🔍 Database service available:`, !!dbService)
+  console.log(`🔍 Database service methods:`, dbService ? Object.keys(dbService) : 'undefined')
   
   // Leave previous room
   const oldRoom = socketRooms.get(socket.id)
@@ -147,7 +149,20 @@ async function handleJoinRoom(socket, data, dbService) {
   
   // Load chat history
   try {
+    if (!dbService) {
+      console.error('❌ Database service is undefined!')
+      return
+    }
+    
+    if (!dbService.getChatHistory) {
+      console.error('❌ getChatHistory method not found on database service!')
+      console.log('Available methods:', Object.keys(dbService))
+      return
+    }
+    
     const chatHistory = await dbService.getChatHistory(targetRoomId, 50)
+    console.log(`📚 Loaded ${chatHistory.length} chat messages for room ${targetRoomId}`)
+    
     if (chatHistory.length > 0) {
       socket.send(JSON.stringify({
         type: 'chat_history',
