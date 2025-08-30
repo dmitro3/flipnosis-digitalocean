@@ -31,6 +31,7 @@ const NFTSection = styled.div`
   flex: 2;
   height: fit-content;
   max-height: 500px;
+  z-index: 1;
   
   &::before {
     content: '';
@@ -42,6 +43,7 @@ const NFTSection = styled.div`
     background: linear-gradient(45deg, transparent 30%, rgba(255, 20, 147, 0.1) 50%, transparent 70%);
     animation: shimmer 3s ease-in-out infinite;
     pointer-events: none;
+    z-index: -1;
   }
   
   @keyframes shimmer {
@@ -76,7 +78,7 @@ const VerificationBadge = styled.div`
   color: ${props => props.verified ? '#00FF41' : '#FF9500'};
   cursor: ${props => props.verified ? 'default' : 'help'};
   position: relative;
-  z-index: 10;
+  z-index: 100;
   
   &:hover::after {
     content: ${props => props.verified ? 'none' : '"⚠️ This NFT has not been verified on our platform"'};
@@ -121,7 +123,7 @@ const ShareButtonsContainer = styled.div`
   width: 100%;
   margin-top: 1rem;
   position: relative;
-  z-index: 10;
+  z-index: 100;
 `
 
 const NFTImage = styled.div`
@@ -191,6 +193,8 @@ const CoinSection = styled.div`
   max-height: 500px;
   flex: 1;
   max-width: 400px;
+  position: relative;
+  z-index: 1;
 `
 
 const GameInfo = styled.div`
@@ -232,7 +236,7 @@ const ActionButton = styled.button`
   gap: 0.5rem;
   text-decoration: none;
   position: relative;
-  z-index: 10;
+  z-index: 100;
   
   &.share-x {
     background: #000000;
@@ -447,61 +451,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
             <NFTImage>
               <img src={getNFTImage()} alt={getNFTName()} />
             </NFTImage>
-          </NFTImageContainer>
-          
-          <NFTDetails>
-            <NFTItem>
-              <NFTLabel>Name:</NFTLabel>
-              <NFTValue>{getNFTName()}</NFTValue>
-            </NFTItem>
             
-            <NFTItem>
-              <NFTLabel>Contract:</NFTLabel>
-              <NFTValue style={{ fontSize: '0.9rem' }}>
-                {getNFTContract() !== 'N/A' 
-                  ? `${getNFTContract().slice(0, 8)}...${getNFTContract().slice(-6)}`
-                  : 'N/A'
-                }
-              </NFTValue>
-            </NFTItem>
-            
-            <NFTItem>
-              <NFTLabel>Token ID:</NFTLabel>
-              <NFTValue>{getNFTTokenId()}</NFTValue>
-            </NFTItem>
-            
-            <NFTItem>
-              <NFTLabel>Chain:</NFTLabel>
-              <NFTValue>{gameData?.chain || 'Base'}</NFTValue>
-            </NFTItem>
-            
-            {gameData?.nft_collection && (
-              <NFTItem>
-                <NFTLabel>Collection:</NFTLabel>
-                <NFTValue>{gameData.nft_collection}</NFTValue>
-              </NFTItem>
-            )}
-
-            <GameInfo>
-              <GameInfoTitle>🎮 Game Information</GameInfoTitle>
-              <GameInfoItem>
-                <span style={{ color: '#00BFFF' }}>Price:</span>
-                <span style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '1.8rem' }}>
-                  ${getGamePrice().toFixed(2)} USD
-                </span>
-              </GameInfoItem>
-              <GameInfoItem>
-                <span style={{ color: '#00BFFF' }}>Status:</span>
-                <span style={{ color: '#00FF41' }}>{getGameStatus()}</span>
-              </GameInfoItem>
-              <GameInfoItem>
-                <span style={{ color: '#00BFFF' }}>Your Role:</span>
-                <span style={{ color: '#FF1493' }}>
-                  {isCreator ? 'Creator' : 'Challenger/Spectator'}
-                </span>
-              </GameInfoItem>
-            </GameInfo>
-
             {/* Share Buttons - 2x2 Grid */}
             <ShareButtonsContainer>
               <ActionButton 
@@ -561,6 +511,60 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
                 </ActionButton>
               </a>
             </ShareButtonsContainer>
+          </NFTImageContainer>
+          
+          <NFTDetails>
+            <NFTItem>
+              <NFTLabel>Name:</NFTLabel>
+              <NFTValue>{getNFTName()}</NFTValue>
+            </NFTItem>
+            
+            <NFTItem>
+              <NFTLabel>Contract:</NFTLabel>
+              <NFTValue style={{ fontSize: '0.9rem' }}>
+                {getNFTContract() !== 'N/A' 
+                  ? `${getNFTContract().slice(0, 8)}...${getNFTContract().slice(-6)}`
+                  : 'N/A'
+                }
+              </NFTValue>
+            </NFTItem>
+            
+            <NFTItem>
+              <NFTLabel>Token ID:</NFTLabel>
+              <NFTValue>{getNFTTokenId()}</NFTValue>
+            </NFTItem>
+            
+            <NFTItem>
+              <NFTLabel>Chain:</NFTLabel>
+              <NFTValue>{gameData?.chain || 'Base'}</NFTValue>
+            </NFTItem>
+            
+            {gameData?.nft_collection && (
+              <NFTItem>
+                <NFTLabel>Collection:</NFTLabel>
+                <NFTValue>{gameData.nft_collection}</NFTValue>
+              </NFTItem>
+            )}
+
+            <GameInfo>
+              <GameInfoTitle>🎮 Game Information</GameInfoTitle>
+              <GameInfoItem>
+                <span style={{ color: '#00BFFF' }}>Price:</span>
+                <span style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '1.8rem' }}>
+                  ${getGamePrice().toFixed(2)} USD
+                </span>
+              </GameInfoItem>
+              <GameInfoItem>
+                <span style={{ color: '#00BFFF' }}>Status:</span>
+                <span style={{ color: '#00FF41' }}>{getGameStatus()}</span>
+              </GameInfoItem>
+              <GameInfoItem>
+                <span style={{ color: '#00BFFF' }}>Your Role:</span>
+                <span style={{ color: '#FF1493' }}>
+                  {isCreator ? 'Creator' : 'Challenger/Spectator'}
+                </span>
+              </GameInfoItem>
+            </GameInfo>
           </NFTDetails>
         </NFTContent>
       </NFTSection>
