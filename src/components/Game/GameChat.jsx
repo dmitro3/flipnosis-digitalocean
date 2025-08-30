@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import styled from 'styled-components'
+import styled from '@emotion/styled'
 import { useAccount } from 'wagmi'
 
 const ChatContainer = styled.div`

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { getApiUrl } from '../../../config/api'
 import { useNotification } from '../../../contexts/NotificationContext'
-import { useWebSocket } from '../../../utils/useWebSocket'
+import useWebSocket from '../../../utils/useWebSocket'
 
 export default function useGameData(gameId) {
   const { address } = useAccount()

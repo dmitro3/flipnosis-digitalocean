@@ -267,14 +267,12 @@ const NFTDetailsTab = ({ gameData, gameId, isCreator, isJoiner }) => {
             </CoinInstructions>
             
             <OptimizedCoinWrapper
+              size={250}
+              headsImage={gameData?.nft_image || '/placeholder-nft.svg'}
+              tailsImage={gameData?.nft_image || '/placeholder-nft.svg'}
+              isDisplay={true}
               gameId={gameId}
-              gameData={gameData}
-              customHeadsImage={gameData?.nft_image}
-              customTailsImage={gameData?.nft_image}
-              gameCoin={null}
-              isMobile={window.innerWidth <= 768}
-              address={address}
-              isCreator={isCreator}
+              serverControlled={false}
             />
           </div>
         </CoinDisplayWrapper>

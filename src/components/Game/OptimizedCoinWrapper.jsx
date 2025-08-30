@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
-import styled from 'styled-components'
+import styled from '@emotion/styled'
 import * as THREE from 'three'
 import { detectDevice } from '../../utils/deviceDetection'
-import useWebSocket from '../../hooks/useWebSocket'
+import useWebSocket from '../../utils/useWebSocket'
 
 const CoinContainer = styled.div`
   width: ${props => props.$size}px;
@@ -58,6 +58,8 @@ export default function OptimizedCoinWrapper({
   gameId = null,
   isDisplay = false
 }) {
+  
+  // Get WebSocket data for server-controlled mode
   const { lastMessage } = useWebSocket()
   const containerRef = useRef(null)
   const sceneRef = useRef(null)

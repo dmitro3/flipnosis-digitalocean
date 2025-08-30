@@ -5,10 +5,10 @@ import { useAccount } from 'wagmi'
 
 // Import existing components
 import useGameData from './hooks/useGameData'
-import { useWebSocket } from '../../utils/useWebSocket'
+import useWebSocket from '../../utils/useWebSocket'
 import { useNotification } from '../../contexts/NotificationContext'
 
-// Import tab content components
+// Import tab content components - use the real ones
 import NFTDetailsTab from './tabs/NFTDetailsTab'
 import ChatOffersTab from './tabs/ChatOffersTab'
 import GameRoomTab from './tabs/GameRoomTab'
@@ -171,9 +171,20 @@ const TabbedGamePage = () => {
   const { address } = useAccount()
   const { showSuccess, showError, showInfo } = useNotification()
   
-  // Game data and WebSocket
+  // Game data and WebSocket - use your existing architecture
   const gameData = useGameData(gameId)
-  const { isConnected, messages, sendMessage } = useWebSocket(gameId)
+  const { isConnected, lastMessage, sendMessage, connect } = useWebSocket()
+  
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (gameId && address) {
+      console.log('🔌 Connecting to WebSocket for game:', gameId)
+      connect(`game_${gameId}`, address)
+    }
+  }, [gameId, address, connect])
+  
+  // Extract messages from game data (your existing pattern)
+  const messages = gameData?.messages || []
   
   // Tab state
   const [activeTab, setActiveTab] = useState('nft-details')

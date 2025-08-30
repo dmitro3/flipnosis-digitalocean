@@ -87,3 +87,5 @@ export function useWebSocket() {
     off
   }
 }
+
+export default useWebSocket
