@@ -154,7 +154,6 @@ const NFTDetailsTab = ({
             gameCoin={gameCoin}
             isMobile={window.innerWidth <= 768}
             address={address}
-            isCreator={isCreator}
           />
         </CoinDisplayWrapper>
       </RightSection>
