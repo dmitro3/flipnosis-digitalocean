@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import styled from '@emotion/styled'
 import { useAccount } from 'wagmi'
-
-// Import existing components
-import useGameData from './hooks/useGameData'
-import { useWebSocket } from '../../utils/useWebSocket'
-import { useNotification } from '../../contexts/NotificationContext'
+import GameBackground from '../GameOrchestrator/GameBackground'
 
 // Import tab content components
-import NFTDetailsTab from './tabs/NFTDetailsTab'
-import ChatOffersTab from './tabs/ChatOffersTab'
-import GameRoomTab from './tabs/GameRoomTab'
-import GameBackground from '../GameOrchestrator/GameBackground'
+import NFTDetailsTabSimple from './tabs/NFTDetailsTabSimple'
+import ChatOffersTabSimple from './tabs/ChatOffersTabSimple'
+import GameRoomTabSimple from './tabs/GameRoomTabSimple'
 
 // Main container with flashing lights design inspired by homepage
 const GamePageContainer = styled.div`
@@ -165,45 +160,39 @@ const LoadingContainer = styled.div`
   font-size: 1.2rem;
 `
 
-const TabbedGamePage = () => {
+const TabbedGamePageSimple = () => {
   const { gameId } = useParams()
-  const navigate = useNavigate()
   const { address } = useAccount()
-  const { showSuccess, showError, showInfo } = useNotification()
-  
-  // Game data and WebSocket
-  const gameData = useGameData(gameId)
-  const { isConnected, messages, sendMessage } = useWebSocket(gameId)
   
   // Tab state
   const [activeTab, setActiveTab] = useState('nft-details')
   
+  // Mock game data for testing
+  const [gameData, setGameData] = useState({
+    id: gameId,
+    nft_name: 'Test NFT',
+    nft_collection: 'Test Collection',
+    nft_image: '/placeholder-nft.svg',
+    nft_contract: '0x1234567890abcdef',
+    nft_token_id: '1',
+    nft_chain: 'base',
+    status: 'waiting',
+    creator: '0xCreator123',
+    nft_deposited: true
+  })
+  
   // Game state
   const [isGameActive, setIsGameActive] = useState(false)
-  const [gamePhase, setGamePhase] = useState('waiting') // waiting, payment, active, completed
   
   useEffect(() => {
-    if (gameData) {
-      // Update game phase based on game data
-      if (gameData.status === 'completed') {
-        setGamePhase('completed')
-      } else if (gameData.status === 'active' || gameData.status === 'in_progress') {
-        setGamePhase('active')
-        setIsGameActive(true)
-        // Auto-switch to game room when game becomes active
-        setActiveTab('game-room')
-      } else if (gameData.status === 'waiting_challenger_deposit') {
-        setGamePhase('payment')
-      } else {
-        setGamePhase('waiting')
-      }
-    }
-  }, [gameData])
+    // Simulate loading game data
+    console.log('🎮 Loading game data for:', gameId)
+    // In a real implementation, this would fetch from API
+  }, [gameId])
   
   // Helper functions
   const isCreator = () => gameData?.creator?.toLowerCase() === address?.toLowerCase()
-  const isJoiner = () => gameData?.joiner?.toLowerCase() === address?.toLowerCase() || 
-                          gameData?.challenger?.toLowerCase() === address?.toLowerCase()
+  const isJoiner = () => false // Simplified for testing
   
   const tabs = [
     {
@@ -240,7 +229,7 @@ const TabbedGamePage = () => {
     switch (activeTab) {
       case 'nft-details':
         return (
-          <NFTDetailsTab
+          <NFTDetailsTabSimple
             gameData={gameData}
             gameId={gameId}
             isCreator={isCreator()}
@@ -249,12 +238,9 @@ const TabbedGamePage = () => {
         )
       case 'chat-offers':
         return (
-          <ChatOffersTab
+          <ChatOffersTabSimple
             gameData={gameData}
             gameId={gameId}
-            messages={messages}
-            sendMessage={sendMessage}
-            isConnected={isConnected}
             isCreator={isCreator()}
             isJoiner={isJoiner()}
             address={address}
@@ -262,28 +248,30 @@ const TabbedGamePage = () => {
         )
       case 'game-room':
         return (
-          <GameRoomTab
+          <GameRoomTabSimple
             gameData={gameData}
             gameId={gameId}
             isCreator={isCreator()}
             isJoiner={isJoiner()}
             address={address}
             isGameActive={isGameActive}
-            gamePhase={gamePhase}
           />
         )
       default:
-        return <div>Select a tab</div>
+        return <div style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>Select a tab</div>
     }
   }
   
   if (!gameData) {
     return (
-      <GamePageContainer>
-        <LoadingContainer>
-          Loading game data...
-        </LoadingContainer>
-      </GamePageContainer>
+      <>
+        <GameBackground />
+        <GamePageContainer>
+          <LoadingContainer>
+            Loading game data...
+          </LoadingContainer>
+        </GamePageContainer>
+      </>
     )
   }
   
@@ -293,30 +281,30 @@ const TabbedGamePage = () => {
       <GamePageContainer>
         {/* Left Sidebar - Tab Navigation */}
         <TabSidebar>
-        {tabs.map(tab => (
-          <TabButton
-            key={tab.id}
-            $active={activeTab === tab.id}
-            $disabled={tab.disabled}
-            onClick={() => handleTabChange(tab.id)}
-            title={tab.description}
-          >
-            {tab.disabled && <TabLockIcon>🔒</TabLockIcon>}
-            <TabIcon>{tab.icon}</TabIcon>
-            <TabLabel>{tab.label}</TabLabel>
-          </TabButton>
-        ))}
-      </TabSidebar>
-      
-      {/* Main Content Area */}
-      <TabContentContainer>
-        <TabContent>
-          {renderTabContent()}
-        </TabContent>
-      </TabContentContainer>
-    </GamePageContainer>
+          {tabs.map(tab => (
+            <TabButton
+              key={tab.id}
+              $active={activeTab === tab.id}
+              $disabled={tab.disabled}
+              onClick={() => handleTabChange(tab.id)}
+              title={tab.description}
+            >
+              {tab.disabled && <TabLockIcon>🔒</TabLockIcon>}
+              <TabIcon>{tab.icon}</TabIcon>
+              <TabLabel>{tab.label}</TabLabel>
+            </TabButton>
+          ))}
+        </TabSidebar>
+        
+        {/* Main Content Area */}
+        <TabContentContainer>
+          <TabContent>
+            {renderTabContent()}
+          </TabContent>
+        </TabContentContainer>
+      </GamePageContainer>
     </>
   )
 }
 
-export default TabbedGamePage
+export default TabbedGamePageSimple
