@@ -9,11 +9,13 @@ const TabContainer = styled.div`
   gap: 2rem;
   padding: 2rem;
   overflow-y: auto;
+  align-items: flex-start;
   
   @media (max-width: 768px) {
     flex-direction: column;
     padding: 1rem;
     gap: 1.5rem;
+    align-items: stretch;
   }
 `
 
@@ -27,6 +29,8 @@ const NFTSection = styled.div`
   position: relative;
   overflow: hidden;
   flex: 2;
+  height: fit-content;
+  max-height: 500px;
   
   &::before {
     content: '';
@@ -154,7 +158,8 @@ const CoinSection = styled.div`
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-  min-height: 400px;
+  height: fit-content;
+  max-height: 500px;
   flex: 1;
   max-width: 400px;
 `
@@ -264,7 +269,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
 
   // Helper function to get marketplace URL based on chain
   const getMarketplaceUrl = (chain) => {
-    if (!chain) return 'https://opensea.io/assets/ethereum' // Default to Ethereum marketplace
+    if (!chain) return 'https://opensea.io/assets/base' // Default to Base marketplace
     
     const marketplaces = {
       ethereum: 'https://opensea.io/assets/ethereum',
@@ -274,7 +279,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
       optimism: 'https://opensea.io/assets/optimism',
     }
     
-    return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
+    return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/base'
   }
 
   // Helper function to get explorer URL
@@ -289,13 +294,13 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
       optimism: 'https://optimistic.etherscan.io/token',
     }
     
-    const baseUrl = explorers[chain.toLowerCase()] || 'https://etherscan.io/token'
+    const baseUrl = explorers[chain.toLowerCase()] || 'https://basescan.org/token'
     return `${baseUrl}/${contract}?a=${tokenId}`
   }
 
   // Share functionality
   const handleShare = async (platform) => {
-    if (!gameData || !address) return
+    if (!gameData) return
     
     const gameUrl = `${window.location.origin}/game/${gameId}`
     const nftName = getNFTName()
@@ -447,14 +452,12 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
               <ActionButton 
                 className="share-x"
                 onClick={() => handleShare('twitter')}
-                disabled={!address}
               >
                 Share on X
               </ActionButton>
               <ActionButton 
                 className="share-tg"
                 onClick={() => handleShare('telegram')}
-                disabled={!address}
               >
                 Share on TG
               </ActionButton>
@@ -509,16 +512,24 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
       
       {/* Coin Display Section - Right Side */}
       <CoinSection>
-        <CoinContainer
-          gameId={gameId}
-          gameData={gameData}
-          customHeadsImage={coinConfig?.headsImage}
-          customTailsImage={coinConfig?.tailsImage}
-          gameCoin={coinConfig}
-          isMobile={window.innerWidth <= 768}
-          address={address}
-          isCreator={isCreator}
-        />
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          width: '100%',
+          height: '100%'
+        }}>
+          <CoinContainer
+            gameId={gameId}
+            gameData={gameData}
+            customHeadsImage={coinConfig?.headsImage}
+            customTailsImage={coinConfig?.tailsImage}
+            gameCoin={coinConfig}
+            isMobile={window.innerWidth <= 768}
+            address={address}
+            isCreator={isCreator}
+          />
+        </div>
       </CoinSection>
     </TabContainer>
   )

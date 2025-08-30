@@ -111,9 +111,13 @@ const TabbedGameInterface = ({
   const [activeTab, setActiveTab] = useState('nft')
   const { address } = useWallet()
   
-  // Auto-switch to game room when game starts
+  // Auto-switch to game room when game starts (but only if not just joining)
   useEffect(() => {
-    if (gameData?.status === 'active' || gameData?.status === 'in_progress') {
+    // Only auto-switch to game room if the game is already in progress
+    // and we're not just joining the game
+    if ((gameData?.status === 'active' || gameData?.status === 'in_progress') && 
+        gameData?.status !== 'waiting_challenger' && 
+        gameData?.status !== 'waiting_challenger_deposit') {
       setActiveTab('game')
     }
   }, [gameData?.status])
