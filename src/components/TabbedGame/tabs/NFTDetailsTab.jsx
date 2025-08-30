@@ -76,6 +76,7 @@ const VerificationBadge = styled.div`
   color: ${props => props.verified ? '#00FF41' : '#FF9500'};
   cursor: ${props => props.verified ? 'default' : 'help'};
   position: relative;
+  z-index: 10;
   
   &:hover::after {
     content: ${props => props.verified ? 'none' : '"⚠️ This NFT has not been verified on our platform"'};
@@ -119,6 +120,8 @@ const ShareButtonsContainer = styled.div`
   gap: 0.5rem;
   width: 100%;
   margin-top: 1rem;
+  position: relative;
+  z-index: 10;
 `
 
 const NFTImage = styled.div`
@@ -228,6 +231,8 @@ const ActionButton = styled.button`
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
+  position: relative;
+  z-index: 10;
   
   &.share-x {
     background: #000000;
@@ -279,6 +284,8 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
   // Load NFT data and coin data
   useEffect(() => {
     if (gameData) {
+      console.log('🪙 NFTDetailsTab - gameData received:', gameData)
+      
       setNftData({
         image: gameData.nft_image,
         name: gameData.nft_name,
@@ -292,12 +299,23 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
       let parsedCoinData = null
       if (gameData.coinData && typeof gameData.coinData === 'object') {
         parsedCoinData = gameData.coinData
+        console.log('🪙 Using gameData.coinData:', parsedCoinData)
       } else if (gameData.coin_data) {
         try {
           parsedCoinData = typeof gameData.coin_data === 'string' ? 
             JSON.parse(gameData.coin_data) : gameData.coin_data
+          console.log('🪙 Parsed gameData.coin_data:', parsedCoinData)
         } catch (error) {
           console.error('❌ Error parsing coin data:', error)
+        }
+      } else {
+        console.log('🪙 No coin data found in gameData, using default')
+        parsedCoinData = {
+          id: 'plain',
+          type: 'default',
+          name: 'Classic',
+          headsImage: '/coins/plainh.png',
+          tailsImage: '/coins/plaint.png'
         }
       }
       setCoinData(parsedCoinData)
@@ -429,7 +447,61 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
             <NFTImage>
               <img src={getNFTImage()} alt={getNFTName()} />
             </NFTImage>
+          </NFTImageContainer>
+          
+          <NFTDetails>
+            <NFTItem>
+              <NFTLabel>Name:</NFTLabel>
+              <NFTValue>{getNFTName()}</NFTValue>
+            </NFTItem>
             
+            <NFTItem>
+              <NFTLabel>Contract:</NFTLabel>
+              <NFTValue style={{ fontSize: '0.9rem' }}>
+                {getNFTContract() !== 'N/A' 
+                  ? `${getNFTContract().slice(0, 8)}...${getNFTContract().slice(-6)}`
+                  : 'N/A'
+                }
+              </NFTValue>
+            </NFTItem>
+            
+            <NFTItem>
+              <NFTLabel>Token ID:</NFTLabel>
+              <NFTValue>{getNFTTokenId()}</NFTValue>
+            </NFTItem>
+            
+            <NFTItem>
+              <NFTLabel>Chain:</NFTLabel>
+              <NFTValue>{gameData?.chain || 'Base'}</NFTValue>
+            </NFTItem>
+            
+            {gameData?.nft_collection && (
+              <NFTItem>
+                <NFTLabel>Collection:</NFTLabel>
+                <NFTValue>{gameData.nft_collection}</NFTValue>
+              </NFTItem>
+            )}
+
+            <GameInfo>
+              <GameInfoTitle>🎮 Game Information</GameInfoTitle>
+              <GameInfoItem>
+                <span style={{ color: '#00BFFF' }}>Price:</span>
+                <span style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '1.8rem' }}>
+                  ${getGamePrice().toFixed(2)} USD
+                </span>
+              </GameInfoItem>
+              <GameInfoItem>
+                <span style={{ color: '#00BFFF' }}>Status:</span>
+                <span style={{ color: '#00FF41' }}>{getGameStatus()}</span>
+              </GameInfoItem>
+              <GameInfoItem>
+                <span style={{ color: '#00BFFF' }}>Your Role:</span>
+                <span style={{ color: '#FF1493' }}>
+                  {isCreator ? 'Creator' : 'Challenger/Spectator'}
+                </span>
+              </GameInfoItem>
+            </GameInfo>
+
             {/* Share Buttons - 2x2 Grid */}
             <ShareButtonsContainer>
               <ActionButton 
@@ -489,86 +561,40 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
                 </ActionButton>
               </a>
             </ShareButtonsContainer>
-          </NFTImageContainer>
-          
-          <NFTDetails>
-            <NFTItem>
-              <NFTLabel>Name:</NFTLabel>
-              <NFTValue>{getNFTName()}</NFTValue>
-            </NFTItem>
-            
-            <NFTItem>
-              <NFTLabel>Contract:</NFTLabel>
-              <NFTValue style={{ fontSize: '0.9rem' }}>
-                {getNFTContract() !== 'N/A' 
-                  ? `${getNFTContract().slice(0, 8)}...${getNFTContract().slice(-6)}`
-                  : 'N/A'
-                }
-              </NFTValue>
-            </NFTItem>
-            
-            <NFTItem>
-              <NFTLabel>Token ID:</NFTLabel>
-              <NFTValue>{getNFTTokenId()}</NFTValue>
-            </NFTItem>
-            
-            <NFTItem>
-              <NFTLabel>Chain:</NFTLabel>
-              <NFTValue>{gameData?.chain || 'Base'}</NFTValue>
-            </NFTItem>
-            
-            {gameData?.nft_collection && (
-              <NFTItem>
-                <NFTLabel>Collection:</NFTLabel>
-                <NFTValue>{gameData.nft_collection}</NFTValue>
-              </NFTItem>
-            )}
-
-            <GameInfo>
-              <GameInfoTitle>🎮 Game Information</GameInfoTitle>
-              <GameInfoItem>
-                <span style={{ color: '#00BFFF' }}>Price:</span>
-                <span style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '1.8rem' }}>
-                  ${getGamePrice().toFixed(2)} USD
-                </span>
-              </GameInfoItem>
-              <GameInfoItem>
-                <span style={{ color: '#00BFFF' }}>Status:</span>
-                <span style={{ color: '#00FF41' }}>{getGameStatus()}</span>
-              </GameInfoItem>
-              <GameInfoItem>
-                <span style={{ color: '#00BFFF' }}>Your Role:</span>
-                <span style={{ color: '#FF1493' }}>
-                  {isCreator ? 'Creator' : 'Challenger/Spectator'}
-                </span>
-              </GameInfoItem>
-            </GameInfo>
           </NFTDetails>
         </NFTContent>
       </NFTSection>
       
-      {/* Coin Display Section - Right Side */}
-      <CoinSection>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          width: '100%',
-          height: '100%',
-          transform: 'translate(0.8rem, 0.4rem)' // Move 2cm right, 1cm down
-        }}>
-          <CoinContainer
-            gameId={gameId}
-            gameData={gameData}
-            customHeadsImage={coinData?.headsImage || coinConfig?.headsImage}
-            customTailsImage={coinData?.tailsImage || coinConfig?.tailsImage}
-            gameCoin={coinData || coinConfig}
-            isMobile={window.innerWidth <= 768}
-            address={address}
-            isCreator={isCreator}
-          />
-        </div>
-      </CoinSection>
+       {/* Coin Display Section - Right Side */}
+       <CoinSection>
+         <div style={{ 
+           display: 'flex', 
+           justifyContent: 'center', 
+           alignItems: 'center',
+           width: '100%',
+           height: '100%',
+           transform: 'translate(0.8rem, 0.4rem)' // Move 2cm right, 1cm down
+         }}>
+           {coinData ? (
+             <CoinContainer
+               gameId={gameId}
+               gameData={gameData}
+               customHeadsImage={coinData.headsImage}
+               customTailsImage={coinData.tailsImage}
+               gameCoin={coinData}
+               isMobile={window.innerWidth <= 768}
+               address={address}
+               isCreator={isCreator}
+             />
+           ) : (
+             <div style={{ color: 'white', textAlign: 'center' }}>
+               <p>Loading coin...</p>
+               <p>Coin data: {JSON.stringify(coinData)}</p>
+               <p>Coin config: {JSON.stringify(coinConfig)}</p>
+             </div>
+           )}
+         </div>
+       </CoinSection>
     </TabContainer>
   )
 }
