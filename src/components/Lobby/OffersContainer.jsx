@@ -427,6 +427,12 @@ const OffersContainer = ({
       return
     }
 
+    // Check if user is creator - prevent creators from making offers
+    if (isCreator()) {
+      showError('Game creators cannot make offers on their own games')
+      return
+    }
+
     const offerAmount = parseFloat(cryptoOffer)
     
     // Validate offer amount
@@ -438,56 +444,73 @@ const OffersContainer = ({
     setIsSubmittingOffer(true)
 
     try {
-      // Try WebSocket service first
-      const isSocketConnected = socket && socket.isConnected && socket.isConnected()
-      console.log('🔍 WebSocket connection check:', isSocketConnected)
+      // WebSocket-first approach with API fallback (same as chat)
+      const ws = socket || window.FlipnosisWS
+      const isConnected = ws && (ws.isConnected ? ws.isConnected() : ws.connected)
       
-      if (isSocketConnected) {
+      console.log('🔍 Offers: WebSocket connection check:', isConnected)
+      
+      if (isConnected) {
+        // Send via WebSocket
         const offerData = {
           type: 'crypto_offer',
+          roomId: `game_${gameId}`,
           listingId: gameData.listing_id,
           address: address,
           cryptoAmount: offerAmount,
           timestamp: new Date().toISOString()
         }
         
-        console.log('📤 Offers: Sending crypto offer:', offerData)
-        console.log('📤 Offers: Socket send method available:', typeof socket.send === 'function')
-        socket.send(offerData)
+        console.log('📤 Offers: Sending via WebSocket:', offerData)
+        ws.send(offerData)
         
-        console.log('💰 Crypto offer sent via WebSocket')
+        // Optimistically add to local state
+        const newOffer = {
+          id: Date.now(),
+          type: 'crypto_offer',
+          address: address,
+          cryptoAmount: offerAmount,
+          timestamp: new Date().toISOString()
+        }
+        
+        addOffer(newOffer)
         showSuccess(`Offer of $${offerAmount.toFixed(2)} USD sent!`)
         setCryptoOffer('')
       } else {
-        // Use WebSocketService with queuing
-        console.log('⚠️ WebSocket not connected, using service to queue offer')
+        // Fallback to API
+        console.log('⚠️ WebSocket not connected, using API fallback')
         
-        const ws = window.FlipnosisWS
-        if (ws) {
-          // Send offer via global WebSocket service
-          ws.send({
-            type: 'crypto_offer',
-            gameId: gameData.listing_id,
+        const response = await fetch('/api/offers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            listingId: gameData.listing_id,
             address: address,
-            amount: offerAmount
+            cryptoAmount: offerAmount,
+            type: 'crypto_offer'
           })
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          console.log('✅ Offer sent via API:', result)
           
-          // Optimistically add to local state
+          // Add to local state
           const newOffer = {
             id: Date.now(),
             type: 'crypto_offer',
             address: address,
             cryptoAmount: offerAmount,
-            timestamp: new Date().toISOString(),
-            message: `💰 Offered $${offerAmount.toFixed(2)} USD`
+            timestamp: new Date().toISOString()
           }
           
           addOffer(newOffer)
-          showSuccess(`Offer queued: $${offerAmount.toFixed(2)} USD`)
+          showSuccess(`Offer of $${offerAmount.toFixed(2)} USD sent!`)
           setCryptoOffer('')
-          
-          // Try to reconnect
-          ws.connect(gameId, address)
+        } else {
+          throw new Error('API request failed')
         }
       }
     } catch (error) {

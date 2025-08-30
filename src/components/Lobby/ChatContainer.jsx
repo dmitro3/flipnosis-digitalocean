@@ -455,7 +455,14 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
             }
             
             return (
-              <Message key={msg.id || index} isCurrentUser={isCurrentUser}>
+              <Message 
+                key={msg.id || index} 
+                isCurrentUser={isCurrentUser}
+                className="flip-card-animated-border"
+                style={{
+                  animationDelay: `${index * 0.1}s, ${index * 0.1}s`
+                }}
+              >
                 <MessageHeader isCurrentUser={isCurrentUser}>
                   <MessageSender>
                     <ProfilePicture 
