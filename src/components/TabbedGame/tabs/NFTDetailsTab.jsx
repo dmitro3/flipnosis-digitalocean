@@ -84,7 +84,7 @@ const VerificationBadge = styled.div`
     content: ${props => props.verified ? 'none' : '"⚠️ This NFT has not been verified on our platform"'};
     position: absolute;
     top: 100%;
-    left: 0;
+    right: 0;
     background: rgba(255, 149, 0, 0.9);
     color: white;
     padding: 0.5rem;
@@ -122,7 +122,7 @@ const ShareButtonsContainer = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 2.5rem;
   position: relative;
   z-index: 100;
 `
@@ -224,60 +224,99 @@ const GameInfoItem = styled.div`
 
 
 const ActionButton = styled.button`
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
   font-size: 0.9rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   text-decoration: none;
   position: relative;
   z-index: 100;
+  min-width: 120px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+  
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  }
   
   &.share-x {
-    background: #000000;
+    background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     
     &:hover {
-      background: #333333;
+      background: linear-gradient(135deg, #1a1a1a 0%, #333333 50%, #1a1a1a 100%);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
     }
   }
   
   &.share-tg {
-    background: #0088cc;
+    background: linear-gradient(135deg, #0088cc 0%, #0099dd 50%, #0088cc 100%);
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     
     &:hover {
-      background: #006bb3;
+      background: linear-gradient(135deg, #0099dd 0%, #00aaff 50%, #0099dd 100%);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 15px -3px rgba(0, 136, 204, 0.3), 0 4px 6px -2px rgba(0, 136, 204, 0.2);
     }
   }
   
   &.opensea {
-    background: white;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%);
     color: #2081e2;
-    border: 1px solid #2081e2;
+    border: 2px solid #2081e2;
     
     &:hover {
-      background: #f8f9fa;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+      border-color: #0056b3;
+      color: #0056b3;
+      box-shadow: 0 8px 15px -3px rgba(32, 129, 226, 0.2), 0 4px 6px -2px rgba(32, 129, 226, 0.1);
     }
   }
   
   &.explorer {
-    background: #6c757d;
+    background: linear-gradient(135deg, #6c757d 0%, #7a8288 50%, #6c757d 100%);
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     
     &:hover {
-      background: #5a6268;
+      background: linear-gradient(135deg, #7a8288 0%, #868e96 50%, #7a8288 100%);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 15px -3px rgba(108, 117, 125, 0.3), 0 4px 6px -2px rgba(108, 117, 125, 0.2);
     }
   }
   
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 `
 
