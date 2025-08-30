@@ -77,8 +77,12 @@ const Message = styled.div`
   padding: 1rem;
   border-radius: 0.5rem;
   background: ${props => props.isCurrentUser ? 'rgba(0, 191, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-  border: 1px solid ${props => props.isCurrentUser ? 'rgba(0, 191, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)'};
-  animation: slideIn 0.3s ease-out;
+  border: 2px solid transparent;
+  animation: 
+    slideIn 0.3s ease-out,
+    rotatingBorder 3s linear infinite,
+    borderPulse 1.5s ease-in-out infinite;
+  animation-delay: ${props => props.index * 0.1}s, ${props => props.index * 0.1}s, ${props => props.index * 0.1}s;
   
   @keyframes slideIn {
     from {
@@ -88,6 +92,60 @@ const Message = styled.div`
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+  
+  @keyframes rotatingBorder {
+    0% {
+      border-color: rgba(255, 20, 147, 0.8);
+      box-shadow: 
+        0 0 20px rgba(255, 20, 147, 0.6),
+        0 0 40px rgba(255, 20, 147, 0.3),
+        inset 0 0 20px rgba(255, 20, 147, 0.1);
+    }
+    20% {
+      border-color: rgba(255, 255, 0, 0.8);
+      box-shadow: 
+        0 0 20px rgba(255, 255, 0, 0.6),
+        0 0 40px rgba(255, 255, 0, 0.3),
+        inset 0 0 20px rgba(255, 255, 0, 0.1);
+    }
+    40% {
+      border-color: rgba(0, 255, 65, 0.8);
+      box-shadow: 
+        0 0 20px rgba(0, 255, 65, 0.6),
+        0 0 40px rgba(0, 255, 65, 0.3),
+        inset 0 0 20px rgba(0, 255, 65, 0.1);
+    }
+    60% {
+      border-color: rgba(0, 191, 255, 0.8);
+      box-shadow: 
+        0 0 20px rgba(0, 191, 255, 0.6),
+        0 0 40px rgba(0, 191, 255, 0.3),
+        inset 0 0 20px rgba(0, 191, 255, 0.1);
+    }
+    80% {
+      border-color: rgba(138, 43, 226, 0.8);
+      box-shadow: 
+        0 0 20px rgba(138, 43, 226, 0.6),
+        0 0 40px rgba(138, 43, 226, 0.3),
+        inset 0 0 20px rgba(138, 43, 226, 0.1);
+    }
+    100% {
+      border-color: rgba(255, 20, 147, 0.8);
+      box-shadow: 
+        0 0 20px rgba(255, 20, 147, 0.6),
+        0 0 40px rgba(255, 20, 147, 0.3),
+        inset 0 0 20px rgba(255, 20, 147, 0.1);
+    }
+  }
+  
+  @keyframes borderPulse {
+    0%, 100% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 1;
     }
   }
 `
@@ -458,10 +516,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
               <Message 
                 key={msg.id || index} 
                 isCurrentUser={isCurrentUser}
-                className="flip-card-animated-border"
-                style={{
-                  animationDelay: `${index * 0.1}s, ${index * 0.1}s`
-                }}
+                index={index}
               >
                 <MessageHeader isCurrentUser={isCurrentUser}>
                   <MessageSender>

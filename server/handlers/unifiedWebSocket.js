@@ -200,6 +200,64 @@ async function handleChatMessage(socket, data, dbService) {
   }
 }
 
+async function handleCryptoOffer(socket, data, dbService) {
+  const { roomId, gameId, listingId, address, cryptoAmount } = data
+  
+  // Normalize room ID
+  const targetRoomId = roomId || `game_${gameId}`
+  const senderAddress = socket.address || address || 'anonymous'
+  
+  console.log(`💰 Crypto offer in ${targetRoomId} from ${senderAddress}: $${cryptoAmount}`)
+  
+  try {
+    // Save to database
+    await dbService.saveChatMessage(targetRoomId, senderAddress, `💰 Offered $${cryptoAmount} USD`, 'crypto_offer', {
+      cryptoAmount,
+      listingId
+    })
+    
+    // Broadcast to room
+    broadcastToRoom(targetRoomId, {
+      type: 'crypto_offer',
+      address: senderAddress,
+      cryptoAmount,
+      listingId,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('❌ Error saving crypto offer:', error)
+  }
+}
+
+async function handleAcceptCryptoOffer(socket, data, dbService) {
+  const { roomId, gameId, listingId, creatorAddress, acceptedOffer } = data
+  
+  // Normalize room ID
+  const targetRoomId = roomId || `game_${gameId}`
+  const senderAddress = socket.address || creatorAddress || 'anonymous'
+  
+  console.log(`✅ Accept crypto offer in ${targetRoomId} by ${senderAddress}`)
+  
+  try {
+    // Save to database
+    await dbService.saveChatMessage(targetRoomId, senderAddress, `✅ Accepted offer of $${acceptedOffer.cryptoAmount} USD`, 'accept_crypto_offer', {
+      acceptedOffer,
+      listingId
+    })
+    
+    // Broadcast to room
+    broadcastToRoom(targetRoomId, {
+      type: 'accept_crypto_offer',
+      creatorAddress: senderAddress,
+      acceptedOffer,
+      listingId,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('❌ Error saving offer acceptance:', error)
+  }
+}
+
 function handleJoinGame(socket, data) {
   const { gameId, address } = data
   
@@ -271,6 +329,14 @@ function handleConnection(ws, dbService) {
           
         case 'chat_message':
           handleChatMessage(ws, data, dbService)
+          break
+          
+        case 'crypto_offer':
+          handleCryptoOffer(ws, data, dbService)
+          break
+          
+        case 'accept_crypto_offer':
+          handleAcceptCryptoOffer(ws, data, dbService)
           break
           
         case 'join_game':
