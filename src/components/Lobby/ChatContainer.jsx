@@ -200,16 +200,16 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
               names[addr] = profile.username
               console.log(`✅ Loaded name for ${addr}: ${profile.username}`)
             } else {
-              names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
-              console.log(`⚠️ No username for ${addr}, using truncated address`)
+              names[addr] = 'Anonymous'
+              console.log(`⚠️ No username for ${addr}, using Anonymous`)
             }
           } else {
-            names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
-            console.log(`❌ Failed to load profile for ${addr}, using truncated address`)
+            names[addr] = 'Anonymous'
+            console.log(`❌ Failed to load profile for ${addr}, using Anonymous`)
           }
         } catch (error) {
           console.error(`❌ Error loading profile for ${addr}:`, error)
-          names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
+          names[addr] = 'Anonymous'
         }
       }
       
@@ -368,10 +368,10 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
   const getDisplayName = (sender) => {
     if (sender === 'System') return 'System'
     if (sender === address) return 'You'
-    // Check if we have a name for this sender (including empty string fallback)
+    // Check if we have a name for this sender
     if (playerNames[sender]) return playerNames[sender]
-    // Fallback to truncated address if no name found
-    return sender ? `${sender.slice(0, 6)}...${sender.slice(-4)}` : 'Anonymous'
+    // Fallback to Anonymous if no name found
+    return 'Anonymous'
   }
 
   // Debug logging for render
