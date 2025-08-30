@@ -1,82 +1,64 @@
 import React, { useState, useEffect } from 'react'
-import styled from '@emotion/styled'
 import { useAccount } from 'wagmi'
-import NFTDetailsContainer from '../../Lobby/NFTDetailsContainer'
-import LobbyCoin from '../../Lobby/LobbyCoin'
+import styled from '@emotion/styled'
 import { useNotification } from '../../../contexts/NotificationContext'
 
+// Import the original components
+import NFTDetailsContainer from '../../Lobby/NFTDetailsContainer'
+import CoinContainer from '../../GameOrchestrator/CoinContainer'
+
 const TabContainer = styled.div`
-  height: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   gap: 2rem;
+  width: 100%;
+  height: 100%;
   
   @media (max-width: 1200px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 1.5rem;
   }
 `
 
 const LeftSection = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 `
 
 const RightSection = styled.div`
-  flex: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
   align-items: center;
-  min-height: 400px;
+  justify-content: center;
+`
+
+const SectionTitle = styled.h3`
+  color: #FFD700;
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin: 0 0 1rem 0;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 `
 
 const CoinDisplayWrapper = styled.div`
-  background: rgba(0, 0, 0, 0.8);
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  background: rgba(0, 0, 40, 0.95);
+  border: 2px solid #FFD700;
   border-radius: 1rem;
   padding: 2rem;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.05) 50%, transparent 70%);
-    animation: shimmer 3s ease-in-out infinite;
-    pointer-events: none;
-  }
-  
-  @keyframes shimmer {
-    0%, 100% { transform: translateX(-100%); }
-    50% { transform: translateX(100%); }
-  }
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
 `
 
-const SectionTitle = styled.h2`
-  color: #00FF41;
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
-`
-
-const CoinInstructions = styled.div`
+const CoinInstructions = styled.p`
+  color: #fff;
   text-align: center;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 2;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
 `
 
 const NFTDetailsTab = ({ 
@@ -90,8 +72,11 @@ const NFTDetailsTab = ({
 }) => {
   const { address } = useAccount()
   const { showSuccess, showError } = useNotification()
-  const [isNFTVerified, setIsNFTVerified] = useState(false)
-  const [verificationChecked, setVerificationChecked] = useState(false)
+  
+  // Coin data state (like in original GameLobby)
+  const [customHeadsImage, setCustomHeadsImage] = useState(null)
+  const [customTailsImage, setCustomTailsImage] = useState(null)
+  const [gameCoin, setGameCoin] = useState(null)
 
   // Debug logging
   console.log('🔍 NFTDetailsTab Debug:', {
@@ -102,21 +87,33 @@ const NFTDetailsTab = ({
     getGameNFTImage: getGameNFTImage(),
     getGameNFTName: getGameNFTName(),
     getGameNFTCollection: getGameNFTCollection(),
-    address
+    address,
+    coin_data: gameData?.coin_data,
+    coinData: gameData?.coinData
   })
 
+  // Extract coin data from gameData (like in original GameLobby)
   useEffect(() => {
-    // Check NFT verification status
-    if (gameData && gameData.nft_deposited) {
-      setIsNFTVerified(true)
-    }
-    setVerificationChecked(true)
-  }, [gameData])
+    let coinData = null
 
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text)
-    showSuccess(`${label} copied to clipboard!`)
-  }
+    if (gameData?.coinData && typeof gameData.coinData === 'object') {
+      coinData = gameData.coinData
+    } else if (gameData?.coin_data) {
+      try {
+        coinData = typeof gameData.coin_data === 'string' ? 
+          JSON.parse(gameData.coin_data) : gameData.coin_data
+      } catch (error) {
+        console.error('❌ Error parsing coin data:', error)
+      }
+    }
+
+    if (coinData && coinData.headsImage && coinData.tailsImage) {
+      setCustomHeadsImage(coinData.headsImage)
+      setCustomTailsImage(coinData.tailsImage)
+      setGameCoin(coinData)
+      console.log('✅ Coin data extracted:', coinData)
+    }
+  }, [gameData])
 
   // Create nftData object in the format expected by NFTDetailsContainer
   const nftData = {
@@ -132,11 +129,9 @@ const NFTDetailsTab = ({
     <TabContainer>
       {/* Left Section - NFT Details */}
       <LeftSection>
-        <SectionTitle>🔍 NFT Verification</SectionTitle>
-        
         <NFTDetailsContainer
           gameData={gameData}
-          isCreator={isCreator}
+          isCreator={isCreator()}
           currentTurn={null}
           nftData={nftData}
           currentChain={gameData?.nft_chain || gameData?.chain || 'base'}
@@ -146,20 +141,21 @@ const NFTDetailsTab = ({
       {/* Right Section - Interactive Coin Display */}
       <RightSection>
         <CoinDisplayWrapper>
-          <div style={{ position: 'relative', zIndex: 2, width: '100%', textAlign: 'center' }}>
-            <SectionTitle style={{ color: '#FFD700' }}>🪙 Interactive Coin</SectionTitle>
-            
-            <CoinInstructions>
-              Click the coin to see it spin and verify its authenticity
-            </CoinInstructions>
-            
-            <LobbyCoin
-              size={250}
-              customHeadsImage={getGameNFTImage()}
-              customTailsImage={getGameNFTImage()}
-              material={gameData?.coin_material || 'gold'}
-            />
-          </div>
+          <SectionTitle>🪙 Interactive Coin</SectionTitle>
+          <CoinInstructions>
+            Click the coin to see it spin and verify its authenticity
+          </CoinInstructions>
+          
+          <CoinContainer
+            gameId={gameId}
+            gameData={gameData}
+            customHeadsImage={customHeadsImage}
+            customTailsImage={customTailsImage}
+            gameCoin={gameCoin}
+            isMobile={window.innerWidth <= 768}
+            address={address}
+            isCreator={isCreator}
+          />
         </CoinDisplayWrapper>
       </RightSection>
     </TabContainer>
