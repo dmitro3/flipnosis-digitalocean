@@ -183,31 +183,44 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
   //   scrollToBottom()
   // }, [messages])
 
-  // Load player names for messages
+  // Load player names and images
   useEffect(() => {
     const loadPlayerNames = async () => {
       const names = {}
-      const uniqueAddresses = [...new Set(messages.map(m => m.sender).filter(Boolean))]
+      const addresses = [...new Set(messages.map(msg => msg.sender).filter(addr => addr && addr !== 'System'))]
       
-      for (const addr of uniqueAddresses) {
-        if (!names[addr] && addr && addr !== 'System') {
-          try {
-            const name = await getPlayerName(addr)
-            // Use the same logic as GameRoom: if name is empty, use truncated address
-            names[addr] = name || `${addr.slice(0, 6)}...${addr.slice(-4)}`
-          } catch (error) {
-            console.error('Error loading player name for:', addr, error)
+      console.log('👥 Loading player names for addresses:', addresses)
+      
+      for (const addr of addresses) {
+        try {
+          const response = await fetch(`/api/profiles/${addr}`)
+          if (response.ok) {
+            const profile = await response.json()
+            if (profile && profile.username) {
+              names[addr] = profile.username
+              console.log(`✅ Loaded name for ${addr}: ${profile.username}`)
+            } else {
+              names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
+              console.log(`⚠️ No username for ${addr}, using truncated address`)
+            }
+          } else {
             names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
+            console.log(`❌ Failed to load profile for ${addr}, using truncated address`)
           }
+        } catch (error) {
+          console.error(`❌ Error loading profile for ${addr}:`, error)
+          names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
         }
       }
+      
+      console.log('👥 Final player names:', names)
       setPlayerNames(names)
     }
 
     if (messages.length > 0) {
       loadPlayerNames()
     }
-  }, [messages, getPlayerName])
+  }, [messages])
 
   useEffect(() => {
     if (!gameId || !address) return
@@ -227,7 +240,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
       setIsConnected(true)
     } else {
       // Connect to WebSocket using global service
-      ws.connect(gameId, address)
+      ws.connect(`game_${gameId}`, address)
         .then(() => {
           console.log('✅ Connected to WebSocket for chat')
           setIsConnected(true)
