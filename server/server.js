@@ -358,7 +358,7 @@ initializeServices()
         const httpsServer = https.createServer(sslOptions, app)
         
         // Initialize WebSocket for HTTPS server
-        initializeWebSocket(httpsServer)
+        initializeWebSocket(httpsServer, dbService)
         
         // Listen on port 443 for HTTPS/WSS
         httpsServer.listen(443, '0.0.0.0', () => {
