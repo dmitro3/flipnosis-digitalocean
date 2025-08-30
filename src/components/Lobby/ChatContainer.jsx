@@ -196,12 +196,15 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
           const response = await fetch(`/api/profiles/${addr}`)
           if (response.ok) {
             const profile = await response.json()
-            if (profile && profile.username) {
-              names[addr] = profile.username
-              console.log(`✅ Loaded name for ${addr}: ${profile.username}`)
+            if (profile && profile.name && profile.name.trim()) {
+              names[addr] = profile.name.trim()
+              console.log(`✅ Loaded name for ${addr}: ${profile.name}`)
+            } else if (profile && profile.username && profile.username.trim()) {
+              names[addr] = profile.username.trim()
+              console.log(`✅ Loaded legacy username for ${addr}: ${profile.username}`)
             } else {
               names[addr] = 'Anonymous'
-              console.log(`⚠️ No username for ${addr}, using Anonymous`)
+              console.log(`⚠️ No name found for ${addr}, using Anonymous`)
             }
           } else {
             names[addr] = 'Anonymous'
