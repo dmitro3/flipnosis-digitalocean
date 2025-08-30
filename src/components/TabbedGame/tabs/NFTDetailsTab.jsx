@@ -150,24 +150,9 @@ const CoinSection = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
   min-height: 400px;
-`
-
-const CoinTitle = styled.h3`
-  margin: 0;
-  color: #FFD700;
-  font-size: 1.3rem;
-  font-weight: bold;
-  text-align: center;
-`
-
-const CoinDescription = styled.p`
-  color: rgba(255, 255, 255, 0.8);
-  text-align: center;
-  margin: 0;
-  font-size: 1rem;
 `
 
 const GameInfo = styled.div`
@@ -339,24 +324,16 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
       
       {/* Coin Display Section */}
       <CoinSection>
-        <CoinTitle>🪙 Game Coin Display</CoinTitle>
-        <CoinDescription>
-          This is the interactive coin that will be used in the game. 
-          You can test the flip animation here!
-        </CoinDescription>
-        
-        <div style={{ flex: 1, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <CoinContainer
-            gameId={gameId}
-            gameData={gameData}
-            customHeadsImage={coinConfig?.headsImage}
-            customTailsImage={coinConfig?.tailsImage}
-            gameCoin={coinConfig}
-            isMobile={window.innerWidth <= 768}
-            address={address}
-            isCreator={isCreator}
-          />
-        </div>
+        <CoinContainer
+          gameId={gameId}
+          gameData={gameData}
+          customHeadsImage={coinConfig?.headsImage}
+          customTailsImage={coinConfig?.tailsImage}
+          gameCoin={coinConfig}
+          isMobile={window.innerWidth <= 768}
+          address={address}
+          isCreator={isCreator}
+        />
       </CoinSection>
     </TabContainer>
   )

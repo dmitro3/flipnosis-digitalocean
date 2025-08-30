@@ -13,32 +13,45 @@ const TabbedContainer = styled.div`
   box-shadow: 0 0 30px rgba(0, 191, 255, 0.3);
   height: 900px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   
   @media (max-width: 768px) {
     height: 100vh;
     border-radius: 0;
+    flex-direction: column;
   }
 `
 
 const TabsHeader = styled.div`
   display: flex;
+  flex-direction: column;
   background: rgba(0, 0, 0, 0.8);
-  border-bottom: 2px solid rgba(0, 191, 255, 0.3);
+  border-right: 2px solid rgba(0, 191, 255, 0.3);
+  min-width: 200px;
+  
+  @media (max-width: 768px) {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 2px solid rgba(0, 191, 255, 0.3);
+    min-width: auto;
+  }
 `
 
 const Tab = styled.button`
-  flex: 1;
-  padding: 1rem 1.5rem;
+  padding: 2rem 1.5rem;
   background: ${props => props.active ? 'rgba(0, 191, 255, 0.2)' : 'transparent'};
   color: ${props => props.active ? '#00BFFF' : 'rgba(255, 255, 255, 0.7)'};
   border: none;
-  border-bottom: 3px solid ${props => props.active ? '#00BFFF' : 'transparent'};
+  border-right: 3px solid ${props => props.active ? '#00BFFF' : 'transparent'};
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.3rem;
   font-weight: bold;
   transition: all 0.3s ease;
   position: relative;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   &:hover {
     background: rgba(0, 191, 255, 0.1);
@@ -46,12 +59,21 @@ const Tab = styled.button`
   }
   
   &:not(:last-child) {
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   @media (max-width: 768px) {
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
+    flex: 1;
+    padding: 1rem 1rem;
+    font-size: 1.1rem;
+    text-align: center;
+    border-right: none;
+    border-bottom: 3px solid ${props => props.active ? '#00BFFF' : 'transparent'};
+    
+    &:not(:last-child) {
+      border-bottom: none;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
   }
 `
 
@@ -74,10 +96,7 @@ const TabPane = styled.div`
   overflow: auto;
 `
 
-const TabIcon = styled.span`
-  margin-right: 0.5rem;
-  font-size: 1.2rem;
-`
+
 
 const TabbedGameInterface = ({ 
   gameData, 
@@ -102,20 +121,17 @@ const TabbedGameInterface = ({
   const tabs = [
     {
       id: 'nft',
-      label: 'NFT & Coin',
-      icon: '💎',
+      label: 'Details',
       component: NFTDetailsTab
     },
     {
       id: 'chat',
       label: 'Chat & Offers',
-      icon: '💬',
       component: ChatOffersTab
     },
     {
       id: 'game',
       label: 'Game Room',
-      icon: '🎮',
       component: GameRoomTab
     }
   ]
@@ -151,7 +167,6 @@ const TabbedGameInterface = ({
             active={activeTab === tab.id}
             onClick={() => handleTabChange(tab.id)}
           >
-            <TabIcon>{tab.icon}</TabIcon>
             {tab.label}
           </Tab>
         ))}
