@@ -393,6 +393,27 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
         </ConnectionStatus>
       </ChatHeader>
 
+      <InputContainer>
+        <Input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder={(connected || isConnected) ? "Type your message..." : "Reconnecting... (you can still type)"}
+          disabled={false}
+          onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
+        />
+        <SendButton
+          onClick={sendMessage}
+          disabled={!newMessage.trim()}
+          style={{
+            background: (connected || isConnected) ? '#00FF41' : '#FFA500',
+            cursor: newMessage.trim() ? 'pointer' : 'not-allowed'
+          }}
+        >
+          {(connected || isConnected) ? 'Send' : 'Queue'}
+        </SendButton>
+      </InputContainer>
+
       <MessagesContainer>
         {messages.length === 0 ? (
           <div style={{
@@ -454,27 +475,6 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
         )}
         <div ref={messagesEndRef} />
       </MessagesContainer>
-
-      <InputContainer>
-        <Input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder={(connected || isConnected) ? "Type your message..." : "Reconnecting... (you can still type)"}
-          disabled={false}
-          onKeyPress={(e) => e.key === 'Enter' && sendMessage(e)}
-        />
-        <SendButton
-          onClick={sendMessage}
-          disabled={!newMessage.trim()}
-          style={{
-            background: (connected || isConnected) ? '#00FF41' : '#FFA500',
-            cursor: newMessage.trim() ? 'pointer' : 'not-allowed'
-          }}
-        >
-          {(connected || isConnected) ? 'Send' : 'Queue'}
-        </SendButton>
-      </InputContainer>
     </ChatContainerStyled>
   )
 }
