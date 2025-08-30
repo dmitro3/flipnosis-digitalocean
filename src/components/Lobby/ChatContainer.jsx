@@ -414,6 +414,8 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
         </SendButton>
       </InputContainer>
 
+      <div style={{ marginBottom: '1rem' }}></div>
+
       <MessagesContainer>
         {messages.length === 0 ? (
           <div style={{

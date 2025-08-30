@@ -246,7 +246,7 @@ const OffersContainer = ({
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
-  const { address, isConnected } = useWallet()
+  const { address, isConnected: walletIsConnected, setIsConnected } = useWallet()
   const { getPlayerName } = useProfile()
   const { showError, showSuccess, showInfo } = useToast()
   
@@ -266,189 +266,151 @@ const OffersContainer = ({
     setOffers(initialOffers)
   }, [initialOffers])
 
-  // Auto scroll to bottom when new offers arrive
-  // useEffect(() => {
-  //   offersEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  // }, [offers])
-
-const isCreator = () => {
-  // Use prop if available (preferred)
-  if (isCreatorProp && typeof isCreatorProp === 'function') {
-    return isCreatorProp()
-  }
-  
-  // Fallback to local implementation
-  if (!gameData || !address) return false
-  
-  // Check both possible creator field names
-  const creatorAddress = gameData.creator || gameData.creator_address
-  if (!creatorAddress) {
-    console.warn('No creator field found in gameData:', Object.keys(gameData))
-    return false
-  }
-  
-  return address.toLowerCase() === creatorAddress.toLowerCase()
-}
-
-  // Listen for offers from WebSocket service
+  // Auto-refresh offers every 2 seconds as fallback
   useEffect(() => {
-    if (!socket) return
-    
-    const handleMessage = (data) => {
+    if (!gameData?.listing_id) return
+
+    const refreshOffers = async () => {
       try {
-        console.log('💰 Offers: WebSocket message received:', data)
+        const response = await fetch(`/api/offers/${gameData.listing_id}`)
+        const data = await response.json()
         
-        if (data.type === 'nft_offer') {
-          console.log('💎 Offers: Received NFT offer:', data)
-          addOffer({
-            id: Date.now() + Math.random(),
-            type: 'nft_offer',
-            address: data.offererAddress,
-            nft: data.nft,
-            timestamp: data.timestamp || new Date().toISOString(),
-            offerId: data.offerId,
-            offerText: data.offerText
-          })
-        } else if (data.type === 'crypto_offer') {
-          console.log('💰 Offers: Received crypto offer:', data)
-          const newOffer = {
-            id: Date.now() + Math.random(),
-            type: 'crypto_offer',
-            address: data.offererAddress,
-            cryptoAmount: data.cryptoAmount,
-            timestamp: data.timestamp || new Date().toISOString(),
-            offerId: data.offerId
-          }
-          addOffer(newOffer)
-          
-          // Show success message to the offerer
-          if (data.offererAddress === address) {
-            showSuccess(`Your offer of $${data.cryptoAmount} USD has been submitted!`)
-          }
-        } else if (data.type === 'accept_nft_offer' || data.type === 'accept_crypto_offer') {
-          console.log('✅ Offers: Offer accepted:', data)
-          
-          // Create the accepted offer object
-          const acceptedOfferData = {
-            id: Date.now() + Math.random(),
-            type: 'offer_accepted',
-            address: data.creatorAddress,
-            acceptedOffer: data.acceptedOffer,
-            timestamp: data.timestamp || new Date().toISOString()
-          }
-          
-          addOffer(acceptedOfferData)
-          
-          // Note: We're NOT triggering the overlay here anymore because
-          // the GameLobby component now handles this via its WebSocket handlers
-          console.log('🎯 Offer accepted message processed - GameLobby will handle overlay')
-          
-          // Add a system message to prompt the joiner to load their crypto
-          if (data.type === 'accept_crypto_offer' && data.acceptedOffer?.cryptoAmount) {
-            addOffer({
-              id: Date.now() + Math.random() + 1,
-              type: 'system',
-              address: 'system',
-              message: `🎮 Game accepted! Player 2, please load your ${data.acceptedOffer.cryptoAmount} USD worth of ETH to start the game!`,
-              timestamp: new Date().toISOString()
-            })
-          }
-        } else if (data.type === 'chat_history') {
-          console.log('📚 Offers: Received chat history:', data)
-          if (data.messages && Array.isArray(data.messages)) {
-            const historyOffers = data.messages
-              .filter(msg => msg.message_type !== 'chat') // Only non-chat messages (offers)
-              .map(msg => ({
-                id: msg.id || Date.now() + Math.random(),
-                type: msg.message_type || 'offer',
-                address: msg.sender_address,
-                message: msg.message,
-                timestamp: msg.created_at,
-                cryptoAmount: msg.message_data?.cryptoAmount,
-                nft: msg.message_data?.nft,
-                offerType: msg.message_data?.offerType,
-                acceptedOffer: msg.message_data?.acceptedOffer,
-                rejectedOffer: msg.message_data?.rejectedOffer
-              }))
-            
-            setOffers(historyOffers)
-            console.log(`📚 Offers: Loaded ${historyOffers.length} offer history messages`)
-          }
+        if (data.offers && data.offers.length > 0) {
+          console.log('🔄 Auto-refresh: Found offers, updating...')
+          setOffers(data.offers)
         }
       } catch (error) {
-        console.error('Offers: Error parsing message:', error)
+        console.error('❌ Auto-refresh error:', error)
       }
     }
+
+    // Initial load
+    refreshOffers()
     
-    // Register message handlers for specific message types
-    console.log('🔌 Offers: Registering message handlers with socket:', socket)
+    // Set up interval for auto-refresh
+    const interval = setInterval(refreshOffers, 2000)
     
-    // Get the actual WebSocket object or use the wrapper
-    const actualSocket = socket?.socket || socket
+    return () => clearInterval(interval)
+  }, [gameData?.listing_id])
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    if (!gameId || !address) return
+
+    console.log('🔌 Setting up WebSocket for real-time offers...')
     
-    if (actualSocket && typeof actualSocket.addEventListener === 'function') {
-      // Use addEventListener for WebSocket
-      const messageHandler = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          handleMessage(data)
-        } catch (error) {
-          console.error('Offers: Error parsing WebSocket message:', error)
+    const ws = socket || window.FlipnosisWS
+    if (!ws) {
+      console.error('❌ WebSocket service not available')
+      return
+    }
+
+    // Connect to WebSocket
+    const connectToWebSocket = async () => {
+      try {
+        if (!ws.isConnected()) {
+          console.log('🔌 Connecting to WebSocket...')
+          await ws.connect(`game_${gameId}`, address)
+          console.log('✅ WebSocket connected for real-time offers')
         }
+        setIsConnected(true)
+      } catch (error) {
+        console.error('❌ WebSocket connection failed:', error)
+        setIsConnected(false)
       }
-      
-      actualSocket.addEventListener('message', messageHandler)
-      
-      return () => {
-        console.log('🔌 Offers: Cleaning up WebSocket message handler')
-        actualSocket.removeEventListener('message', messageHandler)
-      }
-    } else if (actualSocket && typeof actualSocket.on === 'function') {
-      // Use .on/.off for socket.io style
-      actualSocket.on('crypto_offer', handleMessage)
-      actualSocket.on('nft_offer', handleMessage)
-      actualSocket.on('accept_crypto_offer', handleMessage)
-      actualSocket.on('accept_nft_offer', handleMessage)
-      actualSocket.on('chat_history', handleMessage)
-      
-      return () => {
-        console.log('🔌 Offers: Cleaning up socket.io message handlers')
-        actualSocket.off('crypto_offer', handleMessage)
-        actualSocket.off('nft_offer', handleMessage)
-        actualSocket.off('accept_crypto_offer', handleMessage)
-        actualSocket.off('accept_nft_offer', handleMessage)
-        actualSocket.off('chat_history', handleMessage)
-      }
-    } else {
-      console.warn('🔌 Offers: No valid socket found for message handling')
-      return () => {}
     }
-  }, [socket, address, showSuccess])
+
+    connectToWebSocket()
+
+    // Real-time offer handler
+    const handleOffer = (data) => {
+      console.log('📨 Real-time offer received:', data)
+      
+      if (data.type === 'crypto_offer' || data.type === 'nft_offer') {
+        const newOffer = {
+          id: data.id || Date.now() + Math.random(),
+          type: data.type,
+          address: data.address || data.offerer_address,
+          cryptoAmount: data.cryptoAmount || data.amount,
+          nftData: data.nftData,
+          timestamp: data.timestamp || new Date().toISOString()
+        }
+        
+        console.log('📝 Adding real-time offer:', newOffer)
+        setOffers(prev => [...prev, newOffer])
+      }
+    }
+
+    // Register real-time handler
+    ws.on('crypto_offer', handleOffer)
+    ws.on('nft_offer', handleOffer)
+
+    return () => {
+      ws.off('crypto_offer', handleOffer)
+      ws.off('nft_offer', handleOffer)
+    }
+  }, [gameId, address, socket])
+
+  const isCreator = () => {
+    // Use prop if available (preferred)
+    if (isCreatorProp && typeof isCreatorProp === 'function') {
+      return isCreatorProp()
+    }
+    
+    // Fallback to local implementation
+    if (!gameData || !address) return false
+    
+    // Check both possible creator field names
+    const creatorAddress = gameData.creator || gameData.creator_address
+    if (!creatorAddress) {
+      console.warn('No creator field found in gameData:', Object.keys(gameData))
+      return false
+    }
+    
+    return address.toLowerCase() === creatorAddress.toLowerCase()
+  }
 
   // Load player names for offers
   useEffect(() => {
     const loadPlayerNames = async () => {
       const names = {}
-      const uniqueAddresses = [...new Set(offers.map(o => o.address).filter(Boolean))]
+      const addresses = [...new Set(offers.map(o => o.address || o.offerer_address).filter(addr => addr && addr !== 'System'))]
       
-      for (const addr of uniqueAddresses) {
-        if (!names[addr] && addr) {
-          try {
-            const name = await getPlayerName(addr)
-            names[addr] = name || `${addr.slice(0, 6)}...${addr.slice(-4)}`
-          } catch (error) {
-            console.error('Error loading player name for:', addr, error)
-            names[addr] = `${addr.slice(0, 6)}...${addr.slice(-4)}`
+      console.log('👥 Loading player names for offers:', addresses)
+      
+      for (const addr of addresses) {
+        try {
+          const response = await fetch(`/api/profile/${addr}`)
+          if (response.ok) {
+            const profile = await response.json()
+            if (profile && profile.name && profile.name.trim()) {
+              names[addr] = profile.name.trim()
+              console.log(`✅ Loaded name for ${addr}: ${profile.name}`)
+            } else if (profile && profile.username && profile.username.trim()) {
+              names[addr] = profile.username.trim()
+              console.log(`✅ Loaded legacy username for ${addr}: ${profile.username}`)
+            } else {
+              names[addr] = 'Anonymous'
+              console.log(`⚠️ No name found for ${addr}, using Anonymous`)
+            }
+          } else {
+            names[addr] = 'Anonymous'
+            console.log(`❌ Failed to load profile for ${addr}, using Anonymous`)
           }
+        } catch (error) {
+          console.error(`❌ Error loading profile for ${addr}:`, error)
+          names[addr] = 'Anonymous'
         }
       }
+      
+      console.log('👥 Final player names for offers:', names)
       setPlayerNames(names)
     }
 
     if (offers.length > 0) {
       loadPlayerNames()
     }
-  }, [offers, getPlayerName])
+  }, [offers])
 
   const addOffer = (offer) => {
     console.log('📝 Offers: Adding offer to state:', offer)
@@ -776,7 +738,7 @@ const isCreator = () => {
     return validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
   }
 
-  if (!isConnected) {
+  if (!walletIsConnected) {
     return (
       <OffersContainerStyled>
         <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -793,7 +755,7 @@ const isCreator = () => {
     gamePrice,
     minOfferAmount,
     shouldShowInput: shouldShowOfferInput(),
-    isConnected,
+    isConnected: walletIsConnected,
     connected,
     hasSocket: !!socket,
     socketReadyState: socket?.readyState,
@@ -812,9 +774,9 @@ const isCreator = () => {
       <OffersHeader>
         <OffersTitle>💰 Offers</OffersTitle>
         <ConnectionStatus>
-          <StatusDot connected={connected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN)} />
-          <StatusText connected={connected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN)}>
-            {connected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN) ? 'Connected' : 'Disconnected'}
+          <StatusDot connected={walletIsConnected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN)} />
+          <StatusText connected={walletIsConnected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN)}>
+            {walletIsConnected || socket?.connected || (socket?.socket?.readyState === WebSocket.OPEN) ? 'Connected' : 'Disconnected'}
           </StatusText>
         </ConnectionStatus>
       </OffersHeader>
@@ -828,7 +790,45 @@ const isCreator = () => {
         </PriceInfo>
       )}
 
-      <OffersList>
+      {/* Offer Input - Available to non-creators when game is waiting for challenger */}
+      {console.log('🔍 Rendering offer input, shouldShowOfferInput:', shouldShowOfferInput())}
+      {shouldShowOfferInput() && (
+        <OfferInputContainer>
+          <OfferInput
+            type="text"
+            value={cryptoOffer}
+            onChange={(e) => {
+              console.log('🔍 Input onChange:', e.target.value)
+              // Only allow digits and decimal point
+              const value = e.target.value.replace(/[^0-9.]/g, '')
+              // Prevent multiple decimal points
+              const parts = value.split('.')
+              if (parts.length <= 2) {
+                setCryptoOffer(value)
+              }
+            }}
+            placeholder={`Min $${minOfferAmount.toFixed(2)} USD...`}
+            disabled={isSubmittingOffer}
+            onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
+            style={{
+              borderColor: '#00FF41'
+            }}
+          />
+          <OfferButton
+            onClick={() => {
+              console.log('🔍 Button clicked, cryptoOffer:', cryptoOffer, 'isSubmittingOffer:', isSubmittingOffer)
+              handleSubmitCryptoOffer()
+            }}
+            disabled={!cryptoOffer.trim() || isSubmittingOffer}
+          >
+            {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
+          </OfferButton>
+                 </OfferInputContainer>
+       )}
+
+       <div style={{ marginBottom: '1rem' }}></div>
+
+       <OffersList>
         {offers.length === 0 ? (
           <div style={{
             textAlign: 'center',
@@ -869,42 +869,6 @@ const isCreator = () => {
         )}
         <div ref={offersEndRef} />
       </OffersList>
-
-      {/* Offer Input - Available to non-creators when game is waiting for challenger */}
-      {console.log('🔍 Rendering offer input, shouldShowOfferInput:', shouldShowOfferInput())}
-      {shouldShowOfferInput() && (
-        <OfferInputContainer>
-          <OfferInput
-            type="text"
-            value={cryptoOffer}
-            onChange={(e) => {
-              console.log('🔍 Input onChange:', e.target.value)
-              // Only allow digits and decimal point
-              const value = e.target.value.replace(/[^0-9.]/g, '')
-              // Prevent multiple decimal points
-              const parts = value.split('.')
-              if (parts.length <= 2) {
-                setCryptoOffer(value)
-              }
-            }}
-            placeholder={`Min $${minOfferAmount.toFixed(2)} USD...`}
-            disabled={isSubmittingOffer}
-            onKeyPress={(e) => e.key === 'Enter' && handleSubmitCryptoOffer()}
-            style={{
-              borderColor: '#00FF41'
-            }}
-          />
-          <OfferButton
-            onClick={() => {
-              console.log('🔍 Button clicked, cryptoOffer:', cryptoOffer, 'isSubmittingOffer:', isSubmittingOffer)
-              handleSubmitCryptoOffer()
-            }}
-            disabled={!cryptoOffer.trim() || isSubmittingOffer}
-          >
-            {isSubmittingOffer ? 'Submitting...' : 'Make Offer'}
-          </OfferButton>
-        </OfferInputContainer>
-      )}
     </OffersContainerStyled>
   )
 }
