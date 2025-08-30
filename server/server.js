@@ -72,9 +72,11 @@ if (fs.existsSync(distPath)) {
 }
 
 // ===== SERVICES INITIALIZATION =====
+let dbService = null
+
 async function initializeServices() {
   // Initialize database
-  const dbService = new DatabaseService(DATABASE_PATH)
+  dbService = new DatabaseService(DATABASE_PATH)
   await dbService.initialize()
 
   // Initialize blockchain service
