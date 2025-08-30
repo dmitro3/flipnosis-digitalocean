@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useWallet } from '../../contexts/WalletContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
+import { useContractService } from '../../contexts/ContractServiceContext'
+import OfferAcceptanceOverlay from './OfferAcceptanceOverlay'
 import styled from '@emotion/styled'
 // Using global WebSocket service to avoid minification issues
 
@@ -255,6 +257,10 @@ const OffersContainer = ({
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
   const [playerNames, setPlayerNames] = useState({})
   
+  // Deposit overlay state
+  const [showDepositOverlay, setShowDepositOverlay] = useState(false)
+  const [acceptedOffer, setAcceptedOffer] = useState(null)
+  
   const offersEndRef = useRef(null)
   
   // Get game price for validation
@@ -352,13 +358,26 @@ const OffersContainer = ({
       }
     }
 
-    // Register real-time handler
+    // Real-time offer acceptance handler
+    const handleOfferAcceptance = (data) => {
+      console.log('✅ Real-time offer acceptance received:', data)
+      
+      if (data.type === 'accept_crypto_offer') {
+        setAcceptedOffer(data.acceptedOffer)
+        setShowDepositOverlay(true)
+        console.log('🎯 Showing deposit overlay for accepted offer')
+      }
+    }
+
+    // Register real-time handlers
     ws.on('crypto_offer', handleOffer)
     ws.on('nft_offer', handleOffer)
+    ws.on('accept_crypto_offer', handleOfferAcceptance)
 
     return () => {
       ws.off('crypto_offer', handleOffer)
       ws.off('nft_offer', handleOffer)
+      ws.off('accept_crypto_offer', handleOfferAcceptance)
     }
   }, [gameId, address, socket])
 
@@ -601,6 +620,11 @@ const OffersContainer = ({
       console.log('✅ Offer acceptance message sent successfully')
       showSuccess(`${offerType} accepted! Game starting...`)
       
+      // Immediately show deposit overlay for the creator
+      setAcceptedOffer(offer)
+      setShowDepositOverlay(true)
+      console.log('🎯 Showing deposit overlay for accepted offer')
+      
       // Don't reload - let the WebSocket handle updates
       console.log('🎯 Offer accepted - waiting for WebSocket updates')
       
@@ -748,6 +772,9 @@ const OffersContainer = ({
 
   // Check if offer input should be shown
   const shouldShowOfferInput = () => {
+    // Don't show input if deposit overlay is active
+    if (showDepositOverlay) return false
+    
     // Show for non-creators when game is waiting for challenger
     if (isCreator()) return false
     
@@ -770,6 +797,23 @@ const OffersContainer = ({
     const listingStatus = gameData?.type === 'listing' ? gameData?.status : null
     
     return validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
+  }
+
+  // Deposit overlay handlers
+  const handleCloseDepositOverlay = () => {
+    setShowDepositOverlay(false)
+    setAcceptedOffer(null)
+  }
+
+  const handleDepositComplete = (offer) => {
+    console.log('🎯 Deposit completed, transporting to game room...')
+    setShowDepositOverlay(false)
+    setAcceptedOffer(null)
+    
+    // Transport to game room
+    if (onOfferAccepted) {
+      onOfferAccepted(offer)
+    }
   }
 
   if (!walletIsConnected) {
@@ -903,6 +947,17 @@ const OffersContainer = ({
         )}
         <div ref={offersEndRef} />
       </OffersList>
+
+      {/* Deposit Overlay */}
+      <OfferAcceptanceOverlay
+        isVisible={showDepositOverlay}
+        acceptedOffer={acceptedOffer}
+        gameData={gameData}
+        gameId={gameId}
+        address={address}
+        onClose={handleCloseDepositOverlay}
+        onDepositComplete={handleDepositComplete}
+      />
     </OffersContainerStyled>
   )
 }
