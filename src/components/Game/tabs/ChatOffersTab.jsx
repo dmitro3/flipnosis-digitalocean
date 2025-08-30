@@ -188,9 +188,14 @@ const ChatOffersTab = ({
                 gameData={gameData}
                 socket={null} // Will be handled by the parent WebSocket
                 connected={isConnected}
+                offers={[]} // Will be loaded by the component
                 isCreator={isCreator}
-                isJoiner={isJoiner}
-                address={address}
+                onOfferSubmitted={(offerData) => {
+                  console.log('Offer submitted via offers container:', offerData)
+                }}
+                onOfferAccepted={(offer) => {
+                  console.log('Offer accepted via offers container:', offer)
+                }}
                 className="offers-container"
               />
             </OffersWrapper>

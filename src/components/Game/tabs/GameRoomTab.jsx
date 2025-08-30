@@ -373,14 +373,14 @@ const GameRoomTab = ({
         {/* Game Coin */}
         <CoinSection>
           <OptimizedCoinWrapper
+            size={300}
+            headsImage={gameData?.nft_image || '/placeholder-nft.svg'}
+            tailsImage={gameData?.nft_image || '/placeholder-nft.svg'}
+            isFlipping={gameState === 'flipping'}
+            result={null}
+            serverControlled={true}
             gameId={gameId}
-            gameData={gameData}
-            customHeadsImage={gameData?.nft_image}
-            customTailsImage={gameData?.nft_image}
-            gameCoin={null}
-            isMobile={window.innerWidth <= 768}
-            address={address}
-            isCreator={isCreator}
+            isDisplay={false}
           />
         </CoinSection>
 

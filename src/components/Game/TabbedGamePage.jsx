@@ -32,7 +32,7 @@ const GamePageContainer = styled.div`
 
 // Left sidebar for tab navigation
 const TabSidebar = styled.div`
-  width: 250px;
+  width: 280px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -51,15 +51,19 @@ const TabButton = styled.button`
   };
   border: 2px solid ${props => props.$active ? '#00FF41' : 'rgba(0, 255, 65, 0.3)'};
   border-radius: 1rem;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1.5rem;
   color: ${props => props.$active ? '#00FF41' : 'rgba(255, 255, 255, 0.7)'};
-  font-size: 1rem;
+  font-size: 1.3rem;
   font-weight: bold;
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
   opacity: ${props => props.$disabled ? 0.5 : 1};
+  text-shadow: ${props => props.$active ? '0 0 10px rgba(0, 255, 65, 0.5)' : 'none'};
   
   &::before {
     content: '';
@@ -83,28 +87,23 @@ const TabButton = styled.button`
     color: #00FF41;
     box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
     transform: scale(1.02);
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
   }
   
   @media (max-width: 768px) {
-    padding: 1rem 0.5rem;
-    font-size: 0.9rem;
+    padding: 1.5rem 1rem;
+    font-size: 1rem;
     flex: 1;
-  }
-`
-
-const TabIcon = styled.div`
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  
-  @media (max-width: 768px) {
-    font-size: 1.2rem;
-    margin-bottom: 0.25rem;
+    letter-spacing: 1px;
   }
 `
 
 const TabLabel = styled.div`
+  text-align: center;
+  line-height: 1.2;
+  
   @media (max-width: 768px) {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 `
 
@@ -219,21 +218,18 @@ const TabbedGamePage = () => {
   const tabs = [
     {
       id: 'nft-details',
-      icon: '💎',
       label: 'NFT Details',
       disabled: false,
       description: 'Verify coin authenticity'
     },
     {
       id: 'chat-offers',
-      icon: '💬',
       label: 'Chat & Offers',
       disabled: false,
       description: 'Communicate and make offers'
     },
     {
       id: 'game-room',
-      icon: '🎮',
       label: 'Game Room',
       disabled: !isGameActive,
       description: isGameActive ? 'Game in progress' : 'Locked until game starts'
@@ -313,7 +309,6 @@ const TabbedGamePage = () => {
             title={tab.description}
           >
             {tab.disabled && <TabLockIcon>🔒</TabLockIcon>}
-            <TabIcon>{tab.icon}</TabIcon>
             <TabLabel>{tab.label}</TabLabel>
           </TabButton>
         ))}
