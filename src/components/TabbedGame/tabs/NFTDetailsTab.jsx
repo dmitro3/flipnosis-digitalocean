@@ -6,22 +6,33 @@ const TabContainer = styled.div`
   height: 100%;
   display: flex;
   flex-direction: row;
-  gap: 2rem;
-  padding: 2rem;
+  gap: 1.5rem;
+  padding: 1.5rem;
   overflow-y: auto;
   align-items: flex-start;
+  min-height: 0;
+  
+  @media (max-width: 1200px) {
+    gap: 1rem;
+    padding: 1rem;
+  }
   
   @media (max-width: 768px) {
     flex-direction: column;
     padding: 1rem;
-    gap: 1.5rem;
+    gap: 1rem;
     align-items: stretch;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    gap: 0.75rem;
   }
 `
 
 const NFTSection = styled.div`
   background: rgba(0, 0, 40, 0.95);
-  padding: 1.5rem;
+  padding: 1.25rem;
   border-radius: 1rem;
   border: 2px solid #FF1493;
   backdrop-filter: blur(10px);
@@ -30,8 +41,25 @@ const NFTSection = styled.div`
   overflow: hidden;
   flex: 2;
   height: fit-content;
-  max-height: 500px;
+  max-height: 100%;
+  min-height: 0;
   z-index: 1;
+  
+  @media (max-width: 1200px) {
+    padding: 1rem;
+    flex: 1.5;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    flex: none;
+    width: 100%;
+    max-height: none;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
   
   &::before {
     content: '';
@@ -81,7 +109,7 @@ const VerificationBadge = styled.div`
   z-index: 100;
   
   &:hover::after {
-    content: ${props => props.verified ? 'none' : '"⚠️ This NFT has not been verified on our platform"'};
+    content: ${props => props.verified ? 'none' : '"⚠️ This NFT has not been verified. Proceed with caution."'};
     position: absolute;
     top: 100%;
     right: 0;
@@ -101,12 +129,20 @@ const VerificationBadge = styled.div`
 const NFTContent = styled.div`
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 2rem;
+  gap: 1.5rem;
   align-items: start;
+  
+  @media (max-width: 1200px) {
+    gap: 1rem;
+  }
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 0.75rem;
   }
 `
 
@@ -122,14 +158,29 @@ const ShareButtonsContainer = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
   width: 100%;
-  margin-top: 2.5rem;
+  margin-top: 2rem;
   position: relative;
   z-index: 100;
+  
+  @media (max-width: 1200px) {
+    margin-top: 1.5rem;
+    gap: 0.4rem;
+  }
+  
+  @media (max-width: 768px) {
+    margin-top: 1.25rem;
+    gap: 0.3rem;
+  }
+  
+  @media (max-width: 480px) {
+    margin-top: 1rem;
+    gap: 0.25rem;
+  }
 `
 
 const NFTImage = styled.div`
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.1);
   display: flex;
@@ -144,9 +195,19 @@ const NFTImage = styled.div`
     object-fit: cover;
   }
   
+  @media (max-width: 1200px) {
+    width: 160px;
+    height: 160px;
+  }
+  
   @media (max-width: 768px) {
-    width: 150px;
-    height: 150px;
+    width: 140px;
+    height: 140px;
+  }
+  
+  @media (max-width: 480px) {
+    width: 120px;
+    height: 120px;
   }
 `
 
@@ -160,16 +221,40 @@ const NFTItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem;
+  padding: 0.6rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  @media (max-width: 1200px) {
+    padding: 0.5rem;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.45rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.4rem;
+  }
 `
 
 const NFTLabel = styled.span`
   color: #00BFFF;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  
+  @media (max-width: 1200px) {
+    font-size: 0.85rem;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+  }
 `
 
 const NFTValue = styled.span`
@@ -178,31 +263,78 @@ const NFTValue = styled.span`
   word-break: break-all;
   text-align: right;
   max-width: 60%;
+  font-size: 0.9rem;
+  
+  @media (max-width: 1200px) {
+    font-size: 0.85rem;
+    max-width: 55%;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    max-width: 50%;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+    max-width: 45%;
+  }
 `
 
 const CoinSection = styled.div`
   background: transparent;
   border: none;
   border-radius: 1rem;
-  padding: 2rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: fit-content;
-  max-height: 500px;
+  max-height: 100%;
+  min-height: 0;
   flex: 1;
-  max-width: 400px;
+  max-width: 350px;
   position: relative;
   z-index: 1;
+  
+  @media (max-width: 1200px) {
+    padding: 1.25rem;
+    max-width: 300px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
 `
 
 const GameInfo = styled.div`
   background: rgba(0, 191, 255, 0.1);
   border: 1px solid rgba(0, 191, 255, 0.3);
   border-radius: 0.5rem;
-  padding: 1rem;
-  margin-top: 1rem;
+  padding: 0.8rem;
+  margin-top: 0.8rem;
+  
+  @media (max-width: 1200px) {
+    padding: 0.7rem;
+    margin-top: 0.7rem;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.6rem;
+    margin-top: 0.6rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+  }
 `
 
 const GameInfoTitle = styled.h4`
@@ -224,23 +356,44 @@ const GameInfoItem = styled.div`
 
 
 const ActionButton = styled.button`
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1rem;
   border: none;
   border-radius: 0.75rem;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   text-decoration: none;
   position: relative;
   z-index: 100;
-  min-width: 120px;
+  min-width: 100px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(10px);
+  
+  @media (max-width: 1200px) {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+    min-width: 90px;
+    gap: 0.3rem;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.75rem;
+    min-width: 80px;
+    gap: 0.25rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.7rem;
+    min-width: 70px;
+    gap: 0.2rem;
+  }
   
   &::before {
     content: '';

@@ -241,6 +241,10 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
     // Set up message handlers
     const handleChatMessage = (data) => {
       console.log('📨 Chat message received:', data)
+      console.log('🔍 Message type check:', data.type === 'chat_message')
+      console.log('🔍 Current address:', address)
+      console.log('🔍 Message sender:', data.from || data.sender)
+      
       if (data.type === 'chat_message') {
         const newMessageObj = {
           id: Date.now() + Math.random(), // Ensure unique ID
@@ -255,6 +259,8 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
           console.log('📝 New messages state:', newMessages.length, 'messages')
           return newMessages
         })
+      } else {
+        console.log('⚠️ Received message with wrong type:', data.type)
       }
     }
 
@@ -333,16 +339,24 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
       return
     }
 
+    // Fix: Send both gameId and roomId to ensure server can handle it properly
     const messageData = {
       type: 'chat_message',
       gameId: gameId,
+      roomId: `game_${gameId}`, // Add explicit roomId for server
       message: newMessage.trim(),
       sender: address
     }
 
     console.log('📤 Sending chat message:', messageData)
+    console.log('🔍 WebSocket state:', {
+      connected: ws.connected,
+      readyState: ws.socket?.readyState,
+      currentRoom: ws.currentRoom
+    })
     
     if (ws.send(messageData)) {
+      console.log('✅ Message sent successfully')
       setNewMessage('')
     } else {
       console.error('❌ Failed to send message')

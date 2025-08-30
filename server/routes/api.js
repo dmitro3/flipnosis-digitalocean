@@ -1747,8 +1747,10 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     const limit = parseInt(req.query.limit) || 50
     
     try {
-      const messages = await dbService.getChatHistory(gameId, limit)
-      console.log(`📚 API: Returning ${messages.length} chat messages for game ${gameId}`)
+      // Fix: Use the correct room ID format that matches how messages are saved
+      const roomId = `game_${gameId}`
+      const messages = await dbService.getChatHistory(roomId, limit)
+      console.log(`📚 API: Returning ${messages.length} chat messages for game ${gameId} (room: ${roomId})`)
       res.json({ messages })
     } catch (error) {
       console.error('❌ Error fetching chat history:', error)
