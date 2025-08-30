@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import styled from '@emotion/styled'
-import { useNotification } from '../../../contexts/NotificationContext'
+import { useToast } from '../../../contexts/ToastContext'
 
 // Import the original components
 import NFTDetailsContainer from '../../Lobby/NFTDetailsContainer'
@@ -71,7 +71,7 @@ const NFTDetailsTab = ({
   getGameNFTCollection 
 }) => {
   const { address } = useAccount()
-  const { showSuccess, showError } = useNotification()
+  const { showSuccess, showError } = useToast()
   
   // Coin data state (like in original GameLobby)
   const [customHeadsImage, setCustomHeadsImage] = useState(null)
