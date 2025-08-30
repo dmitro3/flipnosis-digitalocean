@@ -4,7 +4,7 @@
 import { useRef, useEffect, useState } from 'react'
 import webSocketService from '../services/WebSocketService'
 
-export function useWebSocket() {
+function useWebSocket() {
   const [lastMessage, setLastMessage] = useState(null)
   const [isConnected, setIsConnected] = useState(false)
   const messageHandlers = useRef(new Map())
@@ -89,3 +89,4 @@ export function useWebSocket() {
 }
 
 export default useWebSocket
+export { useWebSocket }

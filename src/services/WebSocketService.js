@@ -197,7 +197,6 @@ if (typeof window !== 'undefined') {
           handlers.splice(index, 1)
         }
       }
-    }
     },
 
     // Disconnect
