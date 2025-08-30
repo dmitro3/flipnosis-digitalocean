@@ -5,12 +5,13 @@ import CoinContainer from '../../GameOrchestrator/CoinContainer'
 const TabContainer = styled.div`
   height: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 2rem;
   padding: 2rem;
   overflow-y: auto;
   
   @media (max-width: 768px) {
+    flex-direction: column;
     padding: 1rem;
     gap: 1.5rem;
   }
@@ -25,6 +26,7 @@ const NFTSection = styled.div`
   box-shadow: 0 0 30px rgba(255, 20, 147, 0.3), inset 0 0 20px rgba(255, 20, 147, 0.1);
   position: relative;
   overflow: hidden;
+  flex: 2;
   
   &::before {
     content: '';
@@ -153,6 +155,8 @@ const CoinSection = styled.div`
   justify-content: center;
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
   min-height: 400px;
+  flex: 1;
+  max-width: 400px;
 `
 
 const GameInfo = styled.div`
@@ -179,6 +183,68 @@ const GameInfoItem = styled.div`
   }
 `
 
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+`
+
+const ActionButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  
+  &.share-x {
+    background: linear-gradient(45deg, #1DA1F2, #0d8bd9);
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(45deg, #0d8bd9, #0a7bc4);
+    }
+  }
+  
+  &.share-tg {
+    background: linear-gradient(45deg, #0088cc, #006bb3);
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(45deg, #006bb3, #005a99);
+    }
+  }
+  
+  &.opensea {
+    background: linear-gradient(45deg, #2081e2, #1a6dc7);
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(45deg, #1a6dc7, #1559ad);
+    }
+  }
+  
+  &.explorer {
+    background: linear-gradient(45deg, #00BFFF, #0080FF);
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(45deg, #0080FF, #0060FF);
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`
+
 const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => {
   const [nftData, setNftData] = useState(null)
 
@@ -195,6 +261,63 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
       })
     }
   }, [gameData])
+
+  // Helper function to get marketplace URL based on chain
+  const getMarketplaceUrl = (chain) => {
+    if (!chain) return 'https://opensea.io/assets/ethereum' // Default to Ethereum marketplace
+    
+    const marketplaces = {
+      ethereum: 'https://opensea.io/assets/ethereum',
+      polygon: 'https://opensea.io/assets/matic',
+      base: 'https://opensea.io/assets/base',
+      arbitrum: 'https://opensea.io/assets/arbitrum',
+      optimism: 'https://opensea.io/assets/optimism',
+    }
+    
+    return marketplaces[chain.toLowerCase()] || 'https://opensea.io/assets/ethereum'
+  }
+
+  // Helper function to get explorer URL
+  const getExplorerUrl = (chain, contract, tokenId) => {
+    if (!chain || !contract || !tokenId) return '#'
+    
+    const explorers = {
+      ethereum: 'https://etherscan.io/token',
+      polygon: 'https://polygonscan.com/token',
+      base: 'https://basescan.org/token',
+      arbitrum: 'https://arbiscan.io/token',
+      optimism: 'https://optimistic.etherscan.io/token',
+    }
+    
+    const baseUrl = explorers[chain.toLowerCase()] || 'https://etherscan.io/token'
+    return `${baseUrl}/${contract}?a=${tokenId}`
+  }
+
+  // Share functionality
+  const handleShare = async (platform) => {
+    if (!gameData || !address) return
+    
+    const gameUrl = `${window.location.origin}/game/${gameId}`
+    const nftName = getNFTName()
+    const gamePrice = getGamePrice()
+    
+    try {
+      const message = platform === 'twitter' 
+        ? `🎮 Join my Flip on Flipnosis!!!\n\n💎 ${nftName} vs $${gamePrice.toFixed(2)} USD\n\n🔥 Bidding is live! Click to join now!\n\n${gameUrl}\n\n#FLIPNOSIS #NFTGaming #Web3`
+        : `🎮 Join my Flip on Flipnosis!\n\n💎 ${nftName} vs $${gamePrice.toFixed(2)} USD\n\nClick to join: ${gameUrl}`
+      
+      const shareUrls = {
+        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`,
+        telegram: `https://t.me/share/url?url=${encodeURIComponent(gameUrl)}&text=${encodeURIComponent(message)}`
+      }
+      
+      if (shareUrls[platform]) {
+        window.open(shareUrls[platform], '_blank', 'width=600,height=400')
+      }
+    } catch (error) {
+      console.error('Share failed:', error)
+    }
+  }
 
   const getNFTImage = () => {
     if (nftData?.image) return nftData.image
@@ -250,7 +373,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
 
   return (
     <TabContainer>
-      {/* NFT Details Section */}
+      {/* NFT Details Section - Left Side */}
       <NFTSection>
         <NFTHeader>
           <NFTTitle>💎 NFT Details</NFTTitle>
@@ -318,11 +441,73 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address, isCreator }) => 
                 </span>
               </GameInfoItem>
             </GameInfo>
+
+            {/* Action Buttons */}
+            <ActionButtons>
+              <ActionButton 
+                className="share-x"
+                onClick={() => handleShare('twitter')}
+                disabled={!address}
+              >
+                Share on X
+              </ActionButton>
+              <ActionButton 
+                className="share-tg"
+                onClick={() => handleShare('telegram')}
+                disabled={!address}
+              >
+                Share on TG
+              </ActionButton>
+              <a
+                href={getNFTContract() !== 'N/A' && getNFTTokenId() !== 'N/A' ? 
+                  `${getMarketplaceUrl(gameData?.chain || 'base')}/${getNFTContract()}/${getNFTTokenId()}` :
+                  '#'
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
+                    e.preventDefault()
+                    console.error('NFT contract details not available')
+                  }
+                }}
+                style={{ textDecoration: 'none' }}
+              >
+                <ActionButton className="opensea">
+                  <img 
+                    src="/images/opensea.png" 
+                    alt="OpenSea" 
+                    style={{ 
+                      width: '16px', 
+                      height: '16px',
+                      objectFit: 'contain'
+                    }} 
+                  />
+                  OpenSea
+                </ActionButton>
+              </a>
+              <a
+                href={getExplorerUrl(gameData?.chain || 'base', getNFTContract(), getNFTTokenId())}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (getNFTContract() === 'N/A' || getNFTTokenId() === 'N/A') {
+                    e.preventDefault()
+                    console.error('NFT contract details not available')
+                  }
+                }}
+                style={{ textDecoration: 'none' }}
+              >
+                <ActionButton className="explorer">
+                  🔍 Explorer
+                </ActionButton>
+              </a>
+            </ActionButtons>
           </NFTDetails>
         </NFTContent>
       </NFTSection>
       
-      {/* Coin Display Section */}
+      {/* Coin Display Section - Right Side */}
       <CoinSection>
         <CoinContainer
           gameId={gameId}
