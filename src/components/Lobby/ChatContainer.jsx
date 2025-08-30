@@ -193,7 +193,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
       
       for (const addr of addresses) {
         try {
-          const response = await fetch(`/api/profiles/${addr}`)
+          const response = await fetch(`/api/profile/${addr}`)
           if (response.ok) {
             const profile = await response.json()
             if (profile && profile.name && profile.name.trim()) {
