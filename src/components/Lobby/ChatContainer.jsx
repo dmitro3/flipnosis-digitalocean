@@ -294,6 +294,20 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
 
     // Register handlers
     ws.on('chat_message', handleChatMessage)
+    ws.on('chat_history', (data) => {
+      console.log('📚 Chat history received from server:', data)
+      if (data.messages && data.messages.length > 0) {
+        const historyMessages = data.messages.map(msg => ({
+          id: msg.id || Date.now() + Math.random(),
+          sender: msg.sender_address || msg.sender,
+          message: msg.message,
+          timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
+          isCurrentUser: (msg.sender_address || msg.sender) === address
+        }))
+        console.log('📚 Setting history messages from WebSocket:', historyMessages)
+        setMessages(historyMessages)
+      }
+    })
     ws.on('user_joined', handleUserJoined)
     ws.on('user_left', handleUserLeft)
 
@@ -324,6 +338,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
     // Cleanup
     return () => {
       ws.off('chat_message', handleChatMessage)
+      ws.off('chat_history')
       ws.off('user_joined', handleUserJoined)
       ws.off('user_left', handleUserLeft)
     }

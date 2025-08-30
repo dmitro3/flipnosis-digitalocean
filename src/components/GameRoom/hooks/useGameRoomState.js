@@ -209,8 +209,8 @@ export const useGameRoomState = (gameId, address, gameData) => {
     }
 
     // FIXED: Update wins count
-    const newCreatorWins = gameState.creatorWins
-    const newJoinerWins = gameState.joinerWins
+    let newCreatorWins = gameState.creatorWins
+    let newJoinerWins = gameState.joinerWins
     
     if (safeResult.roundWinner === getGameCreator()) {
       newCreatorWins++

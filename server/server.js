@@ -9,7 +9,7 @@ const fs = require('fs')
 
 // Import route handlers
 const { createApiRoutes } = require('./routes/api')
-const { initializeWebSocket, broadcastToRoom } = require('./handlers/unifiedWebSocket')
+const { createWebSocketHandlers } = require('./handlers/websocket')
 const { DatabaseService } = require('./services/database')
 const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
@@ -101,7 +101,7 @@ async function initializeServices() {
       })
       
       // Find the game in our database and update status
-      handleGameReady(gameId, nftDepositor, cryptoDepositor, dbService, { broadcastToRoom })
+      handleGameReady(gameId, nftDepositor, cryptoDepositor, dbService, wsHandlers)
     }
   })
 
@@ -109,11 +109,14 @@ async function initializeServices() {
   const cleanupService = new CleanupService(dbService, blockchainService)
   cleanupService.start()
 
-  // Initialize WebSocket handlers
-  initializeWebSocket(server)
+  // Initialize WebSocket server
+  const wss = new WebSocket.Server({ server })
+  
+  // Initialize WebSocket handlers with database and blockchain services
+  const wsHandlers = createWebSocketHandlers(wss, dbService, blockchainService)
 
   // Initialize API routes
-  const apiRouter = createApiRoutes(dbService, blockchainService, { broadcastToRoom })
+  const apiRouter = createApiRoutes(dbService, blockchainService, wsHandlers)
   app.use('/api', apiRouter)
 
   // Health check endpoint
