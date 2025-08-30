@@ -18,6 +18,7 @@ import OffersContainer from './OffersContainer'
 import CoinContainer from '../GameOrchestrator/CoinContainer'
 import GameCountdown from '../GameOrchestrator/GameCountdown'
 import OfferAcceptanceOverlay from './OfferAcceptanceOverlay'
+import { TabbedGameInterface } from '../TabbedGame'
 
 // Lobby-specific hooks
 import { useLobbyState } from './hooks/useLobbyState'
@@ -573,113 +574,68 @@ const GameLobby = () => {
               />
             )}
             
-            {/* Unified Lobby Background Container */}
-            <LobbyBackgroundContainer>
-              <LobbyContent>
-                {/* NFT Details and Coin Section */}
-                <NFTAndCoinSection>
-                  {/* NFT Details Container - Always visible on the left */}
-                  <NFTDetailsWrapper style={{ position: 'relative' }}>
-                    <NFTDetailsContainer
-                      gameData={gameData}
-                      isCreator={isCreator()}
-                      currentTurn={null}
-                      nftData={{
-                        image: getGameNFTImage(),
-                        name: getGameNFTName(),
-                        collection: getGameNFTCollection()
-                      }}
-                      currentChain={chain}
-                    />
-                    
-                    {/* Offer Acceptance Overlay */}
-                    <OfferAcceptanceOverlay
-                      isVisible={showOfferOverlay && isProcessingDeposit}
-                      acceptedOffer={acceptedOffer}
-                      gameData={gameData}
-                      gameId={gameId}
-                      address={address}
-                      onClose={() => {
-                        console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
-                        setShowOfferOverlay(false)
-                        setAcceptedOffer(null)
-                        setIsProcessingDeposit(false)
-                      }}
-                      onDepositComplete={(offer) => {
-                        console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
-                        setShowOfferOverlay(false)
-                        setAcceptedOffer(null)
-                        setIsProcessingDeposit(false)
-                        // Don't reload game data immediately - let the WebSocket handle updates
-                        showInfo('Deposit successful! Game starting...')
-                      }}
-                    />
-                  </NFTDetailsWrapper>
+            {/* Tabbed Game Interface */}
+            <div style={{ width: '100%', maxWidth: '1400px' }}>
+              <TabbedGameInterface
+                gameData={gameData}
+                gameId={gameId}
+                socket={webSocketService}
+                connected={wsConnected}
+                offers={offers}
+                isCreator={isCreator}
+                coinConfig={{
+                  headsImage: getGameNFTImage(),
+                  tailsImage: getGameNFTImage(),
+                  material: 'gold'
+                }}
+                onOfferAccepted={(offer) => {
+                  console.log('🎯 Offer accepted via tabbed interface:', offer)
                   
-                  {/* Coin Container - Always show the streaming coin */}
-                  <CoinSection show={true}>
-                      <CoinContainer
-                        gameId={gameId}
-                        gameData={gameData}
-                        customHeadsImage={customHeadsImage}
-                        customTailsImage={customTailsImage}
-                        gameCoin={gameCoin}
-                        isMobile={isMobile}
-                        address={address}
-                        isCreator={isCreator}
-                      />
-                    </CoinSection>
-                </NFTAndCoinSection>
-                
-                {/* Chat Container */}
-                <div style={{ height: '750px' }}>
-                  <ChatContainer
-                    gameId={gameId}
-                    gameData={gameData}
-                    socket={webSocketService}
-                    connected={wsConnected}
-                  />
-                </div>
-                
-                {/* Offers Container - Always visible until countdown */}
-                <OffersSection show={true}>
-                  <OffersContainer
-                    gameId={gameId}
-                    gameData={gameData}
-                    socket={webSocketService}
-                    connected={wsConnected}
-                    offers={offers}
-                    isCreator={isCreator}
-                    onOfferSubmitted={(offerData) => {
-                      console.log('Offer submitted via offers container:', offerData)
-                    }}
-                    onOfferAccepted={(offer) => {
-                      console.log('🎯 Offer accepted via offers container:', offer)
-                      
-                      // Check if current user is the offerer (Player 2) who needs to deposit
-                      if (offer.acceptedOffer?.offerer_address && address && 
-                          offer.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
-                        console.log('🎯 Current user is the offerer - showing deposit overlay')
-                        
-                        // Show deposit overlay for Player 2
-                        setAcceptedOffer(offer.acceptedOffer)
-                        setShowOfferOverlay(true)
-                        setIsProcessingDeposit(true)
-                        
-                        // Show info message
-                        showInfo('Your offer was accepted! Please deposit your crypto.')
-                      } else {
-                        console.log('🎯 Current user is not the offerer - just refreshing data')
-                      }
-                      
-                      // Always refresh game data to check for status changes
-                      loadGameData()
-                      setIsProcessingDeposit(true)
-                    }}
-                  />
-                </OffersSection>
-              </LobbyContent>
-            </LobbyBackgroundContainer>
+                  // Check if current user is the offerer (Player 2) who needs to deposit
+                  if (offer.acceptedOffer?.offerer_address && address && 
+                      offer.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
+                    console.log('🎯 Current user is the offerer - showing deposit overlay')
+                    
+                    // Show deposit overlay for Player 2
+                    setAcceptedOffer(offer.acceptedOffer)
+                    setShowOfferOverlay(true)
+                    setIsProcessingDeposit(true)
+                    
+                    // Show info message
+                    showInfo('Your offer was accepted! Please deposit your crypto.')
+                  } else {
+                    console.log('🎯 Current user is not the offerer - just refreshing data')
+                  }
+                  
+                  // Always refresh game data to check for status changes
+                  loadGameData()
+                  setIsProcessingDeposit(true)
+                }}
+              />
+              
+              {/* Offer Acceptance Overlay - Keep this outside tabs for important notifications */}
+              <OfferAcceptanceOverlay
+                isVisible={showOfferOverlay && isProcessingDeposit}
+                acceptedOffer={acceptedOffer}
+                gameData={gameData}
+                gameId={gameId}
+                address={address}
+                onClose={() => {
+                  console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
+                  setShowOfferOverlay(false)
+                  setAcceptedOffer(null)
+                  setIsProcessingDeposit(false)
+                }}
+                onDepositComplete={(offer) => {
+                  console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
+                  setShowOfferOverlay(false)
+                  setAcceptedOffer(null)
+                  setIsProcessingDeposit(false)
+                  // Don't reload game data immediately - let the WebSocket handle updates
+                  showInfo('Deposit successful! Game starting...')
+                }}
+              />
+            </div>
           </GameLayout>
         </GameContainer>
       </Container>
