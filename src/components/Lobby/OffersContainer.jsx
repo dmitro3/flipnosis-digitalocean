@@ -273,6 +273,15 @@ const OffersContainer = ({
 
   // Auto-show deposit overlay when game status is waiting_challenger_deposit and current user is challenger
   useEffect(() => {
+    console.log('🔍 Checking auto-show deposit overlay:', {
+      status: gameData?.status,
+      challenger: gameData?.challenger,
+      address: address,
+      showDepositOverlay: showDepositOverlay,
+      isChallenger: gameData?.challenger && address && 
+                   gameData.challenger.toLowerCase() === address.toLowerCase()
+    })
+    
     if (gameData?.status === 'waiting_challenger_deposit' && 
         gameData?.challenger && 
         address && 
@@ -326,19 +335,34 @@ const OffersContainer = ({
 
     console.log('🔌 Setting up WebSocket for real-time offers...')
     
-    const ws = socket || window.FlipnosisWS
-    if (!ws) {
-      console.error('❌ WebSocket service not available')
+    // Get WebSocket service - try multiple sources
+    let ws = null
+    if (socket && typeof socket === 'object') {
+      ws = socket
+      console.log('🔌 Using provided socket prop')
+    } else if (window.FlipnosisWS) {
+      ws = window.FlipnosisWS
+      console.log('🔌 Using global WebSocket service')
+    } else {
+      console.error('❌ No WebSocket service available')
       return
     }
 
     // Connect to WebSocket
     const connectToWebSocket = async () => {
       try {
-        if (!ws.isConnected()) {
+        // Check if already connected
+        const isConnected = ws.isConnected ? ws.isConnected() : ws.connected
+        if (!isConnected) {
           console.log('🔌 Connecting to WebSocket...')
-          await ws.connect(`game_${gameId}`, address)
-          console.log('✅ WebSocket connected for real-time offers')
+          if (ws.connect) {
+            await ws.connect(`game_${gameId}`, address)
+            console.log('✅ WebSocket connected for real-time offers')
+          } else {
+            console.warn('⚠️ WebSocket service has no connect method')
+          }
+        } else {
+          console.log('✅ WebSocket already connected')
         }
         setIsConnected(true)
       } catch (error) {
@@ -400,18 +424,24 @@ const OffersContainer = ({
     }
 
     // Register real-time handlers
-    ws.on('crypto_offer', handleOffer)
-    ws.on('nft_offer', handleOffer)
-    ws.on('accept_crypto_offer', handleOfferAcceptance)
-    ws.on('offer_accepted', handleOfferAcceptance)
-    ws.on('your_offer_accepted', handleOfferAcceptance)
+    if (ws.on) {
+      ws.on('crypto_offer', handleOffer)
+      ws.on('nft_offer', handleOffer)
+      ws.on('accept_crypto_offer', handleOfferAcceptance)
+      ws.on('offer_accepted', handleOfferAcceptance)
+      ws.on('your_offer_accepted', handleOfferAcceptance)
+    } else {
+      console.warn('⚠️ WebSocket service has no event handlers')
+    }
 
     return () => {
-      ws.off('crypto_offer', handleOffer)
-      ws.off('nft_offer', handleOffer)
-      ws.off('accept_crypto_offer', handleOfferAcceptance)
-      ws.off('offer_accepted', handleOfferAcceptance)
-      ws.off('your_offer_accepted', handleOfferAcceptance)
+      if (ws.off) {
+        ws.off('crypto_offer', handleOffer)
+        ws.off('nft_offer', handleOffer)
+        ws.off('accept_crypto_offer', handleOfferAcceptance)
+        ws.off('offer_accepted', handleOfferAcceptance)
+        ws.off('your_offer_accepted', handleOfferAcceptance)
+      }
     }
   }, [gameId, address, socket])
 
@@ -659,13 +689,20 @@ const OffersContainer = ({
       setShowDepositOverlay(true)
       console.log('🎯 Showing deposit overlay for accepted offer')
       
-      // Don't reload - let the WebSocket handle updates
-      console.log('🎯 Offer accepted - waiting for WebSocket updates')
-      
+      // Force refresh game data to get updated status
+      console.log('🔄 Forcing game data refresh after offer acceptance')
       if (onOfferAccepted) {
         console.log('📞 Calling onOfferAccepted callback')
         onOfferAccepted(offer)
       }
+      
+      // Also trigger a manual refresh after a short delay to ensure server has processed
+      setTimeout(() => {
+        console.log('⏰ Delayed game data refresh')
+        if (onOfferAccepted) {
+          onOfferAccepted(offer)
+        }
+      }, 1000)
       
     } catch (error) {
       console.error('Offers: Error accepting offer:', error)

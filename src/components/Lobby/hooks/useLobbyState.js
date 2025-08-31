@@ -79,10 +79,19 @@ export const useLobbyState = (gameId, address) => {
         return
       }
 
+      console.log('🔄 Game data loaded:', {
+        id: data.id,
+        status: data.status,
+        challenger: data.challenger,
+        creator_deposited: data.creator_deposited,
+        challenger_deposited: data.challenger_deposited
+      })
+
       setGameData(data)
 
       // Start countdown if game is waiting for challenger deposit
       if (data.status === 'waiting_challenger_deposit') {
+        console.log('💰 Game is waiting for challenger deposit, starting countdown')
         if (data.deposit_deadline) {
           const now = new Date().getTime()
           const deadline = new Date(data.deposit_deadline).getTime()

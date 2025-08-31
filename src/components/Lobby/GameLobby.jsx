@@ -306,8 +306,15 @@ const GameLobby = () => {
       showInfo('Your offer was accepted! Please check the Lounge tab to deposit your crypto.')
     }
     
-    // Always refresh game data to trigger tab switching
+    // Force refresh game data to get updated status and trigger tab switching
+    console.log('🔄 Forcing game data refresh after WebSocket offer acceptance')
     loadGameData()
+    
+    // Also trigger a delayed refresh to ensure server has processed
+    setTimeout(() => {
+      console.log('⏰ Delayed game data refresh after WebSocket')
+      loadGameData()
+    }, 1000)
   }
 
   // REMOVED: handleDepositTransition function - not needed anymore
@@ -613,8 +620,15 @@ const GameLobby = () => {
                     console.log('🎯 Current user is not the offerer - just refreshing data')
                   }
                   
-                  // Always refresh game data to check for status changes
+                  // Force refresh game data to get updated status and trigger tab switching
+                  console.log('🔄 Forcing game data refresh after offer acceptance')
                   loadGameData()
+                  
+                  // Also trigger a delayed refresh to ensure server has processed
+                  setTimeout(() => {
+                    console.log('⏰ Delayed game data refresh')
+                    loadGameData()
+                  }, 2000)
                 }}
               />
               
