@@ -250,13 +250,6 @@ const TabbedGameInterface = ({
       console.log('🎯 Force switching to Lounge tab for deposit')
       setActiveTab('chat')
     }
-    
-    // If both players have deposited, switch to Flip Suite
-    if ((gameData?.status === 'active' || gameData?.status === 'in_progress') && 
-        gameData?.creator_deposited && gameData?.challenger_deposited) {
-      console.log('🎯 Both players deposited, switching to Flip Suite')
-      setActiveTab('game')
-    }
   }, [gameData, activeTab])
 
   const tabs = [

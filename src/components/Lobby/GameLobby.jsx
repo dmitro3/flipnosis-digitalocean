@@ -10,6 +10,7 @@ import { useToast } from '../../contexts/ToastContext'
 // Component imports  
 import GameBackground from '../GameOrchestrator/GameBackground'
 import GameCoin from '../GameOrchestrator/GameCoin'
+import GamePayment from '../GameOrchestrator/GamePayment'
 import ProfilePicture from '../ProfilePicture'
 import NFTDetailsContainer from './NFTDetailsContainer'
 import ChatContainer from './ChatContainer'
@@ -150,11 +151,14 @@ const GameLobby = () => {
     error,
     offers,
     chatMessages,
+    ethAmount,
+    depositTimeLeft,
     newOffer,
     creatingOffer,
     createOffer,
     acceptOffer,
     rejectOffer,
+    formatTimeLeft,
     loadGameData,
     loadOffers,
     setNewOffer,
@@ -592,6 +596,27 @@ const GameLobby = () => {
         <GameBackground />
         <GameContainer>
           <GameLayout>
+            
+            {/* Payment Section - Only show during payment phase */}
+            {(gameData?.status === 'waiting_challenger_deposit' || 
+              gameData?.status === 'pending') && (
+              <GamePayment
+                gameData={gameData}
+                gameId={gameId}
+                address={address}
+                isCreator={isCreator}
+                isJoiner={isJoiner}
+                depositTimeLeft={depositTimeLeft}
+                formatTimeLeft={formatTimeLeft}
+                ethAmount={ethAmount}
+                getGamePrice={getGamePrice}
+                getGameNFTImage={getGameNFTImage}
+                getGameNFTName={getGameNFTName}
+                getGameNFTCollection={getGameNFTCollection}
+                contractInitialized={true}
+                loadGameData={loadGameData}
+              />
+            )}
             
             {/* Tabbed Game Interface */}
             <div style={{ width: '100%', maxWidth: '1400px' }}>
