@@ -597,26 +597,7 @@ const GameLobby = () => {
         <GameContainer>
           <GameLayout>
             
-            {/* Payment Section - Only show during payment phase */}
-            {(gameData?.status === 'waiting_challenger_deposit' || 
-              gameData?.status === 'pending') && (
-              <GamePayment
-                gameData={gameData}
-                gameId={gameId}
-                address={address}
-                isCreator={isCreator}
-                isJoiner={isJoiner}
-                depositTimeLeft={depositTimeLeft}
-                formatTimeLeft={formatTimeLeft}
-                ethAmount={ethAmount}
-                getGamePrice={getGamePrice}
-                getGameNFTImage={getGameNFTImage}
-                getGameNFTName={getGameNFTName}
-                getGameNFTCollection={getGameNFTCollection}
-                contractInitialized={true}
-                loadGameData={loadGameData}
-              />
-            )}
+            {/* Payment Section - Disabled when using tabbed interface, handled within tabs */}
             
             {/* Tabbed Game Interface */}
             <div style={{ width: '100%', maxWidth: '1400px' }}>
@@ -640,21 +621,22 @@ const GameLobby = () => {
                       offer.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
                     console.log('🎯 Current user is the offerer - deposit will be handled in Lounge tab')
                     
-                    // Show info message - the deposit overlay will be shown in the Lounge tab
-                    showInfo('Your offer was accepted! Please check the Lounge tab to deposit your crypto.')
+                    // Show info message and auto-switch to Lounge tab
+                    showInfo('Your offer was accepted! Switching to Lounge tab to deposit your crypto.')
+                    
+                    // Auto-switch to Lounge tab
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+                    }, 500)
                   } else {
                     console.log('🎯 Current user is not the offerer - just refreshing data')
                   }
                   
-                  // Force refresh game data to get updated status and trigger tab switching
-                  console.log('🔄 Forcing game data refresh after offer acceptance')
-                  loadGameData()
-                  
-                  // Also trigger a delayed refresh to ensure server has processed
+                  // Single refresh with a short delay to ensure server has processed
                   setTimeout(() => {
-                    console.log('⏰ Delayed game data refresh')
+                    console.log('🔄 Refreshing game data after offer acceptance')
                     loadGameData()
-                  }, 2000)
+                  }, 1000)
                 }}
               />
               

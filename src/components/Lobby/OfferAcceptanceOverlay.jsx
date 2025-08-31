@@ -219,10 +219,45 @@ const OfferAcceptanceOverlay = ({
       const result = await contractService.depositETH(gameId, depositAmount)
 
       if (result.success) {
-        showSuccess('Deposit successful! Game starting...')
-        onDepositComplete(acceptedOffer)
+        showSuccess('Crypto deposited successfully!')
+        
+        // Clear any running countdown intervals
+        if (window.countdownInterval) {
+          clearInterval(window.countdownInterval)
+        }
+        
+        // Confirm deposit to backend using the getApiUrl helper
+        const { getApiUrl } = await import('../../config/api')
+        await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player: address,
+            assetType: 'eth',
+            transactionHash: result.transactionHash
+          })
+        })
+        
+        showSuccess('Deposit confirmed! Redirecting to flip suite...')
+        
+        // Close overlay first
+        onClose()
+        
+        // Notify parent component
+        if (onDepositComplete) {
+          onDepositComplete(acceptedOffer)
+        }
+        
+        // Navigate to flip suite tab instead of old game page
+        setTimeout(() => {
+          // Trigger navigation to flip suite tab via custom event
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameId }
+          }))
+        }, 1000)
+        
       } else {
-        showError(result.error || 'Deposit failed')
+        showError(result.error || 'Failed to deposit ETH')
       }
     } catch (error) {
       console.error('Deposit error:', error)

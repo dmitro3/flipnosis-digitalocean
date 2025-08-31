@@ -210,6 +210,27 @@ const TabbedGameInterface = ({
   const [activeTab, setActiveTab] = useState('nft')
   const { address } = useWallet()
   
+  // Listen for navigation events
+  useEffect(() => {
+    const handleSwitchToFlipSuite = (event) => {
+      console.log('🎯 Received switchToFlipSuite event:', event.detail)
+      setActiveTab('game')
+    }
+    
+    const handleSwitchToLounge = (event) => {
+      console.log('🎯 Received switchToLoungeTab event')
+      setActiveTab('chat')
+    }
+    
+    window.addEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
+    window.addEventListener('switchToLoungeTab', handleSwitchToLounge)
+    
+    return () => {
+      window.removeEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
+      window.removeEventListener('switchToLoungeTab', handleSwitchToLounge)
+    }
+  }, [])
+  
   // Auto-switch to game room when game starts (but only if not just joining)
   useEffect(() => {
     // Only auto-switch to game room if the game is already in progress

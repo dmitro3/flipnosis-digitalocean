@@ -302,18 +302,52 @@ const OffersContainer = ({
     }
   }, [gameData?.status, gameData?.challenger, address, showDepositOverlay])
 
-  // Auto-refresh offers every 2 seconds as fallback
+  // Auto-refresh offers and game status every 2 seconds as fallback
   useEffect(() => {
-    if (!gameData?.listing_id) return
+    if (!gameData?.listing_id && !gameId) return
 
-    const refreshOffers = async () => {
+    const refreshGameState = async () => {
       try {
-        const response = await fetch(`/api/offers/${gameData.listing_id}`)
-        const data = await response.json()
+        // Refresh offers if we have a listing ID
+        if (gameData?.listing_id) {
+          const response = await fetch(`/api/offers/${gameData.listing_id}`)
+          const data = await response.json()
+          
+          if (data.offers && data.offers.length > 0) {
+            console.log('🔄 Auto-refresh: Found offers, updating...')
+            setOffers(data.offers)
+          }
+        }
         
-        if (data.offers && data.offers.length > 0) {
-          console.log('🔄 Auto-refresh: Found offers, updating...')
-          setOffers(data.offers)
+        // Also check game status for player 2 who might miss WebSocket events
+        if (gameId && address) {
+          const gameResponse = await fetch(`/api/games/${gameId}`)
+          const gameData = await gameResponse.json()
+          
+          // Check if we're the challenger and game is waiting for our deposit
+          if (gameData.status === 'waiting_challenger_deposit' && 
+              gameData.challenger && 
+              address && 
+              gameData.challenger.toLowerCase() === address.toLowerCase() &&
+              !showDepositOverlay) {
+            
+            console.log('🎯 Fallback: Auto-showing deposit overlay for challenger via polling')
+            
+            // Create accepted offer object for the deposit overlay
+            const acceptedOffer = {
+              offerer_address: gameData.challenger,
+              cryptoAmount: gameData.payment_amount || gameData.price_usd,
+              timestamp: new Date().toISOString()
+            }
+            
+            setAcceptedOffer(acceptedOffer)
+            setShowDepositOverlay(true)
+            
+            // Auto-switch to Lounge tab
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+            }, 200)
+          }
         }
       } catch (error) {
         console.error('❌ Auto-refresh error:', error)
@@ -321,13 +355,13 @@ const OffersContainer = ({
     }
 
     // Initial load
-    refreshOffers()
+    refreshGameState()
     
     // Set up interval for auto-refresh
-    const interval = setInterval(refreshOffers, 2000)
+    const interval = setInterval(refreshGameState, 2000)
     
     return () => clearInterval(interval)
-  }, [gameData?.listing_id])
+  }, [gameData?.listing_id, gameId, address, showDepositOverlay])
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -440,6 +474,11 @@ const OffersContainer = ({
         setAcceptedOffer(acceptedOffer)
         setShowDepositOverlay(true)
         console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
+        
+        // Auto-switch to Lounge tab for player 2 immediately
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+        }, 200)
         
         // Refresh game data
         if (onOfferAccepted) {
