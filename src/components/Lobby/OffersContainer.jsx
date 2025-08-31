@@ -160,6 +160,34 @@ const NoOffersMessage = styled.div`
   padding: 2rem;
 `
 
+const PriceInfo = styled.div`
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  text-align: center;
+`
+
+const PriceLabel = styled.div`
+  color: #FFD700;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+`
+
+const PriceValue = styled.div`
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: bold;
+`
+
+const MinOfferInfo = styled.div`
+  color: #00FF41;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+`
+
 const OffersContainer = ({ 
   gameId, 
   gameData, 
