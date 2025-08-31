@@ -170,7 +170,7 @@ const OffersContainer = ({
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
-  const { address } = useWallet()
+  const { address, isConnected: walletIsConnected } = useWallet()
   const { profile } = useProfile()
   const { showSuccess, showError, showInfo } = useToast()
   
