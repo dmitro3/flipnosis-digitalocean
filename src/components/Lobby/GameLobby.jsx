@@ -302,8 +302,14 @@ const GameLobby = () => {
       console.log('✅ Offer accepted for current game, refreshing data...')
       showInfo('Offer accepted! Game status updated.')
       
-      // Single refresh for creator (Player 1) - no delayed refresh
+      // Force refresh game data to get updated status
       loadGameData()
+      
+      // Also trigger a delayed refresh to ensure server has processed
+      setTimeout(() => {
+        console.log('⏰ Delayed game data refresh after offer acceptance')
+        loadGameData()
+      }, 1000)
     }
   }
 
@@ -332,14 +338,8 @@ const GameLobby = () => {
       console.log('✅ Your offer was accepted, showing deposit overlay...')
       showSuccess('Your offer was accepted! Please deposit crypto within 2 minutes.')
       
-      // Force immediate refresh for challenger (Player 2)
+      // Refresh game data
       loadGameData()
-      
-      // Additional refresh after a short delay to ensure data is updated
-      setTimeout(() => {
-        console.log('⏰ Additional refresh for challenger after offer acceptance')
-        loadGameData()
-      }, 500)
     }
   }
 
@@ -615,15 +615,6 @@ const GameLobby = () => {
                 getGameNFTCollection={getGameNFTCollection}
                 contractInitialized={true}
                 loadGameData={loadGameData}
-                onDepositComplete={(depositData) => {
-                  console.log('🎯 Deposit completed in GamePayment, switching to Flip Suite tab')
-                  
-                  // Trigger tab switch to Flip Suite (game tab)
-                  if (depositData.depositCompleted) {
-                    // This will be handled by the TabbedGameInterface useEffect
-                    showSuccess('Deposit successful! Switching to Flip Suite...')
-                  }
-                }}
               />
             )}
             
