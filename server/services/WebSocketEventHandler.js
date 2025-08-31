@@ -1,4 +1,4 @@
-const wsHandlers = require('./websocket-handlers');
+const wsHandlers = require('../handlers/unifiedWebSocket');
 
 class WebSocketEventHandler {
   constructor(gameEventService) {
