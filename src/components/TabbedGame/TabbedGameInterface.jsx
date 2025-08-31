@@ -240,7 +240,7 @@ const TabbedGameInterface = ({
     if (onOfferAccepted && typeof onOfferAccepted === 'function') {
       // Check if the onOfferAccepted was called with depositCompleted flag
       const originalOnOfferAccepted = onOfferAccepted
-      onOfferAccepted = (data) => {
+      const wrappedOnOfferAccepted = (data) => {
         if (data && data.depositCompleted) {
           console.log('🎯 Deposit completed, switching to Flip Suite tab')
           setActiveTab('game')
@@ -248,6 +248,9 @@ const TabbedGameInterface = ({
         // Call the original handler
         originalOnOfferAccepted(data)
       }
+      
+      // Replace the onOfferAccepted prop with our wrapped version
+      onOfferAccepted = wrappedOnOfferAccepted
     }
   }, [onOfferAccepted])
 

@@ -302,14 +302,8 @@ const GameLobby = () => {
       console.log('✅ Offer accepted for current game, refreshing data...')
       showInfo('Offer accepted! Game status updated.')
       
-      // Force refresh game data to get updated status
+      // Single refresh for creator (Player 1) - no delayed refresh
       loadGameData()
-      
-      // Also trigger a delayed refresh to ensure server has processed
-      setTimeout(() => {
-        console.log('⏰ Delayed game data refresh after offer acceptance')
-        loadGameData()
-      }, 1000)
     }
   }
 
@@ -338,8 +332,14 @@ const GameLobby = () => {
       console.log('✅ Your offer was accepted, showing deposit overlay...')
       showSuccess('Your offer was accepted! Please deposit crypto within 2 minutes.')
       
-      // Refresh game data
+      // Force immediate refresh for challenger (Player 2)
       loadGameData()
+      
+      // Additional refresh after a short delay to ensure data is updated
+      setTimeout(() => {
+        console.log('⏰ Additional refresh for challenger after offer acceptance')
+        loadGameData()
+      }, 500)
     }
   }
 
