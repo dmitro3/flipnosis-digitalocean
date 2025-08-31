@@ -1,9 +1,9 @@
 const EventEmitter = require('events');
-const db = require('../database');
 
 class GameEventService extends EventEmitter {
-  constructor() {
+  constructor(dbService) {
     super();
+    this.db = dbService.getDatabase();
     this.eventTypes = {
       OFFER_MADE: 'offer_made',
       OFFER_ACCEPTED: 'offer_accepted',
@@ -54,7 +54,7 @@ class GameEventService extends EventEmitter {
       const eventDataJson = JSON.stringify(eventData);
       const targetUsersJson = JSON.stringify(targetUsers);
       
-      db.run(`
+      this.db.run(`
         INSERT INTO game_events (game_id, event_type, event_data, target_users, processed)
         VALUES (?, ?, ?, ?, 1)
       `, [gameId, eventType, eventDataJson, targetUsersJson], function(err) {
@@ -71,7 +71,7 @@ class GameEventService extends EventEmitter {
   // Update game's event tracking info
   async updateGameEventInfo(gameId, eventId) {
     return new Promise((resolve, reject) => {
-      db.run(`
+      this.db.run(`
         UPDATE games 
         SET last_event_id = ?, event_version = event_version + 1
         WHERE id = ?
@@ -89,7 +89,7 @@ class GameEventService extends EventEmitter {
   // Get recent events for a game
   async getGameEvents(gameId, limit = 10) {
     return new Promise((resolve, reject) => {
-      db.all(`
+      this.db.all(`
         SELECT * FROM game_events 
         WHERE game_id = ? 
         ORDER BY created_at DESC 
@@ -113,7 +113,7 @@ class GameEventService extends EventEmitter {
   // Get unprocessed events
   async getUnprocessedEvents() {
     return new Promise((resolve, reject) => {
-      db.all(`
+      this.db.all(`
         SELECT * FROM game_events 
         WHERE processed = 0 
         ORDER BY created_at ASC
@@ -135,7 +135,7 @@ class GameEventService extends EventEmitter {
   // Mark event as processed
   async markEventProcessed(eventId) {
     return new Promise((resolve, reject) => {
-      db.run(`
+      this.db.run(`
         UPDATE game_events 
         SET processed = 1 
         WHERE id = ?
@@ -196,7 +196,4 @@ class GameEventService extends EventEmitter {
   }
 }
 
-// Create singleton instance
-const gameEventService = new GameEventService();
-
-module.exports = gameEventService;
+module.exports = GameEventService;

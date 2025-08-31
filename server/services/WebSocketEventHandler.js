@@ -1,49 +1,49 @@
-const gameEventService = require('./EventService');
 const wsHandlers = require('./websocket-handlers');
 
 class WebSocketEventHandler {
-  constructor() {
+  constructor(gameEventService) {
+    this.gameEventService = gameEventService;
     this.setupEventListeners();
   }
 
   setupEventListeners() {
     // Listen for offer made events
-    gameEventService.on(gameEventService.eventTypes.OFFER_MADE, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.OFFER_MADE, (event) => {
       this.handleOfferMade(event);
     });
 
     // Listen for offer accepted events
-    gameEventService.on(gameEventService.eventTypes.OFFER_ACCEPTED, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.OFFER_ACCEPTED, (event) => {
       this.handleOfferAccepted(event);
     });
 
     // Listen for game status changed events
-    gameEventService.on(gameEventService.eventTypes.GAME_STATUS_CHANGED, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.GAME_STATUS_CHANGED, (event) => {
       this.handleGameStatusChanged(event);
     });
 
     // Listen for deposit made events
-    gameEventService.on(gameEventService.eventTypes.DEPOSIT_MADE, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.DEPOSIT_MADE, (event) => {
       this.handleDepositMade(event);
     });
 
     // Listen for game started events
-    gameEventService.on(gameEventService.eventTypes.GAME_STARTED, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.GAME_STARTED, (event) => {
       this.handleGameStarted(event);
     });
 
     // Listen for round completed events
-    gameEventService.on(gameEventService.eventTypes.ROUND_COMPLETED, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.ROUND_COMPLETED, (event) => {
       this.handleRoundCompleted(event);
     });
 
     // Listen for game ended events
-    gameEventService.on(gameEventService.eventTypes.GAME_ENDED, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.GAME_ENDED, (event) => {
       this.handleGameEnded(event);
     });
 
     // Listen for chat message events
-    gameEventService.on(gameEventService.eventTypes.CHAT_MESSAGE, (event) => {
+    this.gameEventService.on(this.gameEventService.eventTypes.CHAT_MESSAGE, (event) => {
       this.handleChatMessage(event);
     });
 
@@ -248,7 +248,4 @@ class WebSocketEventHandler {
   }
 }
 
-// Create singleton instance
-const webSocketEventHandler = new WebSocketEventHandler();
-
-module.exports = webSocketEventHandler;
+module.exports = WebSocketEventHandler;
