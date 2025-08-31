@@ -25,37 +25,147 @@ const TabbedContainer = styled.div`
 const TabsHeader = styled.div`
   display: flex;
   flex-direction: column;
-  background: rgba(0, 0, 0, 0.8);
-  border-right: 2px solid rgba(0, 191, 255, 0.3);
-  min-width: 200px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 40, 0.8));
+  border-right: 3px solid rgba(0, 191, 255, 0.3);
+  min-width: 220px;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+      rgba(255, 20, 147, 0.05) 0%, 
+      rgba(0, 255, 65, 0.05) 25%, 
+      rgba(0, 191, 255, 0.05) 50%, 
+      rgba(255, 215, 0, 0.05) 75%, 
+      rgba(138, 43, 226, 0.05) 100%
+    );
+    pointer-events: none;
+  }
   
   @media (max-width: 768px) {
     flex-direction: row;
     border-right: none;
-    border-bottom: 2px solid rgba(0, 191, 255, 0.3);
+    border-bottom: 3px solid rgba(0, 191, 255, 0.3);
     min-width: auto;
   }
 `
 
 const Tab = styled.button`
-  padding: 2rem 1.5rem;
-  background: ${props => props.active ? 'rgba(0, 191, 255, 0.2)' : 'transparent'};
+  padding: 1.5rem 1rem;
+  background: ${props => props.active ? 
+    'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(0, 255, 65, 0.2))' : 
+    'transparent'
+  };
   color: ${props => props.active ? '#00BFFF' : 'rgba(255, 255, 255, 0.7)'};
   border: none;
-  border-right: 3px solid ${props => props.active ? '#00BFFF' : 'transparent'};
+  border-right: 4px solid ${props => props.active ? '#00BFFF' : 'transparent'};
   cursor: pointer;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: bold;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
+  overflow: hidden;
   
+  /* Neon glow effect for active tab */
+  ${props => props.active && `
+    text-shadow: 0 0 10px #00BFFF, 0 0 20px #00BFFF, 0 0 30px #00BFFF;
+    box-shadow: 
+      inset 0 0 20px rgba(0, 191, 255, 0.2),
+      0 0 15px rgba(0, 191, 255, 0.3);
+  `}
+  
+  /* Hover effects */
   &:hover {
-    background: rgba(0, 191, 255, 0.1);
-    color: #00BFFF;
+    background: ${props => props.active ? 
+      'linear-gradient(135deg, rgba(0, 191, 255, 0.4), rgba(0, 255, 65, 0.3))' : 
+      'linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(0, 191, 255, 0.1))'
+    };
+    color: ${props => props.active ? '#00BFFF' : '#FF1493'};
+    transform: translateX(5px);
+    
+    ${props => !props.active && `
+      text-shadow: 0 0 10px #FF1493, 0 0 20px #FF1493;
+    `}
+  }
+  
+  /* Animated border for active tab */
+  ${props => props.active && `
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, 
+        transparent 0%, 
+        rgba(0, 191, 255, 0.3) 50%, 
+        transparent 100%
+      );
+      animation: borderFlow 2s linear infinite;
+    }
+  `}
+  
+  /* Tab-specific colors */
+  &:nth-child(1) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(255, 20, 147, 0.3), rgba(255, 105, 180, 0.2));
+      color: #FF1493;
+      text-shadow: 0 0 10px #FF1493, 0 0 20px #FF1493, 0 0 30px #FF1493;
+      border-right-color: #FF1493;
+    `}
+    
+    &:hover {
+      background: ${props => props.active ? 
+        'linear-gradient(135deg, rgba(255, 20, 147, 0.4), rgba(255, 105, 180, 0.3))' : 
+        'linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(255, 105, 180, 0.1))'
+      };
+      color: ${props => props.active ? '#FF1493' : '#FF1493'};
+    }
+  }
+  
+  &:nth-child(2) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(0, 255, 65, 0.3), rgba(57, 255, 20, 0.2));
+      color: #00FF41;
+      text-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41, 0 0 30px #00FF41;
+      border-right-color: #00FF41;
+    `}
+    
+    &:hover {
+      background: ${props => props.active ? 
+        'linear-gradient(135deg, rgba(0, 255, 65, 0.4), rgba(57, 255, 20, 0.3))' : 
+        'linear-gradient(135deg, rgba(0, 255, 65, 0.1), rgba(57, 255, 20, 0.1))'
+      };
+      color: ${props => props.active ? '#00FF41' : '#00FF41'};
+    }
+  }
+  
+  &:nth-child(3) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.2));
+      color: #FFD700;
+      text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700;
+      border-right-color: #FFD700;
+    `}
+    
+    &:hover {
+      background: ${props => props.active ? 
+        'linear-gradient(135deg, rgba(255, 215, 0, 0.4), rgba(255, 193, 7, 0.3))' : 
+        'linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 193, 7, 0.1))'
+      };
+      color: ${props => props.active ? '#FFD700' : '#FFD700'};
+    }
   }
   
   &:not(:last-child) {
@@ -64,16 +174,33 @@ const Tab = styled.button`
   
   @media (max-width: 768px) {
     flex: 1;
-    padding: 1rem 1rem;
-    font-size: 1.1rem;
+    padding: 1rem 0.5rem;
+    font-size: 1rem;
     text-align: center;
     border-right: none;
-    border-bottom: 3px solid ${props => props.active ? '#00BFFF' : 'transparent'};
+    border-bottom: 4px solid ${props => props.active ? 
+      (props.tabIndex === 0 ? '#FF1493' : props.tabIndex === 1 ? '#00FF41' : '#FFD700') : 
+      'transparent'
+    };
+    transform: none;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
     
     &:not(:last-child) {
       border-bottom: none;
       border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
+  }
+`
+
+const TabIcon = styled.span`
+  font-size: 1.2rem;
+  opacity: 0.9;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
   }
 `
 
@@ -96,7 +223,26 @@ const TabPane = styled.div`
   overflow: auto;
 `
 
-
+// Keyframe animations
+const keyframes = `
+  @keyframes borderFlow {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  
+  @keyframes neonPulse {
+    0%, 100% {
+      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+    }
+    50% {
+      text-shadow: 0 0 15px currentColor, 0 0 30px currentColor, 0 0 45px currentColor;
+    }
+  }
+`
 
 const TabbedGameInterface = ({ 
   gameData, 
@@ -125,17 +271,20 @@ const TabbedGameInterface = ({
   const tabs = [
     {
       id: 'nft',
-      label: 'Details',
+      label: 'Deets',
+      icon: '📋',
       component: NFTDetailsTab
     },
     {
       id: 'chat',
-      label: 'Chat & Offers',
+      label: 'Lounge',
+      icon: '💬',
       component: ChatOffersTab
     },
     {
       id: 'game',
-      label: 'Game Room',
+      label: 'Flip Suite',
+      icon: '🎮',
       component: GameRoomTab
     }
   ]
@@ -163,30 +312,35 @@ const TabbedGameInterface = ({
   }
 
   return (
-    <TabbedContainer>
-      <TabsHeader>
-        {tabs.map(tab => (
-          <Tab
-            key={tab.id}
-            active={activeTab === tab.id}
-            onClick={() => handleTabChange(tab.id)}
-          >
-            {tab.label}
-          </Tab>
-        ))}
-      </TabsHeader>
-      
-      <TabContent>
-        {tabs.map(tab => (
-          <TabPane
-            key={tab.id}
-            active={activeTab === tab.id}
-          >
-            {renderTabContent(tab)}
-          </TabPane>
-        ))}
-      </TabContent>
-    </TabbedContainer>
+    <>
+      <style>{keyframes}</style>
+      <TabbedContainer>
+        <TabsHeader>
+          {tabs.map((tab, index) => (
+            <Tab
+              key={tab.id}
+              active={activeTab === tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              tabIndex={index}
+            >
+              <TabIcon>{tab.icon}</TabIcon>
+              {tab.label}
+            </Tab>
+          ))}
+        </TabsHeader>
+        
+        <TabContent>
+          {tabs.map(tab => (
+            <TabPane
+              key={tab.id}
+              active={activeTab === tab.id}
+            >
+              {renderTabContent(tab)}
+            </TabPane>
+          ))}
+        </TabContent>
+      </TabbedContainer>
+    </>
   )
 }
 
