@@ -10,6 +10,10 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   // Initialize XP Service
   const xpService = new XPService(dbService.databasePath)
   xpService.initialize().catch(console.error)
+  
+  // Initialize Event Service
+  const gameEventService = require('../services/EventService')
+  const webSocketEventHandler = require('../services/WebSocketEventHandler')
 
   // Health check
   router.get('/health', (req, res) => {
@@ -929,54 +933,35 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         })
       })
       
-      // Send WebSocket notifications
-      console.log('📡 Sending WebSocket notifications...')
+      // Emit offer accepted event using event-driven system
+      console.log('🎯 Emitting offer accepted event...')
       
-      // Send WebSocket notifications
-      console.log('📡 Sending WebSocket notifications...')
-      console.log('📋 Game details for WebSocket:', {
-        gameId: game.id,
-        challenger: offer.offerer_address,
-        creator: listing.creator,
-        finalPrice: offer.offer_price
-      })
-      
-      wsHandlers.sendToUser(listing.creator, {
-        type: 'offer_accepted',
-        gameId: game.id,
-        depositDeadline,
-        challenger: offer.offerer_address,
-        finalPrice: offer.offer_price,
-        message: 'Offer accepted! Waiting for challenger to deposit crypto.'
-      })
-      
-      wsHandlers.sendToUser(offer.offerer_address, {
-        type: 'your_offer_accepted',
-        gameId: game.id,
-        depositDeadline,
-        finalPrice: offer.offer_price,
-        message: 'Your offer was accepted! You have 2 minutes to deposit crypto.',
-        requiresDeposit: true
-      })
-      
-      // Broadcast to room
-      wsHandlers.broadcastToRoom(listing.id, {
-        type: 'offer_accepted',
-        listingId: listing.id,
-        gameId: game.id,
-        acceptedOfferId: offerId,
-        challenger: offer.offerer_address,
-        depositDeadline
-      })
-      
-      // Also broadcast to game room
-      wsHandlers.broadcastToRoom(game.id, {
-        type: 'game_awaiting_challenger_deposit',
-        gameId: game.id,
-        challenger: offer.offerer_address,
-        depositDeadline,
-        finalPrice: offer.offer_price
-      })
+      try {
+        await gameEventService.emitOfferAccepted(
+          game.id,
+          {
+            id: offerId,
+            offer_price: offer.offer_price,
+            message: offer.message,
+            depositDeadline: depositDeadline.toISOString()
+          },
+          listing.creator,
+          offer.offerer_address
+        )
+        
+        // Also emit game status changed event
+        await gameEventService.emitGameStatusChanged(
+          game.id,
+          'waiting_challenger_deposit',
+          'awaiting_challenger',
+          [listing.creator, offer.offerer_address]
+        )
+        
+        console.log('✅ Events emitted successfully')
+      } catch (eventError) {
+        console.error('❌ Error emitting events:', eventError)
+        // Continue with response even if events fail
+      }
       
       console.log(`✅ Offer accepted: ${offerId}, Game: ${game.id}, Deadline: ${depositDeadline}`)
       console.log(`📡 WebSocket messages sent to: creator=${listing.creator}, challenger=${offer.offerer_address}`)

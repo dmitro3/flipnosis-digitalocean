@@ -423,27 +423,80 @@ const OffersContainer = ({
       }
     }
 
-    // Register real-time handlers
-    if (ws.on) {
-      ws.on('crypto_offer', handleOffer)
-      ws.on('nft_offer', handleOffer)
-      ws.on('accept_crypto_offer', handleOfferAcceptance)
-      ws.on('offer_accepted', handleOfferAcceptance)
-      ws.on('your_offer_accepted', handleOfferAcceptance)
-    } else {
-      console.warn('⚠️ WebSocket service has no event handlers')
-    }
-
-    return () => {
-      if (ws.off) {
-        ws.off('crypto_offer', handleOffer)
-        ws.off('nft_offer', handleOffer)
-        ws.off('accept_crypto_offer', handleOfferAcceptance)
-        ws.off('offer_accepted', handleOfferAcceptance)
-        ws.off('your_offer_accepted', handleOfferAcceptance)
+    // Handle your offer accepted event (for challenger)
+    const handleYourOfferAccepted = (data) => {
+      console.log('🎯 Your offer accepted event received:', data)
+      
+      if (data.gameId === gameData?.id) {
+        console.log('✅ Your offer was accepted, showing deposit overlay...')
+        
+        // Create accepted offer object for the deposit overlay
+        const acceptedOffer = {
+          offerer_address: address, // Current user is the offerer
+          cryptoAmount: data.data.finalPrice,
+          timestamp: data.data.timestamp
+        }
+        
+        setAcceptedOffer(acceptedOffer)
+        setShowDepositOverlay(true)
+        console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
+        
+        // Refresh game data
+        if (onOfferAccepted) {
+          onOfferAccepted(acceptedOffer)
+        }
       }
     }
-  }, [gameId, address, socket])
+
+    // Handle game status changed event
+    const handleGameStatusChanged = (data) => {
+      console.log('🔄 Game status changed event received:', data)
+      
+      if (data.gameId === gameData?.id && data.data.newStatus === 'waiting_challenger_deposit') {
+        console.log('🔄 Game status changed to waiting_challenger_deposit')
+        
+        // Check if current user is the challenger
+        if (gameData?.challenger && address && 
+            gameData.challenger.toLowerCase() === address.toLowerCase()) {
+          console.log('✅ Current user is challenger, showing deposit overlay...')
+          
+          // Show deposit overlay for challenger
+          const acceptedOffer = {
+            offerer_address: address,
+            cryptoAmount: gameData.payment_amount || gameData.price_usd,
+            timestamp: data.data.timestamp
+          }
+          
+          setAcceptedOffer(acceptedOffer)
+          setShowDepositOverlay(true)
+          console.log('🎯 Auto-showing deposit overlay for challenger:', acceptedOffer)
+        }
+      }
+    }
+
+          // Register real-time handlers
+      if (ws.on) {
+        ws.on('crypto_offer', handleOffer)
+        ws.on('nft_offer', handleOffer)
+        ws.on('accept_crypto_offer', handleOfferAcceptance)
+        ws.on('offer_accepted', handleOfferAcceptance)
+        ws.on('your_offer_accepted', handleYourOfferAccepted)
+        ws.on('game_status_changed', handleGameStatusChanged)
+      } else {
+        console.warn('⚠️ WebSocket service has no event handlers')
+      }
+
+      return () => {
+        if (ws.off) {
+          ws.off('crypto_offer', handleOffer)
+          ws.off('nft_offer', handleOffer)
+          ws.off('accept_crypto_offer', handleOfferAcceptance)
+          ws.off('offer_accepted', handleOfferAcceptance)
+          ws.off('your_offer_accepted', handleYourOfferAccepted)
+          ws.off('game_status_changed', handleGameStatusChanged)
+        }
+      }
+  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, onOfferAccepted])
 
   const isCreator = () => {
     // Use prop if available (preferred)

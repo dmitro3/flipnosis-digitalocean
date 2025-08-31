@@ -204,8 +204,9 @@ const GameLobby = () => {
         
         // Add handlers for offer acceptance to trigger tab switching
         webSocketService.on('offer_accepted', handleOfferAccepted)
-        webSocketService.on('your_offer_accepted', handleOfferAccepted)
+        webSocketService.on('your_offer_accepted', handleYourOfferAccepted)
         webSocketService.on('accept_crypto_offer', handleOfferAccepted)
+        webSocketService.on('game_status_changed', handleGameStatusChanged)
         
         console.log('✅ GameLobby: Game state message handlers registered')
         
@@ -250,6 +251,7 @@ const GameLobby = () => {
       webSocketService.off('offer_accepted')
       webSocketService.off('your_offer_accepted')
       webSocketService.off('accept_crypto_offer')
+      webSocketService.off('game_status_changed')
     }
   }, [gameId, address])
 
@@ -292,29 +294,53 @@ const GameLobby = () => {
     loadGameData()
   }
 
+  // Handle offer accepted event from event-driven system
   const handleOfferAccepted = (data) => {
-    console.log('🎯 Offer accepted in GameLobby:', data)
+    console.log('🎯 Event-driven offer accepted received:', data)
     
-    // Check if current user is the offerer (Player 2) who needs to deposit
-    if (data.acceptedOffer?.offerer_address && address && 
-        data.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
-      console.log('🎯 Current user is the offerer - deposit will be handled in Lounge tab')
-      showInfo('Your offer was accepted! Please check the Lounge tab to deposit your crypto.')
-    } else if (data.challenger && address && 
-               data.challenger.toLowerCase() === address.toLowerCase()) {
-      console.log('🎯 Current user is the challenger - deposit will be handled in Lounge tab')
-      showInfo('Your offer was accepted! Please check the Lounge tab to deposit your crypto.')
-    }
-    
-    // Force refresh game data to get updated status and trigger tab switching
-    console.log('🔄 Forcing game data refresh after WebSocket offer acceptance')
-    loadGameData()
-    
-    // Also trigger a delayed refresh to ensure server has processed
-    setTimeout(() => {
-      console.log('⏰ Delayed game data refresh after WebSocket')
+    if (data.gameId === gameData?.id) {
+      console.log('✅ Offer accepted for current game, refreshing data...')
+      showInfo('Offer accepted! Game status updated.')
+      
+      // Force refresh game data to get updated status
       loadGameData()
-    }, 1000)
+      
+      // Also trigger a delayed refresh to ensure server has processed
+      setTimeout(() => {
+        console.log('⏰ Delayed game data refresh after offer acceptance')
+        loadGameData()
+      }, 1000)
+    }
+  }
+
+  // Handle game status changed event
+  const handleGameStatusChanged = (data) => {
+    console.log('🔄 Game status changed event received:', data)
+    
+    if (data.gameId === gameData?.id) {
+      console.log(`🔄 Game status changed from ${data.data.previousStatus} to ${data.data.newStatus}`)
+      
+      // Refresh game data to get the new status
+      loadGameData()
+      
+      // Show appropriate message based on status change
+      if (data.data.newStatus === 'waiting_challenger_deposit') {
+        showInfo('Game is now waiting for challenger to deposit crypto.')
+      }
+    }
+  }
+
+  // Handle your offer accepted event (for challenger)
+  const handleYourOfferAccepted = (data) => {
+    console.log('🎯 Your offer accepted event received:', data)
+    
+    if (data.gameId === gameData?.id) {
+      console.log('✅ Your offer was accepted, showing deposit overlay...')
+      showSuccess('Your offer was accepted! Please deposit crypto within 2 minutes.')
+      
+      // Refresh game data
+      loadGameData()
+    }
   }
 
   // REMOVED: handleDepositTransition function - not needed anymore
