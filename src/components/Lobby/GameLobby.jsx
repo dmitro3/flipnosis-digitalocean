@@ -140,8 +140,7 @@ const GameLobby = () => {
   
   // Offer acceptance is now handled within the Lounge tab
   
-  // Add new state for game phases
-  const [showCountdown, setShowCountdown] = useState(false)
+  // Transport state to prevent multiple triggers
   const [countdownTriggered, setCountdownTriggered] = useState(false)
 
   // Lobby state management
@@ -410,15 +409,13 @@ const GameLobby = () => {
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
   }, [loadGameData])
 
-  // Watch for game starting (both players deposited) - with debouncing to prevent flash
+  // Watch for game starting (both players deposited) - transport directly to flip suite
   useEffect(() => {
-    console.log('🔍 Countdown useEffect running...')
+    console.log('🔍 Game start check running...')
     console.log('🔍 gameData exists:', !!gameData)
-    console.log('🔍 gameData keys:', gameData ? Object.keys(gameData) : 'no gameData')
     
     // Debug logging to see what's happening
-    console.log('🔍 Countdown Debug:', {
-      gameData: gameData,
+    console.log('🔍 Game Start Debug:', {
       status: gameData?.status,
       creator_deposited: gameData?.creator_deposited,
       challenger_deposited: gameData?.challenger_deposited,
@@ -428,59 +425,48 @@ const GameLobby = () => {
       address: address
     })
     
-    // Check if both players have deposited - only trigger once when status becomes 'active'
-    // Add a small delay to prevent flash from rapid re-renders
-    const checkCountdown = () => {
+    // Check if both players have deposited - transport directly to flip suite
+    const checkGameStart = () => {
       if (gameData?.status === 'active' && 
           gameData?.creator_deposited && 
           gameData?.challenger_deposited &&
           !countdownTriggered) {
         
-        // Only show countdown for the two players
+        // Only transport for the two players
         const isPlayer = isCreator() || isJoiner() || 
                         (gameData?.challenger && address && 
                          gameData.challenger.toLowerCase() === address.toLowerCase())
         
-        console.log('🎯 Countdown conditions met:', {
+        console.log('🎯 Game ready conditions met:', {
           isPlayer: isPlayer,
-          isCreator: isCreator(),
-          isJoiner: isJoiner(),
-          challengerMatch: gameData?.challenger && address && 
-                          gameData.challenger.toLowerCase() === address.toLowerCase(),
           gameStatus: gameData?.status,
           creatorDeposited: gameData?.creator_deposited,
           challengerDeposited: gameData?.challenger_deposited
         })
         
         if (isPlayer) {
-          console.log('🚀 Game starting! Showing countdown...')
-          setCountdownTriggered(true)
-          setShowCountdown(true)
+          console.log('🚀 Game ready! Transporting directly to flip suite...')
+          setCountdownTriggered(true) // Prevent multiple triggers
+          
+          // Transport directly to flip suite without countdown
+          showSuccess('Both players deposited! Entering Battle Arena...')
+          
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+              detail: { gameId, gameData, immediate: true }
+            }))
+          }, 1500) // Small delay to show the success message
         }
       }
     }
     
-    // Debounce the countdown check to prevent flash
-    const timeoutId = setTimeout(checkCountdown, 100)
+    // Small delay to prevent rapid triggers from refreshes
+    const timeoutId = setTimeout(checkGameStart, 200)
     
     return () => clearTimeout(timeoutId)
   }, [gameData, address, isCreator, isJoiner, countdownTriggered])
   
-  // Handle countdown completion - transport to flip suite tab
-  const handleCountdownComplete = () => {
-    console.log('⚔️ Countdown complete! Switching to Flip Suite...')
-    setShowCountdown(false)
-    
-    // Transport directly to flip suite tab instead of old game page
-    showInfo('Entering Battle Arena!')
-    
-    // Switch to flip suite tab
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-        detail: { gameId, gameData }
-      }))
-    }, 500)
-  }
+  // Countdown is no longer used - players transport directly to flip suite
 
 
 
@@ -580,23 +566,7 @@ const GameLobby = () => {
                   (gameData?.challenger && address && 
                    gameData.challenger.toLowerCase() === address.toLowerCase())
   
-  // Render countdown overlay
-  if (showCountdown) {
-    return (
-      <>
-        <Container>
-          <GameBackground />
-        </Container>
-        <GameCountdown
-          isVisible={showCountdown}
-          onComplete={handleCountdownComplete}
-          creatorAddress={getGameCreator()}
-          challengerAddress={getGameJoiner()}
-          currentUserAddress={address}
-        />
-      </>
-    )
-  }
+  // Countdown removed - players transport directly to flip suite
 
   // Regular lobby view
   return (

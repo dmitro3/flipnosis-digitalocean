@@ -276,12 +276,12 @@ const TabbedGameInterface = ({
   const tabs = [
     {
       id: 'nft',
-      label: 'Deets',
+      label: 'Flip Deets',
       component: NFTDetailsTab
     },
     {
       id: 'chat',
-      label: 'Lounge',
+      label: 'Flip Lounge',
       component: ChatOffersTab
     },
     {

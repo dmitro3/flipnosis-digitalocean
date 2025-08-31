@@ -327,12 +327,12 @@ export const useLobbyState = (gameId, address) => {
     }
   }, [gameData])
 
-  // Auto-refresh offers every 5 seconds
+  // Auto-refresh offers every 10 seconds (reduced to prevent interference)
   useEffect(() => {
     if (gameData && (gameData.listing_id || gameData.id)) {
       const interval = setInterval(() => {
         loadOffers()
-      }, 5000)
+      }, 10000)
 
       return () => {
         clearInterval(interval)

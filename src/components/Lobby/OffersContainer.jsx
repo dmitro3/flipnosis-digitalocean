@@ -362,8 +362,8 @@ const OffersContainer = ({
     // Initial load
     refreshGameState()
     
-    // Set up interval for auto-refresh
-    const interval = setInterval(refreshGameState, 2000)
+    // Set up interval for auto-refresh (reduced frequency)
+    const interval = setInterval(refreshGameState, 5000)
     
     return () => clearInterval(interval)
   }, [gameData?.listing_id, gameId, address, showDepositOverlay])
