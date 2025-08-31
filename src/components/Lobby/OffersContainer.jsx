@@ -631,57 +631,32 @@ const OffersContainer = ({
       showError('Only the game creator can accept offers')
       return
     }
-    
-    // Check if we have a valid socket connection
-    const isSocketConnected = socket?.connected || (socket?.socket && socket.socket.readyState === WebSocket.OPEN)
-    if (!isSocketConnected) {
-      console.error('❌ Cannot accept offer: no socket connection')
-      showError('Connection required to accept offers')
-      return
-    }
 
     try {
       const offerType = offer.cryptoAmount ? 'crypto offer' : 'NFT offer'
       console.log('🎯 Starting offer acceptance process for:', offerType)
       showInfo(`Accepting ${offerType}...`)
 
-      const acceptanceData = {
-        type: offer.cryptoAmount ? 'accept_crypto_offer' : 'accept_nft_offer',
-        gameId: gameId,
-        listingId: gameData?.listing_id || gameData?.id,
-        creatorAddress: address,
-        acceptedOffer: offer,
-        timestamp: new Date().toISOString()
+      // Use the API endpoint to accept the offer
+      const response = await fetch(`/api/offers/${offer.id}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          final_price: offer.cryptoAmount || offer.offer_price 
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`)
       }
 
-      console.log('📤 Offers: Sending offer acceptance:', acceptanceData)
+      const result = await response.json()
+      console.log('✅ Offer accepted via API:', result)
       
-      // Send via WebSocket - handle both direct socket and wrapper object
-      if (socket?.socket && socket.socket.send) {
-        // Use the actual WebSocket object
-        console.log('📤 Using socket.socket.send method')
-        socket.socket.send(JSON.stringify(acceptanceData))
-        console.log('📤 Offer acceptance sent via socket.socket.send')
-      } else if (socket?.send) {
-        // Direct socket object
-        console.log('📤 Using socket.send method')
-        socket.send(acceptanceData)
-        console.log('📤 Offer acceptance sent via socket.send')
-      } else {
-        // Fallback to global WebSocket service
-        console.log('📤 Using global WebSocket service fallback')
-        const ws = window.FlipnosisWS
-        if (ws) {
-          ws.send(acceptanceData)
-          console.log('📤 Offer acceptance sent via global WebSocket service')
-        } else {
-          console.error('❌ No WebSocket connection available for offer acceptance')
-          showError('WebSocket connection not available')
-          return
-        }
-      }
-      
-      console.log('✅ Offer acceptance message sent successfully')
+      console.log('✅ Offer acceptance successful')
       showSuccess(`${offerType} accepted! Game starting...`)
       
       // Immediately show deposit overlay for the creator

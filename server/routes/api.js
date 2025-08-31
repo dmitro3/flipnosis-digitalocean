@@ -810,6 +810,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   router.post('/offers/:offerId/accept', async (req, res) => {
     const { offerId } = req.params
     
+    console.log('🎯 Offer acceptance request received:', { offerId, body: req.body })
+    
     try {
       // Get offer details
       const offer = await new Promise((resolve, reject) => {
@@ -856,19 +858,24 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         await new Promise((resolve, reject) => {
           db.run(`
             INSERT INTO games (
-              id, listing_id, offer_id, blockchain_game_id, creator, challenger,
+              id, listing_id, creator, challenger,
               nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-              price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
-              game_type, network, payment_token
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              payment_amount, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
+              game_type, chain, payment_token
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, [
-            gameId, listing.id, offerId, gameId, listing.creator, offer.offerer_address,
+            gameId, listing.id, listing.creator, offer.offerer_address,
             listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
             offer.offer_price, listing.coin_data, 'waiting_challenger_deposit', depositDeadline, true, false,
             'nft-vs-crypto', 'base', 'ETH'
           ], function(err) {
-            if (err) reject(err)
-            else resolve()
+            if (err) {
+              console.error('❌ Error creating game:', err)
+              reject(err)
+            } else {
+              console.log('✅ Game created successfully')
+              resolve()
+            }
           })
         })
         
@@ -878,13 +885,18 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         await new Promise((resolve, reject) => {
           db.run(`
             UPDATE games 
-            SET challenger = ?, offer_id = ?, price_usd = ?, 
+            SET challenger = ?, payment_amount = ?, 
                 status = 'waiting_challenger_deposit', deposit_deadline = ?,
                 creator_deposited = true
             WHERE id = ?
-          `, [offer.offerer_address, offerId, offer.offer_price, depositDeadline, game.id], function(err) {
-            if (err) reject(err)
-            else resolve()
+          `, [offer.offerer_address, offer.offer_price, depositDeadline, game.id], function(err) {
+            if (err) {
+              console.error('❌ Error updating game:', err)
+              reject(err)
+            } else {
+              console.log('✅ Game updated successfully')
+              resolve()
+            }
           })
         })
       }
@@ -918,6 +930,17 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       })
       
       // Send WebSocket notifications
+      console.log('📡 Sending WebSocket notifications...')
+      
+      // Send WebSocket notifications
+      console.log('📡 Sending WebSocket notifications...')
+      console.log('📋 Game details for WebSocket:', {
+        gameId: game.id,
+        challenger: offer.offerer_address,
+        creator: listing.creator,
+        finalPrice: offer.offer_price
+      })
+      
       wsHandlers.sendToUser(listing.creator, {
         type: 'offer_accepted',
         gameId: game.id,
@@ -956,6 +979,17 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       })
       
       console.log(`✅ Offer accepted: ${offerId}, Game: ${game.id}, Deadline: ${depositDeadline}`)
+      console.log(`📡 WebSocket messages sent to: creator=${listing.creator}, challenger=${offer.offerer_address}`)
+      
+      // Verify the game was updated correctly
+      const updatedGame = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM games WHERE id = ?', [game.id], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      console.log('🔍 Updated game data:', updatedGame)
       
       res.json({ 
         success: true, 
