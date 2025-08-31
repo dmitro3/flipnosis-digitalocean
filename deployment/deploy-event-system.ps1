@@ -15,37 +15,31 @@ $SERVER_USER = "root"
 $APP_PATH = "/opt/flipnosis/app"
 $DB_PATH = "$APP_PATH/server/flipz.db"
 
-# Colors for output
-$Green = "Green"
-$Yellow = "Yellow"
-$Red = "Red"
-$Cyan = "Cyan"
-
 function Write-Step {
-    param([string]$Message, [string]$Color = $Green)
-    Write-Host "`n📋 $Message" -ForegroundColor $Color
+    param([string]$Message)
+    Write-Host "`n📋 $Message" -ForegroundColor Yellow
 }
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✅ $Message" -ForegroundColor $Green
+    Write-Host "✅ $Message" -ForegroundColor Green
 }
 
 function Write-Error {
     param([string]$Message)
-    Write-Host "❌ $Message" -ForegroundColor $Red
+    Write-Host "❌ $Message" -ForegroundColor Red
 }
 
 function Write-Info {
     param([string]$Message)
-    Write-Host "ℹ️  $Message" -ForegroundColor $Cyan
+    Write-Host "ℹ️  $Message" -ForegroundColor Cyan
 }
 
 try {
     # Step 1: Database Migration
-    Write-Step "Step 1: Running Database Migration" $Yellow
+    Write-Step "Step 1: Running Database Migration"
     
-    $migrationScript = @"
+    $migrationScript = @'
 -- Event System Migration
 -- Adding game_events table and event tracking fields
 
@@ -72,9 +66,9 @@ ALTER TABLE games ADD COLUMN event_version INTEGER DEFAULT 0;
 
 -- Verify migration
 SELECT 'Event system migration completed' as status;
-"@
+'@
 
-    $migrationScript | ssh ${SERVER_USER}@${SERVER_IP} "cd $APP_PATH/server && sqlite3 $DB_PATH"
+    $migrationScript | ssh "${SERVER_USER}@${SERVER_IP}" "cd $APP_PATH/server; sqlite3 $DB_PATH"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Success "Database migration completed successfully"
@@ -84,7 +78,7 @@ SELECT 'Event system migration completed' as status;
     }
 
     # Step 2: Deploy Server Code
-    Write-Step "Step 2: Deploying Server Code" $Yellow
+    Write-Step "Step 2: Deploying Server Code"
     
     # Use the existing deployment script
     $deployScript = ".\deployment\deploy-hetzner-git-fixed.ps1"
@@ -102,9 +96,9 @@ SELECT 'Event system migration completed' as status;
     }
 
     # Step 3: Verify Event System
-    Write-Step "Step 3: Verifying Event System" $Yellow
+    Write-Step "Step 3: Verifying Event System"
     
-    $verificationScript = @"
+    $verificationScript = @'
 -- Verify event system tables and fields
 SELECT 'game_events table exists' as check_item, 
        CASE WHEN EXISTS (SELECT 1 FROM sqlite_master WHERE type='table' AND name='game_events') 
@@ -121,10 +115,10 @@ SELECT 'event indexes exist' as check_item,
 -- Show current event system status
 SELECT 'Current game_events count' as metric, COUNT(*) as value FROM game_events;
 SELECT 'Games with event tracking' as metric, COUNT(*) as value FROM games WHERE last_event_id > 0;
-"@
+'@
 
     Write-Info "Running verification checks..."
-    $verificationScript | ssh ${SERVER_USER}@${SERVER_IP} "cd $APP_PATH/server && sqlite3 $DB_PATH"
+    $verificationScript | ssh "${SERVER_USER}@${SERVER_IP}" "cd $APP_PATH/server; sqlite3 $DB_PATH"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Success "Event system verification completed"
@@ -134,12 +128,12 @@ SELECT 'Games with event tracking' as metric, COUNT(*) as value FROM games WHERE
     }
 
     # Step 4: Test Event System
-    Write-Step "Step 4: Testing Event System" $Yellow
+    Write-Step "Step 4: Testing Event System"
     
     Write-Info "Testing event system functionality..."
     
     # Test event emission
-    $testEventScript = @"
+    $testEventScript = @'
 -- Test event emission
 INSERT INTO game_events (game_id, event_type, event_data, target_users, processed)
 VALUES ('test_game_123', 'test_event', '{"test": "data"}', '["test_user"]', 1);
@@ -148,9 +142,9 @@ SELECT 'Test event created' as status, COUNT(*) as event_count FROM game_events 
 
 -- Clean up test data
 DELETE FROM game_events WHERE game_id = 'test_game_123';
-"@
+'@
 
-    $testEventScript | ssh ${SERVER_USER}@${SERVER_IP} "cd $APP_PATH/server && sqlite3 $DB_PATH"
+    $testEventScript | ssh "${SERVER_USER}@${SERVER_IP}" "cd $APP_PATH/server; sqlite3 $DB_PATH"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Success "Event system test completed successfully"
@@ -160,10 +154,10 @@ DELETE FROM game_events WHERE game_id = 'test_game_123';
     }
 
     # Step 5: Restart Services
-    Write-Step "Step 5: Restarting Services" $Yellow
+    Write-Step "Step 5: Restarting Services"
     
     Write-Info "Restarting application services..."
-    ssh ${SERVER_USER}@${SERVER_IP} "cd $APP_PATH && pm2 restart all"
+    ssh "${SERVER_USER}@${SERVER_IP}" "cd $APP_PATH; pm2 restart all"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Success "Services restarted successfully"
@@ -173,27 +167,27 @@ DELETE FROM game_events WHERE game_id = 'test_game_123';
     }
 
     # Step 6: Final Verification
-    Write-Step "Step 6: Final System Check" $Yellow
+    Write-Step "Step 6: Final System Check"
     
     Write-Info "Checking application status..."
-    ssh ${SERVER_USER}@${SERVER_IP} "cd $APP_PATH && pm2 status"
+    ssh "${SERVER_USER}@${SERVER_IP}" "cd $APP_PATH; pm2 status"
     
     Write-Info "Checking server logs for event system..."
-    ssh ${SERVER_USER}@${SERVER_IP} "cd $APP_PATH && tail -n 20 logs/app.log | grep -i event"
+    ssh "${SERVER_USER}@${SERVER_IP}" "cd $APP_PATH; tail -n 20 logs/app.log | grep -i event"
     
     Write-Success "Event system deployment completed successfully!"
-    Write-Host "`n🎉 Event-driven system is now live!" -ForegroundColor $Green
-    Write-Host "📊 Benefits:" -ForegroundColor $Cyan
-    Write-Host "   • Targeted notifications to specific users" -ForegroundColor $Cyan
-    Write-Host "   • Better scalability for multiple concurrent users" -ForegroundColor $Cyan
-    Write-Host "   • Improved debugging and event tracking" -ForegroundColor $Cyan
-    Write-Host "   • Event persistence for replay capability" -ForegroundColor $Cyan
+    Write-Host "`n🎉 Event-driven system is now live!" -ForegroundColor Green
+    Write-Host "📊 Benefits:" -ForegroundColor Cyan
+    Write-Host "   • Targeted notifications to specific users" -ForegroundColor Cyan
+    Write-Host "   • Better scalability for multiple concurrent users" -ForegroundColor Cyan
+    Write-Host "   • Improved debugging and event tracking" -ForegroundColor Cyan
+    Write-Host "   • Event persistence for replay capability" -ForegroundColor Cyan
     
-    Write-Host "`n🔧 Next Steps:" -ForegroundColor $Yellow
-    Write-Host "   1. Test offer acceptance flow" -ForegroundColor $Yellow
-    Write-Host "   2. Monitor event emission in logs" -ForegroundColor $Yellow
-    Write-Host "   3. Verify targeted notifications work" -ForegroundColor $Yellow
-    Write-Host "   4. Check database for event records" -ForegroundColor $Yellow
+    Write-Host "`n🔧 Next Steps:" -ForegroundColor Yellow
+    Write-Host "   1. Test offer acceptance flow" -ForegroundColor Yellow
+    Write-Host "   2. Monitor event emission in logs" -ForegroundColor Yellow
+    Write-Host "   3. Verify targeted notifications work" -ForegroundColor Yellow
+    Write-Host "   4. Check database for event records" -ForegroundColor Yellow
 
 } catch {
     Write-Error "Deployment failed: $($_.Exception.Message)"
