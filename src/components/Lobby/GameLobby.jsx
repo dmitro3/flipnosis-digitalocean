@@ -17,7 +17,6 @@ import ChatContainer from './ChatContainer'
 import OffersContainer from './OffersContainer'
 import CoinContainer from '../GameOrchestrator/CoinContainer'
 import GameCountdown from '../GameOrchestrator/GameCountdown'
-import OfferAcceptanceOverlay from './OfferAcceptanceOverlay'
 import { TabbedGameInterface } from '../TabbedGame'
 
 // Lobby-specific hooks
@@ -139,10 +138,7 @@ const GameLobby = () => {
   
   // REMOVED: Transition state variables - not needed anymore
   
-  // Offer acceptance overlay state
-  const [showOfferOverlay, setShowOfferOverlay] = useState(false)
-  const [acceptedOffer, setAcceptedOffer] = useState(null)
-  const [isProcessingDeposit, setIsProcessingDeposit] = useState(false)
+  // Offer acceptance is now handled within the Lounge tab
   
   // Add new state for game phases
   const [showCountdown, setShowCountdown] = useState(false)
@@ -272,20 +268,8 @@ const GameLobby = () => {
         data.challenger.toLowerCase() === address.toLowerCase()) {
       console.log('🎯 Current user is the challenger - needs to deposit')
       
-      // Create accepted offer object for consistency
-      const acceptedOffer = {
-        offerer_address: data.challenger,
-        cryptoAmount: data.cryptoAmount || data.payment_amount,
-        timestamp: new Date().toISOString()
-      }
-      
-      // Show deposit overlay for Player 2
-      setAcceptedOffer(acceptedOffer)
-      setShowOfferOverlay(true)
-      setIsProcessingDeposit(true)
-      
-      // Show info message
-      showInfo(`Your offer was accepted! Please deposit $${acceptedOffer.cryptoAmount} USD worth of ETH.`)
+      // Show info message - deposit will be handled in the Lounge tab
+      showInfo(`Your offer was accepted! Please check the Lounge tab to deposit $${data.cryptoAmount || data.payment_amount} USD worth of ETH.`)
     } else {
       console.log('🎯 Current user is not the challenger - challenger comparison failed:', {
         currentAddress: address,
@@ -594,47 +578,20 @@ const GameLobby = () => {
                   // Check if current user is the offerer (Player 2) who needs to deposit
                   if (offer.acceptedOffer?.offerer_address && address && 
                       offer.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
-                    console.log('🎯 Current user is the offerer - showing deposit overlay')
+                    console.log('🎯 Current user is the offerer - deposit will be handled in Lounge tab')
                     
-                    // Show deposit overlay for Player 2
-                    setAcceptedOffer(offer.acceptedOffer)
-                    setShowOfferOverlay(true)
-                    setIsProcessingDeposit(true)
-                    
-                    // Show info message
-                    showInfo('Your offer was accepted! Please deposit your crypto.')
+                    // Show info message - the deposit overlay will be shown in the Lounge tab
+                    showInfo('Your offer was accepted! Please check the Lounge tab to deposit your crypto.')
                   } else {
                     console.log('🎯 Current user is not the offerer - just refreshing data')
                   }
                   
                   // Always refresh game data to check for status changes
                   loadGameData()
-                  setIsProcessingDeposit(true)
                 }}
               />
               
-              {/* Offer Acceptance Overlay - Keep this outside tabs for important notifications */}
-              <OfferAcceptanceOverlay
-                isVisible={showOfferOverlay && isProcessingDeposit}
-                acceptedOffer={acceptedOffer}
-                gameData={gameData}
-                gameId={gameId}
-                address={address}
-                onClose={() => {
-                  console.log('🎯 OfferAcceptanceOverlay: Closing overlay')
-                  setShowOfferOverlay(false)
-                  setAcceptedOffer(null)
-                  setIsProcessingDeposit(false)
-                }}
-                onDepositComplete={(offer) => {
-                  console.log('🎯 OfferAcceptanceOverlay: Deposit completed')
-                  setShowOfferOverlay(false)
-                  setAcceptedOffer(null)
-                  setIsProcessingDeposit(false)
-                  // Don't reload game data immediately - let the WebSocket handle updates
-                  showInfo('Deposit successful! Game starting...')
-                }}
-              />
+              {/* Removed external OfferAcceptanceOverlay - now handled within the Lounge tab */}
             </div>
           </GameLayout>
         </GameContainer>

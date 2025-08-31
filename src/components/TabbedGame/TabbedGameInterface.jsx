@@ -221,6 +221,14 @@ const TabbedGameInterface = ({
     }
   }, [gameData?.status])
 
+  // Auto-switch to Lounge tab when waiting for challenger deposit
+  useEffect(() => {
+    if (gameData?.status === 'waiting_challenger_deposit') {
+      console.log('🎯 Auto-switching to Lounge tab for deposit')
+      setActiveTab('chat')
+    }
+  }, [gameData?.status])
+
   const tabs = [
     {
       id: 'nft',

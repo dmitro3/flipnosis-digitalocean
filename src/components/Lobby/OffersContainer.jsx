@@ -271,6 +271,28 @@ const OffersContainer = ({
     setOffers(initialOffers)
   }, [initialOffers])
 
+  // Auto-show deposit overlay when game status is waiting_challenger_deposit and current user is challenger
+  useEffect(() => {
+    if (gameData?.status === 'waiting_challenger_deposit' && 
+        gameData?.challenger && 
+        address && 
+        gameData.challenger.toLowerCase() === address.toLowerCase() &&
+        !showDepositOverlay) {
+      
+      console.log('🎯 Auto-showing deposit overlay for challenger')
+      
+      // Create accepted offer object for the deposit overlay
+      const acceptedOffer = {
+        offerer_address: gameData.challenger,
+        cryptoAmount: gameData.payment_amount || gameData.price_usd,
+        timestamp: new Date().toISOString()
+      }
+      
+      setAcceptedOffer(acceptedOffer)
+      setShowDepositOverlay(true)
+    }
+  }, [gameData?.status, gameData?.challenger, address, showDepositOverlay])
+
   // Auto-refresh offers every 2 seconds as fallback
   useEffect(() => {
     if (!gameData?.listing_id) return
