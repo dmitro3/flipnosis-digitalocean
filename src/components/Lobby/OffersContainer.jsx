@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useWallet } from '../../contexts/WalletContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
-import OfferAcceptanceOverlay from './OfferAcceptanceOverlay'
 import styled from '@emotion/styled'
 // Using global WebSocket service to avoid minification issues
 
@@ -98,169 +97,92 @@ const OfferHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
-  font-size: 0.8rem;
+`
+
+const OffererInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`
+
+const OffererName = styled.span`
   color: #00FF41;
+  font-weight: bold;
+  font-size: 0.9rem;
 `
 
-const OfferContent = styled.div`
-  color: #fff;
-  margin-bottom: 0.5rem;
+const OfferTime = styled.span`
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
 `
 
-const OfferAmount = styled.div`
-  padding: 0.5rem;
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 0.25rem;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  margin-bottom: 0.5rem;
-`
-
-const OfferAmountLabel = styled.div`
+const OfferPrice = styled.div`
   color: #FFD700;
   font-weight: bold;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-`
-
-const OfferAmountValue = styled.div`
-  color: #fff;
   font-size: 1.1rem;
-  font-weight: bold;
 `
 
-const OfferActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-`
-
-const ActionButton = styled.button`
-  flex: 1;
-  padding: 0.5rem;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.2s ease;
-  
-  &.accept {
-    background: #00FF41;
-    color: #000;
-    
-    &:hover {
-      background: #00CC33;
-    }
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`
-
-const OfferInputContainer = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-end;
-`
-
-const OfferInput = styled.input`
-  flex: 1;
-  padding: 0.75rem;
-  background: rgba(0, 255, 65, 0.1);
-  border: 1px solid rgba(0, 255, 65, 0.3);
-  border-radius: 0.5rem;
-  color: #fff;
+const OfferMessage = styled.div`
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
-  
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
-  
-  &:focus {
-    outline: none;
-    border-color: #00FF41;
-    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  margin-bottom: 0.75rem;
+  font-style: italic;
 `
 
-const OfferButton = styled.button`
-  padding: 0.75rem 1rem;
-  background: linear-gradient(45deg, #FFD700, #FFA500);
+const AcceptButton = styled.button`
+  background: linear-gradient(45deg, #00FF41, #39FF14);
   color: #000;
   border: none;
+  padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: bold;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   
-  &:hover:not(:disabled) {
-    background: linear-gradient(45deg, #FFA500, #FF8C00);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 255, 65, 0.3);
   }
   
   &:disabled {
-    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `
 
-const PriceInfo = styled.div`
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
+const NoOffersMessage = styled.div`
   text-align: center;
-`
-
-const PriceLabel = styled.div`
-  color: #FFD700;
-  font-weight: bold;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-`
-
-const PriceValue = styled.div`
-  color: #fff;
-  font-size: 1.1rem;
-  font-weight: bold;
-`
-
-const MinOfferInfo = styled.div`
-  color: #00FF41;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  padding: 2rem;
 `
 
 const OffersContainer = ({ 
   gameId, 
   gameData, 
   socket, 
-  connected,
-  offers: initialOffers = [],
-  isCreator: isCreatorProp,
+  connected, 
+  offers: initialOffers = [], 
+  isCreator: isCreatorProp = false,
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
-  const { address, isConnected: walletIsConnected, setIsConnected } = useWallet()
-  const { getPlayerName } = useProfile()
-  const { showError, showSuccess, showInfo } = useToast()
+  const { address } = useWallet()
+  const { profile } = useProfile()
+  const { showSuccess, showError, showInfo } = useToast()
   
   const [offers, setOffers] = useState(initialOffers)
-  const [cryptoOffer, setCryptoOffer] = useState('')
-  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
-  const [playerNames, setPlayerNames] = useState({})
-  
-  // Deposit overlay state
-  const [showDepositOverlay, setShowDepositOverlay] = useState(false)
-  const [acceptedOffer, setAcceptedOffer] = useState(null)
-  
-  const offersEndRef = useRef(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [wsConnected, setWsConnected] = useState(false)
+  const [showConnectionStatus, setShowConnectionStatus] = useState(false)
+  const [connectionTimeout, setConnectionTimeout] = useState(null)
+  const [lastOfferTime, setLastOfferTime] = useState(0)
+  const [offerCooldown, setOfferCooldown] = useState(0)
+  const [showCooldown, setShowCooldown] = useState(false)
+  const [cooldownInterval, setCooldownInterval] = useState(null)
   
   // Get game price for validation
   const gamePrice = gameData?.payment_amount || gameData?.price_usd || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || 0
@@ -270,37 +192,6 @@ const OffersContainer = ({
   useEffect(() => {
     setOffers(initialOffers)
   }, [initialOffers])
-
-  // Auto-show deposit overlay when game status is waiting_challenger_deposit and current user is challenger
-  useEffect(() => {
-    console.log('🔍 Checking auto-show deposit overlay:', {
-      status: gameData?.status,
-      challenger: gameData?.challenger,
-      address: address,
-      showDepositOverlay: showDepositOverlay,
-      isChallenger: gameData?.challenger && address && 
-                   gameData.challenger.toLowerCase() === address.toLowerCase()
-    })
-    
-    if (gameData?.status === 'waiting_challenger_deposit' && 
-        gameData?.challenger && 
-        address && 
-        gameData.challenger.toLowerCase() === address.toLowerCase() &&
-        !showDepositOverlay) {
-      
-      console.log('🎯 Auto-showing deposit overlay for challenger')
-      
-      // Create accepted offer object for the deposit overlay
-      const acceptedOffer = {
-        offerer_address: gameData.challenger,
-        cryptoAmount: gameData.payment_amount || gameData.price_usd,
-        timestamp: new Date().toISOString()
-      }
-      
-      setAcceptedOffer(acceptedOffer)
-      setShowDepositOverlay(true)
-    }
-  }, [gameData?.status, gameData?.challenger, address, showDepositOverlay])
 
   // Auto-refresh offers every 2 seconds as fallback
   useEffect(() => {
@@ -364,10 +255,10 @@ const OffersContainer = ({
         } else {
           console.log('✅ WebSocket already connected')
         }
-        setIsConnected(true)
+        setWsConnected(true)
       } catch (error) {
         console.error('❌ WebSocket connection failed:', error)
-        setIsConnected(false)
+        setWsConnected(false)
       }
     }
 
@@ -417,8 +308,8 @@ const OffersContainer = ({
           timestamp: data.timestamp || new Date().toISOString()
         }
         
-        setAcceptedOffer(acceptedOffer)
-        setShowDepositOverlay(true)
+        // setAcceptedOffer(acceptedOffer) // Removed as per edit hint
+        // setShowDepositOverlay(true) // Removed as per edit hint
         console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
       }
     }
@@ -437,8 +328,8 @@ const OffersContainer = ({
           timestamp: data.data.timestamp
         }
         
-        setAcceptedOffer(acceptedOffer)
-        setShowDepositOverlay(true)
+        // setAcceptedOffer(acceptedOffer) // Removed as per edit hint
+        // setShowDepositOverlay(true) // Removed as per edit hint
         console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
         
         // Refresh game data
@@ -467,8 +358,8 @@ const OffersContainer = ({
             timestamp: data.data.timestamp
           }
           
-          setAcceptedOffer(acceptedOffer)
-          setShowDepositOverlay(true)
+          // setAcceptedOffer(acceptedOffer) // Removed as per edit hint
+          // setShowDepositOverlay(true) // Removed as per edit hint
           console.log('🎯 Auto-showing deposit overlay for challenger:', acceptedOffer)
         }
       }
@@ -551,7 +442,7 @@ const OffersContainer = ({
       }
       
       console.log('👥 Final player names for offers:', names)
-      setPlayerNames(names)
+      // setPlayerNames(names) // Removed as per edit hint
     }
 
     if (offers.length > 0) {
@@ -713,8 +604,8 @@ const OffersContainer = ({
       showSuccess(`${offerType} accepted! Game starting...`)
       
       // Immediately show deposit overlay for the creator
-      setAcceptedOffer(offer)
-      setShowDepositOverlay(true)
+      // setAcceptedOffer(offer) // Removed as per edit hint
+      // setShowDepositOverlay(true) // Removed as per edit hint
       console.log('🎯 Showing deposit overlay for accepted offer')
       
       // Force refresh game data to get updated status
@@ -904,14 +795,13 @@ const OffersContainer = ({
     setAcceptedOffer(null)
   }
 
+  // Deposit completion is now handled by GamePayment component
   const handleDepositComplete = (offer) => {
-    console.log('🎯 Deposit completed, transporting to game room...')
-    setShowDepositOverlay(false)
-    setAcceptedOffer(null)
+    console.log('🎯 Deposit completed via GamePayment component')
     
-    // Transport to game room
+    // Trigger tab switch to Flip Suite (game tab)
     if (onOfferAccepted) {
-      onOfferAccepted(offer)
+      onOfferAccepted({ ...offer, depositCompleted: true })
     }
   }
 
@@ -1047,16 +937,7 @@ const OffersContainer = ({
         <div ref={offersEndRef} />
       </OffersList>
 
-      {/* Deposit Overlay */}
-      <OfferAcceptanceOverlay
-        isVisible={showDepositOverlay}
-        acceptedOffer={acceptedOffer}
-        gameData={gameData}
-        gameId={gameId}
-        address={address}
-        onClose={handleCloseDepositOverlay}
-        onDepositComplete={handleDepositComplete}
-      />
+              {/* Deposit overlay removed - now handled by GamePayment component */}
     </OffersContainerStyled>
   )
 }

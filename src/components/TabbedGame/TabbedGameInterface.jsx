@@ -235,6 +235,22 @@ const TabbedGameInterface = ({
     }
   }, [gameData?.status])
 
+  // Handle deposit completion and switch to Flip Suite tab
+  useEffect(() => {
+    if (onOfferAccepted && typeof onOfferAccepted === 'function') {
+      // Check if the onOfferAccepted was called with depositCompleted flag
+      const originalOnOfferAccepted = onOfferAccepted
+      onOfferAccepted = (data) => {
+        if (data && data.depositCompleted) {
+          console.log('🎯 Deposit completed, switching to Flip Suite tab')
+          setActiveTab('game')
+        }
+        // Call the original handler
+        originalOnOfferAccepted(data)
+      }
+    }
+  }, [onOfferAccepted])
+
   // Also check for any status changes that might indicate offer acceptance
   useEffect(() => {
     console.log('🔍 TabbedGameInterface: Game data changed:', {
@@ -249,6 +265,13 @@ const TabbedGameInterface = ({
     if (gameData?.status === 'waiting_challenger_deposit' && activeTab !== 'chat') {
       console.log('🎯 Force switching to Lounge tab for deposit')
       setActiveTab('chat')
+    }
+    
+    // If both players have deposited, switch to Flip Suite tab
+    if (gameData?.creator_deposited && gameData?.challenger_deposited && 
+        gameData?.status !== 'waiting_challenger_deposit') {
+      console.log('🎯 Both players deposited, switching to Flip Suite tab')
+      setActiveTab('game')
     }
   }, [gameData, activeTab])
 

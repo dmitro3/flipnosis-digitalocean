@@ -124,7 +124,8 @@ const GamePayment = ({
   isJoiner,
   formatTimeLeft,
   startDepositCountdown,
-  loadGameData
+  loadGameData,
+  onDepositComplete
 }) => {
   const { showInfo, showSuccess, showError } = useToast()
   const { contractService } = useContractService()
@@ -167,6 +168,18 @@ const GamePayment = ({
         
         // Reload game data
         loadGameData()
+        
+        // Trigger deposit completion callback to switch to Flip Suite tab
+        if (onDepositComplete) {
+          console.log('🎯 Deposit completed, triggering tab switch to Flip Suite')
+          onDepositComplete({
+            gameId,
+            player: address,
+            amount: priceUSD,
+            transactionHash: result.transactionHash,
+            depositCompleted: true
+          })
+        }
       } else {
         showError(result.error || 'Failed to deposit ETH')
       }

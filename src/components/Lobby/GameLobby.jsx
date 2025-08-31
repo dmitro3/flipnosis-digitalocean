@@ -615,6 +615,15 @@ const GameLobby = () => {
                 getGameNFTCollection={getGameNFTCollection}
                 contractInitialized={true}
                 loadGameData={loadGameData}
+                onDepositComplete={(depositData) => {
+                  console.log('🎯 Deposit completed in GamePayment, switching to Flip Suite tab')
+                  
+                  // Trigger tab switch to Flip Suite (game tab)
+                  if (depositData.depositCompleted) {
+                    // This will be handled by the TabbedGameInterface useEffect
+                    showSuccess('Deposit successful! Switching to Flip Suite...')
+                  }
+                }}
               />
             )}
             
