@@ -410,7 +410,7 @@ const GameLobby = () => {
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
   }, [loadGameData])
 
-  // Watch for game starting (both players deposited)
+  // Watch for game starting (both players deposited) - with debouncing to prevent flash
   useEffect(() => {
     console.log('🔍 Countdown useEffect running...')
     console.log('🔍 gameData exists:', !!gameData)
@@ -429,48 +429,57 @@ const GameLobby = () => {
     })
     
     // Check if both players have deposited - only trigger once when status becomes 'active'
-    if (gameData?.status === 'active' && 
-        gameData?.creator_deposited && 
-        gameData?.challenger_deposited &&
-        !countdownTriggered) {
-      
-      // Only show countdown for the two players
-      const isPlayer = isCreator() || isJoiner() || 
-                      (gameData?.challenger && address && 
-                       gameData.challenger.toLowerCase() === address.toLowerCase())
-      
-      console.log('🎯 Countdown conditions met:', {
-        isPlayer: isPlayer,
-        isCreator: isCreator(),
-        isJoiner: isJoiner(),
-        challengerMatch: gameData?.challenger && address && 
-                        gameData.challenger.toLowerCase() === address.toLowerCase(),
-        gameStatus: gameData?.status,
-        creatorDeposited: gameData?.creator_deposited,
-        challengerDeposited: gameData?.challenger_deposited
-      })
-      
-      if (isPlayer) {
-        console.log('🚀 Game starting! Showing countdown...')
-        setCountdownTriggered(true)
-        setShowCountdown(true)
+    // Add a small delay to prevent flash from rapid re-renders
+    const checkCountdown = () => {
+      if (gameData?.status === 'active' && 
+          gameData?.creator_deposited && 
+          gameData?.challenger_deposited &&
+          !countdownTriggered) {
+        
+        // Only show countdown for the two players
+        const isPlayer = isCreator() || isJoiner() || 
+                        (gameData?.challenger && address && 
+                         gameData.challenger.toLowerCase() === address.toLowerCase())
+        
+        console.log('🎯 Countdown conditions met:', {
+          isPlayer: isPlayer,
+          isCreator: isCreator(),
+          isJoiner: isJoiner(),
+          challengerMatch: gameData?.challenger && address && 
+                          gameData.challenger.toLowerCase() === address.toLowerCase(),
+          gameStatus: gameData?.status,
+          creatorDeposited: gameData?.creator_deposited,
+          challengerDeposited: gameData?.challenger_deposited
+        })
+        
+        if (isPlayer) {
+          console.log('🚀 Game starting! Showing countdown...')
+          setCountdownTriggered(true)
+          setShowCountdown(true)
+        }
       }
     }
+    
+    // Debounce the countdown check to prevent flash
+    const timeoutId = setTimeout(checkCountdown, 100)
+    
+    return () => clearTimeout(timeoutId)
   }, [gameData, address, isCreator, isJoiner, countdownTriggered])
   
-  // Handle countdown completion - transport to game room
+  // Handle countdown completion - transport to flip suite tab
   const handleCountdownComplete = () => {
-    console.log('⚔️ Countdown complete! Transporting to game room...')
+    console.log('⚔️ Countdown complete! Switching to Flip Suite...')
     setShowCountdown(false)
     
-    // Transport to game room - this will be handled by the parent component
-    // or we can navigate to a game room route
+    // Transport directly to flip suite tab instead of old game page
     showInfo('Entering Battle Arena!')
     
-    // For now, we'll trigger a custom event that the parent can listen to
-    window.dispatchEvent(new CustomEvent('enterGameRoom', {
-      detail: { gameId, gameData }
-    }))
+    // Switch to flip suite tab
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+        detail: { gameId, gameData }
+      }))
+    }, 500)
   }
 
 

@@ -248,13 +248,18 @@ const OfferAcceptanceOverlay = ({
           onDepositComplete(acceptedOffer)
         }
         
-        // Navigate to flip suite tab instead of old game page
+        // Navigate to flip suite tab instead of old game page - immediate and with fallback
+        // Immediate navigation
+        window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+          detail: { gameId: gameId, immediate: true }
+        }))
+        
+        // Also trigger again after a short delay as fallback
         setTimeout(() => {
-          // Trigger navigation to flip suite tab via custom event
           window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameId }
+            detail: { gameId: gameId, fallback: true }
           }))
-        }, 1000)
+        }, 500)
         
       } else {
         showError(result.error || 'Failed to deposit ETH')

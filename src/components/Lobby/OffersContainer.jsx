@@ -310,12 +310,17 @@ const OffersContainer = ({
       try {
         // Refresh offers if we have a listing ID
         if (gameData?.listing_id) {
-          const response = await fetch(`/api/offers/${gameData.listing_id}`)
-          const data = await response.json()
+          const response = await fetch(`/api/listings/${gameData.listing_id}/offers`)
           
-          if (data.offers && data.offers.length > 0) {
-            console.log('🔄 Auto-refresh: Found offers, updating...')
-            setOffers(data.offers)
+          if (response.ok) {
+            const data = await response.json()
+            
+            if (data && data.length > 0) {
+              console.log('🔄 Auto-refresh: Found offers, updating...')
+              setOffers(data)
+            }
+          } else {
+            console.log('❌ Auto-refresh offers failed:', response.status)
           }
         }
         
@@ -513,26 +518,36 @@ const OffersContainer = ({
       }
     }
 
-          // Register real-time handlers
-      if (ws.on) {
-        ws.on('crypto_offer', handleOffer)
-        ws.on('nft_offer', handleOffer)
-        ws.on('accept_crypto_offer', handleOfferAcceptance)
-        ws.on('offer_accepted', handleOfferAcceptance)
-        ws.on('your_offer_accepted', handleYourOfferAccepted)
-        ws.on('game_status_changed', handleGameStatusChanged)
-      } else {
-        console.warn('⚠️ WebSocket service has no event handlers')
+          // Register real-time handlers with error handling
+      try {
+        if (ws && typeof ws.on === 'function') {
+          ws.on('crypto_offer', handleOffer)
+          ws.on('nft_offer', handleOffer)
+          ws.on('accept_crypto_offer', handleOfferAcceptance)
+          ws.on('offer_accepted', handleOfferAcceptance)
+          ws.on('your_offer_accepted', handleYourOfferAccepted)
+          ws.on('game_status_changed', handleGameStatusChanged)
+          console.log('✅ WebSocket handlers registered successfully')
+        } else {
+          console.warn('⚠️ WebSocket service has no event handlers or is not available')
+        }
+      } catch (error) {
+        console.error('❌ Error registering WebSocket handlers:', error)
       }
 
       return () => {
-        if (ws.off) {
-          ws.off('crypto_offer', handleOffer)
-          ws.off('nft_offer', handleOffer)
-          ws.off('accept_crypto_offer', handleOfferAcceptance)
-          ws.off('offer_accepted', handleOfferAcceptance)
-          ws.off('your_offer_accepted', handleYourOfferAccepted)
-          ws.off('game_status_changed', handleGameStatusChanged)
+        try {
+          if (ws && typeof ws.off === 'function') {
+            ws.off('crypto_offer', handleOffer)
+            ws.off('nft_offer', handleOffer)
+            ws.off('accept_crypto_offer', handleOfferAcceptance)
+            ws.off('offer_accepted', handleOfferAcceptance)
+            ws.off('your_offer_accepted', handleYourOfferAccepted)
+            ws.off('game_status_changed', handleGameStatusChanged)
+            console.log('✅ WebSocket handlers cleaned up successfully')
+          }
+        } catch (error) {
+          console.error('❌ Error cleaning up WebSocket handlers:', error)
         }
       }
   }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, onOfferAccepted])
