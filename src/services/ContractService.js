@@ -116,7 +116,7 @@ const NFT_ABI = [
 
 class ContractService {
   constructor() {
-    this.contractAddress = '0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69'
+    this.contractAddress = '0x415BBd5933EaDc0570403c65114B7c5a1c7FADb7'
     this.walletClient = null
     this.publicClient = null
     this.userAddress = null

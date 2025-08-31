@@ -2,9 +2,11 @@
   "network": "base",
   "contractAddress": "0x415BBd5933EaDc0570403c65114B7c5a1c7FADb7",
   "deployer": "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628",
-  "deploymentTime": "2025-08-17T17:08:26.752Z",
+  "deploymentTime": "2025-01-17T00:00:00.000Z",
+  "transactionHash": "0x170dd2a642faec4b1dba78f1545b93843d3d5afad71061faae23448ac915dbaf",
   "constructorArgs": {
     "platformFeeReceiver": "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628",
     "usdcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-  }
+  },
+  "notes": "New contract deployed to replace compromised wallet contract. Old contract abandoned."
 }

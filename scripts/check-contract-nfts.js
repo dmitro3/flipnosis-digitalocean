@@ -4,7 +4,7 @@ async function checkContractNFTs() {
   console.log('🔍 Checking NFT deposits in contract...\n')
   
   const RPC_URL = 'https://mainnet.base.org'
-const GAME_CONTRACT_ADDRESS = '0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69'
+const GAME_CONTRACT_ADDRESS = '0x415BBd5933EaDc0570403c65114B7c5a1c7FADb7'
 const CREATOR_ADDRESS = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
   
   try {
