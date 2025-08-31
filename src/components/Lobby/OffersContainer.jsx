@@ -712,25 +712,22 @@ const OffersContainer = ({
       console.log('✅ Offer acceptance successful')
       showSuccess(`${offerType} accepted! Game starting...`)
       
-      // Immediately show deposit overlay for the creator
-      setAcceptedOffer(offer)
-      setShowDepositOverlay(true)
-      console.log('🎯 Showing deposit overlay for accepted offer')
+      // Only show deposit overlay if not already showing
+      if (!showDepositOverlay && !acceptedOffer) {
+        // Immediately show deposit overlay for the creator
+        setAcceptedOffer(offer)
+        setShowDepositOverlay(true)
+        console.log('🎯 Showing deposit overlay for accepted offer')
+      } else {
+        console.log('🎯 Deposit overlay already showing, skipping duplicate')
+      }
       
-      // Force refresh game data to get updated status
+      // Force refresh game data to get updated status (but only once)
       console.log('🔄 Forcing game data refresh after offer acceptance')
       if (onOfferAccepted) {
         console.log('📞 Calling onOfferAccepted callback')
         onOfferAccepted(offer)
       }
-      
-      // Also trigger a manual refresh after a short delay to ensure server has processed
-      setTimeout(() => {
-        console.log('⏰ Delayed game data refresh')
-        if (onOfferAccepted) {
-          onOfferAccepted(offer)
-        }
-      }, 1000)
       
     } catch (error) {
       console.error('Offers: Error accepting offer:', error)
@@ -905,11 +902,11 @@ const OffersContainer = ({
   }
 
   const handleDepositComplete = (offer) => {
-    console.log('🎯 Deposit completed, transporting to game room...')
+    console.log('🎯 Deposit completed, transporting to Flip Suite...')
     setShowDepositOverlay(false)
     setAcceptedOffer(null)
     
-    // Transport to game room
+    // Transport to Flip Suite tab
     if (onOfferAccepted) {
       onOfferAccepted(offer)
     }
