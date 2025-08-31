@@ -383,10 +383,19 @@ const OffersContainer = ({
     const handleOfferAcceptance = (data) => {
       console.log('✅ Real-time offer acceptance received:', data)
       
-      if (data.type === 'accept_crypto_offer') {
-        setAcceptedOffer(data.acceptedOffer)
+      if (data.type === 'accept_crypto_offer' || data.type === 'offer_accepted' || data.type === 'your_offer_accepted') {
+        console.log('🎯 Processing offer acceptance:', data)
+        
+        // Create accepted offer object for the deposit overlay
+        const acceptedOffer = {
+          offerer_address: data.acceptedOffer?.offerer_address || data.challenger || address,
+          cryptoAmount: data.acceptedOffer?.cryptoAmount || data.finalPrice || data.acceptedOffer?.offer_price,
+          timestamp: data.timestamp || new Date().toISOString()
+        }
+        
+        setAcceptedOffer(acceptedOffer)
         setShowDepositOverlay(true)
-        console.log('🎯 Showing deposit overlay for accepted offer')
+        console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
       }
     }
 
@@ -394,11 +403,15 @@ const OffersContainer = ({
     ws.on('crypto_offer', handleOffer)
     ws.on('nft_offer', handleOffer)
     ws.on('accept_crypto_offer', handleOfferAcceptance)
+    ws.on('offer_accepted', handleOfferAcceptance)
+    ws.on('your_offer_accepted', handleOfferAcceptance)
 
     return () => {
       ws.off('crypto_offer', handleOffer)
       ws.off('nft_offer', handleOffer)
       ws.off('accept_crypto_offer', handleOfferAcceptance)
+      ws.off('offer_accepted', handleOfferAcceptance)
+      ws.off('your_offer_accepted', handleOfferAcceptance)
     }
   }, [gameId, address, socket])
 

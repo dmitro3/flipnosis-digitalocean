@@ -394,10 +394,9 @@ export const useGameData = (
 
       case 'your_offer_accepted':
         console.log('🎉 Your offer was accepted!')
-        showSuccess('Your offer has been accepted! Waiting for deposit...')
-        setTimeout(() => {
-          window.location.href = `/game/${data.gameId}`
-        }, 2000)
+        showSuccess('Your offer has been accepted! Please check the Lounge tab to deposit.')
+        // Remove the redirect - let the tab switching handle it
+        loadGameData()
         break
 
       case 'game_awaiting_challenger_deposit':
@@ -451,15 +450,14 @@ export const useGameData = (
 
       case 'offer_accepted':
         console.log('🎉 Offer accepted notification:', data)
-        showSuccess('🎉 Your offer was accepted! Redirecting to game...')
+        showSuccess('🎉 Your offer was accepted! Check the Lounge tab for deposit.')
         // Update local state to show deposit UI immediately
         setGameState(prev => ({
           ...prev,
           phase: 'waiting_deposit'
         }))
-        setTimeout(() => {
-          window.location.href = `/game/${data.gameId}`
-        }, 2000)
+        // Remove the redirect - let the tab switching handle it
+        loadGameData()
         break
 
       case 'PLAYER_CHOICE_BROADCAST':

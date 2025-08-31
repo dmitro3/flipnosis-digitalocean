@@ -201,6 +201,12 @@ const GameLobby = () => {
         webSocketService.on('game_awaiting_challenger_deposit', handleGameAwaitingDeposit)
         webSocketService.on('deposit_confirmed', handleDepositConfirmed)
         webSocketService.on('game_started', handleGameStarted)
+        
+        // Add handlers for offer acceptance to trigger tab switching
+        webSocketService.on('offer_accepted', handleOfferAccepted)
+        webSocketService.on('your_offer_accepted', handleOfferAccepted)
+        webSocketService.on('accept_crypto_offer', handleOfferAccepted)
+        
         console.log('✅ GameLobby: Game state message handlers registered')
         
         // Debug: Log all incoming messages to see what we're receiving
@@ -241,6 +247,9 @@ const GameLobby = () => {
       webSocketService.off('room_joined')
       webSocketService.off('crypto_offer')
       webSocketService.off('system')
+      webSocketService.off('offer_accepted')
+      webSocketService.off('your_offer_accepted')
+      webSocketService.off('accept_crypto_offer')
     }
   }, [gameId, address])
 
@@ -280,6 +289,24 @@ const GameLobby = () => {
     }
     
     // Always refresh game data
+    loadGameData()
+  }
+
+  const handleOfferAccepted = (data) => {
+    console.log('🎯 Offer accepted in GameLobby:', data)
+    
+    // Check if current user is the offerer (Player 2) who needs to deposit
+    if (data.acceptedOffer?.offerer_address && address && 
+        data.acceptedOffer.offerer_address.toLowerCase() === address.toLowerCase()) {
+      console.log('🎯 Current user is the offerer - deposit will be handled in Lounge tab')
+      showInfo('Your offer was accepted! Please check the Lounge tab to deposit your crypto.')
+    } else if (data.challenger && address && 
+               data.challenger.toLowerCase() === address.toLowerCase()) {
+      console.log('🎯 Current user is the challenger - deposit will be handled in Lounge tab')
+      showInfo('Your offer was accepted! Please check the Lounge tab to deposit your crypto.')
+    }
+    
+    // Always refresh game data to trigger tab switching
     loadGameData()
   }
 
