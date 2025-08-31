@@ -762,9 +762,6 @@ const OffersContainer = ({
 
   // Check if offer input should be shown
   const shouldShowOfferInput = () => {
-    // Don't show input if deposit overlay is active
-    if (showDepositOverlay) return false
-    
     // Show for non-creators when game is waiting for challenger
     if (isCreator()) return false
     
@@ -787,12 +784,6 @@ const OffersContainer = ({
     const listingStatus = gameData?.type === 'listing' ? gameData?.status : null
     
     return validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
-  }
-
-  // Deposit overlay handlers
-  const handleCloseDepositOverlay = () => {
-    setShowDepositOverlay(false)
-    setAcceptedOffer(null)
   }
 
   // Deposit completion is now handled by GamePayment component
