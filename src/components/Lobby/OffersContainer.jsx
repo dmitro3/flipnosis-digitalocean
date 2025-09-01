@@ -516,6 +516,48 @@ const OffersContainer = ({
           console.log('🎯 Auto-showing deposit overlay for challenger:', acceptedOffer)
         }
       }
+      
+      // Handle game becoming active (both players deposited)
+      if (data.gameId === gameData?.id && data.data.newStatus === 'active') {
+        console.log('🎯 Game is now active - both players deposited!')
+        
+        // Close any open deposit overlays
+        setShowDepositOverlay(false)
+        setAcceptedOffer(null)
+        
+        // Transport both players to the game room
+        console.log('🚀 Transporting players to flip suite...')
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameData.id, immediate: true }
+          }))
+        }, 500)
+      }
+    }
+
+    // Handle deposit confirmed event  
+    const handleDepositConfirmed = (data) => {
+      console.log('💰 Deposit confirmed event received:', data)
+      
+      if (data.gameId === gameData?.id) {
+        console.log('✅ Deposit confirmed for current game')
+        
+        // If we're the creator waiting and challenger just deposited, transport us too
+        if (showDepositOverlay && acceptedOffer?.isCreatorWaiting) {
+          console.log('🎯 Creator was waiting, challenger deposited - transporting to game!')
+          
+          // Close waiting overlay
+          setShowDepositOverlay(false)
+          setAcceptedOffer(null)
+          
+          // Transport to flip suite
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+              detail: { gameId: gameData.id, immediate: true }
+            }))
+          }, 1000)
+        }
+      }
     }
 
           // Register real-time handlers with error handling
@@ -527,6 +569,7 @@ const OffersContainer = ({
           ws.on('offer_accepted', handleOfferAcceptance)
           ws.on('your_offer_accepted', handleYourOfferAccepted)
           ws.on('game_status_changed', handleGameStatusChanged)
+          ws.on('deposit_confirmed', handleDepositConfirmed)
           console.log('✅ WebSocket handlers registered successfully')
         } else {
           console.warn('⚠️ WebSocket service has no event handlers or is not available')
@@ -544,13 +587,14 @@ const OffersContainer = ({
             ws.off('offer_accepted', handleOfferAcceptance)
             ws.off('your_offer_accepted', handleYourOfferAccepted)
             ws.off('game_status_changed', handleGameStatusChanged)
+            ws.off('deposit_confirmed', handleDepositConfirmed)
             console.log('✅ WebSocket handlers cleaned up successfully')
           }
         } catch (error) {
           console.error('❌ Error cleaning up WebSocket handlers:', error)
         }
       }
-  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, onOfferAccepted])
+  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, onOfferAccepted, showDepositOverlay, acceptedOffer])
 
   const isCreator = () => {
     // Use prop if available (preferred)
@@ -766,10 +810,18 @@ const OffersContainer = ({
       console.log('✅ Offer acceptance successful')
       showSuccess(`${offerType} accepted! Game starting...`)
       
-      // Immediately show deposit overlay for the creator
-      setAcceptedOffer(offer)
+      // For the creator (Player 1), show waiting overlay instead of deposit overlay
+      // The creator doesn't need to deposit - they're waiting for the challenger
+      const waitingOffer = {
+        offerer_address: offer.offerer_address || offer.address, // This is the challenger who needs to deposit
+        cryptoAmount: offer.cryptoAmount || offer.offer_price,
+        timestamp: new Date().toISOString(),
+        isCreatorWaiting: true // Flag to indicate this is creator waiting, not challenger depositing
+      }
+      
+      setAcceptedOffer(waitingOffer)
       setShowDepositOverlay(true)
-      console.log('🎯 Showing deposit overlay for accepted offer')
+      console.log('🎯 Showing waiting overlay for creator after accepting offer:', waitingOffer)
       
       // Force refresh game data to get updated status
       console.log('🔄 Forcing game data refresh after offer acceptance')

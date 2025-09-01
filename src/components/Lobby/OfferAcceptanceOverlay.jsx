@@ -248,8 +248,8 @@ const OfferAcceptanceOverlay = ({
           onDepositComplete(acceptedOffer)
         }
         
-        // Navigate to flip suite tab instead of old game page - immediate and with fallback
-        // Immediate navigation
+        // Navigate to flip suite tab - immediate transport for Player 2
+        console.log('🚀 Player 2 deposit complete - transporting to flip suite...')
         window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
           detail: { gameId: gameId, immediate: true }
         }))
@@ -299,9 +299,11 @@ const OfferAcceptanceOverlay = ({
       
       <OverlayTitle>🎯 Offer Accepted!</OverlayTitle>
       <OverlaySubtitle>
-        {acceptedOffer.offerer_address === address 
-          ? 'You need to deposit to join the game'
-          : 'Waiting for challenger to deposit'
+        {acceptedOffer.isCreatorWaiting
+          ? 'Waiting for challenger to deposit'
+          : acceptedOffer.offerer_address === address 
+            ? 'You need to deposit to join the game'
+            : 'Waiting for challenger to deposit'
         }
       </OverlaySubtitle>
 
@@ -318,7 +320,8 @@ const OfferAcceptanceOverlay = ({
         ${offerAmount.toFixed(2)} USD
       </PriceDisplay>
 
-      {acceptedOffer.offerer_address === address && (
+      {/* Show deposit button only for challenger (Player 2), not for creator waiting */}
+      {!acceptedOffer.isCreatorWaiting && acceptedOffer.offerer_address === address && (
         <DepositButton
           onClick={handleDeposit}
           disabled={isDepositing || timeLeft === 0}
@@ -327,7 +330,8 @@ const OfferAcceptanceOverlay = ({
         </DepositButton>
       )}
 
-      {acceptedOffer.offerer_address !== address && (
+      {/* Show waiting message for creator or when challenger needs to deposit */}
+      {(acceptedOffer.isCreatorWaiting || acceptedOffer.offerer_address !== address) && (
         <OverlaySubtitle>
           Waiting for {acceptedOffer.offerer_address?.slice(0, 6)}...{acceptedOffer.offerer_address?.slice(-4)} to deposit
         </OverlaySubtitle>
