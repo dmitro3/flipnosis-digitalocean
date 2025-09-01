@@ -320,12 +320,12 @@ export const useLobbyState = (gameId, address) => {
     }
   }, [gameId])
 
-  // Load offers when game data changes
+  // Load offers when game data changes - only trigger on specific fields
   useEffect(() => {
     if (gameData && (gameData.listing_id || gameData.id)) {
       loadOffers()
     }
-  }, [gameData])
+  }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
 
   // Auto-refresh offers every 10 seconds (reduced to prevent interference)
   useEffect(() => {
@@ -338,7 +338,7 @@ export const useLobbyState = (gameId, address) => {
         clearInterval(interval)
       }
     }
-  }, [gameData])
+  }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
 
   // Cleanup on unmount
   useEffect(() => {

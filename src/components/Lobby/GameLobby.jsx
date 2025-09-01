@@ -407,7 +407,7 @@ const GameLobby = () => {
 
     window.addEventListener('lobbyRefresh', handleLobbyRefresh)
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
-  }, [loadGameData])
+  }, []) // Remove loadGameData from deps to prevent unnecessary re-registrations
 
   // Watch for game starting (both players deposited) - transport directly to flip suite
   useEffect(() => {

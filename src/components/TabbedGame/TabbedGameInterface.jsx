@@ -271,7 +271,7 @@ const TabbedGameInterface = ({
       console.log('🎯 Force switching to Lounge tab for deposit')
       setActiveTab('chat')
     }
-  }, [gameData, activeTab])
+  }, [gameData?.status, gameData?.challenger, gameData?.creator_deposited, gameData?.challenger_deposited]) // Removed activeTab from deps
 
   const tabs = [
     {

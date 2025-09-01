@@ -341,28 +341,34 @@ const OffersContainer = ({
           const gameData = await gameResponse.json()
           
           // Check if we're the challenger and game is waiting for our deposit
+          // Use functional state update to check current overlay state
           if (gameData.status === 'waiting_challenger_deposit' && 
               gameData.challenger && 
               address && 
-              gameData.challenger.toLowerCase() === address.toLowerCase() &&
-              !showDepositOverlay) {
+              gameData.challenger.toLowerCase() === address.toLowerCase()) {
             
             console.log('🎯 Fallback: Auto-showing deposit overlay for challenger via polling')
             
-            // Create accepted offer object for the deposit overlay
-            const acceptedOffer = {
-              offerer_address: gameData.challenger,
-              cryptoAmount: gameData.payment_amount || gameData.price_usd,
-              timestamp: new Date().toISOString()
-            }
-            
-            setAcceptedOffer(acceptedOffer)
-            setShowDepositOverlay(true)
-            
-            // Auto-switch to Lounge tab
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
-            }, 200)
+            setShowDepositOverlay(currentShow => {
+              if (!currentShow) { // Only show if not already showing
+                // Create accepted offer object for the deposit overlay
+                const acceptedOffer = {
+                  offerer_address: gameData.challenger,
+                  cryptoAmount: gameData.payment_amount || gameData.price_usd,
+                  timestamp: new Date().toISOString()
+                }
+                
+                setAcceptedOffer(acceptedOffer)
+                
+                // Auto-switch to Lounge tab
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+                }, 200)
+                
+                return true
+              }
+              return currentShow
+            })
           }
         }
       } catch (error) {
@@ -377,7 +383,7 @@ const OffersContainer = ({
     const interval = setInterval(refreshGameState, 5000)
     
     return () => clearInterval(interval)
-  }, [gameData?.listing_id, gameId, address, showDepositOverlay])
+  }, [gameData?.listing_id, gameId, address]) // Removed showDepositOverlay from deps
 
   // WebSocket connection for real-time updates
   useEffect(() => {
