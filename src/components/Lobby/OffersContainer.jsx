@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useWallet } from '../../contexts/WalletContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -260,6 +260,17 @@ const OffersContainer = ({
   const [showDepositOverlay, setShowDepositOverlay] = useState(false)
   const [acceptedOffer, setAcceptedOffer] = useState(null)
   
+  // Use refs to persist overlay state across re-renders and prevent flicker
+  const overlayStateRef = useRef({ showOverlay: false, offer: null })
+  
+  // Sync ref with state to maintain consistency
+  useEffect(() => {
+    overlayStateRef.current = { 
+      showOverlay: showDepositOverlay, 
+      offer: acceptedOffer 
+    }
+  }, [showDepositOverlay, acceptedOffer])
+  
   const offersEndRef = useRef(null)
   
   // Get game price for validation
@@ -300,7 +311,7 @@ const OffersContainer = ({
       setAcceptedOffer(acceptedOffer)
       setShowDepositOverlay(true)
     }
-  }, [gameData?.status, gameData?.challenger, address, showDepositOverlay])
+  }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay from deps
 
   // Auto-refresh offers and game status every 2 seconds as fallback
   useEffect(() => {
@@ -492,8 +503,8 @@ const OffersContainer = ({
       }
     }
 
-    // Handle game status changed event
-    const handleGameStatusChanged = (data) => {
+    // Handle game status changed event - using useCallback to prevent re-renders
+    const handleGameStatusChanged = useCallback((data) => {
       console.log('🔄 Game status changed event received:', data)
       
       if (data.gameId === gameData?.id && data.data.newStatus === 'waiting_challenger_deposit') {
@@ -533,32 +544,37 @@ const OffersContainer = ({
           }))
         }, 500)
       }
-    }
+    }, [gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, address])
 
-    // Handle deposit confirmed event  
-    const handleDepositConfirmed = (data) => {
+    // Handle deposit confirmed event - using useCallback to prevent re-renders
+    const handleDepositConfirmed = useCallback((data) => {
       console.log('💰 Deposit confirmed event received:', data)
       
       if (data.gameId === gameData?.id) {
         console.log('✅ Deposit confirmed for current game')
         
-        // If we're the creator waiting and challenger just deposited, transport us too
-        if (showDepositOverlay && acceptedOffer?.isCreatorWaiting) {
-          console.log('🎯 Creator was waiting, challenger deposited - transporting to game!')
+        // Use functional state updates to access current state
+        setShowDepositOverlay(currentShow => {
+          setAcceptedOffer(currentOffer => {
+            if (currentShow && currentOffer?.isCreatorWaiting) {
+              console.log('🎯 Creator was waiting, challenger deposited - transporting to game!')
+              
+              // Transport to flip suite
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+                  detail: { gameId: gameData?.id, immediate: true }
+                }))
+              }, 1000)
+              
+              return null // Clear accepted offer
+            }
+            return currentOffer
+          })
           
-          // Close waiting overlay
-          setShowDepositOverlay(false)
-          setAcceptedOffer(null)
-          
-          // Transport to flip suite
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-              detail: { gameId: gameData.id, immediate: true }
-            }))
-          }, 1000)
-        }
+          return currentShow && false // Close overlay if it was open
+        })
       }
-    }
+    }, [gameData?.id])
 
           // Register real-time handlers with error handling
       try {
@@ -594,7 +610,7 @@ const OffersContainer = ({
           console.error('❌ Error cleaning up WebSocket handlers:', error)
         }
       }
-  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, onOfferAccepted, showDepositOverlay, acceptedOffer])
+  }, [gameId, address, socket, handleGameStatusChanged, handleDepositConfirmed])
 
   const isCreator = () => {
     // Use prop if available (preferred)
@@ -819,8 +835,10 @@ const OffersContainer = ({
         isCreatorWaiting: true // Flag to indicate this is creator waiting, not challenger depositing
       }
       
+      // Update both state and ref to persist across re-renders
       setAcceptedOffer(waitingOffer)
       setShowDepositOverlay(true)
+      overlayStateRef.current = { showOverlay: true, offer: waitingOffer }
       console.log('🎯 Showing waiting overlay for creator after accepting offer:', waitingOffer)
       
       // Force refresh game data to get updated status
@@ -1008,12 +1026,14 @@ const OffersContainer = ({
   const handleCloseDepositOverlay = () => {
     setShowDepositOverlay(false)
     setAcceptedOffer(null)
+    overlayStateRef.current = { showOverlay: false, offer: null }
   }
 
   const handleDepositComplete = (offer) => {
     console.log('🎯 Deposit completed, transporting to game room...')
     setShowDepositOverlay(false)
     setAcceptedOffer(null)
+    overlayStateRef.current = { showOverlay: false, offer: null }
     
     // Transport to game room
     if (onOfferAccepted) {
@@ -1153,10 +1173,10 @@ const OffersContainer = ({
         <div ref={offersEndRef} />
       </OffersList>
 
-      {/* Deposit Overlay */}
+      {/* Deposit Overlay - use persistent state to prevent flicker */}
       <OfferAcceptanceOverlay
-        isVisible={showDepositOverlay}
-        acceptedOffer={acceptedOffer}
+        isVisible={showDepositOverlay || overlayStateRef.current.showOverlay}
+        acceptedOffer={acceptedOffer || overlayStateRef.current.offer}
         gameData={gameData}
         gameId={gameId}
         address={address}
