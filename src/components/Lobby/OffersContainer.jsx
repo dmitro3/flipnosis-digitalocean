@@ -503,8 +503,8 @@ const OffersContainer = ({
       }
     }
 
-    // Handle game status changed event - using useCallback to prevent re-renders
-    const handleGameStatusChanged = useCallback((data) => {
+    // Regular event handlers inside the useEffect
+    const handleGameStatusChanged = (data) => {
       console.log('🔄 Game status changed event received:', data)
       
       if (data.gameId === gameData?.id && data.data.newStatus === 'waiting_challenger_deposit') {
@@ -540,14 +540,14 @@ const OffersContainer = ({
         console.log('🚀 Transporting players to flip suite...')
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameData.id, immediate: true }
+            detail: { gameId: gameData?.id, immediate: true }
           }))
         }, 500)
       }
-    }, [gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, address])
+    }
 
-    // Handle deposit confirmed event - using useCallback to prevent re-renders
-    const handleDepositConfirmed = useCallback((data) => {
+    // Handle deposit confirmed event
+    const handleDepositConfirmed = (data) => {
       console.log('💰 Deposit confirmed event received:', data)
       
       if (data.gameId === gameData?.id) {
@@ -574,7 +574,7 @@ const OffersContainer = ({
           return currentShow && false // Close overlay if it was open
         })
       }
-    }, [gameData?.id])
+    }
 
           // Register real-time handlers with error handling
       try {
@@ -610,7 +610,7 @@ const OffersContainer = ({
           console.error('❌ Error cleaning up WebSocket handlers:', error)
         }
       }
-  }, [gameId, address, socket, handleGameStatusChanged, handleDepositConfirmed])
+  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd])
 
   const isCreator = () => {
     // Use prop if available (preferred)
