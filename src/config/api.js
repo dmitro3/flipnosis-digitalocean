@@ -17,8 +17,8 @@ export const getWsUrl = () => {
     return 'ws://localhost:3000'
   }
   
-  // For production - use nginx proxy to avoid mixed content issues
-  // The server should handle WebSocket upgrade requests properly
+  // For production - connect directly to the server (no nginx proxy)
+  // The server now handles HTTPS/WSS directly on port 443
   if (window.location.protocol === 'https:') {
     return `wss://${window.location.hostname}`
   }

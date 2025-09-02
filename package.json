@@ -41,6 +41,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "@vitejs/plugin-react-swc": "^3.10.0",
     "alchemy-sdk": "^3.6.3",
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "ethers": "^6.8.1",
     "express": "^4.21.2",
