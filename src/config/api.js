@@ -17,13 +17,14 @@ export const getWsUrl = () => {
     return 'ws://localhost:3000'
   }
   
-  // For production - always use WSS when on HTTPS
+  // For production - use the same hostname and protocol as the current page
+  // The nginx proxy will handle routing to the correct backend port
   if (window.location.protocol === 'https:') {
-    // Use WSS on standard port
+    // Use WSS on the same hostname (nginx will proxy to port 3000)
     return `wss://${window.location.hostname}`
   }
   
-  // Fallback to WS
+  // Fallback to WS on the same hostname (nginx will proxy to port 3000)
   return `ws://${window.location.hostname}`
 }
 

@@ -176,13 +176,18 @@ async function handleJoinRoom(socket, data, dbService) {
 }
 
 async function handleChatMessage(socket, data, dbService) {
-  const { roomId, gameId, message, from } = data
+  const { roomId, gameId, message, from, sender } = data
   
   // Normalize room ID
   const targetRoomId = roomId || `game_${gameId}`
-  const senderAddress = socket.address || from || 'anonymous'
+  // Try multiple possible sender fields
+  const senderAddress = from || sender || socket.address || 'anonymous'
   
-  console.log(`💬 Chat message in ${targetRoomId} from ${senderAddress}`)
+  console.log(`💬 Chat message in ${targetRoomId} from ${senderAddress}`, {
+    data,
+    socketAddress: socket.address,
+    extractedSender: senderAddress
+  })
   
   try {
     // Save to database

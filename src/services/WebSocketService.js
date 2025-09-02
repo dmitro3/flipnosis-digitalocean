@@ -130,12 +130,23 @@ if (typeof window !== 'undefined') {
                 console.log('✅ Room joined confirmation received:', data)
               }
               
-              // Call registered handlers
-              const handlers = this.messageHandlers.get(data.type) || []
-              handlers.forEach(handler => handler(data))
+              // Call registered handlers for this message type
+              const handlers = this.messageHandlers.get(data.type)
+              if (handlers && handlers.length > 0) {
+                console.log(`🔍 Calling ${handlers.length} handlers for message type: ${data.type}`)
+                handlers.forEach(handler => {
+                  try {
+                    handler(data)
+                  } catch (error) {
+                    console.error(`❌ Error in handler for ${data.type}:`, error)
+                  }
+                })
+              } else {
+                console.log(`⚠️ No handlers registered for message type: ${data.type}`)
+              }
               
             } catch (error) {
-              console.error('Error handling message:', error)
+              console.error('❌ Error handling message:', error)
             }
           }
           

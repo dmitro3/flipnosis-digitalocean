@@ -372,10 +372,18 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
     }
 
     // Register real-time handler
-    ws.on('chat_message', handleChatMessage)
+    if (ws && typeof ws.on === 'function') {
+      ws.on('chat_message', handleChatMessage)
+      console.log('✅ Chat message handler registered with WebSocket')
+    } else {
+      console.error('❌ WebSocket service does not have "on" method:', ws)
+    }
 
     return () => {
-      ws.off('chat_message', handleChatMessage)
+      if (ws && typeof ws.off === 'function') {
+        ws.off('chat_message', handleChatMessage)
+        console.log('✅ Chat message handler unregistered from WebSocket')
+      }
     }
   }, [gameId, address, socket])
 
@@ -470,6 +478,42 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
         >
           {(connected || isConnected) ? 'Send' : 'Queue'}
         </SendButton>
+        <button 
+          onClick={() => {
+            const ws = socket || window.FlipnosisWS
+            console.log('🔍 Manual WebSocket test:', {
+              hasSocket: !!socket,
+              hasGlobalWS: !!window.FlipnosisWS,
+              wsType: typeof ws,
+              wsMethods: ws ? Object.keys(ws) : [],
+              wsConnected: ws ? ws.isConnected() : false,
+              wsReadyState: ws && ws.socket ? ws.socket.readyState : 'no socket'
+            })
+            
+            // Test WebSocket connection
+            if (ws && ws.connect) {
+              console.log('🔌 Testing WebSocket connection...')
+              ws.connect(`game_${gameId}`, address)
+                .then(() => {
+                  console.log('✅ WebSocket connection test successful')
+                })
+                .catch((error) => {
+                  console.error('❌ WebSocket connection test failed:', error)
+                })
+            }
+          }}
+          style={{
+            background: '#444',
+            color: 'white',
+            border: 'none',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          Test WS
+        </button>
       </InputContainer>
 
       <div style={{ marginBottom: '1rem' }}></div>
