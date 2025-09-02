@@ -48,6 +48,20 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
+// Add WebSocket upgrade handling
+app.use((req, res, next) => {
+  // Check if this is a WebSocket upgrade request
+  if (req.headers.upgrade && req.headers.upgrade.toLowerCase() === 'websocket') {
+    console.log('🔌 WebSocket upgrade request detected:', {
+      upgrade: req.headers.upgrade,
+      connection: req.headers.connection,
+      host: req.headers.host,
+      url: req.url
+    })
+  }
+  next()
+})
+
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 

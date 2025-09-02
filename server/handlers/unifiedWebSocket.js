@@ -419,15 +419,32 @@ let wss = null
 let dbService = null
 
 function initializeWebSocket(server, databaseService) {
-  wss = new WebSocket.Server({ server })
+  wss = new WebSocket.Server({ 
+    server,
+    // Add debugging for upgrade requests
+    handleProtocols: () => {
+      console.log('🔌 WebSocket upgrade request received')
+      return true
+    }
+  })
   dbService = databaseService
   
   console.log('🚀 WebSocket server initialized')
   console.log('🔍 Database service passed:', !!dbService)
   console.log('🔍 Database service methods:', dbService ? Object.keys(dbService) : 'undefined')
   
+  // Add debugging for server events
+  wss.on('headers', (headers) => {
+    console.log('🔌 WebSocket headers sent:', headers)
+  })
+  
   wss.on('connection', (ws) => {
+    console.log('🔌 WebSocket connection established successfully')
     handleConnection(ws, dbService)
+  })
+  
+  wss.on('error', (error) => {
+    console.error('❌ WebSocket server error:', error)
   })
 }
 

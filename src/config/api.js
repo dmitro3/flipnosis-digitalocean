@@ -17,13 +17,13 @@ export const getWsUrl = () => {
     return 'ws://localhost:3000'
   }
   
-  // Use the /ws path that nginx is configured to proxy
-  // This avoids the mixed content issue since nginx handles the WebSocket upgrade
+  // For production - use nginx proxy to avoid mixed content issues
+  // The server should handle WebSocket upgrade requests properly
   if (window.location.protocol === 'https:') {
-    return `wss://${window.location.hostname}/ws`
+    return `wss://${window.location.hostname}`
   }
   
-  return `ws://${window.location.hostname}/ws`
+  return `ws://${window.location.hostname}`
 }
 
 export default API_CONFIG 
