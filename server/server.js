@@ -331,9 +331,8 @@ initializeServices()
         })
       }
       
-      // For production on port 80
-      const isProduction = process.env.NODE_ENV === 'production'
-      const httpPort = isProduction ? 80 : PORT
+      // Always use PORT (3000) - Nginx will proxy from port 80
+      const httpPort = PORT
       
       // Check if HTTP port is available
       const httpPortAvailable = await checkPort(httpPort)
@@ -353,8 +352,8 @@ initializeServices()
         console.log(`💾 Auto-backup: Enabled (every 6 hours)`)
       })
       
-      // HTTPS Server with WSS support - FIXED VERSION
-      if (sslOptions && isProduction) {
+      // HTTPS Server with WSS support - only if SSL certificates exist
+      if (sslOptions) {
         const httpsServer = https.createServer(sslOptions, app)
         
         // Initialize WebSocket for HTTPS server
@@ -365,8 +364,8 @@ initializeServices()
           console.log(`🔒 CryptoFlipz HTTPS Server running on port 443`)
           console.log(`🔐 WSS WebSocket server ready on wss://`)
         })
-      } else if (!sslOptions && isProduction) {
-        console.log('⚠️ Production mode but SSL certificates not found!')
+      } else {
+        console.log('⚠️ SSL certificates not found - HTTPS/WSS disabled')
         console.log('🔧 Generate SSL certificates with:')
         console.log('   sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \\')
         console.log('   -keyout /etc/ssl/private/selfsigned.key \\')
