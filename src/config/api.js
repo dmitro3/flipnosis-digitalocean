@@ -17,15 +17,13 @@ export const getWsUrl = () => {
     return 'ws://localhost:3000'
   }
   
-  // For production - use the same hostname and protocol as the current page
-  // The nginx proxy will handle routing to the correct backend port
+  // Use the /ws path that nginx is configured to proxy
+  // This avoids the mixed content issue since nginx handles the WebSocket upgrade
   if (window.location.protocol === 'https:') {
-    // Use WSS on the same hostname (nginx will proxy to port 3000)
-    return `wss://${window.location.hostname}`
+    return `wss://${window.location.hostname}/ws`
   }
   
-  // Fallback to WS on the same hostname (nginx will proxy to port 3000)
-  return `ws://${window.location.hostname}`
+  return `ws://${window.location.hostname}/ws`
 }
 
 export default API_CONFIG 
