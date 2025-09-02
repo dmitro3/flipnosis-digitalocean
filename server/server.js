@@ -1,7 +1,6 @@
 // Simplified server.js for single server setup
 const express = require('express')
 const http = require('http')
-const https = require('https')
 const WebSocket = require('ws')
 const cors = require('cors')
 const path = require('path')
@@ -25,22 +24,6 @@ const DATABASE_PATH = path.join(__dirname, 'flipz.db') // Local database file
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x415BBd5933EaDc0570403c65114B7c5a1c7FADb7'
 const CONTRACT_OWNER_KEY = process.env.CONTRACT_OWNER_KEY || process.env.PRIVATE_KEY
 const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/hoaKpKFy40ibWtxftFZbJNUk5NQoL0R3'
-
-// SSL Configuration - use Let's Encrypt certificates directly
-let sslOptions = null
-try {
-  // Use Let's Encrypt certificates (what nginx was using)
-  sslOptions = {
-    cert: fs.readFileSync('/etc/letsencrypt/live/flipnosis.fun/fullchain.pem'),
-    key: fs.readFileSync('/etc/letsencrypt/live/flipnosis.fun/privkey.pem')
-  }
-  console.log('✅ Let\'s Encrypt SSL certificates loaded successfully')
-} catch (error) {
-  console.log('❌ Let\'s Encrypt certificates not found:', error.message)
-  console.log('💡 Make sure nginx is stopped and certificates are accessible')
-  console.log('🔧 Try: sudo systemctl stop nginx')
-  sslOptions = null
-}
 
 // ===== MIDDLEWARE =====
 app.use(cors({
@@ -369,35 +352,36 @@ initializeServices()
       })
       
       // HTTPS Server with WSS support - only if SSL certificates exist
-      if (sslOptions) {
-        const httpsServer = https.createServer(sslOptions, app)
-        
-        // Initialize WebSocket for HTTPS server
-        initializeWebSocket(httpsServer, dbService)
-        
-        // Listen on port 443 for HTTPS/WSS (standard HTTPS port)
-        httpsServer.listen(443, '0.0.0.0', () => {
-          console.log(`🔒 CryptoFlipz HTTPS Server running on port 443`)
-          console.log(`🔐 WSS WebSocket server ready on wss://flipnosis.fun`)
-          console.log(`🌐 Your site is now accessible at https://flipnosis.fun`)
-        })
-        
-        // Also listen on port 80 to redirect HTTP to HTTPS
-        const httpRedirect = http.createServer((req, res) => {
-          res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` })
-          res.end()
-        })
-        
-        httpRedirect.listen(80, '0.0.0.0', () => {
-          console.log(`🔄 HTTP redirect server running on port 80`)
-        })
-        
-      } else {
-        console.log('❌ SSL certificates not found - HTTPS/WSS disabled')
-        console.log('💡 Make sure nginx is stopped and Let\'s Encrypt certificates are accessible')
-        console.log('🔧 Run: sudo systemctl stop nginx')
-        console.log('🔧 Then restart this server')
-      }
+      // This section is no longer needed as Nginx handles SSL and port 443
+      // if (sslOptions) {
+      //   const httpsServer = https.createServer(sslOptions, app)
+      //   
+      //   // Initialize WebSocket for HTTPS server
+      //   initializeWebSocket(httpsServer, dbService)
+      //   
+      //   // Listen on port 443 for HTTPS/WSS (standard HTTPS port)
+      //   httpsServer.listen(443, '0.0.0.0', () => {
+      //     console.log(`🔒 CryptoFlipz HTTPS Server running on port 443`)
+      //     console.log(`🔐 WSS WebSocket server ready on wss://flipnosis.fun`)
+      //     console.log(`🌐 Your site is now accessible at https://flipnosis.fun`)
+      //   })
+      //   
+      //   // Also listen on port 80 to redirect HTTP to HTTPS
+      //   const httpRedirect = http.createServer((req, res) => {
+      //     res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` })
+      //     res.end()
+      //   })
+      //   
+      //   httpRedirect.listen(80, '0.0.0.0', () => {
+      //     console.log(`🔄 HTTP redirect server running on port 80`)
+      //   })
+      //   
+      // } else {
+      //   console.log('❌ SSL certificates not found - HTTPS/WSS disabled')
+      //   console.log('💡 Make sure nginx is stopped and Let\'s Encrypt certificates are accessible')
+      //   console.log('🔧 Run: sudo systemctl stop nginx')
+      //   console.log('🔧 Then restart this server')
+      // }
       
       // Start auto-backup
       startAutoBackup(dbService)
