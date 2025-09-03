@@ -1,29 +1,23 @@
-// config/api.js
-// Configuration for flipnosis.fun domain
+// API Configuration
+export const API_BASE_URL = process.env.REACT_APP_API_URL || ''
 
-export const API_CONFIG = {
-  BASE_URL: '',
-  WS_URL: null
-}
-
-// Helper functions
-export const getApiUrl = (endpoint) => {
-  return `/api${endpoint}`
+export const getApiUrl = (path) => {
+  return `${API_BASE_URL}${path}`
 }
 
 export const getWsUrl = () => {
-  // For development
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'ws://localhost:3000'
-  }
+  // Determine WebSocket URL based on current location
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
   
-  // For production - connect directly to the server (no nginx proxy)
-  // The server now handles HTTPS/WSS directly on port 443
-  if (window.location.protocol === 'https:') {
-    return `wss://${window.location.hostname}`
+  // In production, use the same host
+  // In development, you might need to adjust the port
+  if (process.env.NODE_ENV === 'development') {
+    // Development - backend might be on different port
+    const backendPort = process.env.REACT_APP_BACKEND_PORT || '3000'
+    return `${protocol}//${window.location.hostname}:${backendPort}/ws`
+  } else {
+    // Production - use same host
+    return `${protocol}//${host}/ws`
   }
-  
-  return `ws://${window.location.hostname}`
-}
-
-export default API_CONFIG 
+} 

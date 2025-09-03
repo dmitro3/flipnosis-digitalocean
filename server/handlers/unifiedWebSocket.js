@@ -1,91 +1,260 @@
 const WebSocket = require('ws')
 
-// ===== SIMPLE ROOM MANAGEMENT =====
+// ===== ROOM MANAGEMENT =====
 const rooms = new Map() // roomId -> Set of socket IDs
 const socketRooms = new Map() // socketId -> roomId
 const socketData = new Map() // socketId -> { address, gameId, etc }
+const addressToSocket = new Map() // address -> socketId for direct messaging
 
-// ===== GAME ROOMS =====
-const gameRooms = new Map()
-
-class GameRoom {
-  constructor(gameId, creator) {
-    this.gameId = gameId
-    this.creator = creator
-    this.joiner = null
-    this.phase = 'waiting'
-    this.currentRound = 0
-    this.scores = { creator: 0, joiner: 0 }
-    this.choices = { creator: null, joiner: null }
-    this.powers = { creator: 0, joiner: 0 }
+// ===== UNIFIED MESSAGE HANDLERS =====
+async function handleJoinRoom(socket, data, dbService) {
+  const { roomId, address } = data
+  
+  // STANDARDIZED room naming - always use game_${gameId}
+  const normalizedRoomId = roomId.startsWith('game_') ? roomId : `game_${roomId}`
+  
+  // Leave previous room if any
+  const previousRoom = socketRooms.get(socket.id)
+  if (previousRoom && rooms.has(previousRoom)) {
+    rooms.get(previousRoom).delete(socket.id)
+    console.log(`📤 Socket ${socket.id} left room ${previousRoom}`)
   }
   
-  addJoiner(joinerAddress) {
-    this.joiner = joinerAddress
-    this.phase = 'locked'
-    return true
+  // Join new room
+  if (!rooms.has(normalizedRoomId)) {
+    rooms.set(normalizedRoomId, new Set())
   }
+  rooms.get(normalizedRoomId).add(socket.id)
+  socketRooms.set(socket.id, normalizedRoomId)
   
-  handleChoice(player, choice) {
-    const role = player === this.creator ? 'creator' : 'joiner'
-    this.choices[role] = choice
-    
-    console.log(`👤 ${role} chose ${choice}`)
-    
-    // Check if both players have chosen
-    if (this.choices.creator && this.choices.joiner) {
-      this.executeCoinFlip()
+  // Store socket data
+  socketData.set(socket.id, { address, gameId: normalizedRoomId.replace('game_', '') })
+  addressToSocket.set(address?.toLowerCase(), socket.id)
+  
+  console.log(`✅ Socket ${socket.id} (${address}) joined room ${normalizedRoomId}`)
+  
+  // Send confirmation
+  socket.send(JSON.stringify({
+    type: 'room_joined',
+    roomId: normalizedRoomId,
+    address,
+    message: `Successfully joined room ${normalizedRoomId}`
+  }))
+  
+  // Load and send chat history if database is available
+  if (dbService && typeof dbService.getChatHistory === 'function') {
+    try {
+      const messages = await dbService.getChatHistory(normalizedRoomId, 50)
+      socket.send(JSON.stringify({
+        type: 'chat_history',
+        messages
+      }))
+    } catch (error) {
+      console.error('❌ Error loading chat history:', error)
     }
-  }
-  
-  handlePowerRelease(player, power) {
-    const role = player === this.creator ? 'creator' : 'joiner'
-    this.powers[role] = power
-    console.log(`⚡ ${role} released power at ${power}%`)
-  }
-  
-  executeCoinFlip() {
-    console.log(`🪙 Executing coin flip for game ${this.gameId}`)
-    
-    // Simple flip result
-    const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
-    let winner = null
-    
-    if (this.choices.creator === flipResult) {
-      winner = 'creator'
-      this.scores.creator++
-    } else if (this.choices.joiner === flipResult) {
-      winner = 'joiner'
-      this.scores.joiner++
-    }
-    
-    // Broadcast result
-    broadcastToRoom(`game_${this.gameId}`, {
-      type: 'round_result',
-      winner,
-      result: flipResult,
-      scores: this.scores,
-      choices: this.choices
-    })
-    
-    // Reset for next round
-    this.choices = { creator: null, joiner: null }
-    this.powers = { creator: 0, joiner: 0 }
-    this.currentRound++
   }
 }
 
-// ===== SIMPLE BROADCASTING =====
-function broadcastToRoom(roomId, message) {
-  const messageStr = JSON.stringify(message)
-  const room = rooms.get(roomId)
-  
-  if (!room) {
-    console.log(`⚠️ Room ${roomId} not found for broadcast`)
+async function handleChatMessage(socket, data, dbService) {
+  const roomId = socketRooms.get(socket.id)
+  if (!roomId) {
+    console.error('❌ Socket not in any room')
     return
   }
   
+  const messageData = {
+    type: 'chat_message',
+    gameId: data.gameId || roomId.replace('game_', ''),
+    from: data.from || data.address,
+    message: data.message,
+    timestamp: new Date().toISOString()
+  }
+  
+  // Save to database if available
+  if (dbService && typeof dbService.saveChatMessage === 'function') {
+    try {
+      await dbService.saveChatMessage(
+        roomId,
+        messageData.from,
+        messageData.message,
+        messageData.timestamp
+      )
+    } catch (error) {
+      console.error('❌ Error saving chat message:', error)
+    }
+  }
+  
+  // Broadcast to room
+  broadcastToRoom(roomId, messageData)
+}
+
+async function handleCryptoOffer(socket, data, dbService) {
+  const roomId = socketRooms.get(socket.id)
+  if (!roomId) return
+  
+  const offerData = {
+    type: 'crypto_offer',
+    id: Date.now() + Math.random(),
+    gameId: data.gameId || roomId.replace('game_', ''),
+    offerer_address: data.from || data.address,
+    amount: data.amount || data.cryptoAmount,
+    timestamp: new Date().toISOString()
+  }
+  
+  // Save to database
+  if (dbService && dbService.db) {
+    try {
+      const gameId = offerData.gameId
+      const listingId = data.listingId || gameId
+      
+      await new Promise((resolve, reject) => {
+        dbService.db.run(`
+          INSERT INTO crypto_offers (listing_id, offerer_address, offer_price, status)
+          VALUES (?, ?, ?, 'pending')
+        `, [listingId, offerData.offerer_address, offerData.amount], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      console.log('💾 Crypto offer saved to database')
+    } catch (error) {
+      console.error('❌ Error saving crypto offer:', error)
+    }
+  }
+  
+  // Broadcast to room
+  broadcastToRoom(roomId, offerData)
+}
+
+async function handleAcceptOffer(socket, data, dbService) {
+  const roomId = socketRooms.get(socket.id)
+  if (!roomId) return
+  
+  const acceptData = {
+    type: 'offer_accepted',
+    gameId: data.gameId || roomId.replace('game_', ''),
+    offerId: data.offerId,
+    challenger: data.joinerAddress || data.offerer_address,
+    timestamp: new Date().toISOString()
+  }
+  
+  // Update database
+  if (dbService && dbService.db) {
+    try {
+      // Update offer status
+      await new Promise((resolve, reject) => {
+        dbService.db.run(`
+          UPDATE crypto_offers 
+          SET status = 'accepted', accepted_at = ?
+          WHERE id = ?
+        `, [acceptData.timestamp, data.offerId], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      // Update game with challenger
+      await new Promise((resolve, reject) => {
+        dbService.db.run(`
+          UPDATE games 
+          SET challenger = ?, status = 'awaiting_challenger_deposit'
+          WHERE id = ?
+        `, [acceptData.challenger, acceptData.gameId], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      console.log('✅ Offer accepted and game updated')
+    } catch (error) {
+      console.error('❌ Error accepting offer:', error)
+    }
+  }
+  
+  // Broadcast to room
+  broadcastToRoom(roomId, acceptData)
+  
+  // Send direct message to challenger
+  sendToUser(acceptData.challenger, {
+    type: 'your_offer_accepted',
+    gameId: acceptData.gameId,
+    message: 'Your offer has been accepted! Please deposit crypto.'
+  })
+}
+
+async function handleDepositConfirmed(socket, data, dbService) {
+  const roomId = socketRooms.get(socket.id)
+  if (!roomId) return
+  
+  const depositData = {
+    type: 'deposit_confirmed',
+    gameId: data.gameId || roomId.replace('game_', ''),
+    player: data.player,
+    assetType: data.assetType,
+    transactionHash: data.transactionHash,
+    timestamp: new Date().toISOString()
+  }
+  
+  // Broadcast to room
+  broadcastToRoom(roomId, depositData)
+  
+  // Check if both players deposited
+  if (dbService && dbService.db) {
+    try {
+      const game = await new Promise((resolve, reject) => {
+        dbService.db.get(
+          'SELECT * FROM games WHERE id = ?',
+          [depositData.gameId],
+          (err, row) => {
+            if (err) reject(err)
+            else resolve(row)
+          }
+        )
+      })
+      
+      if (game && game.creator_deposited && game.challenger_deposited) {
+        // Both deposited - game can start
+        broadcastToRoom(roomId, {
+          type: 'game_ready',
+          gameId: depositData.gameId,
+          message: 'Both players have deposited! Game starting...',
+          creator: game.creator,
+          challenger: game.challenger
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error checking deposit status:', error)
+    }
+  }
+}
+
+async function handleGameStatusChange(socket, data, dbService) {
+  const roomId = socketRooms.get(socket.id)
+  if (!roomId) return
+  
+  broadcastToRoom(roomId, {
+    type: 'game_status_changed',
+    gameId: data.gameId,
+    newStatus: data.newStatus,
+    previousStatus: data.previousStatus,
+    timestamp: new Date().toISOString()
+  })
+}
+
+// ===== BROADCAST FUNCTIONS =====
+function broadcastToRoom(roomId, message) {
+  const normalizedRoomId = roomId.startsWith('game_') ? roomId : `game_${roomId}`
+  const room = rooms.get(normalizedRoomId)
+  
+  if (!room || room.size === 0) {
+    console.log(`⚠️ No clients in room ${normalizedRoomId}`)
+    return
+  }
+  
+  const messageStr = JSON.stringify(message)
   let sentCount = 0
+  
   room.forEach(socketId => {
     const socket = getSocketById(socketId)
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -101,11 +270,24 @@ function broadcastToRoom(roomId, message) {
     }
   })
   
-  console.log(`📢 Broadcast to room ${roomId}: ${sentCount} clients`)
+  console.log(`📢 Broadcast to ${normalizedRoomId}: ${sentCount}/${room.size} clients`)
+}
+
+function sendToUser(address, message) {
+  const socketId = addressToSocket.get(address?.toLowerCase())
+  if (!socketId) {
+    console.log(`⚠️ No socket found for address ${address}`)
+    return
+  }
+  
+  const socket = getSocketById(socketId)
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(message))
+    console.log(`📨 Direct message sent to ${address}`)
+  }
 }
 
 function getSocketById(socketId) {
-  // Find socket in global wss.clients
   for (const client of wss.clients) {
     if (client.id === socketId) {
       return client
@@ -114,279 +296,52 @@ function getSocketById(socketId) {
   return null
 }
 
-// ===== MESSAGE HANDLERS =====
-async function handleJoinRoom(socket, data, dbService) {
-  const { roomId } = data
-  
-  // Normalize room ID
-  const targetRoomId = roomId.startsWith('game_') ? roomId : `game_${roomId}`
-  
-  console.log(`👥 Socket ${socket.id} joining room ${targetRoomId}`)
-  console.log(`🔍 Database service available:`, !!dbService)
-  console.log(`🔍 Database service methods:`, dbService ? Object.keys(dbService) : 'undefined')
-  
-  // Leave previous room
-  const oldRoom = socketRooms.get(socket.id)
-  if (oldRoom && rooms.has(oldRoom)) {
-    rooms.get(oldRoom).delete(socket.id)
-  }
-  
-  // Join new room
-  if (!rooms.has(targetRoomId)) {
-    rooms.set(targetRoomId, new Set())
-  }
-  
-  const room = rooms.get(targetRoomId)
-  room.add(socket.id)
-  socketRooms.set(socket.id, targetRoomId)
-  
-  // Send confirmation
-  socket.send(JSON.stringify({
-    type: 'room_joined',
-    roomId: targetRoomId,
-    members: room.size
-  }))
-  
-  // Load chat history
-  try {
-    if (!dbService) {
-      console.error('❌ Database service is undefined!')
-      return
-    }
-    
-    if (!dbService.getChatHistory) {
-      console.error('❌ getChatHistory method not found on database service!')
-      console.log('Available methods:', Object.keys(dbService))
-      return
-    }
-    
-    const chatHistory = await dbService.getChatHistory(targetRoomId, 50)
-    console.log(`📚 Loaded ${chatHistory.length} chat messages for room ${targetRoomId}`)
-    
-    if (chatHistory.length > 0) {
-      socket.send(JSON.stringify({
-        type: 'chat_history',
-        roomId: targetRoomId,
-        messages: chatHistory
-      }))
-    }
-  } catch (error) {
-    console.error('❌ Error loading chat history:', error)
-  }
-}
-
-async function handleChatMessage(socket, data, dbService) {
-  const { roomId, gameId, message, from, sender } = data
-  
-  // Normalize room ID
-  const targetRoomId = roomId || `game_${gameId}`
-  // Try multiple possible sender fields
-  const senderAddress = from || sender || socket.address || 'anonymous'
-  
-  console.log(`💬 Chat message in ${targetRoomId} from ${senderAddress}`, {
-    data,
-    socketAddress: socket.address,
-    extractedSender: senderAddress
-  })
-  
-  try {
-    // Save to database
-    await dbService.saveChatMessage(targetRoomId, senderAddress, message, 'chat')
-    
-    // Broadcast to room
-    broadcastToRoom(targetRoomId, {
-      type: 'chat_message',
-      message,
-      from: senderAddress,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('❌ Error saving chat message:', error)
-  }
-}
-
-async function handleCryptoOffer(socket, data, dbService) {
-  const { roomId, gameId, listingId, address, cryptoAmount } = data
-  
-  // Normalize room ID
-  const targetRoomId = roomId || `game_${gameId}`
-  const senderAddress = socket.address || address || 'anonymous'
-  
-  console.log(`💰 Crypto offer in ${targetRoomId} from ${senderAddress}: $${cryptoAmount}`)
-  
-  try {
-    // Save to offers table
-    const offerId = `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
-    // Use the database service to save to offers table
-    await new Promise((resolve, reject) => {
-      dbService.db.run(`
-        INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [
-        offerId,
-        listingId,
-        senderAddress,
-        cryptoAmount,
-        `💰 Offered $${cryptoAmount} USD`,
-        'pending',
-        new Date().toISOString()
-      ], function(err) {
-        if (err) {
-          console.error('❌ Error saving offer to offers table:', err)
-          reject(err)
-        } else {
-          console.log(`✅ Offer saved to offers table with ID: ${offerId}`)
-          resolve()
-        }
-      })
-    })
-    
-    // Also save as chat message for chat display
-    await dbService.saveChatMessage(targetRoomId, senderAddress, `💰 Offered $${cryptoAmount} USD`, 'crypto_offer', {
-      cryptoAmount,
-      listingId,
-      offerId
-    })
-    
-    // Broadcast to room
-    broadcastToRoom(targetRoomId, {
-      type: 'crypto_offer',
-      id: offerId,
-      address: senderAddress,
-      cryptoAmount,
-      listingId,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('❌ Error saving crypto offer:', error)
-  }
-}
-
-async function handleAcceptCryptoOffer(socket, data, dbService) {
-  const { roomId, gameId, listingId, creatorAddress, acceptedOffer } = data
-  
-  // Normalize room ID
-  const targetRoomId = roomId || `game_${gameId}`
-  const senderAddress = socket.address || creatorAddress || 'anonymous'
-  
-  console.log(`✅ Accept crypto offer in ${targetRoomId} by ${senderAddress}`)
-  
-  try {
-    // Save to database
-    await dbService.saveChatMessage(targetRoomId, senderAddress, `✅ Accepted offer of $${acceptedOffer.cryptoAmount} USD`, 'accept_crypto_offer', {
-      acceptedOffer,
-      listingId
-    })
-    
-    // Broadcast to room
-    broadcastToRoom(targetRoomId, {
-      type: 'accept_crypto_offer',
-      creatorAddress: senderAddress,
-      acceptedOffer,
-      listingId,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error('❌ Error saving offer acceptance:', error)
-  }
-}
-
-function handleJoinGame(socket, data) {
-  const { gameId, address } = data
-  
-  // Store socket data
-  socketData.set(socket.id, { address, gameId })
-  
-  console.log(`✅ ${address} joined game ${gameId}`)
-  
-  // Get or create game room
-  let gameRoom = gameRooms.get(gameId)
-  if (!gameRoom) {
-    gameRoom = new GameRoom(gameId, address)
-    gameRooms.set(gameId, gameRoom)
-  } else if (address !== gameRoom.creator && !gameRoom.joiner) {
-    gameRoom.addJoiner(address)
-  }
-  
-  // Send game state
-  socket.send(JSON.stringify({
-    type: 'game_joined',
-    gameId,
-    phase: gameRoom.phase,
-    round: gameRoom.currentRound,
-    scores: gameRoom.scores,
-    creator: gameRoom.creator,
-    joiner: gameRoom.joiner
-  }))
-}
-
-function handlePlayerChoice(socket, data) {
-  const { gameId, choice, player } = data
-  const gameRoom = gameRooms.get(gameId)
-  
-  if (!gameRoom) {
-    console.error(`❌ Game room not found: ${gameId}`)
-    return
-  }
-  
-  gameRoom.handleChoice(player, choice)
-}
-
-function handlePowerRelease(socket, data) {
-  const { gameId, power, player } = data
-  const gameRoom = gameRooms.get(gameId)
-  
-  if (!gameRoom) {
-    console.error(`❌ Game room not found: ${gameId}`)
-    return
-  }
-  
-  gameRoom.handlePowerRelease(player, power)
-}
-
 // ===== MAIN CONNECTION HANDLER =====
 function handleConnection(ws, dbService) {
   ws.id = require('crypto').randomBytes(16).toString('hex')
   
   console.log(`🔌 New WebSocket connection: ${ws.id}`)
   
-  ws.on('message', (message) => {
+  // Send welcome message
+  ws.send(JSON.stringify({
+    type: 'connected',
+    socketId: ws.id,
+    message: 'Connected to CryptoFlipz WebSocket server'
+  }))
+  
+  ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message.toString())
       console.log(`📨 Message from ${ws.id}: ${data.type}`)
       
       switch (data.type) {
         case 'join_room':
-          handleJoinRoom(ws, data, dbService)
+          await handleJoinRoom(ws, data, dbService)
           break
           
         case 'chat_message':
-          handleChatMessage(ws, data, dbService)
+          await handleChatMessage(ws, data, dbService)
           break
           
         case 'crypto_offer':
-          handleCryptoOffer(ws, data, dbService)
+          await handleCryptoOffer(ws, data, dbService)
           break
           
+        case 'accept_offer':
         case 'accept_crypto_offer':
-          handleAcceptCryptoOffer(ws, data, dbService)
+          await handleAcceptOffer(ws, data, dbService)
           break
           
-        case 'join_game':
-          handleJoinGame(ws, data)
+        case 'deposit_confirmed':
+          await handleDepositConfirmed(ws, data, dbService)
           break
           
-        case 'player_choice':
-          handlePlayerChoice(ws, data)
-          break
-          
-        case 'power_release':
-          handlePowerRelease(ws, data)
+        case 'game_status_changed':
+          await handleGameStatusChange(ws, data, dbService)
           break
           
         case 'ping':
-          ws.send(JSON.stringify({ type: 'pong' }))
+          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }))
           break
           
         default:
@@ -394,6 +349,11 @@ function handleConnection(ws, dbService) {
       }
     } catch (error) {
       console.error('❌ Error handling message:', error)
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Failed to process message',
+        error: error.message
+      }))
     }
   })
   
@@ -404,7 +364,14 @@ function handleConnection(ws, dbService) {
     const roomId = socketRooms.get(ws.id)
     if (roomId && rooms.has(roomId)) {
       rooms.get(roomId).delete(ws.id)
+      console.log(`📤 Removed ${ws.id} from room ${roomId}`)
     }
+    
+    const userData = socketData.get(ws.id)
+    if (userData?.address) {
+      addressToSocket.delete(userData.address.toLowerCase())
+    }
+    
     socketRooms.delete(ws.id)
     socketData.delete(ws.id)
   })
@@ -421,35 +388,42 @@ let dbService = null
 function initializeWebSocket(server, databaseService) {
   wss = new WebSocket.Server({ 
     server,
-    // Add debugging for upgrade requests
-    handleProtocols: () => {
-      console.log('🔌 WebSocket upgrade request received')
-      return true
-    }
+    path: '/ws',
+    perMessageDeflate: false
   })
+  
   dbService = databaseService
   
-  console.log('🚀 WebSocket server initialized')
-  console.log('🔍 Database service passed:', !!dbService)
-  console.log('🔍 Database service methods:', dbService ? Object.keys(dbService) : 'undefined')
-  
-  // Add debugging for server events
-  wss.on('headers', (headers) => {
-    console.log('🔌 WebSocket headers sent:', headers)
-  })
+  console.log('🚀 WebSocket server initialized on /ws')
+  console.log('📊 Database service:', !!dbService)
   
   wss.on('connection', (ws) => {
-    console.log('🔌 WebSocket connection established successfully')
     handleConnection(ws, dbService)
   })
   
   wss.on('error', (error) => {
     console.error('❌ WebSocket server error:', error)
   })
+  
+  // Heartbeat to keep connections alive
+  const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }))
+      }
+    })
+  }, 30000)
+  
+  wss.on('close', () => {
+    clearInterval(interval)
+  })
 }
 
 module.exports = {
   initializeWebSocket,
-  gameRooms,
-  broadcastToRoom
+  broadcastToRoom,
+  sendToUser,
+  rooms,
+  socketRooms,
+  socketData
 }

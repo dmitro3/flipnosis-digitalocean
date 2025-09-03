@@ -1,272 +1,284 @@
-// WebSocket Service - Minification Proof
-// This service uses a global object approach to prevent minification issues
-
+// WebSocket Service - Clean WebSocket-only implementation
 import { getWsUrl } from '../config/api'
 
-// Create a global WebSocket service that cannot be minified
-if (typeof window !== 'undefined') {
-  window.FlipnosisWS = {
-    // Connection state
-    socket: null,
-    connected: false,
-    gameId: null,
-    address: null,
-    currentRoom: null,
-    reconnectAttempts: 0,
-    maxReconnectAttempts: 10,
-    reconnectDelay: 2000,
-    messageHandlers: new Map(),
-    connectionPromise: null,
-    reconnectTimer: null,
-    pingInterval: null,
+class WebSocketService {
+  constructor() {
+    this.socket = null
+    this.connected = false
+    this.connecting = false
+    this.gameId = null
+    this.address = null
+    this.currentRoom = null
+    this.reconnectAttempts = 0
+    this.maxReconnectAttempts = 10
+    this.reconnectDelay = 2000
+    this.messageHandlers = new Map()
+    this.messageQueue = []
+    this.pingInterval = null
+    this.reconnectTimer = null
+  }
 
-    // Connect to WebSocket
-    connect: function(roomId, address) {
-      // If connecting to a different room, disconnect first
-      if (this.currentRoom && this.currentRoom !== roomId) {
-        console.log(`🔄 Switching from room ${this.currentRoom} to ${roomId}`)
-        this.disconnect()
-      }
-      
-      this.currentRoom = roomId  // Track current room
-      this.address = address
-      this.gameId = roomId.replace('game_room_', '').replace('game_', '')  // Extract actual gameId
-
-      // Clear any existing reconnect timer
-      if (this.reconnectTimer) {
-        clearTimeout(this.reconnectTimer)
-        this.reconnectTimer = null
-      }
-
-      // If already connected, return existing connection
-      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        console.log('🔌 Already connected')
-        this.setupPingPong()
-        return Promise.resolve(this.socket)
-      }
-
-      // If connection is in progress, wait for it
-      if (this.connectionPromise) {
-        console.log('🔌 Connection in progress, waiting...')
-        return this.connectionPromise
-      }
-
-      this.connectionPromise = new Promise((resolve, reject) => {
-        try {
-          const wsUrl = getWsUrl()
-          console.log('🔌 Connecting to WebSocket:', wsUrl)
-          
-          this.socket = new WebSocket(wsUrl)
-          
-          this.socket.onopen = () => {
-            console.log('✅ WebSocket connected to room:', roomId)
-            this.connected = true
-            this.reconnectAttempts = 0
-            this.connectionPromise = null
-            
-            // Setup ping-pong to keep connection alive
-            this.setupPingPong()
-            
-            // Join the specific room
-            const joinMessage = {
-              type: roomId.startsWith('game_room_') ? 'join_game_room' : 'join_room',
-              roomId,
-              gameId: roomId.replace('game_room_', '').replace('game_', ''),
-              address
-            }
-            console.log('🔌 Sending join room message:', joinMessage)
-            this.socket.send(JSON.stringify(joinMessage))
-            
-            resolve(this.socket)
+  async connect(gameId, address) {
+    // Normalize room ID - ALWAYS use game_${gameId} format
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    
+    // If already connected to this room, just return
+    if (this.connected && this.currentRoom === roomId) {
+      console.log('✅ Already connected to room:', roomId)
+      return Promise.resolve()
+    }
+    
+    // If connecting, wait for it
+    if (this.connecting) {
+      console.log('⏳ Connection already in progress...')
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (!this.connecting) {
+            clearInterval(checkInterval)
+            resolve()
           }
-          
-          this.socket.onerror = (error) => {
-            console.error('❌ WebSocket error:', error)
-            this.connected = false
-            this.connectionPromise = null
-            
-            // Don't reject immediately, let onclose handle reconnection
-            if (this.socket.readyState === WebSocket.CONNECTING) {
-              reject(error)
-            }
-          }
-          
-          this.socket.onclose = (event) => {
-            console.log('🔌 WebSocket disconnected', { code: event.code, reason: event.reason })
-            this.connected = false
-            this.connectionPromise = null
-            
-            // Clear ping interval
-            if (this.pingInterval) {
-              clearInterval(this.pingInterval)
-              this.pingInterval = null
-            }
-            
-            // Try to reconnect with exponential backoff
-            if (this.reconnectAttempts < this.maxReconnectAttempts) {
-              const delay = Math.min(this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts), 30000)
-              this.reconnectTimer = setTimeout(() => {
-                this.reconnectAttempts++
-                console.log(`🔄 Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-                this.connect(this.currentRoom, this.address)
-              }, delay)
-            } else {
-              console.error('❌ Max reconnection attempts reached')
-            }
-          }
-          
-          this.socket.onmessage = (event) => {
-            try {
-              const data = JSON.parse(event.data)
-              console.log('📨 WebSocket message received:', data)
-              
-              // Handle pong messages
-              if (data.type === 'pong') {
-                return // Just a keepalive response
-              }
-              
-              // Debug: Log room joined confirmations
-              if (data.type === 'room_joined') {
-                console.log('✅ Room joined confirmation received:', data)
-              }
-              
-              // Call registered handlers for this message type
-              const handlers = this.messageHandlers.get(data.type)
-              if (handlers && handlers.length > 0) {
-                console.log(`🔍 Calling ${handlers.length} handlers for message type: ${data.type}`)
-                handlers.forEach(handler => {
-                  try {
-                    handler(data)
-                  } catch (error) {
-                    console.error(`❌ Error in handler for ${data.type}:`, error)
-                  }
-                })
-              } else {
-                console.log(`⚠️ No handlers registered for message type: ${data.type}`)
-              }
-              
-            } catch (error) {
-              console.error('❌ Error handling message:', error)
-            }
-          }
-          
-        } catch (error) {
-          console.error('Failed to create WebSocket:', error)
-          this.connectionPromise = null
-          reject(error)
-        }
+        }, 100)
       })
-
-      return this.connectionPromise
-    },
-
-    // Setup ping-pong to keep connection alive
-    setupPingPong: function() {
-      // Clear existing interval
-      if (this.pingInterval) {
-        clearInterval(this.pingInterval)
-      }
-      
-      // Send ping every 30 seconds
-      this.pingInterval = setInterval(() => {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-          this.socket.send(JSON.stringify({
-            type: 'ping',
-            timestamp: Date.now()
-          }))
+    }
+    
+    // Disconnect from previous room if different
+    if (this.currentRoom && this.currentRoom !== roomId) {
+      console.log(`🔄 Switching from ${this.currentRoom} to ${roomId}`)
+      this.disconnect()
+    }
+    
+    this.connecting = true
+    this.currentRoom = roomId
+    this.gameId = roomId.replace('game_', '')
+    this.address = address
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const wsUrl = getWsUrl()
+        console.log('🔌 Connecting to WebSocket:', wsUrl)
+        
+        this.socket = new WebSocket(wsUrl)
+        
+        this.socket.onopen = () => {
+          console.log('✅ WebSocket connected')
+          this.connected = true
+          this.connecting = false
+          this.reconnectAttempts = 0
+          
+          // Join room immediately
+          this.send({
+            type: 'join_room',
+            roomId: roomId,
+            address: address
+          })
+          
+          // Process queued messages
+          this.processMessageQueue()
+          
+          // Setup ping to keep connection alive
+          this.setupPingInterval()
+          
+          // Notify handlers
+          this.notifyHandlers('connected', { roomId, address })
+          
+          resolve()
         }
-      }, 30000)
-    },
-
-    // Send message
-    send: function(message) {
-      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        this.socket.send(JSON.stringify(message))
-        return true
+        
+        this.socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            
+            // Skip heartbeat/ping/pong messages
+            if (data.type === 'heartbeat' || data.type === 'pong') {
+              return
+            }
+            
+            console.log('📨 Message received:', data.type, data)
+            
+            // Call registered handlers
+            const handlers = this.messageHandlers.get(data.type) || []
+            handlers.forEach(handler => {
+              try {
+                handler(data)
+              } catch (error) {
+                console.error(`❌ Handler error for ${data.type}:`, error)
+              }
+            })
+          } catch (error) {
+            console.error('❌ Failed to parse message:', error)
+          }
+        }
+        
+        this.socket.onerror = (error) => {
+          console.error('❌ WebSocket error:', error)
+          this.connecting = false
+          
+          if (!this.connected) {
+            reject(error)
+          }
+        }
+        
+        this.socket.onclose = (event) => {
+          console.log('🔌 WebSocket disconnected:', event.code, event.reason)
+          this.connected = false
+          this.connecting = false
+          
+          // Clear ping interval
+          if (this.pingInterval) {
+            clearInterval(this.pingInterval)
+            this.pingInterval = null
+          }
+          
+          // Notify handlers
+          this.notifyHandlers('disconnected', { code: event.code, reason: event.reason })
+          
+          // Auto-reconnect if not manually closed
+          if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.scheduleReconnect()
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to create WebSocket:', error)
+        this.connecting = false
+        reject(error)
       }
-      console.warn('⚠️ Cannot send message - WebSocket not connected')
+    })
+  }
+
+  scheduleReconnect() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+    }
+    
+    const delay = Math.min(this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts), 30000)
+    console.log(`🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
+    
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectAttempts++
+      this.connect(this.gameId, this.address).catch(error => {
+        console.error('❌ Reconnection failed:', error)
+      })
+    }, delay)
+  }
+
+  setupPingInterval() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval)
+    }
+    
+    // Send ping every 30 seconds
+    this.pingInterval = setInterval(() => {
+      if (this.connected && this.socket && this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }))
+      }
+    }, 30000)
+  }
+
+  send(message) {
+    if (this.connected && this.socket && this.socket.readyState === WebSocket.OPEN) {
+      const messageStr = JSON.stringify(message)
+      this.socket.send(messageStr)
+      console.log('📤 Message sent:', message.type)
+      return true
+    } else {
+      // Queue message for later
+      console.log('⏳ Queueing message (not connected):', message.type)
+      this.messageQueue.push(message)
       
       // Try to reconnect
-      this.connect(this.currentRoom, this.address)
-      return false
-    },
-
-    // Register message handler
-    on: function(messageType, handler) {
-      if (!this.messageHandlers.has(messageType)) {
-        this.messageHandlers.set(messageType, [])
-      }
-      this.messageHandlers.get(messageType).push(handler)
-    },
-
-    // Remove message handler
-    off: function(messageType, handler) {
-      const handlers = this.messageHandlers.get(messageType)
-      if (handlers) {
-        const index = handlers.indexOf(handler)
-        if (index > -1) {
-          handlers.splice(index, 1)
-        }
-      }
-    },
-
-    // Disconnect
-    disconnect: function() {
-      // Clear timers
-      if (this.reconnectTimer) {
-        clearTimeout(this.reconnectTimer)
-        this.reconnectTimer = null
-      }
-      if (this.pingInterval) {
-        clearInterval(this.pingInterval)
-        this.pingInterval = null
+      if (!this.connected && !this.connecting) {
+        this.connect(this.gameId, this.address)
       }
       
-      // Close socket
-      if (this.socket) {
-        this.socket.close()
-        this.socket = null
-      }
-      this.connected = false
-      this.connectionPromise = null
-    },
-
-    // Get WebSocket instance
-    getWebSocket: function() {
-      return this.socket
-    },
-
-    // Check if connected
-    isConnected: function() {
-      return this.socket && this.socket.readyState === WebSocket.OPEN
-    },
-
-    // Check if initialized
-    isInitialized: function() {
-      return this.socket !== null
-    },
-
-    // Force reconnect
-    forceReconnect: function() {
-      this.disconnect()
-      this.reconnectAttempts = 0
-      return this.connect(this.currentRoom, this.address)
+      return false
     }
   }
 
-  console.log('✅ Global WebSocket service created: window.FlipnosisWS')
+  processMessageQueue() {
+    if (this.messageQueue.length > 0) {
+      console.log(`📤 Processing ${this.messageQueue.length} queued messages`)
+      const queue = [...this.messageQueue]
+      this.messageQueue = []
+      
+      queue.forEach(message => {
+        this.send(message)
+      })
+    }
+  }
+
+  on(eventType, handler) {
+    if (!this.messageHandlers.has(eventType)) {
+      this.messageHandlers.set(eventType, [])
+    }
+    this.messageHandlers.get(eventType).push(handler)
+    console.log(`✅ Handler registered for: ${eventType}`)
+  }
+
+  off(eventType, handler) {
+    const handlers = this.messageHandlers.get(eventType)
+    if (handlers) {
+      const index = handlers.indexOf(handler)
+      if (index > -1) {
+        handlers.splice(index, 1)
+        console.log(`✅ Handler removed for: ${eventType}`)
+      }
+    }
+  }
+
+  notifyHandlers(eventType, data) {
+    const handlers = this.messageHandlers.get(eventType) || []
+    handlers.forEach(handler => {
+      try {
+        handler(data)
+      } catch (error) {
+        console.error(`❌ Error in ${eventType} handler:`, error)
+      }
+    })
+  }
+
+  disconnect() {
+    console.log('🔌 Disconnecting WebSocket...')
+    
+    // Clear timers
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval)
+      this.pingInterval = null
+    }
+    
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
+    
+    // Close socket
+    if (this.socket) {
+      this.socket.close(1000, 'Client disconnect')
+      this.socket = null
+    }
+    
+    this.connected = false
+    this.connecting = false
+    this.currentRoom = null
+    this.reconnectAttempts = 0
+  }
+
+  isConnected() {
+    return this.connected && this.socket && this.socket.readyState === WebSocket.OPEN
+  }
+
+  getConnectionStatus() {
+    if (this.connected) return 'connected'
+    if (this.connecting) return 'connecting'
+    return 'disconnected'
+  }
 }
 
-// Export the global service for direct access
-const webSocketService = typeof window !== 'undefined' ? window.FlipnosisWS : null
+// Create singleton instance
+const webSocketService = new WebSocketService()
 
-// Add debugging for service export
+// Make it globally available for debugging
 if (typeof window !== 'undefined') {
-  console.log('🔌 WebSocketService export:', {
-    hasService: !!webSocketService,
-    serviceKeys: webSocketService ? Object.keys(webSocketService) : [],
-    globalService: !!window.FlipnosisWS
-  })
+  window.webSocketService = webSocketService
 }
 
 export default webSocketService
