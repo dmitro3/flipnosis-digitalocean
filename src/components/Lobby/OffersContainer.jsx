@@ -260,16 +260,7 @@ const OffersContainer = ({
   const [showDepositOverlay, setShowDepositOverlay] = useState(false)
   const [acceptedOffer, setAcceptedOffer] = useState(null)
   
-  // Use refs to persist overlay state across re-renders and prevent flicker
-  const overlayStateRef = useRef({ showOverlay: false, offer: null })
-  
-  // Sync ref with state to maintain consistency
-  useEffect(() => {
-    overlayStateRef.current = { 
-      showOverlay: showDepositOverlay, 
-      offer: acceptedOffer 
-    }
-  }, [showDepositOverlay, acceptedOffer])
+  // Simple overlay state management
   
   const offersEndRef = useRef(null)
   
@@ -311,7 +302,7 @@ const OffersContainer = ({
       setAcceptedOffer(acceptedOffer)
       setShowDepositOverlay(true)
     }
-  }, [gameData?.status, gameData?.challenger, address, showDepositOverlay])
+  }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay to prevent infinite loop
 
   // WebSocket connection for real-time updates (replaces old polling system)
   useEffect(() => {
@@ -348,10 +339,8 @@ const OffersContainer = ({
         } else {
           console.log('✅ WebSocket already connected')
         }
-        setIsConnected(true)
       } catch (error) {
         console.error('❌ WebSocket connection failed:', error)
-        setIsConnected(false)
       }
     }
 
@@ -487,35 +476,25 @@ const OffersContainer = ({
       if (data.gameId === gameData?.id) {
         console.log('✅ Deposit confirmed for current game')
         
-        // Use functional state updates to access current state
-        setShowDepositOverlay(currentShow => {
-          setAcceptedOffer(currentOffer => {
-            if (currentShow && currentOffer?.isCreatorWaiting) {
-              console.log('🎯 Creator was waiting, challenger deposited - transporting to game!')
-              
-              // Transport to flip suite
-              setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-                  detail: { gameId: gameData?.id, immediate: true }
-                }))
-              }, 1000)
-              
-              return null // Clear accepted offer
-            }
-            return currentOffer
-          })
+        // Check if we're in creator waiting mode
+        if (acceptedOffer?.isCreatorWaiting) {
+          console.log('🎯 Creator was waiting, challenger deposited - transporting to game!')
           
-          // Only close overlay if we're not in creator waiting mode
-          // This prevents the overlay from disappearing prematurely for Player 1
-          const currentOverlayState = overlayStateRef.current
-          if (currentShow && currentOverlayState.offer?.isCreatorWaiting) {
-            console.log('🎯 Keeping overlay open for creator waiting mode')
-            return true
-          }
+          // Clear the overlay and transport to game
+          setShowDepositOverlay(false)
+          setAcceptedOffer(null)
           
-          // Close overlay only when appropriate (e.g., challenger deposited)
-          return false
-        })
+          // Transport to flip suite
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+              detail: { gameId: gameData?.id, immediate: true }
+            }))
+          }, 1000)
+        } else {
+          console.log('🎯 Not in creator waiting mode, closing overlay')
+          setShowDepositOverlay(false)
+          setAcceptedOffer(null)
+        }
       }
     }
 
@@ -553,7 +532,7 @@ const OffersContainer = ({
           console.error('❌ Error cleaning up WebSocket handlers:', error)
         }
       }
-  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, onOfferAccepted])
+  }, [gameId, address, socket]) // Removed problematic dependencies that cause re-renders
 
   const isCreator = () => {
     // Use prop if available (preferred)
@@ -787,11 +766,10 @@ const OffersContainer = ({
         isCreatorWaiting: true // Flag to indicate this is creator waiting, not challenger depositing
       }
       
-      // Update both state and ref to persist across re-renders
-      setAcceptedOffer(waitingOffer)
-      setShowDepositOverlay(true)
-      overlayStateRef.current = { showOverlay: true, offer: waitingOffer }
-      console.log('🎯 Showing waiting overlay for creator after accepting offer:', waitingOffer)
+             // Update state to show waiting overlay
+       setAcceptedOffer(waitingOffer)
+       setShowDepositOverlay(true)
+       console.log('🎯 Showing waiting overlay for creator after accepting offer:', waitingOffer)
       
       // Force refresh game data to get updated status
       console.log('🔄 Forcing game data refresh after offer acceptance')
@@ -978,14 +956,12 @@ const OffersContainer = ({
   const handleCloseDepositOverlay = () => {
     setShowDepositOverlay(false)
     setAcceptedOffer(null)
-    overlayStateRef.current = { showOverlay: false, offer: null }
   }
 
   const handleDepositComplete = (offer) => {
     console.log('🎯 Deposit completed, transporting to game room...')
     setShowDepositOverlay(false)
     setAcceptedOffer(null)
-    overlayStateRef.current = { showOverlay: false, offer: null }
     
     // Transport to game room
     if (onOfferAccepted) {
@@ -1125,16 +1101,16 @@ const OffersContainer = ({
         <div ref={offersEndRef} />
       </OffersList>
 
-      {/* Deposit Overlay - use persistent state to prevent flicker */}
-      <OfferAcceptanceOverlay
-        isVisible={showDepositOverlay || overlayStateRef.current.showOverlay}
-        acceptedOffer={acceptedOffer || overlayStateRef.current.offer}
-        gameData={gameData}
-        gameId={gameId}
-        address={address}
-        onClose={handleCloseDepositOverlay}
-        onDepositComplete={handleDepositComplete}
-      />
+             {/* Deposit Overlay */}
+       <OfferAcceptanceOverlay
+         isVisible={showDepositOverlay}
+         acceptedOffer={acceptedOffer}
+         gameData={gameData}
+         gameId={gameId}
+         address={address}
+         onClose={handleCloseDepositOverlay}
+         onDepositComplete={handleDepositComplete}
+       />
     </OffersContainerStyled>
   )
 }
