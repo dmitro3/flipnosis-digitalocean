@@ -2,7 +2,9 @@
 export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://flipnosis.fun'
 
 export const getApiUrl = (path) => {
-  return `${API_BASE_URL}${path}`
+  // Ensure path starts with /api if it doesn't already
+  const apiPath = path.startsWith('/api') ? path : `/api${path}`
+  return `${API_BASE_URL}${apiPath}`
 }
 
 export const getWsUrl = () => {
