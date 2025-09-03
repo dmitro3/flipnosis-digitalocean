@@ -646,7 +646,10 @@ export default function AdminPanel() {
     let monthlyVolume = 0
     let activeCount = 0
     
-    gamesData.forEach(game => {
+    // Filter out null/undefined games and ensure gamesData is an array
+    const validGames = Array.isArray(gamesData) ? gamesData.filter(game => game && typeof game === 'object') : []
+    
+    validGames.forEach(game => {
       if (game.status === 'active' || game.status === 'joined') {
         activeCount++
       }
@@ -654,15 +657,17 @@ export default function AdminPanel() {
       if (game.price_usd) {
         totalVolume += game.price_usd
         
-        const gameDate = new Date(game.created_at)
-        if (gameDate >= monthStart) {
-          monthlyVolume += game.price_usd
+        if (game.created_at) {
+          const gameDate = new Date(game.created_at)
+          if (gameDate >= monthStart) {
+            monthlyVolume += game.price_usd
+          }
         }
       }
     })
     
     setStats({
-      totalGames: gamesData.length,
+      totalGames: validGames.length,
       activeGames: activeCount,
       totalVolume: totalVolume,
       platformFees: totalVolume * (settings.platformFeePercent / 100),
@@ -677,36 +682,41 @@ export default function AdminPanel() {
   const loadPlayerData = async (allData) => {
     const playerMap = new Map()
     
-    allData.forEach(item => {
+    // Filter out null/undefined items and ensure allData is an array
+    const validData = Array.isArray(allData) ? allData.filter(item => item && typeof item === 'object') : []
+    
+    validData.forEach(item => {
       // Handle both games and listings
       const isGame = item.challenger !== undefined || item.joiner !== undefined
       const price = item.final_price || item.asking_price || item.price_usd || 0
       
-      // Process creator
-      if (!playerMap.has(item.creator)) {
-        playerMap.set(item.creator, {
-          address: item.creator,
-          gamesCreated: 0,
-          listingsCreated: 0,
-          gamesWon: 0,
-          totalVolume: 0
-        })
-      }
-      const creator = playerMap.get(item.creator)
-      
-      if (isGame) {
-        creator.gamesCreated++
-        if (item.winner === item.creator) {
-          creator.gamesWon++
+      // Process creator - ensure creator exists
+      if (item.creator && typeof item.creator === 'string') {
+        if (!playerMap.has(item.creator)) {
+          playerMap.set(item.creator, {
+            address: item.creator,
+            gamesCreated: 0,
+            listingsCreated: 0,
+            gamesWon: 0,
+            totalVolume: 0
+          })
         }
-      } else {
-        creator.listingsCreated++
+        const creator = playerMap.get(item.creator)
+        
+        if (isGame) {
+          creator.gamesCreated++
+          if (item.winner === item.creator) {
+            creator.gamesWon++
+          }
+        } else {
+          creator.listingsCreated++
+        }
+        creator.totalVolume += price
       }
-      creator.totalVolume += price
       
       // Process challenger/joiner for games
       const participant = item.challenger || item.joiner
-      if (participant && !playerMap.has(participant)) {
+      if (participant && typeof participant === 'string' && !playerMap.has(participant)) {
         playerMap.set(participant, {
           address: participant,
           gamesCreated: 0,
@@ -715,11 +725,13 @@ export default function AdminPanel() {
           totalVolume: 0
         })
       }
-      if (participant) {
+      if (participant && typeof participant === 'string') {
         const joiner = playerMap.get(participant)
-        joiner.totalVolume += price
-        if (item.winner === participant) {
-          joiner.gamesWon++
+        if (joiner) {
+          joiner.totalVolume += price
+          if (item.winner === participant) {
+            joiner.gamesWon++
+          }
         }
       }
     })
@@ -869,11 +881,17 @@ export default function AdminPanel() {
         const gamesResponse = await fetch(`${API_URL}/api/admin/games`)
         if (gamesResponse.ok) {
           const data = await gamesResponse.json()
-          const waitingGames = data.games.filter(g => g.status === 'waiting')
+          const waitingGames = data.games.filter(g => g && g.status === 'waiting')
           
           let updatedCount = 0
           for (const game of waitingGames) {
             try {
+              // Skip null/undefined games
+              if (!game || !game.id) {
+                console.log('⚠️ Skipping invalid game:', game)
+                continue
+              }
+              
               await fetch(`${API_URL}/api/admin/games/${game.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -881,7 +899,7 @@ export default function AdminPanel() {
               })
               updatedCount++
             } catch (e) {
-              console.warn('Failed to update game:', game.id, e)
+              console.warn('Failed to update game:', game?.id || 'unknown', e)
             }
           }
           
@@ -959,8 +977,8 @@ export default function AdminPanel() {
       const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
       
       const gamesToCancel = games.filter(game => 
-        game.status === 'waiting' && 
-        new Date(game.created_at) < twentyFourHoursAgo
+        game && game.status === 'waiting' && 
+        game.created_at && new Date(game.created_at) < twentyFourHoursAgo
       )
       
       if (gamesToCancel.length === 0) {
@@ -972,6 +990,12 @@ export default function AdminPanel() {
       let cancelledCount = 0
       for (const game of gamesToCancel) {
         try {
+          // Skip null/undefined games
+          if (!game || !game.id) {
+            console.log('⚠️ Skipping invalid game:', game)
+            continue
+          }
+          
           const response = await fetch(`${API_URL}/api/admin/games/${game.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -982,7 +1006,7 @@ export default function AdminPanel() {
             cancelledCount++
           }
         } catch (error) {
-          console.warn(`Failed to cancel game ${game.id}:`, error)
+          console.warn(`Failed to cancel game ${game?.id || 'unknown'}:`, error)
         }
       }
       
@@ -1148,6 +1172,12 @@ export default function AdminPanel() {
         
         for (const game of games) {
           try {
+            // Skip null/undefined games
+            if (!game || !game.id) {
+              console.log('⚠️ Skipping invalid game:', game)
+              continue
+            }
+            
             console.log(`🔍 Checking contract for game ${game.id}...`)
             
             // Get game state from contract
@@ -1177,7 +1207,7 @@ export default function AdminPanel() {
               console.log(`❌ No NFT found in contract for game ${game.id}`)
             }
           } catch (error) {
-            console.error(`❌ Error checking game ${game.id}:`, error)
+            console.error(`❌ Error checking game ${game?.id || 'unknown'}:`, error)
           }
         }
         
@@ -1261,7 +1291,7 @@ export default function AdminPanel() {
   }
 
   const selectAllNFTs = () => {
-    setSelectedNFTsForWithdrawal(contractNFTs.filter(nft => nft.nftContract !== '0x0000000000000000000000000000000000000000'))
+    setSelectedNFTsForWithdrawal(contractNFTs.filter(nft => nft && nft.nftContract && nft.nftContract !== '0x0000000000000000000000000000000000000000'))
   }
 
   const deselectAllNFTs = () => {
@@ -1296,16 +1326,29 @@ export default function AdminPanel() {
     if (!addr || addr === '0x0000000000000000000000000000000000000000') {
       return 'N/A'
     }
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+    try {
+      return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+    } catch (error) {
+      console.warn('Invalid address format:', addr)
+      return 'Invalid Address'
+    }
   }
   
   // Format date
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString()
+    if (!date) return 'N/A'
+    try {
+      return new Date(date).toLocaleDateString()
+    } catch (error) {
+      console.warn('Invalid date format:', date)
+      return 'Invalid Date'
+    }
   }
   
   // Get status color
   const getStatusColor = (status) => {
+    if (!status) return '#666'
+    
     switch(status) {
       case 'open': return '#00FF41'
       case 'active': return '#00FF41'
@@ -1322,17 +1365,17 @@ export default function AdminPanel() {
   // Filter games and listings
   useEffect(() => {
     const filteredGamesResult = games.filter(game => 
-      game.id.toString().includes(searchQuery) ||
-      game.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (game.challenger && game.challenger.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (game.joiner && game.joiner.toLowerCase().includes(searchQuery.toLowerCase()))
+      game && game.id && game.id.toString().includes(searchQuery) ||
+      game && game.creator && game.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (game && game.challenger && game.challenger.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (game && game.joiner && game.joiner.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     setFilteredGames(filteredGamesResult)
     
     const filteredListingsResult = listings.filter(listing => 
-      listing.id.toString().includes(searchQuery) ||
-      listing.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (listing.nft_name && listing.nft_name.toLowerCase().includes(searchQuery.toLowerCase()))
+      listing && listing.id && listing.id.toString().includes(searchQuery) ||
+      listing && listing.creator && listing.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (listing && listing.nft_name && listing.nft_name.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     setFilteredListings(filteredListingsResult)
   }, [games, listings, searchQuery])
@@ -1998,7 +2041,7 @@ export default function AdminPanel() {
                         onClick={selectAllNFTs}
                         style={{ background: '#FFD700', color: '#000' }}
                       >
-                        Select All NFTs ({contractNFTs.filter(nft => nft.nftContract !== '0x0000000000000000000000000000000000000000').length})
+                        Select All NFTs ({contractNFTs.filter(nft => nft && nft.nftContract && nft.nftContract !== '0x0000000000000000000000000000000000000000').length})
                       </Button>
                       <Button 
                         onClick={deselectAllNFTs}
