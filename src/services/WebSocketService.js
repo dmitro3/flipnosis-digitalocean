@@ -1,8 +1,16 @@
-// WebSocket Service - Clean WebSocket-only implementation
+// WebSocket Service - Clean WebSocket-only implementation with Singleton pattern
 import { getWsUrl } from '../config/api'
+
+// Singleton instance
+let instance = null
 
 class WebSocketService {
   constructor() {
+    // Prevent multiple instances
+    if (instance) {
+      return instance
+    }
+    
     this.socket = null
     this.connected = false
     this.connecting = false
@@ -16,6 +24,17 @@ class WebSocketService {
     this.messageQueue = []
     this.pingInterval = null
     this.reconnectTimer = null
+    
+    // Set instance
+    instance = this
+  }
+
+  // Static method to get singleton instance
+  static getInstance() {
+    if (!instance) {
+      instance = new WebSocketService()
+    }
+    return instance
   }
 
   async connect(gameId, address) {
@@ -227,11 +246,18 @@ class WebSocketService {
 
   notifyHandlers(eventType, data) {
     const handlers = this.messageHandlers.get(eventType) || []
-    handlers.forEach(handler => {
+    handlers.forEach((handler, index) => {
       try {
+        // Validate handler is actually a function
+        if (typeof handler !== 'function') {
+          console.error(`❌ Invalid handler for ${eventType} at index ${index}:`, handler)
+          return
+        }
         handler(data)
       } catch (error) {
-        console.error(`❌ Error in ${eventType} handler:`, error)
+        console.error(`❌ Error in ${eventType} handler at index ${index}:`, error)
+        console.error('Handler:', handler)
+        console.error('Data:', data)
       }
     })
   }
