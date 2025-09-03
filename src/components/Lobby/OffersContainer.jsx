@@ -284,14 +284,7 @@ const OffersContainer = ({
 
   // Auto-show deposit overlay when game status is waiting_challenger_deposit and current user is challenger
   useEffect(() => {
-    console.log('🔍 Checking auto-show deposit overlay:', {
-      status: gameData?.status,
-      challenger: gameData?.challenger,
-      address: address,
-      showDepositOverlay: showDepositOverlay,
-      isChallenger: gameData?.challenger && address && 
-                   gameData.challenger.toLowerCase() === address.toLowerCase()
-    })
+    // Checking auto-show deposit overlay
     
     if (gameData?.status === 'waiting_challenger_deposit' && 
         gameData?.challenger && 
@@ -317,16 +310,16 @@ const OffersContainer = ({
   useEffect(() => {
     if (!gameId || !address) return
 
-    console.log('🔌 Setting up WebSocket for real-time offers...')
+    // Setting up WebSocket for real-time offers
     
     // Get WebSocket service - try multiple sources
     let ws = null
     if (socket && typeof socket === 'object') {
       ws = socket
-      console.log('🔌 Using provided socket prop')
+      // Using provided socket prop
     } else if (window.FlipnosisWS) {
       ws = window.FlipnosisWS
-      console.log('🔌 Using global WebSocket service')
+              // Using global WebSocket service
     } else {
       console.error('❌ No WebSocket service available')
       return
@@ -338,15 +331,15 @@ const OffersContainer = ({
         // Check if already connected
         const isConnected = ws.isConnected ? ws.isConnected() : ws.connected
         if (!isConnected) {
-          console.log('🔌 Connecting to WebSocket...')
+          // Connecting to WebSocket
           if (ws.connect) {
             await ws.connect(`game_${gameId}`, address)
-            console.log('✅ WebSocket connected for real-time offers')
+            // WebSocket connected for real-time offers
           } else {
             console.warn('⚠️ WebSocket service has no connect method')
           }
         } else {
-          console.log('✅ WebSocket already connected')
+          // WebSocket already connected
         }
         setIsConnected(true)
       } catch (error) {
@@ -643,7 +636,7 @@ const OffersContainer = ({
       const ws = socket || window.FlipnosisWS
       const isConnected = ws && (ws.isConnected ? ws.isConnected() : ws.connected)
       
-      console.log('🔍 Offers: WebSocket connection check:', isConnected)
+      // Offers: WebSocket connection check
       
       if (isConnected) {
         // Send via WebSocket
@@ -717,15 +710,7 @@ const OffersContainer = ({
   }
 
   const handleAcceptOffer = async (offer) => {
-    console.log('🔍 Accept offer attempt:', { 
-      isCreator: isCreator(), 
-      connected, 
-      hasSocket: !!socket,
-      socketConnected: socket?.connected,
-      socketObject: socket,
-      offer,
-      gameData: gameData?.id || gameData?.listing_id 
-    })
+    // Accept offer attempt
     
     if (!isCreator()) {
       console.error('❌ Cannot accept offer: not creator')
@@ -811,14 +796,7 @@ const OffersContainer = ({
   const renderOfferContent = (offer) => {
     const creatorCheck = isCreator()
     
-    console.log('🔍 Rendering offer:', {
-      offerType: offer.type,
-      isCreator: creatorCheck,
-      currentAddress: address,
-      gameCreator: gameData?.creator,
-      gameDataKeys: Object.keys(gameData || {}),
-      offer: offer
-    })
+    // Rendering offer
     
     // Determine offer type
     let offerType = offer.type
@@ -833,7 +811,7 @@ const OffersContainer = ({
       hour12: true
     })
     
-    console.log('🔍 Rendering offer input, shouldShowOfferInput:', shouldShowOfferInput())
+    // Rendering offer input
     
     switch (offerType) {
       case 'crypto_offer':
@@ -881,13 +859,7 @@ const OffersContainer = ({
             {/* Accept button - show for creators with detailed logging */}
             {(() => {
               const shouldShowAccept = isCreator()
-              console.log('🔍 NFT offer accept button decision:', {
-                shouldShowAccept,
-                isCreatorResult: isCreator(),
-                currentAddress: address,
-                gameCreator: gameData?.creator,
-                gameStatus: gameData?.status
-              })
+                  // NFT offer accept button decision
               return shouldShowAccept
             })() && (
               <OfferActions>
@@ -985,26 +957,7 @@ const OffersContainer = ({
     )
   }
 
-  // Debug logging
-  console.log('🔍 OffersContainer Debug:', {
-    isCreator: isCreator(),
-    gameStatus: gameData?.status,
-    gamePrice,
-    minOfferAmount,
-    shouldShowInput: shouldShowOfferInput(),
-    isConnected: walletIsConnected,
-    connected,
-    hasSocket: !!socket,
-    socketReadyState: socket?.readyState,
-    // Additional debug info
-    currentAddress: address,
-    gameCreator: gameData?.creator,
-          gameCreatorAddress: gameData?.creator,
-    gameDataKeys: gameData ? Object.keys(gameData) : 'no gameData',
-    offerCount: offers?.length || 0,
-    hasIsCreatorProp: !!isCreatorProp,
-    isCreatorPropType: typeof isCreatorProp
-  })
+  // Debug logging removed for performance
 
   return (
     <OffersContainerStyled>
@@ -1028,14 +981,14 @@ const OffersContainer = ({
       )}
 
       {/* Offer Input - Available to non-creators when game is waiting for challenger */}
-      {console.log('🔍 Rendering offer input, shouldShowOfferInput:', shouldShowOfferInput())}
+
       {shouldShowOfferInput() && (
         <OfferInputContainer>
           <OfferInput
             type="text"
             value={cryptoOffer}
             onChange={(e) => {
-              console.log('🔍 Input onChange:', e.target.value)
+              // Input onChange
               // Only allow digits and decimal point
               const value = e.target.value.replace(/[^0-9.]/g, '')
               // Prevent multiple decimal points
@@ -1053,7 +1006,7 @@ const OffersContainer = ({
           />
           <OfferButton
             onClick={() => {
-              console.log('🔍 Button clicked, cryptoOffer:', cryptoOffer, 'isSubmittingOffer:', isSubmittingOffer)
+              // Button clicked
               handleSubmitCryptoOffer()
             }}
             disabled={!cryptoOffer.trim() || isSubmittingOffer}
