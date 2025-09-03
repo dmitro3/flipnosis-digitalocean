@@ -26,8 +26,8 @@ try {
 }
 
 # Ensure hetzner remote exists
-$remotes = git remote | Out-String
-if ($remotes -notmatch "(^|\n)hetzner(\n|$)") {
+$remotes = git remote
+if ($remotes -notcontains "hetzner") {
   throw "Missing 'hetzner' remote. Run setup script: .\\deployment\\setup-hetzner-git-deploy.ps1 -ServerIP <IP>"
 }
 
