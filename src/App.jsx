@@ -129,9 +129,13 @@ function App() {
           // Close any open modals
           window.dispatchEvent(new CustomEvent('closeAllModals'))
           
-          // Navigate to game
+          // Navigate to game using React Router (no page reload)
           setTimeout(() => {
-            window.location.href = `/game/${gameId}`
+            // Use React Router navigation instead of window.location.href
+            // This prevents page reloads and component re-mounting
+            window.dispatchEvent(new CustomEvent('navigateToGame', {
+              detail: { gameId }
+            }))
           }, 100)
         }
       }

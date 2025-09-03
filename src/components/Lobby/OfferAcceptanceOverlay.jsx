@@ -272,15 +272,7 @@ const OfferAcceptanceOverlay = ({
     }
   }
 
-  console.log('🎯 OfferAcceptanceOverlay render:', { 
-    isVisible, 
-    acceptedOffer: !!acceptedOffer, 
-    timeLeft,
-    acceptedOfferKeys: acceptedOffer ? Object.keys(acceptedOffer) : [],
-    acceptedOfferData: acceptedOffer,
-    gameDataPrice: gameData?.payment_amount,
-    gameDataPriceUsd: gameData?.price_usd
-  })
+  // OfferAcceptanceOverlay render
   
   if (!isVisible || !acceptedOffer) return null
 
