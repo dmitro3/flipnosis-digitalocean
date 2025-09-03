@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ThemeProvider } from '@emotion/react'
 import styled from '@emotion/styled'
@@ -399,17 +399,22 @@ const GameLobby = () => {
 
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
-    const handleLobbyRefresh = useCallback((event) => {
+    const handleLobbyRefresh = (event) => {
       console.log('🔄 Lobby refresh triggered:', event.detail)
       loadGameData() // Refresh game data to check for countdown
-    }, [loadGameData])
+    }
 
     window.addEventListener('lobbyRefresh', handleLobbyRefresh)
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
-  }, [loadGameData]) // Only depend on loadGameData function
+  }, []) // Empty dependency array since loadGameData is stable
 
   // Watch for game starting (both players deposited) - transport directly to flip suite
   useEffect(() => {
+    // Only run if we have game data and haven't already triggered
+    if (!gameData || countdownTriggered) {
+      return
+    }
+
     console.log('🔍 Game start check running...')
     console.log('🔍 gameData exists:', !!gameData)
     
@@ -463,7 +468,7 @@ const GameLobby = () => {
     const timeoutId = setTimeout(checkGameStart, 200)
     
     return () => clearTimeout(timeoutId)
-  }, [gameData, address, isCreator, isJoiner, countdownTriggered])
+  }, [gameData?.status, gameData?.creator_deposited, gameData?.challenger_deposited, countdownTriggered, gameId, address]) // Fixed dependencies
   
   // Countdown is no longer used - players transport directly to flip suite
 
