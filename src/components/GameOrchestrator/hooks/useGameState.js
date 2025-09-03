@@ -206,11 +206,11 @@ export const useGameState = (gameId, address) => {
         return
       }
 
-      const responseText = await response.text()
       let data
       try {
-        data = JSON.parse(responseText)
+        data = await response.json()
       } catch (err) {
+        console.error('Failed to parse game data JSON:', err)
         setError('Invalid response from server. Please try again.')
         setLoading(false)
         return

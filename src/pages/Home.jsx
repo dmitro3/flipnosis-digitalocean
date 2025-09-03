@@ -409,30 +409,53 @@ const Home = () => {
     try {
       setLoading(true)
       setError(null)
+      
+      console.log('🔍 Fetching data from:', getApiUrl('/listings'))
+      
       // Fetch listings
       const listingsResponse = await fetch(getApiUrl('/listings'))
+      console.log('📊 Listings response status:', listingsResponse.status, listingsResponse.statusText)
+      
       let listings
+      if (!listingsResponse.ok) {
+        const errorText = await listingsResponse.text()
+        console.error('❌ Listings API error response:', errorText)
+        throw new Error(`Listings API error: ${listingsResponse.status} ${listingsResponse.statusText}`)
+      }
+      
       try {
         listings = await listingsResponse.json()
+        console.log('✅ Listings loaded:', listings?.length || 0, 'items')
       } catch (e) {
-        const raw = await listingsResponse.text()
-        console.error('Listings response not JSON:', raw)
-        throw new Error('Listings API did not return JSON. See console for details.')
+        console.error('❌ Listings response not JSON:', e)
+        throw new Error('Listings API did not return valid JSON')
       }
+      
+      console.log('🔍 Fetching data from:', getApiUrl('/games'))
+      
       // Fetch games
       const gamesResponse = await fetch(getApiUrl('/games'))
+      console.log('📊 Games response status:', gamesResponse.status, gamesResponse.statusText)
+      
       let games
+      if (!gamesResponse.ok) {
+        const errorText = await gamesResponse.text()
+        console.error('❌ Games API error response:', errorText)
+        throw new Error(`Games API error: ${gamesResponse.status} ${gamesResponse.statusText}`)
+      }
+      
       try {
         games = await gamesResponse.json()
+        console.log('✅ Games loaded:', games?.length || 0, 'items')
       } catch (e) {
-        const raw = await gamesResponse.text()
-        console.error('Games response not JSON:', raw)
-        throw new Error('Games API did not return JSON. See console for details.')
+        console.error('❌ Games response not JSON:', e)
+        throw new Error('Games API did not return valid JSON')
       }
-      setListings(listings)
-      setGames(games)
+      
+      setListings(listings || [])
+      setGames(games || [])
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('❌ Error fetching data:', error)
       setError('Failed to load games and listings: ' + error.message)
       showError('Failed to load games and listings: ' + error.message)
     } finally {
