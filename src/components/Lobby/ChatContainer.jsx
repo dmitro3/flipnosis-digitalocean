@@ -315,47 +315,22 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
       }
     }
 
-    // Initial load
+    // Initial load only - no more polling!
     refreshChat()
     
-    // Set up interval for auto-refresh
-    const interval = setInterval(refreshChat, 2000)
-    
-    return () => clearInterval(interval)
+    // WebSocket handles real-time updates, no polling needed
   }, [gameId, address])
 
-  // WebSocket connection for real-time updates
+  // Listen for chat messages from unified WebSocket (no more individual WebSocket management)
   useEffect(() => {
     if (!gameId || !address) return
 
-    console.log('🔌 Setting up WebSocket for real-time chat...')
+    console.log('🔌 ChatContainer: Listening for chat messages from unified WebSocket...')
     
-    const ws = socket || window.FlipnosisWS
-    if (!ws) {
-      console.error('❌ WebSocket service not available')
-      return
-    }
-
-    // Connect to WebSocket
-    const connectToWebSocket = async () => {
-      try {
-        if (!ws.isConnected()) {
-          console.log('🔌 Connecting to WebSocket...')
-          await ws.connect(`game_${gameId}`, address)
-          console.log('✅ WebSocket connected for real-time chat')
-        }
-        setIsConnected(true)
-      } catch (error) {
-        console.error('❌ WebSocket connection failed:', error)
-        setIsConnected(false)
-      }
-    }
-
-    connectToWebSocket()
-
-    // Real-time message handler
-    const handleChatMessage = (data) => {
-      console.log('📨 Real-time message received:', data)
+    // Listen for chat messages broadcast from GameLobby
+    const handleChatMessage = (event) => {
+      const data = event.detail
+      console.log('📨 Chat message received via unified WebSocket:', data)
       
       if (data.type === 'chat_message') {
         const newMessageObj = {
@@ -366,26 +341,23 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
           isCurrentUser: (data.from || data.sender) === address
         }
         
-        console.log('📝 Adding real-time message:', newMessageObj)
+        console.log('📝 Adding chat message to state:', newMessageObj)
         setMessages(prev => [...prev, newMessageObj])
       }
     }
 
-    // Register real-time handler
-    if (ws && typeof ws.on === 'function') {
-      ws.on('chat_message', handleChatMessage)
-      console.log('✅ Chat message handler registered with WebSocket')
-    } else {
-      console.error('❌ WebSocket service does not have "on" method:', ws)
+    // Register event listener
+    window.addEventListener('chatMessageReceived', handleChatMessage)
+    
+    // Set connection status based on socket prop
+    if (socket && connected) {
+      setIsConnected(true)
     }
 
     return () => {
-      if (ws && typeof ws.off === 'function') {
-        ws.off('chat_message', handleChatMessage)
-        console.log('✅ Chat message handler unregistered from WebSocket')
-      }
+      window.removeEventListener('chatMessageReceived', handleChatMessage)
     }
-  }, [gameId, address, socket])
+  }, [gameId, address, socket, connected])
 
   const sendMessage = (e) => {
     e.preventDefault()

@@ -14,7 +14,6 @@ export const useLobbyState = (gameId, address) => {
   
   // Countdown and deposit state
   const [depositTimeLeft, setDepositTimeLeft] = useState(null)
-  const [countdownInterval, setCountdownInterval] = useState(null)
   
   // Offer state
   const [newOffer, setNewOffer] = useState({ price: '', message: '' })
@@ -157,27 +156,11 @@ export const useLobbyState = (gameId, address) => {
     }
   }
 
-  // Countdown functions
+  // Countdown functions - now handled via WebSocket events
   const startDepositCountdown = (deadline) => {
-    if (countdownInterval) {
-      clearInterval(countdownInterval)
-    }
-
-    const interval = setInterval(() => {
-      const now = new Date().getTime()
-      const deadlineTime = new Date(deadline).getTime()
-      const timeLeft = Math.max(0, deadlineTime - now)
-
-      if (timeLeft === 0) {
-        clearInterval(interval)
-        setDepositTimeLeft(0)
-        loadGameData()
-      } else {
-        setDepositTimeLeft(Math.floor(timeLeft / 1000))
-      }
-    }, 1000)
-
-    setCountdownInterval(interval)
+    // WebSocket events will handle countdown updates
+    // No more polling needed
+    console.log('🎯 Countdown started via WebSocket event:', deadline)
   }
 
   const formatTimeLeft = (seconds) => {
@@ -330,14 +313,7 @@ export const useLobbyState = (gameId, address) => {
   // WebSocket-based real-time updates replace the old polling system
   // No more setInterval calls that could interfere with real-time updates
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownInterval) {
-        clearInterval(countdownInterval)
-      }
-    }
-  }, [countdownInterval])
+  // No more intervals to clean up - WebSocket handles everything
 
   return {
     // State

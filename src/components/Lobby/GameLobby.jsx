@@ -177,10 +177,10 @@ const GameLobby = () => {
   const [wsConnected, setWsConnected] = useState(false)
   const [wsRef, setWsRef] = useState(null)
 
-  // Connect to lobby when component mounts
+  // UNIFIED WebSocket connection - handles everything for all child components
   useEffect(() => {
     const initLobby = async () => {
-      console.log('🔌 GameLobby: Attempting WebSocket connection...', { gameId, address })
+      console.log('🔌 GameLobby: Setting up UNIFIED WebSocket connection...', { gameId, address })
       
       if (!gameId || !address) {
         console.log('🔌 GameLobby: Missing gameId or address, skipping connection')
@@ -191,46 +191,43 @@ const GameLobby = () => {
       console.log('🔌 GameLobby: Connecting to room:', lobbyRoomId)
       
       try {
-        // Make sure to properly await connection
+        // Single WebSocket connection for everything
         await webSocketService.connect(lobbyRoomId, address)
-        console.log('✅ GameLobby: WebSocket connected successfully')
+        console.log('✅ GameLobby: UNIFIED WebSocket connected successfully')
         setWsConnected(true)
         
-        // Register message handlers for game state changes only
+        // Register ALL message handlers for the entire application
         webSocketService.on('game_awaiting_challenger_deposit', handleGameAwaitingDeposit)
         webSocketService.on('deposit_confirmed', handleDepositConfirmed)
         webSocketService.on('game_started', handleGameStarted)
-        
-        // Add handlers for offer acceptance to trigger tab switching
         webSocketService.on('offer_accepted', handleOfferAccepted)
         webSocketService.on('your_offer_accepted', handleYourOfferAccepted)
         webSocketService.on('accept_crypto_offer', handleOfferAccepted)
         webSocketService.on('game_status_changed', handleGameStatusChanged)
-        
-        console.log('✅ GameLobby: Game state message handlers registered')
-        
-        // Debug: Log all incoming messages to see what we're receiving
         webSocketService.on('room_joined', (data) => {
           console.log('✅ GameLobby: Room joined confirmation received:', data)
         })
-        
-        // Debug: Log any other messages we might be missing
         webSocketService.on('crypto_offer', (data) => {
           console.log('💰 GameLobby: Crypto offer received:', data)
+          // Broadcast to child components via custom events
+          window.dispatchEvent(new CustomEvent('cryptoOfferReceived', { detail: data }))
         })
-        
+        webSocketService.on('chat_message', (data) => {
+          console.log('💬 GameLobby: Chat message received:', data)
+          // Broadcast to child components via custom events
+          window.dispatchEvent(new CustomEvent('chatMessageReceived', { detail: data }))
+        })
+        webSocketService.on('nft_offer', (data) => {
+          console.log('💎 GameLobby: NFT offer received:', data)
+          // Broadcast to child components via custom events
+          window.dispatchEvent(new CustomEvent('nftOfferReceived', { detail: data }))
+        })
         webSocketService.on('system', (data) => {
           console.log('🔧 GameLobby: System message received:', data)
         })
         
-        // Debug: Check what room we're connected to
-        console.log('🔍 GameLobby: Connected to room:', lobbyRoomId)
-        console.log('🔍 GameLobby: WebSocket service state:', {
-          connected: webSocketService.connected,
-          currentRoom: webSocketService.currentRoom,
-          gameId: webSocketService.gameId,
-          address: webSocketService.address
-        })
+        console.log('✅ GameLobby: ALL message handlers registered - UNIFIED WebSocket ready')
+        
       } catch (error) {
         console.error('❌ GameLobby: WebSocket connection failed:', error)
         setWsConnected(false)
@@ -240,17 +237,19 @@ const GameLobby = () => {
     initLobby()
     
     return () => {
-      console.log('🔌 GameLobby: Cleaning up WebSocket handlers')
+      console.log('🔌 GameLobby: Cleaning up UNIFIED WebSocket handlers')
       webSocketService.off('game_awaiting_challenger_deposit')
       webSocketService.off('deposit_confirmed')
       webSocketService.off('game_started')
-      webSocketService.off('room_joined')
-      webSocketService.off('crypto_offer')
-      webSocketService.off('system')
       webSocketService.off('offer_accepted')
       webSocketService.off('your_offer_accepted')
       webSocketService.off('accept_crypto_offer')
       webSocketService.off('game_status_changed')
+      webSocketService.off('room_joined')
+      webSocketService.off('crypto_offer')
+      webSocketService.off('chat_message')
+      webSocketService.off('nft_offer')
+      webSocketService.off('system')
     }
   }, [gameId, address])
 

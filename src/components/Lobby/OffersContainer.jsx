@@ -304,66 +304,30 @@ const OffersContainer = ({
     }
   }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay to prevent infinite loop
 
-  // WebSocket connection for real-time updates (replaces old polling system)
+  // Listen for offers and events from unified WebSocket (no more individual WebSocket management)
   useEffect(() => {
     if (!gameId || !address) return
 
-    console.log('🔌 Setting up WebSocket for real-time offers...')
+    console.log('🔌 OffersContainer: Listening for offers from unified WebSocket...')
     
-    // Get WebSocket service - try multiple sources
-    let ws = null
-    if (socket && typeof socket === 'object') {
-      ws = socket
-      console.log('🔌 Using provided socket prop')
-    } else if (window.FlipnosisWS) {
-      ws = window.FlipnosisWS
-      console.log('🔌 Using global WebSocket service')
-    } else {
-      console.error('❌ No WebSocket service available')
-      return
-    }
-
-    // Connect to WebSocket
-    const connectToWebSocket = async () => {
-      try {
-        // Check if already connected
-        const isConnected = ws && (ws.isConnected ? ws.isConnected() : ws.connected)
-        if (!isConnected) {
-          console.log('🔌 Connecting to WebSocket...')
-          if (ws && ws.connect && typeof ws.connect === 'function') {
-            await ws.connect(`game_${gameId}`, address)
-            console.log('✅ WebSocket connected for real-time offers')
-          } else {
-            console.warn('⚠️ WebSocket service has no connect method or is not a function')
-          }
-        } else {
-          console.log('✅ WebSocket already connected')
-        }
-      } catch (error) {
-        console.error('❌ WebSocket connection failed:', error)
-      }
-    }
-
-    connectToWebSocket()
-
-    // Real-time offer handler
-    const handleOffer = (data) => {
-      console.log('📨 Real-time offer received:', data)
+    // Listen for crypto offers broadcast from GameLobby
+    const handleCryptoOffer = (event) => {
+      const data = event.detail
+      console.log('💰 Crypto offer received via unified WebSocket:', data)
       
-      if (data.type === 'crypto_offer' || data.type === 'nft_offer') {
+      if (data.type === 'crypto_offer') {
         const newOffer = {
-          id: data.id || Date.now() + Math.random(),
+          id: data.id || `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           type: data.type,
           address: data.address || data.offerer_address,
           offerer_address: data.address || data.offerer_address,
           cryptoAmount: data.cryptoAmount || data.amount,
           offer_price: data.cryptoAmount || data.amount,
-          nftData: data.nftData,
           timestamp: data.timestamp || new Date().toISOString(),
           created_at: data.timestamp || new Date().toISOString()
         }
         
-        console.log('📝 Adding real-time offer:', newOffer)
+        console.log('📝 Adding crypto offer to state:', newOffer)
         setOffers(prev => {
           // Check if offer already exists
           const exists = prev.find(o => o.id === newOffer.id)
@@ -376,163 +340,49 @@ const OffersContainer = ({
       }
     }
 
-    // Real-time offer acceptance handler
-    const handleOfferAcceptance = (data) => {
-      console.log('✅ Real-time offer acceptance received:', data)
+    // Listen for NFT offers broadcast from GameLobby
+    const handleNftOffer = (event) => {
+      const data = event.detail
+      console.log('💎 NFT offer received via unified WebSocket:', data)
       
-      if (data.type === 'accept_crypto_offer' || data.type === 'offer_accepted' || data.type === 'your_offer_accepted') {
-        console.log('🎯 Processing offer acceptance:', data)
-        
-        // Create accepted offer object for the deposit overlay
-        const acceptedOffer = {
-          offerer_address: data.acceptedOffer?.offerer_address || data.challenger || address,
-          cryptoAmount: data.acceptedOffer?.cryptoAmount || data.finalPrice || data.acceptedOffer?.offer_price,
-          timestamp: data.timestamp || new Date().toISOString()
+      if (data.type === 'nft_offer') {
+        const newOffer = {
+          id: data.id || `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: data.type,
+          address: data.address || data.offerer_address,
+          offerer_address: data.address || data.offerer_address,
+          nftData: data.nftData,
+          timestamp: data.timestamp || new Date().toISOString(),
+          created_at: data.timestamp || new Date().toISOString()
         }
         
-        setAcceptedOffer(acceptedOffer)
-        setShowDepositOverlay(true)
-        console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
-      }
-    }
-
-    // Handle your offer accepted event (for challenger)
-    const handleYourOfferAccepted = (data) => {
-      console.log('🎯 Your offer accepted event received:', data)
-      
-      if (data.gameId === gameData?.id) {
-        console.log('✅ Your offer was accepted, showing deposit overlay...')
-        
-        // Create accepted offer object for the deposit overlay
-        const acceptedOffer = {
-          offerer_address: address, // Current user is the offerer
-          cryptoAmount: data.data.finalPrice,
-          timestamp: data.data.timestamp
-        }
-        
-        setAcceptedOffer(acceptedOffer)
-        setShowDepositOverlay(true)
-        console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
-        
-        // Auto-switch to Lounge tab for player 2 immediately
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
-        }, 200)
-        
-        // Refresh game data
-        if (onOfferAccepted) {
-          onOfferAccepted(acceptedOffer)
-        }
-      }
-    }
-
-    // Regular event handlers inside the useEffect
-    const handleGameStatusChanged = (data) => {
-      console.log('🔄 Game status changed event received:', data)
-      
-      if (data.gameId === gameData?.id && data.data.newStatus === 'waiting_challenger_deposit') {
-        console.log('🔄 Game status changed to waiting_challenger_deposit')
-        
-        // Check if current user is the challenger
-        if (gameData?.challenger && address && 
-            gameData.challenger.toLowerCase() === address.toLowerCase()) {
-          console.log('✅ Current user is challenger, showing deposit overlay...')
-          
-          // Show deposit overlay for challenger
-          const acceptedOffer = {
-            offerer_address: address,
-            cryptoAmount: gameData.payment_amount || gameData.price_usd,
-            timestamp: data.data.timestamp
+        console.log('📝 Adding NFT offer to state:', newOffer)
+        setOffers(prev => {
+          // Check if offer already exists
+          const exists = prev.find(o => o.id === newOffer.id)
+          if (exists) {
+            console.log('📝 Offer already exists, not adding duplicate')
+            return prev
           }
-          
-          setAcceptedOffer(acceptedOffer)
-          setShowDepositOverlay(true)
-          console.log('🎯 Auto-showing deposit overlay for challenger:', acceptedOffer)
-        }
-      }
-      
-      // Handle game becoming active (both players deposited)
-      if (data.gameId === gameData?.id && data.data.newStatus === 'active') {
-        console.log('🎯 Game is now active - both players deposited!')
-        
-        // Close any open deposit overlays
-        setShowDepositOverlay(false)
-        setAcceptedOffer(null)
-        
-        // Transport both players to the game room
-        console.log('🚀 Transporting players to flip suite...')
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameData?.id, immediate: true }
-          }))
-        }, 500)
+          return [...prev, newOffer]
+        })
       }
     }
 
-    // Handle deposit confirmed event
-    const handleDepositConfirmed = (data) => {
-      console.log('💰 Deposit confirmed event received:', data)
-      
-      if (data.gameId === gameData?.id) {
-        console.log('✅ Deposit confirmed for current game')
-        
-        // Check if we're in creator waiting mode
-        if (acceptedOffer?.isCreatorWaiting) {
-          console.log('🎯 Creator was waiting, challenger deposited - transporting to game!')
-          
-          // Clear the overlay and transport to game
-          setShowDepositOverlay(false)
-          setAcceptedOffer(null)
-          
-          // Transport to flip suite
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-              detail: { gameId: gameData?.id, immediate: true }
-            }))
-          }, 1000)
-        } else {
-          console.log('🎯 Not in creator waiting mode, closing overlay')
-          setShowDepositOverlay(false)
-          setAcceptedOffer(null)
-        }
-      }
+    // Register event listeners
+    window.addEventListener('cryptoOfferReceived', handleCryptoOffer)
+    window.addEventListener('nftOfferReceived', handleNftOffer)
+    
+    // Set connection status based on socket prop
+    if (socket && connected) {
+      setIsConnected(true)
     }
 
-          // Register real-time handlers with error handling
-      try {
-        if (ws && typeof ws.on === 'function') {
-          ws.on('crypto_offer', handleOffer)
-          ws.on('nft_offer', handleOffer)
-          ws.on('accept_crypto_offer', handleOfferAcceptance)
-          ws.on('offer_accepted', handleOfferAcceptance)
-          ws.on('your_offer_accepted', handleYourOfferAccepted)
-          ws.on('game_status_changed', handleGameStatusChanged)
-          ws.on('deposit_confirmed', handleDepositConfirmed)
-          console.log('✅ WebSocket handlers registered successfully')
-        } else {
-          console.warn('⚠️ WebSocket service has no event handlers or is not available')
-        }
-      } catch (error) {
-        console.error('❌ Error registering WebSocket handlers:', error)
-      }
-
-      return () => {
-        try {
-          if (ws && typeof ws.off === 'function') {
-            ws.off('crypto_offer', handleOffer)
-            ws.off('nft_offer', handleOffer)
-            ws.off('accept_crypto_offer', handleOfferAcceptance)
-            ws.off('offer_accepted', handleOfferAcceptance)
-            ws.off('your_offer_accepted', handleYourOfferAccepted)
-            ws.off('game_status_changed', handleGameStatusChanged)
-            ws.off('deposit_confirmed', handleDepositConfirmed)
-            console.log('✅ WebSocket handlers cleaned up successfully')
-          }
-        } catch (error) {
-          console.error('❌ Error cleaning up WebSocket handlers:', error)
-        }
-      }
-  }, [gameId, address, socket]) // Removed problematic dependencies that cause re-renders
+    return () => {
+      window.removeEventListener('cryptoOfferReceived', handleCryptoOffer)
+      window.removeEventListener('nftOfferReceived', handleNftOffer)
+    }
+  }, [gameId, address, socket, connected])
 
   const isCreator = () => {
     // Use prop if available (preferred)
