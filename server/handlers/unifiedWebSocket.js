@@ -187,25 +187,38 @@ async function handleDepositConfirmed(socket, data, dbService) {
   const roomId = socketRooms.get(socket.id)
   if (!roomId) return
   
-  const depositData = {
-    type: 'deposit_confirmed',
-    gameId: data.gameId || roomId.replace('game_', ''),
-    player: data.player,
-    assetType: data.assetType,
-    transactionHash: data.transactionHash,
-    timestamp: new Date().toISOString()
-  }
+  const gameId = data.gameId || roomId.replace('game_', '')
   
-  // Broadcast to room
-  broadcastToRoom(roomId, depositData)
+  // Check if both players deposited BEFORE broadcasting
+  let bothDeposited = false
+  let gameData = null
   
-  // Check if both players deposited
   if (dbService && dbService.db) {
     try {
-      const game = await new Promise((resolve, reject) => {
+      // First update the deposit status
+      if (data.player && data.assetType) {
+        const isCreator = data.assetType === 'nft'
+        const updateField = isCreator ? 'creator_deposited' : 'challenger_deposited'
+        
+        await new Promise((resolve, reject) => {
+          dbService.db.run(
+            `UPDATE games SET ${updateField} = 1 WHERE id = ?`,
+            [gameId],
+            (err) => {
+              if (err) reject(err)
+              else resolve()
+            }
+          )
+        })
+        
+        console.log(`✅ Updated ${updateField} for game ${gameId}`)
+      }
+      
+      // Now check if both have deposited
+      gameData = await new Promise((resolve, reject) => {
         dbService.db.get(
           'SELECT * FROM games WHERE id = ?',
-          [depositData.gameId],
+          [gameId],
           (err, row) => {
             if (err) reject(err)
             else resolve(row)
@@ -213,19 +226,39 @@ async function handleDepositConfirmed(socket, data, dbService) {
         )
       })
       
-      if (game && game.creator_deposited && game.challenger_deposited) {
-        // Both deposited - game can start
-        broadcastToRoom(roomId, {
-          type: 'game_ready',
-          gameId: depositData.gameId,
-          message: 'Both players have deposited! Game starting...',
-          creator: game.creator,
-          challenger: game.challenger
-        })
-      }
+      bothDeposited = !!(gameData?.creator_deposited && gameData?.challenger_deposited)
+      console.log(`🎮 Game ${gameId} deposit status - Creator: ${gameData?.creator_deposited}, Challenger: ${gameData?.challenger_deposited}, Both: ${bothDeposited}`)
+      
     } catch (error) {
       console.error('❌ Error checking deposit status:', error)
     }
+  }
+  
+  // Broadcast deposit confirmation with bothDeposited flag
+  const depositData = {
+    type: 'deposit_confirmed',
+    gameId: gameId,
+    player: data.player,
+    assetType: data.assetType,
+    transactionHash: data.transactionHash,
+    bothDeposited: bothDeposited, // Include this crucial flag
+    timestamp: new Date().toISOString()
+  }
+  
+  broadcastToRoom(roomId, depositData)
+  
+  // If both deposited, also send game_ready event
+  if (bothDeposited && gameData) {
+    setTimeout(() => {
+      broadcastToRoom(roomId, {
+        type: 'game_ready',
+        gameId: gameId,
+        message: 'Both players have deposited! Game starting...',
+        creator: gameData.creator,
+        challenger: gameData.challenger,
+        bothDeposited: true
+      })
+    }, 500)
   }
 }
 

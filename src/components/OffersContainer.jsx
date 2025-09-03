@@ -134,6 +134,7 @@ export default function OffersContainer({
 }) {
   const [offers, setOffers] = useState([])
   const [connectionStatus, setConnectionStatus] = useState('disconnected')
+  const [hasAcceptedOffer, setHasAcceptedOffer] = useState(false) // Track if creator accepted
   const gameId = gameData?.id || gameData?.listing_id
 
   // WebSocket connection and event handling
@@ -188,11 +189,21 @@ export default function OffersContainer({
     }
 
     const handleOfferAccepted = (data) => {
-      console.log('🎯 Offer accepted:', data)
+      console.log('🎯 Offer accepted event:', data)
       
       if (data.gameId === gameId) {
-        // If we're the challenger, show deposit overlay
-        if (data.challenger?.toLowerCase() === address?.toLowerCase()) {
+        // Check if we are the creator (who accepted the offer)
+        if (isCreator && !hasAcceptedOffer) {
+          console.log('✅ Creator (Player 1) accepted offer - keeping deposit overlay')
+          // Creator needs to deposit NFT - DO NOT close overlay
+          setHasAcceptedOffer(true)
+          
+          // The acceptedOffer and showDepositOverlay should already be set
+          // from handleAcceptOffer function, so we don't change them here
+          
+        } else if (data.challenger?.toLowerCase() === address?.toLowerCase()) {
+          // We are the challenger whose offer was accepted
+          console.log('✅ Challenger (Player 2) offer accepted - showing deposit overlay')
           showSuccess('Your offer was accepted! Please deposit crypto.')
           setAcceptedOffer({
             offerer_address: data.challenger,
@@ -210,34 +221,39 @@ export default function OffersContainer({
     }
 
     const handleYourOfferAccepted = (data) => {
-      console.log('🎉 Your offer was accepted!', data)
-      showSuccess('Your offer was accepted! Please deposit crypto.')
-      
-      setAcceptedOffer({
-        offerer_address: address,
-        cryptoAmount: gameData?.price_usd || gameData?.asking_price,
-        timestamp: new Date().toISOString()
-      })
-      setShowDepositOverlay(true)
-      
-      // Switch to Lounge tab
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
-      }, 200)
+      // This is specifically for the challenger
+      if (!isCreator) {
+        console.log('🎉 Your offer was accepted! (Player 2)', data)
+        showSuccess('Your offer was accepted! Please deposit crypto.')
+        
+        setAcceptedOffer({
+          offerer_address: address,
+          cryptoAmount: gameData?.price_usd || gameData?.asking_price,
+          timestamp: new Date().toISOString()
+        })
+        setShowDepositOverlay(true)
+        
+        // Switch to Lounge tab
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+        }, 200)
+      }
     }
 
     const handleGameStatusChanged = (data) => {
       console.log('📊 Game status changed:', data)
       
       if (data.gameId === gameId) {
+        // Only show deposit overlay for challenger on this status
         if (data.newStatus === 'waiting_challenger_deposit' && 
-            gameData?.challenger?.toLowerCase() === address?.toLowerCase()) {
-          // We're the challenger and need to deposit
+            gameData?.challenger?.toLowerCase() === address?.toLowerCase() &&
+            !isCreator) {
           if (!showDepositOverlay) {
             setShowDepositOverlay(true)
             showInfo('Please deposit crypto to start the game')
           }
         }
+        // DO NOT close overlay for creator on status changes
       }
     }
 
@@ -245,10 +261,12 @@ export default function OffersContainer({
       console.log('✅ Deposit confirmed:', data)
       
       if (data.gameId === gameId) {
-        // Check if both players have deposited
-        if (data.bothDeposited) {
+        // Only proceed if BOTH players have deposited
+        if (data.bothDeposited === true) {
+          console.log('🎮 Both players deposited - starting game!')
           showSuccess('Both players deposited! Game starting...')
           setShowDepositOverlay(false)
+          setHasAcceptedOffer(false) // Reset for next game
           
           // Transport to flip suite
           setTimeout(() => {
@@ -256,6 +274,9 @@ export default function OffersContainer({
               detail: { gameId, immediate: true }
             }))
           }, 1000)
+        } else {
+          console.log(`⏳ Waiting for ${data.player === address ? 'other player' : 'your'} deposit`)
+          // Keep overlay open until both deposits confirmed
         }
       }
     }
@@ -286,9 +307,9 @@ export default function OffersContainer({
       webSocketService.off('connected', handleConnectionStatus)
       webSocketService.off('disconnected', handleConnectionStatus)
     }
-  }, [gameId, address, gameData?.challenger, gameData?.price_usd, gameData?.asking_price])
+  }, [gameId, address, isCreator, gameData?.challenger, gameData?.price_usd, gameData?.asking_price, hasAcceptedOffer])
 
-  // Handle accepting an offer
+  // Handle accepting an offer (Player 1 / Creator)
   const handleAcceptOffer = async (offer) => {
     if (!isCreator) {
       showError('Only the game creator can accept offers')
@@ -296,7 +317,27 @@ export default function OffersContainer({
     }
 
     try {
-      // Send via WebSocket
+      // Set the accepted offer and show deposit overlay FIRST
+      console.log('🎯 Creator accepting offer, showing deposit overlay')
+      
+      // Set accepted offer details for creator
+      setAcceptedOffer({
+        offerer_address: offer.offerer_address,
+        cryptoAmount: offer.offer_price,
+        timestamp: new Date().toISOString(),
+        isCreatorDeposit: true // Mark this as creator's deposit
+      })
+      
+      // Show deposit overlay for creator immediately
+      setShowDepositOverlay(true)
+      setHasAcceptedOffer(true)
+      
+      // Switch to Lounge tab for creator
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+      }, 200)
+
+      // Send accept offer message via WebSocket
       webSocketService.send({
         type: 'accept_offer',
         gameId,
@@ -315,16 +356,23 @@ export default function OffersContainer({
       })
 
       if (response.ok) {
-        showSuccess('Offer accepted! Waiting for deposits...')
+        showSuccess('Offer accepted! Please deposit your NFT.')
         
         // Remove accepted offer from list
         setOffers(prev => prev.filter(o => o.id !== offer.id))
       } else {
+        // If API fails, revert the UI changes
+        setShowDepositOverlay(false)
+        setHasAcceptedOffer(false)
         throw new Error('Failed to accept offer')
       }
     } catch (error) {
       console.error('❌ Error accepting offer:', error)
       showError('Failed to accept offer')
+      // Revert UI changes on error
+      setShowDepositOverlay(false)
+      setHasAcceptedOffer(false)
+      setAcceptedOffer(null)
     }
   }
 
@@ -354,7 +402,7 @@ export default function OffersContainer({
                     {offer.offerer_address?.slice(0, 6)}...{offer.offerer_address?.slice(-4)}
                   </OfferAddress>
                 </div>
-                {isCreator && (
+                {isCreator && !hasAcceptedOffer && (
                   <AcceptButton
                     onClick={() => handleAcceptOffer(offer)}
                     disabled={connectionStatus !== 'connected'}
