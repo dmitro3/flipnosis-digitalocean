@@ -56,18 +56,6 @@ function App() {
       const errorString = event.error?.toString() || '';
       const stackString = event.error?.stack || '';
       
-      // Block WebSocket function reference errors
-      if (
-        errorString.includes('v is not a function') ||
-        errorString.includes('is not a function') ||
-        stackString.includes('v is not a function')
-      ) {
-        console.warn('⚠️ WebSocket function reference error blocked:', event.error?.message);
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return false;
-      }
-      
       if (
         stackString.includes('chrome-extension://') ||
         errorString.includes('chrome-extension://') ||
@@ -87,18 +75,6 @@ function App() {
     const handleUnhandledRejection = (event) => {
       const reasonString = event.reason?.toString() || '';
       const stackString = event.reason?.stack || '';
-      
-      // Block WebSocket function reference errors
-      if (
-        reasonString.includes('v is not a function') ||
-        reasonString.includes('is not a function') ||
-        stackString.includes('v is not a function')
-      ) {
-        console.warn('⚠️ WebSocket function reference rejection blocked:', event.reason?.message);
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return false;
-      }
       
       if (
         stackString.includes('chrome-extension://') ||
@@ -153,13 +129,9 @@ function App() {
           // Close any open modals
           window.dispatchEvent(new CustomEvent('closeAllModals'))
           
-          // Navigate to game using React Router (no page reload)
+          // Navigate to game
           setTimeout(() => {
-            // Use React Router navigation instead of window.location.href
-            // This prevents page reloads and component re-mounting
-            window.dispatchEvent(new CustomEvent('navigateToGame', {
-              detail: { gameId }
-            }))
+            window.location.href = `/game/${gameId}`
           }, 100)
         }
       }

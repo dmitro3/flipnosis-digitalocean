@@ -80,7 +80,7 @@ const ChatBelowPlayer2 = styled.div`
 
 
 const GamePage = () => {
-  // GamePage component loaded
+  console.log('🚀 GAMEPAGE ORCHESTRATOR LOADED - NEW ARCHITECTURE!')
   
   const { gameId } = useParams()
   const navigate = useNavigate()
@@ -127,26 +127,9 @@ const GamePage = () => {
       }))
     }
 
-    // Listen for global navigation events (prevents page reloads)
-    const handleNavigateToGame = (event) => {
-      console.log('🎯 Received navigateToGame event:', event.detail)
-      const { gameId: targetGameId } = event.detail
-      
-      // Only navigate if it's a different game
-      if (targetGameId && targetGameId !== gameId) {
-        console.log('🔄 Navigating to different game:', targetGameId)
-        navigate(`/game/${targetGameId}`)
-      }
-    }
-
     window.addEventListener('enterGameRoom', handleEnterGameRoom)
-    window.addEventListener('navigateToGame', handleNavigateToGame)
-    
-    return () => {
-      window.removeEventListener('enterGameRoom', handleEnterGameRoom)
-      window.removeEventListener('navigateToGame', handleNavigateToGame)
-    }
-  }, [gameId, navigate])
+    return () => window.removeEventListener('enterGameRoom', handleEnterGameRoom)
+  }, [])
 
   // Update coin images when game data changes
   useEffect(() => {

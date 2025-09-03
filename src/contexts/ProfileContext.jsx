@@ -181,7 +181,7 @@ export const ProfileProvider = ({ children }) => {
     setLoading(prev => ({ ...prev, [playerAddress]: true }))
 
     try {
-      // Fetching profile
+      console.log('🌐 Fetching profile from:', getApiUrl(`/profile/${playerAddress}`))
       const response = await fetch(getApiUrl(`/profile/${playerAddress}`))
       console.log('🌐 Profile API response:', { 
         status: response.status, 

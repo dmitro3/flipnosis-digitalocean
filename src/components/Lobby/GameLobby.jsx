@@ -180,7 +180,7 @@ const GameLobby = () => {
   // Connect to lobby when component mounts
   useEffect(() => {
     const initLobby = async () => {
-      // GameLobby: Attempting WebSocket connection
+      console.log('🔌 GameLobby: Attempting WebSocket connection...', { gameId, address })
       
       if (!gameId || !address) {
         console.log('🔌 GameLobby: Missing gameId or address, skipping connection')
@@ -224,7 +224,13 @@ const GameLobby = () => {
         })
         
         // Debug: Check what room we're connected to
-        // GameLobby: Connected to room
+        console.log('🔍 GameLobby: Connected to room:', lobbyRoomId)
+        console.log('🔍 GameLobby: WebSocket service state:', {
+          connected: webSocketService.connected,
+          currentRoom: webSocketService.currentRoom,
+          gameId: webSocketService.gameId,
+          address: webSocketService.address
+        })
       } catch (error) {
         console.error('❌ GameLobby: WebSocket connection failed:', error)
         setWsConnected(false)
@@ -234,7 +240,7 @@ const GameLobby = () => {
     initLobby()
     
     return () => {
-              // GameLobby: Cleaning up WebSocket handlers
+      console.log('🔌 GameLobby: Cleaning up WebSocket handlers')
       webSocketService.off('game_awaiting_challenger_deposit')
       webSocketService.off('deposit_confirmed')
       webSocketService.off('game_started')
@@ -395,13 +401,13 @@ const GameLobby = () => {
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
     const handleLobbyRefresh = (event) => {
-      // Lobby refresh triggered
+      console.log('🔄 Lobby refresh triggered:', event.detail)
       loadGameData() // Refresh game data to check for countdown
     }
 
     window.addEventListener('lobbyRefresh', handleLobbyRefresh)
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
-  }, []) // Remove loadGameData dependency to prevent infinite re-renders
+  }, [loadGameData]) // Add loadGameData back to deps
 
   // Watch for game starting (both players deposited) - transport directly to flip suite
   useEffect(() => {
@@ -411,7 +417,16 @@ const GameLobby = () => {
     // Game start check running
     console.log('🔍 gameData exists:', !!gameData)
     
-    // Game Start Debug
+    // Debug logging to see what's happening
+    console.log('🔍 Game Start Debug:', {
+      status: gameData?.status,
+      creator_deposited: gameData?.creator_deposited,
+      challenger_deposited: gameData?.challenger_deposited,
+      countdownTriggered: countdownTriggered,
+      isCreator: isCreator(),
+      isJoiner: isJoiner(),
+      address: address
+    })
     
     // Check if both players have deposited - transport directly to flip suite
     const checkGameStart = () => {
@@ -425,10 +440,15 @@ const GameLobby = () => {
                         (gameData?.challenger && address && 
                          gameData.challenger.toLowerCase() === address.toLowerCase())
         
-        // Game ready conditions met
+        console.log('🎯 Game ready conditions met:', {
+          isPlayer: isPlayer,
+          gameStatus: gameData?.status,
+          creatorDeposited: gameData?.creator_deposited,
+          challengerDeposited: gameData?.challenger_deposited
+        })
         
         if (isPlayer) {
-          // Game ready! Transporting directly to flip suite
+          console.log('🚀 Game ready! Transporting directly to flip suite...')
           setCountdownTriggered(true) // Prevent multiple triggers
           
           // Transport directly to flip suite without countdown
@@ -447,7 +467,7 @@ const GameLobby = () => {
     const timeoutId = setTimeout(checkGameStart, 200)
     
     return () => clearTimeout(timeoutId)
-  }, [gameData?.status, gameData?.creator_deposited, gameData?.challenger_deposited, countdownTriggered, address, gameData?.challenger]) // Only depend on specific fields, not functions
+  }, [gameData?.status, gameData?.creator_deposited, gameData?.challenger_deposited, countdownTriggered, address]) // Only depend on specific fields, not functions
   
   // Countdown is no longer used - players transport directly to flip suite
 

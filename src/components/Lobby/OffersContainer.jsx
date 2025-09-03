@@ -310,16 +310,16 @@ const OffersContainer = ({
   useEffect(() => {
     if (!gameId || !address) return
 
-    // Setting up WebSocket for real-time offers
+    console.log('🔌 Setting up WebSocket for real-time offers...')
     
     // Get WebSocket service - try multiple sources
     let ws = null
     if (socket && typeof socket === 'object') {
       ws = socket
-      // Using provided socket prop
+      console.log('🔌 Using provided socket prop')
     } else if (window.FlipnosisWS) {
       ws = window.FlipnosisWS
-              // Using global WebSocket service
+      console.log('🔌 Using global WebSocket service')
     } else {
       console.error('❌ No WebSocket service available')
       return
@@ -331,15 +331,15 @@ const OffersContainer = ({
         // Check if already connected
         const isConnected = ws.isConnected ? ws.isConnected() : ws.connected
         if (!isConnected) {
-          // Connecting to WebSocket
+          console.log('🔌 Connecting to WebSocket...')
           if (ws.connect) {
             await ws.connect(`game_${gameId}`, address)
-            // WebSocket connected for real-time offers
+            console.log('✅ WebSocket connected for real-time offers')
           } else {
             console.warn('⚠️ WebSocket service has no connect method')
           }
         } else {
-          // WebSocket already connected
+          console.log('✅ WebSocket already connected')
         }
         setIsConnected(true)
       } catch (error) {
@@ -636,7 +636,7 @@ const OffersContainer = ({
       const ws = socket || window.FlipnosisWS
       const isConnected = ws && (ws.isConnected ? ws.isConnected() : ws.connected)
       
-      // Offers: WebSocket connection check
+      console.log('🔍 Offers: WebSocket connection check:', isConnected)
       
       if (isConnected) {
         // Send via WebSocket
@@ -710,7 +710,15 @@ const OffersContainer = ({
   }
 
   const handleAcceptOffer = async (offer) => {
-    // Accept offer attempt
+    console.log('🔍 Accept offer attempt:', { 
+      isCreator: isCreator(), 
+      connected, 
+      hasSocket: !!socket,
+      socketConnected: socket?.connected,
+      socketObject: socket,
+      offer,
+      gameData: gameData?.id || gameData?.listing_id 
+    })
     
     if (!isCreator()) {
       console.error('❌ Cannot accept offer: not creator')
@@ -859,7 +867,13 @@ const OffersContainer = ({
             {/* Accept button - show for creators with detailed logging */}
             {(() => {
               const shouldShowAccept = isCreator()
-                  // NFT offer accept button decision
+              console.log('🔍 NFT offer accept button decision:', {
+                shouldShowAccept,
+                isCreatorResult: isCreator(),
+                currentAddress: address,
+                gameCreator: gameData?.creator,
+                gameStatus: gameData?.status
+              })
               return shouldShowAccept
             })() && (
               <OfferActions>

@@ -289,7 +289,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
   useEffect(() => {
     if (!gameId || !address) return
 
-    // Setting up WebSocket for real-time chat
+    console.log('🔌 Setting up WebSocket for real-time chat...')
     
     const ws = socket || window.FlipnosisWS
     if (!ws) {
@@ -301,9 +301,9 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
     const connectToWebSocket = async () => {
       try {
         if (!ws.isConnected()) {
-          // Connecting to WebSocket
+          console.log('🔌 Connecting to WebSocket...')
           await ws.connect(`game_${gameId}`, address)
-          // WebSocket connected for real-time chat
+          console.log('✅ WebSocket connected for real-time chat')
         }
         setIsConnected(true)
       } catch (error) {
