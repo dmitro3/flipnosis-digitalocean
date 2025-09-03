@@ -327,18 +327,7 @@ export const useLobbyState = (gameId, address) => {
     }
   }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
 
-  // Auto-refresh offers every 10 seconds (reduced to prevent interference)
-  useEffect(() => {
-    if (gameData && (gameData.listing_id || gameData.id)) {
-      const interval = setInterval(() => {
-        loadOffers()
-      }, 10000)
 
-      return () => {
-        clearInterval(interval)
-      }
-    }
-  }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
 
   // Cleanup on unmount
   useEffect(() => {

@@ -283,46 +283,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
     }
   }, [messages])
 
-  // Auto-refresh chat every 2 seconds as fallback
-  useEffect(() => {
-    if (!gameId) return
 
-    const refreshChat = async () => {
-      try {
-        const response = await fetch(`/api/chat/${gameId}`)
-        const data = await response.json()
-        
-        if (data.messages && data.messages.length > 0) {
-          const historyMessages = data.messages.map(msg => ({
-            id: msg.id || Date.now() + Math.random(),
-            sender: msg.sender_address || msg.sender,
-            message: msg.message,
-            timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
-            isCurrentUser: (msg.sender_address || msg.sender) === address
-          }))
-          
-          // Only update if we have new messages
-          setMessages(prev => {
-            if (prev.length !== historyMessages.length) {
-              console.log('🔄 Auto-refresh: Found new messages, updating...')
-              return historyMessages
-            }
-            return prev
-          })
-        }
-      } catch (error) {
-        console.error('❌ Auto-refresh error:', error)
-      }
-    }
-
-    // Initial load
-    refreshChat()
-    
-    // Set up interval for auto-refresh
-    const interval = setInterval(refreshChat, 2000)
-    
-    return () => clearInterval(interval)
-  }, [gameId, address])
 
   // WebSocket connection for real-time updates
   useEffect(() => {

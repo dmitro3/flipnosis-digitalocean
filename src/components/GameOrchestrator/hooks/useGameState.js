@@ -60,8 +60,7 @@ export const useGameState = (gameId, address) => {
   const [roundCountdown, setRoundCountdown] = useState(null)
   const [roundCountdownInterval, setRoundCountdownInterval] = useState(null)
 
-  // Live updates state
-  const [offersRefreshInterval, setOffersRefreshInterval] = useState(null)
+
 
   // ETH amount state
   const [ethAmount, setEthAmount] = useState(null)
@@ -987,20 +986,7 @@ export const useGameState = (gameId, address) => {
     }
   }, [gameData])
 
-  // Auto-refresh offers every 5 seconds
-  useEffect(() => {
-    if (gameData && (gameData.listing_id || gameData.id)) {
-      const interval = setInterval(() => {
-        loadOffers()
-      }, 5000)
 
-      setOffersRefreshInterval(interval)
-
-      return () => {
-        clearInterval(interval)
-      }
-    }
-  }, [gameData])
 
   // Recalculate ETH amount when contract becomes initialized
   useEffect(() => {
@@ -1022,11 +1008,9 @@ export const useGameState = (gameId, address) => {
       if (roundCountdownInterval) {
         clearInterval(roundCountdownInterval)
       }
-      if (offersRefreshInterval) {
-        clearInterval(offersRefreshInterval)
-      }
+
     }
-  }, [countdownInterval, roundCountdownInterval, offersRefreshInterval])
+      }, [countdownInterval, roundCountdownInterval])
 
 
 
