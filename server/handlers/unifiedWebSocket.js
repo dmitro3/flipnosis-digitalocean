@@ -12,11 +12,15 @@ const addressToSocket = new Map() // address -> socketId for direct messaging
 
 // ===== UNIFIED MESSAGE HANDLERS =====
 async function handleJoinRoom(socket, data, dbService) {
+  console.log('🔍 handleJoinRoom called with:', { data, socketId: socket.id })
+  
   const { roomId, address } = data
   
   // STANDARDIZED room naming - always use game_${gameId}
   const normalizedRoomId = roomId.startsWith('game_') ? roomId : `game_${roomId}`
   const gameId = normalizedRoomId.replace('game_', '')
+  
+  console.log('🔍 Room normalization:', { roomId, normalizedRoomId, gameId })
   
   // Leave previous room if any
   const previousRoom = socketRooms.get(socket.id)
@@ -28,6 +32,7 @@ async function handleJoinRoom(socket, data, dbService) {
   // Join new room
   if (!rooms.has(normalizedRoomId)) {
     rooms.set(normalizedRoomId, new Set())
+    console.log(`🏠 Created new room: ${normalizedRoomId}`)
   }
   rooms.get(normalizedRoomId).add(socket.id)
   socketRooms.set(socket.id, normalizedRoomId)
@@ -37,6 +42,10 @@ async function handleJoinRoom(socket, data, dbService) {
   addressToSocket.set(address?.toLowerCase(), socket.id)
   
   console.log(`✅ Socket ${socket.id} (${address}) joined room ${normalizedRoomId}`)
+  console.log('🔍 Current rooms state:', {
+    totalRooms: rooms.size,
+    roomMembers: Array.from(rooms.entries()).map(([id, members]) => ({ id, memberCount: members.size }))
+  })
   
   // Get game state from manager
   let gameState = gameStateManager.getGame(gameId)
@@ -110,19 +119,25 @@ async function handleJoinRoom(socket, data, dbService) {
 }
 
 async function handleChatMessage(socket, data, dbService) {
+  console.log('🔍 handleChatMessage called with:', { data, socketId: socket.id })
+  
   const roomId = socketRooms.get(socket.id)
   if (!roomId) {
     console.error('❌ Socket not in any room')
     return
   }
   
+  console.log('🔍 Room ID found:', roomId)
+  
   const messageData = {
     type: 'chat_message',
-    gameId: data.gameId || roomId.replace('game_', ''),
-    from: data.from || data.address,
+    gameId: data.gameId || data.roomId?.replace('game_', '') || roomId.replace('game_', ''),
+    from: data.from || data.address || data.sender,
     message: data.message,
     timestamp: new Date().toISOString()
   }
+  
+  console.log('🔍 Message data prepared:', messageData)
   
   // Save to database if available
   if (dbService && typeof dbService.saveChatMessage === 'function') {
@@ -133,12 +148,16 @@ async function handleChatMessage(socket, data, dbService) {
         messageData.message,
         messageData.timestamp
       )
+      console.log('✅ Chat message saved to database')
     } catch (error) {
       console.error('❌ Error saving chat message:', error)
     }
+  } else {
+    console.log('⚠️ Database service not available or saveChatMessage method missing')
   }
   
   // Broadcast to room
+  console.log('🔍 Broadcasting message to room:', roomId)
   broadcastToRoom(roomId, messageData)
 }
 
@@ -309,8 +328,12 @@ async function handleGameAction(socket, data) {
 
 // ===== BROADCAST FUNCTIONS =====
 function broadcastToRoom(roomId, message) {
+  console.log('🔍 broadcastToRoom called with:', { roomId, message })
+  
   const normalizedRoomId = roomId.startsWith('game_') ? roomId : `game_${roomId}`
   const room = rooms.get(normalizedRoomId)
+  
+  console.log('🔍 Room lookup:', { normalizedRoomId, roomExists: !!room, roomSize: room?.size })
   
   if (!room || room.size === 0) {
     console.log(`⚠️ No clients in room ${normalizedRoomId}`)
@@ -320,17 +343,23 @@ function broadcastToRoom(roomId, message) {
   const messageStr = JSON.stringify(message)
   let sentCount = 0
   
+  console.log('🔍 Broadcasting to sockets:', Array.from(room))
+  
   room.forEach(socketId => {
     const socket = getSocketById(socketId)
+    console.log('🔍 Socket lookup:', { socketId, socketFound: !!socket, readyState: socket?.readyState })
+    
     if (socket && socket.readyState === WebSocket.OPEN) {
       try {
         socket.send(messageStr)
         sentCount++
+        console.log(`✅ Message sent to socket ${socketId}`)
       } catch (error) {
         console.error(`❌ Failed to send to socket ${socketId}:`, error)
         room.delete(socketId)
       }
     } else {
+      console.log(`⚠️ Socket ${socketId} not ready, removing from room`)
       room.delete(socketId)
     }
   })
@@ -453,7 +482,6 @@ let dbService = null
 function initializeWebSocket(server, databaseService) {
   wss = new WebSocket.Server({ 
     server,
-    path: '/ws',
     perMessageDeflate: false
   })
   

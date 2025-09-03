@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; max-height: 400px; overflow-y: auto; }
+        .input-group { margin: 10px 0; }
+        input, button { padding: 8px; margin: 5px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    
+    <div class="input-group">
+        <label>WebSocket URL:</label>
+        <input type="text" id="wsUrl" value="wss://flipnosis.fun/ws" style="width: 300px;">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    
+    <div class="input-group">
+        <label>Game ID:</label>
+        <input type="text" id="gameId" value="test123" style="width: 200px;">
+        <label>Address:</label>
+        <input type="text" id="address" value="0x1234567890123456789012345678901234567890" style="width: 400px;">
+        <button onclick="joinRoom()">Join Room</button>
+    </div>
+    
+    <div class="input-group">
+        <label>Message:</label>
+        <input type="text" id="message" placeholder="Type your message here..." style="width: 400px;">
+        <button onclick="sendMessage()">Send Message</button>
+    </div>
+    
+    <div class="input-group">
+        <label>Offer Amount:</label>
+        <input type="number" id="offerAmount" value="0.1" step="0.01" style="width: 100px;">
+        <button onclick="sendOffer()">Send Offer</button>
+    </div>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <div class="log" id="log"></div>
+    
+    <script>
+        let ws = null;
+        let connected = false;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            if (connected) {
+                statusDiv.textContent = 'Connected';
+                statusDiv.className = 'status connected';
+            } else {
+                statusDiv.textContent = 'Disconnected';
+                statusDiv.className = 'status disconnected';
+            }
+        }
+        
+        function connect() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            log(`🔌 Connecting to ${wsUrl}...`);
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    log('✅ WebSocket connected');
+                    connected = true;
+                    updateStatus();
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`📨 Received: ${data.type} - ${JSON.stringify(data)}`);
+                    } catch (error) {
+                        log(`📨 Received raw: ${event.data}`);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    log(`❌ WebSocket error: ${error}`);
+                };
+                
+                ws.onclose = (event) => {
+                    log(`🔌 WebSocket closed: ${event.code} - ${event.reason}`);
+                    connected = false;
+                    updateStatus();
+                };
+                
+            } catch (error) {
+                log(`❌ Failed to create WebSocket: ${error}`);
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                connected = false;
+                updateStatus();
+                log('🔌 Disconnected');
+            }
+        }
+        
+        function joinRoom() {
+            if (!ws || !connected) {
+                log('❌ Not connected');
+                return;
+            }
+            
+            const gameId = document.getElementById('gameId').value;
+            const address = document.getElementById('address').value;
+            const roomId = `game_${gameId}`;
+            
+            const message = {
+                type: 'join_room',
+                roomId: roomId,
+                address: address
+            };
+            
+            log(`📤 Joining room: ${JSON.stringify(message)}`);
+            ws.send(JSON.stringify(message));
+        }
+        
+        function sendMessage() {
+            if (!ws || !connected) {
+                log('❌ Not connected');
+                return;
+            }
+            
+            const message = document.getElementById('message').value;
+            const gameId = document.getElementById('gameId').value;
+            const address = document.getElementById('address').value;
+            
+            if (!message.trim()) {
+                log('❌ Message is empty');
+                return;
+            }
+            
+            const messageData = {
+                type: 'chat_message',
+                gameId: gameId,
+                roomId: `game_${gameId}`,
+                message: message.trim(),
+                from: address
+            };
+            
+            log(`📤 Sending message: ${JSON.stringify(messageData)}`);
+            ws.send(JSON.stringify(messageData));
+            document.getElementById('message').value = '';
+        }
+        
+        function sendOffer() {
+            if (!ws || !connected) {
+                log('❌ Not connected');
+                return;
+            }
+            
+            const amount = document.getElementById('offerAmount').value;
+            const gameId = document.getElementById('gameId').value;
+            const address = document.getElementById('address').value;
+            
+            const offerData = {
+                type: 'crypto_offer',
+                gameId: gameId,
+                from: address,
+                amount: parseFloat(amount)
+            };
+            
+            log(`📤 Sending offer: ${JSON.stringify(offerData)}`);
+            ws.send(JSON.stringify(offerData));
+        }
+        
+        // Auto-connect on page load
+        window.onload = () => {
+            log('🚀 WebSocket test page loaded');
+            updateStatus();
+        };
+    </script>
+</body>
+</html>
