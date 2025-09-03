@@ -14,6 +14,7 @@ export const useLobbyState = (gameId, address) => {
   
   // Countdown and deposit state
   const [depositTimeLeft, setDepositTimeLeft] = useState(null)
+  const [countdownInterval, setCountdownInterval] = useState(null)
   
   // Offer state
   const [newOffer, setNewOffer] = useState({ price: '', message: '' })
@@ -22,7 +23,7 @@ export const useLobbyState = (gameId, address) => {
   // ETH amount state
   const [ethAmount, setEthAmount] = useState(null)
 
-  // Helper functions - simple functions without useCallback to avoid circular dependencies
+  // Helper functions - only use 'creator' field
   const getGameCreator = () => gameData?.creator
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
   const getGamePrice = () => gameData?.payment_amount || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || gameData?.price_usd || 0
@@ -39,7 +40,6 @@ export const useLobbyState = (gameId, address) => {
     
     return address.toLowerCase() === creatorAddress.toLowerCase()
   }
-
   const isJoiner = () => {
     if (!address || !gameData) return false
     
@@ -157,11 +157,27 @@ export const useLobbyState = (gameId, address) => {
     }
   }
 
-  // Countdown functions - now handled via WebSocket events
+  // Countdown functions
   const startDepositCountdown = (deadline) => {
-    // WebSocket events will handle countdown updates
-    // No more polling needed
-    console.log('🎯 Countdown started via WebSocket event:', deadline)
+    if (countdownInterval) {
+      clearInterval(countdownInterval)
+    }
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const deadlineTime = new Date(deadline).getTime()
+      const timeLeft = Math.max(0, deadlineTime - now)
+
+      if (timeLeft === 0) {
+        clearInterval(interval)
+        setDepositTimeLeft(0)
+        loadGameData()
+      } else {
+        setDepositTimeLeft(Math.floor(timeLeft / 1000))
+      }
+    }, 1000)
+
+    setCountdownInterval(interval)
   }
 
   const formatTimeLeft = (seconds) => {
@@ -302,7 +318,7 @@ export const useLobbyState = (gameId, address) => {
     if (gameId) {
       loadGameData()
     }
-  }, [gameId]) // Only depend on gameId
+  }, [gameId])
 
   // Load offers when game data changes - only trigger on specific fields
   useEffect(() => {
@@ -310,6 +326,28 @@ export const useLobbyState = (gameId, address) => {
       loadOffers()
     }
   }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
+
+  // Auto-refresh offers every 10 seconds (reduced to prevent interference)
+  useEffect(() => {
+    if (gameData && (gameData.listing_id || gameData.id)) {
+      const interval = setInterval(() => {
+        loadOffers()
+      }, 10000)
+
+      return () => {
+        clearInterval(interval)
+      }
+    }
+  }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+      }
+    }
+  }, [countdownInterval])
 
   return {
     // State

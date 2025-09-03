@@ -41,11 +41,7 @@ if (typeof window !== 'undefined') {
       // If already connected, return existing connection
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
         console.log('🔌 Already connected')
-        try {
-          this.setupPingPong()
-        } catch (error) {
-          console.error('❌ Error setting up ping-pong:', error)
-        }
+        this.setupPingPong()
         return Promise.resolve(this.socket)
       }
 
@@ -242,12 +238,7 @@ if (typeof window !== 'undefined') {
 
     // Check if connected
     isConnected: function() {
-      try {
-        return this.socket && this.socket.readyState === WebSocket.OPEN
-      } catch (error) {
-        console.error('❌ Error checking WebSocket connection:', error)
-        return false
-      }
+      return this.socket && this.socket.readyState === WebSocket.OPEN
     },
 
     // Check if initialized

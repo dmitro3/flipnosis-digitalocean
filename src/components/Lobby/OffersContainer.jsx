@@ -260,7 +260,16 @@ const OffersContainer = ({
   const [showDepositOverlay, setShowDepositOverlay] = useState(false)
   const [acceptedOffer, setAcceptedOffer] = useState(null)
   
-  // Simple overlay state management
+  // Use refs to persist overlay state across re-renders and prevent flicker
+  const overlayStateRef = useRef({ showOverlay: false, offer: null })
+  
+  // Sync ref with state to maintain consistency
+  useEffect(() => {
+    overlayStateRef.current = { 
+      showOverlay: showDepositOverlay, 
+      offer: acceptedOffer 
+    }
+  }, [showDepositOverlay, acceptedOffer])
   
   const offersEndRef = useRef(null)
   
@@ -302,61 +311,142 @@ const OffersContainer = ({
       setAcceptedOffer(acceptedOffer)
       setShowDepositOverlay(true)
     }
-  }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay to prevent infinite loop
+  }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay from deps
 
-  // Listen for offers and events from unified WebSocket (no more individual WebSocket management)
+  // Auto-refresh offers and game status every 2 seconds as fallback
+  useEffect(() => {
+    if (!gameData?.listing_id && !gameId) return
+
+    const refreshGameState = async () => {
+      try {
+        // Refresh offers if we have a listing ID
+        if (gameData?.listing_id) {
+          const response = await fetch(`/api/listings/${gameData.listing_id}/offers`)
+          
+          if (response.ok) {
+            const data = await response.json()
+            
+            if (data && data.length > 0) {
+              console.log('🔄 Auto-refresh: Found offers, updating...')
+              setOffers(data)
+            }
+          } else {
+            console.log('❌ Auto-refresh offers failed:', response.status)
+          }
+        }
+        
+        // Also check game status for player 2 who might miss WebSocket events
+        if (gameId && address) {
+          const gameResponse = await fetch(`/api/games/${gameId}`)
+          const gameData = await gameResponse.json()
+          
+          // Check if we're the challenger and game is waiting for our deposit
+          // Use functional state update to check current overlay state
+          if (gameData.status === 'waiting_challenger_deposit' && 
+              gameData.challenger && 
+              address && 
+              gameData.challenger.toLowerCase() === address.toLowerCase()) {
+            
+            console.log('🎯 Fallback: Auto-showing deposit overlay for challenger via polling')
+            
+            setShowDepositOverlay(currentShow => {
+              if (!currentShow) { // Only show if not already showing
+                // Create accepted offer object for the deposit overlay
+                const acceptedOffer = {
+                  offerer_address: gameData.challenger,
+                  cryptoAmount: gameData.payment_amount || gameData.price_usd,
+                  timestamp: new Date().toISOString()
+                }
+                
+                setAcceptedOffer(acceptedOffer)
+                
+                // Auto-switch to Lounge tab
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+                }, 200)
+                
+                return true
+              }
+              return currentShow
+            })
+          }
+        }
+      } catch (error) {
+        console.error('❌ Auto-refresh error:', error)
+      }
+    }
+
+    // Initial load
+    refreshGameState()
+    
+    // Set up interval for auto-refresh (reduced frequency)
+    const interval = setInterval(refreshGameState, 5000)
+    
+    return () => clearInterval(interval)
+  }, [gameData?.listing_id, gameId, address]) // Removed showDepositOverlay from deps
+
+  // WebSocket connection for real-time updates
   useEffect(() => {
     if (!gameId || !address) return
 
-    console.log('🔌 OffersContainer: Listening for offers from unified WebSocket...')
+    console.log('🔌 Setting up WebSocket for real-time offers...')
     
-    // Listen for crypto offers broadcast from GameLobby
-    const handleCryptoOffer = (event) => {
-      const data = event.detail
-      console.log('💰 Crypto offer received via unified WebSocket:', data)
+    // Get WebSocket service - try multiple sources
+    let ws = null
+    if (socket && typeof socket === 'object') {
+      ws = socket
+      console.log('🔌 Using provided socket prop')
+    } else if (window.FlipnosisWS) {
+      ws = window.FlipnosisWS
+      console.log('🔌 Using global WebSocket service')
+    } else {
+      console.error('❌ No WebSocket service available')
+      return
+    }
+
+    // Connect to WebSocket
+    const connectToWebSocket = async () => {
+      try {
+        // Check if already connected
+        const isConnected = ws.isConnected ? ws.isConnected() : ws.connected
+        if (!isConnected) {
+          console.log('🔌 Connecting to WebSocket...')
+          if (ws.connect) {
+            await ws.connect(`game_${gameId}`, address)
+            console.log('✅ WebSocket connected for real-time offers')
+          } else {
+            console.warn('⚠️ WebSocket service has no connect method')
+          }
+        } else {
+          console.log('✅ WebSocket already connected')
+        }
+        setIsConnected(true)
+      } catch (error) {
+        console.error('❌ WebSocket connection failed:', error)
+        setIsConnected(false)
+      }
+    }
+
+    connectToWebSocket()
+
+    // Real-time offer handler
+    const handleOffer = (data) => {
+      console.log('📨 Real-time offer received:', data)
       
-      if (data.type === 'crypto_offer') {
+      if (data.type === 'crypto_offer' || data.type === 'nft_offer') {
         const newOffer = {
-          id: data.id || `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: data.id || Date.now() + Math.random(),
           type: data.type,
           address: data.address || data.offerer_address,
           offerer_address: data.address || data.offerer_address,
           cryptoAmount: data.cryptoAmount || data.amount,
           offer_price: data.cryptoAmount || data.amount,
-          timestamp: data.timestamp || new Date().toISOString(),
-          created_at: data.timestamp || new Date().toISOString()
-        }
-        
-        console.log('📝 Adding crypto offer to state:', newOffer)
-        setOffers(prev => {
-          // Check if offer already exists
-          const exists = prev.find(o => o.id === newOffer.id)
-          if (exists) {
-            console.log('📝 Offer already exists, not adding duplicate')
-            return prev
-          }
-          return [...prev, newOffer]
-        })
-      }
-    }
-
-    // Listen for NFT offers broadcast from GameLobby
-    const handleNftOffer = (event) => {
-      const data = event.detail
-      console.log('💎 NFT offer received via unified WebSocket:', data)
-      
-      if (data.type === 'nft_offer') {
-        const newOffer = {
-          id: data.id || `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: data.type,
-          address: data.address || data.offerer_address,
-          offerer_address: data.address || data.offerer_address,
           nftData: data.nftData,
           timestamp: data.timestamp || new Date().toISOString(),
           created_at: data.timestamp || new Date().toISOString()
         }
         
-        console.log('📝 Adding NFT offer to state:', newOffer)
+        console.log('📝 Adding real-time offer:', newOffer)
         setOffers(prev => {
           // Check if offer already exists
           const exists = prev.find(o => o.id === newOffer.id)
@@ -369,20 +459,164 @@ const OffersContainer = ({
       }
     }
 
-    // Register event listeners
-    window.addEventListener('cryptoOfferReceived', handleCryptoOffer)
-    window.addEventListener('nftOfferReceived', handleNftOffer)
-    
-    // Set connection status based on socket prop
-    if (socket && connected) {
-      setIsConnected(true)
+    // Real-time offer acceptance handler
+    const handleOfferAcceptance = (data) => {
+      console.log('✅ Real-time offer acceptance received:', data)
+      
+      if (data.type === 'accept_crypto_offer' || data.type === 'offer_accepted' || data.type === 'your_offer_accepted') {
+        console.log('🎯 Processing offer acceptance:', data)
+        
+        // Create accepted offer object for the deposit overlay
+        const acceptedOffer = {
+          offerer_address: data.acceptedOffer?.offerer_address || data.challenger || address,
+          cryptoAmount: data.acceptedOffer?.cryptoAmount || data.finalPrice || data.acceptedOffer?.offer_price,
+          timestamp: data.timestamp || new Date().toISOString()
+        }
+        
+        setAcceptedOffer(acceptedOffer)
+        setShowDepositOverlay(true)
+        console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
+      }
     }
 
-    return () => {
-      window.removeEventListener('cryptoOfferReceived', handleCryptoOffer)
-      window.removeEventListener('nftOfferReceived', handleNftOffer)
+    // Handle your offer accepted event (for challenger)
+    const handleYourOfferAccepted = (data) => {
+      console.log('🎯 Your offer accepted event received:', data)
+      
+      if (data.gameId === gameData?.id) {
+        console.log('✅ Your offer was accepted, showing deposit overlay...')
+        
+        // Create accepted offer object for the deposit overlay
+        const acceptedOffer = {
+          offerer_address: address, // Current user is the offerer
+          cryptoAmount: data.data.finalPrice,
+          timestamp: data.data.timestamp
+        }
+        
+        setAcceptedOffer(acceptedOffer)
+        setShowDepositOverlay(true)
+        console.log('🎯 Showing deposit overlay for accepted offer:', acceptedOffer)
+        
+        // Auto-switch to Lounge tab for player 2 immediately
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+        }, 200)
+        
+        // Refresh game data
+        if (onOfferAccepted) {
+          onOfferAccepted(acceptedOffer)
+        }
+      }
     }
-  }, [gameId, address, socket, connected])
+
+    // Regular event handlers inside the useEffect
+    const handleGameStatusChanged = (data) => {
+      console.log('🔄 Game status changed event received:', data)
+      
+      if (data.gameId === gameData?.id && data.data.newStatus === 'waiting_challenger_deposit') {
+        console.log('🔄 Game status changed to waiting_challenger_deposit')
+        
+        // Check if current user is the challenger
+        if (gameData?.challenger && address && 
+            gameData.challenger.toLowerCase() === address.toLowerCase()) {
+          console.log('✅ Current user is challenger, showing deposit overlay...')
+          
+          // Show deposit overlay for challenger
+          const acceptedOffer = {
+            offerer_address: address,
+            cryptoAmount: gameData.payment_amount || gameData.price_usd,
+            timestamp: data.data.timestamp
+          }
+          
+          setAcceptedOffer(acceptedOffer)
+          setShowDepositOverlay(true)
+          console.log('🎯 Auto-showing deposit overlay for challenger:', acceptedOffer)
+        }
+      }
+      
+      // Handle game becoming active (both players deposited)
+      if (data.gameId === gameData?.id && data.data.newStatus === 'active') {
+        console.log('🎯 Game is now active - both players deposited!')
+        
+        // Close any open deposit overlays
+        setShowDepositOverlay(false)
+        setAcceptedOffer(null)
+        
+        // Transport both players to the game room
+        console.log('🚀 Transporting players to flip suite...')
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameData?.id, immediate: true }
+          }))
+        }, 500)
+      }
+    }
+
+    // Handle deposit confirmed event
+    const handleDepositConfirmed = (data) => {
+      console.log('💰 Deposit confirmed event received:', data)
+      
+      if (data.gameId === gameData?.id) {
+        console.log('✅ Deposit confirmed for current game')
+        
+        // Use functional state updates to access current state
+        setShowDepositOverlay(currentShow => {
+          setAcceptedOffer(currentOffer => {
+            if (currentShow && currentOffer?.isCreatorWaiting) {
+              console.log('🎯 Creator was waiting, challenger deposited - transporting to game!')
+              
+              // Transport to flip suite
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+                  detail: { gameId: gameData?.id, immediate: true }
+                }))
+              }, 1000)
+              
+              return null // Clear accepted offer
+            }
+            return currentOffer
+          })
+          
+          return currentShow && false // Close overlay if it was open
+        })
+      }
+    }
+
+          // Register real-time handlers with error handling
+      try {
+        if (ws && typeof ws.on === 'function') {
+          ws.on('crypto_offer', handleOffer)
+          ws.on('nft_offer', handleOffer)
+          ws.on('accept_crypto_offer', handleOfferAcceptance)
+          ws.on('offer_accepted', handleOfferAcceptance)
+          ws.on('your_offer_accepted', handleYourOfferAccepted)
+          ws.on('game_status_changed', handleGameStatusChanged)
+          ws.on('deposit_confirmed', handleDepositConfirmed)
+          console.log('✅ WebSocket handlers registered successfully')
+        } else {
+          console.warn('⚠️ WebSocket service has no event handlers or is not available')
+        }
+      } catch (error) {
+        console.error('❌ Error registering WebSocket handlers:', error)
+      }
+
+      return () => {
+        try {
+          if (ws && typeof ws.off === 'function') {
+            ws.off('crypto_offer', handleOffer)
+            ws.off('nft_offer', handleOffer)
+            ws.off('accept_crypto_offer', handleOfferAcceptance)
+            ws.off('offer_accepted', handleOfferAcceptance)
+            ws.off('your_offer_accepted', handleYourOfferAccepted)
+            ws.off('game_status_changed', handleGameStatusChanged)
+            ws.off('deposit_confirmed', handleDepositConfirmed)
+            console.log('✅ WebSocket handlers cleaned up successfully')
+          }
+        } catch (error) {
+          console.error('❌ Error cleaning up WebSocket handlers:', error)
+        }
+      }
+  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd])
 
   const isCreator = () => {
     // Use prop if available (preferred)
@@ -479,7 +713,7 @@ const OffersContainer = ({
     try {
       // WebSocket-first approach with API fallback (same as chat)
       const ws = socket || window.FlipnosisWS
-      const isConnected = ws && typeof ws === 'object' && (ws.isConnected ? ws.isConnected() : ws.connected)
+      const isConnected = ws && (ws.isConnected ? ws.isConnected() : ws.connected)
       
       console.log('🔍 Offers: WebSocket connection check:', isConnected)
       
@@ -495,21 +729,14 @@ const OffersContainer = ({
         }
         
         console.log('📤 Offers: Sending via WebSocket:', offerData)
-        if (ws && typeof ws.send === 'function') {
-          ws.send(offerData)
-        } else {
-          console.error('❌ WebSocket send method not available')
-          throw new Error('WebSocket send method not available')
-        }
+        ws.send(offerData)
         
         // Optimistically add to local state
         const newOffer = {
-          id: `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: Date.now(),
           type: 'crypto_offer',
           address: address,
-          offerer_address: address,
           cryptoAmount: offerAmount,
-          offer_price: offerAmount,
           timestamp: new Date().toISOString()
         }
         
@@ -539,12 +766,10 @@ const OffersContainer = ({
           
           // Add to local state
           const newOffer = {
-            id: `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: Date.now(),
             type: 'crypto_offer',
             address: address,
-            offerer_address: address,
             cryptoAmount: offerAmount,
-            offer_price: offerAmount,
             timestamp: new Date().toISOString()
           }
           
@@ -616,10 +841,11 @@ const OffersContainer = ({
         isCreatorWaiting: true // Flag to indicate this is creator waiting, not challenger depositing
       }
       
-             // Update state to show waiting overlay
-       setAcceptedOffer(waitingOffer)
-       setShowDepositOverlay(true)
-       console.log('🎯 Showing waiting overlay for creator after accepting offer:', waitingOffer)
+      // Update both state and ref to persist across re-renders
+      setAcceptedOffer(waitingOffer)
+      setShowDepositOverlay(true)
+      overlayStateRef.current = { showOverlay: true, offer: waitingOffer }
+      console.log('🎯 Showing waiting overlay for creator after accepting offer:', waitingOffer)
       
       // Force refresh game data to get updated status
       console.log('🔄 Forcing game data refresh after offer acceptance')
@@ -806,12 +1032,14 @@ const OffersContainer = ({
   const handleCloseDepositOverlay = () => {
     setShowDepositOverlay(false)
     setAcceptedOffer(null)
+    overlayStateRef.current = { showOverlay: false, offer: null }
   }
 
   const handleDepositComplete = (offer) => {
     console.log('🎯 Deposit completed, transporting to game room...')
     setShowDepositOverlay(false)
     setAcceptedOffer(null)
+    overlayStateRef.current = { showOverlay: false, offer: null }
     
     // Transport to game room
     if (onOfferAccepted) {
@@ -951,16 +1179,16 @@ const OffersContainer = ({
         <div ref={offersEndRef} />
       </OffersList>
 
-             {/* Deposit Overlay */}
-       <OfferAcceptanceOverlay
-         isVisible={showDepositOverlay}
-         acceptedOffer={acceptedOffer}
-         gameData={gameData}
-         gameId={gameId}
-         address={address}
-         onClose={handleCloseDepositOverlay}
-         onDepositComplete={handleDepositComplete}
-       />
+      {/* Deposit Overlay - use persistent state to prevent flicker */}
+      <OfferAcceptanceOverlay
+        isVisible={showDepositOverlay || overlayStateRef.current.showOverlay}
+        acceptedOffer={acceptedOffer || overlayStateRef.current.offer}
+        gameData={gameData}
+        gameId={gameId}
+        address={address}
+        onClose={handleCloseDepositOverlay}
+        onDepositComplete={handleDepositComplete}
+      />
     </OffersContainerStyled>
   )
 }
