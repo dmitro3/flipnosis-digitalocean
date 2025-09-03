@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useToast } from '../../../contexts/ToastContext'
 import { getApiUrl } from '../../../config/api'
 
@@ -23,14 +23,14 @@ export const useLobbyState = (gameId, address) => {
   const [ethAmount, setEthAmount] = useState(null)
 
   // Helper functions - only use 'creator' field
-  const getGameCreator = () => gameData?.creator
-  const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
-  const getGamePrice = () => gameData?.payment_amount || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || gameData?.price_usd || 0
-  const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
-  const getGameNFTName = () => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
-  const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
+  const getGameCreator = useCallback(() => gameData?.creator, [gameData?.creator])
+  const getGameJoiner = useCallback(() => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address, [gameData?.challenger, gameData?.joiner, gameData?.joiner_address, gameData?.challenger_address])
+  const getGamePrice = useCallback(() => gameData?.payment_amount || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || gameData?.price_usd || 0, [gameData?.payment_amount, gameData?.final_price, gameData?.price, gameData?.asking_price, gameData?.priceUSD, gameData?.price_usd])
+  const getGameNFTImage = useCallback(() => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg', [gameData?.nft?.image, gameData?.nft_image, gameData?.nftImage])
+  const getGameNFTName = useCallback(() => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT', [gameData?.nft?.name, gameData?.nft_name, gameData?.nftName])
+  const getGameNFTCollection = useCallback(() => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection', [gameData?.nft?.collection, gameData?.nft_collection, gameData?.nftCollection])
 
-  const isCreator = () => {
+  const isCreator = useCallback(() => {
     if (!gameData || !address) return false
     
     // Use 'creator' field which is what your database actually has
@@ -38,8 +38,9 @@ export const useLobbyState = (gameId, address) => {
     if (!creatorAddress) return false
     
     return address.toLowerCase() === creatorAddress.toLowerCase()
-  }
-  const isJoiner = () => {
+  }, [gameData?.creator, address])
+
+  const isJoiner = useCallback(() => {
     if (!address || !gameData) return false
     
     const challengerAddress = gameData?.challenger || gameData?.joiner || 
@@ -48,10 +49,10 @@ export const useLobbyState = (gameId, address) => {
     if (!challengerAddress) return false
     
     return address.toLowerCase() === challengerAddress.toLowerCase()
-  }
+  }, [gameData?.challenger, gameData?.joiner, gameData?.joiner_address, gameData?.challenger_address, address])
 
   // Load game data
-  const loadGameData = async () => {
+  const loadGameData = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(getApiUrl(`/games/${gameId}`))
@@ -124,10 +125,10 @@ export const useLobbyState = (gameId, address) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [gameId])
 
   // Load offers for listings
-  const loadOffers = async () => {
+  const loadOffers = useCallback(async () => {
     console.log('🔍 loadOffers called with gameData:', gameData)
     
     if (!gameData) {
@@ -154,24 +155,24 @@ export const useLobbyState = (gameId, address) => {
       console.error('❌ Error loading offers:', error)
       setOffers([])
     }
-  }
+  }, [gameData?.listing_id, gameData?.id])
 
   // Countdown functions - now handled via WebSocket events
-  const startDepositCountdown = (deadline) => {
+  const startDepositCountdown = useCallback((deadline) => {
     // WebSocket events will handle countdown updates
     // No more polling needed
     console.log('🎯 Countdown started via WebSocket event:', deadline)
-  }
+  }, [])
 
-  const formatTimeLeft = (seconds) => {
+  const formatTimeLeft = useCallback((seconds) => {
     if (!seconds && seconds !== 0) return ''
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+  }, [])
 
   // Offer functions
-  const createOffer = async () => {
+  const createOffer = useCallback(async () => {
     if (!newOffer.price || !gameData?.id) {
       showError('Please enter a price and ensure game data is loaded')
       return
@@ -238,9 +239,9 @@ export const useLobbyState = (gameId, address) => {
     } finally {
       setCreatingOffer(false)
     }
-  }
+  }, [newOffer.price, gameData, address, showError, showSuccess, loadOffers])
 
-  const acceptOffer = async (offerId, offerPrice) => {
+  const acceptOffer = useCallback(async (offerId, offerPrice) => {
     try {
       showInfo('Accepting offer...')
 
@@ -274,9 +275,9 @@ export const useLobbyState = (gameId, address) => {
       console.error('❌ Error accepting offer:', error)
       showError(`Failed to accept offer: ${error.message}`)
     }
-  }
+  }, [address, showError, showSuccess, showInfo, loadGameData, loadOffers, isCreator, getGameJoiner])
 
-  const rejectOffer = async (offerId) => {
+  const rejectOffer = useCallback(async (offerId) => {
     try {
       const response = await fetch(getApiUrl(`/offers/${offerId}/reject`), {
         method: 'POST',
@@ -294,26 +295,21 @@ export const useLobbyState = (gameId, address) => {
       console.error('Error rejecting offer:', error)
       showError('Failed to reject offer')
     }
-  }
+  }, [showError, showSuccess, loadOffers])
 
   // Load game data on mount
   useEffect(() => {
     if (gameId) {
       loadGameData()
     }
-  }, [gameId])
+  }, [gameId, loadGameData])
 
   // Load offers when game data changes - only trigger on specific fields
   useEffect(() => {
     if (gameData && (gameData.listing_id || gameData.id)) {
       loadOffers()
     }
-  }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
-
-  // WebSocket-based real-time updates replace the old polling system
-  // No more setInterval calls that could interfere with real-time updates
-
-  // No more intervals to clean up - WebSocket handles everything
+  }, [gameData?.listing_id, gameData?.id, loadOffers])
 
   return {
     // State

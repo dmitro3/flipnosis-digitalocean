@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ThemeProvider } from '@emotion/react'
 import styled from '@emotion/styled'
@@ -399,14 +399,14 @@ const GameLobby = () => {
 
   // Listen for lobby refresh events from WebSocket
   useEffect(() => {
-    const handleLobbyRefresh = (event) => {
+    const handleLobbyRefresh = useCallback((event) => {
       console.log('🔄 Lobby refresh triggered:', event.detail)
       loadGameData() // Refresh game data to check for countdown
-    }
+    }, [loadGameData])
 
     window.addEventListener('lobbyRefresh', handleLobbyRefresh)
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
-  }, []) // Remove loadGameData from deps to prevent unnecessary re-registrations
+  }, [loadGameData]) // Only depend on loadGameData function
 
   // Watch for game starting (both players deposited) - transport directly to flip suite
   useEffect(() => {
