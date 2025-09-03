@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useToast } from '../../../contexts/ToastContext'
 import { getApiUrl } from '../../../config/api'
 
@@ -24,14 +24,14 @@ export const useLobbyState = (gameId, address) => {
   const [ethAmount, setEthAmount] = useState(null)
 
   // Helper functions - only use 'creator' field
-  const getGameCreator = () => gameData?.creator
-  const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
-  const getGamePrice = () => gameData?.payment_amount || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || gameData?.price_usd || 0
-  const getGameNFTImage = () => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg'
-  const getGameNFTName = () => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT'
-  const getGameNFTCollection = () => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection'
+  const getGameCreator = useCallback(() => gameData?.creator, [gameData?.creator])
+  const getGameJoiner = useCallback(() => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address, [gameData?.challenger, gameData?.joiner, gameData?.joiner_address, gameData?.challenger_address])
+  const getGamePrice = useCallback(() => gameData?.payment_amount || gameData?.final_price || gameData?.price || gameData?.asking_price || gameData?.priceUSD || gameData?.price_usd || 0, [gameData?.payment_amount, gameData?.final_price, gameData?.price, gameData?.asking_price, gameData?.priceUSD, gameData?.price_usd])
+  const getGameNFTImage = useCallback(() => gameData?.nft?.image || gameData?.nft_image || gameData?.nftImage || '/placeholder-nft.svg', [gameData?.nft?.image, gameData?.nft_image, gameData?.nftImage])
+  const getGameNFTName = useCallback(() => gameData?.nft?.name || gameData?.nft_name || gameData?.nftName || 'Unknown NFT', [gameData?.nft?.name, gameData?.nft_name, gameData?.nftName])
+  const getGameNFTCollection = useCallback(() => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection', [gameData?.nft?.collection, gameData?.nft_collection, gameData?.nftCollection])
 
-  const isCreator = () => {
+  const isCreator = useCallback(() => {
     if (!gameData || !address) return false
     
     // Use 'creator' field which is what your database actually has
@@ -39,8 +39,9 @@ export const useLobbyState = (gameId, address) => {
     if (!creatorAddress) return false
     
     return address.toLowerCase() === creatorAddress.toLowerCase()
-  }
-  const isJoiner = () => {
+  }, [gameData?.creator, address])
+
+  const isJoiner = useCallback(() => {
     if (!address || !gameData) return false
     
     const challengerAddress = gameData?.challenger || gameData?.joiner || 
@@ -49,10 +50,10 @@ export const useLobbyState = (gameId, address) => {
     if (!challengerAddress) return false
     
     return address.toLowerCase() === challengerAddress.toLowerCase()
-  }
+  }, [gameData?.challenger, gameData?.joiner, gameData?.joiner_address, gameData?.challenger_address, address])
 
   // Load game data
-  const loadGameData = async () => {
+  const loadGameData = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(getApiUrl(`/games/${gameId}`))
@@ -105,19 +106,8 @@ export const useLobbyState = (gameId, address) => {
         }
       }
 
-      // Load offers for this listing/game
-      const listingId = data?.listing_id || data?.id
-      if (listingId) {
-        try {
-          const offersResponse = await fetch(getApiUrl(`/listings/${listingId}/offers`))
-          if (offersResponse.ok) {
-            let offersData = await offersResponse.json()
-            setOffers(offersData)
-          }
-        } catch (error) {
-          console.error('❌ Error loading offers:', error)
-        }
-      }
+      // REMOVED: Automatic offers loading to prevent circular dependencies
+      // Offers will be loaded separately via loadOffers() when needed
 
     } catch (err) {
       console.error('Error loading game data:', err)
@@ -125,10 +115,10 @@ export const useLobbyState = (gameId, address) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [gameId]) // Only depend on gameId
 
   // Load offers for listings
-  const loadOffers = async () => {
+  const loadOffers = useCallback(async () => {
     console.log('🔍 loadOffers called with gameData:', gameData)
     
     if (!gameData) {
@@ -155,7 +145,7 @@ export const useLobbyState = (gameId, address) => {
       console.error('❌ Error loading offers:', error)
       setOffers([])
     }
-  }
+  }, [gameData?.listing_id, gameData?.id]) // Only depend on the IDs, not the entire gameData object
 
   // Countdown functions
   const startDepositCountdown = (deadline) => {
@@ -320,12 +310,7 @@ export const useLobbyState = (gameId, address) => {
     }
   }, [gameId])
 
-  // Load offers when game data changes - only trigger on specific fields
-  useEffect(() => {
-    if (gameData && (gameData.listing_id || gameData.id)) {
-      loadOffers()
-    }
-  }, [gameData?.listing_id, gameData?.id]) // Only depend on IDs, not full gameData
+
 
 
 

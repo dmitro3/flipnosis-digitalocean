@@ -242,7 +242,7 @@ const TabbedGameInterface = ({
     }
   }, [gameData?.status])
 
-  // Auto-switch to Lounge tab when waiting for challenger deposit
+  // Check for game status changes and auto-switch tabs when needed
   useEffect(() => {
     console.log('🔍 TabbedGameInterface: Checking game status for tab switch:', {
       status: gameData?.status,
@@ -250,28 +250,12 @@ const TabbedGameInterface = ({
       address: address
     })
     
-    if (gameData?.status === 'waiting_challenger_deposit') {
+    // If game status indicates waiting for deposit, switch to Lounge tab
+    if (gameData?.status === 'waiting_challenger_deposit' && activeTab !== 'chat') {
       console.log('🎯 Auto-switching to Lounge tab for deposit')
       setActiveTab('chat')
     }
-  }, [gameData?.status])
-
-  // Also check for any status changes that might indicate offer acceptance
-  useEffect(() => {
-    console.log('🔍 TabbedGameInterface: Game data changed:', {
-      status: gameData?.status,
-      challenger: gameData?.challenger,
-      creator_deposited: gameData?.creator_deposited,
-      challenger_deposited: gameData?.challenger_deposited,
-      activeTab: activeTab
-    })
-    
-    // If game status indicates waiting for deposit, switch to Lounge tab
-    if (gameData?.status === 'waiting_challenger_deposit' && activeTab !== 'chat') {
-      console.log('🎯 Force switching to Lounge tab for deposit')
-      setActiveTab('chat')
-    }
-  }, [gameData?.status, gameData?.challenger, gameData?.creator_deposited, gameData?.challenger_deposited]) // Removed activeTab from deps
+  }, [gameData?.status, activeTab]) // Only depend on status and activeTab, not entire gameData object
 
   const tabs = [
     {

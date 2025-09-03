@@ -393,7 +393,7 @@ const GameLobby = () => {
       setCustomTailsImage(coinData.tailsImage)
       setGameCoin(coinData)
     }
-  }, [gameData])
+  }, [gameData?.coin_data]) // Only depend on coin_data, not entire gameData
 
   // REMOVED: Transition logic that was hiding offers box
   // Offers box should always be visible until countdown starts
@@ -407,10 +407,13 @@ const GameLobby = () => {
 
     window.addEventListener('lobbyRefresh', handleLobbyRefresh)
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
-  }, []) // Remove loadGameData from deps to prevent unnecessary re-registrations
+  }, [loadGameData]) // Add loadGameData back to deps
 
   // Watch for game starting (both players deposited) - transport directly to flip suite
   useEffect(() => {
+    // Only run this effect when game data actually changes
+    if (!gameData) return
+    
     console.log('🔍 Game start check running...')
     console.log('🔍 gameData exists:', !!gameData)
     
@@ -464,7 +467,7 @@ const GameLobby = () => {
     const timeoutId = setTimeout(checkGameStart, 200)
     
     return () => clearTimeout(timeoutId)
-  }, [gameData, address, isCreator, isJoiner, countdownTriggered])
+  }, [gameData?.status, gameData?.creator_deposited, gameData?.challenger_deposited, countdownTriggered, address]) // Only depend on specific fields, not functions
   
   // Countdown is no longer used - players transport directly to flip suite
 
