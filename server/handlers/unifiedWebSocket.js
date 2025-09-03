@@ -65,8 +65,8 @@ async function handleJoinRoom(socket, data, dbService) {
           gameData.price_usd || gameData.asking_price
         )
         
-        // Update state based on database
-        gameState.creatorDeposited = true // Creator always has NFT deposited at creation
+        // Update state based on database - use actual column names
+        gameState.creatorDeposited = gameData.creator_deposited || false
         if (gameData.challenger) {
           gameState.challenger = gameData.challenger
         }

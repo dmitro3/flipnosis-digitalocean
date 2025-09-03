@@ -27,7 +27,7 @@ class GameStateManager {
       // Deposit tracking
       depositStartTime: null,
       depositTimeRemaining: 120, // 2 minutes in seconds
-      creatorDeposited: true, // Creator's NFT already deposited at game creation
+      creatorDeposited: false, // Will be set to true when NFT deposit is confirmed
       challengerDeposited: false,
       creatorDepositTx: null,
       challengerDepositTx: null,
@@ -81,7 +81,7 @@ class GameStateManager {
       creator: game.creator,
       challenger: game.challenger,
       timeRemaining: game.depositTimeRemaining,
-      creatorDeposited: true, // Always true - NFT already deposited
+      creatorDeposited: game.creatorDeposited, // Use actual deposit status
       challengerDeposited: false
     })
     
@@ -94,7 +94,7 @@ class GameStateManager {
         type: 'deposit_countdown',
         gameId: gameId,
         timeRemaining: game.depositTimeRemaining,
-        creatorDeposited: true, // Always true
+        creatorDeposited: game.creatorDeposited, // Use actual deposit status
         challengerDeposited: game.challengerDeposited
       })
       
@@ -104,9 +104,9 @@ class GameStateManager {
         this.handleDepositTimeout(gameId, broadcastFn)
       }
       
-      // Check if challenger deposited
-      if (game.challengerDeposited) {
-        console.log(`✅ Challenger deposited for game ${gameId}`)
+      // Check if both deposited
+      if (game.creatorDeposited && game.challengerDeposited) {
+        console.log(`✅ Both players deposited for game ${gameId}`)
         this.startGameActive(gameId, broadcastFn)
       }
     }, 1000) // Update every second
@@ -118,44 +118,84 @@ class GameStateManager {
   // Handle deposit confirmation
   confirmDeposit(gameId, player, assetType, transactionHash, broadcastFn) {
     const game = this.games.get(gameId)
-    if (!game || game.phase !== this.PHASES.DEPOSIT_STAGE) {
-      console.error(`❌ Cannot confirm deposit - game ${gameId} not in deposit stage`)
+    if (!game) {
+      console.error(`❌ Game not found: ${gameId}`)
       return false
     }
     
-    // Only challenger needs to deposit (creator already deposited NFT at game creation)
-    const isChallenger = player.toLowerCase() === game.challenger.toLowerCase()
-    if (!isChallenger) {
-      console.log(`⚠️ Creator deposit ignored - NFT already deposited at game creation`)
-      return false
+    // Handle creator NFT deposits
+    if (assetType === 'nft') {
+      const isCreator = player.toLowerCase() === game.creator.toLowerCase()
+      if (!isCreator) {
+        console.error(`❌ Only creator can deposit NFT`)
+        return false
+      }
+      
+      game.creatorDeposited = true
+      game.creatorDepositTx = transactionHash
+      console.log(`✅ Creator deposited NFT for game ${gameId}`)
+      
+      game.updatedAt = new Date().toISOString()
+      
+      // Broadcast NFT deposit update
+      broadcastFn(`game_${gameId}`, {
+        type: 'nft_deposit_confirmed',
+        gameId: gameId,
+        player: player,
+        assetType: 'nft',
+        transactionHash: transactionHash,
+        creatorDeposited: true,
+        challengerDeposited: game.challengerDeposited
+      })
+      
+      return true
     }
     
-    game.challengerDeposited = true
-    game.challengerDepositTx = transactionHash
-    console.log(`✅ Challenger deposited crypto for game ${gameId}`)
+    // Handle challenger crypto deposits
+    if (assetType === 'crypto') {
+      if (game.phase !== this.PHASES.DEPOSIT_STAGE) {
+        console.error(`❌ Cannot confirm crypto deposit - game ${gameId} not in deposit stage`)
+        return false
+      }
+      
+      const isChallenger = player.toLowerCase() === game.challenger.toLowerCase()
+      if (!isChallenger) {
+        console.error(`❌ Only challenger can deposit crypto`)
+        return false
+      }
+      
+      game.challengerDeposited = true
+      game.challengerDepositTx = transactionHash
+      console.log(`✅ Challenger deposited crypto for game ${gameId}`)
+      
+      game.updatedAt = new Date().toISOString()
+      
+      // Broadcast crypto deposit update
+      broadcastFn(`game_${gameId}`, {
+        type: 'deposit_confirmed',
+        gameId: gameId,
+        player: player,
+        assetType: 'crypto',
+        transactionHash: transactionHash,
+        creatorDeposited: game.creatorDeposited,
+        challengerDeposited: true,
+        timeRemaining: game.depositTimeRemaining,
+        bothDeposited: game.creatorDeposited && true
+      })
+      
+      // Check if both deposited to start game
+      if (game.creatorDeposited && game.challengerDeposited) {
+        console.log(`🎮 Both deposited - starting game ${gameId}`)
+        setTimeout(() => {
+          this.startGameActive(gameId, broadcastFn)
+        }, 1000)
+      }
+      
+      return true
+    }
     
-    game.updatedAt = new Date().toISOString()
-    
-    // Broadcast deposit update
-    broadcastFn(`game_${gameId}`, {
-      type: 'deposit_confirmed',
-      gameId: gameId,
-      player: player,
-      assetType: 'crypto',
-      transactionHash: transactionHash,
-      creatorDeposited: true, // Always true
-      challengerDeposited: true,
-      timeRemaining: game.depositTimeRemaining,
-      bothDeposited: true // Both are now deposited
-    })
-    
-    // Challenger deposited - start game
-    console.log(`🎮 Challenger deposited - starting game ${gameId}`)
-    setTimeout(() => {
-      this.startGameActive(gameId, broadcastFn)
-    }, 1000)
-    
-    return true
+    console.error(`❌ Unknown asset type: ${assetType}`)
+    return false
   }
 
   // Handle deposit timeout
@@ -184,7 +224,7 @@ class GameStateManager {
       gameId: gameId,
       refundTo: refundTo,
       penaltyTo: penaltyTo,
-      creatorDeposited: true, // Always true
+      creatorDeposited: game.creatorDeposited, // Use actual deposit status
       challengerDeposited: game.challengerDeposited,
       message: 'Challenger failed to deposit crypto in time. Creator\'s NFT will be refunded.'
     })

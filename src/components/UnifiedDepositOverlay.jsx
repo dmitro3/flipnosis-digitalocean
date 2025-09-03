@@ -252,16 +252,29 @@ export default function UnifiedDepositOverlay({
       if (data.gameId === gameId) {
         setDepositState(prev => ({
           ...prev,
+          creatorDeposited: data.creatorDeposited,
           challengerDeposited: data.challengerDeposited
         }))
         
         if (data.bothDeposited) {
-          showSuccess('Challenger deposited crypto! Game starting...')
+          showSuccess('Both players deposited! Game starting...')
           setTimeout(() => {
             setDepositState(null)
             if (onDepositComplete) onDepositComplete()
           }, 2000)
         }
+      }
+    }
+
+    const handleNftDepositConfirmed = (data) => {
+      console.log('✅ NFT deposit confirmed:', data)
+      if (data.gameId === gameId) {
+        setDepositState(prev => ({
+          ...prev,
+          creatorDeposited: data.creatorDeposited
+        }))
+        
+        showSuccess('NFT deposited successfully!')
       }
     }
 
@@ -288,6 +301,7 @@ export default function UnifiedDepositOverlay({
     webSocketService.on('deposit_stage_started', handleDepositStageStarted)
     webSocketService.on('deposit_countdown', handleDepositCountdown)
     webSocketService.on('deposit_confirmed', handleDepositConfirmed)
+    webSocketService.on('nft_deposit_confirmed', handleNftDepositConfirmed)
     webSocketService.on('deposit_timeout', handleDepositTimeout)
     webSocketService.on('game_started', handleGameStarted)
 
@@ -296,6 +310,7 @@ export default function UnifiedDepositOverlay({
       webSocketService.off('deposit_stage_started', handleDepositStageStarted)
       webSocketService.off('deposit_countdown', handleDepositCountdown)
       webSocketService.off('deposit_confirmed', handleDepositConfirmed)
+      webSocketService.off('nft_deposit_confirmed', handleNftDepositConfirmed)
       webSocketService.off('deposit_timeout', handleDepositTimeout)
       webSocketService.off('game_started', handleGameStarted)
     }
@@ -303,27 +318,47 @@ export default function UnifiedDepositOverlay({
 
   // Handle deposit action
   const handleDeposit = async () => {
-    if (isDepositing || userRole !== 'challenger') return
+    if (isDepositing) return
     setIsDepositing(true)
 
     try {
-      // Only challenger deposits crypto (creator already deposited NFT)
-      showInfo('Depositing crypto...')
-      
-      // Here you would call your deposit contract method
-      // For now, we'll simulate it
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Send confirmation to server
-      webSocketService.send({
-        type: 'deposit_confirmed',
-        gameId,
-        player: address,
-        assetType: 'crypto',
-        transactionHash: '0x' + Math.random().toString(16).slice(2, 66)
-      })
-      
-      showSuccess('Crypto deposited successfully!')
+      if (userRole === 'creator') {
+        // Creator deposits NFT
+        showInfo('Depositing NFT...')
+        
+        // Here you would call your NFT deposit contract method
+        // For now, we'll simulate it
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Send confirmation to server
+        webSocketService.send({
+          type: 'deposit_confirmed',
+          gameId,
+          player: address,
+          assetType: 'nft',
+          transactionHash: '0x' + Math.random().toString(16).slice(2, 66)
+        })
+        
+        showSuccess('NFT deposited successfully!')
+      } else if (userRole === 'challenger') {
+        // Challenger deposits crypto
+        showInfo('Depositing crypto...')
+        
+        // Here you would call your crypto deposit contract method
+        // For now, we'll simulate it
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Send confirmation to server
+        webSocketService.send({
+          type: 'deposit_confirmed',
+          gameId,
+          player: address,
+          assetType: 'crypto',
+          transactionHash: '0x' + Math.random().toString(16).slice(2, 66)
+        })
+        
+        showSuccess('Crypto deposited successfully!')
+      }
     } catch (error) {
       console.error('❌ Deposit failed:', error)
       showError('Deposit failed. Please try again.')
@@ -386,13 +421,25 @@ export default function UnifiedDepositOverlay({
         </StatusGrid>
 
         <ActionSection>
-          {userRole === 'creator' && (
+          {userRole === 'creator' && !depositState.creatorDeposited && (
             <>
-              <CreatorInfo>
-                ✅ Your NFT was deposited when you created the game<br/>
-                ⏳ Waiting for challenger to deposit crypto...
-              </CreatorInfo>
+              <DepositButton 
+                onClick={handleDeposit}
+                disabled={isDepositing}
+              >
+                {isDepositing ? 'Depositing NFT...' : 'Deposit NFT'}
+              </DepositButton>
+              <InfoMessage>
+                ⚠️ You must deposit your NFT to start the game
+              </InfoMessage>
             </>
+          )}
+
+          {userRole === 'creator' && depositState.creatorDeposited && !depositState.challengerDeposited && (
+            <CreatorInfo>
+              ✅ Your NFT has been deposited<br/>
+              ⏳ Waiting for challenger to deposit crypto...
+            </CreatorInfo>
           )}
 
           {userRole === 'challenger' && !depositState.challengerDeposited && (
