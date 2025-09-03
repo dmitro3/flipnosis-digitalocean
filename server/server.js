@@ -69,7 +69,7 @@ async function initializeServices() {
 
   // Initialize cleanup service
   const cleanupService = new CleanupService(dbService, blockchainService)
-  cleanupService.startCleanupInterval()
+  cleanupService.start()
   console.log('✅ Cleanup service started')
 
   // Setup blockchain event listeners

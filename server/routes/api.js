@@ -13,10 +13,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   
   // Initialize Event Service
   const GameEventService = require('../services/EventService')
-  const WebSocketEventHandler = require('../services/WebSocketEventHandler')
   
   const gameEventService = new GameEventService(dbService)
-  const webSocketEventHandler = new WebSocketEventHandler(gameEventService)
 
   // Health check
   router.get('/health', (req, res) => {

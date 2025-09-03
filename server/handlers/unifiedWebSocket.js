@@ -1,4 +1,8 @@
 const WebSocket = require('ws')
+const GameStateManager = require('./GameStateManager')
+
+// ===== GAME STATE MANAGER =====
+const gameStateManager = new GameStateManager()
 
 // ===== ROOM MANAGEMENT =====
 const rooms = new Map() // roomId -> Set of socket IDs
@@ -12,6 +16,7 @@ async function handleJoinRoom(socket, data, dbService) {
   
   // STANDARDIZED room naming - always use game_${gameId}
   const normalizedRoomId = roomId.startsWith('game_') ? roomId : `game_${roomId}`
+  const gameId = normalizedRoomId.replace('game_', '')
   
   // Leave previous room if any
   const previousRoom = socketRooms.get(socket.id)
@@ -28,18 +33,67 @@ async function handleJoinRoom(socket, data, dbService) {
   socketRooms.set(socket.id, normalizedRoomId)
   
   // Store socket data
-  socketData.set(socket.id, { address, gameId: normalizedRoomId.replace('game_', '') })
+  socketData.set(socket.id, { address, gameId })
   addressToSocket.set(address?.toLowerCase(), socket.id)
   
   console.log(`✅ Socket ${socket.id} (${address}) joined room ${normalizedRoomId}`)
   
-  // Send confirmation
+  // Get game state from manager
+  let gameState = gameStateManager.getGame(gameId)
+  
+  // If no game state exists, check database
+  if (!gameState && dbService && dbService.db) {
+    try {
+      const gameData = await new Promise((resolve, reject) => {
+        dbService.db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
+          if (err) reject(err)
+          else resolve(row)
+        })
+      })
+      
+      if (gameData) {
+        // Create game state from database
+        gameState = gameStateManager.createGame(
+          gameId,
+          gameData.creator,
+          {
+            contract: gameData.nft_contract,
+            tokenId: gameData.nft_token_id,
+            name: gameData.nft_name,
+            image: gameData.nft_image
+          },
+          gameData.price_usd || gameData.asking_price
+        )
+        
+        // Update state based on database
+        gameState.creatorDeposited = true // Creator always has NFT deposited at creation
+        if (gameData.challenger) {
+          gameState.challenger = gameData.challenger
+        }
+        if (gameData.challenger_deposited) {
+          gameState.challengerDeposited = true
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading game from database:', error)
+    }
+  }
+  
+  // Send room joined confirmation with game state
   socket.send(JSON.stringify({
     type: 'room_joined',
     roomId: normalizedRoomId,
     address,
+    gameState: gameState || null,
     message: `Successfully joined room ${normalizedRoomId}`
   }))
+  
+  // Add as spectator if not creator or challenger
+  if (gameState) {
+    if (address !== gameState.creator && address !== gameState.challenger) {
+      gameStateManager.addSpectator(gameId, address)
+    }
+  }
   
   // Load and send chat history if database is available
   if (dbService && typeof dbService.getChatHistory === 'function') {
@@ -131,12 +185,28 @@ async function handleAcceptOffer(socket, data, dbService) {
   const roomId = socketRooms.get(socket.id)
   if (!roomId) return
   
-  const acceptData = {
-    type: 'offer_accepted',
-    gameId: data.gameId || roomId.replace('game_', ''),
-    offerId: data.offerId,
-    challenger: data.joinerAddress || data.offerer_address,
-    timestamp: new Date().toISOString()
+  const gameId = data.gameId || roomId.replace('game_', '')
+  const challenger = data.joinerAddress || data.offerer_address
+  
+  // Start deposit stage using GameStateManager
+  const success = gameStateManager.startDepositStage(gameId, challenger, broadcastToRoom)
+  
+  if (!success) {
+    // Create game state if it doesn't exist
+    let gameState = gameStateManager.getGame(gameId)
+    if (!gameState) {
+      // Get creator from socket data
+      const creatorData = socketData.get(socket.id)
+      gameState = gameStateManager.createGame(
+        gameId,
+        creatorData?.address || data.creator,
+        data.nftData || {},
+        data.askingPrice || data.amount
+      )
+    }
+    
+    // Try again
+    gameStateManager.startDepositStage(gameId, challenger, broadcastToRoom)
   }
   
   // Update database
@@ -148,7 +218,7 @@ async function handleAcceptOffer(socket, data, dbService) {
           UPDATE crypto_offers 
           SET status = 'accepted', accepted_at = ?
           WHERE id = ?
-        `, [acceptData.timestamp, data.offerId], (err) => {
+        `, [new Date().toISOString(), data.offerId], (err) => {
           if (err) reject(err)
           else resolve()
         })
@@ -158,28 +228,25 @@ async function handleAcceptOffer(socket, data, dbService) {
       await new Promise((resolve, reject) => {
         dbService.db.run(`
           UPDATE games 
-          SET challenger = ?, status = 'awaiting_challenger_deposit'
+          SET challenger = ?, status = 'awaiting_deposits'
           WHERE id = ?
-        `, [acceptData.challenger, acceptData.gameId], (err) => {
+        `, [challenger, gameId], (err) => {
           if (err) reject(err)
           else resolve()
         })
       })
       
-      console.log('✅ Offer accepted and game updated')
+      console.log('✅ Offer accepted and deposit stage started')
     } catch (error) {
       console.error('❌ Error accepting offer:', error)
     }
   }
   
-  // Broadcast to room
-  broadcastToRoom(roomId, acceptData)
-  
   // Send direct message to challenger
-  sendToUser(acceptData.challenger, {
+  sendToUser(challenger, {
     type: 'your_offer_accepted',
-    gameId: acceptData.gameId,
-    message: 'Your offer has been accepted! Please deposit crypto.'
+    gameId: gameId,
+    message: 'Your offer has been accepted! Deposit stage starting...'
   })
 }
 
@@ -189,90 +256,55 @@ async function handleDepositConfirmed(socket, data, dbService) {
   
   const gameId = data.gameId || roomId.replace('game_', '')
   
-  // Check if both players deposited BEFORE broadcasting
-  let bothDeposited = false
-  let gameData = null
+  // Use GameStateManager to handle deposit
+  const success = gameStateManager.confirmDeposit(
+    gameId,
+    data.player,
+    data.assetType,
+    data.transactionHash,
+    broadcastToRoom
+  )
   
-  if (dbService && dbService.db) {
+  if (success && dbService && dbService.db) {
+    // Update database
     try {
-      // First update the deposit status
-      if (data.player && data.assetType) {
-        const isCreator = data.assetType === 'nft'
-        const updateField = isCreator ? 'creator_deposited' : 'challenger_deposited'
-        
-        await new Promise((resolve, reject) => {
-          dbService.db.run(
-            `UPDATE games SET ${updateField} = 1 WHERE id = ?`,
-            [gameId],
-            (err) => {
-              if (err) reject(err)
-              else resolve()
-            }
-          )
-        })
-        
-        console.log(`✅ Updated ${updateField} for game ${gameId}`)
-      }
+      const isCreator = data.assetType === 'nft'
+      const updateField = isCreator ? 'creator_deposited' : 'challenger_deposited'
       
-      // Now check if both have deposited
-      gameData = await new Promise((resolve, reject) => {
-        dbService.db.get(
-          'SELECT * FROM games WHERE id = ?',
+      await new Promise((resolve, reject) => {
+        dbService.db.run(
+          `UPDATE games SET ${updateField} = 1 WHERE id = ?`,
           [gameId],
-          (err, row) => {
+          (err) => {
             if (err) reject(err)
-            else resolve(row)
+            else resolve()
           }
         )
       })
       
-      bothDeposited = !!(gameData?.creator_deposited && gameData?.challenger_deposited)
-      console.log(`🎮 Game ${gameId} deposit status - Creator: ${gameData?.creator_deposited}, Challenger: ${gameData?.challenger_deposited}, Both: ${bothDeposited}`)
-      
+      console.log(`✅ Database updated: ${updateField} for game ${gameId}`)
     } catch (error) {
-      console.error('❌ Error checking deposit status:', error)
+      console.error('❌ Error updating deposit in database:', error)
     }
-  }
-  
-  // Broadcast deposit confirmation with bothDeposited flag
-  const depositData = {
-    type: 'deposit_confirmed',
-    gameId: gameId,
-    player: data.player,
-    assetType: data.assetType,
-    transactionHash: data.transactionHash,
-    bothDeposited: bothDeposited, // Include this crucial flag
-    timestamp: new Date().toISOString()
-  }
-  
-  broadcastToRoom(roomId, depositData)
-  
-  // If both deposited, also send game_ready event
-  if (bothDeposited && gameData) {
-    setTimeout(() => {
-      broadcastToRoom(roomId, {
-        type: 'game_ready',
-        gameId: gameId,
-        message: 'Both players have deposited! Game starting...',
-        creator: gameData.creator,
-        challenger: gameData.challenger,
-        bothDeposited: true
-      })
-    }, 500)
   }
 }
 
-async function handleGameStatusChange(socket, data, dbService) {
-  const roomId = socketRooms.get(socket.id)
-  if (!roomId) return
+// Game action handlers
+async function handleGameAction(socket, data) {
+  const gameId = data.gameId
   
-  broadcastToRoom(roomId, {
-    type: 'game_status_changed',
-    gameId: data.gameId,
-    newStatus: data.newStatus,
-    previousStatus: data.previousStatus,
-    timestamp: new Date().toISOString()
-  })
+  switch (data.action) {
+    case 'make_choice':
+      gameStateManager.makeChoice(gameId, data.player, data.choice, broadcastToRoom)
+      break
+      
+    case 'set_power':
+      // Future implementation
+      break
+      
+    default:
+      console.log(`⚠️ Unknown game action: ${data.action}`)
+  }
 }
 
 // ===== BROADCAST FUNCTIONS =====
@@ -369,8 +401,8 @@ function handleConnection(ws, dbService) {
           await handleDepositConfirmed(ws, data, dbService)
           break
           
-        case 'game_status_changed':
-          await handleGameStatusChange(ws, data, dbService)
+        case 'game_action':
+          await handleGameAction(ws, data)
           break
           
         case 'ping':
@@ -429,6 +461,7 @@ function initializeWebSocket(server, databaseService) {
   
   console.log('🚀 WebSocket server initialized on /ws')
   console.log('📊 Database service:', !!dbService)
+  console.log('🎮 Game State Manager:', !!gameStateManager)
   
   wss.on('connection', (ws) => {
     handleConnection(ws, dbService)
@@ -458,5 +491,6 @@ module.exports = {
   sendToUser,
   rooms,
   socketRooms,
-  socketData
+  socketData,
+  gameStateManager
 }

@@ -84,15 +84,14 @@ class CleanupService {
       this.dbService.db.all(`
         SELECT * FROM games 
         WHERE (
-          -- Games without NFT deposits older than MAX_AGE_MINUTES
-          (nft_deposited = false AND created_at < ? AND status IN ('waiting_challenger', 'waiting'))
+          -- Games without deposits older than MAX_AGE_MINUTES
+          (creator_deposited = false AND created_at < ? AND status IN ('waiting_deposits', 'waiting'))
           OR
-          -- Games that need contract verification (not checked recently)
-          (nft_deposited = true AND nft_deposit_verified = false AND 
-           (last_nft_check_time IS NULL OR last_nft_check_time < ?))
+          -- Games that need cleanup (older than MAX_AGE_MINUTES)
+          (created_at < ? AND status IN ('waiting_deposits', 'waiting'))
         )
         ORDER BY created_at ASC
-      `, [cutoffTime.toISOString(), new Date(Date.now() - this.CONTRACT_CHECK_COOLDOWN_MS).toISOString()], (err, rows) => {
+      `, [cutoffTime.toISOString(), cutoffTime.toISOString()], (err, rows) => {
         if (err) reject(err)
         else resolve(rows || [])
       })
