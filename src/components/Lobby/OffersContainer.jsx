@@ -311,7 +311,7 @@ const OffersContainer = ({
       setAcceptedOffer(acceptedOffer)
       setShowDepositOverlay(true)
     }
-  }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay from deps
+  }, [gameData?.status, gameData?.challenger, address, showDepositOverlay])
 
   // WebSocket connection for real-time updates (replaces old polling system)
   useEffect(() => {
@@ -336,14 +336,14 @@ const OffersContainer = ({
     const connectToWebSocket = async () => {
       try {
         // Check if already connected
-        const isConnected = ws.isConnected ? ws.isConnected() : ws.connected
+        const isConnected = ws && (ws.isConnected ? ws.isConnected() : ws.connected)
         if (!isConnected) {
           console.log('🔌 Connecting to WebSocket...')
-          if (ws.connect) {
+          if (ws && ws.connect && typeof ws.connect === 'function') {
             await ws.connect(`game_${gameId}`, address)
             console.log('✅ WebSocket connected for real-time offers')
           } else {
-            console.warn('⚠️ WebSocket service has no connect method')
+            console.warn('⚠️ WebSocket service has no connect method or is not a function')
           }
         } else {
           console.log('✅ WebSocket already connected')
@@ -507,7 +507,8 @@ const OffersContainer = ({
           
           // Only close overlay if we're not in creator waiting mode
           // This prevents the overlay from disappearing prematurely for Player 1
-          if (currentShow && acceptedOffer?.isCreatorWaiting) {
+          const currentOverlayState = overlayStateRef.current
+          if (currentShow && currentOverlayState.offer?.isCreatorWaiting) {
             console.log('🎯 Keeping overlay open for creator waiting mode')
             return true
           }
@@ -552,7 +553,7 @@ const OffersContainer = ({
           console.error('❌ Error cleaning up WebSocket handlers:', error)
         }
       }
-  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd])
+  }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd, onOfferAccepted])
 
   const isCreator = () => {
     // Use prop if available (preferred)
@@ -649,7 +650,7 @@ const OffersContainer = ({
     try {
       // WebSocket-first approach with API fallback (same as chat)
       const ws = socket || window.FlipnosisWS
-      const isConnected = ws && (ws.isConnected ? ws.isConnected() : ws.connected)
+      const isConnected = ws && typeof ws === 'object' && (ws.isConnected ? ws.isConnected() : ws.connected)
       
       console.log('🔍 Offers: WebSocket connection check:', isConnected)
       
@@ -665,14 +666,21 @@ const OffersContainer = ({
         }
         
         console.log('📤 Offers: Sending via WebSocket:', offerData)
-        ws.send(offerData)
+        if (ws && typeof ws.send === 'function') {
+          ws.send(offerData)
+        } else {
+          console.error('❌ WebSocket send method not available')
+          throw new Error('WebSocket send method not available')
+        }
         
         // Optimistically add to local state
         const newOffer = {
-          id: Date.now(),
+          id: `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           type: 'crypto_offer',
           address: address,
+          offerer_address: address,
           cryptoAmount: offerAmount,
+          offer_price: offerAmount,
           timestamp: new Date().toISOString()
         }
         
@@ -702,10 +710,12 @@ const OffersContainer = ({
           
           // Add to local state
           const newOffer = {
-            id: Date.now(),
+            id: `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             type: 'crypto_offer',
             address: address,
+            offerer_address: address,
             cryptoAmount: offerAmount,
+            offer_price: offerAmount,
             timestamp: new Date().toISOString()
           }
           
