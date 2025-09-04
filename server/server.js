@@ -32,8 +32,27 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }))
 
-app.use(express.json({ limit: '50mb' }))
+// Temporarily disable JSON middleware to debug
+// app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
+
+// Raw body parser for debugging
+app.use('/api/games/:gameId/deposit-confirmed', (req, res, next) => {
+  let body = ''
+  req.on('data', chunk => {
+    body += chunk.toString()
+  })
+  req.on('end', () => {
+    try {
+      req.body = JSON.parse(body)
+      next()
+    } catch (err) {
+      console.error('❌ Raw JSON parsing error:', err.message)
+      console.error('❌ Raw body:', body)
+      res.status(400).json({ error: 'Invalid JSON', message: err.message })
+    }
+  })
+})
 
 // ===== STATIC FILES =====
 const distPath = path.join(__dirname, '..', 'dist')
