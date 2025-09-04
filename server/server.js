@@ -7,7 +7,7 @@ const fs = require('fs')
 
 // Import services
 const { createApiRoutes } = require('./routes/api')
-const { initializeWebSocket } = require('./handlers/unifiedWebSocket')
+const { initializeWebSocket } = require('./handlers/cleanWebSocket')
 const { DatabaseService } = require('./services/database')
 const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
@@ -77,7 +77,7 @@ async function initializeServices() {
     console.log('🔔 Blockchain event received:', event.type, event)
     
     // Handle blockchain events and broadcast via WebSocket
-    const { broadcastToRoom } = require('./handlers/unifiedWebSocket')
+    const { broadcastToRoom } = require('./handlers/cleanWebSocket')
     
     if (event.type === 'GameReady') {
       const gameId = event.gameId
@@ -105,7 +105,7 @@ initializeServices()
     console.log('✅ WebSocket server initialized')
     
     // Setup API routes
-    const wsHandlers = require('./handlers/unifiedWebSocket')
+    const wsHandlers = require('./handlers/cleanWebSocket')
     const apiRouter = createApiRoutes(dbService, blockchainService, wsHandlers)
     app.use('/api', apiRouter)
     console.log('✅ API routes configured')
