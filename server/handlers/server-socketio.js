@@ -128,6 +128,10 @@ function initializeSocketIO(server, dbService) {
       game.depositTimeRemaining = 120
       game.depositStartTime = Date.now()
       
+      // IMPORTANT: Creator has already deposited NFT when they created the game
+      game.creatorDeposited = true
+      console.log('🎯 Set creatorDeposited to true (NFT already deposited)')
+      
       // Start countdown timer that broadcasts to ALL users in room
       const timer = setInterval(() => {
         game.depositTimeRemaining--
@@ -135,6 +139,12 @@ function initializeSocketIO(server, dbService) {
         // Broadcast countdown to ENTIRE ROOM
         io.to(socketInfo.roomId).emit('deposit_countdown', {
           gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
+          timeRemaining: game.depositTimeRemaining,
+          creatorDeposited: game.creatorDeposited,
+          challengerDeposited: game.challengerDeposited
+        })
+        
+        console.log('⏰ Countdown broadcast:', {
           timeRemaining: game.depositTimeRemaining,
           creatorDeposited: game.creatorDeposited,
           challengerDeposited: game.challengerDeposited
@@ -172,6 +182,8 @@ function initializeSocketIO(server, dbService) {
         challengerDeposited: false
       })
       
+      console.log('🎯 Sent deposit_stage_started with creatorDeposited: true')
+      
       // Send specific event to challenger (Player 2) to show deposit overlay
       const challengerSocketId = userSockets.get(challenger.toLowerCase())
       if (challengerSocketId) {
@@ -193,26 +205,57 @@ function initializeSocketIO(server, dbService) {
 
     // Handle deposit confirmation
     socket.on('deposit_confirmed', (data) => {
+      console.log('🎯 Server received deposit_confirmed event:', data)
+      
       const socketInfo = socketData.get(socket.id)
-      if (!socketInfo) return
+      if (!socketInfo) {
+        console.error('❌ No socket info found for socket:', socket.id)
+        return
+      }
+      
+      console.log('🎯 Socket info:', socketInfo)
       
       const game = gameStateManager.getGame(socketInfo.gameId)
-      if (!game) return
+      if (!game) {
+        console.error('❌ No game found for gameId:', socketInfo.gameId)
+        return
+      }
+      
+      console.log('🎯 Current game state:', {
+        gameId: socketInfo.gameId,
+        challenger: game.challenger,
+        player: data.player,
+        creatorDeposited: game.creatorDeposited,
+        challengerDeposited: game.challengerDeposited
+      })
       
       // Update game state
       if (data.player === game.challenger) {
         game.challengerDeposited = true
+        console.log('✅ Updated challengerDeposited to true')
       }
       
       // Broadcast to room
-      io.to(socketInfo.roomId).emit('deposit_confirmed', {
+      const broadcastData = {
         gameId: socketInfo.gameId,
         player: data.player,
         assetType: data.assetType,
         creatorDeposited: game.creatorDeposited,
         challengerDeposited: game.challengerDeposited,
         bothDeposited: game.creatorDeposited && game.challengerDeposited
-      })
+      }
+      
+      console.log('🎯 Broadcasting deposit_confirmed:', broadcastData)
+      io.to(socketInfo.roomId).emit('deposit_confirmed', broadcastData)
+      
+      // Check if both deposited to start game
+      if (game.creatorDeposited && game.challengerDeposited) {
+        console.log('🎮 Both players deposited - starting game!')
+        io.to(socketInfo.roomId).emit('game_started', {
+          gameId: socketInfo.gameId,
+          message: 'Both players deposited! Game starting...'
+        })
+      }
     })
 
     // Handle disconnection

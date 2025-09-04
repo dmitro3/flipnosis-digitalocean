@@ -301,7 +301,16 @@ export default function UnifiedDepositOverlay({
     const handleGameStarted = (data) => {
       console.log('🎮 Game started:', data)
       if (data.gameId === gameId) {
+        console.log('🚀 Both players deposited - transitioning to flip suite!')
         setDepositState(null)
+        
+        // Transport both players to the flip suite
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: data.gameId, immediate: true }
+          }))
+        }, 1000)
+        
         if (onDepositComplete) onDepositComplete()
       }
     }
@@ -378,14 +387,23 @@ export default function UnifiedDepositOverlay({
         if (result.success) {
           // Send confirmation to server via Socket.io
           try {
+            console.log('🎯 Sending deposit_confirmed event:', {
+              gameId: gameId,
+              player: address,
+              assetType: 'crypto',
+              transactionHash: result.transactionHash
+            })
+            
             webSocketService.emit('deposit_confirmed', {
               gameId: gameId,
               player: address,
               assetType: 'crypto',
               transactionHash: result.transactionHash
             })
+            
+            console.log('✅ deposit_confirmed event sent successfully')
           } catch (socketError) {
-            console.warn('⚠️ Failed to send Socket.io message:', socketError)
+            console.error('❌ Failed to send Socket.io message:', socketError)
             // Don't fail the deposit if Socket.io fails
           }
           
