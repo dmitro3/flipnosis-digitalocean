@@ -526,6 +526,23 @@ const OffersContainer = ({
       })
     }
 
+    // Handle game started event
+    const handleGameStarted = (data) => {
+      console.log('🎮 Game started event received:', data)
+      if (data.gameId === gameId) {
+        // Close any open deposit overlays
+        setShowDepositOverlay(false)
+        setAcceptedOffer(null)
+        
+        // Transport to game room
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameId, immediate: true }
+          }))
+        }, 500)
+      }
+    }
+
     // Register Socket.io event listeners
     socketService.on('crypto_offer', handleOffer)
     socketService.on('deposit_stage_started', handleDepositStageStarted)
