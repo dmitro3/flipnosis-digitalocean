@@ -950,6 +950,30 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           offer.offerer_address
         )
         
+        // Send specific your_offer_accepted event to challenger
+        if (wsHandlers && wsHandlers.sendToUser) {
+          wsHandlers.sendToUser(offer.offerer_address, {
+            type: 'your_offer_accepted',
+            gameId: game.id,
+            challenger: offer.offerer_address,
+            cryptoAmount: offer.offer_price,
+            finalPrice: offer.offer_price,
+            timestamp: new Date().toISOString(),
+            message: 'Your offer has been accepted! Please deposit crypto within 2 minutes.'
+          })
+          console.log('✅ your_offer_accepted event sent to challenger:', offer.offerer_address)
+        }
+        
+        // Start deposit stage in GameStateManager
+        if (wsHandlers && wsHandlers.gameStateManager) {
+          const success = wsHandlers.gameStateManager.startDepositStage(
+            game.id, 
+            offer.offerer_address, 
+            wsHandlers.broadcastToRoom
+          )
+          console.log('✅ GameStateManager deposit stage started:', success)
+        }
+        
         // Also emit game status changed event
         await gameEventService.emitGameStatusChanged(
           game.id,
