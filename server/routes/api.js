@@ -1441,7 +1441,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     }
     
     if (updates.joiner !== undefined) {
-      updateFields.push('joiner = ?')
+      updateFields.push('challenger = ?')
       updateValues.push(updates.joiner)
     }
     
