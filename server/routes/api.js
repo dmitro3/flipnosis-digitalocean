@@ -471,14 +471,15 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator, challenger,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            price_usd, coin_data, status, creator_deposited, game_type, chain, payment_token,
+            price_usd, rounds, coin_data, status, creator_deposited, game_type, chain, payment_token,
             nft_deposited, nft_deposit_time, nft_deposit_hash, nft_deposit_verified, last_nft_check_time
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listing.id, ethers.id(gameId), listing.creator, '', // challenger is empty initially
           listing.nft_contract, listing.nft_token_id, listing.nft_name, 
           listing.nft_image, listing.nft_collection,
-          listing.asking_price, JSON.stringify(coinData), 
+          listing.asking_price, 5, // rounds - default to 5 rounds
+          JSON.stringify(coinData), 
           'awaiting_deposit', // Status for game created but NFT not deposited yet
           false, // creator_deposited
           'nft-vs-crypto', // game_type
