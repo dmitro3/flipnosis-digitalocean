@@ -33,15 +33,6 @@ app.use(cors({
 }))
 
 app.use(express.json({ limit: '50mb' }))
-
-// Debug middleware to catch JSON parsing errors
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    console.error('❌ JSON parsing error:', err.message)
-    return res.status(400).json({ error: 'Invalid JSON', message: err.message })
-  }
-  next(err)
-})
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ===== STATIC FILES =====
@@ -152,6 +143,13 @@ initializeServices()
     // Error handling middleware
     app.use((err, req, res, next) => {
       console.error('❌ Server error:', err)
+      
+      // Handle JSON parsing errors specifically
+      if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        console.error('❌ JSON parsing error:', err.message)
+        return res.status(400).json({ error: 'Invalid JSON', message: err.message })
+      }
+      
       res.status(500).json({
         error: 'Internal server error',
         message: err.message
