@@ -306,6 +306,39 @@ const OffersContainer = ({
     }
   }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay from deps
 
+  // Listen for custom showDepositScreen event from GameLobby
+  useEffect(() => {
+    const handleShowDepositScreen = (event) => {
+      console.log('🎯 Received showDepositScreen event:', event.detail)
+      
+      const { gameId: eventGameId, challenger, cryptoAmount } = event.detail
+      
+      // Only handle if it's for the current game and current user is the challenger
+      if (eventGameId === gameId && challenger && address && 
+          challenger.toLowerCase() === address.toLowerCase()) {
+        
+        console.log('✅ Showing deposit screen for Player 2 (challenger)')
+        
+        // Create accepted offer object for the deposit overlay
+        const acceptedOffer = {
+          offerer_address: address, // Current user is the offerer who needs to deposit
+          cryptoAmount: cryptoAmount,
+          timestamp: new Date().toISOString()
+        }
+        
+        setAcceptedOffer(acceptedOffer)
+        setShowDepositOverlay(true)
+        console.log('🎯 Deposit screen shown for Player 2:', acceptedOffer)
+      }
+    }
+
+    window.addEventListener('showDepositScreen', handleShowDepositScreen)
+    
+    return () => {
+      window.removeEventListener('showDepositScreen', handleShowDepositScreen)
+    }
+  }, [gameId, address])
+
   // WebSocket connection for real-time updates
   useEffect(() => {
     if (!gameId || !address) return

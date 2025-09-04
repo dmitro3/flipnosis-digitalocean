@@ -261,10 +261,13 @@ async function handleAcceptOffer(socket, data, dbService) {
     }
   }
   
-  // Send direct message to challenger
+  // Send direct message to challenger with crypto amount
   sendToUser(challenger, {
     type: 'your_offer_accepted',
     gameId: gameId,
+    challenger: challenger,
+    cryptoAmount: data.finalPrice || data.amount || data.cryptoAmount,
+    finalPrice: data.finalPrice || data.amount || data.cryptoAmount,
     message: 'Your offer has been accepted! Deposit stage starting...'
   })
 }

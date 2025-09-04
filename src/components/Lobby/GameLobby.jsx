@@ -396,7 +396,16 @@ const GameLobby = () => {
       console.log('✅ Your offer was accepted, showing deposit overlay...')
       showSuccess('Your offer was accepted! Please deposit crypto within 2 minutes.')
       
-      // WebSocket will handle state updates - no manual refresh needed
+      // Trigger the deposit screen for Player 2 (challenger)
+      // Dispatch a custom event that the OffersContainer will listen for
+      window.dispatchEvent(new CustomEvent('showDepositScreen', {
+        detail: {
+          gameId: data.gameId,
+          challenger: data.challenger || address,
+          cryptoAmount: data.cryptoAmount || data.finalPrice,
+          timestamp: new Date().toISOString()
+        }
+      }))
     }
   }
 
