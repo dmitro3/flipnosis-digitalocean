@@ -402,9 +402,6 @@ const GameLobby = () => {
     if (data.gameId === gameData?.id) {
       console.log('✅ Your offer was accepted - OffersContainer will handle the deposit screen')
       showSuccess('Your offer was accepted! Please deposit crypto within 2 minutes.')
-      
-      // The OffersContainer will handle showing the deposit screen
-      // No need to dispatch custom events here
     }
   }
 

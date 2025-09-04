@@ -425,11 +425,6 @@ const OffersContainer = ({
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
         }, 200)
-        
-        // No refresh needed - WebSocket will handle state updates
-        if (onOfferAccepted) {
-          onOfferAccepted(acceptedOffer)
-        }
       }
     }
 
