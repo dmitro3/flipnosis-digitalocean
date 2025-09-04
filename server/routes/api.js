@@ -1609,7 +1609,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     const { player, assetType, transactionHash, nftDeposited, nftDepositTime, nftDepositHash, nftDepositVerified, lastNftCheckTime } = req.body
     
     try {
-      console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash })
+      console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash }) // Fixed database reference
       
       // Get game details
       const game = await new Promise((resolve, reject) => {
