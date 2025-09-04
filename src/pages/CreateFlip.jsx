@@ -382,34 +382,7 @@ const CreateFlip = () => {
         throw new Error(errorData.error || 'Failed to register game')
       }
       
-      // Step 6: Confirm NFT deposit with all tracking fields
-      const confirmResponse = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player: address,
-          assetType: 'nft',
-          transactionHash: createResult.transactionHash,
-          nftDeposited: true,
-          nftDepositTime: new Date().toISOString(),
-          nftDepositHash: createResult.transactionHash,
-          nftDepositVerified: false,
-          lastNftCheckTime: new Date().toISOString()
-        })
-      })
-      
-      if (!confirmResponse.ok) {
-        const errorData = await confirmResponse.json().catch(() => ({}))
-        console.error('Deposit confirmation failed:', errorData)
-        
-        // Check if it's a verification issue vs a real failure
-        if (errorData.error && errorData.error.includes('verification')) {
-          console.warn('⚠️ NFT deposit verification failed, but transaction succeeded')
-          // Don't throw error - the NFT was deposited successfully
-        } else {
-          throw new Error(errorData.error || 'Failed to confirm NFT deposit')
-        }
-      }
+      // NFT deposit is already handled by createGame() - no need for separate confirmation
       
       showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.')
       navigate(`/game/${gameId}`)
