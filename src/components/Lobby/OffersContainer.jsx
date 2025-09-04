@@ -482,20 +482,34 @@ const OffersContainer = ({
     // Synchronized deposit stage handler - BOTH PLAYERS GET THIS!
     const handleDepositStageStarted = (data) => {
       console.log('🎯 Deposit stage started (synchronized):', data)
+      console.log('🎯 Comparing gameIds:', { eventGameId: data.gameId, componentGameId: gameId })
       
-      if (data.gameId !== gameId) return
+      // More flexible gameId comparison - handle both formats
+      const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+      const componentGameId = gameId?.replace('game_', '') || gameId
       
-      const isChallenger = data.challenger === address
-      const isCreator = data.creator === address
+      if (eventGameId !== componentGameId) {
+        console.log('❌ GameId mismatch, ignoring event')
+        return
+      }
+      
+      console.log('✅ GameId matches, processing deposit stage started')
+      
+      const isChallenger = data.challenger?.toLowerCase() === address?.toLowerCase()
+      const isCreator = data.creator?.toLowerCase() === address?.toLowerCase()
+      
+      console.log('🎯 Player roles:', { isChallenger, isCreator, challenger: data.challenger, creator: data.creator, address })
       
       if (isChallenger) {
         console.log('✅ You are the challenger - need to deposit')
-        setAcceptedOffer({
+        const acceptedOffer = {
           offerer_address: address,
           cryptoAmount: gameData?.payment_amount || gameData?.price_usd,
           needsDeposit: true,
           timeRemaining: data.timeRemaining
-        })
+        }
+        console.log('🎯 Setting accepted offer for challenger:', acceptedOffer)
+        setAcceptedOffer(acceptedOffer)
         setShowDepositOverlay(true)
         
         // Switch to Lounge tab
@@ -504,18 +518,26 @@ const OffersContainer = ({
         }, 200)
       } else if (isCreator) {
         console.log('✅ You are the creator - waiting for deposit')
-        setAcceptedOffer({
+        const acceptedOffer = {
           isCreatorWaiting: true,
           cryptoAmount: gameData?.payment_amount || gameData?.price_usd,
           timeRemaining: data.timeRemaining
-        })
+        }
+        console.log('🎯 Setting accepted offer for creator:', acceptedOffer)
+        setAcceptedOffer(acceptedOffer)
         setShowDepositOverlay(true)
+      } else {
+        console.log('❌ Neither challenger nor creator - ignoring')
       }
     }
 
     // Synchronized countdown - BOTH PLAYERS GET THE SAME TIME!
     const handleDepositCountdown = (data) => {
-      if (data.gameId !== gameId) return
+      // More flexible gameId comparison
+      const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+      const componentGameId = gameId?.replace('game_', '') || gameId
+      
+      if (eventGameId !== componentGameId) return
       
       setAcceptedOffer(prev => {
         if (!prev) return prev
@@ -946,7 +968,14 @@ const OffersContainer = ({
       </OffersList>
 
       {/* Deposit Overlay - use persistent state to prevent flicker */}
-      {showDepositOverlay && acceptedOffer && (
+      {(() => {
+        console.log('🎯 Deposit overlay render check:', { 
+          showDepositOverlay, 
+          hasAcceptedOffer: !!acceptedOffer,
+          acceptedOfferData: acceptedOffer 
+        })
+        return showDepositOverlay && acceptedOffer
+      })() && (
         <UnifiedDepositOverlay
           gameId={gameId}
           address={address}

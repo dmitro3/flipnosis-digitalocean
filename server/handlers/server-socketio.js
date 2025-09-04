@@ -134,7 +134,7 @@ function initializeSocketIO(server, dbService) {
         
         // Broadcast countdown to ENTIRE ROOM
         io.to(socketInfo.roomId).emit('deposit_countdown', {
-          gameId: gameId,
+          gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
           timeRemaining: game.depositTimeRemaining,
           creatorDeposited: game.creatorDeposited,
           challengerDeposited: game.challengerDeposited
@@ -144,7 +144,7 @@ function initializeSocketIO(server, dbService) {
         if (game.depositTimeRemaining <= 0) {
           clearInterval(timer)
           io.to(socketInfo.roomId).emit('deposit_timeout', {
-            gameId: gameId,
+            gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
             message: 'Deposit time expired!'
           })
         }
@@ -153,7 +153,7 @@ function initializeSocketIO(server, dbService) {
         if (game.creatorDeposited && game.challengerDeposited) {
           clearInterval(timer)
           io.to(socketInfo.roomId).emit('game_started', {
-            gameId: gameId,
+            gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
             message: 'Both players deposited! Game starting...'
           })
         }
@@ -164,7 +164,7 @@ function initializeSocketIO(server, dbService) {
       
       // Send initial deposit stage notification to ENTIRE ROOM
       io.to(socketInfo.roomId).emit('deposit_stage_started', {
-        gameId: gameId,
+        gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
         creator: creator,
         challenger: challenger,
         timeRemaining: 120,
@@ -176,7 +176,7 @@ function initializeSocketIO(server, dbService) {
       const challengerSocketId = userSockets.get(challenger.toLowerCase())
       if (challengerSocketId) {
         io.to(challengerSocketId).emit('your_offer_accepted', {
-          gameId: gameId,
+          gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
           challenger: challenger,
           cryptoAmount: data.cryptoAmount,
           finalPrice: data.cryptoAmount,
