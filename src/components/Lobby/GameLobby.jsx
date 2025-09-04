@@ -21,7 +21,7 @@ import { TabbedGameInterface } from '../TabbedGame'
 
 // Lobby-specific hooks
 import { useLobbyState } from './hooks/useLobbyState'
-import webSocketService from '../../services/WebSocketService'
+import socketService from '../../services/SocketService'
 
 // Styles
 import { theme } from '../../styles/theme'
@@ -180,64 +180,25 @@ const GameLobby = () => {
   // Connect to lobby when component mounts
   useEffect(() => {
     const initLobby = async () => {
-      console.log('🔌 GameLobby: Attempting WebSocket connection...', { gameId, address })
+      console.log('🔌 GameLobby: Connecting to Socket.io...', { gameId, address })
       
-      if (!gameId || !address) {
-        console.log('🔌 GameLobby: Missing gameId or address, skipping connection')
-        return
-      }
-      
-      const lobbyRoomId = `game_${gameId}`
-      console.log('🔌 GameLobby: Connecting to room:', lobbyRoomId)
+      if (!gameId || !address) return
       
       try {
-        // Make sure to properly await connection
-        await webSocketService.connect(lobbyRoomId, address)
-        console.log('✅ GameLobby: WebSocket connected successfully')
+        await socketService.connect(gameId, address)
+        console.log('✅ GameLobby: Socket.io connected')
         setWsConnected(true)
         
-        // Register message handlers for game state changes only
-        webSocketService.on('game_awaiting_challenger_deposit', handleGameAwaitingDeposit)
-        webSocketService.on('deposit_confirmed', handleDepositConfirmed)
-        webSocketService.on('game_started', handleGameStarted)
+        // Register game state handlers
+        socketService.on('deposit_stage_started', handleDepositStageStarted)
+        socketService.on('deposit_countdown', handleDepositCountdown)
+        socketService.on('deposit_confirmed', handleDepositConfirmed)
+        socketService.on('deposit_timeout', handleDepositTimeout)
+        socketService.on('game_started', handleGameStarted)
         
-        // Add handlers for deposit stage events
-        webSocketService.on('deposit_stage_started', handleDepositStageStarted)
-        webSocketService.on('deposit_countdown', handleDepositCountdown)
-        webSocketService.on('deposit_timeout', handleDepositTimeout)
-        
-        // Add handlers for offer acceptance to trigger tab switching
-        webSocketService.on('offer_accepted', handleOfferAccepted)
-        webSocketService.on('your_offer_accepted', handleYourOfferAccepted)
-        webSocketService.on('accept_crypto_offer', handleOfferAccepted)
-        webSocketService.on('game_status_changed', handleGameStatusChanged)
-        
-        console.log('✅ GameLobby: Game state message handlers registered')
-        
-        // Debug: Log all incoming messages to see what we're receiving
-        webSocketService.on('room_joined', (data) => {
-          console.log('✅ GameLobby: Room joined confirmation received:', data)
-        })
-        
-        // Debug: Log any other messages we might be missing
-        webSocketService.on('crypto_offer', (data) => {
-          console.log('💰 GameLobby: Crypto offer received:', data)
-        })
-        
-        webSocketService.on('system', (data) => {
-          console.log('🔧 GameLobby: System message received:', data)
-        })
-        
-        // Debug: Check what room we're connected to
-        console.log('🔍 GameLobby: Connected to room:', lobbyRoomId)
-        console.log('🔍 GameLobby: WebSocket service state:', {
-          connected: webSocketService.connected,
-          currentRoom: webSocketService.currentRoom,
-          gameId: webSocketService.gameId,
-          address: webSocketService.address
-        })
+        console.log('✅ GameLobby: Event handlers registered')
       } catch (error) {
-        console.error('❌ GameLobby: WebSocket connection failed:', error)
+        console.error('❌ GameLobby: Socket.io connection failed:', error)
         setWsConnected(false)
       }
     }
@@ -245,20 +206,12 @@ const GameLobby = () => {
     initLobby()
     
     return () => {
-      console.log('🔌 GameLobby: Cleaning up WebSocket handlers')
-      webSocketService.off('game_awaiting_challenger_deposit')
-      webSocketService.off('deposit_confirmed')
-      webSocketService.off('game_started')
-      webSocketService.off('deposit_stage_started')
-      webSocketService.off('deposit_countdown')
-      webSocketService.off('deposit_timeout')
-      webSocketService.off('room_joined')
-      webSocketService.off('crypto_offer')
-      webSocketService.off('system')
-      webSocketService.off('offer_accepted')
-      webSocketService.off('your_offer_accepted')
-      webSocketService.off('accept_crypto_offer')
-      webSocketService.off('game_status_changed')
+      console.log('🔌 GameLobby: Cleaning up Socket.io handlers')
+      socketService.off('deposit_stage_started')
+      socketService.off('deposit_countdown')
+      socketService.off('deposit_confirmed')
+      socketService.off('deposit_timeout')
+      socketService.off('game_started')
     }
   }, [gameId, address])
 
@@ -408,18 +361,14 @@ const GameLobby = () => {
   // REMOVED: handleDepositTransition function - not needed anymore
 
   const sendOfferMessage = (message) => {
-    webSocketService.send({
-      type: 'chat_message',
-      gameId,
+    socketService.emit('chat_message', {
       message,
       from: address
     })
   }
 
   const sendChatMessage = (message) => {
-    webSocketService.send({
-      type: 'chat_message',
-      gameId,
+    socketService.emit('chat_message', {
       message,
       from: address
     })
@@ -649,7 +598,7 @@ const GameLobby = () => {
               <TabbedGameInterface
                 gameData={gameData}
                 gameId={gameId}
-                socket={webSocketService}
+                socket={socketService}
                 connected={wsConnected}
                 offers={offers}
                 isCreator={isCreator}

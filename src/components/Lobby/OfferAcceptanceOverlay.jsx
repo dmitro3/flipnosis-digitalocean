@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 import { useToast } from '../../contexts/ToastContext'
 import { useContractService } from '../../utils/useContractService'
 import { getApiUrl } from '../../config/api'
+import socketService from '../../services/SocketService'
 
 const OverlayContainer = styled.div`
   position: absolute;
@@ -220,12 +221,16 @@ const OfferAcceptanceOverlay = ({
       const result = await contractService.depositETH(gameId, depositAmount)
 
       if (result.success) {
-        showSuccess('Crypto deposited successfully!')
+        // Notify server via Socket.io
+        socketService.emit('deposit_confirmed', {
+          gameId: gameId,
+          player: address,
+          assetType: 'crypto',
+          transactionHash: result.transactionHash
+        })
         
-        // Clear any running countdown intervals
-        if (window.countdownInterval) {
-          clearInterval(window.countdownInterval)
-        }
+        showSuccess('Deposit confirmed!')
+        onClose()
         
         // Confirm deposit to backend using the getApiUrl helper
         const { getApiUrl } = await import('../../config/api')

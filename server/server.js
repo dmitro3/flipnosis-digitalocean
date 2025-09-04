@@ -7,7 +7,7 @@ const fs = require('fs')
 
 // Import services
 const { createApiRoutes } = require('./routes/api')
-const { initializeWebSocket } = require('./handlers/cleanWebSocket')
+const { initializeSocketIO } = require('./handlers/server-socketio')
 const { DatabaseService } = require('./services/database')
 const { BlockchainService } = require('./services/blockchain')
 const CleanupService = require('./services/cleanupService')
@@ -76,15 +76,17 @@ async function initializeServices() {
   blockchainService.setupEventListeners((event) => {
     console.log('🔔 Blockchain event received:', event.type, event)
     
-    // Handle blockchain events and broadcast via WebSocket
-    const { broadcastToRoom } = require('./handlers/cleanWebSocket')
+    // Handle blockchain events and broadcast via Socket.io
+    // Note: We'll need to pass the io instance to this function
+    // For now, we'll handle this in the main initialization
     
     if (event.type === 'GameReady') {
       const gameId = event.gameId
       console.log('🎮 GameReady - both deposits confirmed on-chain')
       
-      // Broadcast to game room
-      broadcastToRoom(`game_${gameId}`, {
+      // Store the event for later broadcasting when Socket.io is initialized
+      global.pendingBlockchainEvents = global.pendingBlockchainEvents || []
+      global.pendingBlockchainEvents.push({
         type: 'game_ready',
         gameId,
         message: 'Both deposits confirmed on blockchain! Game starting...',
@@ -100,13 +102,20 @@ async function initializeServices() {
 // ===== SERVER STARTUP =====
 initializeServices()
   .then(({ dbService, blockchainService, cleanupService }) => {
-    // Initialize WebSocket server
-    initializeWebSocket(server, dbService)
-    console.log('✅ WebSocket server initialized')
+    // Initialize Socket.io server
+    const io = initializeSocketIO(server, dbService)
+    console.log('✅ Socket.io server initialized')
+    
+    // Handle any pending blockchain events
+    if (global.pendingBlockchainEvents) {
+      global.pendingBlockchainEvents.forEach(event => {
+        io.to(`game_${event.gameId}`).emit('game_ready', event)
+      })
+      global.pendingBlockchainEvents = []
+    }
     
     // Setup API routes
-    const wsHandlers = require('./handlers/cleanWebSocket')
-    const apiRouter = createApiRoutes(dbService, blockchainService, wsHandlers)
+    const apiRouter = createApiRoutes(dbService, blockchainService, { io })
     app.use('/api', apiRouter)
     console.log('✅ API routes configured')
     
@@ -115,7 +124,7 @@ initializeServices()
       res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        websocket: 'active',
+        socketio: 'active',
         database: 'connected',
         blockchain: blockchainService.hasOwnerWallet() ? 'ready' : 'view-only'
       })
@@ -145,7 +154,7 @@ initializeServices()
       console.log('═══════════════════════════════════════════')
       console.log(`🎮 CryptoFlipz Server Running`)
       console.log(`📡 HTTP: http://localhost:${PORT}`)
-      console.log(`🔌 WebSocket: ws://localhost:${PORT}/ws`)
+      console.log(`🔌 Socket.io: http://localhost:${PORT}`)
       console.log(`📊 Database: ${DATABASE_PATH}`)
       console.log(`🔗 Blockchain: ${CONTRACT_ADDRESS}`)
       console.log(`🔑 Mode: ${blockchainService.hasOwnerWallet() ? 'Full (can write)' : 'View-only (read only)'}`)
