@@ -1182,7 +1182,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       }
       
       db.all(
-        'SELECT * FROM games WHERE creator = ? OR joiner = ? ORDER BY created_at DESC',
+        'SELECT * FROM games WHERE creator = ? OR challenger = ? ORDER BY created_at DESC',
         [address, address],
         (err, games) => {
           if (err) {
@@ -1440,9 +1440,9 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       updateValues.push(updates.status)
     }
     
-    if (updates.joiner !== undefined) {
+    if (updates.challenger !== undefined) {
       updateFields.push('challenger = ?')
-      updateValues.push(updates.joiner)
+      updateValues.push(updates.challenger)
     }
     
     if (updateFields.length === 0) {
