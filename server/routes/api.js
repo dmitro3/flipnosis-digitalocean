@@ -5,7 +5,7 @@ const { XPService } = require('../services/xpService')
 
 function createApiRoutes(dbService, blockchainService, wsHandlers) {
   const router = express.Router()
-  const db = dbService.getDatabase()
+  const db = dbService.db
   
   // Initialize XP Service
   const xpService = new XPService(dbService.databasePath)
