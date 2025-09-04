@@ -2,7 +2,7 @@
 // Socket.io server implementation - much cleaner than raw WebSocket!
 
 const socketIO = require('socket.io')
-const GameStateManager = require('../services/GameStateManager')
+const GameStateManager = require('./GameStateManager')
 
 // Initialize game state manager
 const gameStateManager = new GameStateManager()
