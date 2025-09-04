@@ -326,7 +326,14 @@ const GameLobby = () => {
   const handleGameStarted = (data) => {
     console.log('Game started:', data)
     showSuccess('Game started! Both players deposited.')
-    // WebSocket will handle state updates - no manual refresh needed
+    
+    // Transport both players to the flip suite
+    console.log('🚀 Both players deposited - transporting to flip suite...')
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+        detail: { gameId: data.gameId, immediate: true }
+      }))
+    }, 1000)
   }
 
   const handleGameAwaitingDeposit = (data) => {
@@ -393,19 +400,11 @@ const GameLobby = () => {
     console.log('🎯 Your offer accepted event received:', data)
     
     if (data.gameId === gameData?.id) {
-      console.log('✅ Your offer was accepted, showing deposit overlay...')
+      console.log('✅ Your offer was accepted - OffersContainer will handle the deposit screen')
       showSuccess('Your offer was accepted! Please deposit crypto within 2 minutes.')
       
-      // Trigger the deposit screen for Player 2 (challenger)
-      // Dispatch a custom event that the OffersContainer will listen for
-      window.dispatchEvent(new CustomEvent('showDepositScreen', {
-        detail: {
-          gameId: data.gameId,
-          challenger: data.challenger || address,
-          cryptoAmount: data.cryptoAmount || data.finalPrice,
-          timestamp: new Date().toISOString()
-        }
-      }))
+      // The OffersContainer will handle showing the deposit screen
+      // No need to dispatch custom events here
     }
   }
 

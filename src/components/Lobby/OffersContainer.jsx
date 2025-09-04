@@ -306,38 +306,8 @@ const OffersContainer = ({
     }
   }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay from deps
 
-  // Listen for custom showDepositScreen event from GameLobby
-  useEffect(() => {
-    const handleShowDepositScreen = (event) => {
-      console.log('🎯 Received showDepositScreen event:', event.detail)
-      
-      const { gameId: eventGameId, challenger, cryptoAmount } = event.detail
-      
-      // Only handle if it's for the current game and current user is the challenger
-      if (eventGameId === gameId && challenger && address && 
-          challenger.toLowerCase() === address.toLowerCase()) {
-        
-        console.log('✅ Showing deposit screen for Player 2 (challenger)')
-        
-        // Create accepted offer object for the deposit overlay
-        const acceptedOffer = {
-          offerer_address: address, // Current user is the offerer who needs to deposit
-          cryptoAmount: cryptoAmount,
-          timestamp: new Date().toISOString()
-        }
-        
-        setAcceptedOffer(acceptedOffer)
-        setShowDepositOverlay(true)
-        console.log('🎯 Deposit screen shown for Player 2:', acceptedOffer)
-      }
-    }
-
-    window.addEventListener('showDepositScreen', handleShowDepositScreen)
-    
-    return () => {
-      window.removeEventListener('showDepositScreen', handleShowDepositScreen)
-    }
-  }, [gameId, address])
+  // Note: Removed custom showDepositScreen event listener
+  // The your_offer_accepted WebSocket event is handled directly by handleYourOfferAccepted
 
   // WebSocket connection for real-time updates
   useEffect(() => {
@@ -443,8 +413,8 @@ const OffersContainer = ({
         // Create accepted offer object for the deposit overlay
         const acceptedOffer = {
           offerer_address: address, // Current user is the offerer
-          cryptoAmount: data.data.finalPrice,
-          timestamp: data.data.timestamp
+          cryptoAmount: data.cryptoAmount || data.finalPrice,
+          timestamp: data.timestamp || new Date().toISOString()
         }
         
         setAcceptedOffer(acceptedOffer)
@@ -456,7 +426,7 @@ const OffersContainer = ({
           window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
         }, 200)
         
-        // Refresh game data
+        // No refresh needed - WebSocket will handle state updates
         if (onOfferAccepted) {
           onOfferAccepted(acceptedOffer)
         }
