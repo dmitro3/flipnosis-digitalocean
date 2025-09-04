@@ -986,7 +986,8 @@ const OffersContainer = ({
             challenger: acceptedOffer.offerer_address,
             timeRemaining: acceptedOffer.timeRemaining || 120,
             creatorDeposited: true,
-            challengerDeposited: false
+            challengerDeposited: false,
+            cryptoAmount: acceptedOffer.cryptoAmount || acceptedOffer.offer_price || acceptedOffer.amount
           }}
           onDepositComplete={() => {
             setShowDepositOverlay(false)

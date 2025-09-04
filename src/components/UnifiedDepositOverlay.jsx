@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import webSocketService from '../services/WebSocketService'
 import { useToast } from '../contexts/ToastContext'
+import { useContractService } from '../utils/useContractService'
 
 // Styled Components
 const Overlay = styled.div`
@@ -203,6 +204,7 @@ export default function UnifiedDepositOverlay({
   onTimeout
 }) {
   const { showSuccess, showError, showInfo } = useToast()
+  const { contractService } = useContractService()
   const [depositState, setDepositState] = useState(propDepositState) // Initialize with prop
   const [isDepositing, setIsDepositing] = useState(false)
   const [userRole, setUserRole] = useState('spectator') // 'creator', 'challenger', 'spectator'
@@ -333,42 +335,68 @@ export default function UnifiedDepositOverlay({
         // Creator deposits NFT
         showInfo('Depositing NFT...')
         
-        // Here you would call your NFT deposit contract method
-        // For now, we'll simulate it
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        if (!gameData?.nft_contract || !gameData?.nft_token_id) {
+          throw new Error('NFT contract or token ID not found')
+        }
         
-        // Send confirmation to server
-        webSocketService.send({
-          type: 'deposit_confirmed',
+        // Call real NFT deposit contract method
+        const result = await contractService.depositNFT(
           gameId,
-          player: address,
-          assetType: 'nft',
-          transactionHash: '0x' + Math.random().toString(16).slice(2, 66)
-        })
+          gameData.nft_contract,
+          gameData.nft_token_id
+        )
         
-        showSuccess('NFT deposited successfully!')
+        if (result.success) {
+          // Send confirmation to server via Socket.io
+          try {
+            webSocketService.emit('deposit_confirmed', {
+              gameId: gameId,
+              player: address,
+              assetType: 'nft',
+              transactionHash: result.transactionHash
+            })
+          } catch (socketError) {
+            console.warn('⚠️ Failed to send Socket.io message:', socketError)
+            // Don't fail the deposit if Socket.io fails
+          }
+          
+          showSuccess('NFT deposited successfully!')
+        } else {
+          throw new Error(result.error || 'NFT deposit failed')
+        }
       } else if (userRole === 'challenger') {
         // Challenger deposits crypto
         showInfo('Depositing crypto...')
         
-        // Here you would call your crypto deposit contract method
-        // For now, we'll simulate it
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        if (!depositState?.cryptoAmount) {
+          throw new Error('Crypto amount not found')
+        }
         
-        // Send confirmation to server
-        webSocketService.send({
-          type: 'deposit_confirmed',
-          gameId,
-          player: address,
-          assetType: 'crypto',
-          transactionHash: '0x' + Math.random().toString(16).slice(2, 66)
-        })
+        // Call real crypto deposit contract method
+        const result = await contractService.depositETH(gameId, depositState.cryptoAmount)
         
-        showSuccess('Crypto deposited successfully!')
+        if (result.success) {
+          // Send confirmation to server via Socket.io
+          try {
+            webSocketService.emit('deposit_confirmed', {
+              gameId: gameId,
+              player: address,
+              assetType: 'crypto',
+              transactionHash: result.transactionHash
+            })
+          } catch (socketError) {
+            console.warn('⚠️ Failed to send Socket.io message:', socketError)
+            // Don't fail the deposit if Socket.io fails
+          }
+          
+          showSuccess('Crypto deposited successfully!')
+        } else {
+          throw new Error(result.error || 'Crypto deposit failed')
+        }
       }
     } catch (error) {
       console.error('❌ Deposit failed:', error)
-      showError('Deposit failed. Please try again.')
+      showError('Deposit failed: ' + error.message)
     } finally {
       setIsDepositing(false)
     }
