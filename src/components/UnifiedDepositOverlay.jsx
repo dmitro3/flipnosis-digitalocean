@@ -198,13 +198,20 @@ export default function UnifiedDepositOverlay({
   gameId, 
   address, 
   gameData,
+  depositState: propDepositState, // Accept depositState as prop
   onDepositComplete,
   onTimeout
 }) {
   const { showSuccess, showError, showInfo } = useToast()
-  const [depositState, setDepositState] = useState(null)
+  const [depositState, setDepositState] = useState(propDepositState) // Initialize with prop
   const [isDepositing, setIsDepositing] = useState(false)
   const [userRole, setUserRole] = useState('spectator') // 'creator', 'challenger', 'spectator'
+
+  // Update internal state when prop changes
+  useEffect(() => {
+    console.log('🎯 UnifiedDepositOverlay: depositState prop changed:', propDepositState)
+    setDepositState(propDepositState)
+  }, [propDepositState])
 
   // Determine user role
   useEffect(() => {
@@ -368,7 +375,18 @@ export default function UnifiedDepositOverlay({
   }
 
   // Don't render if no deposit state
-  if (!depositState) return null
+  console.log('🎯 UnifiedDepositOverlay: render check:', { 
+    hasDepositState: !!depositState, 
+    depositState,
+    userRole,
+    gameId,
+    address 
+  })
+  
+  if (!depositState) {
+    console.log('❌ UnifiedDepositOverlay: No depositState, not rendering')
+    return null
+  }
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
