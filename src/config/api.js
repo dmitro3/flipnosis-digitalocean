@@ -9,11 +9,10 @@ export const getApiUrl = (path) => {
 
 export const getWsUrl = () => {
   // Socket.io URL - no /ws suffix needed
-  // For now, use HTTP to avoid SSL issues
-  const protocol = 'ws:'
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.host
   
-  // For production (Hetzner server), use HTTP for now
+  // For production (Hetzner server), use the same protocol as the page
   if (process.env.NODE_ENV === 'production' || host === 'flipnosis.fun') {
     return `${protocol}//${host}`
   } else {
