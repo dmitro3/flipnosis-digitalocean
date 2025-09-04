@@ -28,8 +28,10 @@ const CleanGamePage = () => {
         const response = await fetch(`/api/games/${gameId}`)
         if (response.ok) {
           const data = await response.json()
-          setGameData(data.game)
+          console.log('🎮 Game data loaded:', data)
+          setGameData(data) // API returns game data directly, not wrapped in .game
         } else {
+          console.error('❌ Game not found, status:', response.status)
           showError('Game not found')
         }
       } catch (error) {
