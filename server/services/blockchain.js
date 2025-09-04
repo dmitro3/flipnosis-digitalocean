@@ -49,8 +49,9 @@ class BlockchainService {
       
       return { success: true, isReady }
     } catch (error) {
-      console.error('❌ Error checking game ready status:', error)
-      return { success: false, error: error.message }
+      console.warn('⚠️ Error checking game ready status (this is often due to contract state sync issues):', error.message)
+      // Return a more graceful response - don't treat this as a complete failure
+      return { success: false, error: error.message, isReady: false, verificationFailed: true }
     }
   }
 

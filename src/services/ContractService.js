@@ -347,11 +347,13 @@ class ContractService {
       }
       
       // Return success even if verification fails - transaction succeeded
+      // The transaction receipt proves the deposit was successful
       return { 
         success: true, 
         transactionHash: hash, 
         receipt,
-        verified: isVerified
+        verified: isVerified,
+        message: isVerified ? 'NFT deposit verified' : 'NFT deposit successful (verification pending)'
       }
       
     } catch (error) {

@@ -1659,55 +1659,70 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       
       // Check if both players have deposited using contract
       if (blockchainService.hasOwnerWallet()) {
-        const gameReadyResult = await blockchainService.isGameReady(gameId)
-        
-        if (gameReadyResult.success && gameReadyResult.isReady) {
-          console.log('🎮 Both assets deposited - Game is ready!')
+        try {
+          const gameReadyResult = await blockchainService.isGameReady(gameId)
           
-          // Update game status to active
-          await new Promise((resolve, reject) => {
-            db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], function(err) {
-              if (err) reject(err)
-              else resolve()
+          if (gameReadyResult.success && gameReadyResult.isReady) {
+            console.log('🎮 Both assets deposited - Game is ready!')
+            
+            // Update game status to active
+            await new Promise((resolve, reject) => {
+              db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], function(err) {
+                if (err) reject(err)
+                else resolve()
+              })
             })
-          })
-          
-          // Get updated game data for engine initialization
-          const gameData = await new Promise((resolve, reject) => {
-            db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
-              if (err) reject(err)
-              else resolve(row)
+            
+            // Get updated game data for engine initialization
+            const gameData = await new Promise((resolve, reject) => {
+              db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
+                if (err) reject(err)
+                else resolve(row)
+              })
             })
-          })
-          
-          // Game is now active - game rooms will be created when players join
-          console.log('🎮 Game is now active:', gameId)
-          
-          // Broadcast game started
-          wsHandlers.broadcastToRoom(gameId, {
-            type: 'game_started',
-            gameId,
-            message: 'Both players have deposited! Game is now active.',
-            bothDeposited: true
-          })
-          
+            
+            // Game is now active - game rooms will be created when players join
+            console.log('🎮 Game is now active:', gameId)
+            
+            // Broadcast game started
+            wsHandlers.broadcastToRoom(gameId, {
+              type: 'game_started',
+              gameId,
+              message: 'Both players have deposited! Game is now active.',
+              bothDeposited: true
+            })
+            
+            wsHandlers.broadcastToRoom(gameId, {
+              type: 'deposit_received',
+              gameId,
+              player,
+              assetType,
+              bothDeposited: true
+            })
+            
+            console.log(`🎮 Game ${gameId} is now active with both deposits confirmed`)
+          } else {
+            // Only one deposit so far or verification failed
+            console.log('🎮 Game not ready yet or verification failed:', gameReadyResult)
+            wsHandlers.broadcastToRoom(gameId, {
+              type: 'deposit_received',
+              gameId,
+              player,
+              assetType,
+              bothDeposited: false
+            })
+          }
+        } catch (blockchainError) {
+          console.warn('⚠️ Blockchain verification failed, but deposit was recorded:', blockchainError.message)
+          // Don't fail the entire request if blockchain verification fails
+          // The deposit was already recorded in the database above
           wsHandlers.broadcastToRoom(gameId, {
             type: 'deposit_received',
             gameId,
             player,
             assetType,
-            bothDeposited: true
-          })
-          
-          console.log(`🎮 Game ${gameId} is now active with both deposits confirmed`)
-        } else {
-          // Only one deposit so far
-          wsHandlers.broadcastToRoom(gameId, {
-            type: 'deposit_received',
-            gameId,
-            player,
-            assetType,
-            bothDeposited: false
+            bothDeposited: false,
+            verificationPending: true
           })
         }
       }

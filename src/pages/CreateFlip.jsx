@@ -399,7 +399,16 @@ const CreateFlip = () => {
       })
       
       if (!confirmResponse.ok) {
-        throw new Error('Failed to confirm NFT deposit')
+        const errorData = await confirmResponse.json().catch(() => ({}))
+        console.error('Deposit confirmation failed:', errorData)
+        
+        // Check if it's a verification issue vs a real failure
+        if (errorData.error && errorData.error.includes('verification')) {
+          console.warn('⚠️ NFT deposit verification failed, but transaction succeeded')
+          // Don't throw error - the NFT was deposited successfully
+        } else {
+          throw new Error(errorData.error || 'Failed to confirm NFT deposit')
+        }
       }
       
       showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.')
