@@ -320,38 +320,33 @@ const OffersContainer = ({
     if (socket && typeof socket === 'object') {
       ws = socket
       console.log('🔌 Using provided socket prop')
-    } else if (window.FlipnosisWS) {
-      ws = window.FlipnosisWS
+    } else if (window.webSocketService) {
+      ws = window.webSocketService
       console.log('🔌 Using global WebSocket service')
     } else {
       console.error('❌ No WebSocket service available')
       return
     }
 
-    // Connect to WebSocket
-    const connectToWebSocket = async () => {
+    // Check if already connected
+    const checkConnection = async () => {
       try {
-        // Check if already connected
-        const isConnected = ws.isConnected ? ws.isConnected() : ws.connected
-        if (!isConnected) {
-          console.log('🔌 Connecting to WebSocket...')
-          if (ws.connect) {
-            await ws.connect(`game_${gameId}`, address)
-            console.log('✅ WebSocket connected for real-time offers')
-          } else {
-            console.warn('⚠️ WebSocket service has no connect method')
-          }
-        } else {
+        if (ws.isConnected && ws.isConnected()) {
           console.log('✅ WebSocket already connected')
+          setIsConnected(true)
+        } else if (ws.connect) {
+          console.log('🔌 Connecting to WebSocket...')
+          await ws.connect(`game_${gameId}`, address)
+          console.log('✅ WebSocket connected for real-time offers')
+          setIsConnected(true)
         }
-        setIsConnected(true)
       } catch (error) {
         console.error('❌ WebSocket connection failed:', error)
         setIsConnected(false)
       }
     }
 
-    connectToWebSocket()
+    checkConnection()
 
     // Real-time offer handler
     const handleOffer = (data) => {
@@ -501,21 +496,23 @@ const OffersContainer = ({
       }
     }
 
-          // Add these handlers in the useEffect that sets up WebSocket listeners:
+    // Handler for deposit stage started (synchronized countdown)
     const handleDepositStageStarted = (data) => {
       console.log('💰 Deposit stage started:', data)
-      if (data.gameId === gameData?.id) {
-        // Check if current user is the challenger
-        if (data.challenger && address && 
-            data.challenger.toLowerCase() === address.toLowerCase()) {
+      if (data.gameId === gameData?.id || data.gameId === gameId) {
+        const isChallenger = data.challenger && address && 
+            data.challenger.toLowerCase() === address.toLowerCase()
+        const isCreator = data.creator && address && 
+            data.creator.toLowerCase() === address.toLowerCase()
+        
+        if (isChallenger) {
           console.log('✅ Current user is challenger, showing deposit overlay...')
-          
           const acceptedOffer = {
             offerer_address: address,
-            cryptoAmount: gameData.payment_amount || gameData.price_usd,
+            cryptoAmount: gameData?.payment_amount || gameData?.price_usd || data.askingPrice,
             needsDeposit: true,
             timeRemaining: data.timeRemaining,
-            serverTime: Date.now() // Track when we received this
+            depositDeadline: data.depositStartTime
           }
           
           setAcceptedOffer(acceptedOffer)
@@ -525,15 +522,13 @@ const OffersContainer = ({
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
           }, 200)
-        } else if (data.creator && address && 
-                   data.creator.toLowerCase() === address.toLowerCase()) {
+        } else if (isCreator) {
           console.log('✅ Current user is creator, showing waiting overlay...')
-          
           const acceptedOffer = {
             isCreatorWaiting: true,
-            cryptoAmount: gameData.payment_amount || gameData.price_usd,
+            cryptoAmount: gameData?.payment_amount || gameData?.price_usd || data.askingPrice,
             timeRemaining: data.timeRemaining,
-            serverTime: Date.now()
+            depositDeadline: data.depositStartTime
           }
           
           setAcceptedOffer(acceptedOffer)
@@ -542,54 +537,48 @@ const OffersContainer = ({
       }
     }
 
+    // Handler for synchronized countdown updates
     const handleDepositCountdown = (data) => {
-      if (data.gameId === gameData?.id && acceptedOffer) {
-        // Update the time remaining based on server countdown
-        setAcceptedOffer(prev => ({
-          ...prev,
-          timeRemaining: data.timeRemaining
-        }))
+      if (data.gameId === gameData?.id || data.gameId === gameId) {
+        setAcceptedOffer(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            timeRemaining: data.timeRemaining
+          }
+        })
       }
     }
 
-    // Register real-time handlers with error handling
-      try {
-        if (ws && typeof ws.on === 'function') {
-          ws.on('crypto_offer', handleOffer)
-          ws.on('nft_offer', handleOffer)
-          ws.on('accept_crypto_offer', handleOfferAcceptance)
-          ws.on('offer_accepted', handleOfferAcceptance)
-          ws.on('your_offer_accepted', handleYourOfferAccepted)
-          ws.on('game_status_changed', handleGameStatusChanged)
-          ws.on('deposit_confirmed', handleDepositConfirmed)
-          ws.on('deposit_stage_started', handleDepositStageStarted)
-          ws.on('deposit_countdown', handleDepositCountdown)
-          console.log('✅ WebSocket handlers registered successfully')
-        } else {
-          console.warn('⚠️ WebSocket service has no event handlers or is not available')
-        }
-      } catch (error) {
-        console.error('❌ Error registering WebSocket handlers:', error)
-      }
+    // Register handlers
+    if (ws && ws.on) {
+      ws.on('crypto_offer', handleOffer)
+      ws.on('nft_offer', handleOffer)
+      ws.on('accept_crypto_offer', handleOfferAcceptance)
+      ws.on('offer_accepted', handleOfferAcceptance)
+      ws.on('your_offer_accepted', handleYourOfferAccepted)
+      ws.on('deposit_stage_started', handleDepositStageStarted)
+      ws.on('deposit_countdown', handleDepositCountdown)
+      ws.on('deposit_timeout', handleDepositTimeout)
+      ws.on('deposit_confirmed', handleDepositConfirmed)
+      ws.on('game_status_changed', handleGameStatusChanged)
+      console.log('✅ WebSocket handlers registered successfully')
+    }
 
-      return () => {
-        try {
-          if (ws && typeof ws.off === 'function') {
-            ws.off('crypto_offer', handleOffer)
-            ws.off('nft_offer', handleOffer)
-            ws.off('accept_crypto_offer', handleOfferAcceptance)
-            ws.off('offer_accepted', handleOfferAcceptance)
-            ws.off('your_offer_accepted', handleYourOfferAccepted)
-            ws.off('game_status_changed', handleGameStatusChanged)
-            ws.off('deposit_confirmed', handleDepositConfirmed)
-            ws.off('deposit_stage_started', handleDepositStageStarted)
-            ws.off('deposit_countdown', handleDepositCountdown)
-            console.log('✅ WebSocket handlers cleaned up successfully')
-          }
-        } catch (error) {
-          console.error('❌ Error cleaning up WebSocket handlers:', error)
-        }
+    return () => {
+      if (ws && ws.off) {
+        ws.off('crypto_offer', handleOffer)
+        ws.off('nft_offer', handleOffer)
+        ws.off('accept_crypto_offer', handleOfferAcceptance)
+        ws.off('offer_accepted', handleOfferAcceptance)
+        ws.off('your_offer_accepted', handleYourOfferAccepted)
+        ws.off('deposit_stage_started', handleDepositStageStarted)
+        ws.off('deposit_countdown', handleDepositCountdown)
+        ws.off('deposit_timeout', handleDepositTimeout)
+        ws.off('deposit_confirmed', handleDepositConfirmed)
+        ws.off('game_status_changed', handleGameStatusChanged)
       }
+    }
   }, [gameId, address, socket, gameData?.id, gameData?.challenger, gameData?.payment_amount, gameData?.price_usd])
 
   const isCreator = () => {

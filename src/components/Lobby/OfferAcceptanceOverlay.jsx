@@ -152,9 +152,13 @@ const OfferAcceptanceOverlay = ({
   useEffect(() => {
     if (!isVisible || !acceptedOffer) return
     
-    // If we have server time, don't run local timer
-    if (acceptedOffer?.timeRemaining !== undefined) return
+    // If we have server time remaining, use that
+    if (acceptedOffer.timeRemaining !== undefined) {
+      setTimeLeft(acceptedOffer.timeRemaining)
+      return // Don't run local timer
+    }
     
+    // Fallback to local timer if no server sync
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -168,7 +172,7 @@ const OfferAcceptanceOverlay = ({
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isVisible, acceptedOffer, showError, onClose])
+  }, [isVisible, acceptedOffer?.timeRemaining, acceptedOffer, showError, onClose])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)

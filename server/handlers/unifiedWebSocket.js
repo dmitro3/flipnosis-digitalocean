@@ -208,10 +208,9 @@ async function handleAcceptOffer(socket, data, dbService) {
   const challenger = data.joinerAddress || data.offerer_address || data.challengerAddress
   const creator = data.accepterAddress || data.creator
   
-  // Create or get game state
-  let gameState = gameStateManager.getGame(gameId)
-  if (!gameState) {
-    gameState = gameStateManager.createGame(
+  // Start deposit stage using GameStateManager
+  if (!gameStateManager.getGame(gameId)) {
+    gameStateManager.createGame(
       gameId,
       creator,
       data.nftData || {},
@@ -220,25 +219,10 @@ async function handleAcceptOffer(socket, data, dbService) {
   }
   
   // Start deposit stage with unified countdown
-  const success = gameStateManager.startDepositStage(gameId, challenger, (roomId, message) => {
-    // Broadcast to both players in the room
-    broadcastToRoom(roomId, message)
-    
-    // Also send direct messages to ensure delivery
-    if (message.type === 'deposit_stage_started') {
-      // Send to creator
-      sendToUser(creator, {
-        ...message,
-        isCreator: true
-      })
-      
-      // Send to challenger
-      sendToUser(challenger, {
-        ...message,
-        isChallenger: true
-      })
-    }
-  })
+  gameStateManager.startDepositStage(gameId, challenger, broadcastToRoom)
+  
+  // The GameStateManager will now broadcast unified countdown to all users
+  console.log('✅ Unified deposit stage started for game:', gameId)
   
   // Update database
   if (dbService && dbService.db) {
