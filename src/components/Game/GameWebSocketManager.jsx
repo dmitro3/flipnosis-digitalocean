@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import webSocketService from '../../services/WebSocketService'
-import { useToast } from '../ui/Toast'
+import { useToast } from '../../contexts/ToastContext'
 
 const GameWebSocketManager = ({ 
   gameId, 

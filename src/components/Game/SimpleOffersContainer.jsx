@@ -2,7 +2,7 @@
 // No API calls, no multiple connections, just clean WebSocket communication
 
 import { useState, useEffect } from 'react'
-import { useToast } from '../ui/Toast'
+import { useToast } from '../../contexts/ToastContext'
 
 const SimpleOffersContainer = ({ 
   gameData, 

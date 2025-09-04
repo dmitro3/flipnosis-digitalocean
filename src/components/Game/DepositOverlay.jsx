@@ -2,8 +2,8 @@
 // Shows when offer is accepted and countdown begins
 
 import { useState, useEffect } from 'react'
-import { useToast } from '../ui/Toast'
-import { useContractService } from '../../context/ContractContext'
+import { useToast } from '../../contexts/ToastContext'
+import { useContractService } from '../../utils/useContractService'
 
 const DepositOverlay = ({ 
   isVisible, 

@@ -7,7 +7,7 @@ import { useAccount } from 'wagmi'
 import GameWebSocketManager from './GameWebSocketManager'
 import SimpleOffersContainer from './SimpleOffersContainer'
 import DepositOverlay from './DepositOverlay'
-import { useToast } from '../ui/Toast'
+import { useToast } from '../../contexts/ToastContext'
 
 const CleanGamePage = () => {
   const { gameId } = useParams()
