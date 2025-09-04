@@ -8,16 +8,16 @@ export const getApiUrl = (path) => {
 }
 
 export const getWsUrl = () => {
-  // Determine WebSocket URL based on current location
+  // Socket.io URL - no /ws suffix needed
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.host
   
   // For production (Hetzner server), always use the same host
   if (process.env.NODE_ENV === 'production' || host === 'flipnosis.fun') {
-    return `${protocol}//${host}/ws`
+    return `${protocol}//${host}`
   } else {
     // Development - backend might be on different port
     const backendPort = process.env.REACT_APP_BACKEND_PORT || '3000'
-    return `${protocol}//${window.location.hostname}:${backendPort}/ws`
+    return `${protocol}//${window.location.hostname}:${backendPort}`
   }
 } 
