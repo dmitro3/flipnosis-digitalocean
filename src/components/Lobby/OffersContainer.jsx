@@ -666,7 +666,8 @@ const OffersContainer = ({
         // Fallback to API
         console.log('⚠️ WebSocket not connected, using API fallback')
         
-        const response = await fetch('/api/offers', {
+        const listingId = gameData?.listing_id || gameData?.id
+        const response = await fetch(`/api/listings/${listingId}/offers`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -729,24 +730,18 @@ const OffersContainer = ({
       console.log('🎯 Starting offer acceptance process for:', offerType)
       showInfo(`Accepting ${offerType}...`)
 
-      // Use the API endpoint to accept the offer
-      const response = await fetch(`/api/offers/${offer.id}/accept`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          final_price: offer.cryptoAmount || offer.offer_price 
-        })
+      // Use WebSocket ONLY for offer acceptance (no more API calls)
+      console.log('🎯 Accepting offer via WebSocket:', offer)
+      
+      webSocketService.send({
+        type: 'accept_offer',
+        offerId: offer.id,
+        accepterAddress: address,
+        challengerAddress: offer.offerer_address || offer.address,
+        cryptoAmount: offer.cryptoAmount || offer.offer_price
       })
-
-      if (!response.ok) {
-        const errorData = await response.text()
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      console.log('✅ Offer accepted via API:', result)
+      
+      console.log('✅ Offer acceptance sent via WebSocket')
       
       console.log('✅ Offer acceptance successful')
       showSuccess(`${offerType} accepted! Game starting...`)

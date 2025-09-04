@@ -106,8 +106,22 @@ export const useLobbyState = (gameId, address) => {
         }
       }
 
-      // REMOVED: Automatic offers loading to prevent circular dependencies
-      // Offers will be loaded separately via loadOffers() when needed
+      // Load offers after game data is loaded
+      if (data && (data.listing_id || data.id)) {
+        console.log('🔄 Loading offers for game data')
+        // Load offers directly with the data we just received
+        try {
+          const listingId = data.listing_id || data.id
+          const response = await fetch(getApiUrl(`/listings/${listingId}/offers`))
+          if (response.ok) {
+            const offersData = await response.json()
+            console.log('✅ Loaded offers:', offersData)
+            setOffers(offersData)
+          }
+        } catch (error) {
+          console.error('❌ Error loading offers:', error)
+        }
+      }
 
     } catch (err) {
       console.error('Error loading game data:', err)
@@ -247,35 +261,25 @@ export const useLobbyState = (gameId, address) => {
     }
   }
 
-  const acceptOffer = async (offerId, offerPrice) => {
+  const acceptOffer = async (offerId, offerPrice, challengerAddress) => {
     try {
       showInfo('Accepting offer...')
 
-      const response = await fetch(getApiUrl(`/offers/${offerId}/accept`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ final_price: offerPrice })
-      })
-
-      let result = await response.json()
-
-      if (response.ok) {
-        showSuccess('Offer accepted! Game created successfully.')
-        // WebSocket will handle state updates - no manual refresh needed
-        await loadOffers()
-
-        if (isCreator()) {
-          showInfo('Offer accepted! Waiting for challenger to deposit payment...')
-        }
-
-        if (address === getGameJoiner()) {
-          showInfo('Your offer was accepted! Please deposit payment to start the game.')
-        }
+      // Use WebSocket ONLY - no more API calls for real-time actions
+      const webSocketService = window.webSocketService || window.FlipnosisWS
+      if (webSocketService && webSocketService.isConnected()) {
+        webSocketService.send({
+          type: 'accept_offer',
+          offerId,
+          accepterAddress: address,
+          challengerAddress,
+          cryptoAmount: offerPrice
+        })
+        
+        showSuccess('Offer accepted! Game starting...')
+        console.log('✅ Offer acceptance sent via WebSocket')
       } else {
-        const errorMessage = result.details 
-          ? `${result.error}: ${result.details}` 
-          : result.error || 'Failed to accept offer'
-        showError(errorMessage)
+        showError('WebSocket not connected. Please refresh the page.')
       }
     } catch (error) {
       console.error('❌ Error accepting offer:', error)
