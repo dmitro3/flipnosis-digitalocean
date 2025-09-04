@@ -67,45 +67,53 @@ class GameStateManager {
     // Update game state
     game.phase = this.PHASES.DEPOSIT_STAGE
     game.challenger = challenger
-    game.depositStartTime = new Date().toISOString()
+    game.depositStartTime = Date.now() // Use timestamp instead of ISO string
     game.depositTimeRemaining = 120
     game.updatedAt = new Date().toISOString()
     
     console.log(`⏱️ Starting deposit stage for game ${gameId}`)
     
-    // Broadcast initial deposit stage
-    broadcastFn(`game_${gameId}`, {
+    // Broadcast initial deposit stage to ALL users in the room
+    const initialMessage = {
       type: 'deposit_stage_started',
       gameId: gameId,
       phase: game.phase,
       creator: game.creator,
       challenger: game.challenger,
       timeRemaining: game.depositTimeRemaining,
-      creatorDeposited: game.creatorDeposited, // Use actual deposit status
+      depositStartTime: game.depositStartTime, // Include server timestamp
+      creatorDeposited: game.creatorDeposited,
       challengerDeposited: false
-    })
+    }
+    
+    // Broadcast to room
+    broadcastFn(`game_${gameId}`, initialMessage)
     
     // Start countdown timer
     const timer = setInterval(() => {
       game.depositTimeRemaining--
       
-      // Broadcast countdown update
-      broadcastFn(`game_${gameId}`, {
+      // Broadcast countdown update to ALL users
+      const countdownMessage = {
         type: 'deposit_countdown',
         gameId: gameId,
         timeRemaining: game.depositTimeRemaining,
-        creatorDeposited: game.creatorDeposited, // Use actual deposit status
+        creatorDeposited: game.creatorDeposited,
         challengerDeposited: game.challengerDeposited
-      })
+      }
+      
+      broadcastFn(`game_${gameId}`, countdownMessage)
       
       // Check if time expired
       if (game.depositTimeRemaining <= 0) {
+        clearInterval(timer)
         console.log(`⏰ Deposit time expired for game ${gameId}`)
         this.handleDepositTimeout(gameId, broadcastFn)
       }
       
       // Check if both deposited
       if (game.creatorDeposited && game.challengerDeposited) {
+        clearInterval(timer)
         console.log(`✅ Both players deposited for game ${gameId}`)
         this.startGameActive(gameId, broadcastFn)
       }

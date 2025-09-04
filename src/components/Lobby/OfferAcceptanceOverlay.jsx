@@ -138,40 +138,37 @@ const OfferAcceptanceOverlay = ({
 }) => {
   const { showSuccess, showError, showInfo } = useToast()
   const { contractService } = useContractService()
-  const [timeLeft, setTimeLeft] = useState(120) // 2 minutes
+  const [timeLeft, setTimeLeft] = useState(120)
   const [isDepositing, setIsDepositing] = useState(false)
-  const [deadline, setDeadline] = useState(null)
-
-  // Set deadline when overlay becomes visible
+  
+  // Use server time if available
   useEffect(() => {
-    if (isVisible && acceptedOffer) {
-      console.log('🎯 OfferAcceptanceOverlay: Setting deadline for offer:', acceptedOffer)
-      const newDeadline = new Date(Date.now() + 120000) // 2 minutes from now
-      setDeadline(newDeadline)
-      setTimeLeft(120)
+    if (acceptedOffer?.timeRemaining !== undefined) {
+      setTimeLeft(acceptedOffer.timeRemaining)
     }
-  }, [isVisible, acceptedOffer])
+  }, [acceptedOffer?.timeRemaining])
 
-  // Countdown timer
+  // Only run local countdown as backup
   useEffect(() => {
-    if (!isVisible || !deadline) return
-
+    if (!isVisible || !acceptedOffer) return
+    
+    // If we have server time, don't run local timer
+    if (acceptedOffer?.timeRemaining !== undefined) return
+    
     const timer = setInterval(() => {
-      const now = new Date().getTime()
-      const distance = deadline.getTime() - now
-      
-      if (distance <= 0) {
-        setTimeLeft(0)
-        clearInterval(timer)
-        showError('Deposit time expired!')
-        onClose()
-      } else {
-        setTimeLeft(Math.floor(distance / 1000))
-      }
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          showError('Deposit time expired!')
+          onClose()
+          return 0
+        }
+        return prev - 1
+      })
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isVisible, deadline, showError, onClose])
+  }, [isVisible, acceptedOffer, showError, onClose])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)

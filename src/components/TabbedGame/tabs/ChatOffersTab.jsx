@@ -62,6 +62,7 @@ const ChatOffersTab = ({
               gameData={gameData}
               socket={socket}
               connected={connected}
+              address={address} // Pass address prop
             />
           </ChatSection>
           <OffersSection>
@@ -72,6 +73,7 @@ const ChatOffersTab = ({
               connected={connected}
               offers={offers}
               isCreator={isCreator}
+              address={address} // Make sure address is passed
               onOfferSubmitted={(offerData) => {
                 console.log('Offer submitted via tabbed interface:', offerData)
               }}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useWallet } from '../../contexts/WalletContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import { useToast } from '../../contexts/ToastContext'
-import OfferAcceptanceOverlay from './OfferAcceptanceOverlay'
+import UnifiedDepositOverlay from '../UnifiedDepositOverlay'
 import styled from '@emotion/styled'
 // Using global WebSocket service to avoid minification issues
 
@@ -501,7 +501,58 @@ const OffersContainer = ({
       }
     }
 
-          // Register real-time handlers with error handling
+          // Add these handlers in the useEffect that sets up WebSocket listeners:
+    const handleDepositStageStarted = (data) => {
+      console.log('💰 Deposit stage started:', data)
+      if (data.gameId === gameData?.id) {
+        // Check if current user is the challenger
+        if (data.challenger && address && 
+            data.challenger.toLowerCase() === address.toLowerCase()) {
+          console.log('✅ Current user is challenger, showing deposit overlay...')
+          
+          const acceptedOffer = {
+            offerer_address: address,
+            cryptoAmount: gameData.payment_amount || gameData.price_usd,
+            needsDeposit: true,
+            timeRemaining: data.timeRemaining,
+            serverTime: Date.now() // Track when we received this
+          }
+          
+          setAcceptedOffer(acceptedOffer)
+          setShowDepositOverlay(true)
+          
+          // Auto-switch to Lounge tab
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
+          }, 200)
+        } else if (data.creator && address && 
+                   data.creator.toLowerCase() === address.toLowerCase()) {
+          console.log('✅ Current user is creator, showing waiting overlay...')
+          
+          const acceptedOffer = {
+            isCreatorWaiting: true,
+            cryptoAmount: gameData.payment_amount || gameData.price_usd,
+            timeRemaining: data.timeRemaining,
+            serverTime: Date.now()
+          }
+          
+          setAcceptedOffer(acceptedOffer)
+          setShowDepositOverlay(true)
+        }
+      }
+    }
+
+    const handleDepositCountdown = (data) => {
+      if (data.gameId === gameData?.id && acceptedOffer) {
+        // Update the time remaining based on server countdown
+        setAcceptedOffer(prev => ({
+          ...prev,
+          timeRemaining: data.timeRemaining
+        }))
+      }
+    }
+
+    // Register real-time handlers with error handling
       try {
         if (ws && typeof ws.on === 'function') {
           ws.on('crypto_offer', handleOffer)
@@ -511,6 +562,8 @@ const OffersContainer = ({
           ws.on('your_offer_accepted', handleYourOfferAccepted)
           ws.on('game_status_changed', handleGameStatusChanged)
           ws.on('deposit_confirmed', handleDepositConfirmed)
+          ws.on('deposit_stage_started', handleDepositStageStarted)
+          ws.on('deposit_countdown', handleDepositCountdown)
           console.log('✅ WebSocket handlers registered successfully')
         } else {
           console.warn('⚠️ WebSocket service has no event handlers or is not available')
@@ -529,6 +582,8 @@ const OffersContainer = ({
             ws.off('your_offer_accepted', handleYourOfferAccepted)
             ws.off('game_status_changed', handleGameStatusChanged)
             ws.off('deposit_confirmed', handleDepositConfirmed)
+            ws.off('deposit_stage_started', handleDepositStageStarted)
+            ws.off('deposit_countdown', handleDepositCountdown)
             console.log('✅ WebSocket handlers cleaned up successfully')
           }
         } catch (error) {
@@ -1060,15 +1115,30 @@ const OffersContainer = ({
       </OffersList>
 
       {/* Deposit Overlay - use persistent state to prevent flicker */}
-      <OfferAcceptanceOverlay
-        isVisible={showDepositOverlay || overlayStateRef.current.showOverlay}
-        acceptedOffer={acceptedOffer || overlayStateRef.current.offer}
-        gameData={gameData}
-        gameId={gameId}
-        address={address}
-        onClose={handleCloseDepositOverlay}
-        onDepositComplete={handleDepositComplete}
-      />
+      {showDepositOverlay && acceptedOffer && (
+        <UnifiedDepositOverlay
+          gameId={gameId}
+          address={address}
+          gameData={gameData}
+          depositState={{
+            phase: 'deposit_stage',
+            creator: gameData?.creator,
+            challenger: acceptedOffer.offerer_address,
+            timeRemaining: acceptedOffer.timeRemaining || 120,
+            creatorDeposited: true,
+            challengerDeposited: false
+          }}
+          onDepositComplete={() => {
+            setShowDepositOverlay(false)
+            setAcceptedOffer(null)
+            // Navigate to game
+          }}
+          onTimeout={() => {
+            setShowDepositOverlay(false)
+            setAcceptedOffer(null)
+          }}
+        />
+      )}
     </OffersContainerStyled>
   )
 }

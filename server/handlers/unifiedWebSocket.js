@@ -205,28 +205,40 @@ async function handleAcceptOffer(socket, data, dbService) {
   if (!roomId) return
   
   const gameId = data.gameId || roomId.replace('game_', '')
-  const challenger = data.joinerAddress || data.offerer_address
+  const challenger = data.joinerAddress || data.offerer_address || data.challengerAddress
+  const creator = data.accepterAddress || data.creator
   
-  // Start deposit stage using GameStateManager
-  const success = gameStateManager.startDepositStage(gameId, challenger, broadcastToRoom)
-  
-  if (!success) {
-    // Create game state if it doesn't exist
-    let gameState = gameStateManager.getGame(gameId)
-    if (!gameState) {
-      // Get creator from socket data
-      const creatorData = socketData.get(socket.id)
-      gameState = gameStateManager.createGame(
-        gameId,
-        creatorData?.address || data.creator,
-        data.nftData || {},
-        data.askingPrice || data.amount
-      )
-    }
-    
-    // Try again
-    gameStateManager.startDepositStage(gameId, challenger, broadcastToRoom)
+  // Create or get game state
+  let gameState = gameStateManager.getGame(gameId)
+  if (!gameState) {
+    gameState = gameStateManager.createGame(
+      gameId,
+      creator,
+      data.nftData || {},
+      data.askingPrice || data.amount || data.cryptoAmount
+    )
   }
+  
+  // Start deposit stage with unified countdown
+  const success = gameStateManager.startDepositStage(gameId, challenger, (roomId, message) => {
+    // Broadcast to both players in the room
+    broadcastToRoom(roomId, message)
+    
+    // Also send direct messages to ensure delivery
+    if (message.type === 'deposit_stage_started') {
+      // Send to creator
+      sendToUser(creator, {
+        ...message,
+        isCreator: true
+      })
+      
+      // Send to challenger
+      sendToUser(challenger, {
+        ...message,
+        isChallenger: true
+      })
+    }
+  })
   
   // Update database
   if (dbService && dbService.db) {
