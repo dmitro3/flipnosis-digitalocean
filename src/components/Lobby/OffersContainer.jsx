@@ -496,6 +496,22 @@ const OffersContainer = ({
       }
     }
 
+    // Handle deposit timeout event
+    const handleDepositTimeout = (data) => {
+      console.log('⏰ Deposit timeout event received:', data)
+      
+      if (data.gameId === gameData?.id) {
+        console.log('⏰ Deposit timeout for current game')
+        
+        // Close any open deposit overlays
+        setShowDepositOverlay(false)
+        setAcceptedOffer(null)
+        
+        // Show timeout message
+        showError(data.message || 'Deposit time expired!')
+      }
+    }
+
     // Handler for deposit stage started (synchronized countdown)
     const handleDepositStageStarted = (data) => {
       console.log('💰 Deposit stage started:', data)
@@ -777,13 +793,19 @@ const OffersContainer = ({
       // Use WebSocket ONLY for offer acceptance (no more API calls)
       console.log('🎯 Accepting offer via WebSocket:', offer)
       
-      webSocketService.send({
-        type: 'accept_offer',
-        offerId: offer.id,
-        accepterAddress: address,
-        challengerAddress: offer.offerer_address || offer.address,
-        cryptoAmount: offer.cryptoAmount || offer.offer_price
-      })
+      // Get WebSocket service
+      const ws = socket || window.webSocketService
+      if (ws && ws.send) {
+        ws.send({
+          type: 'accept_offer',
+          offerId: offer.id,
+          accepterAddress: address,
+          challengerAddress: offer.offerer_address || offer.address,
+          cryptoAmount: offer.cryptoAmount || offer.offer_price
+        })
+      } else {
+        throw new Error('WebSocket service not available')
+      }
       
       console.log('✅ Offer acceptance sent via WebSocket')
       
