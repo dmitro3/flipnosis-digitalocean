@@ -201,6 +201,11 @@ const GameLobby = () => {
         webSocketService.on('deposit_confirmed', handleDepositConfirmed)
         webSocketService.on('game_started', handleGameStarted)
         
+        // Add handlers for deposit stage events
+        webSocketService.on('deposit_stage_started', handleDepositStageStarted)
+        webSocketService.on('deposit_countdown', handleDepositCountdown)
+        webSocketService.on('deposit_timeout', handleDepositTimeout)
+        
         // Add handlers for offer acceptance to trigger tab switching
         webSocketService.on('offer_accepted', handleOfferAccepted)
         webSocketService.on('your_offer_accepted', handleYourOfferAccepted)
@@ -244,6 +249,9 @@ const GameLobby = () => {
       webSocketService.off('game_awaiting_challenger_deposit')
       webSocketService.off('deposit_confirmed')
       webSocketService.off('game_started')
+      webSocketService.off('deposit_stage_started')
+      webSocketService.off('deposit_countdown')
+      webSocketService.off('deposit_timeout')
       webSocketService.off('room_joined')
       webSocketService.off('crypto_offer')
       webSocketService.off('system')
@@ -256,16 +264,69 @@ const GameLobby = () => {
 
   // Game state message handlers only
 
+  // Handle deposit stage started
+  const handleDepositStageStarted = (data) => {
+    console.log('🎯 Deposit stage started:', data)
+    
+    if (data.gameId === gameData?.id) {
+      console.log('✅ Deposit stage started for current game')
+      
+      // Update game data with deposit stage info
+      setGameData(prevData => ({
+        ...prevData,
+        status: 'awaiting_deposits',
+        deposit_deadline: new Date(Date.now() + (data.timeRemaining * 1000)).toISOString(),
+        phase: 'deposit_stage'
+      }))
+      
+      showInfo('Deposit stage started! Both players have 2 minutes to deposit.')
+    }
+  }
+
+  // Handle deposit countdown updates
+  const handleDepositCountdown = (data) => {
+    console.log('⏰ Deposit countdown update:', data)
+    
+    if (data.gameId === gameData?.id) {
+      // Update the deposit deadline based on remaining time
+      const newDeadline = new Date(Date.now() + (data.timeRemaining * 1000)).toISOString()
+      
+      setGameData(prevData => ({
+        ...prevData,
+        deposit_deadline: newDeadline,
+        creatorDeposited: data.creatorDeposited,
+        challengerDeposited: data.challengerDeposited
+      }))
+    }
+  }
+
+  // Handle deposit timeout
+  const handleDepositTimeout = (data) => {
+    console.log('⏰ Deposit timeout:', data)
+    
+    if (data.gameId === gameData?.id) {
+      console.log('❌ Deposit time expired for current game')
+      showError('Deposit time expired! Game cancelled.')
+      
+      // Update game status
+      setGameData(prevData => ({
+        ...prevData,
+        status: 'cancelled',
+        phase: 'cancelled'
+      }))
+    }
+  }
+
   const handleDepositConfirmed = (data) => {
     console.log('Deposit confirmed:', data)
     showSuccess('Deposit confirmed! Game starting...')
-    loadGameData() // Refresh game data to check for deposit status
+    // WebSocket will handle state updates - no manual refresh needed
   }
 
   const handleGameStarted = (data) => {
     console.log('Game started:', data)
     showSuccess('Game started! Both players deposited.')
-    loadGameData() // Refresh game data to check for deposit status
+    // WebSocket will handle state updates - no manual refresh needed
   }
 
   const handleGameAwaitingDeposit = (data) => {
@@ -298,17 +359,11 @@ const GameLobby = () => {
     console.log('🎯 Event-driven offer accepted received:', data)
     
     if (data.gameId === gameData?.id) {
-      console.log('✅ Offer accepted for current game, refreshing data...')
+      console.log('✅ Offer accepted for current game - WebSocket will handle state updates')
       showInfo('Offer accepted! Game status updated.')
       
-      // Force refresh game data to get updated status
-      loadGameData()
-      
-      // Also trigger a delayed refresh to ensure server has processed
-      setTimeout(() => {
-        console.log('⏰ Delayed game data refresh after offer acceptance')
-        loadGameData()
-      }, 1000)
+      // No manual refresh needed - WebSocket will handle all state updates
+      // The server will send game_status_changed events when needed
     }
   }
 
@@ -319,8 +374,12 @@ const GameLobby = () => {
     if (data.gameId === gameData?.id) {
       console.log(`🔄 Game status changed from ${data.data.previousStatus} to ${data.data.newStatus}`)
       
-      // Refresh game data to get the new status
-      loadGameData()
+      // Update game data directly from WebSocket event instead of refreshing
+      setGameData(prevData => ({
+        ...prevData,
+        status: data.data.newStatus,
+        deposit_deadline: data.data.deposit_deadline || prevData.deposit_deadline
+      }))
       
       // Show appropriate message based on status change
       if (data.data.newStatus === 'waiting_challenger_deposit') {
@@ -337,8 +396,7 @@ const GameLobby = () => {
       console.log('✅ Your offer was accepted, showing deposit overlay...')
       showSuccess('Your offer was accepted! Please deposit crypto within 2 minutes.')
       
-      // Refresh game data
-      loadGameData()
+      // WebSocket will handle state updates - no manual refresh needed
     }
   }
 
@@ -402,12 +460,12 @@ const GameLobby = () => {
   useEffect(() => {
     const handleLobbyRefresh = (event) => {
       console.log('🔄 Lobby refresh triggered:', event.detail)
-      loadGameData() // Refresh game data to check for countdown
+      // WebSocket will handle state updates - no manual refresh needed
     }
 
     window.addEventListener('lobbyRefresh', handleLobbyRefresh)
     return () => window.removeEventListener('lobbyRefresh', handleLobbyRefresh)
-  }, [loadGameData]) // Add loadGameData back to deps
+  }, []) // Remove loadGameData dependency
 
   // Watch for game starting (both players deposited) - transport directly to flip suite
   useEffect(() => {
@@ -614,11 +672,8 @@ const GameLobby = () => {
                     console.log('🎯 Current user is not the offerer - just refreshing data')
                   }
                   
-                  // Single refresh with a short delay to ensure server has processed
-                  setTimeout(() => {
-                    console.log('🔄 Refreshing game data after offer acceptance')
-                    loadGameData()
-                  }, 1000)
+                  // No refresh needed - WebSocket events will handle state updates
+                  console.log('🔄 WebSocket will handle game state updates after offer acceptance')
                 }}
               />
               

@@ -161,7 +161,7 @@ export const useLobbyState = (gameId, address) => {
       if (timeLeft === 0) {
         clearInterval(interval)
         setDepositTimeLeft(0)
-        loadGameData()
+        // WebSocket will handle state updates when deposit expires
       } else {
         setDepositTimeLeft(Math.floor(timeLeft / 1000))
       }
@@ -261,7 +261,7 @@ export const useLobbyState = (gameId, address) => {
 
       if (response.ok) {
         showSuccess('Offer accepted! Game created successfully.')
-        await loadGameData()
+        // WebSocket will handle state updates - no manual refresh needed
         await loadOffers()
 
         if (isCreator()) {

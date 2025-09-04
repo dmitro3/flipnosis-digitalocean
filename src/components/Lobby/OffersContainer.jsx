@@ -768,20 +768,12 @@ const OffersContainer = ({
       overlayStateRef.current = { showOverlay: true, offer: waitingOffer }
       console.log('🎯 Showing waiting overlay for creator after accepting offer:', waitingOffer)
       
-      // Force refresh game data to get updated status
-      console.log('🔄 Forcing game data refresh after offer acceptance')
+      // WebSocket will handle state updates - no manual refresh needed
+      console.log('🔄 WebSocket will handle game state updates after offer acceptance')
       if (onOfferAccepted) {
         console.log('📞 Calling onOfferAccepted callback')
         onOfferAccepted(offer)
       }
-      
-      // Also trigger a manual refresh after a short delay to ensure server has processed
-      setTimeout(() => {
-        console.log('⏰ Delayed game data refresh')
-        if (onOfferAccepted) {
-          onOfferAccepted(offer)
-        }
-      }, 1000)
       
     } catch (error) {
       console.error('Offers: Error accepting offer:', error)
