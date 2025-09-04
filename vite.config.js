@@ -84,6 +84,7 @@ export default defineConfig(({ mode }) => {
             vendor: ['react', 'react-dom'],
             wagmi: ['@rainbow-me/rainbowkit', '@wagmi/core', 'wagmi'],
             three: ['three', '@react-three/fiber', '@react-three/drei'],
+            socketio: ['socket.io-client'],
           },
         },
       },

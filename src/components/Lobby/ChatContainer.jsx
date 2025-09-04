@@ -311,7 +311,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
         sender: data.from,
         message: data.message,
         timestamp: new Date().toLocaleTimeString(),
-        isCurrentUser: data.from === address
+        isCurrentUser: data.from?.toLowerCase() === address?.toLowerCase()
       }
       setMessages(prev => [...prev, newMessage])
     }
@@ -325,7 +325,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
           sender: msg.sender_address || msg.sender,
           message: msg.message,
           timestamp: new Date(msg.timestamp).toLocaleTimeString(),
-          isCurrentUser: msg.sender_address === address
+          isCurrentUser: (msg.sender_address || msg.sender)?.toLowerCase() === address?.toLowerCase()
         })))
       }
     }
@@ -358,7 +358,7 @@ const ChatContainer = ({ gameId, gameData, socket, connected }) => {
 
   const getDisplayName = (sender) => {
     if (sender === 'System') return 'System'
-    if (sender === address) return 'You'
+    if (sender?.toLowerCase() === address?.toLowerCase()) return 'You'
     // Check if we have a name for this sender
     if (playerNames[sender]) return playerNames[sender]
     // Fallback to Anonymous if no name found

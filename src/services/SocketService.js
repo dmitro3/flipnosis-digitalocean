@@ -17,7 +17,7 @@ class SocketService {
     // If already connected to this room, just return
     const roomId = `game_${gameId.replace('game_', '')}`
     
-    if (this.connected && this.currentRoom === roomId) {
+    if (this.connected && this.currentRoom === roomId && this.socket) {
       console.log('✅ Already connected to room:', roomId)
       return Promise.resolve()
     }
@@ -28,9 +28,25 @@ class SocketService {
       this.disconnect()
     }
 
+    // If already connecting, wait for it to complete
+    if (this.connecting) {
+      console.log('⏳ Already connecting, waiting...')
+      return new Promise((resolve) => {
+        const checkConnection = () => {
+          if (!this.connecting) {
+            resolve()
+          } else {
+            setTimeout(checkConnection, 100)
+          }
+        }
+        checkConnection()
+      })
+    }
+
     this.currentRoom = roomId
     this.gameId = gameId.replace('game_', '')
     this.address = address
+    this.connecting = true
 
     return new Promise((resolve, reject) => {
       try {
@@ -43,12 +59,15 @@ class SocketService {
           reconnection: true,
           reconnectionAttempts: 10,
           reconnectionDelay: 2000,
+          timeout: 10000,
+          forceNew: true // Force new connection
         })
 
         // Connection established
         this.socket.on('connect', () => {
           console.log('✅ Socket.io connected')
           this.connected = true
+          this.connecting = false
           
           // Join game room
           this.emit('join_room', {
@@ -80,6 +99,7 @@ class SocketService {
         // Handle errors
         this.socket.on('connect_error', (error) => {
           console.error('❌ Socket.io connection error:', error.message)
+          this.connecting = false
           if (!this.connected) {
             reject(error)
           }

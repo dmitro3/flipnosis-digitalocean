@@ -172,6 +172,19 @@ function initializeSocketIO(server, dbService) {
         challengerDeposited: false
       })
       
+      // Send specific event to challenger (Player 2) to show deposit overlay
+      const challengerSocketId = userSockets.get(challenger.toLowerCase())
+      if (challengerSocketId) {
+        io.to(challengerSocketId).emit('your_offer_accepted', {
+          gameId: gameId,
+          challenger: challenger,
+          cryptoAmount: data.cryptoAmount,
+          finalPrice: data.cryptoAmount,
+          timestamp: new Date().toISOString()
+        })
+        console.log(`🎯 Sent your_offer_accepted to challenger: ${challenger}`)
+      }
+      
       // Update database
       if (dbService) {
         await dbService.updateGameStatus(gameId, 'awaiting_deposits', challenger)
