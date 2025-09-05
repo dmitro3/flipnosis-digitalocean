@@ -93,13 +93,21 @@ function initializeSocketIO(server, dbService) {
       const socketInfo = socketData.get(socket.id)
       if (!socketInfo) return
       
+      const offererAddress = data.address || socketInfo.address
+      
+      // TODO: Add validation to prevent creators from making offers on their own games
+      // This would require checking the game data to get the creator address
+      // For now, we'll rely on client-side validation
+      
       const offer = {
         type: 'crypto_offer',
         id: Date.now() + '_' + Math.random(),
-        address: data.address || socketInfo.address,
+        address: offererAddress,
         cryptoAmount: data.cryptoAmount,
         timestamp: new Date().toISOString()
       }
+      
+      console.log('💰 Crypto offer received:', { offerer: offererAddress, amount: data.cryptoAmount, gameId: socketInfo.gameId })
       
       // Broadcast to room
       io.to(socketInfo.roomId).emit('crypto_offer', offer)

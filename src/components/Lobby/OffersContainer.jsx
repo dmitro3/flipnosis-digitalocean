@@ -655,11 +655,30 @@ const OffersContainer = ({
   }
 
   const handleSubmitOffer = () => {
-    if (!cryptoOffer || parseFloat(cryptoOffer) <= 0) return
+    if (!cryptoOffer || parseFloat(cryptoOffer) <= 0) {
+      showError('Please enter a valid offer amount')
+      return
+    }
+    
+    const offerAmount = parseFloat(cryptoOffer)
+    
+    // Check minimum offer amount
+    if (offerAmount < minOfferAmount) {
+      showError(`Minimum offer amount is $${minOfferAmount.toFixed(2)} USD`)
+      return
+    }
+    
+    // Check if user is creator (double-check)
+    if (isCreator()) {
+      showError('You cannot make an offer on your own flip')
+      return
+    }
+    
+    console.log('💰 Submitting offer:', { address, amount: offerAmount, gameId })
     
     socketService.emit('crypto_offer', {
       address: address,
-      cryptoAmount: parseFloat(cryptoOffer)
+      cryptoAmount: offerAmount
     })
     
     setCryptoOffer('')
@@ -811,11 +830,14 @@ const OffersContainer = ({
     // Don't show input if deposit overlay is active
     if (showDepositOverlay) return false
     
-    // Show for non-creators when game is waiting for challenger
+    // Don't show for creators - they can't make offers on their own flip
     if (isCreator()) return false
     
-    // Don't show if game is waiting for deposit
+    // Don't show if game is waiting for deposit (game is already matched)
     if (gameData?.status === 'waiting_challenger_deposit') return false
+    
+    // Don't show if game is already active or completed
+    if (gameData?.status === 'active' || gameData?.status === 'completed' || gameData?.status === 'in_progress') return false
     
     // Check if any offer has been accepted recently (within 5 minutes)
     const hasRecentAcceptance = offers.some(offer => 
@@ -826,13 +848,35 @@ const OffersContainer = ({
     if (hasRecentAcceptance) return false
     
     // Check if game is in a state where offers are accepted
-    const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger', 'open']
+    const validStatuses = [
+      'waiting_challenger', 
+      'awaiting_challenger', 
+      'waiting_for_challenger', 
+      'open',
+      'waiting', // Add waiting status
+      'pending'  // Add pending status
+    ]
     
     // Also check if listing status allows offers (for games that are listings)
     const gameStatus = gameData?.status
     const listingStatus = gameData?.type === 'listing' ? gameData?.status : null
     
-    return validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
+    // Allow offers if game status is valid OR if no specific status (new games)
+    const statusAllowsOffers = validStatuses.includes(gameStatus) || 
+                              validStatuses.includes(listingStatus) ||
+                              !gameStatus // Allow if no status set yet
+    
+    console.log('🔍 Offer input check:', {
+      isCreator: isCreator(),
+      gameStatus,
+      listingStatus,
+      statusAllowsOffers,
+      showDepositOverlay,
+      hasRecentAcceptance,
+      shouldShow: statusAllowsOffers && !showDepositOverlay && !isCreator() && !hasRecentAcceptance
+    })
+    
+    return statusAllowsOffers
   }
 
   // Deposit overlay handlers
