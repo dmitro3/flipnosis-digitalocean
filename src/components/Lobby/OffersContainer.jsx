@@ -306,7 +306,6 @@ const OffersContainer = ({
     }
   }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay from deps
 
-
   // Note: Removed custom showDepositScreen event listener
   // The your_offer_accepted WebSocket event is handled directly by handleYourOfferAccepted
 
@@ -656,30 +655,11 @@ const OffersContainer = ({
   }
 
   const handleSubmitOffer = () => {
-    if (!cryptoOffer || parseFloat(cryptoOffer) <= 0) {
-      showError('Please enter a valid offer amount')
-      return
-    }
-    
-    const offerAmount = parseFloat(cryptoOffer)
-    
-    // Check minimum offer amount
-    if (offerAmount < minOfferAmount) {
-      showError(`Minimum offer amount is $${minOfferAmount.toFixed(2)} USD`)
-      return
-    }
-    
-    // Check if user is creator (double-check)
-    if (isCreator()) {
-      showError('You cannot make an offer on your own flip')
-      return
-    }
-    
-    console.log('💰 Submitting offer:', { address, amount: offerAmount, gameId })
+    if (!cryptoOffer || parseFloat(cryptoOffer) <= 0) return
     
     socketService.emit('crypto_offer', {
       address: address,
-      cryptoAmount: offerAmount
+      cryptoAmount: parseFloat(cryptoOffer)
     })
     
     setCryptoOffer('')
@@ -701,59 +681,6 @@ const OffersContainer = ({
     })
     
     showInfo('Accepting offer...')
-  }
-
-  const handleRetryNFTDeposit = async () => {
-    if (!isCreator()) {
-      showError('Only the creator can complete NFT deposit')
-      return
-    }
-
-    try {
-      showInfo('Completing NFT deposit...')
-      
-      // Call the contract service to deposit NFT
-      const contractService = window.contractService
-      if (!contractService) {
-        throw new Error('Contract service not available')
-      }
-
-      const result = await contractService.depositNFT(
-        gameId,
-        gameData.nft_contract,
-        gameData.nft_token_id
-      )
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to deposit NFT')
-      }
-
-      // Confirm the deposit with the server
-      const confirmResponse = await fetch(`/api/games/${gameId}/deposit-confirmed`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player: address,
-          assetType: 'nft',
-          transactionHash: result.transactionHash
-        })
-      })
-
-      if (!confirmResponse.ok) {
-        throw new Error('Failed to confirm NFT deposit')
-      }
-
-      showSuccess('NFT deposit completed! Game is now open for challengers.')
-      
-      // Reload game data to get updated status
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
-
-    } catch (error) {
-      console.error('Error completing NFT deposit:', error)
-      showError(error.message || 'Failed to complete NFT deposit')
-    }
   }
 
   const formatTimestamp = (timestamp) => {
@@ -884,14 +811,11 @@ const OffersContainer = ({
     // Don't show input if deposit overlay is active
     if (showDepositOverlay) return false
     
-    // Don't show for creators - they can't make offers on their own flip
+    // Show for non-creators when game is waiting for challenger
     if (isCreator()) return false
     
-    // Don't show if game is waiting for deposit (game is already matched)
+    // Don't show if game is waiting for deposit
     if (gameData?.status === 'waiting_challenger_deposit') return false
-    
-    // Don't show if game is already active or completed
-    if (gameData?.status === 'active' || gameData?.status === 'completed' || gameData?.status === 'in_progress') return false
     
     // Check if any offer has been accepted recently (within 5 minutes)
     const hasRecentAcceptance = offers.some(offer => 
@@ -902,35 +826,13 @@ const OffersContainer = ({
     if (hasRecentAcceptance) return false
     
     // Check if game is in a state where offers are accepted
-    const validStatuses = [
-      'waiting_challenger', 
-      'awaiting_challenger', 
-      'waiting_for_challenger', 
-      'open',
-      'waiting', // Add waiting status
-      'pending'  // Add pending status
-    ]
+    const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger', 'open']
     
     // Also check if listing status allows offers (for games that are listings)
     const gameStatus = gameData?.status
     const listingStatus = gameData?.type === 'listing' ? gameData?.status : null
     
-    // Allow offers if game status is valid OR if no specific status (new games)
-    const statusAllowsOffers = validStatuses.includes(gameStatus) || 
-                              validStatuses.includes(listingStatus) ||
-                              !gameStatus // Allow if no status set yet
-    
-    console.log('🔍 Offer input check:', {
-      isCreator: isCreator(),
-      gameStatus,
-      listingStatus,
-      statusAllowsOffers,
-      showDepositOverlay,
-      hasRecentAcceptance,
-      shouldShow: statusAllowsOffers && !showDepositOverlay && !isCreator() && !hasRecentAcceptance
-    })
-    
-    return statusAllowsOffers
+    return validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
   }
 
   // Deposit overlay handlers
@@ -1034,42 +936,10 @@ const OffersContainer = ({
             <div style={{ marginBottom: '0.5rem' }}>No offers yet.</div>
             <div style={{ fontSize: '0.9rem', color: '#00FF41' }}>
               {isCreator() 
-                ? (gameData?.status === 'awaiting_deposit' 
-                    ? 'Complete NFT deposit to start accepting offers!'
-                    : 'Wait for other players to make offers!')
-                : (gameData?.status === 'awaiting_deposit'
-                    ? 'Creator needs to complete NFT deposit first!'
-                    : 'Make an offer to join the game!')
+                ? 'Wait for other players to make offers!'
+                : 'Make an offer to join the game!'
               }
             </div>
-            
-            {/* Show NFT deposit button for creator when game is awaiting_deposit */}
-            {isCreator() && gameData?.status === 'awaiting_deposit' && (
-              <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                <button
-                  onClick={handleRetryNFTDeposit}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  Complete NFT Deposit
-                </button>
-                <div style={{ 
-                  fontSize: '0.8rem', 
-                  color: 'rgba(255, 255, 255, 0.7)', 
-                  marginTop: '0.5rem' 
-                }}>
-                  Click to complete the NFT deposit process
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           offers.map((offer, index) => {

@@ -617,13 +617,6 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       
       console.log('✅ Found listing for offer:', { id: listing.id, status: listing.status, creator: listing.creator })
       
-      // Prevent creators from making offers on their own listings
-      if (listing.creator && offerer_address && 
-          listing.creator.toLowerCase() === offerer_address.toLowerCase()) {
-        console.warn('⚠️ Creator attempted to make offer on their own listing:', { creator: listing.creator, offerer: offerer_address })
-        return res.status(400).json({ error: 'You cannot make an offer on your own listing' })
-      }
-      
       // Only block offers if the listing is cancelled or completed
       if (listing.status === 'closed' || listing.status === 'completed') {
         console.warn('⚠️ Attempted offer on closed/completed listing:', listing.status)
