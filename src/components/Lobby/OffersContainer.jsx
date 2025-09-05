@@ -306,6 +306,30 @@ const OffersContainer = ({
     }
   }, [gameData?.status, gameData?.challenger, address]) // Removed showDepositOverlay from deps
 
+  // Auto-show deposit overlay when game status is awaiting_deposit and current user is creator
+  useEffect(() => {
+    if (gameData?.status === 'awaiting_deposit' && 
+        gameData?.creator && 
+        address && 
+        gameData.creator.toLowerCase() === address.toLowerCase() &&
+        !gameData?.creator_deposited &&
+        !showDepositOverlay) {
+      
+      console.log('🎯 Auto-showing deposit overlay for creator - NFT deposit required')
+      
+      // Create deposit state for creator NFT deposit
+      const acceptedOffer = {
+        isCreatorDeposit: true,
+        creator: gameData.creator,
+        cryptoAmount: gameData.payment_amount || gameData.price_usd,
+        timestamp: new Date().toISOString()
+      }
+      
+      setAcceptedOffer(acceptedOffer)
+      setShowDepositOverlay(true)
+    }
+  }, [gameData?.status, gameData?.creator, gameData?.creator_deposited, address])
+
   // Note: Removed custom showDepositScreen event listener
   // The your_offer_accepted WebSocket event is handled directly by handleYourOfferAccepted
 
@@ -980,8 +1004,12 @@ const OffersContainer = ({
             <div style={{ marginBottom: '0.5rem' }}>No offers yet.</div>
             <div style={{ fontSize: '0.9rem', color: '#00FF41' }}>
               {isCreator() 
-                ? 'Wait for other players to make offers!'
-                : 'Make an offer to join the game!'
+                ? (gameData?.status === 'awaiting_deposit' 
+                    ? 'Deposit your NFT to start accepting offers!'
+                    : 'Wait for other players to make offers!')
+                : (gameData?.status === 'awaiting_deposit'
+                    ? 'Creator needs to deposit NFT first!'
+                    : 'Make an offer to join the game!')
               }
             </div>
           </div>
@@ -1025,11 +1053,11 @@ const OffersContainer = ({
           address={address}
           gameData={gameData}
           depositState={{
-            phase: 'deposit_stage',
+            phase: acceptedOffer.isCreatorDeposit ? 'creator_nft_deposit' : 'deposit_stage',
             creator: gameData?.creator,
             challenger: acceptedOffer.offerer_address,
             timeRemaining: acceptedOffer.timeRemaining || 120,
-            creatorDeposited: true,
+            creatorDeposited: acceptedOffer.isCreatorDeposit ? false : true, // Creator hasn't deposited NFT yet if isCreatorDeposit
             challengerDeposited: false,
             cryptoAmount: acceptedOffer.cryptoAmount || acceptedOffer.offer_price || acceptedOffer.amount
           }}
