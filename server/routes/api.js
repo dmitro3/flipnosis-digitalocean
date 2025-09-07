@@ -1837,6 +1837,69 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     }
   })
 
+  // Route: Store challenger details when deposit button is clicked
+  router.post('/games/:gameId/store-challenger', async (req, res) => {
+    const { gameId } = req.params
+    const { challengerAddress } = req.body
+    
+    try {
+      console.log(`🎯 Storing challenger details for game ${gameId}: ${challengerAddress}`)
+      
+      // Update game with challenger information
+      await new Promise((resolve, reject) => {
+        db.run(`
+          UPDATE games 
+          SET challenger = ?, status = 'awaiting_deposits', joiner = ?
+          WHERE id = ?
+        `, [challengerAddress, challengerAddress, gameId], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      
+      console.log(`✅ Stored challenger ${challengerAddress} for game ${gameId}`)
+      
+      // Start a 2-minute timer to clear challenger field if deposit doesn't complete
+      setTimeout(async () => {
+        try {
+          // Check if deposit was completed
+          const gameData = await new Promise((resolve, reject) => {
+            db.get('SELECT challenger_deposited FROM games WHERE id = ?', [gameId], (err, row) => {
+              if (err) reject(err)
+              else resolve(row)
+            })
+          })
+          
+          // If deposit wasn't completed, clear the challenger field
+          if (gameData && !gameData.challenger_deposited) {
+            console.log(`⏰ Deposit timeout for game ${gameId}, clearing challenger field`)
+            
+            await new Promise((resolve, reject) => {
+              db.run(`
+                UPDATE games 
+                SET challenger = NULL, joiner = NULL, status = 'waiting'
+                WHERE id = ?
+              `, [gameId], (err) => {
+                if (err) reject(err)
+                else resolve()
+              })
+            })
+            
+            console.log(`✅ Cleared challenger field for game ${gameId} due to timeout`)
+          }
+        } catch (error) {
+          console.error('❌ Error checking deposit timeout:', error)
+        }
+      }, 2 * 60 * 1000) // 2 minutes
+      
+      res.json({ success: true, message: 'Challenger details stored' })
+      
+    } catch (error) {
+      console.error('❌ Error storing challenger details:', error)
+      res.status(500).json({ error: 'Failed to store challenger details', details: error.message })
+    }
+  })
+
   return router
 }
 
