@@ -348,6 +348,7 @@ export const useLobbyState = (gameId, address) => {
     formatTimeLeft,
 
     // Setters
+    setGameData,
     setNewOffer,
     setCreatingOffer,
     setChatMessages,

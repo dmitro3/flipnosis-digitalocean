@@ -160,6 +160,7 @@ const GameLobby = () => {
     formatTimeLeft,
     loadGameData,
     loadOffers,
+    setGameData,
     setNewOffer,
     setCreatingOffer,
     setChatMessages,
