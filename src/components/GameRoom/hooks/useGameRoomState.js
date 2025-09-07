@@ -1,24 +1,27 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../../../contexts/ToastContext'
+import socketService from '../../../services/SocketService'
 
 export const useGameRoomState = (gameId, address, gameData) => {
   const { showSuccess, showError, showInfo } = useToast()
 
   // Game room specific state
   const [gameState, setGameState] = useState({
-    phase: 'choosing', // choosing, charging, flipping, completed
+    phase: 'waiting', // waiting, choosing, charging, flipping, round_result, game_complete
     currentRound: 1,
-    currentTurn: null,
-    creatorChoice: null,
-    joinerChoice: null,
-    creatorPower: 0,
-    joinerPower: 0,
-    chargingPlayer: null,
+    currentPlayer: null, // Track whose turn it is (creator or joiner address)
+    roundPhase: 'player1_choice', // player1_choice, player1_flip, player2_choice, player2_flip, round_complete
+    player1Choice: null,
+    player2Choice: null,
+    player1Power: 0,
+    player2Power: 0,
+    chargingStartTime: null,
     flipResult: null,
     roundWinner: null,
     creatorWins: 0,
     joinerWins: 0,
-    flipSeed: null // For deterministic animations
+    flipSeed: null,
+    isCharging: false // Track if currently charging power
   })
 
   const [playerChoices, setPlayerChoices] = useState({ creator: null, joiner: null })
@@ -52,62 +55,196 @@ export const useGameRoomState = (gameId, address, gameData) => {
     return address.toLowerCase() === challengerAddress.toLowerCase()
   }
 
-  // FIXED: Better turn determination logic
-  const getChoosingPlayer = (round) => {
-    // Round 1, 3, 5: Creator chooses first
-    // Round 2, 4: Joiner chooses first
-    if (round === 1 || round === 3 || round === 5) {
-      return getGameCreator()
-    } else {
-      return getGameJoiner()
-    }
+  // Add function to determine who goes first each round
+  const getFirstPlayer = (round) => {
+    // Alternate who goes first each round
+    return round % 2 === 1 ? getGameCreator() : getGameJoiner()
   }
 
   const isMyTurn = () => {
-    // Don't allow turns if game hasn't started yet
-    const creatorDeposited = gameData?.creator_deposited === 1 || gameData?.creator_deposited === true
-    const challengerDeposited = gameData?.challenger_deposited === 1 || gameData?.challenger_deposited === true
+    if (!gameState.currentPlayer) return false
+    return address?.toLowerCase() === gameState.currentPlayer?.toLowerCase()
+  }
+
+  // Replace the handlePlayerChoice function:
+  const handlePlayerChoice = (choice) => {
+    const isPlayer1Turn = gameState.roundPhase === 'player1_choice' && 
+                          address === getFirstPlayer(gameState.currentRound)
+    const isPlayer2Turn = gameState.roundPhase === 'player2_choice' && 
+                          address !== getFirstPlayer(gameState.currentRound)
     
-    if (!creatorDeposited || !challengerDeposited || gameData?.status !== 'active') {
-      console.log('🔍 Game not ready for turns:', { 
-        creatorDeposited, 
-        challengerDeposited, 
-        status: gameData?.status 
-      })
-      return false
+    if (!isPlayer1Turn && !isPlayer2Turn) {
+      console.log('Not your turn to choose!')
+      return
     }
-
-    if (gameState.phase === 'choosing') {
-      // FIXED: Only allow the current choosing player to make a choice
-      const choosingPlayer = getChoosingPlayer(gameState.currentRound)
-      const isMyTurnResult = address?.toLowerCase() === choosingPlayer?.toLowerCase()
-      
-      console.log('🔍 isMyTurn choosing phase:', { 
-        address: address?.toLowerCase(), 
-        choosingPlayer: choosingPlayer?.toLowerCase(), 
-        currentRound: gameState.currentRound,
-        phase: gameState.phase,
-        creatorChoice: gameState.creatorChoice,
-        joinerChoice: gameState.joinerChoice,
-        isMyTurn: isMyTurnResult 
-      })
-      
-      return isMyTurnResult
+    
+    if (isPlayer1Turn) {
+      setGameState(prev => ({
+        ...prev,
+        player1Choice: choice,
+        roundPhase: 'player1_flip',
+        phase: 'charging'
+      }))
+    } else {
+      setGameState(prev => ({
+        ...prev,
+        player2Choice: choice,
+        roundPhase: 'player2_flip',
+        phase: 'charging'
+      }))
     }
+    
+    // Stop countdown
+    stopRoundCountdown()
+    
+    // Emit choice to server
+    socketService.emit('game_action', {
+      type: 'MAKE_CHOICE',
+      gameId,
+      player: address,
+      choice,
+      roundPhase: gameState.roundPhase
+    })
+  }
 
-    // Charging phase - check if it's this player's turn to charge
-    if (gameState.phase === 'charging') {
-      if (gameState.currentTurn) {
-        return gameState.currentTurn === address
+  // Add new power charging functions:
+  const handlePowerChargeStart = () => {
+    if (gameState.phase !== 'charging') return
+    
+    const canCharge = 
+      (gameState.roundPhase === 'player1_flip' && address === getFirstPlayer(gameState.currentRound)) ||
+      (gameState.roundPhase === 'player2_flip' && address !== getFirstPlayer(gameState.currentRound))
+    
+    if (!canCharge) return
+    
+    setGameState(prev => ({
+      ...prev,
+      isCharging: true,
+      chargingStartTime: Date.now()
+    }))
+    
+    // Start incrementing power
+    const powerInterval = setInterval(() => {
+      setGameState(prev => {
+        if (!prev.isCharging) {
+          clearInterval(powerInterval)
+          return prev
+        }
+        
+        const elapsed = (Date.now() - prev.chargingStartTime) / 1000
+        const power = Math.min(10, Math.floor(elapsed * 2)) // Max power in 5 seconds
+        
+        if (prev.roundPhase === 'player1_flip') {
+          return { ...prev, player1Power: power }
+        } else {
+          return { ...prev, player2Power: power }
+        }
+      })
+    }, 100)
+  }
+
+  const handlePowerChargeStop = () => {
+    if (!gameState.isCharging) return
+    
+    const finalPower = gameState.roundPhase === 'player1_flip' ? 
+                       gameState.player1Power : gameState.player2Power
+    
+    setGameState(prev => ({
+      ...prev,
+      isCharging: false,
+      phase: 'flipping'
+    }))
+    
+    // Trigger flip animation
+    const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
+    
+    setFlipAnimation({
+      isActive: true,
+      result: flipResult,
+      duration: 3000
+    })
+    
+    // Emit flip action
+    socketService.emit('game_action', {
+      type: 'EXECUTE_FLIP',
+      gameId,
+      player: address,
+      power: finalPower,
+      roundPhase: gameState.roundPhase
+    })
+    
+    // Handle flip result after animation
+    setTimeout(() => {
+      handleFlipComplete(flipResult)
+    }, 3000)
+  }
+
+  // Add flip complete handler:
+  const handleFlipComplete = (result) => {
+    setFlipAnimation(null)
+    
+    if (gameState.roundPhase === 'player1_flip') {
+      // Player 1 just flipped, now it's player 2's turn
+      setGameState(prev => ({
+        ...prev,
+        phase: 'choosing',
+        roundPhase: 'player2_choice',
+        currentPlayer: prev.currentPlayer === getGameCreator() ? getGameJoiner() : getGameCreator()
+      }))
+      
+      // Start countdown for player 2
+      startRoundCountdown()
+    } else {
+      // Player 2 just flipped, determine round winner
+      const player1Choice = gameState.player1Choice
+      const player2Choice = gameState.player2Choice
+      
+      // Determine winner based on choices and result
+      let roundWinner = null
+      if (result === player1Choice) {
+        roundWinner = getFirstPlayer(gameState.currentRound)
+      } else if (result === player2Choice) {
+        roundWinner = address === getGameCreator() ? getGameJoiner() : getGameCreator()
+      }
+      
+      const newCreatorWins = roundWinner === getGameCreator() ? 
+                             gameState.creatorWins + 1 : gameState.creatorWins
+      const newJoinerWins = roundWinner === getGameJoiner() ? 
+                            gameState.joinerWins + 1 : gameState.joinerWins
+      
+      setGameState(prev => ({
+        ...prev,
+        phase: 'round_result',
+        roundWinner,
+        flipResult: result,
+        creatorWins: newCreatorWins,
+        joinerWins: newJoinerWins
+      }))
+      
+      // Show result popup
+      setResultData({
+        isWinner: roundWinner === address,
+        flipResult: result,
+        playerChoice: address === getFirstPlayer(gameState.currentRound) ? player1Choice : player2Choice,
+        roundWinner
+      })
+      setShowResultPopup(true)
+      
+      // Check if game is over
+      if (newCreatorWins >= 3 || newJoinerWins >= 3 || gameState.currentRound >= 5) {
+        setTimeout(() => {
+          handleGameCompleted({
+            winner: newCreatorWins > newJoinerWins ? getGameCreator() : getGameJoiner(),
+            finalScores: { creator: newCreatorWins, joiner: newJoinerWins }
+          })
+        }, 3000)
       } else {
-        // Fallback: allow the player who made their choice to charge
-        const hasMadeChoice = (isCreator() && gameState.creatorChoice) || (isJoiner() && gameState.joinerChoice)
-        return hasMadeChoice
+        // Prepare for next round after showing results
+        setTimeout(() => {
+          resetForNextRound()
+        }, 5000)
       }
     }
-
-    // Other phases - no turn restrictions
-    return false
   }
 
   // Start round countdown timer
@@ -338,51 +475,31 @@ export const useGameRoomState = (gameId, address, gameData) => {
     })
   }
 
-  // FIXED: Better reset for next round
+  // Update resetForNextRound:
   const resetForNextRound = () => {
     const nextRound = gameState.currentRound + 1
-    const gameOver = gameState.creatorWins >= 3 || gameState.joinerWins >= 3 || nextRound > 5
-
-    if (gameOver) {
-      // Game is complete
-      const winner = gameState.creatorWins > gameState.joinerWins ? getGameCreator() : getGameJoiner()
-      handleGameCompleted({
-        winner,
-        finalResult: gameState.flipResult,
-        playerChoice: isCreator() ? gameState.creatorChoice : gameState.joinerChoice
-      })
-      return
-    }
-
-    console.log('🔄 Resetting for next round:', nextRound)
-
+    const nextFirstPlayer = getFirstPlayer(nextRound)
+    
     setGameState(prev => ({
       ...prev,
       phase: 'choosing',
       currentRound: nextRound,
-      creatorChoice: null,
-      joinerChoice: null,
-      currentTurn: null,
-      creatorPower: 0,
-      joinerPower: 0,
-      chargingPlayer: null,
+      currentPlayer: nextFirstPlayer,
+      roundPhase: 'player1_choice',
+      player1Choice: null,
+      player2Choice: null,
+      player1Power: 0,
+      player2Power: 0,
       flipResult: null,
-      roundWinner: null
+      roundWinner: null,
+      isCharging: false
     }))
-
-    setPlayerChoices({
-      creator: null,
-      joiner: null
-    })
-
-    setFlipAnimation(null)
+    
     setShowResultPopup(false)
     setResultData(null)
-
+    
     // Start countdown for next round
-    setTimeout(() => {
-      startRoundCountdown()
-    }, 1000)
+    startRoundCountdown()
   }
 
   // Initialize game when both players are present
@@ -517,6 +634,9 @@ export const useGameRoomState = (gameId, address, gameData) => {
     startRoundCountdown,
     stopRoundCountdown,
     handleAutoFlip,
+    handlePlayerChoice,
+    handlePowerChargeStart,
+    handlePowerChargeStop,
 
     // Helpers
     isCreator,
@@ -524,6 +644,6 @@ export const useGameRoomState = (gameId, address, gameData) => {
     isMyTurn,
     getGameCreator,
     getGameJoiner,
-    getChoosingPlayer // FIXED: Export the turn determination function
+    getFirstPlayer
   }
 }

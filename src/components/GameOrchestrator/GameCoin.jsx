@@ -130,25 +130,27 @@ const GameCoin = ({
   return (
     <CoinSection>
       <FinalCoin
-        isFlipping={testFlip?.isActive || !!flipAnimation}
+        isFlipping={testFlip?.isActive || flipAnimation?.isActive}
         flipResult={testFlip?.result || flipAnimation?.result}
-        flipDuration={testFlip?.duration || flipAnimation?.duration || 3000}
+        flipDuration={3000}
         onFlipComplete={() => {
-          // Handle flip completion
           console.log('Flip animation complete')
         }}
-        onPowerCharge={onPowerChargeStart}
-        onPowerRelease={onPowerChargeStop}
-        isPlayerTurn={typeof isMyTurn === 'function' ? isMyTurn() : isMyTurn}
-        isCharging={gameState.chargingPlayer === address}
-        creatorPower={gameState.creatorPower || 5}
-        joinerPower={gameState.joinerPower || 5}
-        // Explicitly pass these to ensure they're not lost
-        customHeadsImage={customHeadsImage || coinFaces.headsImage || gameCoin?.headsImage}
-        customTailsImage={customTailsImage || coinFaces.tailsImage || gameCoin?.tailsImage}
+        onPowerCharge={onPowerChargeStart} // Start charging
+        onPowerRelease={onPowerChargeStop} // Stop charging and flip
+        isPlayerTurn={
+          gameState?.phase === 'charging' && 
+          ((gameState?.roundPhase === 'player1_flip' && isCreator()) ||
+           (gameState?.roundPhase === 'player2_flip' && !isCreator()))
+        }
+        isCharging={gameState?.isCharging}
+        creatorPower={gameState?.roundPhase === 'player1_flip' ? gameState?.player1Power : 0}
+        joinerPower={gameState?.roundPhase === 'player2_flip' ? gameState?.player2Power : 0}
+        customHeadsImage={customHeadsImage || coinFaces.headsImage}
+        customTailsImage={customTailsImage || coinFaces.tailsImage}
         size={isMobile ? 180 : 240}
         material={coinFaces.material}
-        seed={flipSeed || Math.random() * 10000}
+        seed={flipSeed}
         isMobile={isMobile}
       />
       

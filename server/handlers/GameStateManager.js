@@ -253,41 +253,27 @@ class GameStateManager {
     // Update game state
     game.phase = this.PHASES.GAME_ACTIVE
     game.currentRound = 1
-    game.currentTurn = game.creator // Creator goes first
+    game.currentPlayer = game.creator // Creator goes first in round 1
+    game.roundPhase = 'player1_choice'
+    game.player1Choice = null
+    game.player2Choice = null
+    game.player1Power = 0
+    game.player2Power = 0
     game.updatedAt = new Date().toISOString()
     
-    console.log(`🎮 Starting game ${gameId} - both players deposited!`)
-    
-    // Broadcast game start with comprehensive data
     broadcastFn(`game_${gameId}`, {
       type: 'game_started',
       gameId: gameId,
       phase: game.phase,
       currentRound: game.currentRound,
-      currentTurn: game.currentTurn,
+      currentPlayer: game.currentPlayer,
+      roundPhase: game.roundPhase,
       maxRounds: game.maxRounds,
       scores: game.scores,
       creator: game.creator,
       challenger: game.challenger,
-      creatorDeposited: game.creatorDeposited,
-      challengerDeposited: game.challengerDeposited,
-      bothDeposited: true,
-      message: 'Game is now active! Round 1 begins.',
-      timestamp: new Date().toISOString()
+      message: 'Game is now active! Player 1 choose heads or tails.'
     })
-    
-    // Also broadcast a transport event to ensure clients switch to flip suite
-    setTimeout(() => {
-      broadcastFn(`game_${gameId}`, {
-        type: 'transport_to_flip_suite',
-        gameId: gameId,
-        immediate: true,
-        reason: 'both_players_deposited',
-        creator: game.creator,
-        challenger: game.challenger,
-        message: 'Both players deposited! Entering Battle Arena...'
-      })
-    }, 1000)
   }
 
   // Handle game moves (for future implementation)
@@ -323,23 +309,47 @@ class GameStateManager {
     return true
   }
 
-  // Execute coin flip
-  executeFlip(gameId, broadcastFn) {
+  // Add handler for flip execution:
+  executeFlip(gameId, player, power, roundPhase, broadcastFn) {
     const game = this.games.get(gameId)
     if (!game) return
     
-    const roundKey = `round_${game.currentRound}`
-    const choices = game.roundChoices[roundKey]
+    // Store power level
+    if (roundPhase === 'player1_flip') {
+      game.player1Power = power
+    } else {
+      game.player2Power = power
+    }
     
-    // Simple flip result
+    // Generate flip result
     const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
     
-    // Determine winner
+    broadcastFn(`game_${gameId}`, {
+      type: 'flip_executed',
+      gameId: gameId,
+      player: player,
+      power: power,
+      flipResult: flipResult,
+      roundPhase: roundPhase
+    })
+    
+    // If this was player 2's flip, determine round winner
+    if (roundPhase === 'player2_flip') {
+      this.determineRoundWinner(gameId, flipResult, broadcastFn)
+    }
+  }
+
+  // Determine round winner
+  determineRoundWinner(gameId, flipResult, broadcastFn) {
+    const game = this.games.get(gameId)
+    if (!game) return
+    
+    // Determine winner based on choices and result
     let roundWinner = null
-    if (choices.creator === flipResult) {
+    if (flipResult === game.player1Choice) {
       roundWinner = game.creator
       game.scores.creator++
-    } else if (choices.challenger === flipResult) {
+    } else if (flipResult === game.player2Choice) {
       roundWinner = game.challenger
       game.scores.challenger++
     }
@@ -350,7 +360,8 @@ class GameStateManager {
       gameId: gameId,
       currentRound: game.currentRound,
       flipResult: flipResult,
-      choices: choices,
+      player1Choice: game.player1Choice,
+      player2Choice: game.player2Choice,
       roundWinner: roundWinner,
       scores: game.scores
     })
@@ -361,14 +372,20 @@ class GameStateManager {
     } else {
       // Next round
       game.currentRound++
-      game.currentTurn = game.currentTurn === game.creator ? game.challenger : game.creator
+      game.currentPlayer = game.currentPlayer === game.creator ? game.challenger : game.creator
+      game.roundPhase = 'player1_choice'
+      game.player1Choice = null
+      game.player2Choice = null
+      game.player1Power = 0
+      game.player2Power = 0
       
       setTimeout(() => {
         broadcastFn(`game_${gameId}`, {
           type: 'next_round',
           gameId: gameId,
           currentRound: game.currentRound,
-          currentTurn: game.currentTurn,
+          currentPlayer: game.currentPlayer,
+          roundPhase: game.roundPhase,
           scores: game.scores
         })
       }, 3000)

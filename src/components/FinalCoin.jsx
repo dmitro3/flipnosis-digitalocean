@@ -415,22 +415,29 @@ const FinalCoin = ({
       try {
         // Idle animation when not flipping
         if (!isAnimatingRef.current) {
-                  if (isCharging) {
-          // Charging animation
-          const time = Date.now() * 0.001
-          const intensity = Math.min(1, (creatorPower + joinerPower) / 20)
-          
-          // Gentle pulsing
-          const scale = 1 + Math.sin(time * 5) * 0.05 * intensity
-          coin.scale.set(scale, scale, scale)
-          
-                     // Slow rotation during charge - rotate forward (like falling towards us)
-           coin.rotation.x += 0.02 * intensity
-                 } else {
-           // Gentle idle rotation - rotate forward (like falling towards us)
-           coin.rotation.x += 0.005
-           coin.scale.set(1, 1, 1)
-         }
+          if (isCharging) {
+            // More dramatic charging animation
+            const time = Date.now() * 0.001
+            const chargeIntensity = Math.min(1, creatorPower / 10 || joinerPower / 10)
+            
+            // Pulsing and rotating during charge
+            const scale = 1 + Math.sin(time * 8) * 0.1 * chargeIntensity
+            coin.scale.set(scale, scale, scale)
+            
+            // Faster rotation during charge
+            coin.rotation.x += 0.03 * chargeIntensity
+            coin.rotation.z += 0.02 * chargeIntensity
+            
+            // Add glow effect (you'll need to add emissive to materials)
+            if (coin.material[1]) {
+              coin.material[1].emissive = new THREE.Color(0xFFD700)
+              coin.material[1].emissiveIntensity = 0.3 * chargeIntensity
+            }
+          } else {
+            // Gentle idle rotation - rotate forward (like falling towards us)
+            coin.rotation.x += 0.005
+            coin.scale.set(1, 1, 1)
+          }
         }
 
         renderer.render(scene, camera)
@@ -547,29 +554,25 @@ const FinalCoin = ({
   const handleMouseDown = (e) => {
     if (!isPlayerTurn || !onPowerCharge) return
     e.preventDefault()
-    onPowerCharge()
+    onPowerCharge() // This should start charging
   }
 
   const handleMouseUp = (e) => {
     if (!isPlayerTurn || !onPowerRelease) return
     e.preventDefault()
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const power = Math.min(10, Math.max(1, Math.floor((y / rect.height) * 10)))
-    onPowerRelease(power)
+    onPowerRelease() // This should stop charging and trigger flip
   }
 
   const handleTouchStart = (e) => {
     if (!isPlayerTurn || !onPowerCharge) return
     e.preventDefault()
-    onPowerCharge()
+    onPowerCharge() // This should start charging
   }
 
   const handleTouchEnd = (e) => {
     if (!isPlayerTurn || !onPowerRelease) return
     e.preventDefault()
-    onPowerRelease(5) // Default power for touch
+    onPowerRelease() // This should stop charging and trigger flip
   }
 
   // Use MobileOptimizedCoin for mobile devices

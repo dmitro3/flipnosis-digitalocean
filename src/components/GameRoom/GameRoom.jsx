@@ -359,12 +359,15 @@ const GameRoom = ({
     startRoundCountdown,
     stopRoundCountdown,
     handleAutoFlip,
+    handlePlayerChoice,
+    handlePowerChargeStart,
+    handlePowerChargeStop,
     isCreator,
     isJoiner,
     isMyTurn,
     getGameCreator,
     getGameJoiner,
-    getChoosingPlayer // FIXED: Use the improved turn determination
+    getFirstPlayer
   } = useGameRoomState(gameId, gameData?.creator, gameData)
 
   // Connect to game room when component mounts
@@ -514,75 +517,18 @@ const GameRoom = ({
     }
   }, [gameId, address])
   
-  // Choice handler
-  const handlePlayerChoice = (choice) => {
-    console.log('🎯 Player making choice:', { choice, address, isMyTurn: isMyTurn() })
-    
-    if (!isMyTurn()) {
-      console.log('❌ Not your turn to choose!')
-      return
-    }
-    
-    // Update local state immediately
-    if (isCreator()) {
-      setPlayerChoices(prev => ({ ...prev, creator: choice }))
-      setGameState(prev => ({ ...prev, creatorChoice: choice }))
-    } else if (isJoiner()) {
-      setPlayerChoices(prev => ({ ...prev, joiner: choice }))
-      setGameState(prev => ({ ...prev, joinerChoice: choice }))
-    }
-    
-    // Move to charging phase for the current player
-    setGameState(prev => ({
-      ...prev,
-      phase: 'charging',
-      currentTurn: address,
-      chargingPlayer: address
-    }))
-    
-    // Stop the countdown since choice is made
-    stopRoundCountdown()
-    
-    socketService.emit('game_action', {
-      type: 'GAME_ACTION',
-      gameId,
-      action: 'MAKE_CHOICE',
-      player: address,
-      choice
-    })
+  // Choice handler - use the function from useGameRoomState hook
+  const handlePlayerChoiceLocal = (choice) => {
+    handlePlayerChoice(choice)
   }
 
-  // Power charge handlers
-  const handlePowerChargeStart = () => {
-    console.log('⚡ Power charge started for:', address)
-    setGameState(prev => ({ ...prev, chargingPlayer: address }))
-    
-    socketService.emit('game_action', {
-      type: 'GAME_ACTION',
-      gameId,
-      action: 'POWER_CHARGE_START',
-      player: address
-    })
+  // Power charge handlers - use the functions from useGameRoomState hook
+  const handlePowerChargeStartLocal = () => {
+    handlePowerChargeStart()
   }
 
-  const handlePowerChargeStop = (powerLevel) => {
-    console.log('⚡ Power charge stopped for:', address, 'with power:', powerLevel)
-    setGameState(prev => ({ ...prev, chargingPlayer: null }))
-    
-    // Update the player's power in the game state
-    if (isCreator()) {
-      setGameState(prev => ({ ...prev, creatorPower: powerLevel }))
-    } else if (isJoiner()) {
-      setGameState(prev => ({ ...prev, joinerPower: powerLevel }))
-    }
-    
-    socketService.emit('game_action', {
-      type: 'GAME_ACTION',
-      gameId,
-      action: 'POWER_CHARGED',
-      player: address,
-      powerLevel
-    })
+  const handlePowerChargeStopLocal = (powerLevel) => {
+    handlePowerChargeStop()
   }
 
   const handleForfeit = () => {
@@ -599,15 +545,6 @@ const GameRoom = ({
   
   const creatorWins = gameState?.creatorWins || 0
   const joinerWins = gameState?.joinerWins || 0
-  
-  const showPowerBar = gameState?.phase === 'charging' || gameState?.chargingPlayer
-  const totalPower = (Number(gameState?.creatorPower) || 0) + (Number(gameState?.joinerPower) || 0)
-  
-  // FIXED: Better turn determination using the improved logic
-  const canChoose = gameState?.phase === 'choosing' && isMyTurn()
-  const currentChooser = getChoosingPlayer(currentRound)
-  const isCreatorTurn = currentChooser === getGameCreator()
-  const isJoinerTurn = currentChooser === getGameJoiner()
 
   // Fetch player names
   useEffect(() => {
@@ -852,13 +789,15 @@ const GameRoom = ({
             </RoundWins>
 
             {/* Countdown beneath creator container */}
-            {gameState?.phase === 'choosing' && isCreatorTurn && (
+            {gameState?.phase === 'choosing' && (
               <CountdownContainer>
                 <CountdownText>
                   {roundCountdown ? `${roundCountdown}s` : '20s'}
                 </CountdownText>
                 <TurnIndicator isMyTurn={isMyTurn()}>
-                  {isMyTurn() ? 'YOUR TURN' : 'OPPONENT\'S TURN'}
+                  {isMyTurn() ? 'YOUR TURN TO CHOOSE' : `WAITING FOR ${
+                    gameState.roundPhase === 'player1_choice' ? 'PLAYER 1' : 'PLAYER 2'
+                  }`}
                 </TurnIndicator>
               </CountdownContainer>
             )}
@@ -873,45 +812,63 @@ const GameRoom = ({
                 isMyTurn: isMyTurn,
                 address: address,
                 isCreator: isCreator,
-                onPowerChargeStart: handlePowerChargeStart,
-                onPowerChargeStop: handlePowerChargeStop
+                onPowerChargeStart: handlePowerChargeStartLocal,
+                onPowerChargeStop: handlePowerChargeStopLocal
               })}
             </CoinContainer>
             
             <ChoiceSection>
-              {!canChoose ? (
-                <OpponentChoosingMessage>
-                  🤔 Opponent is choosing...
-                </OpponentChoosingMessage>
-              ) : (
+              {gameState?.phase === 'choosing' && (
                 <>
-                  <ChoiceButton
-                    choice="heads"
-                    disabled={!canChoose}
-                    onClick={() => canChoose && handlePlayerChoice('heads')}
-                  >
-                    Heads
-                  </ChoiceButton>
-                  
-                  <ChoiceButton
-                    choice="tails"
-                    disabled={!canChoose}
-                    onClick={() => canChoose && handlePlayerChoice('tails')}
-                  >
-                    Tails
-                  </ChoiceButton>
+                  {!isMyTurn() ? (
+                    <OpponentChoosingMessage>
+                      🤔 {gameState.roundPhase === 'player1_choice' ? 'Player 1' : 'Player 2'} is choosing...
+                    </OpponentChoosingMessage>
+                  ) : (
+                    <>
+                      <ChoiceButton
+                        choice="heads"
+                        onClick={() => handlePlayerChoiceLocal('heads')}
+                      >
+                        👑 Heads
+                      </ChoiceButton>
+                      
+                      <ChoiceButton
+                        choice="tails"
+                        onClick={() => handlePlayerChoiceLocal('tails')}
+                      >
+                        💎 Tails
+                      </ChoiceButton>
+                    </>
+                  )}
                 </>
+              )}
+              
+              {gameState?.phase === 'charging' && (
+                <OpponentChoosingMessage>
+                  {isMyTurn() ? '⚡ Hold the coin to charge power!' : '⏳ Opponent is flipping...'}
+                </OpponentChoosingMessage>
+              )}
+              
+              {gameState?.phase === 'flipping' && (
+                <OpponentChoosingMessage>
+                  🎲 Coin is flipping...
+                </OpponentChoosingMessage>
               )}
             </ChoiceSection>
             
-            <PowerBarContainer show={showPowerBar}>
+            <PowerBarContainer show={gameState?.phase === 'charging' || gameState?.phase === 'flipping'}>
               <PowerBarLabel>
-                {gameState?.chargingPlayer ? '⚡ Charging Power ⚡' : 'Power Level'}
+                {gameState?.isCharging ? '⚡ Charging Power ⚡' : 'Power Level'}
               </PowerBarLabel>
               <PowerBar>
                 <PowerFill 
-                  power={Math.min(totalPower * 10, 100)}
-                  charging={gameState?.chargingPlayer}
+                  power={
+                    gameState?.roundPhase === 'player1_flip' ? 
+                    gameState.player1Power * 10 : 
+                    gameState.player2Power * 10
+                  }
+                  charging={gameState?.isCharging}
                 />
               </PowerBar>
             </PowerBarContainer>
@@ -956,13 +913,15 @@ const GameRoom = ({
             </RoundWins>
 
             {/* Countdown beneath challenger container */}
-            {gameState?.phase === 'choosing' && isJoinerTurn && (
+            {gameState?.phase === 'choosing' && (
               <CountdownContainer>
                 <CountdownText>
                   {roundCountdown ? `${roundCountdown}s` : '20s'}
                 </CountdownText>
                 <TurnIndicator isMyTurn={isMyTurn()}>
-                  {isMyTurn() ? 'YOUR TURN' : 'OPPONENT\'S TURN'}
+                  {isMyTurn() ? 'YOUR TURN TO CHOOSE' : `WAITING FOR ${
+                    gameState.roundPhase === 'player1_choice' ? 'PLAYER 1' : 'PLAYER 2'
+                  }`}
                 </TurnIndicator>
               </CountdownContainer>
             )}
