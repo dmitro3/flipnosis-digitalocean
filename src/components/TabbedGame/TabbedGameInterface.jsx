@@ -1,178 +1,95 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
-import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
-
-// Tab Components
 import { NFTDetailsTab, ChatOffersTab, GameRoomTab } from './tabs'
 
+// Styled Components
 const TabbedContainer = styled.div`
-  background: rgba(0, 0, 40, 0.95);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 600px;
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid rgba(0, 191, 255, 0.3);
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 0 30px rgba(0, 191, 255, 0.3);
-  height: 900px;
-  display: flex;
-  flex-direction: row;
+  box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
   
   @media (max-width: 768px) {
-    height: 100vh;
-    border-radius: 0;
-    flex-direction: column;
+    min-height: 500px;
   }
 `
 
 const TabsHeader = styled.div`
   display: flex;
-  flex-direction: column;
   background: rgba(0, 0, 0, 0.8);
-  border-right: 2px solid rgba(0, 191, 255, 0.3);
-  min-width: 200px;
+  border-bottom: 2px solid rgba(0, 191, 255, 0.3);
   
   @media (max-width: 768px) {
     flex-direction: row;
-    border-right: none;
-    border-bottom: 2px solid rgba(0, 191, 255, 0.3);
-    min-width: auto;
+    overflow-x: auto;
   }
 `
 
 const Tab = styled.button`
-  padding: 1.5rem 1rem;
+  flex: 1;
+  padding: 1.5rem 2rem;
   background: ${props => props.active ? 
-    'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(0, 255, 65, 0.2))' : 
+    'linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(0, 255, 65, 0.1))' : 
     'transparent'
   };
-  color: ${props => props.active ? '#00BFFF' : 'rgba(255, 255, 255, 0.7)'};
+  color: ${props => props.active ? '#00BFFF' : '#FFFFFF'};
   border: none;
-  border-right: 4px solid ${props => props.active ? '#00BFFF' : 'transparent'};
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  font-size: 1.6rem;
+  font-size: 1.2rem;
   font-weight: bold;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
   position: relative;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
   
-  /* Neon glow effect for active tab */
-  ${props => props.active && `
-    text-shadow: 0 0 10px #00BFFF, 0 0 20px #00BFFF, 0 0 30px #00BFFF;
-    box-shadow: 
-      inset 0 0 20px rgba(0, 191, 255, 0.2),
-      0 0 15px rgba(0, 191, 255, 0.3);
-  `}
-  
-  /* Hover effects */
   &:hover {
     background: ${props => props.active ? 
-      'linear-gradient(135deg, rgba(0, 191, 255, 0.4), rgba(0, 255, 65, 0.3))' : 
-      'linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(0, 191, 255, 0.1))'
+      'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(0, 255, 65, 0.2))' : 
+      'rgba(255, 255, 255, 0.05)'
     };
-    color: ${props => props.active ? '#00BFFF' : '#FF1493'};
-    transform: translateX(5px);
-    
-    ${props => !props.active && `
-      text-shadow: 0 0 10px #FF1493, 0 0 20px #FF1493;
-    `}
   }
   
-  /* Animated border for active tab */
-  ${props => props.active && `
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(45deg, 
-        transparent 0%, 
-        rgba(0, 191, 255, 0.3) 50%, 
-        transparent 100%
-      );
-      animation: borderFlow 2s linear infinite;
-    }
-  `}
+  &:last-child {
+    border-right: none;
+  }
   
   /* Tab-specific colors */
   &:nth-child(1) {
     ${props => props.active && `
       background: linear-gradient(135deg, rgba(255, 20, 147, 0.3), rgba(255, 105, 180, 0.2));
       color: #FF1493;
-      text-shadow: 0 0 10px #FF1493, 0 0 20px #FF1493, 0 0 30px #FF1493;
-      border-right-color: #FF1493;
+      text-shadow: 0 0 10px #FF1493;
     `}
-    
-    &:hover {
-      background: ${props => props.active ? 
-        'linear-gradient(135deg, rgba(255, 20, 147, 0.4), rgba(255, 105, 180, 0.3))' : 
-        'linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(255, 105, 180, 0.1))'
-      };
-      color: ${props => props.active ? '#FF1493' : '#FF1493'};
-    }
   }
   
   &:nth-child(2) {
     ${props => props.active && `
       background: linear-gradient(135deg, rgba(0, 255, 65, 0.3), rgba(57, 255, 20, 0.2));
       color: #00FF41;
-      text-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41, 0 0 30px #00FF41;
-      border-right-color: #00FF41;
+      text-shadow: 0 0 10px #00FF41;
     `}
-    
-    &:hover {
-      background: ${props => props.active ? 
-        'linear-gradient(135deg, rgba(0, 255, 65, 0.4), rgba(57, 255, 20, 0.3))' : 
-        'linear-gradient(135deg, rgba(0, 255, 65, 0.1), rgba(57, 255, 20, 0.1))'
-      };
-      color: ${props => props.active ? '#00FF41' : '#00FF41'};
-    }
   }
   
   &:nth-child(3) {
     ${props => props.active && `
       background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.2));
       color: #FFD700;
-      text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700;
-      border-right-color: #FFD700;
+      text-shadow: 0 0 10px #FFD700;
     `}
-    
-    &:hover {
-      background: ${props => props.active ? 
-        'linear-gradient(135deg, rgba(255, 215, 0, 0.4), rgba(255, 193, 7, 0.3))' : 
-        'linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 193, 7, 0.1))'
-      };
-      color: ${props => props.active ? '#FFD700' : '#FFD700'};
-    }
-  }
-  
-  &:not(:last-child) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   @media (max-width: 768px) {
     flex: 1;
     padding: 1rem 0.5rem;
-    font-size: 1.4rem;
-    text-align: center;
-    border-right: none;
-    border-bottom: 4px solid ${props => props.active ? 
-      (props.tabIndex === 0 ? '#FF1493' : props.tabIndex === 1 ? '#00FF41' : '#FFD700') : 
-      'transparent'
-    };
-    transform: none;
-    
-    &:hover {
-      transform: translateY(-2px);
-    }
-    
-    &:not(:last-child) {
-      border-bottom: none;
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    font-size: 0.9rem;
+    min-width: 120px;
   }
 `
 
@@ -195,8 +112,6 @@ const TabPane = styled.div`
   overflow: auto;
 `
 
-
-
 const TabbedGameInterface = ({ 
   gameData, 
   gameId, 
@@ -210,53 +125,92 @@ const TabbedGameInterface = ({
   const [activeTab, setActiveTab] = useState('nft')
   const { address } = useWallet()
   
-  // Listen for navigation events
+  // Listen for navigation events from other components
   useEffect(() => {
     const handleSwitchToFlipSuite = (event) => {
-      console.log('🎯 Received switchToFlipSuite event:', event.detail)
+      console.log('🎯 TabbedGameInterface: Switching to Flip Suite tab')
       setActiveTab('game')
     }
     
     const handleSwitchToLounge = (event) => {
-      console.log('🎯 Received switchToLoungeTab event')
+      console.log('🎯 TabbedGameInterface: Switching to Lounge tab')
       setActiveTab('chat')
+    }
+    
+    const handleSwitchToDetails = (event) => {
+      console.log('🎯 TabbedGameInterface: Switching to Details tab')
+      setActiveTab('nft')
     }
     
     window.addEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
     window.addEventListener('switchToLoungeTab', handleSwitchToLounge)
+    window.addEventListener('switchToDetailsTab', handleSwitchToDetails)
     
     return () => {
       window.removeEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
       window.removeEventListener('switchToLoungeTab', handleSwitchToLounge)
+      window.removeEventListener('switchToDetailsTab', handleSwitchToDetails)
     }
   }, [])
   
-  // Auto-switch to game room when game starts (but only if not just joining)
+  // Auto-switch to game room when game becomes active
   useEffect(() => {
-    // Only auto-switch to game room if the game is already in progress
-    // and we're not just joining the game
-    if ((gameData?.status === 'active' || gameData?.status === 'in_progress') && 
-        gameData?.status !== 'waiting_challenger' && 
-        gameData?.status !== 'waiting_challenger_deposit') {
-      setActiveTab('game')
-    }
-  }, [gameData?.status])
-
-  // Check for game status changes and auto-switch tabs when needed
-  useEffect(() => {
-    console.log('🔍 TabbedGameInterface: Checking game status for tab switch:', {
-      status: gameData?.status,
-      activeTab: activeTab,
-      address: address
-    })
+    if (!gameData) return
     
-    // If game status indicates waiting for deposit, switch to Lounge tab
-    if (gameData?.status === 'waiting_challenger_deposit' && activeTab !== 'chat') {
-      console.log('🎯 Auto-switching to Lounge tab for deposit')
+    const isGameActive = 
+      gameData.status === 'active' || 
+      gameData.status === 'in_progress' ||
+      gameData.status === 'playing' ||
+      gameData.phase === 'active'
+    
+    const isWaitingForPlayers = 
+      gameData.status === 'waiting_challenger' || 
+      gameData.status === 'waiting_for_challenger' ||
+      gameData.status === 'waiting_challenger_deposit'
+    
+    if (isGameActive && activeTab !== 'game') {
+      console.log('🎮 Auto-switching to game room - game is active!')
+      setActiveTab('game')
+    } else if (isWaitingForPlayers && activeTab === 'game') {
+      // If we're in game tab but game isn't ready, go back to lounge
+      console.log('🏠 Game not ready, switching to lounge')
       setActiveTab('chat')
     }
-  }, [gameData?.status, activeTab]) // Only depend on status and activeTab, not entire gameData object
-
+  }, [gameData?.status, gameData?.phase, activeTab])
+  
+  // Listen for socket events that might trigger tab changes
+  useEffect(() => {
+    if (!socket) return
+    
+    const handleGameReady = (data) => {
+      console.log('🎮 Game ready event received, switching to game tab')
+      setActiveTab('game')
+    }
+    
+    const handleDepositReceived = (data) => {
+      console.log('💰 Deposit received, preparing for game')
+      // Stay in lounge until both deposits are confirmed
+      if (data.bothDeposited) {
+        setTimeout(() => setActiveTab('game'), 1000)
+      }
+    }
+    
+    const handleGameComplete = (data) => {
+      console.log('🏁 Game complete, showing results')
+      // Stay in game tab to show results
+    }
+    
+    socket.on('game_ready', handleGameReady)
+    socket.on('deposit_received', handleDepositReceived)
+    socket.on('game_complete', handleGameComplete)
+    
+    return () => {
+      socket.off('game_ready', handleGameReady)
+      socket.off('deposit_received', handleDepositReceived)
+      socket.off('game_complete', handleGameComplete)
+    }
+  }, [socket])
+  
   const tabs = [
     {
       id: 'nft',
@@ -274,11 +228,12 @@ const TabbedGameInterface = ({
       component: GameRoomTab
     }
   ]
-
+  
   const handleTabChange = (tabId) => {
+    console.log(`📑 Manual tab change to: ${tabId}`)
     setActiveTab(tabId)
   }
-
+  
   const renderTabContent = (tab) => {
     const TabComponent = tab.component
     
@@ -293,10 +248,10 @@ const TabbedGameInterface = ({
       coinConfig,
       onOfferAccepted
     }
-
+    
     return <TabComponent {...commonProps} />
   }
-
+  
   return (
     <TabbedContainer>
       <TabsHeader>
@@ -318,7 +273,7 @@ const TabbedGameInterface = ({
             key={tab.id}
             active={activeTab === tab.id}
           >
-            {renderTabContent(tab)}
+            {activeTab === tab.id && renderTabContent(tab)}
           </TabPane>
         ))}
       </TabContent>

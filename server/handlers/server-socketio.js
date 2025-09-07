@@ -11,6 +11,148 @@ const gameStateManager = new GameStateManager()
 const userSockets = new Map() // address -> socketId
 const socketData = new Map() // socketId -> { address, gameId, roomId }
 
+// Game state management on server
+const gameStates = new Map() // Store active game states
+
+// Initialize game state when both players deposit
+function initializeGameState(gameId, gameData) {
+  const initialState = {
+    gameId,
+    status: 'active',
+    currentRound: 1,
+    totalRounds: 3,
+    creatorScore: 0,
+    challengerScore: 0,
+    currentTurn: gameData.creator,
+    creator: gameData.creator,
+    challenger: gameData.challenger || gameData.joiner,
+    creatorChoice: null,
+    challengerChoice: null,
+    creatorPower: 0,
+    challengerPower: 0,
+    flipInProgress: false,
+    roundHistory: []
+  }
+  
+  gameStates.set(gameId, initialState)
+  return initialState
+}
+
+// Execute flip logic
+async function executeFlip(gameId, gameState, io, dbService) {
+  if (gameState.flipInProgress) return
+  
+  gameState.flipInProgress = true
+  
+  console.log(`🎲 Executing flip for game ${gameId}`)
+  console.log(`   Creator: ${gameState.creatorChoice} (Power: ${gameState.creatorPower})`)
+  console.log(`   Challenger: ${gameState.challengerChoice} (Power: ${gameState.challengerPower})`)
+  
+  // Generate random result
+  const seed = Math.random()
+  const powerDiff = gameState.creatorPower - gameState.challengerPower
+  const powerInfluence = powerDiff * 0.01 // 1% influence per power point
+  const adjustedSeed = Math.max(0, Math.min(1, seed + powerInfluence))
+  
+  const result = adjustedSeed < 0.5 ? 'heads' : 'tails'
+  
+  // Determine winner
+  const creatorWon = gameState.creatorChoice === result
+  const challengerWon = gameState.challengerChoice === result
+  
+  let roundWinner = null
+  if (creatorWon && !challengerWon) {
+    roundWinner = 'creator'
+    gameState.creatorScore++
+  } else if (challengerWon && !creatorWon) {
+    roundWinner = 'challenger'
+    gameState.challengerScore++
+  }
+  // If both chose the same, it's a tie - no score change
+  
+  // Record round history
+  gameState.roundHistory.push({
+    round: gameState.currentRound,
+    result,
+    creatorChoice: gameState.creatorChoice,
+    challengerChoice: gameState.challengerChoice,
+    creatorPower: gameState.creatorPower,
+    challengerPower: gameState.challengerPower,
+    winner: roundWinner,
+    seed: adjustedSeed
+  })
+  
+  // Broadcast flip result
+  io.to(`game_${gameId}`).emit('flip_result', {
+    gameId,
+    round: gameState.currentRound,
+    result,
+    winner: roundWinner,
+    creatorScore: gameState.creatorScore,
+    challengerScore: gameState.challengerScore,
+    seed: adjustedSeed
+  })
+  
+  // Check if game is complete
+  const gameComplete = 
+    gameState.currentRound >= gameState.totalRounds ||
+    gameState.creatorScore > gameState.totalRounds / 2 ||
+    gameState.challengerScore > gameState.totalRounds / 2
+  
+  if (gameComplete) {
+    // Determine final winner
+    const finalWinner = gameState.creatorScore > gameState.challengerScore ? 
+      gameState.creator : gameState.challenger
+    
+    gameState.status = 'completed'
+    gameState.winner = finalWinner
+    
+    // Update database
+    await dbService.updateGame(gameId, {
+      status: 'completed',
+      winner: finalWinner,
+      finalScore: `${gameState.creatorScore}-${gameState.challengerScore}`,
+      roundHistory: JSON.stringify(gameState.roundHistory)
+    })
+    
+    // Broadcast game complete
+    io.to(`game_${gameId}`).emit('game_complete', {
+      gameId,
+      winner: finalWinner,
+      creatorScore: gameState.creatorScore,
+      challengerScore: gameState.challengerScore,
+      roundHistory: gameState.roundHistory
+    })
+    
+    // Clean up game state after a delay
+    setTimeout(() => {
+      gameStates.delete(gameId)
+    }, 60000) // Keep for 1 minute for any final updates
+    
+  } else {
+    // Move to next round
+    gameState.currentRound++
+    gameState.creatorChoice = null
+    gameState.challengerChoice = null
+    gameState.creatorPower = 0
+    gameState.challengerPower = 0
+    gameState.flipInProgress = false
+    
+    // Switch turns (optional)
+    gameState.currentTurn = gameState.currentTurn === gameState.creator ? 
+      gameState.challenger : gameState.creator
+    
+    // Broadcast updated state
+    io.to(`game_${gameId}`).emit('game_state_update', gameState)
+    
+    io.to(`game_${gameId}`).emit('round_complete', {
+      gameId,
+      nextRound: gameState.currentRound,
+      currentTurn: gameState.currentTurn
+    })
+  }
+}
+
 function initializeSocketIO(server, dbService) {
   console.log('🚀 Initializing Socket.io server...')
   
@@ -324,6 +466,80 @@ function initializeSocketIO(server, dbService) {
       }
     })
 
+    // Request current game state
+    socket.on('request_game_state', async ({ gameId }) => {
+      console.log(`📊 Game state requested for ${gameId}`)
+      
+      let gameState = gameStates.get(gameId)
+      
+      if (!gameState) {
+        // Try to load from database
+        const gameData = await dbService.getGame(gameId)
+        if (gameData && gameData.status === 'active') {
+          gameState = initializeGameState(gameId, gameData)
+        }
+      }
+      
+      if (gameState) {
+        socket.emit('game_state_update', gameState)
+      }
+    })
+    
+    // Handle player choice (heads/tails)
+    socket.on('player_choice', async ({ gameId, choice, power }) => {
+      const gameState = gameStates.get(gameId)
+      if (!gameState) return
+      
+      const userAddress = socket.userAddress || socketData.get(socket.id)?.address
+      const isCreator = userAddress === gameState.creator
+      
+      console.log(`🎯 Player choice: ${choice} with power ${power} from ${isCreator ? 'creator' : 'challenger'}`)
+      
+      // Store the choice
+      if (isCreator) {
+        gameState.creatorChoice = choice
+        gameState.creatorPower = power
+      } else {
+        gameState.challengerChoice = choice
+        gameState.challengerPower = power
+      }
+      
+      // Broadcast updated state
+      io.to(`game_${gameId}`).emit('game_state_update', gameState)
+      
+      // Check if both players have made their choice
+      if (gameState.creatorChoice && gameState.challengerChoice) {
+        // Execute the flip
+        await executeFlip(gameId, gameState, io, dbService)
+      }
+    })
+    
+    // Handle game ready (both deposits confirmed)
+    socket.on('game_deposits_confirmed', async ({ gameId }) => {
+      console.log(`💰 Both deposits confirmed for game ${gameId}`)
+      
+      const gameData = await dbService.getGame(gameId)
+      if (!gameData) return
+      
+      // Initialize game state
+      const gameState = initializeGameState(gameId, gameData)
+      
+      // Update database
+      await dbService.updateGame(gameId, { 
+        status: 'active',
+        phase: 'active'
+      })
+      
+      // Notify all players
+      io.to(`game_${gameId}`).emit('game_ready', {
+        gameId,
+        message: 'Game is starting!',
+        gameState
+      })
+      
+      io.to(`game_${gameId}`).emit('game_state_update', gameState)
+    })
+
     // Handle game actions
     socket.on('game_action', (data) => {
       console.log('🎮 Game action received:', data)
@@ -398,4 +614,82 @@ function initializeSocketIO(server, dbService) {
   return io
 }
 
-module.exports = { initializeSocketIO }
+// Export the handler function to be added to your main socket handler
+module.exports = { 
+  initializeSocketIO,
+  addGameHandlers: (socket, io, dbService) => {
+    // Request current game state
+    socket.on('request_game_state', async ({ gameId }) => {
+      console.log(`📊 Game state requested for ${gameId}`)
+      
+      let gameState = gameStates.get(gameId)
+      
+      if (!gameState) {
+        // Try to load from database
+        const gameData = await dbService.getGame(gameId)
+        if (gameData && gameData.status === 'active') {
+          gameState = initializeGameState(gameId, gameData)
+        }
+      }
+      
+      if (gameState) {
+        socket.emit('game_state_update', gameState)
+      }
+    })
+    
+    // Handle player choice (heads/tails)
+    socket.on('player_choice', async ({ gameId, choice, power }) => {
+      const gameState = gameStates.get(gameId)
+      if (!gameState) return
+      
+      const userAddress = socket.userAddress || socketData.get(socket.id)?.address
+      const isCreator = userAddress === gameState.creator
+      
+      console.log(`🎯 Player choice: ${choice} with power ${power} from ${isCreator ? 'creator' : 'challenger'}`)
+      
+      // Store the choice
+      if (isCreator) {
+        gameState.creatorChoice = choice
+        gameState.creatorPower = power
+      } else {
+        gameState.challengerChoice = choice
+        gameState.challengerPower = power
+      }
+      
+      // Broadcast updated state
+      io.to(`game_${gameId}`).emit('game_state_update', gameState)
+      
+      // Check if both players have made their choice
+      if (gameState.creatorChoice && gameState.challengerChoice) {
+        // Execute the flip
+        await executeFlip(gameId, gameState, io, dbService)
+      }
+    })
+    
+    // Handle game ready (both deposits confirmed)
+    socket.on('game_deposits_confirmed', async ({ gameId }) => {
+      console.log(`💰 Both deposits confirmed for game ${gameId}`)
+      
+      const gameData = await dbService.getGame(gameId)
+      if (!gameData) return
+      
+      // Initialize game state
+      const gameState = initializeGameState(gameId, gameData)
+      
+      // Update database
+      await dbService.updateGame(gameId, { 
+        status: 'active',
+        phase: 'active'
+      })
+      
+      // Notify all players
+      io.to(`game_${gameId}`).emit('game_ready', {
+        gameId,
+        message: 'Game is starting!',
+        gameState
+      })
+      
+      io.to(`game_${gameId}`).emit('game_state_update', gameState)
+    })
+  }
+}

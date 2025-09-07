@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import GameRoom from '../../GameRoom/GameRoom'
 import GameCoin from '../../GameOrchestrator/GameCoin'
+import { useToast } from '../../../contexts/ToastContext'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -26,6 +27,7 @@ const StatusBadge = styled.div`
     switch (props.status) {
       case 'active':
       case 'in_progress':
+      case 'playing':
         return 'rgba(0, 255, 65, 0.2)'
       case 'waiting_challenger':
       case 'waiting_for_challenger':
@@ -42,6 +44,7 @@ const StatusBadge = styled.div`
     switch (props.status) {
       case 'active':
       case 'in_progress':
+      case 'playing':
         return 'rgba(0, 255, 65, 0.4)'
       case 'waiting_challenger':
       case 'waiting_for_challenger':
@@ -58,6 +61,7 @@ const StatusBadge = styled.div`
     switch (props.status) {
       case 'active':
       case 'in_progress':
+      case 'playing':
         return '#00FF41'
       case 'waiting_challenger':
       case 'waiting_for_challenger':
@@ -67,13 +71,15 @@ const StatusBadge = styled.div`
       case 'completed':
         return '#808080'
       default:
-        return '#fff'
+        return '#FFFFFF'
     }
   }};
   padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  font-size: 0.9rem;
+  border-radius: 0.5rem;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `
 
 const GameInfo = styled.div`
@@ -81,68 +87,64 @@ const GameInfo = styled.div`
   gap: 2rem;
   align-items: center;
   flex-wrap: wrap;
-  
-  @media (max-width: 768px) {
-    gap: 1rem;
-  }
 `
 
 const InfoItem = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 0.25rem;
 `
 
 const InfoLabel = styled.span`
-  color: rgba(255, 255, 255, 0.7);
+  color: #888;
   font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 `
 
 const InfoValue = styled.span`
-  color: #00BFFF;
+  color: white;
   font-weight: bold;
   font-size: 1rem;
 `
 
 const GameContent = styled.div`
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
 `
 
 const WaitingState = styled.div`
-  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  text-align: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 2rem;
   padding: 2rem;
-  background: rgba(0, 0, 40, 0.95);
 `
 
 const WaitingIcon = styled.div`
   font-size: 4rem;
-  margin-bottom: 1rem;
-  animation: pulse 2s infinite;
+  animation: pulse 2s ease-in-out infinite;
   
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
   }
 `
 
 const WaitingTitle = styled.h2`
   color: #FFD700;
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  margin: 0;
+  text-align: center;
 `
 
 const WaitingDescription = styled.p`
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0 0 2rem 0;
+  color: #CCC;
   font-size: 1.1rem;
+  text-align: center;
   max-width: 500px;
   line-height: 1.5;
 `
@@ -162,18 +164,6 @@ const ActionButton = styled.button`
     background: linear-gradient(45deg, #0080FF, #0060FF);
     transform: translateY(-2px);
   }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-`
-
-const CoinPreview = styled.div`
-  display: flex;
-  justify-content: center;
-  margin: 2rem 0;
 `
 
 const GameRoomTab = ({ 
@@ -187,108 +177,137 @@ const GameRoomTab = ({
 }) => {
   const [gameState, setGameState] = useState(null)
   const [isGameReady, setIsGameReady] = useState(false)
-
+  const { showInfo } = useToast()
+  
   // Check if game is ready to play
   useEffect(() => {
-    if (gameData) {
-      // Check both status and phase fields for game readiness
-      const gameReady = gameData.status === 'active' || 
-                       gameData.status === 'in_progress' ||
-                       gameData.status === 'playing' ||
-                       gameData.phase === 'game_active' ||
-                       gameData.phase === 'active'
-      setIsGameReady(gameReady)
-      console.log('🎮 GameRoomTab: Checking game readiness:', {
-        status: gameData.status,
-        phase: gameData.phase,
-        gameReady: gameReady
-      })
+    if (!gameData) {
+      setIsGameReady(false)
+      return
     }
+    
+    // Check various status fields for game readiness
+    const readyStatuses = ['active', 'in_progress', 'playing']
+    const readyPhases = ['active', 'game_active', 'playing']
+    
+    const statusReady = readyStatuses.includes(gameData.status)
+    const phaseReady = readyPhases.includes(gameData.phase)
+    
+    // Also check if both players have deposited
+    const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
+    
+    const gameReady = statusReady || phaseReady || bothDeposited
+    
+    setIsGameReady(gameReady)
+    
+    console.log('🎮 GameRoomTab: Game readiness check:', {
+      status: gameData.status,
+      phase: gameData.phase,
+      bothDeposited,
+      gameReady
+    })
   }, [gameData])
-
-  // Mock game state for testing (replace with real WebSocket data)
+  
+  // Listen for socket events to update game state
   useEffect(() => {
-    if (isGameReady) {
+    if (!socket) return
+    
+    const handleGameStateUpdate = (data) => {
+      console.log('📊 Game state update received:', data)
+      setGameState(data)
+    }
+    
+    const handleGameReady = (data) => {
+      console.log('🎮 Game ready event in GameRoomTab')
+      setIsGameReady(true)
+      showInfo('Game is starting!')
+    }
+    
+    const handleRoundResult = (data) => {
+      console.log('🎲 Round result:', data)
+      setGameState(prev => ({
+        ...prev,
+        currentRound: data.currentRound,
+        creatorScore: data.creatorScore,
+        challengerScore: data.challengerScore,
+        lastResult: data.result
+      }))
+    }
+    
+    socket.on('game_state_update', handleGameStateUpdate)
+    socket.on('game_ready', handleGameReady)
+    socket.on('round_result', handleRoundResult)
+    
+    // Request current game state when mounting
+    socket.emit('request_game_state', { gameId })
+    
+    return () => {
+      socket.off('game_state_update', handleGameStateUpdate)
+      socket.off('game_ready', handleGameReady)
+      socket.off('round_result', handleRoundResult)
+    }
+  }, [socket, gameId, showInfo])
+  
+  // Initialize game state from gameData if available
+  useEffect(() => {
+    if (isGameReady && gameData && !gameState) {
       setGameState({
-        phase: 'waiting',
-        currentRound: 1,
-        totalRounds: 5,
-        creatorScore: 0,
-        challengerScore: 0,
-        currentTurn: gameData?.creator,
-        timeLeft: 30
+        currentRound: gameData.currentRound || 1,
+        totalRounds: gameData.totalRounds || 3,
+        creatorScore: gameData.creatorScore || 0,
+        challengerScore: gameData.challengerScore || 0,
+        currentTurn: gameData.currentTurn || gameData.creator,
+        flipSeed: gameData.flipSeed || null
       })
     }
-  }, [isGameReady, gameData])
-
+  }, [isGameReady, gameData, gameState])
+  
   const getGameStatus = () => {
-    switch (gameData?.status) {
-      case 'waiting_challenger':
-      case 'awaiting_challenger':
-      case 'waiting_for_challenger':
-        return 'Waiting for challenger'
-      case 'waiting_challenger_deposit':
-        return 'Waiting for deposit'
+    if (!gameData) return 'Loading...'
+    
+    switch (gameData.status) {
       case 'active':
       case 'in_progress':
       case 'playing':
-        return 'Game active'
+        return 'Game Active'
+      case 'waiting_challenger':
+      case 'waiting_for_challenger':
+        return 'Waiting for Player 2'
+      case 'waiting_challenger_deposit':
+        return 'Waiting for Deposit'
       case 'completed':
-        return 'Game completed'
+        return 'Game Complete'
       default:
-        return gameData?.status || 'Unknown'
+        return gameData.status || 'Unknown'
     }
   }
-
+  
   const getGamePrice = () => {
-    return gameData?.payment_amount || 
-           gameData?.price_usd || 
-           gameData?.final_price || 
-           gameData?.price || 
-           gameData?.asking_price || 
-           gameData?.priceUSD || 
-           0
+    if (!gameData) return 0
+    return parseFloat(gameData.ethAmount || gameData.amount || 0)
   }
-
+  
   const handleExitRoom = () => {
-    console.log('Exiting game room')
-    // Add logic to handle exiting the game
+    console.log('🚪 Exiting game room')
+    // Dispatch event to switch to lounge tab
+    window.dispatchEvent(new CustomEvent('switchToLoungeTab'))
   }
-
+  
   const renderWaitingState = () => {
     const status = gameData?.status
     
-    if (status === 'waiting_challenger' || status === 'awaiting_challenger' || status === 'waiting_for_challenger') {
+    if (status === 'waiting_challenger' || status === 'waiting_for_challenger') {
       return (
         <WaitingState>
           <WaitingIcon>⏳</WaitingIcon>
-          <WaitingTitle>Waiting for Challenger</WaitingTitle>
+          <WaitingTitle>Waiting for Player 2</WaitingTitle>
           <WaitingDescription>
-            The game is waiting for someone to accept an offer and join as a challenger. 
-            Once a challenger joins and deposits their crypto, the game will begin!
+            The game room will activate once another player joins and deposits.
+            Check the Flip Lounge tab to see incoming offers!
           </WaitingDescription>
-          
-          <CoinPreview>
-            <GameCoin
-              gameId={gameId}
-              gameState={{ phase: 'waiting' }}
-              gameData={gameData}
-              flipAnimation={null}
-              customHeadsImage={coinConfig?.headsImage}
-              customTailsImage={coinConfig?.tailsImage}
-              gameCoin={coinConfig}
-              isMobile={window.innerWidth <= 768}
-              onPowerChargeStart={() => {}}
-              onPowerChargeStop={() => {}}
-              isMyTurn={() => false}
-              address={address}
-              isCreator={() => isCreator}
-            />
-          </CoinPreview>
-          
-          <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9rem' }}>
-            Game ID: {gameId}
-          </div>
+          <ActionButton onClick={() => window.dispatchEvent(new CustomEvent('switchToLoungeTab'))}>
+            Go to Flip Lounge
+          </ActionButton>
         </WaitingState>
       )
     }
@@ -299,27 +318,9 @@ const GameRoomTab = ({
           <WaitingIcon>💰</WaitingIcon>
           <WaitingTitle>Waiting for Deposit</WaitingTitle>
           <WaitingDescription>
-            A challenger has accepted an offer! Waiting for them to deposit their crypto stake. 
-            The game will start automatically once the deposit is confirmed.
+            Player 2 has joined! Waiting for their deposit to be confirmed.
+            The game will start automatically once the deposit is received.
           </WaitingDescription>
-          
-          <CoinPreview>
-            <GameCoin
-              gameId={gameId}
-              gameState={{ phase: 'waiting' }}
-              gameData={gameData}
-              flipAnimation={null}
-              customHeadsImage={coinConfig?.headsImage}
-              customTailsImage={coinConfig?.tailsImage}
-              gameCoin={coinConfig}
-              isMobile={window.innerWidth <= 768}
-              onPowerChargeStart={() => {}}
-              onPowerChargeStop={() => {}}
-              isMyTurn={() => false}
-              address={address}
-              isCreator={() => isCreator}
-            />
-          </CoinPreview>
         </WaitingState>
       )
     }
@@ -328,11 +329,10 @@ const GameRoomTab = ({
       return (
         <WaitingState>
           <WaitingIcon>🏆</WaitingIcon>
-          <WaitingTitle>Game Completed</WaitingTitle>
+          <WaitingTitle>Game Complete</WaitingTitle>
           <WaitingDescription>
-            This game has finished. Check the final results and coin flip history.
+            This game has ended. Check the results in the game history.
           </WaitingDescription>
-          
           <ActionButton onClick={() => window.location.href = '/'}>
             Return to Games
           </ActionButton>
@@ -343,21 +343,26 @@ const GameRoomTab = ({
     return (
       <WaitingState>
         <WaitingIcon>🎮</WaitingIcon>
-        <WaitingTitle>Game Room Not Ready</WaitingTitle>
+        <WaitingTitle>Preparing Game Room...</WaitingTitle>
         <WaitingDescription>
-          The game room is not yet available. Please check the other tabs for more information.
+          The game room is loading. This should only take a moment.
         </WaitingDescription>
       </WaitingState>
     )
   }
-
+  
   const renderActiveGame = () => {
     return (
       <GameRoom
         gameId={gameId}
         gameData={gameData}
+        gameState={gameState}
+        socket={socket}
+        connected={connected}
         onExitRoom={handleExitRoom}
         coinConfig={coinConfig}
+        address={address}
+        isCreator={isCreator}
       >
         <GameCoin
           gameId={gameId}
@@ -378,7 +383,7 @@ const GameRoomTab = ({
       </GameRoom>
     )
   }
-
+  
   return (
     <TabContainer>
       {/* Game Status Header */}
