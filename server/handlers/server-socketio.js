@@ -829,7 +829,6 @@ function addGameHandlers(socket, io, dbService) {
       io.to(`game_${gameId}`).emit('game_state_update', gameState)
     })
   }
-}
 
 // Export the handler function to be added to your main socket handler
 module.exports = { 
