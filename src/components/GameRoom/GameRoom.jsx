@@ -516,15 +516,39 @@ const GameRoom = ({
   
   // Choice handler
   const handlePlayerChoice = (choice) => {
-    const oppositeChoice = choice === 'heads' ? 'tails' : 'heads'
+    console.log('🎯 Player making choice:', { choice, address, isMyTurn: isMyTurn() })
+    
+    if (!isMyTurn()) {
+      console.log('❌ Not your turn to choose!')
+      return
+    }
+    
+    // Update local state immediately
+    if (isCreator()) {
+      setPlayerChoices(prev => ({ ...prev, creator: choice }))
+      setGameState(prev => ({ ...prev, creatorChoice: choice }))
+    } else if (isJoiner()) {
+      setPlayerChoices(prev => ({ ...prev, joiner: choice }))
+      setGameState(prev => ({ ...prev, joinerChoice: choice }))
+    }
+    
+    // Move to charging phase for the current player
+    setGameState(prev => ({
+      ...prev,
+      phase: 'charging',
+      currentTurn: address,
+      chargingPlayer: address
+    }))
+    
+    // Stop the countdown since choice is made
+    stopRoundCountdown()
     
     socketService.emit('game_action', {
       type: 'GAME_ACTION',
       gameId,
       action: 'MAKE_CHOICE',
       player: address,
-      choice,
-      oppositeChoice
+      choice
     })
   }
 
@@ -578,10 +602,13 @@ const GameRoom = ({
       const creatorAddress = getGameCreator()
       const joinerAddress = getGameJoiner()
       
+      console.log('🔍 Fetching player names:', { creatorAddress, joinerAddress, gameData })
+      
       if (creatorAddress) {
         try {
           const name = await getPlayerName(creatorAddress)
           setCreatorName(name || `${creatorAddress.slice(0, 6)}...${creatorAddress.slice(-4)}`)
+          console.log('✅ Creator name set:', name || `${creatorAddress.slice(0, 6)}...${creatorAddress.slice(-4)}`)
         } catch (error) {
           console.error('Error fetching creator name:', error)
           setCreatorName(`${creatorAddress.slice(0, 6)}...${creatorAddress.slice(-4)}`)
@@ -592,15 +619,19 @@ const GameRoom = ({
         try {
           const name = await getPlayerName(joinerAddress)
           setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+          console.log('✅ Joiner name set:', name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
         } catch (error) {
           console.error('Error fetching joiner name:', error)
           setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
         }
+      } else {
+        console.log('❌ No joiner address found, using fallback')
+        setJoinerName('Challenger')
       }
     }
 
     fetchPlayerNames()
-  }, [getGameCreator, getGameJoiner, getPlayerName])
+  }, [getGameCreator, getGameJoiner, getPlayerName, gameData])
 
   // Add forfeit button styles
   const ForfeitButton = styled.button`
@@ -740,7 +771,7 @@ const GameRoom = ({
                 <>
                   <ChoiceButton
                     choice="heads"
-                    disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
+                    disabled={!canChoose}
                     onClick={() => canChoose && handlePlayerChoice('heads')}
                   >
                     Heads
@@ -748,7 +779,7 @@ const GameRoom = ({
                   
                   <ChoiceButton
                     choice="tails"
-                    disabled={!canChoose || playerChoices?.creator || playerChoices?.joiner}
+                    disabled={!canChoose}
                     onClick={() => canChoose && handlePlayerChoice('tails')}
                   >
                     Tails

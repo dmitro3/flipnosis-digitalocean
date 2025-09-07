@@ -78,17 +78,17 @@ export const useGameRoomState = (gameId, address, gameData) => {
     }
 
     if (gameState.phase === 'choosing') {
-      // FIXED: Use the proper turn determination
+      // FIXED: Only allow the current choosing player to make a choice
       const choosingPlayer = getChoosingPlayer(gameState.currentRound)
-      const isMyTurnResult = address?.toLowerCase() === choosingPlayer?.toLowerCase() && 
-             !gameState.creatorChoice && 
-             !gameState.joinerChoice
+      const isMyTurnResult = address?.toLowerCase() === choosingPlayer?.toLowerCase()
       
       console.log('🔍 isMyTurn choosing phase:', { 
         address: address?.toLowerCase(), 
         choosingPlayer: choosingPlayer?.toLowerCase(), 
-        hasCreatorChoice: !!gameState.creatorChoice,
-        hasJoinerChoice: !!gameState.joinerChoice,
+        currentRound: gameState.currentRound,
+        phase: gameState.phase,
+        creatorChoice: gameState.creatorChoice,
+        joinerChoice: gameState.joinerChoice,
         isMyTurn: isMyTurnResult 
       })
       
@@ -107,7 +107,7 @@ export const useGameRoomState = (gameId, address, gameData) => {
     }
 
     // Other phases - no turn restrictions
-    return true
+    return false
   }
 
   // Start round countdown timer
@@ -354,6 +354,8 @@ export const useGameRoomState = (gameId, address, gameData) => {
       return
     }
 
+    console.log('🔄 Resetting for next round:', nextRound)
+
     setGameState(prev => ({
       ...prev,
       phase: 'choosing',
@@ -363,7 +365,9 @@ export const useGameRoomState = (gameId, address, gameData) => {
       currentTurn: null,
       creatorPower: 0,
       joinerPower: 0,
-      chargingPlayer: null
+      chargingPlayer: null,
+      flipResult: null,
+      roundWinner: null
     }))
 
     setPlayerChoices({
