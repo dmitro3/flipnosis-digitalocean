@@ -736,6 +736,9 @@ function initializeSocketIO(server, dbService) {
     })
 
     // Handle disconnection
+    // Add all game handlers (accept_offer, game_state_update, etc.)
+    addGameHandlers(socket, io, dbService)
+
     socket.on('disconnect', () => {
       console.log('👋 Socket disconnected:', socket.id)
       const socketInfo = socketData.get(socket.id)
