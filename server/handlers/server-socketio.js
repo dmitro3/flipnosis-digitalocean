@@ -175,6 +175,7 @@ function initializeSocketIO(server, dbService) {
             gameId: socketInfo.gameId,
             gameIdFull: socketInfo.roomId,
             phase: 'game_active',
+            status: 'active', // Also set status for compatibility
             currentRound: 1,
             currentTurn: game.creator,
             creator: game.creator,
@@ -295,6 +296,7 @@ function initializeSocketIO(server, dbService) {
           gameId: socketInfo.gameId,
           gameIdFull: socketInfo.roomId, // Include full roomId
           phase: 'game_active',
+          status: 'active', // Also set status for compatibility
           currentRound: 1,
           currentTurn: game.creator,
           creator: game.creator,

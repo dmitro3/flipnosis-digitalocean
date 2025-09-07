@@ -282,6 +282,18 @@ const GameLobby = () => {
     console.log('Game started:', data)
     showSuccess('Game started! Both players deposited.')
     
+    // Update gameData with the new status and phase
+    setGameData(prevData => ({
+      ...prevData,
+      status: data.status || 'active',
+      phase: data.phase || 'game_active',
+      currentRound: data.currentRound || 1,
+      currentTurn: data.currentTurn,
+      creatorDeposited: data.creatorDeposited,
+      challengerDeposited: data.challengerDeposited,
+      bothDeposited: data.bothDeposited
+    }))
+    
     // Transport both players to the flip suite
     console.log('🚀 Both players deposited - transporting to flip suite...')
     setTimeout(() => {

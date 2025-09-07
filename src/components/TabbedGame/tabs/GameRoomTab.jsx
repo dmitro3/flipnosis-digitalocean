@@ -191,10 +191,18 @@ const GameRoomTab = ({
   // Check if game is ready to play
   useEffect(() => {
     if (gameData) {
+      // Check both status and phase fields for game readiness
       const gameReady = gameData.status === 'active' || 
                        gameData.status === 'in_progress' ||
-                       gameData.status === 'playing'
+                       gameData.status === 'playing' ||
+                       gameData.phase === 'game_active' ||
+                       gameData.phase === 'active'
       setIsGameReady(gameReady)
+      console.log('🎮 GameRoomTab: Checking game readiness:', {
+        status: gameData.status,
+        phase: gameData.phase,
+        gameReady: gameReady
+      })
     }
   }, [gameData])
 
