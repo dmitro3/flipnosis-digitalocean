@@ -602,7 +602,12 @@ const GameRoom = ({
       const creatorAddress = getGameCreator()
       const joinerAddress = getGameJoiner()
       
-      console.log('🔍 Fetching player names:', { creatorAddress, joinerAddress, gameData })
+      console.log('🔍 Fetching player names:', { 
+        creatorAddress, 
+        joinerAddress, 
+        gameData: gameData,
+        allGameDataKeys: Object.keys(gameData || {})
+      })
       
       if (creatorAddress) {
         try {
@@ -758,7 +763,17 @@ const GameRoom = ({
           <CenterArea>
             <CoinContainer>
               {React.cloneElement(children, {
-                flipSeed: gameState.flipSeed
+                flipSeed: gameState.flipSeed,
+                gameState: gameState,
+                isMyTurn: isMyTurn,
+                address: address,
+                isCreator: isCreator,
+                onPowerChargeStart: () => {
+                  setGameState(prev => ({ ...prev, chargingPlayer: address }))
+                },
+                onPowerChargeStop: () => {
+                  setGameState(prev => ({ ...prev, chargingPlayer: null }))
+                }
               })}
             </CoinContainer>
             
