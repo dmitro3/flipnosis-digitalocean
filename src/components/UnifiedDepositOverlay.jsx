@@ -376,7 +376,7 @@ export default function UnifiedDepositOverlay({
         console.log('🎯 Challenger clicked deposit - storing challenger details first')
         
         try {
-          const { getApiUrl } = await import('../../config/api')
+          const { getApiUrl } = await import('../../config/api.js')
           const response = await fetch(getApiUrl(`/games/${gameId}/store-challenger`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
