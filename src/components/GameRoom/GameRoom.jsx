@@ -653,7 +653,7 @@ const GameRoom = ({
 
   // Listen for game state updates that might include challenger info
   useEffect(() => {
-    if (!socket) return
+    if (!socketService) return
 
     const handleGameStateUpdate = (data) => {
       console.log('📊 Game state update received in GameRoom:', data)
@@ -673,12 +673,12 @@ const GameRoom = ({
       }
     }
 
-    socket.on('game_state_update', handleGameStateUpdate)
+    socketService.on('game_state_update', handleGameStateUpdate)
 
     return () => {
-      socket.off('game_state_update', handleGameStateUpdate)
+      socketService.off('game_state_update', handleGameStateUpdate)
     }
-  }, [socket, getGameJoiner, getPlayerName])
+  }, [getGameJoiner, getPlayerName])
 
   // Add forfeit button styles
   const ForfeitButton = styled.button`
