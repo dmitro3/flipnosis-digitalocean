@@ -272,7 +272,17 @@ const OfferAcceptanceOverlay = ({
       }
     } catch (error) {
       console.error('Deposit error:', error)
-      showError('Deposit failed: ' + error.message)
+      
+      // Handle insufficient funds error with helpful message
+      if (error.message?.includes('Insufficient funds') || error.message?.includes('exceeds the balance')) {
+        const errorMsg = error.message.includes('Insufficient funds') 
+          ? error.message 
+          : 'Insufficient funds. You need more ETH to cover the deposit amount and gas fees.'
+        
+        showError(errorMsg + ' 💡 Tip: You can get ETH from exchanges like Coinbase, Binance, or use a faucet for testnet ETH.')
+      } else {
+        showError('Deposit failed: ' + error.message)
+      }
     } finally {
       setIsDepositing(false)
     }

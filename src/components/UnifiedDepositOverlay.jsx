@@ -183,6 +183,20 @@ const InfoMessage = styled.div`
   text-align: center;
 `
 
+const BalanceInfo = styled.div`
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  
+  div {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+  }
+`
+
 const CreatorInfo = styled.div`
   background: rgba(0, 255, 65, 0.1);
   border: 1px solid #00FF41;
@@ -208,12 +222,29 @@ export default function UnifiedDepositOverlay({
   const [depositState, setDepositState] = useState(propDepositState) // Initialize with prop
   const [isDepositing, setIsDepositing] = useState(false)
   const [userRole, setUserRole] = useState('spectator') // 'creator', 'challenger', 'spectator'
+  const [balanceCheck, setBalanceCheck] = useState(null)
 
   // Update internal state when prop changes
   useEffect(() => {
     console.log('🎯 UnifiedDepositOverlay: depositState prop changed:', propDepositState)
     setDepositState(propDepositState)
   }, [propDepositState])
+
+  // Check balance when deposit state changes (for challenger)
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (userRole === 'challenger' && depositState?.cryptoAmount && contractService) {
+        try {
+          const result = await contractService.checkDepositBalance(depositState.cryptoAmount)
+          setBalanceCheck(result)
+        } catch (error) {
+          console.error('Failed to check balance:', error)
+        }
+      }
+    }
+    
+    checkBalance()
+  }, [userRole, depositState?.cryptoAmount, contractService])
 
   // Determine user role
   useEffect(() => {
@@ -414,7 +445,17 @@ export default function UnifiedDepositOverlay({
       }
     } catch (error) {
       console.error('❌ Deposit failed:', error)
-      showError('Deposit failed: ' + error.message)
+      
+      // Handle insufficient funds error with helpful message
+      if (error.message?.includes('Insufficient funds') || error.message?.includes('exceeds the balance')) {
+        const errorMsg = error.message.includes('Insufficient funds') 
+          ? error.message 
+          : 'Insufficient funds. You need more ETH to cover the deposit amount and gas fees.'
+        
+        showError(errorMsg + ' 💡 Tip: You can get ETH from exchanges like Coinbase, Binance, or use a faucet for testnet ETH.')
+      } else {
+        showError('Deposit failed: ' + error.message)
+      }
     } finally {
       setIsDepositing(false)
     }
@@ -508,14 +549,35 @@ export default function UnifiedDepositOverlay({
 
           {userRole === 'challenger' && !depositState.challengerDeposited && (
             <>
+              {balanceCheck && (
+                <BalanceInfo>
+                  <div>💰 Your Balance: {balanceCheck.balance} ETH</div>
+                  <div>💸 Required: {balanceCheck.required} ETH</div>
+                  {!balanceCheck.sufficient && (
+                    <div style={{ color: '#ff6b6b', fontWeight: 'bold' }}>
+                      ❌ Insufficient funds! You need {balanceCheck.shortfall} ETH more
+                    </div>
+                  )}
+                  {balanceCheck.sufficient && (
+                    <div style={{ color: '#00FF41', fontWeight: 'bold' }}>
+                      ✅ Sufficient funds available
+                    </div>
+                  )}
+                </BalanceInfo>
+              )}
               <DepositButton 
                 onClick={handleDeposit}
-                disabled={isDepositing}
+                disabled={isDepositing || (balanceCheck && !balanceCheck.sufficient)}
               >
                 {isDepositing ? 'Depositing Crypto...' : `Deposit ${gameData?.price_usd || gameData?.asking_price || '0'} Crypto`}
               </DepositButton>
               <InfoMessage>
                 ⚠️ You must deposit crypto to start the game
+                {balanceCheck && !balanceCheck.sufficient && (
+                  <div style={{ color: '#ff6b6b', marginTop: '0.5rem' }}>
+                    💡 Get ETH from exchanges like Coinbase, Binance, or use a faucet for testnet ETH
+                  </div>
+                )}
               </InfoMessage>
             </>
           )}

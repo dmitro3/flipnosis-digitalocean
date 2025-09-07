@@ -397,6 +397,67 @@ class ContractService {
     }
   }
 
+  // Check if user has sufficient balance for deposit
+  async checkDepositBalance(priceUSD) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      // Get ETH price and calculate required amount
+      const ethPriceUSD = await this.getETHPriceUSD()
+      const ethAmount = parseFloat(priceUSD) / ethPriceUSD
+      const ethAmountRounded = Math.round(ethAmount * 1000000) / 1000000
+      const ethAmountWei = ethers.parseEther(ethAmountRounded.toString())
+      
+      // Get user's current balance
+      const balance = await this.publicClient.getBalance({
+        address: this.walletClient.account.address
+      })
+      
+      // Estimate gas cost (use a dummy game ID for estimation)
+      const dummyGameId = '0x' + '0'.repeat(64)
+      const gasEstimate = await this.publicClient.estimateContractGas({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'depositETH',
+        args: [dummyGameId],
+        value: ethAmountWei,
+        account: this.walletClient.account
+      })
+      
+      // Get current gas price
+      const gasPrice = await this.publicClient.getGasPrice()
+      const gasCost = gasEstimate * gasPrice
+      
+      // Add 20% buffer to gas estimate
+      const totalGasCost = BigInt(Math.floor(Number(gasCost) * 1.2))
+      const totalRequired = ethAmountWei + totalGasCost
+      
+      console.log('💰 Balance check:', {
+        balance: balance.toString(),
+        ethAmount: ethAmountWei.toString(),
+        gasCost: gasCost.toString(),
+        totalGasCost: totalGasCost.toString(),
+        totalRequired: totalRequired.toString(),
+        sufficient: balance >= totalRequired
+      })
+      
+      return {
+        success: true,
+        sufficient: balance >= totalRequired,
+        balance: balance.toString(),
+        required: totalRequired.toString(),
+        shortfall: balance < totalRequired ? (totalRequired - balance).toString() : '0',
+        ethAmount: ethAmountRounded,
+        gasCost: ethers.formatEther(totalGasCost)
+      }
+    } catch (error) {
+      console.error('❌ Error checking balance:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Deposit ETH for a game
   async depositETH(gameId, priceUSD) {
     if (!this.isReady()) {
@@ -406,6 +467,27 @@ class ContractService {
     try {
       await this.ensureBaseNetwork()
       console.log('💰 Starting ETH deposit for game:', gameId, 'Price USD:', priceUSD)
+      
+      // Check balance first
+      const balanceCheck = await this.checkDepositBalance(priceUSD)
+      if (!balanceCheck.success) {
+        return { success: false, error: 'Failed to check balance: ' + balanceCheck.error }
+      }
+      
+      if (!balanceCheck.sufficient) {
+        const shortfallEth = ethers.formatEther(balanceCheck.shortfall)
+        const requiredEth = ethers.formatEther(balanceCheck.required)
+        const currentEth = ethers.formatEther(balanceCheck.balance)
+        
+        return { 
+          success: false, 
+          error: `Insufficient funds. You need ${requiredEth} ETH (${priceUSD} USD + gas fees) but only have ${currentEth} ETH. You need ${shortfallEth} ETH more.`,
+          insufficientFunds: true,
+          balance: currentEth,
+          required: requiredEth,
+          shortfall: shortfallEth
+        }
+      }
       
       const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
@@ -474,6 +556,15 @@ class ContractService {
       }
       if (error.message?.includes('User rejected')) {
         return { success: false, error: 'Transaction cancelled by user' }
+      }
+      
+      // Check for insufficient funds error
+      if (error.message?.includes('insufficient funds') || error.message?.includes('exceeds the balance')) {
+        return { 
+          success: false, 
+          error: 'Insufficient funds. You need more ETH to cover the deposit amount and gas fees.',
+          insufficientFunds: true
+        }
       }
       
       return { success: false, error: error.shortMessage || error.message }
