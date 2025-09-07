@@ -651,6 +651,98 @@ const GameRoom = ({
     fetchPlayerNames()
   }, [getGameCreator, getGameJoiner, getPlayerName, gameData])
 
+  // Additional effect to fetch challenger details after 2 seconds
+  useEffect(() => {
+    if (!gameData || !gameId) return
+
+    const fetchChallengerDetails = async () => {
+      // Wait 2 seconds to allow game data to be fully loaded
+      setTimeout(async () => {
+        // First, try to refresh game data from server
+        try {
+          const response = await fetch(`/api/games/${gameId}`)
+          if (response.ok) {
+            const freshGameData = await response.json()
+            console.log('🔄 Fresh game data fetched:', freshGameData)
+            
+            // Update the gameData if we got fresh data
+            if (freshGameData.challenger) {
+              console.log('🎯 Fresh challenger data found:', freshGameData.challenger)
+              
+              // Fetch the challenger's profile
+              try {
+                const name = await getPlayerName(freshGameData.challenger)
+                setJoinerName(name || `${freshGameData.challenger.slice(0, 6)}...${freshGameData.challenger.slice(-4)}`)
+                console.log('✅ Fresh joiner name set:', name || `${freshGameData.challenger.slice(0, 6)}...${freshGameData.challenger.slice(-4)}`)
+              } catch (error) {
+                console.error('Error fetching fresh challenger name:', error)
+                setJoinerName(`${freshGameData.challenger.slice(0, 6)}...${freshGameData.challenger.slice(-4)}`)
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching fresh game data:', error)
+        }
+        
+        // Fallback: check current gameData
+        const joinerAddress = getGameJoiner()
+        
+        console.log('🔍 Delayed challenger fetch:', { 
+          joinerAddress, 
+          gameData: gameData,
+          challengerField: gameData.challenger,
+          joinerField: gameData.joiner,
+          challenger_addressField: gameData.challenger_address,
+          joiner_addressField: gameData.joiner_address
+        })
+        
+        if (joinerAddress && joinerAddress !== 'Challenger') {
+          try {
+            const name = await getPlayerName(joinerAddress)
+            setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+            console.log('✅ Delayed joiner name set:', name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+          } catch (error) {
+            console.error('Error fetching delayed joiner name:', error)
+            setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+          }
+        } else {
+          console.log('❌ Still no joiner address found after delay')
+        }
+      }, 2000)
+    }
+
+    fetchChallengerDetails()
+  }, [gameData, gameId, getGameJoiner, getPlayerName])
+
+  // Listen for game state updates that might include challenger info
+  useEffect(() => {
+    if (!socket) return
+
+    const handleGameStateUpdate = (data) => {
+      console.log('📊 Game state update received in GameRoom:', data)
+      
+      // Check if this update includes challenger information
+      if (data.challenger && data.challenger !== getGameJoiner()) {
+        console.log('🎯 New challenger info received:', data.challenger)
+        
+        // Fetch the challenger's profile
+        getPlayerName(data.challenger).then(name => {
+          setJoinerName(name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+          console.log('✅ Updated joiner name from game state:', name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+        }).catch(error => {
+          console.error('Error fetching challenger name from game state:', error)
+          setJoinerName(`${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+        })
+      }
+    }
+
+    socket.on('game_state_update', handleGameStateUpdate)
+
+    return () => {
+      socket.off('game_state_update', handleGameStateUpdate)
+    }
+  }, [socket, getGameJoiner, getPlayerName])
+
   // Add forfeit button styles
   const ForfeitButton = styled.button`
     position: fixed;
