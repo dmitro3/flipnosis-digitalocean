@@ -195,6 +195,7 @@ const GameLobby = () => {
         socketService.on('deposit_confirmed', handleDepositConfirmed)
         socketService.on('deposit_timeout', handleDepositTimeout)
         socketService.on('game_started', handleGameStarted)
+        socketService.on('transport_to_flip_suite', handleTransportToFlipSuite)
         
         console.log('✅ GameLobby: Event handlers registered')
       } catch (error) {
@@ -212,6 +213,7 @@ const GameLobby = () => {
       socketService.off('deposit_confirmed')
       socketService.off('deposit_timeout')
       socketService.off('game_started')
+      socketService.off('transport_to_flip_suite')
     }
   }, [gameId, address])
 
@@ -287,6 +289,16 @@ const GameLobby = () => {
         detail: { gameId: data.gameId, immediate: true }
       }))
     }, 1000)
+  }
+
+  const handleTransportToFlipSuite = (data) => {
+    console.log('🚀 Transport to flip suite event received:', data)
+    if (data.gameId === gameId) {
+      console.log('🚀 Transporting to flip suite...')
+      window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+        detail: { gameId: data.gameId, immediate: data.immediate || true, reason: data.reason }
+      }))
+    }
   }
 
   const handleGameAwaitingDeposit = (data) => {

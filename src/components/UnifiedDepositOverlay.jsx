@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import webSocketService from '../services/WebSocketService'
+import socketService from '../services/SocketService'
 import { useToast } from '../contexts/ToastContext'
 import { useContractService } from '../utils/useContractService'
 
@@ -347,21 +347,21 @@ export default function UnifiedDepositOverlay({
     }
 
     // Register handlers
-    webSocketService.on('deposit_stage_started', handleDepositStageStarted)
-    webSocketService.on('deposit_countdown', handleDepositCountdown)
-    webSocketService.on('deposit_confirmed', handleDepositConfirmed)
-    webSocketService.on('nft_deposit_confirmed', handleNftDepositConfirmed)
-    webSocketService.on('deposit_timeout', handleDepositTimeout)
-    webSocketService.on('game_started', handleGameStarted)
+    socketService.on('deposit_stage_started', handleDepositStageStarted)
+    socketService.on('deposit_countdown', handleDepositCountdown)
+    socketService.on('deposit_confirmed', handleDepositConfirmed)
+    socketService.on('nft_deposit_confirmed', handleNftDepositConfirmed)
+    socketService.on('deposit_timeout', handleDepositTimeout)
+    socketService.on('game_started', handleGameStarted)
 
     // Cleanup
     return () => {
-      webSocketService.off('deposit_stage_started', handleDepositStageStarted)
-      webSocketService.off('deposit_countdown', handleDepositCountdown)
-      webSocketService.off('deposit_confirmed', handleDepositConfirmed)
-      webSocketService.off('nft_deposit_confirmed', handleNftDepositConfirmed)
-      webSocketService.off('deposit_timeout', handleDepositTimeout)
-      webSocketService.off('game_started', handleGameStarted)
+      socketService.off('deposit_stage_started', handleDepositStageStarted)
+      socketService.off('deposit_countdown', handleDepositCountdown)
+      socketService.off('deposit_confirmed', handleDepositConfirmed)
+      socketService.off('nft_deposit_confirmed', handleNftDepositConfirmed)
+      socketService.off('deposit_timeout', handleDepositTimeout)
+      socketService.off('game_started', handleGameStarted)
     }
   }, [gameId, onDepositComplete, onTimeout, showSuccess, showError])
 
@@ -389,7 +389,7 @@ export default function UnifiedDepositOverlay({
         if (result.success) {
           // Send confirmation to server via Socket.io
           try {
-            webSocketService.emit('deposit_confirmed', {
+            socketService.emit('deposit_confirmed', {
               gameId: gameId,
               player: address,
               assetType: 'nft',
@@ -425,7 +425,7 @@ export default function UnifiedDepositOverlay({
               transactionHash: result.transactionHash
             })
             
-            webSocketService.emit('deposit_confirmed', {
+            socketService.emit('deposit_confirmed', {
               gameId: gameId,
               player: address,
               assetType: 'crypto',
@@ -439,6 +439,55 @@ export default function UnifiedDepositOverlay({
           }
           
           showSuccess('Crypto deposited successfully!')
+          
+          // Fallback: Check game state and transport if both players deposited
+          // This ensures transport happens even if Socket.io events fail
+          const checkAndTransport = async () => {
+            try {
+              console.log('🚀 Fallback: Checking game state for transport...')
+              
+              // Fetch current game state from API
+              const response = await fetch(`/api/games/${gameId}`)
+              if (response.ok) {
+                const gameData = await response.json()
+                console.log('🚀 Current game state:', {
+                  status: gameData.status,
+                  creatorDeposited: gameData.creator_deposited,
+                  challengerDeposited: gameData.challenger_deposited
+                })
+                
+                if (gameData.creator_deposited && gameData.challenger_deposited) {
+                  console.log('🚀 Both players deposited - transporting to flip suite (fallback)!')
+                  
+                  // Transport current player
+                  window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+                    detail: { gameId: gameId, immediate: true, fallback: true }
+                  }))
+                  
+                  // Also emit a Socket.io event to ensure both players get transported
+                  try {
+                    socketService.emit('transport_to_flip_suite', {
+                      gameId: gameId,
+                      reason: 'both_deposited',
+                      immediate: true
+                    })
+                  } catch (error) {
+                    console.warn('⚠️ Failed to emit transport event:', error)
+                  }
+                  
+                  return true
+                }
+              }
+            } catch (error) {
+              console.error('❌ Error checking game state:', error)
+            }
+            return false
+          }
+          
+          // Try immediately, then retry after delays
+          setTimeout(checkAndTransport, 1000)
+          setTimeout(checkAndTransport, 3000)
+          setTimeout(checkAndTransport, 5000)
         } else {
           throw new Error(result.error || 'Crypto deposit failed')
         }
