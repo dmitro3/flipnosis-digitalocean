@@ -640,9 +640,9 @@ const GameLobby = () => {
                 connected={wsConnected}
                 offers={offers}
                 isCreator={isCreator}
-                coinConfig={{
-                  headsImage: getGameNFTImage(),
-                  tailsImage: getGameNFTImage(),
+                coinConfig={gameData?.coinData || gameData?.coin || {
+                  headsImage: '/coins/plainh.png',
+                  tailsImage: '/coins/plaint.png',
                   material: 'gold'
                 }}
                 onOfferAccepted={(offer) => {

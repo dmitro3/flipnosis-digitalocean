@@ -636,7 +636,7 @@ const GameRoom = ({
     }
 
     fetchPlayerNames()
-  }, [getGameCreator, getGameJoiner, getPlayerName, gameData])
+  }, [gameData])
 
   // Add forfeit button styles
   const ForfeitButton = styled.button`
