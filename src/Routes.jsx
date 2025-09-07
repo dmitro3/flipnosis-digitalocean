@@ -4,7 +4,7 @@ import CreateFlip from "./pages/CreateFlip";
 import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
-import TabbedGameInterface from "./components/TabbedGame/TabbedGameInterface";
+import GamePage from "./components/GameOrchestrator/GamePage";
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 
@@ -23,11 +23,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "game/listing_:listingId",
-        element: <TabbedGameInterface />,
+        element: <GamePage />,
       },
       {
         path: "game/:gameId",
-        element: <TabbedGameInterface />,
+        element: <GamePage />,
       },
       {
         path: "admin",

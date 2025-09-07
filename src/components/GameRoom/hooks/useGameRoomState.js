@@ -32,18 +32,7 @@ export const useGameRoomState = (gameId, address, gameData) => {
 
   // Helper functions
   const getGameCreator = () => gameData?.creator
-  const getGameJoiner = () => {
-    const challenger = gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
-    console.log('🔍 getGameJoiner debug:', {
-      challenger,
-      gameDataChallenger: gameData?.challenger,
-      gameDataJoiner: gameData?.joiner,
-      gameDataJoinerAddress: gameData?.joiner_address,
-      gameDataChallengerAddress: gameData?.challenger_address,
-      allKeys: Object.keys(gameData || {})
-    })
-    return challenger
-  }
+  const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
 
   const isCreator = () => {
     if (!address || !gameData) return false
