@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useToast } from '../../../contexts/ToastContext'
 import { getApiUrl } from '../../../config/api'
+import socketService from '../../../services/SocketService'
 
 export const useLobbyState = (gameId, address) => {
   const { showSuccess, showError, showInfo } = useToast()
@@ -22,6 +23,9 @@ export const useLobbyState = (gameId, address) => {
 
   // ETH amount state
   const [ethAmount, setEthAmount] = useState(null)
+  
+  // Socket connection state
+  const [connected, setConnected] = useState(false)
 
   // Helper functions - only use 'creator' field
   const getGameCreator = useCallback(() => gameData?.creator, [gameData?.creator])
@@ -346,6 +350,81 @@ export const useLobbyState = (gameId, address) => {
     }
   }, [gameId])
 
+  // Socket event handlers to update game data
+  useEffect(() => {
+    if (!gameId || !address) return
+
+    // Connect to socket
+    const initSocket = async () => {
+      try {
+        await socketService.connect(gameId, address)
+        setConnected(true)
+        console.log('✅ Socket connected in useLobbyState')
+      } catch (error) {
+        console.error('❌ Socket connection failed in useLobbyState:', error)
+        setConnected(false)
+      }
+    }
+
+    initSocket()
+
+    // Handle game started event - update game data status
+    const handleGameStarted = (data) => {
+      console.log('🎮 Game started event in useLobbyState:', data)
+      if (data.gameId === gameId || data.gameId === `game_${gameId}`) {
+        setGameData(prev => ({
+          ...prev,
+          status: 'active',
+          phase: 'active',
+          currentRound: data.currentRound || 1,
+          currentTurn: data.currentTurn || data.creator,
+          creator_deposited: 1,
+          challenger_deposited: 1,
+          challenger: data.challenger || prev.challenger
+        }))
+        showSuccess('Game is starting!')
+      }
+    }
+
+    // Handle deposit confirmed event
+    const handleDepositConfirmed = (data) => {
+      console.log('💰 Deposit confirmed in useLobbyState:', data)
+      if (data.gameId === gameId || data.gameId === `game_${gameId}`) {
+        setGameData(prev => ({
+          ...prev,
+          creator_deposited: data.creatorDeposited ? 1 : prev.creator_deposited,
+          challenger_deposited: data.challengerDeposited ? 1 : prev.challenger_deposited
+        }))
+      }
+    }
+
+    // Handle game state updates
+    const handleGameStateUpdate = (data) => {
+      console.log('📊 Game state update in useLobbyState:', data)
+      if (data.gameId === gameId) {
+        setGameData(prev => ({
+          ...prev,
+          currentRound: data.currentRound,
+          creatorScore: data.creatorScore,
+          challengerScore: data.challengerScore,
+          currentTurn: data.currentTurn
+        }))
+      }
+    }
+
+    // Register socket event listeners
+    socketService.on('game_started', handleGameStarted)
+    socketService.on('deposit_confirmed', handleDepositConfirmed)
+    socketService.on('game_state_update', handleGameStateUpdate)
+
+    // Cleanup
+    return () => {
+      socketService.off('game_started', handleGameStarted)
+      socketService.off('deposit_confirmed', handleDepositConfirmed)
+      socketService.off('game_state_update', handleGameStateUpdate)
+    }
+  }, [gameId, address, showSuccess])
+
 
 
 
@@ -370,6 +449,7 @@ export const useLobbyState = (gameId, address) => {
     depositTimeLeft,
     newOffer,
     creatingOffer,
+    connected,
 
     // Actions
     loadGameData,

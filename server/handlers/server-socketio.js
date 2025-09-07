@@ -312,6 +312,12 @@ function initializeSocketIO(server, dbService) {
           
           console.log('🎮 Both players deposited during countdown - starting game!')
           
+          // Initialize game state on server
+          const gameState = initializeGameState(socketInfo.gameId, {
+            creator: game.creator,
+            challenger: game.challenger
+          })
+          
           // Broadcast game started event
           io.to(socketInfo.roomId).emit('game_started', {
             gameId: socketInfo.gameId,
@@ -328,6 +334,16 @@ function initializeSocketIO(server, dbService) {
             message: 'Both players deposited! Game starting...',
             timestamp: new Date().toISOString()
           })
+          
+          // Also emit game_ready event for compatibility
+          io.to(socketInfo.roomId).emit('game_ready', {
+            gameId: socketInfo.gameId,
+            gameState: gameState,
+            message: 'Game is starting!'
+          })
+          
+          // Emit initial game state
+          io.to(socketInfo.roomId).emit('game_state_update', gameState)
           
           // Also broadcast transport event to ensure clients switch to flip suite
           setTimeout(() => {
@@ -433,6 +449,12 @@ function initializeSocketIO(server, dbService) {
         game.currentRound = 1
         game.currentTurn = game.creator
         
+        // Initialize game state on server
+        const gameState = initializeGameState(socketInfo.gameId, {
+          creator: game.creator,
+          challenger: game.challenger
+        })
+        
         // Broadcast game started event
         io.to(socketInfo.roomId).emit('game_started', {
           gameId: socketInfo.gameId,
@@ -449,6 +471,16 @@ function initializeSocketIO(server, dbService) {
           message: 'Both players deposited! Game starting...',
           timestamp: new Date().toISOString()
         })
+        
+        // Also emit game_ready event for compatibility
+        io.to(socketInfo.roomId).emit('game_ready', {
+          gameId: socketInfo.gameId,
+          gameState: gameState,
+          message: 'Game is starting!'
+        })
+        
+        // Emit initial game state
+        io.to(socketInfo.roomId).emit('game_state_update', gameState)
         
         // Also broadcast transport event to ensure clients switch to flip suite
         setTimeout(() => {

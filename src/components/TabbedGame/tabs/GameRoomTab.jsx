@@ -223,6 +223,22 @@ const GameRoomTab = ({
       showInfo('Game is starting!')
     }
     
+    const handleGameStarted = (data) => {
+      console.log('🎮 Game started event in GameRoomTab:', data)
+      setIsGameReady(true)
+      showInfo('Game is starting!')
+      
+      // Initialize game state from the event data
+      setGameState({
+        currentRound: data.currentRound || 1,
+        totalRounds: 3,
+        creatorScore: 0,
+        challengerScore: 0,
+        currentTurn: data.currentTurn || data.creator,
+        flipSeed: null
+      })
+    }
+    
     const handleRoundResult = (data) => {
       console.log('🎲 Round result:', data)
       setGameState(prev => ({
@@ -236,6 +252,7 @@ const GameRoomTab = ({
     
     socket.on('game_state_update', handleGameStateUpdate)
     socket.on('game_ready', handleGameReady)
+    socket.on('game_started', handleGameStarted)
     socket.on('round_result', handleRoundResult)
     
     // Request current game state when mounting
@@ -244,6 +261,7 @@ const GameRoomTab = ({
     return () => {
       socket.off('game_state_update', handleGameStateUpdate)
       socket.off('game_ready', handleGameReady)
+      socket.off('game_started', handleGameStarted)
       socket.off('round_result', handleRoundResult)
     }
   }, [socket, gameId, showInfo])

@@ -82,11 +82,10 @@ const GameLobby = () => {
     error,
     connected,
     offers,
-    socket,
     isCreator,
     isJoiner,
-    refreshGameData
-  } = useLobbyState(gameId || listingId)
+    loadGameData
+  } = useLobbyState(gameId || listingId, address)
   
   // Create coin config from game data
   const coinConfig = React.useMemo(() => ({
@@ -99,8 +98,8 @@ const GameLobby = () => {
   const handleOfferAccepted = React.useCallback((offer) => {
     console.log('🎯 GameLobby: Offer accepted:', offer)
     showSuccess('Offer accepted! Waiting for deposit...')
-    refreshGameData()
-  }, [showSuccess, refreshGameData])
+    loadGameData()
+  }, [showSuccess, loadGameData])
   
   // Show loading state
   if (loading) {
@@ -168,7 +167,7 @@ const GameLobby = () => {
           <TabbedGameInterface
             gameData={gameData}
             gameId={gameId || listingId}
-            socket={socket}
+            socket={socketService}
             connected={connected}
             offers={offers}
             isCreator={isCreator()}
