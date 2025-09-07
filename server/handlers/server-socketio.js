@@ -753,10 +753,8 @@ function initializeSocketIO(server, dbService) {
   return io
 }
 
-// Export the handler function to be added to your main socket handler
-module.exports = { 
-  initializeSocketIO,
-  addGameHandlers: (socket, io, dbService) => {
+// Define the game handlers function
+function addGameHandlers(socket, io, dbService) {
     // Request current game state
     socket.on('request_game_state', async ({ gameId }) => {
       console.log(`📊 Game state requested for ${gameId}`)
@@ -831,4 +829,10 @@ module.exports = {
       io.to(`game_${gameId}`).emit('game_state_update', gameState)
     })
   }
+}
+
+// Export the handler function to be added to your main socket handler
+module.exports = { 
+  initializeSocketIO,
+  addGameHandlers
 }
