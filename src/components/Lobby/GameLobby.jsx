@@ -293,11 +293,24 @@ const GameLobby = () => {
 
   const handleTransportToFlipSuite = (data) => {
     console.log('🚀 Transport to flip suite event received:', data)
-    if (data.gameId === gameId) {
-      console.log('🚀 Transporting to flip suite...')
+    
+    // Check both gameId formats (with and without game_ prefix)
+    const currentGameId = gameId?.replace('game_', '') || gameId
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const eventGameIdFull = data.gameIdFull?.replace('game_', '') || data.gameIdFull
+    
+    if (eventGameId === currentGameId || eventGameIdFull === currentGameId) {
+      console.log('🚀 Transporting to flip suite...', { currentGameId, eventGameId, eventGameIdFull })
       window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-        detail: { gameId: data.gameId, immediate: data.immediate || true, reason: data.reason }
+        detail: { 
+          gameId: data.gameId || data.gameIdFull, 
+          immediate: data.immediate || true, 
+          reason: data.reason,
+          message: data.message
+        }
       }))
+    } else {
+      console.log('❌ GameId mismatch - not transporting:', { currentGameId, eventGameId, eventGameIdFull })
     }
   }
 

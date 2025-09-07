@@ -162,10 +162,43 @@ function initializeSocketIO(server, dbService) {
         // Check if both deposited
         if (game.creatorDeposited && game.challengerDeposited) {
           clearInterval(timer)
+          
+          // Update game state to active
+          game.phase = 'game_active'
+          game.currentRound = 1
+          game.currentTurn = game.creator
+          
+          console.log('🎮 Both players deposited during countdown - starting game!')
+          
+          // Broadcast game started event
           io.to(socketInfo.roomId).emit('game_started', {
-            gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
-            message: 'Both players deposited! Game starting...'
+            gameId: socketInfo.gameId,
+            gameIdFull: socketInfo.roomId,
+            phase: 'game_active',
+            currentRound: 1,
+            currentTurn: game.creator,
+            creator: game.creator,
+            challenger: game.challenger,
+            creatorDeposited: game.creatorDeposited,
+            challengerDeposited: game.challengerDeposited,
+            bothDeposited: true,
+            message: 'Both players deposited! Game starting...',
+            timestamp: new Date().toISOString()
           })
+          
+          // Also broadcast transport event to ensure clients switch to flip suite
+          setTimeout(() => {
+            console.log('🚀 Broadcasting transport_to_flip_suite event from countdown')
+            io.to(socketInfo.roomId).emit('transport_to_flip_suite', {
+              gameId: socketInfo.gameId,
+              gameIdFull: socketInfo.roomId,
+              immediate: true,
+              reason: 'both_players_deposited',
+              creator: game.creator,
+              challenger: game.challenger,
+              message: 'Both players deposited! Entering Battle Arena...'
+            })
+          }, 1000)
         }
       }, 1000) // Update every second
       
@@ -251,10 +284,100 @@ function initializeSocketIO(server, dbService) {
       // Check if both deposited to start game
       if (game.creatorDeposited && game.challengerDeposited) {
         console.log('🎮 Both players deposited - starting game!')
+        
+        // Update game state to active
+        game.phase = 'game_active'
+        game.currentRound = 1
+        game.currentTurn = game.creator
+        
+        // Broadcast game started event
         io.to(socketInfo.roomId).emit('game_started', {
           gameId: socketInfo.gameId,
-          message: 'Both players deposited! Game starting...'
+          gameIdFull: socketInfo.roomId, // Include full roomId
+          phase: 'game_active',
+          currentRound: 1,
+          currentTurn: game.creator,
+          creator: game.creator,
+          challenger: game.challenger,
+          creatorDeposited: game.creatorDeposited,
+          challengerDeposited: game.challengerDeposited,
+          bothDeposited: true,
+          message: 'Both players deposited! Game starting...',
+          timestamp: new Date().toISOString()
         })
+        
+        // Also broadcast transport event to ensure clients switch to flip suite
+        setTimeout(() => {
+          console.log('🚀 Broadcasting transport_to_flip_suite event')
+          io.to(socketInfo.roomId).emit('transport_to_flip_suite', {
+            gameId: socketInfo.gameId,
+            gameIdFull: socketInfo.roomId,
+            immediate: true,
+            reason: 'both_players_deposited',
+            creator: game.creator,
+            challenger: game.challenger,
+            message: 'Both players deposited! Entering Battle Arena...'
+          })
+        }, 1000)
+      }
+    })
+
+    // Handle game actions
+    socket.on('game_action', (data) => {
+      console.log('🎮 Game action received:', data)
+      
+      const socketInfo = socketData.get(socket.id)
+      if (!socketInfo) {
+        console.error('❌ No socket info found for game action')
+        return
+      }
+      
+      const game = gameStateManager.getGame(socketInfo.gameId)
+      if (!game) {
+        console.error('❌ No game found for game action')
+        return
+      }
+      
+      // Handle different game actions
+      switch (data.action) {
+        case 'MAKE_CHOICE':
+          console.log('🎯 Player made choice:', data.choice)
+          // Broadcast choice to room
+          io.to(socketInfo.roomId).emit('choice_made', {
+            gameId: socketInfo.gameId,
+            player: data.player,
+            choice: data.choice,
+            currentRound: game.currentRound || 1
+          })
+          break
+          
+        case 'POWER_CHARGE_START':
+          console.log('⚡ Power charge started by:', data.player)
+          io.to(socketInfo.roomId).emit('power_charge_started', {
+            gameId: socketInfo.gameId,
+            player: data.player
+          })
+          break
+          
+        case 'POWER_CHARGED':
+          console.log('⚡ Power charged by:', data.player, 'Level:', data.powerLevel)
+          io.to(socketInfo.roomId).emit('power_charged', {
+            gameId: socketInfo.gameId,
+            player: data.player,
+            powerLevel: data.powerLevel
+          })
+          break
+          
+        case 'FORFEIT_GAME':
+          console.log('🏳️ Game forfeited by:', data.player)
+          io.to(socketInfo.roomId).emit('game_forfeited', {
+            gameId: socketInfo.gameId,
+            forfeiter: data.player
+          })
+          break
+          
+        default:
+          console.log('⚠️ Unknown game action:', data.action)
       }
     })
 

@@ -256,7 +256,9 @@ class GameStateManager {
     game.currentTurn = game.creator // Creator goes first
     game.updatedAt = new Date().toISOString()
     
-    // Broadcast game start
+    console.log(`🎮 Starting game ${gameId} - both players deposited!`)
+    
+    // Broadcast game start with comprehensive data
     broadcastFn(`game_${gameId}`, {
       type: 'game_started',
       gameId: gameId,
@@ -265,8 +267,27 @@ class GameStateManager {
       currentTurn: game.currentTurn,
       maxRounds: game.maxRounds,
       scores: game.scores,
-      message: 'Game is now active! Round 1 begins.'
+      creator: game.creator,
+      challenger: game.challenger,
+      creatorDeposited: game.creatorDeposited,
+      challengerDeposited: game.challengerDeposited,
+      bothDeposited: true,
+      message: 'Game is now active! Round 1 begins.',
+      timestamp: new Date().toISOString()
     })
+    
+    // Also broadcast a transport event to ensure clients switch to flip suite
+    setTimeout(() => {
+      broadcastFn(`game_${gameId}`, {
+        type: 'transport_to_flip_suite',
+        gameId: gameId,
+        immediate: true,
+        reason: 'both_players_deposited',
+        creator: game.creator,
+        challenger: game.challenger,
+        message: 'Both players deposited! Entering Battle Arena...'
+      })
+    }, 1000)
   }
 
   // Handle game moves (for future implementation)

@@ -5,7 +5,7 @@ import ProfilePicture from '../ProfilePicture'
 import GameBackground from '../GameOrchestrator/GameBackground'
 import GameResultPopup from '../GameResultPopup'
 import { useGameRoomState } from './hooks/useGameRoomState'
-import webSocketService from '../../services/WebSocketService'
+import socketService from '../../services/SocketService'
 import { useProfile } from '../../contexts/ProfileContext'
 import { theme } from '../../styles/theme'
 
@@ -339,6 +339,9 @@ const GameRoom = ({
   const [creatorName, setCreatorName] = useState('')
   const [joinerName, setJoinerName] = useState('')
   
+  // State for game countdown
+  const [gameCountdown, setGameCountdown] = useState(null)
+  
   // Use game room specific hooks
   const {
     gameState,
@@ -369,53 +372,153 @@ const GameRoom = ({
     const initGameRoom = async () => {
       if (!gameId || !address) return
       
-      const gameRoomId = `game_room_${gameId}`
-      await webSocketService.connect(gameRoomId, address)
-      setWsConnected(true)
-      
-      // Set up message handling
-      const handleMessage = (data) => {
-        console.log('🎮 Game room message:', data)
+      try {
+        // Connect to the same room as the lobby
+        const roomId = `game_${gameId}`
+        await socketService.connect(gameId, address)
+        setWsConnected(true)
         
-        switch (data.type) {
-          case 'CHOICES_MADE':
-            // Update UI with both player choices
-            setPlayerChoices({
-              creator: data.player1Choice,
-              joiner: data.player2Choice  
+        console.log('🎮 GameRoom connected to Socket.io')
+        
+        // Set up message handling for game events
+        const handleGameStarted = (data) => {
+          console.log('🎮 Game started in GameRoom:', data)
+          
+          // Start the game with a 3-second countdown
+          setGameState(prev => ({
+            ...prev,
+            phase: 'countdown',
+            currentRound: 1,
+            currentTurn: data.currentTurn || data.creator
+          }))
+          
+          // Show countdown overlay
+          setGameCountdown(3)
+          const countdownInterval = setInterval(() => {
+            setGameCountdown(prev => {
+              if (prev <= 1) {
+                clearInterval(countdownInterval)
+                setGameCountdown(null)
+                
+                // Start the choosing phase
+                setGameState(prev => ({
+                  ...prev,
+                  phase: 'choosing',
+                  currentRound: 1,
+                  currentTurn: data.currentTurn || data.creator
+                }))
+                
+                // Start the 20-second round countdown
+                startRoundCountdown()
+                return null
+              }
+              return prev - 1
             })
-            setGameState(prev => ({
-              ...prev,
-              phase: 'charging',
-              currentTurn: data.currentTurn
-            }))
-            break
-            
-          case 'POWER_PHASE_STARTED':
-            setGameState(prev => ({
-              ...prev,
-              phase: 'charging',
-              currentTurn: data.currentTurn
-            }))
-            break
-            
-          // ... other message handlers
+          }, 1000)
         }
+        
+        const handleTransportToFlipSuite = (data) => {
+          console.log('🚀 Transport to flip suite received in GameRoom:', data)
+          
+          // Start the game with a 3-second countdown
+          setGameState(prev => ({
+            ...prev,
+            phase: 'countdown',
+            currentRound: 1,
+            currentTurn: data.creator
+          }))
+          
+          // Show countdown overlay
+          setGameCountdown(3)
+          const countdownInterval = setInterval(() => {
+            setGameCountdown(prev => {
+              if (prev <= 1) {
+                clearInterval(countdownInterval)
+                setGameCountdown(null)
+                
+                // Start the choosing phase
+                setGameState(prev => ({
+                  ...prev,
+                  phase: 'choosing',
+                  currentRound: 1,
+                  currentTurn: data.creator
+                }))
+                
+                // Start the 20-second round countdown
+                startRoundCountdown()
+                return null
+              }
+              return prev - 1
+            })
+          }, 1000)
+        }
+        
+        const handleChoicesMade = (data) => {
+          console.log('🎯 Choices made:', data)
+          setPlayerChoices({
+            creator: data.creatorChoice,
+            joiner: data.joinerChoice
+          })
+          setGameState(prev => ({
+            ...prev,
+            phase: 'charging',
+            currentTurn: data.currentTurn
+          }))
+        }
+        
+        const handlePowerPhaseStarted = (data) => {
+          console.log('⚡ Power phase started:', data)
+          setGameState(prev => ({
+            ...prev,
+            phase: 'charging',
+            currentTurn: data.currentTurn
+          }))
+        }
+        
+        const handleRoundResult = (data) => {
+          console.log('🎲 Round result:', data)
+          handleFlipResult(data)
+        }
+        
+        const handleGameCompleted = (data) => {
+          console.log('🏆 Game completed:', data)
+          handleGameCompleted(data)
+        }
+        
+        // Register Socket.io event handlers
+        socketService.on('game_started', handleGameStarted)
+        socketService.on('transport_to_flip_suite', handleTransportToFlipSuite)
+        socketService.on('choices_made', handleChoicesMade)
+        socketService.on('power_phase_started', handlePowerPhaseStarted)
+        socketService.on('round_result', handleRoundResult)
+        socketService.on('game_completed', handleGameCompleted)
+        
+        console.log('✅ GameRoom: Socket.io event handlers registered')
+        
+      } catch (error) {
+        console.error('❌ GameRoom: Socket.io connection failed:', error)
+        setWsConnected(false)
       }
-      
-      webSocketService.on('CHOICES_MADE', handleMessage)
-      webSocketService.on('POWER_PHASE_STARTED', handleMessage)
-      // ... register other handlers
     }
     
     initGameRoom()
+    
+    // Cleanup on unmount
+    return () => {
+      socketService.off('game_started')
+      socketService.off('transport_to_flip_suite')
+      socketService.off('choices_made')
+      socketService.off('power_phase_started')
+      socketService.off('round_result')
+      socketService.off('game_completed')
+    }
   }, [gameId, address])
   
   // Choice handler
   const handlePlayerChoice = (choice) => {
     const oppositeChoice = choice === 'heads' ? 'tails' : 'heads'
     
-    webSocketService.send({
+    socketService.emit('game_action', {
       type: 'GAME_ACTION',
       gameId,
       action: 'MAKE_CHOICE',
@@ -427,7 +530,7 @@ const GameRoom = ({
 
   // Power charge handlers
   const handlePowerChargeStart = () => {
-    webSocketService.send({
+    socketService.emit('game_action', {
       type: 'GAME_ACTION',
       gameId,
       action: 'POWER_CHARGE_START',
@@ -436,7 +539,7 @@ const GameRoom = ({
   }
 
   const handlePowerChargeStop = (powerLevel) => {
-    webSocketService.send({
+    socketService.emit('game_action', {
       type: 'GAME_ACTION',
       gameId,
       action: 'POWER_CHARGED',
@@ -446,7 +549,7 @@ const GameRoom = ({
   }
 
   const handleForfeit = () => {
-    webSocketService.send({
+    socketService.emit('game_action', {
       type: 'GAME_ACTION',
       gameId,
       action: 'FORFEIT_GAME',
@@ -539,6 +642,28 @@ const GameRoom = ({
     <ThemeProvider theme={theme}>
       <GameRoomContainer>
         <GameBackground />
+        
+        {/* Game Countdown Overlay */}
+        {gameCountdown && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            color: 'white',
+            fontSize: '8rem',
+            fontWeight: 'bold',
+            textShadow: '0 0 30px #00BFFF'
+          }}>
+            {gameCountdown > 0 ? gameCountdown : 'GO!'}
+          </div>
+        )}
         
         {/* Forfeit Button */}
         <ForfeitButton onClick={handleForfeitClick}>
