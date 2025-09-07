@@ -139,7 +139,7 @@ const GameCoin = ({
         }}
         onPowerCharge={onPowerChargeStart}
         onPowerRelease={onPowerChargeStop}
-        isPlayerTurn={isMyTurn()}
+        isPlayerTurn={typeof isMyTurn === 'function' ? isMyTurn() : isMyTurn}
         isCharging={gameState.chargingPlayer === address}
         creatorPower={gameState.creatorPower || 5}
         joinerPower={gameState.joinerPower || 5}

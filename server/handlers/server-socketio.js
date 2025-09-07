@@ -391,7 +391,23 @@ function initializeSocketIO(server, dbService) {
       
       // Update database
       if (dbService) {
-        await dbService.updateGameStatus(gameId, 'awaiting_deposits', challenger)
+        try {
+          // Update game with challenger information
+          await new Promise((resolve, reject) => {
+            dbService.db.run(`
+              UPDATE games 
+              SET challenger = ?, status = 'awaiting_deposits', joiner = ?
+              WHERE id = ?
+            `, [challenger, challenger, gameId], (err) => {
+              if (err) reject(err)
+              else resolve()
+            })
+          })
+          
+          console.log(`✅ Updated game ${gameId} with challenger: ${challenger}`)
+        } catch (error) {
+          console.error('❌ Error updating game with challenger:', error)
+        }
       }
     })
 
@@ -573,13 +589,97 @@ function initializeSocketIO(server, dbService) {
     })
 
     // Handle game actions
-    socket.on('game_action', (data) => {
+    socket.on('game_action', async (data) => {
       console.log('🎮 Game action received:', data)
       
       const socketInfo = socketData.get(socket.id)
       if (!socketInfo) {
         console.error('❌ No socket info found for game action')
         return
+      }
+      
+      const gameId = socketInfo.gameId
+      const gameState = gameStates.get(gameId)
+      
+      if (!gameState) {
+        console.log('❌ No game state found for game action')
+        return
+      }
+      
+      const player = socketInfo.address
+      
+      switch (data.action) {
+        case 'MAKE_CHOICE':
+          console.log('🎯 Player making choice:', { player, choice: data.choice })
+          
+          // Record the player's choice
+          if (player === gameState.creator) {
+            gameState.creatorChoice = data.choice
+          } else if (player === gameState.challenger) {
+            gameState.challengerChoice = data.choice
+          }
+          
+          // Update game state
+          gameState.phase = 'charging'
+          gameState.currentTurn = player
+          
+          // Broadcast updated state
+          io.to(socketInfo.roomId).emit('game_state_update', gameState)
+          break
+          
+        case 'POWER_CHARGE_START':
+          console.log('⚡ Power charge started for:', player)
+          gameState.chargingPlayer = player
+          io.to(socketInfo.roomId).emit('game_state_update', gameState)
+          break
+          
+        case 'POWER_CHARGED':
+          console.log('⚡ Power charged for:', player, 'with power:', data.powerLevel)
+          gameState.chargingPlayer = null
+          
+          // Record the player's power
+          if (player === gameState.creator) {
+            gameState.creatorPower = data.powerLevel
+          } else if (player === gameState.challenger) {
+            gameState.challengerPower = data.powerLevel
+          }
+          
+          // Check if both players have made their choices and charged power
+          if (gameState.creatorChoice && gameState.challengerChoice && 
+              gameState.creatorPower && gameState.challengerPower) {
+            console.log('🎮 Both players ready, executing flip')
+            await executeFlip(gameId, gameState, io, dbService)
+          } else {
+            // Determine whose turn it is next
+            const creatorReady = gameState.creatorChoice && gameState.creatorPower
+            const challengerReady = gameState.challengerChoice && gameState.challengerPower
+            
+            if (!creatorReady && !challengerReady) {
+              // Both players need to choose and charge
+              gameState.phase = 'choosing'
+              gameState.currentTurn = gameState.creator // Start with creator
+            } else if (creatorReady && !challengerReady) {
+              // Creator is ready, challenger needs to choose and charge
+              gameState.phase = 'choosing'
+              gameState.currentTurn = gameState.challenger
+            } else if (!creatorReady && challengerReady) {
+              // Challenger is ready, creator needs to choose and charge
+              gameState.phase = 'choosing'
+              gameState.currentTurn = gameState.creator
+            }
+            
+            // Broadcast updated state
+            io.to(socketInfo.roomId).emit('game_state_update', gameState)
+          }
+          break
+          
+        case 'FORFEIT_GAME':
+          console.log('🏳️ Player forfeited:', player)
+          // Handle forfeit logic
+          break
+          
+        default:
+          console.log('⚠️ Unknown game action:', data.action)
       }
       
       const game = gameStateManager.getGame(socketInfo.gameId)

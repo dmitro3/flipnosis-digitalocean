@@ -554,6 +554,9 @@ const GameRoom = ({
 
   // Power charge handlers
   const handlePowerChargeStart = () => {
+    console.log('⚡ Power charge started for:', address)
+    setGameState(prev => ({ ...prev, chargingPlayer: address }))
+    
     socketService.emit('game_action', {
       type: 'GAME_ACTION',
       gameId,
@@ -563,6 +566,16 @@ const GameRoom = ({
   }
 
   const handlePowerChargeStop = (powerLevel) => {
+    console.log('⚡ Power charge stopped for:', address, 'with power:', powerLevel)
+    setGameState(prev => ({ ...prev, chargingPlayer: null }))
+    
+    // Update the player's power in the game state
+    if (isCreator()) {
+      setGameState(prev => ({ ...prev, creatorPower: powerLevel }))
+    } else if (isJoiner()) {
+      setGameState(prev => ({ ...prev, joinerPower: powerLevel }))
+    }
+    
     socketService.emit('game_action', {
       type: 'GAME_ACTION',
       gameId,
@@ -768,12 +781,8 @@ const GameRoom = ({
                 isMyTurn: isMyTurn,
                 address: address,
                 isCreator: isCreator,
-                onPowerChargeStart: () => {
-                  setGameState(prev => ({ ...prev, chargingPlayer: address }))
-                },
-                onPowerChargeStop: () => {
-                  setGameState(prev => ({ ...prev, chargingPlayer: null }))
-                }
+                onPowerChargeStart: handlePowerChargeStart,
+                onPowerChargeStop: handlePowerChargeStop
               })}
             </CoinContainer>
             
