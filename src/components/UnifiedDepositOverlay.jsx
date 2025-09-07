@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import socketService from '../services/SocketService'
 import { useToast } from '../contexts/ToastContext'
 import { useContractService } from '../utils/useContractService'
+import { getApiUrl } from '../config/api'
 
 // Styled Components
 const Overlay = styled.div`
@@ -376,7 +377,6 @@ export default function UnifiedDepositOverlay({
         console.log('🎯 Challenger clicked deposit - storing challenger details first')
         
         try {
-          const { getApiUrl } = await import('../../config/api.js')
           const response = await fetch(getApiUrl(`/games/${gameId}/store-challenger`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
