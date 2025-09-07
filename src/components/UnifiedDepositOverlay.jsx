@@ -372,29 +372,8 @@ export default function UnifiedDepositOverlay({
     setIsDepositing(true)
 
     try {
-      // For challenger, store challenger details BEFORE starting the transaction
-      if (userRole === 'challenger') {
-        console.log('🎯 Challenger clicked deposit - storing challenger details first')
-        
-        try {
-          const response = await fetch(getApiUrl(`/games/${gameId}/store-challenger`), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              challengerAddress: address
-            })
-          })
-          
-          if (response.ok) {
-            console.log('✅ Challenger details stored successfully')
-          } else {
-            console.error('❌ Failed to store challenger details')
-          }
-        } catch (error) {
-          console.error('❌ Error storing challenger details:', error)
-          // Continue with deposit even if storing fails
-        }
-      }
+      // Note: Challenger details are now stored when Player 1 accepts the offer,
+      // not when the deposit button is clicked
 
       if (userRole === 'creator') {
         // Creator deposits NFT

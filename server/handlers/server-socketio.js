@@ -389,8 +389,29 @@ function initializeSocketIO(server, dbService) {
         console.log(`🎯 Sent your_offer_accepted to challenger: ${challenger}`)
       }
       
-      // Note: Challenger field is now updated when deposit button is clicked, not here
-      // This ensures the challenger data is stored before the fast game room transition
+      // Store challenger details immediately when offer is accepted
+      if (dbService) {
+        try {
+          console.log(`🎯 Storing challenger details immediately on offer acceptance: ${challenger}`)
+          
+          // Update game with challenger information
+          await new Promise((resolve, reject) => {
+            dbService.db.run(`
+              UPDATE games 
+              SET challenger = ?, status = 'awaiting_deposits', joiner = ?
+              WHERE id = ?
+            `, [challenger, challenger, gameId], (err) => {
+              if (err) reject(err)
+              else resolve()
+            })
+          })
+          
+          console.log(`✅ Stored challenger ${challenger} for game ${gameId} on offer acceptance`)
+        } catch (error) {
+          console.error('❌ Error storing challenger details on offer acceptance:', error)
+        }
+      }
+      
       console.log(`🎯 Offer accepted: Creator ${creator} accepts Challenger ${challenger}`)
     })
 
