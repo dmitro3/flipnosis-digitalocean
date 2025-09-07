@@ -247,7 +247,7 @@ const OffersContainer = ({
   onOfferSubmitted,
   onOfferAccepted 
 }) => {
-  const { address, isConnected: walletIsConnected, setIsConnected } = useWallet()
+  const { address, isConnected: walletIsConnected } = useWallet()
   const { getPlayerName } = useProfile()
   const { showError, showSuccess, showInfo } = useToast()
   
@@ -255,6 +255,7 @@ const OffersContainer = ({
   const [cryptoOffer, setCryptoOffer] = useState('')
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
   const [playerNames, setPlayerNames] = useState({})
+  const [socketConnected, setSocketConnected] = useState(false)
   
   // Deposit overlay state
   const [showDepositOverlay, setShowDepositOverlay] = useState(false)
@@ -320,10 +321,10 @@ const OffersContainer = ({
       try {
         await socketService.connect(gameId, address)
         console.log('✅ Socket.io connected for offers')
-        setIsConnected(true)
+        setSocketConnected(true)
       } catch (error) {
         console.error('❌ Socket.io connection failed:', error)
-        setIsConnected(false)
+        setSocketConnected(false)
       }
     }
 
@@ -808,13 +809,24 @@ const OffersContainer = ({
 
   // Check if offer input should be shown
   const shouldShowOfferInput = () => {
+    console.log('🔍 shouldShowOfferInput check:', {
+      showDepositOverlay,
+      isCreator: isCreator(),
+      gameStatus: gameData?.status,
+      offersCount: offers.length,
+      hasRecentAcceptance: offers.some(offer => 
+        offer.status === 'accepted' && 
+        new Date(offer.accepted_at || offer.timestamp).getTime() > Date.now() - 300000
+      )
+    })
+    
     // Don't show input if deposit overlay is active
     if (showDepositOverlay) return false
     
     // Show for non-creators when game is waiting for challenger
     if (isCreator()) return false
     
-    // Don't show if game is waiting for deposit
+    // Don't show if game is waiting for challenger deposit (after offer accepted)
     if (gameData?.status === 'waiting_challenger_deposit') return false
     
     // Check if any offer has been accepted recently (within 5 minutes)
@@ -826,13 +838,16 @@ const OffersContainer = ({
     if (hasRecentAcceptance) return false
     
     // Check if game is in a state where offers are accepted
-    const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger', 'open']
+    const validStatuses = ['waiting_challenger', 'awaiting_challenger', 'waiting_for_challenger', 'open', 'awaiting_deposit']
     
     // Also check if listing status allows offers (for games that are listings)
     const gameStatus = gameData?.status
     const listingStatus = gameData?.type === 'listing' ? gameData?.status : null
     
-    return validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
+    const shouldShow = validStatuses.includes(gameStatus) || validStatuses.includes(listingStatus)
+    console.log('🔍 shouldShowOfferInput result:', shouldShow)
+    
+    return shouldShow
   }
 
   // Deposit overlay handlers
