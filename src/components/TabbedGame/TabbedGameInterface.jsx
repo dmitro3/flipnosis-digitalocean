@@ -41,12 +41,13 @@ const Tab = styled.button`
   padding: 1.5rem 1rem;
   background: ${props => props.active ? 
     'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(0, 255, 65, 0.2))' : 
-    'transparent'
+    props.locked ? 'rgba(255, 0, 0, 0.1)' : 'transparent'
   };
-  color: ${props => props.active ? '#00BFFF' : 'rgba(255, 255, 255, 0.7)'};
+  color: ${props => props.active ? '#00BFFF' : 
+    props.locked ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'};
   border: none;
   border-right: 4px solid ${props => props.active ? '#00BFFF' : 'transparent'};
-  cursor: pointer;
+  cursor: ${props => props.locked ? 'not-allowed' : 'pointer'};
   font-size: 1.6rem;
   font-weight: bold;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -56,6 +57,7 @@ const Tab = styled.button`
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  opacity: ${props => props.locked ? 0.5 : 1};
   
   /* Neon glow effect for active tab */
   ${props => props.active && `
@@ -231,16 +233,43 @@ const TabbedGameInterface = ({
     }
   }, [])
   
-  // Auto-switch to game room when game starts (but only if not just joining)
+  // Auto-switch to appropriate tab based on game state
   useEffect(() => {
-    // Only auto-switch to game room if the game is already in progress
-    // and we're not just joining the game
-    if ((gameData?.status === 'active' || gameData?.status === 'in_progress') && 
-        gameData?.status !== 'waiting_challenger' && 
-        gameData?.status !== 'waiting_challenger_deposit') {
+    const gameStatus = gameData?.status
+    const isGameActive = gameStatus === 'active' || gameStatus === 'in_progress'
+    const isGameReady = gameData?.creator_deposited && gameData?.challenger_deposited
+    
+    // Calculate current tab locking
+    const currentTabLocking = {
+      nft: isGameActive,
+      chat: isGameActive,
+      game: !isGameReady && !isGameActive
+    }
+    
+    // If game becomes active, switch to Flip Suite
+    if (isGameActive) {
+      console.log('🎮 Game is active - switching to Flip Suite')
       setActiveTab('game')
     }
-  }, [gameData?.status])
+    // If game is ready but not active yet, allow access to Flip Suite
+    else if (isGameReady && !isGameActive) {
+      console.log('✅ Game is ready - allowing access to Flip Suite')
+      // Don't auto-switch, let user choose
+    }
+    // If current tab becomes locked, switch to an unlocked tab
+    else if (currentTabLocking[activeTab]) {
+      console.log('🔒 Current tab is locked, switching to available tab')
+      const availableTabs = [
+        { id: 'nft', locked: currentTabLocking.nft },
+        { id: 'chat', locked: currentTabLocking.chat },
+        { id: 'game', locked: currentTabLocking.game }
+      ]
+      const availableTab = availableTabs.find(tab => !tab.locked)
+      if (availableTab) {
+        setActiveTab(availableTab.id)
+      }
+    }
+  }, [gameData?.status, gameData?.creator_deposited, gameData?.challenger_deposited, activeTab])
 
   // Check for game status changes and auto-switch tabs when needed
   useEffect(() => {
@@ -257,26 +286,59 @@ const TabbedGameInterface = ({
     }
   }, [gameData?.status, activeTab]) // Only depend on status and activeTab, not entire gameData object
 
+  // Determine tab locking based on game state
+  const getTabLocking = () => {
+    const gameStatus = gameData?.status
+    const isGameActive = gameStatus === 'active' || gameStatus === 'in_progress'
+    const isGameWaiting = gameStatus === 'waiting_challenger' || gameStatus === 'waiting_challenger_deposit' || gameStatus === 'awaiting_deposit'
+    const isGameReady = gameData?.creator_deposited && gameData?.challenger_deposited
+    
+    const locking = {
+      nft: isGameActive, // Lock Flip Details during active game
+      chat: isGameActive, // Lock Flip Lounge during active game  
+      game: !isGameReady && !isGameActive // Lock Flip Suite until game is ready
+    }
+    
+    console.log('🔒 Tab locking state:', {
+      gameStatus,
+      isGameActive,
+      isGameReady,
+      creatorDeposited: gameData?.creator_deposited,
+      challengerDeposited: gameData?.challenger_deposited,
+      locking
+    })
+    
+    return locking
+  }
+
+  const tabLocking = getTabLocking()
+
   const tabs = [
     {
       id: 'nft',
       label: 'Flip Deets',
-      component: NFTDetailsTab
+      component: NFTDetailsTab,
+      locked: tabLocking.nft
     },
     {
       id: 'chat',
       label: 'Flip Lounge',
-      component: ChatOffersTab
+      component: ChatOffersTab,
+      locked: tabLocking.chat
     },
     {
       id: 'game',
       label: 'Flip Suite',
-      component: GameRoomTab
+      component: GameRoomTab,
+      locked: tabLocking.game
     }
   ]
 
   const handleTabChange = (tabId) => {
-    setActiveTab(tabId)
+    const tab = tabs.find(t => t.id === tabId)
+    if (tab && !tab.locked) {
+      setActiveTab(tabId)
+    }
   }
 
   const renderTabContent = (tab) => {
@@ -304,10 +366,21 @@ const TabbedGameInterface = ({
           <Tab
             key={tab.id}
             active={activeTab === tab.id}
+            locked={tab.locked}
             onClick={() => handleTabChange(tab.id)}
             tabIndex={index}
           >
+            {tab.locked && '🔒 '}
             {tab.label}
+            {tab.locked && (
+              <span style={{ 
+                fontSize: '0.8rem', 
+                marginLeft: '0.5rem',
+                opacity: 0.7 
+              }}>
+                {tab.id === 'game' ? 'Game Not Ready' : 'Game Active'}
+              </span>
+            )}
           </Tab>
         ))}
       </TabsHeader>
