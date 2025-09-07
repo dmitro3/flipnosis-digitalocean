@@ -32,24 +32,50 @@ export const useLobbyState = (gameId, address) => {
   const getGameNFTCollection = useCallback(() => gameData?.nft?.collection || gameData?.nft_collection || gameData?.nftCollection || 'Unknown Collection', [gameData?.nft?.collection, gameData?.nft_collection, gameData?.nftCollection])
 
   const isCreator = useCallback(() => {
-    if (!gameData || !address) return false
+    if (!gameData || !address) {
+      console.log('🔍 isCreator check failed:', { hasGameData: !!gameData, hasAddress: !!address })
+      return false
+    }
     
     // Use 'creator' field which is what your database actually has
     const creatorAddress = gameData.creator
-    if (!creatorAddress) return false
+    if (!creatorAddress) {
+      console.log('🔍 No creator address found in gameData:', Object.keys(gameData))
+      return false
+    }
     
-    return address.toLowerCase() === creatorAddress.toLowerCase()
+    const isCreatorResult = address.toLowerCase() === creatorAddress.toLowerCase()
+    console.log('🔍 isCreator result:', { 
+      address: address.toLowerCase(), 
+      creatorAddress: creatorAddress.toLowerCase(), 
+      isCreator: isCreatorResult 
+    })
+    
+    return isCreatorResult
   }, [gameData?.creator, address])
 
   const isJoiner = useCallback(() => {
-    if (!address || !gameData) return false
+    if (!address || !gameData) {
+      console.log('🔍 isJoiner check failed:', { hasAddress: !!address, hasGameData: !!gameData })
+      return false
+    }
     
     const challengerAddress = gameData?.challenger || gameData?.joiner || 
       gameData?.joiner_address || gameData?.challenger_address
     
-    if (!challengerAddress) return false
+    if (!challengerAddress) {
+      console.log('🔍 No challenger address found in gameData:', Object.keys(gameData))
+      return false
+    }
     
-    return address.toLowerCase() === challengerAddress.toLowerCase()
+    const isJoinerResult = address.toLowerCase() === challengerAddress.toLowerCase()
+    console.log('🔍 isJoiner result:', { 
+      address: address.toLowerCase(), 
+      challengerAddress: challengerAddress.toLowerCase(), 
+      isJoiner: isJoinerResult 
+    })
+    
+    return isJoinerResult
   }, [gameData?.challenger, gameData?.joiner, gameData?.joiner_address, gameData?.challenger_address, address])
 
   // Load game data
@@ -88,7 +114,13 @@ export const useLobbyState = (gameId, address) => {
         challenger_deposited: data.challenger_deposited
       })
 
-      setGameData(data)
+      // Ensure challenger data is properly set
+      const gameDataWithChallenger = {
+        ...data,
+        joiner: data.challenger || data.joiner || data.challenger_address || data.joiner_address
+      }
+      
+      setGameData(gameDataWithChallenger)
 
       // Start countdown if game is waiting for challenger deposit
       if (data.status === 'waiting_challenger_deposit') {

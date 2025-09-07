@@ -250,8 +250,8 @@ const GameLobby = () => {
       setGameData(prevData => ({
         ...prevData,
         deposit_deadline: newDeadline,
-        creatorDeposited: data.creatorDeposited,
-        challengerDeposited: data.challengerDeposited
+        creator_deposited: data.creatorDeposited ? 1 : 0,
+        challenger_deposited: data.challengerDeposited ? 1 : 0
       }))
     }
   }
@@ -290,9 +290,9 @@ const GameLobby = () => {
       phase: data.phase || 'game_active',
       currentRound: data.currentRound || 1,
       currentTurn: data.currentTurn,
-      creatorDeposited: data.creatorDeposited,
-      challengerDeposited: data.challengerDeposited,
-      bothDeposited: data.bothDeposited
+      creator_deposited: 1,
+      challenger_deposited: 1,
+      joiner: prevData.challenger || prevData.joiner || prevData.challenger_address || prevData.joiner_address
     }))
     
     // Transport both players to the flip suite

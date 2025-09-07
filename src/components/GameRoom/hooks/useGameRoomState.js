@@ -34,7 +34,13 @@ export const useGameRoomState = (gameId, address, gameData) => {
   const getGameCreator = () => gameData?.creator
   const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
 
-  const isCreator = () => address === getGameCreator()
+  const isCreator = () => {
+    if (!address || !gameData) return false
+    const creatorAddress = getGameCreator()
+    if (!creatorAddress) return false
+    return address.toLowerCase() === creatorAddress.toLowerCase()
+  }
+  
   const isJoiner = () => {
     if (!address || !gameData) return false
     
@@ -59,16 +65,34 @@ export const useGameRoomState = (gameId, address, gameData) => {
 
   const isMyTurn = () => {
     // Don't allow turns if game hasn't started yet
-    if (!gameData?.creator_deposited || !gameData?.challenger_deposited || gameData?.status !== 'active') {
+    const creatorDeposited = gameData?.creator_deposited === 1 || gameData?.creator_deposited === true
+    const challengerDeposited = gameData?.challenger_deposited === 1 || gameData?.challenger_deposited === true
+    
+    if (!creatorDeposited || !challengerDeposited || gameData?.status !== 'active') {
+      console.log('🔍 Game not ready for turns:', { 
+        creatorDeposited, 
+        challengerDeposited, 
+        status: gameData?.status 
+      })
       return false
     }
 
     if (gameState.phase === 'choosing') {
       // FIXED: Use the proper turn determination
       const choosingPlayer = getChoosingPlayer(gameState.currentRound)
-      return address?.toLowerCase() === choosingPlayer?.toLowerCase() && 
+      const isMyTurnResult = address?.toLowerCase() === choosingPlayer?.toLowerCase() && 
              !gameState.creatorChoice && 
              !gameState.joinerChoice
+      
+      console.log('🔍 isMyTurn choosing phase:', { 
+        address: address?.toLowerCase(), 
+        choosingPlayer: choosingPlayer?.toLowerCase(), 
+        hasCreatorChoice: !!gameState.creatorChoice,
+        hasJoinerChoice: !!gameState.joinerChoice,
+        isMyTurn: isMyTurnResult 
+      })
+      
+      return isMyTurnResult
     }
 
     // Charging phase - check if it's this player's turn to charge
@@ -370,8 +394,11 @@ export const useGameRoomState = (gameId, address, gameData) => {
     })
 
     // Auto-start the game when both players have deposited and we're in choosing phase
-    if (gameData?.creator_deposited && 
-        gameData?.challenger_deposited && 
+    const creatorDeposited = gameData?.creator_deposited === 1 || gameData?.creator_deposited === true
+    const challengerDeposited = gameData?.challenger_deposited === 1 || gameData?.challenger_deposited === true
+    
+    if (creatorDeposited && 
+        challengerDeposited && 
         gameData?.status === 'active' && 
         gameState.phase === 'choosing' && 
         !roundCountdown && 
