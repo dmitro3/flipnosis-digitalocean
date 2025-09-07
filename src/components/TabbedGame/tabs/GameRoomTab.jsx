@@ -194,17 +194,26 @@ const GameRoomTab = ({
   // Check if game is ready to play
   useEffect(() => {
     if (gameData) {
+      console.log('🎮 GameRoomTab: Full gameData object:', gameData)
+      
       const gameReady = gameData.status === 'active' || 
                        gameData.status === 'in_progress' ||
                        gameData.status === 'playing' ||
+                       (gameData.creator_deposited && gameData.challenger_deposited) ||
+                       (gameData.creatorDeposited && gameData.challengerDeposited) ||
+                       (gameData.creator_deposited && gameData.challenger_deposited) ||
                        (gameData.creator_deposited && gameData.challenger_deposited)
+      
       setIsGameReady(gameReady)
       
       console.log('🎮 GameRoomTab: Game ready check:', {
         status: gameData.status,
-        creatorDeposited: gameData.creator_deposited,
-        challengerDeposited: gameData.challenger_deposited,
-        gameReady
+        creator_deposited: gameData.creator_deposited,
+        challenger_deposited: gameData.challenger_deposited,
+        creatorDeposited: gameData.creatorDeposited,
+        challengerDeposited: gameData.challengerDeposited,
+        gameReady,
+        allKeys: Object.keys(gameData)
       })
     }
   }, [gameData])
@@ -570,6 +579,51 @@ const GameRoomTab = ({
   const renderWaitingState = () => {
     const status = gameData?.status
     
+    // Show debug info in waiting state too
+    if (process.env.NODE_ENV === 'development') {
+      return (
+        <WaitingState>
+          <WaitingIcon>🔍</WaitingIcon>
+          <WaitingTitle>Debug Mode - Game Data</WaitingTitle>
+          <WaitingDescription>
+            <div style={{ textAlign: 'left', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              <div><strong>Game Status:</strong> {status || 'undefined'}</div>
+              <div><strong>Creator Deposited:</strong> {gameData?.creator_deposited ? 'Yes' : 'No'}</div>
+              <div><strong>Challenger Deposited:</strong> {gameData?.challenger_deposited ? 'Yes' : 'No'}</div>
+              <div><strong>Game Ready:</strong> {isGameReady ? 'Yes' : 'No'}</div>
+              <div><strong>Game ID:</strong> {gameId}</div>
+              <div><strong>Address:</strong> {address}</div>
+            </div>
+            <div style={{ fontSize: '0.8rem', textAlign: 'left', maxHeight: '200px', overflow: 'auto', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '0.25rem' }}>
+              <strong>Full Game Data:</strong>
+              <pre>{JSON.stringify(gameData, null, 2)}</pre>
+            </div>
+          </WaitingDescription>
+          
+          <ActionButton onClick={() => {
+            console.log('🧪 Force starting game for testing')
+            setIsGameReady(true)
+            setGameState({
+              phase: 'choosing',
+              currentRound: 1,
+              totalRounds: 5,
+              creatorScore: 0,
+              challengerScore: 0,
+              currentTurn: gameData?.creator,
+              timeLeft: 20,
+              creatorChoice: null,
+              joinerChoice: null,
+              creatorPower: 0,
+              joinerPower: 0
+            })
+            startCountdown()
+          }}>
+            🧪 Force Start Game (Test)
+          </ActionButton>
+        </WaitingState>
+      )
+    }
+    
     if (status === 'waiting_challenger' || status === 'awaiting_challenger' || status === 'waiting_for_challenger') {
       return (
         <WaitingState>
@@ -839,7 +893,39 @@ const GameRoomTab = ({
             <div>Game Ready: {isGameReady ? 'Yes' : 'No'}</div>
             <div>Creator Deposited: {gameData?.creator_deposited ? 'Yes' : 'No'}</div>
             <div>Challenger Deposited: {gameData?.challenger_deposited ? 'Yes' : 'No'}</div>
+            <div>Game Status: {gameData?.status || 'undefined'}</div>
             <div>Game State: {JSON.stringify(gameState, null, 2)}</div>
+            <button
+              onClick={() => {
+                console.log('🧪 Force starting game for testing')
+                setIsGameReady(true)
+                setGameState({
+                  phase: 'choosing',
+                  currentRound: 1,
+                  totalRounds: 5,
+                  creatorScore: 0,
+                  challengerScore: 0,
+                  currentTurn: gameData?.creator,
+                  timeLeft: 20,
+                  creatorChoice: null,
+                  joinerChoice: null,
+                  creatorPower: 0,
+                  joinerPower: 0
+                })
+                startCountdown()
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#FF0000',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                marginTop: '0.5rem'
+              }}
+            >
+              🧪 Force Start Game (Test)
+            </button>
           </div>
         )}
 
