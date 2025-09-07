@@ -521,11 +521,20 @@ export const useGameRoomState = (gameId, address, gameData) => {
     if (creatorDeposited && 
         challengerDeposited && 
         gameData?.status === 'active' && 
-        gameState.phase === 'choosing' && 
+        (gameState.phase === 'waiting' || gameState.phase === 'choosing') && 
         !roundCountdown && 
         gameState.currentRound <= 5) {
       
       console.log('🚀 Auto-starting game countdown!')
+      
+      // Set the game to choosing phase and start countdown
+      setGameState(prev => ({
+        ...prev,
+        phase: 'choosing',
+        currentPlayer: getFirstPlayer(prev.currentRound),
+        roundPhase: 'player1_choice'
+      }))
+      
       startRoundCountdown()
     }
   }, [gameData, gameState.phase, roundCountdown, gameState.currentRound])

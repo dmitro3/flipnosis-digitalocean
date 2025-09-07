@@ -368,7 +368,7 @@ const GameRoom = ({
     getGameCreator,
     getGameJoiner,
     getFirstPlayer
-  } = useGameRoomState(gameId, gameData?.creator, gameData)
+  } = useGameRoomState(gameId, address, gameData)
 
   // Connect to game room when component mounts
   useEffect(() => {
