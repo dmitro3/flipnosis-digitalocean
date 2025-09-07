@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
+import socketService from '../../services/SocketService'
 
 // Tab Components
 import { NFTDetailsTab, ChatOffersTab, GameRoomTab } from './tabs'
@@ -212,26 +213,37 @@ const TabbedGameInterface = ({
   const [activeTab, setActiveTab] = useState('nft')
   const { address } = useWallet()
   
-  // Listen for navigation events
+  // Listen for navigation events and Socket.io events
   useEffect(() => {
     const handleSwitchToFlipSuite = (event) => {
-      console.log('🎯 Received switchToFlipSuite event:', event.detail)
+      console.log('🎯 TabbedGameInterface: Received switchToFlipSuite event:', event.detail)
       setActiveTab('game')
     }
     
     const handleSwitchToLounge = (event) => {
-      console.log('🎯 Received switchToLoungeTab event')
+      console.log('🎯 TabbedGameInterface: Received switchToLoungeTab event')
       setActiveTab('chat')
+    }
+    
+    // Listen for game_started event from Socket.io
+    const handleGameStarted = (data) => {
+      console.log('🎮 TabbedGameInterface: Game started event received:', data)
+      if (data.gameId === gameId) {
+        console.log('🎮 TabbedGameInterface: Switching to Flip Suite due to game started')
+        setActiveTab('game')
+      }
     }
     
     window.addEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
     window.addEventListener('switchToLoungeTab', handleSwitchToLounge)
+    socketService.on('game_started', handleGameStarted)
     
     return () => {
       window.removeEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
       window.removeEventListener('switchToLoungeTab', handleSwitchToLounge)
+      socketService.off('game_started', handleGameStarted)
     }
-  }, [])
+  }, [gameId])
   
   // Auto-switch to appropriate tab based on game state
   useEffect(() => {
@@ -239,22 +251,32 @@ const TabbedGameInterface = ({
     const isGameActive = gameStatus === 'active' || gameStatus === 'in_progress'
     const isGameReady = gameData?.creator_deposited && gameData?.challenger_deposited
     
-    // Calculate current tab locking
+    // Calculate current tab locking (same logic as getTabLocking)
     const currentTabLocking = {
-      nft: isGameActive,
-      chat: isGameActive,
-      game: !isGameReady && !isGameActive
+      nft: isGameActive || isGameReady, // Lock Flip Details during active game OR when both players deposited
+      chat: isGameActive || isGameReady, // Lock Flip Lounge during active game OR when both players deposited
+      game: !isGameReady && !isGameActive // Lock Flip Suite until game is ready
     }
+    
+    console.log('🎯 Tab switching logic:', {
+      gameStatus,
+      isGameActive,
+      isGameReady,
+      creatorDeposited: gameData?.creator_deposited,
+      challengerDeposited: gameData?.challenger_deposited,
+      currentTab: activeTab,
+      tabLocking: currentTabLocking
+    })
     
     // If game becomes active, switch to Flip Suite
     if (isGameActive) {
       console.log('🎮 Game is active - switching to Flip Suite')
       setActiveTab('game')
     }
-    // If game is ready but not active yet, allow access to Flip Suite
+    // If both players have deposited (game is ready), switch to Flip Suite and lock other tabs
     else if (isGameReady && !isGameActive) {
-      console.log('✅ Game is ready - allowing access to Flip Suite')
-      // Don't auto-switch, let user choose
+      console.log('✅ Both players deposited - switching to Flip Suite and locking other tabs')
+      setActiveTab('game')
     }
     // If current tab becomes locked, switch to an unlocked tab
     else if (currentTabLocking[activeTab]) {
@@ -290,12 +312,11 @@ const TabbedGameInterface = ({
   const getTabLocking = () => {
     const gameStatus = gameData?.status
     const isGameActive = gameStatus === 'active' || gameStatus === 'in_progress'
-    const isGameWaiting = gameStatus === 'waiting_challenger' || gameStatus === 'waiting_challenger_deposit' || gameStatus === 'awaiting_deposit'
     const isGameReady = gameData?.creator_deposited && gameData?.challenger_deposited
     
     const locking = {
-      nft: isGameActive, // Lock Flip Details during active game
-      chat: isGameActive, // Lock Flip Lounge during active game  
+      nft: isGameActive || isGameReady, // Lock Flip Details during active game OR when both players deposited
+      chat: isGameActive || isGameReady, // Lock Flip Lounge during active game OR when both players deposited
       game: !isGameReady && !isGameActive // Lock Flip Suite until game is ready
     }
     
