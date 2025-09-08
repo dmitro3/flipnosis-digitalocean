@@ -92,11 +92,20 @@ export const useGameEngine = (gameId, address, gameData) => {
     
     try {
       setGameState(prev => {
+        // Determine the correct phase based on server data
+        let gamePhase = data.phase || prev.phase
+        
+        // If server says game is active but doesn't specify phase, default to choosing
+        if (data.status === 'active' && !data.phase && prev.phase === 'waiting') {
+          gamePhase = 'choosing'
+          console.log('🎮 NEW GAME ENGINE - Server says active but no phase, defaulting to choosing')
+        }
+        
         const newState = {
           ...prev,
           // Update from server state (only if provided)
           status: data.status || prev.status,
-          phase: data.phase || prev.phase,
+          phase: gamePhase,
           creator: data.creator || prev.creator,
           challenger: data.challenger || prev.challenger,
           currentTurn: data.currentTurn || prev.currentTurn,
