@@ -194,14 +194,32 @@ function initializeSocketIO(server, dbService) {
       
       // Send chat history if exists
       if (dbService) {
-        dbService.getChatHistory(roomId.replace('game_', ''), 50)
+        const gameIdForHistory = roomId.replace('game_', '')
+        console.log('📜 Loading chat history for game:', gameIdForHistory)
+        dbService.getChatHistory(gameIdForHistory, 50)
           .then(messages => {
+            console.log('📜 Chat history loaded:', messages?.length || 0, 'messages')
             socket.emit('chat_history', {
               roomId,
-              messages
+              messages: messages || []
             })
           })
-          .catch(err => console.error('Error loading chat history:', err))
+          .catch(err => console.error('❌ Error loading chat history:', err))
+        
+        // Load and send active offers
+        dbService.getActiveOffers(gameIdForHistory)
+          .then(offers => {
+            console.log('💰 Active offers loaded:', offers?.length || 0, 'offers')
+            if (offers && offers.length > 0) {
+              socket.emit('active_offers', {
+                roomId,
+                offers: offers
+              })
+            }
+          })
+          .catch(err => console.error('❌ Error loading active offers:', err))
+      } else {
+        console.log('⚠️ Database service not available for chat history')
       }
     })
 
@@ -222,11 +240,22 @@ function initializeSocketIO(server, dbService) {
       
       // Save to database
       if (dbService) {
+        console.log('💾 Saving chat message to database:', {
+          gameId: socketInfo.gameId,
+          from: message.from,
+          message: message.message
+        })
         dbService.saveChatMessage(
           socketInfo.gameId,
           message.from,
-          message.message
-        ).catch(err => console.error('Error saving chat:', err))
+          message.message,
+          'chat',
+          null
+        ).then(id => {
+          console.log('✅ Chat message saved with ID:', id)
+        }).catch(err => console.error('❌ Error saving chat:', err))
+      } else {
+        console.log('⚠️ Database service not available for saving chat')
       }
     })
 
@@ -241,6 +270,20 @@ function initializeSocketIO(server, dbService) {
         address: data.address || socketInfo.address,
         cryptoAmount: data.cryptoAmount,
         timestamp: new Date().toISOString()
+      }
+      
+      // Save offer to database
+      if (dbService) {
+        dbService.saveChatMessage(
+          socketInfo.gameId,
+          offer.address,
+          `Made a crypto offer for ${offer.cryptoAmount} ETH`,
+          'offer',
+          JSON.stringify({
+            cryptoAmount: offer.cryptoAmount,
+            offerId: offer.id
+          })
+        ).catch(err => console.error('Error saving crypto offer:', err))
       }
       
       // Broadcast to room
@@ -269,16 +312,42 @@ function initializeSocketIO(server, dbService) {
       console.log(`🎯 Offer accepted: Creator ${creator} accepts Challenger ${challenger} (Game: ${gameId})`)
       
       try {
-        // STEP 1: Update offer status in database
+        // STEP 1: Update offer status in database (skip if it's a real-time offer)
         if (offerId && dbService && dbService.db) {
-          await new Promise((resolve, reject) => {
-            dbService.db.run(
-              'UPDATE offers SET status = ?, accepted_at = ? WHERE id = ?',
-              ['accepted', new Date().toISOString(), offerId],
-              (err) => err ? reject(err) : resolve()
-            )
-          })
-          console.log(`✅ Marked offer ${offerId} as accepted`)
+          try {
+            await new Promise((resolve, reject) => {
+              dbService.db.run(
+                'UPDATE offers SET status = ?, accepted_at = ? WHERE id = ?',
+                ['accepted', new Date().toISOString(), offerId],
+                (err) => {
+                  if (err) {
+                    console.log(`📋 Offer ${offerId} not found in database (real-time offer) - skipping database update`)
+                    resolve() // Don't reject, just skip
+                  } else {
+                    resolve()
+                  }
+                }
+              )
+            })
+            console.log(`✅ Marked offer ${offerId} as accepted`)
+          } catch (error) {
+            console.log(`📋 Could not update offer in database (likely real-time offer): ${error.message}`)
+          }
+        }
+        
+        // Save offer acceptance to chat history
+        if (dbService) {
+          dbService.saveChatMessage(
+            gameId,
+            creator,
+            `Accepted offer from ${challenger}`,
+            'offer_accepted',
+            JSON.stringify({
+              challenger: challenger,
+              cryptoAmount: data.cryptoAmount,
+              offerId: offerId
+            })
+          ).catch(err => console.error('Error saving offer acceptance:', err))
         }
         
         // STEP 2: Update game with challenger and start deposit countdown
@@ -444,30 +513,40 @@ function initializeSocketIO(server, dbService) {
       // Store timer reference
       gameStateManager.timers.set(gameId, timer)
       
-      // Send initial deposit stage notification to ENTIRE ROOM
-      io.to(socketInfo.roomId).emit('deposit_stage_started', {
-        gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
-        creator: creator,
-        challenger: challenger,
-        timeRemaining: 120,
-        creatorDeposited: true, // NFT already deposited
-        challengerDeposited: false
-      })
-      
-      console.log('🎯 Sent deposit_stage_started with creatorDeposited: true')
-      
-      // Send specific event to challenger (Player 2) to show deposit overlay
-      const challengerSocketId = userSockets.get(challenger.toLowerCase())
-      if (challengerSocketId) {
-        io.to(challengerSocketId).emit('your_offer_accepted', {
+        // Send initial deposit stage notification to ENTIRE ROOM
+        io.to(socketInfo.roomId).emit('deposit_stage_started', {
+          gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
+          creator: creator,
+          challenger: challenger,
+          timeRemaining: 120,
+          creatorDeposited: true, // NFT already deposited
+          challengerDeposited: false
+        })
+        
+        console.log('🎯 Sent deposit_stage_started to room:', socketInfo.roomId)
+        
+        // Send specific event to challenger (Player 2) to show deposit overlay
+        // Send to entire room so both players get the event
+        io.to(socketInfo.roomId).emit('your_offer_accepted', {
           gameId: socketInfo.roomId, // Use full roomId (includes game_ prefix)
           challenger: challenger,
           cryptoAmount: data.cryptoAmount,
           finalPrice: data.cryptoAmount,
           timestamp: new Date().toISOString()
         })
-        console.log(`🎯 Sent your_offer_accepted to challenger: ${challenger}`)
-      }
+        console.log(`🎯 Sent your_offer_accepted to entire room for challenger: ${challenger}`)
+        
+        // Also send offer_accepted event for compatibility with different frontend handlers
+        io.to(socketInfo.roomId).emit('offer_accepted', {
+          gameId: socketInfo.roomId,
+          challenger: challenger,
+          creator: creator,
+          cryptoAmount: data.cryptoAmount,
+          timestamp: new Date().toISOString()
+        })
+        console.log(`🎯 Sent offer_accepted to entire room`)
+        
+        console.log(`✅ All deposit stage events sent successfully to room: ${socketInfo.roomId}`)
       } catch (error) {
         console.error('❌ Error processing offer acceptance:', error)
         

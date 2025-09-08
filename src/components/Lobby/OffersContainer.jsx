@@ -346,6 +346,14 @@ const OffersContainer = ({
       setOffers(prev => [...prev, newOffer])
     }
 
+    // Active offers handler (when rejoining room)
+    const handleActiveOffers = (data) => {
+      console.log('💰 Active offers loaded:', data.offers?.length || 0, 'offers')
+      if (data.offers && Array.isArray(data.offers)) {
+        setOffers(data.offers)
+      }
+    }
+
     // Real-time offer acceptance handler
     const handleOfferAcceptance = (data) => {
       console.log('✅ Real-time offer acceptance received:', data)
@@ -568,6 +576,7 @@ const OffersContainer = ({
 
     // Register Socket.io event listeners
     socketService.on('crypto_offer', handleOffer)
+    socketService.on('active_offers', handleActiveOffers)
     socketService.on('deposit_stage_started', handleDepositStageStarted)
     socketService.on('deposit_countdown', handleDepositCountdown)
     socketService.on('deposit_confirmed', handleDepositConfirmed)
@@ -577,6 +586,7 @@ const OffersContainer = ({
     // Cleanup
     return () => {
       socketService.off('crypto_offer', handleOffer)
+      socketService.off('active_offers', handleActiveOffers)
       socketService.off('deposit_stage_started', handleDepositStageStarted)
       socketService.off('deposit_countdown', handleDepositCountdown)
       socketService.off('deposit_confirmed', handleDepositConfirmed)

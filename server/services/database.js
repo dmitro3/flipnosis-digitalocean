@@ -174,7 +174,7 @@ class DatabaseService {
   async saveChatMessage(roomId, senderAddress, message, messageType = 'chat', messageData = null) {
     return new Promise((resolve, reject) => {
       this.db.run(`
-        INSERT INTO chat_messages (room_id, sender_address, message, message_type, message_data)
+        INSERT INTO messages (room_id, sender_address, message, message_type, message_data)
         VALUES (?, ?, ?, ?, ?)
       `, [roomId, senderAddress, message, messageType, messageData ? JSON.stringify(messageData) : null], function(err) {
         if (err) reject(err)
@@ -186,7 +186,7 @@ class DatabaseService {
   async getChatHistory(roomId, limit = 100) {
     return new Promise((resolve, reject) => {
       this.db.all(`
-        SELECT * FROM chat_messages 
+        SELECT * FROM messages 
         WHERE room_id = ? 
         ORDER BY created_at ASC 
         LIMIT ?
@@ -199,6 +199,20 @@ class DatabaseService {
           }))
           resolve(parsedMessages)
         }
+      })
+    })
+  }
+
+  // Get active offers for a game
+  async getActiveOffers(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.all(`
+        SELECT * FROM offers 
+        WHERE listing_id = ? AND status = 'pending'
+        ORDER BY created_at DESC
+      `, [gameId], (err, offers) => {
+        if (err) reject(err)
+        else resolve(offers || [])
       })
     })
   }
