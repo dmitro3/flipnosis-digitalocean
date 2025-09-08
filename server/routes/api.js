@@ -936,6 +936,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   router.get('/games/:gameId', (req, res) => {
     const { gameId } = req.params
     
+    console.log(`🔍 API: Fetching game data for gameId: ${gameId}`)
+    
     db.get('SELECT * FROM games WHERE id = ? OR blockchain_game_id = ?', [gameId, gameId], (err, game) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' })
@@ -996,6 +998,8 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       
       // Add parsed coin data to response
       game.coinData = coinData
+      
+      console.log(`🔍 API: Game data found - challenger: ${game.challenger}, joiner: ${game.joiner}, status: ${game.status}`)
       
       // Get round information and accepted offer data
       db.all('SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number', [gameId], (err, rounds) => {
