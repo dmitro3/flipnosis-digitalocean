@@ -385,6 +385,12 @@ export const useLobbyState = (gameId, address) => {
     const handleGameStarted = (data) => {
       console.log('🎮 Game started event in useLobbyState:', data)
       if (data.gameId === gameId || data.gameId === `game_${gameId}`) {
+        // Extract challenger/joiner from various possible fields
+        const challengerAddress = data.challenger || data.joiner || data.joiner_address || 
+                                 data.challenger_address
+        
+        console.log('🎮 Updating gameData with challenger:', challengerAddress)
+        
         setGameData(prev => ({
           ...prev,
           status: 'active',
@@ -393,7 +399,9 @@ export const useLobbyState = (gameId, address) => {
           currentTurn: data.currentTurn || data.creator,
           creator_deposited: 1,
           challenger_deposited: 1,
-          challenger: data.challenger || prev.challenger
+          challenger: challengerAddress,
+          joiner: challengerAddress, // Also set joiner field for compatibility
+          joiner_address: challengerAddress
         }))
         showSuccess('Game is starting!')
       }
@@ -403,11 +411,26 @@ export const useLobbyState = (gameId, address) => {
     const handleDepositConfirmed = (data) => {
       console.log('💰 Deposit confirmed in useLobbyState:', data)
       if (data.gameId === gameId || data.gameId === `game_${gameId}`) {
+        // Extract challenger/joiner from deposit event  
+        const challengerAddress = data.challenger || data.joiner || data.joiner_address || 
+                                 data.challenger_address
+        
         setGameData(prev => ({
           ...prev,
           creator_deposited: data.creatorDeposited ? 1 : prev.creator_deposited,
-          challenger_deposited: data.challengerDeposited ? 1 : prev.challenger_deposited
+          challenger_deposited: data.challengerDeposited ? 1 : prev.challenger_deposited,
+          challenger: challengerAddress || prev.challenger,
+          joiner: challengerAddress || prev.joiner,
+          joiner_address: challengerAddress || prev.joiner_address,
+          // If both deposited, auto-update status
+          status: (data.creatorDeposited && data.challengerDeposited) ? 'active' : prev.status,
+          phase: (data.creatorDeposited && data.challengerDeposited) ? 'active' : prev.phase
         }))
+        
+        // Check if both players have deposited
+        if (data.bothDeposited || (data.creatorDeposited && data.challengerDeposited)) {
+          console.log('🎮 Both deposits confirmed, game should start!')
+        }
       }
     }
 
@@ -415,12 +438,21 @@ export const useLobbyState = (gameId, address) => {
     const handleGameStateUpdate = (data) => {
       console.log('📊 Game state update in useLobbyState:', data)
       if (data.gameId === gameId) {
+        // Extract challenger/joiner from state update
+        const challengerAddress = data.challenger || data.joiner || data.joiner_address || 
+                                 data.challenger_address
+        
         setGameData(prev => ({
           ...prev,
-          currentRound: data.currentRound,
-          creatorScore: data.creatorScore,
-          challengerScore: data.challengerScore,
-          currentTurn: data.currentTurn
+          currentRound: data.currentRound || prev.currentRound,
+          creatorScore: typeof data.creatorScore === 'number' ? data.creatorScore : prev.creatorScore,
+          challengerScore: typeof data.challengerScore === 'number' ? data.challengerScore : prev.challengerScore,
+          currentTurn: data.currentTurn || prev.currentTurn,
+          status: data.status || prev.status,
+          phase: data.phase || prev.phase,
+          challenger: challengerAddress || prev.challenger,
+          joiner: challengerAddress || prev.joiner,
+          joiner_address: challengerAddress || prev.joiner_address
         }))
       }
     }
