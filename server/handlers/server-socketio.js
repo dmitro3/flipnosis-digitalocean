@@ -194,32 +194,14 @@ function initializeSocketIO(server, dbService) {
       
       // Send chat history if exists
       if (dbService) {
-        const gameIdForHistory = roomId.replace('game_', '')
-        console.log('📜 Loading chat history for game:', gameIdForHistory)
-        dbService.getChatHistory(gameIdForHistory, 50)
+        dbService.getChatHistory(roomId.replace('game_', ''), 50)
           .then(messages => {
-            console.log('📜 Chat history loaded:', messages?.length || 0, 'messages')
             socket.emit('chat_history', {
               roomId,
-              messages: messages || []
+              messages
             })
           })
-          .catch(err => console.error('❌ Error loading chat history:', err))
-        
-        // Load and send active offers
-        dbService.getActiveOffers(gameIdForHistory)
-          .then(offers => {
-            console.log('💰 Active offers loaded:', offers?.length || 0, 'offers')
-            if (offers && offers.length > 0) {
-              socket.emit('active_offers', {
-                roomId,
-                offers: offers
-              })
-            }
-          })
-          .catch(err => console.error('❌ Error loading active offers:', err))
-      } else {
-        console.log('⚠️ Database service not available for chat history')
+          .catch(err => console.error('Error loading chat history:', err))
       }
     })
 
@@ -240,22 +222,11 @@ function initializeSocketIO(server, dbService) {
       
       // Save to database
       if (dbService) {
-        console.log('💾 Saving chat message to database:', {
-          gameId: socketInfo.gameId,
-          from: message.from,
-          message: message.message
-        })
         dbService.saveChatMessage(
           socketInfo.gameId,
           message.from,
-          message.message,
-          'chat',
-          null
-        ).then(id => {
-          console.log('✅ Chat message saved with ID:', id)
-        }).catch(err => console.error('❌ Error saving chat:', err))
-      } else {
-        console.log('⚠️ Database service not available for saving chat')
+          message.message
+        ).catch(err => console.error('Error saving chat:', err))
       }
     })
 
@@ -270,20 +241,6 @@ function initializeSocketIO(server, dbService) {
         address: data.address || socketInfo.address,
         cryptoAmount: data.cryptoAmount,
         timestamp: new Date().toISOString()
-      }
-      
-      // Save offer to database
-      if (dbService) {
-        dbService.saveChatMessage(
-          socketInfo.gameId,
-          offer.address,
-          `Made a crypto offer for ${offer.cryptoAmount} ETH`,
-          'offer',
-          JSON.stringify({
-            cryptoAmount: offer.cryptoAmount,
-            offerId: offer.id
-          })
-        ).catch(err => console.error('Error saving crypto offer:', err))
       }
       
       // Broadcast to room
@@ -335,31 +292,43 @@ function initializeSocketIO(server, dbService) {
           }
         }
         
-        // Save offer acceptance to chat history
-        if (dbService) {
-          dbService.saveChatMessage(
-            gameId,
-            creator,
-            `Accepted offer from ${challenger}`,
-            'offer_accepted',
-            JSON.stringify({
-              challenger: challenger,
-              cryptoAmount: data.cryptoAmount,
-              offerId: offerId
-            })
-          ).catch(err => console.error('Error saving offer acceptance:', err))
-        }
-        
         // STEP 2: Update game with challenger and start deposit countdown
         if (dbService && dbService.db) {
-          await new Promise((resolve, reject) => {
-            dbService.db.run(
-              'UPDATE games SET challenger = ?, joiner = ?, status = ?, deposit_deadline = ? WHERE id = ?',
-              [challenger, challenger, 'awaiting_deposits', new Date(Date.now() + 2 * 60 * 1000).toISOString(), gameId],
-              (err) => err ? reject(err) : resolve()
-            )
-          })
-          console.log(`✅ Updated game ${gameId} with challenger: ${challenger}`)
+          try {
+            await new Promise((resolve, reject) => {
+              console.log(`🔍 ATTEMPTING DATABASE UPDATE: gameId=${gameId}, challenger=${challenger}`)
+              dbService.db.run(
+                'UPDATE games SET challenger = ?, joiner = ?, status = ?, deposit_deadline = ? WHERE id = ?',
+                [challenger, challenger, 'awaiting_deposits', new Date(Date.now() + 2 * 60 * 1000).toISOString(), gameId],
+                function(err) {
+                  if (err) {
+                    console.error(`❌ DATABASE UPDATE ERROR:`, err)
+                    reject(err)
+                  } else {
+                    console.log(`🔍 DATABASE UPDATE RESULT: changes=${this.changes}, lastID=${this.lastID}`)
+                    if (this.changes === 0) {
+                      console.error(`❌ NO ROWS UPDATED! gameId ${gameId} not found in database`)
+                      // Let's try to find what gameIds actually exist
+                      dbService.db.all('SELECT id FROM games ORDER BY created_at DESC LIMIT 5', [], (err, rows) => {
+                        if (!err) {
+                          console.log(`🔍 Recent game IDs in database:`, rows.map(r => r.id))
+                        }
+                      })
+                    } else {
+                      console.log(`✅ Successfully updated ${this.changes} row(s) for game ${gameId}`)
+                    }
+                    resolve()
+                  }
+                }
+              )
+            })
+            console.log(`✅ Database update completed for game ${gameId} with challenger: ${challenger}`)
+          } catch (error) {
+            console.error(`❌ Database update failed for game ${gameId}:`, error)
+            throw error
+          }
+        } else {
+          console.error(`❌ Database service not available for updating game ${gameId}`)
         }
         
         // STEP 3: Create or update game state
