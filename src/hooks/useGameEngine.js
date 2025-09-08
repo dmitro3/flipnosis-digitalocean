@@ -169,75 +169,78 @@ export const useGameEngine = (gameId, address, gameData) => {
   const handleRoundResult = useCallback((data) => {
     console.log('🎲 NEW GAME ENGINE - Round result from server:', data)
     
+    // Set up synchronized flip animation
+    const flipAnimation = data.flipAnimation || {
+      duration: 3000,
+      rotations: 10,
+      result: data.result
+    }
+    
     setGameState(prev => ({
       ...prev,
       flipResult: data.result,
       roundWinner: data.roundWinner,
       creatorScore: data.creatorScore || prev.creatorScore,
       challengerScore: data.challengerScore || prev.challengerScore,
-      currentRound: data.currentRound || prev.currentRound,
-      phase: 'results',
-      showResults: true,
-      // Reset choices and power for next round
-      creatorChoice: null,
-      challengerChoice: null,
-      creatorPower: 0,
-      challengerPower: 0
+      currentRound: data.round || prev.currentRound,
+      phase: 'flipping',
+      showResults: false,
+      // Trigger synchronized flip animation
+      flipAnimation: {
+        ...flipAnimation,
+        seed: data.seed, // Use server seed for deterministic animation
+        isActive: true,
+        startTime: Date.now()
+      }
     }))
     
-    // Show result message
-    const isWinner = data.roundWinner === address
-    if (isWinner) {
-      showSuccess(`🎉 You won round ${data.currentRound || 'this'}! Coin landed ${data.result}!`)
-    } else {
-      showInfo(`😔 You lost round ${data.currentRound || 'this'}. Coin landed ${data.result}.`)
-    }
-    
-    // Check if game is over (first to 3 wins)
-    const creatorWins = data.creatorScore || 0
-    const challengerWins = data.challengerScore || 0
-    
-    if (creatorWins >= 3 || challengerWins >= 3) {
-      // Game over
-      setTimeout(() => {
-        const gameWinner = creatorWins >= 3 ? prev.creator : prev.challenger
-        setGameState(prev => ({
-          ...prev,
-          phase: 'completed',
-          gameWinner,
-          showResults: false
-        }))
-        
-        if (gameWinner === address) {
-          showSuccess('🏆 You won the game! Congratulations!')
+    // Show result message after animation
+    setTimeout(() => {
+      const playerFlipped = data.player
+      const isPlayerWinner = data.roundWinner === playerFlipped
+      const isMyFlip = playerFlipped === address
+      
+      if (isMyFlip) {
+        if (isPlayerWinner) {
+          showSuccess(`🎉 You won! Coin landed ${data.result}!`)
         } else {
-          showInfo('😔 You lost the game. Better luck next time!')
+          showInfo(`😔 You lost. Coin landed ${data.result}.`)
         }
-      }, 3000)
-    } else {
-      // Continue to next round - alternate who goes first
-      setTimeout(() => {
-        setGameState(prev => {
-          const nextRound = (data.currentRound || prev.currentRound) + 1
-          // Alternate first player each round: Creator goes first in odd rounds, Challenger in even
-          const nextFirstPlayer = nextRound % 2 === 1 ? prev.creator : prev.challenger
-          
-          return {
+      } else {
+        showInfo(`${isPlayerWinner ? '😔' : '🎉'} Opponent ${isPlayerWinner ? 'won' : 'lost'}. Coin landed ${data.result}.`)
+      }
+      
+      setGameState(prev => ({
+        ...prev,
+        phase: 'results',
+        showResults: true,
+        flipAnimation: null
+      }))
+      
+      // Check if game is over (first to 3 wins)
+      const creatorWins = data.creatorScore || 0
+      const challengerWins = data.challengerScore || 0
+      
+      if (creatorWins >= 3 || challengerWins >= 3) {
+        // Game over
+        setTimeout(() => {
+          const gameWinner = creatorWins >= 3 ? prev.creator : prev.challenger
+          setGameState(prev => ({
             ...prev,
-            phase: 'choosing',
-            currentRound: nextRound,
-            currentTurn: nextFirstPlayer,
-            showResults: false,
-            creatorChoice: null,
-            challengerChoice: null,
-            flipResult: null,
-            roundWinner: null
+            phase: 'completed',
+            gameWinner,
+            showResults: false
+          }))
+          
+          if (gameWinner === address) {
+            showSuccess('🏆 You won the game! Congratulations!')
+          } else {
+            showInfo('😔 You lost the game. Better luck next time!')
           }
-        })
-        
-        showInfo(`🎮 Round ${(data.currentRound || 1) + 1} starting!`)
-      }, 3000)
-    }
+        }, 3000)
+      }
+    }, flipAnimation.duration)
+    
   }, [address, showSuccess, showInfo])
   
   const handleDepositConfirmed = useCallback((data) => {
@@ -245,6 +248,29 @@ export const useGameEngine = (gameId, address, gameData) => {
     
     if (data.bothDeposited) {
       showInfo('Both players deposited! Game starting...')
+    }
+  }, [showInfo])
+  
+  const handleRoundComplete = useCallback((data) => {
+    console.log('🔄 Round complete, starting next round:', data)
+    
+    setGameState(prev => ({
+      ...prev,
+      currentRound: data.nextRound,
+      currentTurn: data.currentTurn,
+      phase: 'choosing',
+      creatorChoice: null,
+      challengerChoice: null,
+      creatorPower: 0,
+      challengerPower: 0,
+      flipResult: null,
+      roundWinner: null,
+      showResults: false,
+      flipAnimation: null
+    }))
+    
+    if (data.message) {
+      showInfo(data.message)
     }
   }, [showInfo])
   
@@ -275,12 +301,15 @@ export const useGameEngine = (gameId, address, gameData) => {
   const chargePower = useCallback((power) => {
     if (gameState.phase !== 'charging' || !isMyTurn()) return
     
-    console.log('⚡ Charging power:', power)
+    // Clamp power to 1-10 range
+    const clampedPower = Math.max(1, Math.min(10, power))
+    
+    console.log('⚡ Charging power:', clampedPower)
     
     // Update local state immediately for smooth UI
     setGameState(prev => ({
       ...prev,
-      [isCreator() ? 'creatorPower' : 'challengerPower']: power,
+      [isCreator() ? 'creatorPower' : 'challengerPower']: clampedPower,
       isCharging: true
     }))
   }, [gameState.phase, isMyTurn, isCreator])
@@ -406,6 +435,7 @@ export const useGameEngine = (gameId, address, gameData) => {
         socketService.on('game_started', handleGameStarted)
         socketService.on('game_ready', handleGameReady)
         socketService.on('round_result', handleRoundResult)
+        socketService.on('round_complete', handleRoundComplete)
         socketService.on('deposit_confirmed', handleDepositConfirmed)
         
         // Store cleanup function
@@ -414,6 +444,7 @@ export const useGameEngine = (gameId, address, gameData) => {
           socketService.off('game_started', handleGameStarted)
           socketService.off('game_ready', handleGameReady)
           socketService.off('round_result', handleRoundResult)
+          socketService.off('round_complete', handleRoundComplete)
           socketService.off('deposit_confirmed', handleDepositConfirmed)
         }
         
@@ -448,7 +479,7 @@ export const useGameEngine = (gameId, address, gameData) => {
         cleanupRef.current()
       }
     }
-  }, [gameId, address, handleGameStateUpdate, handleGameStarted, handleGameReady, handleRoundResult, handleDepositConfirmed, requestGameState, showError])
+  }, [gameId, address, handleGameStateUpdate, handleGameStarted, handleGameReady, handleRoundResult, handleRoundComplete, handleDepositConfirmed, requestGameState, showError])
   
   // === GAME DATA SYNC ===
   useEffect(() => {

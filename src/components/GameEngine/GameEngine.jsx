@@ -180,12 +180,15 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
     
     console.log('⚡ Starting power charge')
     setIsCharging(true)
-    setChargingPower(0)
+    setChargingPower(1)
     
+    const startTime = Date.now()
     const interval = setInterval(() => {
       setChargingPower(prev => {
-        // Power increases from 0 to 10 over 5 seconds (2 power per second)
-        const newPower = Math.min(10, prev + 0.1) // 0.1 per 50ms = 5 seconds to max power 10
+        // Power increases from 1 to 10 over 4.5 seconds (clear 1-10 scale)
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / 4500, 1) // 4.5 seconds to reach max
+        const newPower = Math.min(10, Math.max(1, 1 + (progress * 9))) // 1-10 range
         chargePower(newPower)
         return newPower
       })
@@ -197,7 +200,7 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
   const stopCharging = () => {
     if (!isCharging) return
     
-    const finalPower = Math.round(chargingPower * 10) / 10 // Round to 1 decimal
+    const finalPower = Math.round(chargingPower) // Round to nearest integer 1-10
     console.log('⚡ Stopping power charge at:', finalPower, '/ 10')
     
     if (chargingInterval) {
@@ -329,7 +332,7 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
               {isCharging ? '⚡ Hold to Charge Power ⚡' : 'Ready to Flip'}
             </div>
             <div style={{ marginBottom: '0.5rem', fontSize: '1.5rem', color: '#00ff88' }}>
-              {isMyTurn ? chargingPower.toFixed(1) : (isCreator ? gameState.challengerPower : gameState.creatorPower).toFixed(1)} / 10
+              {isMyTurn ? Math.round(chargingPower) : Math.round(isCreator ? gameState.challengerPower : gameState.creatorPower)} / 10
             </div>
             <PowerBar>
               <PowerFill power={(isMyTurn ? chargingPower : (isCreator ? gameState.challengerPower : gameState.creatorPower)) * 10} />

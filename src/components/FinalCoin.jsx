@@ -461,7 +461,7 @@ const FinalCoin = ({
     }
   }, [isCharging, creatorPower, joinerPower])
 
-  // Flip animation
+  // Flip animation - SYNCHRONIZED SERVER-DRIVEN (like flip deets page)
   useEffect(() => {
     if (!isFlipping || !coinRef.current) {
       console.log('🔄 Flip animation blocked:', { isFlipping, hasCoin: !!coinRef.current })
@@ -477,63 +477,67 @@ const FinalCoin = ({
     const coin = coinRef.current
     const physics = getMaterialPhysics(material)
     
-    // Calculate total power
+    // Use clamped power (1-10) for consistent animation
     const totalPower = Math.max(1, Math.min(10, creatorPower + joinerPower))
     
-    // Deterministic random based on seed if provided
-    const getRandom = () => {
-      if (seed !== null) {
-        // Simple deterministic random based on seed
-        const x = Math.sin(seed) * 10000
-        return x - Math.floor(x)
-      }
-      return Math.random()
-    }
-
-         // Calculate flip parameters - simplified for test flip
-     const totalRotations = 3 // Fixed number of rotations for consistent animation
-     
-     // Final rotation to show result
-     // When X rotation is at PI/2 (90°), we see heads
-     // When X rotation is at 3PI/2 (270°), we see tails
-     const basePosition = Math.PI / 2 // Starting position (heads visible)
-     const finalRotation = flipResult === 'heads' ? basePosition : basePosition + Math.PI
-     const totalRotation = (totalRotations * Math.PI * 2) + (finalRotation - basePosition)
+    console.log('🎲 Using server seed for deterministic animation:', { seed, totalPower })
+    
+    // Calculate flip parameters - CLEAN X-AXIS ROTATION ONLY (like flip deets page)
+    // Power determines number of rotations: 1 = 5 rotations, 10 = 25 rotations
+    const minRotations = 5
+    const maxRotations = 25
+    const powerBasedRotations = minRotations + (totalPower / 10) * (maxRotations - minRotations)
+    
+    // Final rotation to show result - clean calculation
+    // When X rotation is at 0°, we see heads (starting position)
+    // When X rotation is at 180°, we see tails
+    const basePosition = 0
+    const fullRotations = Math.floor(powerBasedRotations)
+    const finalRotation = (fullRotations * Math.PI * 2) + (flipResult === 'tails' ? Math.PI : 0)
     
     // Animation parameters
     const startTime = Date.now()
     const startRotationX = coin.rotation.x
-    const maxHeight = 2 * physics.height * (totalPower / 10) // Subtle height based on power and weight
     
-         isAnimatingRef.current = true
-     console.log('🎲 Starting flip animation:', { flipResult, totalRotations, finalRotation })
+    isAnimatingRef.current = true
+    console.log('🎲 Starting CLEAN flip animation:', { 
+      flipResult, 
+      totalPower,
+      rotations: powerBasedRotations.toFixed(1),
+      finalAngle: (finalRotation * 180 / Math.PI).toFixed(0) + '°',
+      duration: flipDuration
+    })
 
-     const animateFlip = () => {
+    const animateFlip = () => {
       try {
         const elapsed = Date.now() - startTime
         const progress = Math.min(elapsed / flipDuration, 1)
         
-        // Easing function for smooth animation
-        const easeInOutCubic = progress < 0.5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2
+        // Smooth easing - fast start, smooth deceleration to stop
+        const easeOutCubic = 1 - Math.pow(1 - progress, 3)
         
-                       // Rotation animation (applying material physics) - no height movement
-         coin.rotation.x = startRotationX + (totalRotation * easeInOutCubic * physics.rotationSpeed)
-         
-         // Keep coin at ground level (no height animation)
-         coin.position.y = 0
-         
-         // Apply resistance (slowing down near the end)
-         const resistanceEffect = 1 - (progress * (1 - physics.resistance))
+        // PURE X-AXIS ROTATION - NO wobble, NO height movement (like flip deets page)
+        coin.rotation.x = startRotationX + (finalRotation * easeOutCubic)
+        
+        // Keep coin perfectly stable - no movement or wobble
+        coin.position.y = 0
+        coin.position.x = 0  
+        coin.position.z = 0
+        coin.rotation.y = Math.PI / 2 // Keep coin facing forward
+        coin.rotation.z = 0 // NO wobble
         
         if (progress < 1) {
           requestAnimationFrame(animateFlip)
         } else {
-          // Ensure final rotation is exact
+          // PERFECT LANDING - ensure exact final rotation
           coin.rotation.x = finalRotation
-          coin.position.y = 0
+          coin.rotation.y = Math.PI / 2
+          coin.rotation.z = 0
+          coin.position.set(0, 0, 0)
+          coin.scale.set(1, 1, 1)
+          
           isAnimatingRef.current = false
+          console.log('✅ CLEAN flip animation complete - result:', flipResult)
           onFlipComplete(flipResult)
         }
       } catch (error) {
@@ -546,8 +550,8 @@ const FinalCoin = ({
 
     animateFlip()
 
-         // Don't cleanup on unmount to prevent stuttering
-     // The animation will complete naturally
+    // Don't cleanup on unmount to prevent stuttering
+    // The animation will complete naturally
   }, [isFlipping, flipResult, flipDuration, creatorPower, joinerPower, material, seed])
 
   // Mouse interaction handlers

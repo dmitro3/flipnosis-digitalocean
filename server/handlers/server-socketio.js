@@ -38,66 +38,74 @@ function initializeGameState(gameId, gameData) {
   return initialState
 }
 
-// Execute flip logic
-async function executeFlip(gameId, gameState, io, dbService) {
+// Execute flip for current player's turn (TURN-BASED)
+async function executePlayerFlip(gameId, gameState, io, dbService, currentPlayer) {
   if (gameState.flipInProgress) return
   
   gameState.flipInProgress = true
   
-  console.log(`🎲 Executing flip for game ${gameId}`)
-  console.log(`   Creator: ${gameState.creatorChoice} (Power: ${gameState.creatorPower})`)
-  console.log(`   Challenger: ${gameState.challengerChoice} (Power: ${gameState.challengerPower})`)
+  console.log(`🎲 Executing flip for ${currentPlayer} in game ${gameId}`)
   
-  // Generate random result
-  const seed = Math.random()
-  const powerDiff = gameState.creatorPower - gameState.challengerPower
-  const powerInfluence = powerDiff * 0.01 // 1% influence per power point
-  const adjustedSeed = Math.max(0, Math.min(1, seed + powerInfluence))
+  const isCreator = currentPlayer === gameState.creator
+  const playerChoice = isCreator ? gameState.creatorChoice : gameState.challengerChoice
+  const playerPower = isCreator ? gameState.creatorPower : gameState.challengerPower
+  
+  console.log(`   Player: ${currentPlayer}`)
+  console.log(`   Choice: ${playerChoice}`)
+  console.log(`   Power: ${playerPower}`)
+  
+  // Generate deterministic result based on power and randomness
+  const baseSeed = Math.random()
+  const powerInfluence = (playerPower / 10) * 0.15 // Up to 15% influence at max power
+  const adjustedSeed = Math.max(0, Math.min(1, baseSeed + (playerChoice === 'heads' ? powerInfluence : -powerInfluence)))
   
   const result = adjustedSeed < 0.5 ? 'heads' : 'tails'
+  const playerWon = playerChoice === result
   
-  // Determine winner
-  const creatorWon = gameState.creatorChoice === result
-  const challengerWon = gameState.challengerChoice === result
-  
-  let roundWinner = null
-  if (creatorWon && !challengerWon) {
-    roundWinner = 'creator'
-    gameState.creatorScore++
-  } else if (challengerWon && !creatorWon) {
-    roundWinner = 'challenger'
-    gameState.challengerScore++
+  // Update scores
+  if (playerWon) {
+    if (isCreator) {
+      gameState.creatorScore++
+    } else {
+      gameState.challengerScore++
+    }
   }
-  // If both chose the same, it's a tie - no score change
   
   // Record round history
   gameState.roundHistory.push({
     round: gameState.currentRound,
+    player: currentPlayer,
+    choice: playerChoice,
+    power: playerPower,
     result,
-    creatorChoice: gameState.creatorChoice,
-    challengerChoice: gameState.challengerChoice,
-    creatorPower: gameState.creatorPower,
-    challengerPower: gameState.challengerPower,
-    winner: roundWinner,
+    won: playerWon,
     seed: adjustedSeed
   })
   
-  // Broadcast flip result
-  io.to(`game_${gameId}`).emit('flip_result', {
+  // Broadcast flip result with synchronized animation
+  io.to(`game_${gameId}`).emit('round_result', {
     gameId,
     round: gameState.currentRound,
+    player: currentPlayer,
+    choice: playerChoice,
+    power: playerPower,
     result,
-    winner: roundWinner,
+    roundWinner: playerWon ? currentPlayer : null,
     creatorScore: gameState.creatorScore,
     challengerScore: gameState.challengerScore,
-    seed: adjustedSeed
+    seed: adjustedSeed,
+    flipAnimation: {
+      duration: Math.max(2000, Math.min(5000, playerPower * 300)), // 2-5 seconds based on power
+      rotations: Math.max(5, Math.min(25, 5 + playerPower * 2)), // 5-25 rotations based on power
+      result
+    }
   })
   
-  // Check if game is complete
+  // Check if game is complete (first to 3 wins or all 5 rounds played)
   const gameComplete = 
-    gameState.currentRound >= gameState.totalRounds ||
-    gameState.creatorScore > gameState.totalRounds / 2 ||
-    gameState.challengerScore > gameState.totalRounds / 2
+    gameState.creatorScore >= 3 ||
+    gameState.challengerScore >= 3 ||
+    gameState.currentRound >= 5
   
   if (gameComplete) {
     // Determine final winner
@@ -130,25 +138,29 @@ async function executeFlip(gameId, gameState, io, dbService) {
     }, 60000) // Keep for 1 minute for any final updates
     
   } else {
-    // Move to next round
+    // Move to next turn/round
     gameState.currentRound++
+    
+    // Reset choices and power for next round
     gameState.creatorChoice = null
     gameState.challengerChoice = null
     gameState.creatorPower = 0
     gameState.challengerPower = 0
     gameState.flipInProgress = false
     
-    // Switch turns (optional)
-    gameState.currentTurn = gameState.currentTurn === gameState.creator ? 
-      gameState.challenger : gameState.creator
+    // Switch turns - alternate who goes first each round
+    gameState.currentTurn = gameState.currentRound % 2 === 1 ? 
+      gameState.creator : gameState.challenger
+    gameState.phase = 'choosing'
     
-    // Broadcast updated state
+    // Broadcast updated state for next round
     io.to(`game_${gameId}`).emit('game_state_update', gameState)
     
     io.to(`game_${gameId}`).emit('round_complete', {
       gameId,
       nextRound: gameState.currentRound,
-      currentTurn: gameState.currentTurn
+      currentTurn: gameState.currentTurn,
+      message: `Round ${gameState.currentRound} starting! ${gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} goes first.`
     })
   }
 }
@@ -704,7 +716,7 @@ function initializeSocketIO(server, dbService) {
       // Check if both players have made their choice
       if (gameState.creatorChoice && gameState.challengerChoice) {
         // Execute the flip
-        await executeFlip(gameId, gameState, io, dbService)
+        await executePlayerFlip(gameId, gameState, io, dbService, player)
       }
     })
     
@@ -783,38 +795,32 @@ function initializeSocketIO(server, dbService) {
           console.log('⚡ Power charged for:', player, 'with power:', data.powerLevel)
           gameState.chargingPlayer = null
           
+          // Clamp power to 1-10 range
+          const clampedPower = Math.max(1, Math.min(10, data.powerLevel))
+          
           // Record the player's power
           if (player === gameState.creator) {
-            gameState.creatorPower = data.powerLevel
+            gameState.creatorPower = clampedPower
           } else if (player === gameState.challenger) {
-            gameState.challengerPower = data.powerLevel
+            gameState.challengerPower = clampedPower
           }
           
-          // Check if both players have made their choices and charged power
-          if (gameState.creatorChoice && gameState.challengerChoice && 
-              gameState.creatorPower && gameState.challengerPower) {
-            console.log('🎮 Both players ready, executing flip')
-            await executeFlip(gameId, gameState, io, dbService)
+          // Check if current player is ready to flip (has choice and power)
+          const isCreator = player === gameState.creator
+          const hasChoice = isCreator ? gameState.creatorChoice : gameState.challengerChoice
+          const hasPower = isCreator ? gameState.creatorPower : gameState.challengerPower
+          
+          if (hasChoice && hasPower && gameState.currentTurn === player) {
+            console.log('🎮 Player ready, executing flip for:', player)
+            gameState.phase = 'flipping'
+            
+            // Broadcast flip starting
+            io.to(socketInfo.roomId).emit('game_state_update', gameState)
+            
+            // Execute the flip for this player
+            await executePlayerFlip(gameId, gameState, io, dbService, player)
           } else {
-            // Determine whose turn it is next
-            const creatorReady = gameState.creatorChoice && gameState.creatorPower
-            const challengerReady = gameState.challengerChoice && gameState.challengerPower
-            
-            if (!creatorReady && !challengerReady) {
-              // Both players need to choose and charge
-              gameState.phase = 'choosing'
-              gameState.currentTurn = gameState.creator // Start with creator
-            } else if (creatorReady && !challengerReady) {
-              // Creator is ready, challenger needs to choose and charge
-              gameState.phase = 'choosing'
-              gameState.currentTurn = gameState.challenger
-            } else if (!creatorReady && challengerReady) {
-              // Challenger is ready, creator needs to choose and charge
-              gameState.phase = 'choosing'
-              gameState.currentTurn = gameState.creator
-            }
-            
-            // Broadcast updated state
+            // Just update state, player not ready yet
             io.to(socketInfo.roomId).emit('game_state_update', gameState)
           }
           break
@@ -941,7 +947,7 @@ function addGameHandlers(socket, io, dbService) {
       // Check if both players have made their choice
       if (gameState.creatorChoice && gameState.challengerChoice) {
         // Execute the flip
-        await executeFlip(gameId, gameState, io, dbService)
+        await executePlayerFlip(gameId, gameState, io, dbService, player)
       }
     })
     
