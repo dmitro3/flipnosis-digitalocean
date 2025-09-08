@@ -1,0 +1,902 @@
+Player 1
+
+index-4e1794c8.js:393 ✅ Rainbow Kit configuration created successfully
+index-4e1794c8.js:393 🧪 Testing WebSocket service...
+index-4e1794c8.js:393 Test 1 - Service import: QE {socket: null, connected: false, connecting: false, gameId: null, address: null, …}
+index-4e1794c8.js:393 Test 1 - Service type: object
+index-4e1794c8.js:393 Test 1 - Service methods: (12) ['constructor', 'connect', 'scheduleReconnect', 'setupPingInterval', 'send', 'processMessageQueue', 'on', 'off', 'notifyHandlers', 'disconnect', 'isConnected', 'getConnectionStatus']
+index-4e1794c8.js:393 Test 2 - isConnected method exists: true
+index-4e1794c8.js:393 Test 2 - isInitialized method exists: false
+index-4e1794c8.js:393 Test 3 - isConnected result: false
+index-4e1794c8.js:393 Test 4 - isInitialized method not available
+index-4e1794c8.js:393 🧪 WebSocket service test complete
+index-4e1794c8.js:393 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
+index-4e1794c8.js:393 🚀 Application starting... {timestamp: '2025-09-08T12:08:15.414Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://flipnosis.fun/'}
+index-4e1794c8.js:393 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-09-08T12:08:15.420Z'}
+index-4e1794c8.js:168 🔍 Fetching data from: https://flipnosis.fun/api/listings
+index-4e1794c8.js:31 🔧 Initializing contract service from WalletContext...
+index-4e1794c8.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 ✅ Contract service initialized successfully
+index-4e1794c8.js:168 📊 Listings response status: 200 
+index-4e1794c8.js:168 ✅ Listings loaded: 5 items
+index-4e1794c8.js:168 🔍 Fetching data from: https://flipnosis.fun/api/games
+index-4e1794c8.js:168 📊 Games response status: 200 
+index-4e1794c8.js:168 ✅ Games loaded: 43 items
+index-4e1794c8.js:168 🔄 Auto-selecting most recent flip: BASE APE TEAM #8036
+index-4e1794c8.js:168 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-4e1794c8.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
+index-4e1794c8.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: false, headsLength: 0}
+index-4e1794c8.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-4e1794c8.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
+index-4e1794c8.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: false, tailsLength: 0}
+index-4e1794c8.js:168 🪙 Custom coin loaded: {hasHeads: false, hasTails: false, headsLength: 0, tailsLength: 0}
+index-4e1794c8.js:31 📞 Manually loading NFTs for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 🚀 loadNFTs called with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 🔍 Current chain info: {chainId: 8453, currentChain: {…}, availableChains: Array(7)}
+index-4e1794c8.js:31 🔍 Loading NFTs for: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', chain: 'Base', network: 'base-mainnet'}
+index-4e1794c8.js:31 🎨 Total NFTs found: 14
+index-4e1794c8.js:31 ✅ Loaded NFTs: 14
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1307
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1312
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafkreib2amqj2zcewaw2sdtzjq27tyq6hcdiyv7ofp6ymiytqlf7t4gb7y
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1308
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieq4pxcymnusz7jjae7vn4ucpekhbzixfcs5tksda6wcmsx3xuud4/3919
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifaaeqknktdsrfb3l5kghisanm5aiovw43dxrs4xjgaujvkvrs57y/3570
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieptfg7ltc3dnzy2yndvhjdhw764mtai6h5bs7pk4uikgxhjlb4ju/4817
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8571
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiggm7mpviuho43jlvrnqbzlls35k72ypqgzpyjqzdpoj3gwxrg5hi
+index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid7syd6tj5iez5lzeg2efnqejcxh6rex6ln2saqbeuymijzdfuabm/2561
+2index-4e1794c8.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmbhsSeehQgBiQB7BVgbBmoPUzWuwsiAm9Y9AXmZ4cyymr
+index-4e1794c8.js:182 🎨 NFT selected: {contractAddress: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406', name: 'BASE APE TEAM #8406', collection: 'BASE APE TEAM', image: 'https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406', …}
+index-4e1794c8.js:168 🪙 Coin selected: {id: 'manga', type: 'default', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png'}
+index-4e1794c8.js:168 🪙 Sending optimized coin to parent: {id: 'manga', type: 'default', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png'}
+index-4e1794c8.js:182 🪙 Coin selected in CreateFlip: {id: 'manga', type: 'default', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png'}
+index-4e1794c8.js:182 ✅ Listing created: {success: true, listingId: 'listing_1757333307931_c3b7a265669f5a25', gameId: 'game_1757333308112_951705fdee3d21ec'}
+index-4e1794c8.js:182 💰 Game price: $0.1 (100000 microdollars)
+index-4e1794c8.js:182 💸 Listing fee: $0.00 (free)
+index-4e1794c8.js:31 🎮 Creating game (approve + deposit NFT): {gameId: 'game_1757333308112_951705fdee3d21ec', nftContract: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406', priceInMicrodollars: 100000, paymentType: 0}
+index-4e1794c8.js:31 🔓 Approving NFT for transfer: {nftContract: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406'}
+index-4e1794c8.js:31 🔓 NFT approval tx: 0x529151a3eb68c5e1f0e8b629619cf9dda95ec2b92565723fef96a8bdfe3f79d2
+index-4e1794c8.js:31 ✅ NFT approval confirmed
+index-4e1794c8.js:31 📦 Depositing NFT for game: {gameId: 'game_1757333308112_951705fdee3d21ec', nftContract: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406'}
+index-4e1794c8.js:31 🔍 Checking existing deposit for game: 0x67616d655f313735373333333330383131325f39353137303566646565336400
+index-4e1794c8.js:31 🔍 Existing deposit data: (5) ['0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', 0n, false, 0n]
+index-4e1794c8.js:31 📦 NFT deposit tx: 0x0d0bcaef72520dca6a65732ecd8bfec1b899befb14118ab1653802cc99df3517
+index-4e1794c8.js:31 ✅ NFT deposit confirmed
+index-4e1794c8.js:31 🔍 Verifying NFT deposit...
+index-4e1794c8.js:31 🔍 Verification result: (5) ['0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x035003062428fD92384317d7a853d8b4Dff9888a', 8406n, false, 1757333333n]
+index-4e1794c8.js:31 🔍 Array format - depositor: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-4e1794c8.js:31 ✅ NFT deposit verified successfully
+index-4e1794c8.js:201 🔌 Connecting to Socket.io: wss://flipnosis.fun
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 🔄 Game data loaded: {id: 'game_1757333308112_951705fdee3d21ec', status: 'awaiting_deposit', challenger: '', creator_deposited: 0, challenger_deposited: 0}
+index-4e1794c8.js:393 🔄 Loading offers for game data
+index-4e1794c8.js:393 ✅ Loaded offers: []
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:189 🪙 NFTDetailsTab - gameData received: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: undefined, nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:189 🪙 Using gameData.coinData: {id: 'manga', type: 'default', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png', …}
+index-4e1794c8.js:201 ✅ Listener registered for: game_ready
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_received
+index-4e1794c8.js:201 ✅ Listener registered for: game_complete
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:201 ✅ Socket.io connected
+index-4e1794c8.js:201 📤 Emitted: join_room
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:189 🎲 Starting flip animation: {flipResult: 'heads', totalRotations: 3, finalRotation: 1.5707963267948966}
+index-4e1794c8.js:189 Lobby coin flip complete
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:393 📑 Manual tab change to: chat
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 0, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: chat_message
+index-4e1794c8.js:201 ✅ Listener registered for: chat_history
+index-4e1794c8.js:366 🔌 Setting up Socket.io for real-time offers...
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: crypto_offer
+index-4e1794c8.js:201 ✅ Listener registered for: active_offers
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Socket.io connected for chat
+index-4e1794c8.js:366 ✅ Socket.io connected for offers
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 0, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 0, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:201 💬 Chat message received: {type: 'chat_message', message: 'bcb', from: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', timestamp: '2025-09-08T12:09:12.936Z'}
+index-4e1794c8.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:201 👥 Loading player names for addresses: ['0xf51D1e69b6857De81432d0D628c45B27dbcE97B6']
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 0, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-4e1794c8.js:31 🌐 Profile data received: {address: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 0, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:201 ✅ Loaded name for 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6: Lola
+index-4e1794c8.js:201 👥 Final player names: {0xf51D1e69b6857De81432d0D628c45B27dbcE97B6: 'Lola'}
+index-4e1794c8.js:366 💰 Real-time offer received: {type: 'crypto_offer', id: '1757333355810_0.19832008717136307', address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.1, timestamp: '2025-09-08T12:09:15.810Z'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:366 👥 Loading player names for offers: ['0xf51D1e69b6857De81432d0D628c45B27dbcE97B6']
+index-4e1794c8.js:366 ✅ Loaded name for 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6: Lola
+index-4e1794c8.js:366 👥 Final player names for offers: {0xf51D1e69b6857De81432d0D628c45B27dbcE97B6: 'Lola'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:366 🔘 Accept button clicked for crypto offer: {id: '1757333355810_0.19832008717136307', type: 'crypto_offer', address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', offerer_address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.1, …}
+index-4e1794c8.js:201 📤 Emitted: accept_offer
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: false, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: false, hasAcceptedOffer: false, acceptedOfferData: null}
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:366 🎯 Deposit stage started (synchronized): {gameId: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', timeRemaining: 120, creatorDeposited: true, …}
+index-4e1794c8.js:366 🎯 Comparing gameIds: {eventGameId: 'game_1757333308112_951705fdee3d21ec', componentGameId: 'game_1757333308112_951705fdee3d21ec'}
+index-4e1794c8.js:366 ✅ GameId matches, processing deposit stage started
+index-4e1794c8.js:366 🎯 Player roles: {isChallenger: false, isCreator: true, challenger: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 ✅ You are the creator - waiting for deposit
+index-4e1794c8.js:366 🎯 Setting accepted offer for creator: {isCreatorWaiting: true, cryptoAmount: 0.1, timeRemaining: 120}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'spectator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 120, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 119, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 118, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 118, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 117, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 116, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 115, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 114, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 113, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 112, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 111, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🔍 shouldShowOfferInput check: {showDepositOverlay: true, isCreator: true, gameStatus: 'awaiting_deposit', offersCount: 1, hasRecentAcceptance: false}
+index-4e1794c8.js:366 🎯 Deposit overlay render check: {showDepositOverlay: true, hasAcceptedOffer: true, acceptedOfferData: {…}}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: depositState prop changed: {phase: 'deposit_stage', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challenger: undefined, timeRemaining: 110, creatorDeposited: true, …}
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 🎯 UnifiedDepositOverlay: render check: {hasDepositState: true, depositState: {…}, userRole: 'creator', gameId: 'game_1757333308112_951705fdee3d21ec', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-4e1794c8.js:366 💰 Deposit confirmed event received: {gameId: '1757333308112_951705fdee3d21ec', player: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', assetType: 'crypto', creatorDeposited: true, challengerDeposited: true, …}
+index-4e1794c8.js:393 💰 Deposit confirmed in useLobbyState: {gameId: '1757333308112_951705fdee3d21ec', player: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', assetType: 'crypto', creatorDeposited: true, challengerDeposited: true, …}
+index-4e1794c8.js:366 ✅ Deposit confirmed: {gameId: '1757333308112_951705fdee3d21ec', player: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', assetType: 'crypto', creatorDeposited: true, challengerDeposited: true, …}
+index-4e1794c8.js:366 🎮 Game started event received: {gameId: '1757333308112_951705fdee3d21ec', gameIdFull: 'game_1757333308112_951705fdee3d21ec', phase: 'game_active', status: 'active', currentRound: 1, …}
+index-4e1794c8.js:393 🎮 Game started event in useLobbyState: {gameId: '1757333308112_951705fdee3d21ec', gameIdFull: 'game_1757333308112_951705fdee3d21ec', phase: 'game_active', status: 'active', currentRound: 1, …}
+index-4e1794c8.js:366 🎮 Game started: {gameId: '1757333308112_951705fdee3d21ec', gameIdFull: 'game_1757333308112_951705fdee3d21ec', phase: 'game_active', status: 'active', currentRound: 1, …}
+index-4e1794c8.js:393 🎮 Game ready event received, switching to game tab
+index-4e1794c8.js:393 📊 Game state update in useLobbyState: {gameId: '1757333308112_951705fdee3d21ec', status: 'active', currentRound: 1, totalRounds: 3, creatorScore: 0, …}
+index-4e1794c8.js:201 ✅ Listener removed for: chat_message
+index-4e1794c8.js:201 ✅ Listener removed for: chat_history
+index-4e1794c8.js:201 ✅ Listener removed for: crypto_offer
+index-4e1794c8.js:201 ✅ Listener removed for: active_offers
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_stage_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_countdown
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: nft_deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_timeout
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:381 🎮 GameRoomTab: Game readiness check: {status: 'awaiting_deposit', phase: undefined, bothDeposited: undefined, gameReady: undefined}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_ready
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: round_result
+index-4e1794c8.js:201 📤 Emitted: request_game_state
+index-4e1794c8.js:393 🎮 Game started event in useLobbyState: {gameId: '1757333308112_951705fdee3d21ec', gameIdFull: 'game_1757333308112_951705fdee3d21ec', phase: 'game_active', status: 'active', currentRound: 1, …}
+index-4e1794c8.js:381 🎮 Game started event in GameRoomTab: {gameId: '1757333308112_951705fdee3d21ec', gameIdFull: 'game_1757333308112_951705fdee3d21ec', phase: 'game_active', status: 'active', currentRound: 1, …}
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Listener removed for: game_ready
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: round_result
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:366 🎮 Game room initialization check: {gameData: {…}, creatorDeposited: 0, challengerDeposited: 0, status: 'awaiting_deposit', phase: 'waiting', …}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_ready
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: round_result
+index-4e1794c8.js:201 📤 Emitted: request_game_state
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:393 🎮 Game ready event received, switching to game tab
+index-4e1794c8.js:381 🎮 Game ready event in GameRoomTab
+index-4e1794c8.js:381 📊 Game state update received in GameRoom: {gameId: '1757333308112_951705fdee3d21ec', status: 'active', currentRound: 1, totalRounds: 3, creatorScore: 0, …}
+index-4e1794c8.js:381 🎯 New challenger info received: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 📊 Game state update received: {gameId: '1757333308112_951705fdee3d21ec', status: 'active', currentRound: 1, totalRounds: 3, creatorScore: 0, …}
+index-4e1794c8.js:393 📊 Game state update in useLobbyState: {gameId: '1757333308112_951705fdee3d21ec', status: 'active', currentRound: 1, totalRounds: 3, creatorScore: 0, …}
+index-4e1794c8.js:381 ✅ Updated joiner name from profile: Lola
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Listener removed for: game_ready
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: round_result
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_ready
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: round_result
+index-4e1794c8.js:201 📤 Emitted: request_game_state
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Listener removed for: game_ready
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: round_result
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_ready
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: round_result
+index-4e1794c8.js:201 📤 Emitted: request_game_state
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:393 🔍 isCreator result: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', creatorAddress: '0xdd6377919ef1ad4babbead667efe3f6607558628', isCreator: true}
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:201 ✅ Listener removed for: game_ready
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: round_result
+index-4e1794c8.js:201 ✅ Listener removed for: game_started
+index-4e1794c8.js:201 ✅ Listener removed for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:201 ✅ Listener registered for: game_ready
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: round_result
+index-4e1794c8.js:201 📤 Emitted: request_game_state
+index-4e1794c8.js:201 ✅ Already connected to room: game_1757333308112_951705fdee3d21ec
+index-4e1794c8.js:201 ✅ Listener registered for: game_started
+index-4e1794c8.js:201 ✅ Listener registered for: deposit_confirmed
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:393 ✅ Socket connected in useLobbyState
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 🔄 Fresh game data fetched: {id: 'game_1757333308112_951705fdee3d21ec', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joiner: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', nft_contract: '0x035003062428fD92384317d7a853d8b4Dff9888a', nft_token_id: '8406', …}
+index-4e1794c8.js:381 🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-4e1794c8.js:381 ✅ Fresh joiner name set: Lola
+index-4e1794c8.js:381 🔍 Delayed challenger fetch: {joinerAddress: undefined, gameData: {…}, challengerField: '', joinerField: undefined, challenger_addressField: undefined, …}
+index-4e1794c8.js:381 ❌ Still no joiner address found after delay
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+index-4e1794c8.js:381 GameCoin props: {customHeadsImage: '/coins/mangah.png', customTailsImage: '/coins/mangat.png', gameCoin: {…}, gameData: {…}}
+index-4e1794c8.js:201 ✅ Listener removed for: game_state_update
+index-4e1794c8.js:189 🔄 Flip animation blocked: {isFlipping: false, hasCoin: true}
+index-4e1794c8.js:381 🔍 Fetching player names: {creatorAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', joinerAddress: undefined, gameData: {…}, allGameDataKeys: Array(66)}
+index-4e1794c8.js:201 ✅ Listener registered for: game_state_update
+index-4e1794c8.js:381 ✅ Creator name set: KOda
+index-4e1794c8.js:381 ❌ No joiner address found, using fallback
+
+PLayer 2
+
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+​
+challengerField: ""
+​
+challenger_addressField: undefined
+​
+gameData: Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", … }
+​
+joinerAddress: undefined
+​
+joinerField: undefined
+​
+joiner_addressField: undefined
+​
+<prototype>: Object { … }
+index-4e1794c8.js:381:5260
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🔄 Fresh game data fetched: 
+Object { id: "game_1757333308112_951705fdee3d21ec", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", joiner: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "8406", nft_name: "BASE APE TEAM #8406", nft_image: "https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406", nft_collection: "BASE APE TEAM", nft_chain: null, price_usd: 0.1, … }
+index-4e1794c8.js:381:4722
+🎯 Fresh challenger data found: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-4e1794c8.js:381:4783
+✅ Fresh joiner name set: Lola index-4e1794c8.js:381:4946
+🔍 Delayed challenger fetch: 
+Object { joinerAddress: undefined, gameData: {…}, challengerField: "", joinerField: undefined, challenger_addressField: undefined, joiner_addressField: undefined }
+index-4e1794c8.js:381:5260
+❌ Still no joiner address found after delay index-4e1794c8.js:381:5923
+🚨 Unhandled rejection: TypeError: can't access property "includes", args.site.enabledFeatures is undefined
+    isFeatureBroken <anonymous code>:980
+    updateFeaturesInner <anonymous code>:9240
+    updateFeaturesInner <anonymous code>:9239
+    update <anonymous code>:9232
+    <anonymous> <anonymous code>:9261
+index-4e1794c8.js:393:51629
+🚨 Unhandled promise rejection: 
+Object { reason: TypeError, promise: Promise { "rejected" }, stack: "isFeatureBroken@<anonymous code>:980:143\nupdateFeaturesInner/<@<anonymous code>:9240:12\nupdateFeaturesInner@<anonymous code>:9239:22\nasync*update@<anonymous code>:9232:24\n@<anonymous code>:9261:15\n", url: "https://www.flipnosis.fun/game/game_1757333308112_951705fdee3d21ec", timestamp: "2025-09-08T12:10:01.765Z" }
+index-4e1794c8.js:8:8278
+Uncaught (in promise) TypeError: can't access property "includes", args.site.enabledFeatures is undefined
+    isFeatureBroken <anonymous code>:980
+    updateFeaturesInner <anonymous code>:9240
+    updateFeaturesInner <anonymous code>:9239
+    update <anonymous code>:9232
+    <anonymous> <anonymous code>:9261
+<anonymous code>:980:143
+
+​
+

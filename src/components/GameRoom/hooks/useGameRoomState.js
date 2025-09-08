@@ -35,7 +35,10 @@ export const useGameRoomState = (gameId, address, gameData) => {
 
   // Helper functions
   const getGameCreator = () => gameData?.creator
-  const getGameJoiner = () => gameData?.challenger || gameData?.joiner || gameData?.joiner_address || gameData?.challenger_address
+  const getGameJoiner = () => {
+    // Priority order for joiner field lookup
+    return gameData?.joiner || gameData?.challenger || gameData?.joiner_address || gameData?.challenger_address
+  }
 
   const isCreator = () => {
     if (!address || !gameData) return false
@@ -47,12 +50,11 @@ export const useGameRoomState = (gameId, address, gameData) => {
   const isJoiner = () => {
     if (!address || !gameData) return false
     
-    const challengerAddress = gameData?.challenger || gameData?.joiner || 
-      gameData?.joiner_address || gameData?.challenger_address
+    const joinerAddress = getGameJoiner()
     
-    if (!challengerAddress) return false
+    if (!joinerAddress) return false
     
-    return address.toLowerCase() === challengerAddress.toLowerCase()
+    return address.toLowerCase() === joinerAddress.toLowerCase()
   }
 
   // Add function to determine who goes first each round
@@ -98,11 +100,19 @@ export const useGameRoomState = (gameId, address, gameData) => {
     stopRoundCountdown()
     
     // Emit choice to server
-    socketService.emit('game_action', {
-      type: 'MAKE_CHOICE',
+    socketService.emit('player_choice', {
       gameId,
       player: address,
       choice,
+      round: gameState.currentRound,
+      roundPhase: gameState.roundPhase
+    })
+    
+    console.log('🎯 Player choice sent to server:', {
+      gameId,
+      player: address,
+      choice,
+      round: gameState.currentRound,
       roundPhase: gameState.roundPhase
     })
   }
@@ -165,11 +175,19 @@ export const useGameRoomState = (gameId, address, gameData) => {
     })
     
     // Emit flip action
-    socketService.emit('game_action', {
-      type: 'EXECUTE_FLIP',
+    socketService.emit('coin_flip', {
       gameId,
       player: address,
       power: finalPower,
+      round: gameState.currentRound,
+      roundPhase: gameState.roundPhase
+    })
+    
+    console.log('🎲 Coin flip sent to server:', {
+      gameId,
+      player: address,
+      power: finalPower,
+      round: gameState.currentRound,
       roundPhase: gameState.roundPhase
     })
     
@@ -506,6 +524,8 @@ export const useGameRoomState = (gameId, address, gameData) => {
   useEffect(() => {
     console.log('🎮 Game room initialization check:', {
       gameData,
+      creator: getGameCreator(),
+      joiner: getGameJoiner(),
       creatorDeposited: gameData?.creator_deposited,
       challengerDeposited: gameData?.challenger_deposited,
       status: gameData?.status,
@@ -514,18 +534,36 @@ export const useGameRoomState = (gameId, address, gameData) => {
       currentRound: gameState.currentRound
     })
 
-    // Auto-start the game when both players have deposited and we're in choosing phase
+    // Check if both players are present and deposits are confirmed
+    const creatorAddress = getGameCreator()
+    const joinerAddress = getGameJoiner()
     const creatorDeposited = gameData?.creator_deposited === 1 || gameData?.creator_deposited === true
     const challengerDeposited = gameData?.challenger_deposited === 1 || gameData?.challenger_deposited === true
     
-    if (creatorDeposited && 
-        challengerDeposited && 
-        gameData?.status === 'active' && 
-        (gameState.phase === 'waiting' || gameState.phase === 'choosing') && 
-        !roundCountdown && 
+    // Game should start if:
+    // 1. Both players exist
+    // 2. Game status is active 
+    // 3. Both have deposited OR game phase is already active
+    // 4. We're not already counting down
+    // 5. Game hasn't ended
+    const bothPlayersPresent = creatorAddress && joinerAddress
+    const gameIsActive = gameData?.status === 'active' || gameData?.phase === 'game_active'
+    const bothDeposited = creatorDeposited && challengerDeposited
+    const needsToStart = gameState.phase === 'waiting' || 
+                        (gameState.phase === 'choosing' && !roundCountdown)
+    
+    if (bothPlayersPresent && 
+        gameIsActive && 
+        (bothDeposited || gameData?.phase === 'game_active') && 
+        needsToStart && 
         gameState.currentRound <= 5) {
       
-      console.log('🚀 Auto-starting game countdown!')
+      console.log('🚀 Starting game! Both players detected:', {
+        creator: creatorAddress,
+        joiner: joinerAddress,
+        bothDeposited,
+        gameIsActive
+      })
       
       // Set the game to choosing phase and start countdown
       setGameState(prev => ({
@@ -537,10 +575,25 @@ export const useGameRoomState = (gameId, address, gameData) => {
       
       startRoundCountdown()
     }
-  }, [gameData, gameState.phase, roundCountdown, gameState.currentRound])
+  }, [gameData, gameState.phase, roundCountdown, gameState.currentRound, getGameCreator, getGameJoiner])
 
   // Listen for game room events from WebSocket
   useEffect(() => {
+    if (!socketService) return
+
+    const handleGameStateUpdate = (data) => {
+      console.log('📊 WebSocket game state update:', data)
+      
+      // Update our local game state with server data
+      setGameState(prev => ({
+        ...prev,
+        ...data,
+        // Preserve local-only state that server doesn't manage
+        isCharging: prev.isCharging,
+        chargingStartTime: prev.chargingStartTime
+      }))
+    }
+
     const handleChoicesMade = (event) => {
       const { activePlayer, activeChoice, otherPlayer, otherChoice } = event.detail
       console.log('🎯 Handling choices made event:', event.detail)
@@ -573,6 +626,9 @@ export const useGameRoomState = (gameId, address, gameData) => {
       // Stop the countdown since choices are made
       stopRoundCountdown()
     }
+
+    // Register WebSocket event handlers
+    socketService.on('game_state_update', handleGameStateUpdate)
     
     const handlePowerPhase = (event) => {
       console.log('⚡ Power phase started')
@@ -607,6 +663,10 @@ export const useGameRoomState = (gameId, address, gameData) => {
     window.addEventListener('gameRoomGameComplete', handleGameComplete)
     
     return () => {
+      // Clean up WebSocket listeners
+      socketService.off('game_state_update', handleGameStateUpdate)
+      
+      // Clean up window listeners
       window.removeEventListener('gameRoomChoicesMade', handleChoicesMade)
       window.removeEventListener('gameRoomPowerPhase', handlePowerPhase)
       window.removeEventListener('gameRoomFlipResult', handleFlipResult)

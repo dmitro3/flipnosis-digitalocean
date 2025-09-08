@@ -226,7 +226,7 @@ const GameRoomTab = ({
     const handleGameStarted = (data) => {
       console.log('🎮 Game started event in GameRoomTab:', data)
       setIsGameReady(true)
-      showInfo('Game is starting!')
+      showInfo('🎮 Game is starting! Get ready to flip!')
       
       // Initialize game state from the event data
       setGameState({
@@ -235,7 +235,9 @@ const GameRoomTab = ({
         creatorScore: 0,
         challengerScore: 0,
         currentTurn: data.currentTurn || data.creator,
-        flipSeed: null
+        flipSeed: null,
+        phase: 'choosing', // Start in choosing phase
+        roundPhase: 'player1_choice' // Player 1 goes first
       })
     }
     
@@ -391,9 +393,19 @@ const GameRoomTab = ({
           customTailsImage={coinConfig?.tailsImage}
           gameCoin={coinConfig}
           isMobile={window.innerWidth <= 768}
-          onPowerChargeStart={() => {}}
-          onPowerChargeStop={() => {}}
-          isMyTurn={() => gameState?.currentTurn === address}
+          onPowerChargeStart={() => {
+            console.log('🔋 Power charge started!')
+          }}
+          onPowerChargeStop={() => {
+            console.log('🔋 Power charge stopped!')
+          }}
+          isMyTurn={() => {
+            // Player 1 (creator) goes first in round 1, 3, 5
+            // Player 2 (joiner) goes first in round 2, 4
+            const currentRound = gameState?.currentRound || 1
+            const firstPlayer = currentRound % 2 === 1 ? gameData?.creator : gameData?.joiner
+            return firstPlayer === address
+          }}
           address={address}
           isCreator={() => isCreator}
           flipSeed={gameState?.flipSeed}

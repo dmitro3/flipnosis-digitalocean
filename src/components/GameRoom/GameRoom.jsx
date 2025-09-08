@@ -595,6 +595,41 @@ const GameRoom = ({
     fetchPlayerNames()
   }, [getGameCreator, getGameJoiner, getPlayerName, gameData])
 
+  // Listen for WebSocket events that might update joiner info
+  useEffect(() => {
+    if (!socketService) return
+
+    const handleGameStateUpdate = (data) => {
+      console.log('📊 Game state update received in GameRoom:', data)
+      
+      // Check if this update includes challenger information
+      if (data.challenger && data.challenger !== getGameJoiner()) {
+        console.log('🎯 New challenger info received:', data.challenger)
+        
+        // First try to use the challenger name from game state data
+        if (data.challenger_name) {
+          setJoinerName(data.challenger_name)
+          console.log('✅ Joiner name updated from game state:', data.challenger_name)
+        } else {
+          // Fallback to profile lookup
+          getPlayerName(data.challenger).then(name => {
+            setJoinerName(name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+            console.log('✅ Updated joiner name from profile:', name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+          }).catch(error => {
+            console.error('Error fetching challenger name:', error)
+            setJoinerName(`${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+          })
+        }
+      }
+    }
+
+    socketService.on('game_state_update', handleGameStateUpdate)
+
+    return () => {
+      socketService.off('game_state_update', handleGameStateUpdate)
+    }
+  }, [getGameJoiner, getPlayerName])
+
   // Additional effect to fetch challenger details after 2 seconds
   useEffect(() => {
     if (!gameData || !gameId) return
@@ -610,17 +645,18 @@ const GameRoom = ({
             console.log('🔄 Fresh game data fetched:', freshGameData)
             
             // Update the gameData if we got fresh data
-            if (freshGameData.challenger) {
-              console.log('🎯 Fresh challenger data found:', freshGameData.challenger)
+            if (freshGameData.challenger || freshGameData.joiner) {
+              const challengerAddress = freshGameData.challenger || freshGameData.joiner
+              console.log('🎯 Fresh challenger data found:', challengerAddress)
               
               // Fetch the challenger's profile
               try {
-                const name = await getPlayerName(freshGameData.challenger)
-                setJoinerName(name || `${freshGameData.challenger.slice(0, 6)}...${freshGameData.challenger.slice(-4)}`)
-                console.log('✅ Fresh joiner name set:', name || `${freshGameData.challenger.slice(0, 6)}...${freshGameData.challenger.slice(-4)}`)
+                const name = await getPlayerName(challengerAddress)
+                setJoinerName(name || `${challengerAddress.slice(0, 6)}...${challengerAddress.slice(-4)}`)
+                console.log('✅ Fresh joiner name set:', name || `${challengerAddress.slice(0, 6)}...${challengerAddress.slice(-4)}`)
               } catch (error) {
                 console.error('Error fetching fresh challenger name:', error)
-                setJoinerName(`${freshGameData.challenger.slice(0, 6)}...${freshGameData.challenger.slice(-4)}`)
+                setJoinerName(`${challengerAddress.slice(0, 6)}...${challengerAddress.slice(-4)}`)
               }
             }
           }
@@ -628,35 +664,19 @@ const GameRoom = ({
           console.error('Error fetching fresh game data:', error)
         }
         
-        // Fallback: check current gameData
+        // Fallback: check current gameData one more time
         const joinerAddress = getGameJoiner()
         
         console.log('🔍 Delayed challenger fetch:', { 
           joinerAddress, 
           gameData: gameData,
-          challengerField: gameData.challenger,
-          joinerField: gameData.joiner,
-          challenger_addressField: gameData.challenger_address,
-          joiner_addressField: gameData.joiner_address
+          challengerField: gameData?.challenger,
+          joinerField: gameData?.joiner,
+          challenger_addressField: gameData?.challenger_address,
+          joiner_addressField: gameData?.joiner_address
         })
         
-        if (joinerAddress && joinerAddress !== 'Challenger') {
-          // First try to use the challenger name from game data (from accepted offer)
-          if (freshGameData?.challenger_name) {
-            setJoinerName(freshGameData.challenger_name)
-            console.log('✅ Delayed joiner name set from game data:', freshGameData.challenger_name)
-          } else {
-            // Fallback to profile lookup
-            try {
-              const name = await getPlayerName(joinerAddress)
-              setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
-              console.log('✅ Delayed joiner name set from profile:', name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
-            } catch (error) {
-              console.error('Error fetching delayed joiner name:', error)
-              setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
-            }
-          }
-        } else {
+        if (!joinerAddress) {
           console.log('❌ Still no joiner address found after delay')
         }
       }, 2000)
@@ -665,40 +685,6 @@ const GameRoom = ({
     fetchChallengerDetails()
   }, [gameData, gameId, getGameJoiner, getPlayerName])
 
-  // Listen for game state updates that might include challenger info
-  useEffect(() => {
-    if (!socketService) return
-
-    const handleGameStateUpdate = (data) => {
-      console.log('📊 Game state update received in GameRoom:', data)
-      
-      // Check if this update includes challenger information
-      if (data.challenger && data.challenger !== getGameJoiner()) {
-        console.log('🎯 New challenger info received:', data.challenger)
-        
-        // First try to use the challenger name from game state data
-        if (data.challenger_name) {
-          setJoinerName(data.challenger_name)
-          console.log('✅ Updated joiner name from game state data:', data.challenger_name)
-        } else {
-          // Fallback to profile lookup
-          getPlayerName(data.challenger).then(name => {
-            setJoinerName(name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
-            console.log('✅ Updated joiner name from profile:', name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
-          }).catch(error => {
-            console.error('Error fetching challenger name from game state:', error)
-            setJoinerName(`${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
-          })
-        }
-      }
-    }
-
-    socketService.on('game_state_update', handleGameStateUpdate)
-
-    return () => {
-      socketService.off('game_state_update', handleGameStateUpdate)
-    }
-  }, [getGameJoiner, getPlayerName])
 
   // Add forfeit button styles
   const ForfeitButton = styled.button`
