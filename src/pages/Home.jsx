@@ -734,11 +734,25 @@ const getAllItems = () => {
       // Use production API URL
       const baseUrl = getApiUrl('')
 
+      // Get current user's profile data
+      const profileResponse = await fetch(`${baseUrl}/api/profile/${address}`)
+      let challengerName = address.slice(0, 6) + '...' + address.slice(-4)
+      let challengerImage = null
+      
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json()
+        challengerName = profile.name || profile.username || challengerName
+        challengerImage = profile.avatar || profile.profile_picture || null
+      }
+
       const offerData = {
         listing_id: flip.listingId,
         offerer_address: address,
+        offerer_name: challengerName,
         offer_price: flip.priceUSD,
-        message: `I want to play with ${flip.nft.name}!`
+        message: `I want to play with ${flip.nft.name}!`,
+        challenger_name: challengerName,
+        challenger_image: challengerImage
       }
 
       console.log('🔍 Making offer with data:', {

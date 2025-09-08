@@ -571,13 +571,20 @@ const GameRoom = ({
       }
       
       if (joinerAddress) {
-        try {
-          const name = await getPlayerName(joinerAddress)
-          setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
-          console.log('✅ Joiner name set:', name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
-        } catch (error) {
-          console.error('Error fetching joiner name:', error)
-          setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+        // First try to use the challenger name from game data (from accepted offer)
+        if (gameData?.challenger_name) {
+          setJoinerName(gameData.challenger_name)
+          console.log('✅ Joiner name set from game data:', gameData.challenger_name)
+        } else {
+          // Fallback to profile lookup
+          try {
+            const name = await getPlayerName(joinerAddress)
+            setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+            console.log('✅ Joiner name set from profile:', name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+          } catch (error) {
+            console.error('Error fetching joiner name:', error)
+            setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+          }
         }
       } else {
         console.log('❌ No joiner address found, using fallback')
@@ -634,13 +641,20 @@ const GameRoom = ({
         })
         
         if (joinerAddress && joinerAddress !== 'Challenger') {
-          try {
-            const name = await getPlayerName(joinerAddress)
-            setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
-            console.log('✅ Delayed joiner name set:', name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
-          } catch (error) {
-            console.error('Error fetching delayed joiner name:', error)
-            setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+          // First try to use the challenger name from game data (from accepted offer)
+          if (freshGameData?.challenger_name) {
+            setJoinerName(freshGameData.challenger_name)
+            console.log('✅ Delayed joiner name set from game data:', freshGameData.challenger_name)
+          } else {
+            // Fallback to profile lookup
+            try {
+              const name = await getPlayerName(joinerAddress)
+              setJoinerName(name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+              console.log('✅ Delayed joiner name set from profile:', name || `${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+            } catch (error) {
+              console.error('Error fetching delayed joiner name:', error)
+              setJoinerName(`${joinerAddress.slice(0, 6)}...${joinerAddress.slice(-4)}`)
+            }
           }
         } else {
           console.log('❌ Still no joiner address found after delay')
@@ -662,14 +676,20 @@ const GameRoom = ({
       if (data.challenger && data.challenger !== getGameJoiner()) {
         console.log('🎯 New challenger info received:', data.challenger)
         
-        // Fetch the challenger's profile
-        getPlayerName(data.challenger).then(name => {
-          setJoinerName(name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
-          console.log('✅ Updated joiner name from game state:', name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
-        }).catch(error => {
-          console.error('Error fetching challenger name from game state:', error)
-          setJoinerName(`${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
-        })
+        // First try to use the challenger name from game state data
+        if (data.challenger_name) {
+          setJoinerName(data.challenger_name)
+          console.log('✅ Updated joiner name from game state data:', data.challenger_name)
+        } else {
+          // Fallback to profile lookup
+          getPlayerName(data.challenger).then(name => {
+            setJoinerName(name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+            console.log('✅ Updated joiner name from profile:', name || `${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+          }).catch(error => {
+            console.error('Error fetching challenger name from game state:', error)
+            setJoinerName(`${data.challenger.slice(0, 6)}...${data.challenger.slice(-4)}`)
+          })
+        }
       }
     }
 

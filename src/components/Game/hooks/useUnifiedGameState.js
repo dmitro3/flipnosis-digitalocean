@@ -105,7 +105,7 @@ export const useUnifiedGameState = (gameId, address) => {
             },
             joiner: {
               address: data.game.joiner || null,
-              name: data.game.joiner ? await getPlayerName(data.game.joiner) : '',
+              name: data.game.challenger_name || (data.game.joiner ? await getPlayerName(data.game.joiner) : ''),
               power: 0,
               choice: null
             },
@@ -148,7 +148,7 @@ export const useUnifiedGameState = (gameId, address) => {
           ...prev,
           joiner: {
             address: data.joinerAddress,
-            name: data.joinerName,
+            name: data.joinerName || data.challengerName || `${data.joinerAddress.slice(0, 6)}...${data.joinerAddress.slice(-4)}`,
             power: 0,
             choice: null
           }

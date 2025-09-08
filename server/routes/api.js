@@ -604,7 +604,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
   // Create offer
   router.post('/listings/:listingId/offers', (req, res) => {
     const { listingId } = req.params
-    const { offerer_address, offer_price, message } = req.body
+    const { offerer_address, offerer_name, offer_price, message, challenger_name, challenger_image } = req.body
 
     console.log('💡 New offer request:', { listingId, offerer_address, offer_price, message })
 
@@ -629,9 +629,9 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       console.log('💾 Creating offer in database:', { offerId, listingId, offerer_address, offer_price })
       
       db.run(`
-        INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status)
-        VALUES (?, ?, ?, ?, ?, 'pending')
-      `, [offerId, listingId, offerer_address, offer_price, message], function(err) {
+        INSERT INTO offers (id, listing_id, offerer_address, offerer_name, offer_price, message, challenger_name, challenger_image, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+      `, [offerId, listingId, offerer_address, offerer_name, offer_price, message, challenger_name, challenger_image], function(err) {
         if (err) {
           console.error('❌ Error creating offer in database:', err)
           return res.status(500).json({ error: 'Database error' })
@@ -997,7 +997,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       // Add parsed coin data to response
       game.coinData = coinData
       
-      // Get round information
+      // Get round information and accepted offer data
       db.all('SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number', [gameId], (err, rounds) => {
         game.rounds = rounds || []
         
@@ -1005,7 +1005,24 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         game.creator_wins = rounds.filter(r => r.round_winner === game.creator).length
         game.challenger_wins = rounds.filter(r => r.round_winner === game.challenger).length
         
-        res.json(game)
+        // If there's a challenger, get their details from the accepted offer
+        if (game.challenger) {
+          db.get(`
+            SELECT challenger_name, challenger_image 
+            FROM offers 
+            WHERE listing_id = ? AND offerer_address = ? AND status = 'accepted'
+            ORDER BY created_at DESC 
+            LIMIT 1
+          `, [game.listing_id, game.challenger], (err, offer) => {
+            if (!err && offer) {
+              game.challenger_name = offer.challenger_name
+              game.challenger_image = offer.challenger_image
+            }
+            res.json(game)
+          })
+        } else {
+          res.json(game)
+        }
       })
     })
   })

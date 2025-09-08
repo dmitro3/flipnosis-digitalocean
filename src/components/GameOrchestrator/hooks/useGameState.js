@@ -775,14 +775,27 @@ export const useGameState = (gameId, address) => {
         }
       }
 
+      // Get current user's profile data
+      const profileResponse = await fetch(getApiUrl(`/api/profile/${address}`))
+      let challengerName = address.slice(0, 6) + '...' + address.slice(-4)
+      let challengerImage = null
+      
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json()
+        challengerName = profile.name || profile.username || challengerName
+        challengerImage = profile.avatar || profile.profile_picture || null
+      }
+
       const response = await fetch(getApiUrl(`/listings/${listingId}/offers`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           offerer_address: address,
-          offerer_name: address.slice(0, 6) + '...' + address.slice(-4),
+          offerer_name: challengerName,
           offer_price: parseFloat(newOffer.price),
-          message: newOffer.message
+          message: newOffer.message,
+          challenger_name: challengerName,
+          challenger_image: challengerImage
         })
       })
 
