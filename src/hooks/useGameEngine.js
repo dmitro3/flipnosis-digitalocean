@@ -88,32 +88,45 @@ export const useGameEngine = (gameId, address, gameData) => {
   
   // === SOCKET.IO EVENT HANDLERS ===
   const handleGameStateUpdate = useCallback((data) => {
-    console.log('🎮 Server game state update:', data)
+    console.log('🎮 NEW GAME ENGINE - Server game state update:', data)
     
     try {
-      setGameState(prev => ({
-        ...prev,
-        // Update from server state (only if provided)
-        status: data.status || prev.status,
-        phase: data.phase || prev.phase,
-        creator: data.creator || prev.creator,
-        challenger: data.challenger || prev.challenger,
-        currentTurn: data.currentTurn || prev.currentTurn,
-        currentRound: data.currentRound || prev.currentRound,
-        totalRounds: data.totalRounds || prev.totalRounds,
-        creatorScore: typeof data.creatorScore === 'number' ? data.creatorScore : prev.creatorScore,
-        challengerScore: typeof data.challengerScore === 'number' ? data.challengerScore : prev.challengerScore,
-        creatorChoice: data.creatorChoice !== undefined ? data.creatorChoice : prev.creatorChoice,
-        challengerChoice: data.challengerChoice !== undefined ? data.challengerChoice : prev.challengerChoice,
-        creatorPower: typeof data.creatorPower === 'number' ? data.creatorPower : prev.creatorPower,
-        challengerPower: typeof data.challengerPower === 'number' ? data.challengerPower : prev.challengerPower,
-        flipResult: data.flipResult || prev.flipResult,
-        roundWinner: data.roundWinner || prev.roundWinner,
-        gameWinner: data.gameWinner || prev.gameWinner,
-        chargingPlayer: data.chargingPlayer || prev.chargingPlayer,
-        // Keep local UI state
-        loading: false
-      }))
+      setGameState(prev => {
+        const newState = {
+          ...prev,
+          // Update from server state (only if provided)
+          status: data.status || prev.status,
+          phase: data.phase || prev.phase,
+          creator: data.creator || prev.creator,
+          challenger: data.challenger || prev.challenger,
+          currentTurn: data.currentTurn || prev.currentTurn,
+          currentRound: data.currentRound || prev.currentRound,
+          totalRounds: 5, // Fixed to 5 rounds (first to 3)
+          creatorScore: typeof data.creatorScore === 'number' ? data.creatorScore : prev.creatorScore,
+          challengerScore: typeof data.challengerScore === 'number' ? data.challengerScore : prev.challengerScore,
+          creatorChoice: data.creatorChoice !== undefined ? data.creatorChoice : prev.creatorChoice,
+          challengerChoice: data.challengerChoice !== undefined ? data.challengerChoice : prev.challengerChoice,
+          creatorPower: typeof data.creatorPower === 'number' ? data.creatorPower : prev.creatorPower,
+          challengerPower: typeof data.challengerPower === 'number' ? data.challengerPower : prev.challengerPower,
+          flipResult: data.flipResult || prev.flipResult,
+          roundWinner: data.roundWinner || prev.roundWinner,
+          gameWinner: data.gameWinner || prev.gameWinner,
+          chargingPlayer: data.chargingPlayer || prev.chargingPlayer,
+          // Keep local UI state
+          loading: false
+        }
+        
+        console.log('🎮 NEW GAME ENGINE - State updated:', {
+          phase: newState.phase,
+          status: newState.status,
+          creator: newState.creator,
+          challenger: newState.challenger,
+          currentTurn: newState.currentTurn,
+          canMakeChoice: newState.status === 'active' && newState.phase === 'choosing'
+        })
+        
+        return newState
+      })
     } catch (error) {
       console.error('❌ Error updating game state:', error)
     }
@@ -241,10 +254,31 @@ export const useGameEngine = (gameId, address, gameData) => {
   
   const requestGameState = useCallback(() => {
     if (gameId && socketService.isConnected()) {
-      console.log('📊 Requesting game state from server')
+      console.log('📊 NEW GAME ENGINE - Requesting game state from server')
       socketService.emit('request_game_state', { gameId })
     }
   }, [gameId])
+  
+  const forceGameStart = useCallback(() => {
+    if (gameId && socketService.isConnected()) {
+      console.log('🚀 NEW GAME ENGINE - Forcing game start')
+      
+      // Try to trigger game start if both players are present
+      setGameState(prev => {
+        if (prev.creator && prev.challenger && prev.status !== 'active') {
+          showInfo('Starting game manually...')
+          return {
+            ...prev,
+            status: 'active',
+            phase: 'choosing',
+            currentTurn: prev.creator,
+            currentRound: 1
+          }
+        }
+        return prev
+      })
+    }
+  }, [gameId, showInfo])
   
   // === SOCKET.IO CONNECTION MANAGEMENT ===
   useEffect(() => {
@@ -312,16 +346,46 @@ export const useGameEngine = (gameId, address, gameData) => {
   
   // === GAME DATA SYNC ===
   useEffect(() => {
-    if (gameData && !gameState.creator) {
-      // Initialize from gameData when available
-      setGameState(prev => ({
-        ...prev,
+    if (gameData) {
+      console.log('🎮 NEW GAME ENGINE - Syncing with gameData:', {
+        gameDataStatus: gameData.status,
+        gameDataPhase: gameData.phase,
         creator: gameData.creator,
         challenger: gameData.challenger || gameData.joiner,
-        status: gameData.status === 'active' ? 'active' : prev.status
-      }))
+        creatorDeposited: gameData.creator_deposited,
+        challengerDeposited: gameData.challenger_deposited
+      })
+      
+      // Initialize from gameData when available
+      setGameState(prev => {
+        const bothDeposited = gameData.creator_deposited && gameData.challenger_deposited
+        const shouldBeActive = gameData.status === 'active' || 
+                              gameData.phase === 'game_active' || 
+                              bothDeposited
+        
+        const newState = {
+          ...prev,
+          creator: gameData.creator || prev.creator,
+          challenger: gameData.challenger || gameData.joiner || prev.challenger,
+          status: shouldBeActive ? 'active' : prev.status,
+          phase: shouldBeActive ? 'choosing' : prev.phase,
+          currentTurn: gameData.creator || prev.currentTurn, // Creator goes first
+          totalRounds: 5 // Fixed to 5 rounds
+        }
+        
+        // Auto-start game if both players are present but game isn't active
+        if (newState.creator && newState.challenger && newState.status === 'waiting' && bothDeposited) {
+          console.log('🚀 NEW GAME ENGINE - Auto-starting game (both players detected)')
+          newState.status = 'active'
+          newState.phase = 'choosing'
+          newState.currentTurn = newState.creator
+          showInfo('🎮 Starting game! Both players ready!')
+        }
+        
+        return newState
+      })
     }
-  }, [gameData, gameState.creator])
+  }, [gameData])
   
   return {
     // State
@@ -338,6 +402,7 @@ export const useGameEngine = (gameId, address, gameData) => {
     chargePower,
     executeFlip,
     requestGameState,
+    forceGameStart,
     
     // Connection info
     connected: gameState.connected,

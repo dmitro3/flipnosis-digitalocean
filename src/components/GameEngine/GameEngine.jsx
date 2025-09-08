@@ -163,6 +163,8 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
     makeChoice,
     chargePower,
     executeFlip,
+    requestGameState,
+    forceGameStart,
     connected,
     loading
   } = useGameEngine(gameId, address, gameData)
@@ -283,7 +285,10 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
         
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-            Round {gameState.currentRound}/{gameState.totalRounds}
+            Round {gameState.currentRound}/5
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '0.5rem' }}>
+            First to 3 wins
           </div>
         </div>
         
@@ -351,6 +356,55 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
         <WaitingMessage>
           {isMyTurn ? 'Make your choice above' : 'Waiting for opponent...'}
         </WaitingMessage>
+      )}
+      
+      {/* Debug Section - Only show if game is stuck in waiting */}
+      {gameState.status === 'waiting' && gameState.creator && gameState.challenger && (
+        <div style={{ 
+          textAlign: 'center', 
+          margin: '2rem 0', 
+          padding: '1rem', 
+          background: 'rgba(255, 255, 0, 0.1)', 
+          borderRadius: '0.5rem',
+          border: '1px solid #ffeb3b'
+        }}>
+          <div style={{ color: '#ffeb3b', marginBottom: '1rem', fontSize: '0.9rem' }}>
+            🛠️ Debug: Both players detected but game hasn't started
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button 
+              onClick={forceGameStart}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#ff9800',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                fontSize: '0.8rem'
+              }}
+            >
+              🚀 Force Start Game
+            </button>
+            <button 
+              onClick={requestGameState}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#2196f3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                fontSize: '0.8rem'
+              }}
+            >
+              📊 Request State
+            </button>
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#aaa', marginTop: '0.5rem' }}>
+            Creator: {gameState.creator?.slice(0, 8)}... | Challenger: {gameState.challenger?.slice(0, 8)}...
+          </div>
+        </div>
       )}
       
       {/* Results Display */}
