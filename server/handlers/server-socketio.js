@@ -274,6 +274,22 @@ function initializeSocketIO(server, dbService) {
       game.creatorDeposited = true
       console.log('🎯 Set creatorDeposited to true (NFT already deposited)')
       
+      // CRITICAL: Update database with challenger address
+      if (dbService && dbService.db) {
+        try {
+          await new Promise((resolve, reject) => {
+            dbService.db.run(
+              'UPDATE games SET challenger = ?, status = ? WHERE id = ?',
+              [challenger, 'waiting_challenger_deposit', gameId],
+              (err) => err ? reject(err) : resolve()
+            )
+          })
+          console.log('✅ Updated database with challenger:', challenger)
+        } catch (error) {
+          console.error('❌ Error updating database with challenger:', error)
+        }
+      }
+      
       // Start countdown timer that broadcasts to ALL users in room
       const timer = setInterval(() => {
         game.depositTimeRemaining--
