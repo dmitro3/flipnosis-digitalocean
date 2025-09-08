@@ -296,10 +296,10 @@ function initializeSocketIO(server, dbService) {
         if (dbService && dbService.db) {
           try {
             await new Promise((resolve, reject) => {
-              console.log(`🔍 ATTEMPTING DATABASE UPDATE: gameId=${gameId}, challenger=${challenger}`)
-              dbService.db.run(
-                'UPDATE games SET challenger = ?, joiner = ?, status = ?, deposit_deadline = ? WHERE id = ?',
-                [challenger, challenger, 'awaiting_deposits', new Date(Date.now() + 2 * 60 * 1000).toISOString(), gameId],
+            console.log(`🔍 ATTEMPTING DATABASE UPDATE: gameId=${gameId}, fullGameId=${socketInfo.roomId}, challenger=${challenger}`)
+            dbService.db.run(
+              'UPDATE games SET challenger = ?, joiner = ?, status = ?, deposit_deadline = ? WHERE id = ?',
+              [challenger, challenger, 'awaiting_deposits', new Date(Date.now() + 2 * 60 * 1000).toISOString(), socketInfo.roomId],
                 function(err) {
                   if (err) {
                     console.error(`❌ DATABASE UPDATE ERROR:`, err)
@@ -322,7 +322,7 @@ function initializeSocketIO(server, dbService) {
                 }
               )
             })
-            console.log(`✅ Database update completed for game ${gameId} with challenger: ${challenger}`)
+            console.log(`✅ Database update completed for game ${socketInfo.roomId} (gameId: ${gameId}) with challenger: ${challenger}`)
           } catch (error) {
             console.error(`❌ Database update failed for game ${gameId}:`, error)
             throw error
