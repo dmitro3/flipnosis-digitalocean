@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import GameRoom from '../../GameRoom/GameRoom'
 import GameCoin from '../../GameOrchestrator/GameCoin'
+import GameEngine from '../../GameEngine/GameEngine'
 import { useToast } from '../../../contexts/ToastContext'
 
 const TabContainer = styled.div`
@@ -372,6 +373,28 @@ const GameRoomTab = ({
   }
   
   const renderActiveGame = () => {
+    // Use new GameEngine component for clean server-side game logic
+    // Set USE_NEW_GAME_ENGINE=true to enable, false to use legacy
+    const useNewGameEngine = process.env.REACT_APP_USE_NEW_GAME_ENGINE === 'true' || true // Default to true for testing
+    
+    if (useNewGameEngine) {
+      console.log('🆕 Using new GameEngine component')
+      return (
+        <GameEngine
+          gameId={gameId}
+          gameData={gameData}
+          address={address}
+          coinConfig={coinConfig}
+        />
+      )
+    } else {
+      console.log('🔄 Using legacy GameRoom component')
+      return renderActiveGameLegacy()
+    }
+  }
+  
+  const renderActiveGameLegacy = () => {
+    // Legacy fallback - keep for now in case of issues
     return (
       <GameRoom
         gameId={gameId}
