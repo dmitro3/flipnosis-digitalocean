@@ -247,48 +247,112 @@ function initializeSocketIO(server, dbService) {
       io.to(socketInfo.roomId).emit('crypto_offer', offer)
     })
 
-    // Handle offer acceptance - THIS IS THE KEY PART!
+    // Handle offer acceptance - UNIFIED AND ROBUST FLOW
     socket.on('accept_offer', async (data) => {
       const socketInfo = socketData.get(socket.id)
-      if (!socketInfo) return
-      
-      const gameId = socketInfo.gameId
-      const creator = data.accepterAddress
-      const challenger = data.challengerAddress || data.offerer_address
-      
-      console.log(`🎯 Offer accepted: Creator ${creator} accepts Challenger ${challenger}`)
-      
-      // Create or get game state
-      if (!gameStateManager.getGame(gameId)) {
-        gameStateManager.createGame(gameId, creator, {}, data.cryptoAmount)
+      if (!socketInfo) {
+        console.error('❌ No socket info found for offer acceptance')
+        return
       }
       
-      // Start deposit stage with synchronized countdown
-      const game = gameStateManager.getGame(gameId)
-      game.phase = 'deposit_stage'
-      game.challenger = challenger
-      game.depositTimeRemaining = 120
-      game.depositStartTime = Date.now()
+      const gameId = socketInfo.gameId
+      // Handle different data structures from frontend
+      const creator = data.accepterAddress || data.creator
+      const challenger = data.challengerAddress || data.offerer_address || data.joinerAddress
+      const offerId = data.offerId
       
-      // IMPORTANT: Creator has already deposited NFT when they created the game
-      game.creatorDeposited = true
-      console.log('🎯 Set creatorDeposited to true (NFT already deposited)')
+      if (!creator || !challenger) {
+        console.error('❌ Missing creator or challenger address in offer acceptance:', data)
+        return
+      }
       
-      // CRITICAL: Update database with challenger address
-      if (dbService && dbService.db) {
-        try {
+      console.log(`🎯 Offer accepted: Creator ${creator} accepts Challenger ${challenger} (Game: ${gameId})`)
+      
+      try {
+        // STEP 1: Update offer status in database
+        if (offerId && dbService && dbService.db) {
           await new Promise((resolve, reject) => {
             dbService.db.run(
-              'UPDATE games SET challenger = ?, joiner = ?, status = ? WHERE id = ?',
-              [challenger, challenger, 'waiting_challenger_deposit', gameId],
+              'UPDATE offers SET status = ?, accepted_at = ? WHERE id = ?',
+              ['accepted', new Date().toISOString(), offerId],
               (err) => err ? reject(err) : resolve()
             )
           })
-          console.log('✅ Updated database with challenger:', challenger)
-        } catch (error) {
-          console.error('❌ Error updating database with challenger:', error)
+          console.log(`✅ Marked offer ${offerId} as accepted`)
         }
-      }
+        
+        // STEP 2: Update game with challenger and start deposit countdown
+        if (dbService && dbService.db) {
+          await new Promise((resolve, reject) => {
+            dbService.db.run(
+              'UPDATE games SET challenger = ?, joiner = ?, status = ?, deposit_deadline = ? WHERE id = ?',
+              [challenger, challenger, 'awaiting_deposits', new Date(Date.now() + 2 * 60 * 1000).toISOString(), gameId],
+              (err) => err ? reject(err) : resolve()
+            )
+          })
+          console.log(`✅ Updated game ${gameId} with challenger: ${challenger}`)
+        }
+        
+        // STEP 3: Create or update game state
+        if (!gameStateManager.getGame(gameId)) {
+          gameStateManager.createGame(gameId, creator, {}, data.cryptoAmount)
+        }
+        
+        const game = gameStateManager.getGame(gameId)
+        game.phase = 'deposit_stage'
+        game.challenger = challenger
+        game.depositTimeRemaining = 120
+        game.depositStartTime = Date.now()
+        game.creatorDeposited = true // NFT already deposited when game created
+        
+        console.log('🎯 Game state updated - deposit stage started')
+        
+        // STEP 4: Set timeout to clear challenger if deposit fails
+        setTimeout(async () => {
+          try {
+            // Check if deposit was completed
+            const gameData = await new Promise((resolve, reject) => {
+              dbService.db.get('SELECT challenger_deposited, status FROM games WHERE id = ?', [gameId], (err, row) => {
+                if (err) reject(err)
+                else resolve(row)
+              })
+            })
+            
+            // If deposit wasn't completed, clear the challenger and allow new offers
+            if (gameData && !gameData.challenger_deposited && gameData.status === 'awaiting_deposits') {
+              console.log(`⏰ Deposit timeout for game ${gameId}, clearing challenger field`)
+              
+              await new Promise((resolve, reject) => {
+                dbService.db.run(
+                  'UPDATE games SET challenger = NULL, joiner = NULL, status = ?, deposit_deadline = NULL WHERE id = ?',
+                  ['waiting_deposits', gameId],
+                  (err) => err ? reject(err) : resolve()
+                )
+              })
+              
+              // Also mark the offer as failed
+              if (offerId) {
+                await new Promise((resolve, reject) => {
+                  dbService.db.run(
+                    'UPDATE offers SET status = ? WHERE id = ?',
+                    ['failed_deposit', offerId],
+                    (err) => err ? reject(err) : resolve()
+                  )
+                })
+              }
+              
+              console.log(`✅ Cleared challenger for game ${gameId} - new offers can be made`)
+              
+              // Broadcast timeout to room
+              io.to(socketInfo.roomId).emit('deposit_timeout', {
+                gameId,
+                message: 'Deposit time expired. Game is open for new offers.'
+              })
+            }
+          } catch (error) {
+            console.error('❌ Error checking deposit timeout:', error)
+          }
+        }, 2 * 60 * 1000) // 2 minutes timeout
       
       // Start countdown timer that broadcasts to ALL users in room
       const timer = setInterval(() => {
@@ -404,31 +468,15 @@ function initializeSocketIO(server, dbService) {
         })
         console.log(`🎯 Sent your_offer_accepted to challenger: ${challenger}`)
       }
-      
-      // Store challenger details immediately when offer is accepted
-      if (dbService) {
-        try {
-          console.log(`🎯 Storing challenger details immediately on offer acceptance: ${challenger}`)
-          
-          // Update game with challenger information
-          await new Promise((resolve, reject) => {
-            dbService.db.run(`
-              UPDATE games 
-              SET challenger = ?, status = 'awaiting_deposits', joiner = ?
-              WHERE id = ?
-            `, [challenger, challenger, gameId], (err) => {
-              if (err) reject(err)
-              else resolve()
-            })
-          })
-          
-          console.log(`✅ Stored challenger ${challenger} for game ${gameId} on offer acceptance`)
-        } catch (error) {
-          console.error('❌ Error storing challenger details on offer acceptance:', error)
-        }
+      } catch (error) {
+        console.error('❌ Error processing offer acceptance:', error)
+        
+        // Send error to the creator
+        socket.emit('offer_acceptance_failed', {
+          gameId,
+          error: 'Failed to process offer acceptance'
+        })
       }
-      
-      console.log(`🎯 Offer accepted: Creator ${creator} accepts Challenger ${challenger}`)
     })
 
     // Handle deposit confirmation
@@ -457,10 +505,25 @@ function initializeSocketIO(server, dbService) {
         challengerDeposited: game.challengerDeposited
       })
       
-      // Update game state
+      // Update game state AND database
       if (data.player === game.challenger) {
         game.challengerDeposited = true
         console.log('✅ Updated challengerDeposited to true')
+        
+        // CRITICAL: Update database with deposit confirmation
+        if (dbService && dbService.db) {
+          dbService.db.run(
+            'UPDATE games SET challenger_deposited = 1 WHERE id = ?',
+            [socketInfo.gameId],
+            (err) => {
+              if (err) {
+                console.error('❌ Error updating challenger_deposited in database:', err)
+              } else {
+                console.log('✅ Database updated: challenger_deposited = 1')
+              }
+            }
+          )
+        }
       }
       
       // Broadcast to room
@@ -484,6 +547,21 @@ function initializeSocketIO(server, dbService) {
         game.phase = 'game_active'
         game.currentRound = 1
         game.currentTurn = game.creator
+        
+        // CRITICAL: Update database game status to active
+        if (dbService && dbService.db) {
+          dbService.db.run(
+            'UPDATE games SET status = ?, started_at = ? WHERE id = ?',
+            ['active', new Date().toISOString(), socketInfo.gameId],
+            (err) => {
+              if (err) {
+                console.error('❌ Error updating game status to active:', err)
+              } else {
+                console.log('✅ Database updated: game status = active')
+              }
+            }
+          )
+        }
         
         // Initialize game state on server
         const gameState = initializeGameState(socketInfo.gameId, {
