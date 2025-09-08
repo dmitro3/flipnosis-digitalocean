@@ -279,8 +279,8 @@ function initializeSocketIO(server, dbService) {
         try {
           await new Promise((resolve, reject) => {
             dbService.db.run(
-              'UPDATE games SET challenger = ?, status = ? WHERE id = ?',
-              [challenger, 'waiting_challenger_deposit', gameId],
+              'UPDATE games SET challenger = ?, joiner = ?, status = ? WHERE id = ?',
+              [challenger, challenger, 'waiting_challenger_deposit', gameId],
               (err) => err ? reject(err) : resolve()
             )
           })
@@ -542,7 +542,7 @@ function initializeSocketIO(server, dbService) {
       
       if (!gameState) {
         // Try to load from database
-        const gameData = await dbService.getGame(gameId)
+        const gameData = await dbService.getGameById(gameId)
         if (gameData && gameData.status === 'active') {
           gameState = initializeGameState(gameId, gameData)
         }
@@ -586,7 +586,7 @@ function initializeSocketIO(server, dbService) {
     socket.on('game_deposits_confirmed', async ({ gameId }) => {
       console.log(`💰 Both deposits confirmed for game ${gameId}`)
       
-      const gameData = await dbService.getGame(gameId)
+      const gameData = await dbService.getGameById(gameId)
       if (!gameData) return
       
       // Initialize game state
@@ -779,7 +779,7 @@ function addGameHandlers(socket, io, dbService) {
       
       if (!gameState) {
         // Try to load from database
-        const gameData = await dbService.getGame(gameId)
+        const gameData = await dbService.getGameById(gameId)
         if (gameData && gameData.status === 'active') {
           gameState = initializeGameState(gameId, gameData)
         }
@@ -823,7 +823,7 @@ function addGameHandlers(socket, io, dbService) {
     socket.on('game_deposits_confirmed', async ({ gameId }) => {
       console.log(`💰 Both deposits confirmed for game ${gameId}`)
       
-      const gameData = await dbService.getGame(gameId)
+      const gameData = await dbService.getGameById(gameId)
       if (!gameData) return
       
       // Initialize game state
