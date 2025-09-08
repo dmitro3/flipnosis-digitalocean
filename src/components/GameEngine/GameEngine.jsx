@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import useGameEngine from '../../hooks/useGameEngine'
-import FinalCoin from '../FinalCoin'
+import OptimizedGoldCoin from '../OptimizedGoldCoin'
 
 // === STYLED COMPONENTS ===
 const GameContainer = styled.div`
@@ -174,7 +174,7 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
   const [isCharging, setIsCharging] = useState(false)
   const [chargingInterval, setChargingInterval] = useState(null)
   
-  // === POWER CHARGING LOGIC ===
+  // === POWER CHARGING LOGIC (0-10 scale) ===
   const startCharging = () => {
     if (gameState.phase !== 'charging' || !isMyTurn) return
     
@@ -184,11 +184,12 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
     
     const interval = setInterval(() => {
       setChargingPower(prev => {
-        const newPower = Math.min(100, prev + 2) // 2% per 100ms = 5 seconds to max
+        // Power increases from 0 to 10 over 5 seconds (2 power per second)
+        const newPower = Math.min(10, prev + 0.1) // 0.1 per 50ms = 5 seconds to max power 10
         chargePower(newPower)
         return newPower
       })
-    }, 100)
+    }, 50) // Update every 50ms for smooth animation
     
     setChargingInterval(interval)
   }
@@ -196,7 +197,8 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
   const stopCharging = () => {
     if (!isCharging) return
     
-    console.log('⚡ Stopping power charge at:', chargingPower)
+    const finalPower = Math.round(chargingPower * 10) / 10 // Round to 1 decimal
+    console.log('⚡ Stopping power charge at:', finalPower, '/ 10')
     
     if (chargingInterval) {
       clearInterval(chargingInterval)
@@ -204,7 +206,7 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
     }
     
     setIsCharging(false)
-    executeFlip(chargingPower)
+    executeFlip(finalPower)
   }
   
   // Cleanup charging on unmount
@@ -303,7 +305,7 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
       
       {/* Coin Area */}
       <CoinArea>
-        <FinalCoin
+        <OptimizedGoldCoin
           isFlipping={gameState.phase === 'flipping'}
           flipResult={gameState.flipResult}
           flipDuration={3000}
@@ -323,12 +325,18 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
         {/* Power Bar (only show during charging) */}
         {gameState.phase === 'charging' && (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '0.5rem' }}>
-              {isCharging ? '⚡ Charging Power ⚡' : 'Power Level'}
+            <div style={{ marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
+              {isCharging ? '⚡ Hold to Charge Power ⚡' : 'Ready to Flip'}
+            </div>
+            <div style={{ marginBottom: '0.5rem', fontSize: '1.5rem', color: '#00ff88' }}>
+              {isMyTurn ? chargingPower.toFixed(1) : (isCreator ? gameState.challengerPower : gameState.creatorPower).toFixed(1)} / 10
             </div>
             <PowerBar>
-              <PowerFill power={isMyTurn ? chargingPower : (isCreator ? gameState.challengerPower : gameState.creatorPower)} />
+              <PowerFill power={(isMyTurn ? chargingPower : (isCreator ? gameState.challengerPower : gameState.creatorPower)) * 10} />
             </PowerBar>
+            <div style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '0.5rem' }}>
+              {isMyTurn ? (isCharging ? 'Release to flip!' : 'Hold coin to charge') : 'Opponent is charging...'}
+            </div>
           </div>
         )}
       </CoinArea>

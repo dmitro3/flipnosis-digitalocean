@@ -131,6 +131,9 @@ export const useGameEngine = (gameId, address, gameData) => {
           creator: newState.creator,
           challenger: newState.challenger,
           currentTurn: newState.currentTurn,
+          currentRound: newState.currentRound,
+          creatorChoice: newState.creatorChoice,
+          challengerChoice: newState.challengerChoice,
           canMakeChoice: newState.status === 'active' && newState.phase === 'choosing'
         })
         
@@ -164,38 +167,77 @@ export const useGameEngine = (gameId, address, gameData) => {
   }, [showInfo])
   
   const handleRoundResult = useCallback((data) => {
-    console.log('🎲 Round result from server:', data)
+    console.log('🎲 NEW GAME ENGINE - Round result from server:', data)
     
     setGameState(prev => ({
       ...prev,
       flipResult: data.result,
       roundWinner: data.roundWinner,
-      creatorScore: data.creatorScore,
-      challengerScore: data.challengerScore,
+      creatorScore: data.creatorScore || prev.creatorScore,
+      challengerScore: data.challengerScore || prev.challengerScore,
+      currentRound: data.currentRound || prev.currentRound,
       phase: 'results',
-      showResults: true
+      showResults: true,
+      // Reset choices and power for next round
+      creatorChoice: null,
+      challengerChoice: null,
+      creatorPower: 0,
+      challengerPower: 0
     }))
     
     // Show result message
     const isWinner = data.roundWinner === address
     if (isWinner) {
-      showSuccess(`🎉 You won! Coin landed ${data.result}!`)
+      showSuccess(`🎉 You won round ${data.currentRound || 'this'}! Coin landed ${data.result}!`)
     } else {
-      showInfo(`😔 You lost. Coin landed ${data.result}.`)
+      showInfo(`😔 You lost round ${data.currentRound || 'this'}. Coin landed ${data.result}.`)
     }
     
-    // Auto-advance to next round after showing results
-    setTimeout(() => {
-      setGameState(prev => ({
-        ...prev,
-        phase: 'choosing',
-        showResults: false,
-        creatorChoice: null,
-        challengerChoice: null,
-        flipResult: null,
-        roundWinner: null
-      }))
-    }, 3000)
+    // Check if game is over (first to 3 wins)
+    const creatorWins = data.creatorScore || 0
+    const challengerWins = data.challengerScore || 0
+    
+    if (creatorWins >= 3 || challengerWins >= 3) {
+      // Game over
+      setTimeout(() => {
+        const gameWinner = creatorWins >= 3 ? prev.creator : prev.challenger
+        setGameState(prev => ({
+          ...prev,
+          phase: 'completed',
+          gameWinner,
+          showResults: false
+        }))
+        
+        if (gameWinner === address) {
+          showSuccess('🏆 You won the game! Congratulations!')
+        } else {
+          showInfo('😔 You lost the game. Better luck next time!')
+        }
+      }, 3000)
+    } else {
+      // Continue to next round - alternate who goes first
+      setTimeout(() => {
+        setGameState(prev => {
+          const nextRound = (data.currentRound || prev.currentRound) + 1
+          // Alternate first player each round: Creator goes first in odd rounds, Challenger in even
+          const nextFirstPlayer = nextRound % 2 === 1 ? prev.creator : prev.challenger
+          
+          return {
+            ...prev,
+            phase: 'choosing',
+            currentRound: nextRound,
+            currentTurn: nextFirstPlayer,
+            showResults: false,
+            creatorChoice: null,
+            challengerChoice: null,
+            flipResult: null,
+            roundWinner: null
+          }
+        })
+        
+        showInfo(`🎮 Round ${(data.currentRound || 1) + 1} starting!`)
+      }, 3000)
+    }
   }, [address, showSuccess, showInfo])
   
   const handleDepositConfirmed = useCallback((data) => {
@@ -244,14 +286,25 @@ export const useGameEngine = (gameId, address, gameData) => {
   }, [gameState.phase, isMyTurn, isCreator])
   
   const executeFlip = useCallback((finalPower) => {
-    console.log('🎲 Executing flip with power:', finalPower)
+    console.log('🎲 NEW GAME ENGINE - Executing flip with power:', finalPower)
     
+    // Send player choice with power to server
     socketService.emit('player_choice', {
       gameId: gameId,
       choice: isCreator() ? gameState.creatorChoice : gameState.challengerChoice,
-      power: finalPower
+      power: finalPower,
+      round: gameState.currentRound
     })
     
+    console.log('🎲 NEW GAME ENGINE - Player choice with power sent to server:', {
+      gameId,
+      player: address,
+      choice: isCreator() ? gameState.creatorChoice : gameState.challengerChoice,
+      power: finalPower,
+      round: gameState.currentRound
+    })
+    
+    // Update local state immediately
     setGameState(prev => ({
       ...prev,
       phase: 'flipping',
@@ -259,7 +312,51 @@ export const useGameEngine = (gameId, address, gameData) => {
       [isCreator() ? 'creatorPower' : 'challengerPower']: finalPower
     }))
     
-  }, [gameId, isCreator, gameState.creatorChoice, gameState.challengerChoice])
+    // Add timeout fallback in case server doesn't respond
+    setTimeout(() => {
+      setGameState(prev => {
+        // Only proceed if we're still in flipping phase (server hasn't responded)
+        if (prev.phase === 'flipping') {
+          console.log('🕐 NEW GAME ENGINE - Server timeout, switching turns locally')
+          
+          // Check if this is a single-player round or both players need to flip
+          if (prev.creatorChoice && prev.challengerChoice) {
+            // Both players have chosen, should get result from server
+            // For now, just simulate a simple result
+            const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
+            const creatorWins = flipResult === prev.creatorChoice
+            
+            return {
+              ...prev,
+              phase: 'results',
+              flipResult,
+              roundWinner: creatorWins ? prev.creator : prev.challenger,
+              showResults: true
+            }
+          } else {
+            // Only one player has chosen so far, switch to other player's turn
+            const nextPlayer = prev.currentTurn === prev.creator ? prev.challenger : prev.creator
+            
+            console.log('🔄 NEW GAME ENGINE - Switching turns:', {
+              previousTurn: prev.currentTurn,
+              nextTurn: nextPlayer,
+              creatorChoice: prev.creatorChoice,
+              challengerChoice: prev.challengerChoice
+            })
+            
+            return {
+              ...prev,
+              phase: 'choosing',
+              currentTurn: nextPlayer,
+              flipResult: null
+            }
+          }
+        }
+        return prev
+      })
+    }, 4000) // 4 second timeout
+    
+  }, [gameId, address, isCreator, gameState.creatorChoice, gameState.challengerChoice, gameState.currentRound])
   
   const requestGameState = useCallback(() => {
     if (gameId && socketService.isConnected()) {
