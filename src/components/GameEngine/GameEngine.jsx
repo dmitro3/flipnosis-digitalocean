@@ -178,7 +178,7 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
   const startCharging = () => {
     if (gameState.phase !== 'charging' || !isMyTurn) return
     
-    console.log('⚡ Starting power charge')
+    console.log('🎮 NEW GAME ENGINE: Starting power charge (1-10 system)')
     setIsCharging(true)
     setChargingPower(1)
     
@@ -201,7 +201,7 @@ const GameEngine = ({ gameId, gameData, address, coinConfig }) => {
     if (!isCharging) return
     
     const finalPower = Math.round(chargingPower) // Round to nearest integer 1-10
-    console.log('⚡ Stopping power charge at:', finalPower, '/ 10')
+    console.log('🎮 NEW GAME ENGINE: Stopping power charge at:', finalPower, '/ 10')
     
     if (chargingInterval) {
       clearInterval(chargingInterval)

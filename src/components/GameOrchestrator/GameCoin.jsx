@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import styled from '@emotion/styled'
-import FinalCoin from '../FinalCoin'
+import OptimizedGoldCoin from '../OptimizedGoldCoin'
 
 const CoinSection = styled.div`
   display: flex;
@@ -129,7 +129,7 @@ const GameCoin = ({
   
   return (
     <CoinSection>
-      <FinalCoin
+      <OptimizedGoldCoin
         isFlipping={testFlip?.isActive || flipAnimation?.isActive}
         flipResult={testFlip?.result || flipAnimation?.result}
         flipDuration={3000}

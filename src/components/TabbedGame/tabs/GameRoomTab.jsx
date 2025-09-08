@@ -373,24 +373,16 @@ const GameRoomTab = ({
   }
   
   const renderActiveGame = () => {
-    // Use new GameEngine component for clean server-side game logic
-    // Set USE_NEW_GAME_ENGINE=true to enable, false to use legacy
-    const useNewGameEngine = process.env.REACT_APP_USE_NEW_GAME_ENGINE === 'true' || true // Default to true for testing
-    
-    if (useNewGameEngine) {
-      console.log('🆕 Using new GameEngine component')
-      return (
-        <GameEngine
-          gameId={gameId}
-          gameData={gameData}
-          address={address}
-          coinConfig={coinConfig}
-        />
-      )
-    } else {
-      console.log('🔄 Using legacy GameRoom component')
-      return renderActiveGameLegacy()
-    }
+    // FORCE ALWAYS use new GameEngine - legacy system disabled to prevent conflicts
+    console.log('🆕 Using NEW GameEngine component (legacy disabled)')
+    return (
+      <GameEngine
+        gameId={gameId}
+        gameData={gameData}
+        address={address}
+        coinConfig={coinConfig}
+      />
+    )
   }
   
   const renderActiveGameLegacy = () => {
