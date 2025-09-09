@@ -1711,7 +1711,7 @@ export default function AdminPanel() {
                                 navigator.clipboard.writeText(`${window.location.origin}/game/${listing.id}`)
                                 addNotification('success', 'Listing URL copied!')
                               }}
-                              style={{ background: '#0088ff' }}
+                              style={{ background: '#FFD700', color: '#000' }}
                             >
                               🔗 Copy URL
                             </Button>
