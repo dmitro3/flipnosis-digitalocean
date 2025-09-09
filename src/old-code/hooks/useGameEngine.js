@@ -79,12 +79,31 @@ export const useGameEngine = (gameId, address, gameData) => {
   }, [address, gameState.currentTurn])
   
   const canMakeChoice = useCallback(() => {
-    return isMyTurn() && 
-           gameState.phase === 'choosing' && 
-           gameState.status === 'active' &&
-           !gameState.creatorChoice && 
-           !gameState.challengerChoice
-  }, [isMyTurn, gameState.phase, gameState.status, gameState.creatorChoice, gameState.challengerChoice])
+    const myTurn = isMyTurn()
+    const isChoosingPhase = gameState.phase === 'choosing'
+    const isActive = gameState.status === 'active'
+    const noCreatorChoice = !gameState.creatorChoice || gameState.creatorChoice === null
+    const noChallengerChoice = !gameState.challengerChoice || gameState.challengerChoice === null
+    
+    const canChoose = myTurn && isChoosingPhase && isActive && noCreatorChoice && noChallengerChoice
+    
+    console.log('🎮 NEW GAME ENGINE - canMakeChoice check:', {
+      myTurn,
+      isChoosingPhase,
+      isActive,
+      noCreatorChoice,
+      noChallengerChoice,
+      canChoose,
+      currentTurn: gameState.currentTurn,
+      address,
+      phase: gameState.phase,
+      status: gameState.status,
+      creatorChoice: gameState.creatorChoice,
+      challengerChoice: gameState.challengerChoice
+    })
+    
+    return canChoose
+  }, [isMyTurn, gameState.phase, gameState.status, gameState.creatorChoice, gameState.challengerChoice, gameState.currentTurn, address])
   
   // === SOCKET.IO EVENT HANDLERS ===
   const handleGameStateUpdate = useCallback((data) => {
@@ -149,12 +168,15 @@ export const useGameEngine = (gameId, address, gameData) => {
     
     setGameState(prev => ({
       ...prev,
-      status: 'active',
-      phase: 'choosing',
+      status: data.status || 'active',
+      phase: data.phase || 'choosing', // Use phase from server
       creator: data.creator || prev.creator,
       challenger: data.challenger || prev.challenger,
       currentTurn: data.currentTurn || data.creator, // Creator usually goes first
       currentRound: data.currentRound || 1,
+      totalRounds: data.totalRounds || 5,
+      creatorScore: data.creatorScore || 0,
+      challengerScore: data.challengerScore || 0,
       loading: false
     }))
     

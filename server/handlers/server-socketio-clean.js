@@ -294,15 +294,15 @@ function initializeSocketIO(server, dbService) {
           io.to(`game_${gameId}`).emit('game_started', {
             gameId,
             gameIdFull: `game_${gameId}`,
-            phase: 'game_active',
+            phase: gameState.phase, // Use the phase from initialized game state
             status: 'active',
-            currentRound: 1,
-            totalRounds: 5,
-            creatorScore: 0,
-            challengerScore: 0,
-            creator: gameData.creator,
-            challenger: gameData.challenger,
-            currentTurn: gameData.creator
+            currentRound: gameState.currentRound,
+            totalRounds: gameState.totalRounds,
+            creatorScore: gameState.creatorScore,
+            challengerScore: gameState.challengerScore,
+            creator: gameState.creator,
+            challenger: gameState.challenger,
+            currentTurn: gameState.currentTurn
           })
           
           // Send initial game state

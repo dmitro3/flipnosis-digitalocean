@@ -230,12 +230,12 @@ const GameRoomTab = ({
       // Initialize game state from the event data
       setGameState({
         currentRound: data.currentRound || 1,
-        totalRounds: 3,
-        creatorScore: 0,
-        challengerScore: 0,
+        totalRounds: data.totalRounds || 5, // Use server data
+        creatorScore: data.creatorScore || 0,
+        challengerScore: data.challengerScore || 0,
         currentTurn: data.currentTurn || data.creator,
         flipSeed: null,
-        phase: 'choosing', // Start in choosing phase
+        phase: data.phase || 'choosing', // Use phase from server
         roundPhase: 'player1_choice' // Player 1 goes first
       })
     }
