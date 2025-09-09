@@ -444,6 +444,14 @@ export default function UnifiedDepositOverlay({
           
           showSuccess('Crypto deposited successfully!')
           
+          // IMMEDIATE transport for Player 2 - don't wait for server events
+          console.log('🚀 Player 2 deposit complete - IMMEDIATE transport to flip suite!')
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+              detail: { gameId: gameId, immediate: true, player2: true }
+            }))
+          }, 500)
+          
           // Fallback: Check game state and transport if both players deposited
           // This ensures transport happens even if Socket.io events fail
           const checkAndTransport = async () => {

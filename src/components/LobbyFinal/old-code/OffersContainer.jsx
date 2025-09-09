@@ -470,6 +470,20 @@ const OffersContainer = ({
           return currentShow && false // Close overlay if it was open
         })
       }
+      
+      // ADDITIONAL: Force transport for Player 2 if they just deposited
+      if (data.player === address && data.assetType === 'crypto') {
+        console.log('🚀 Player 2 (challenger) deposited - FORCE transport to flip suite!')
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameData?.id, immediate: true, player2: true }
+          }))
+        }, 500)
+        
+        // Close any open deposit overlays
+        setShowDepositOverlay(false)
+        setAcceptedOffer(null)
+      }
     }
 
     // Handle deposit timeout event

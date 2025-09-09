@@ -128,8 +128,14 @@ const TabbedGameInterface = ({
   // Listen for navigation events from other components
   useEffect(() => {
     const handleSwitchToFlipSuite = (event) => {
-      console.log('🎯 TabbedGameInterface: Switching to Flip Suite tab')
+      console.log('🎯 TabbedGameInterface: Switching to Flip Suite tab', event.detail)
       setActiveTab('game')
+      
+      // Force focus to ensure the tab switch is visible
+      setTimeout(() => {
+        console.log('🎯 TabbedGameInterface: Confirming tab switch to game')
+        setActiveTab('game')
+      }, 100)
     }
     
     const handleSwitchToLounge = (event) => {
@@ -177,6 +183,26 @@ const TabbedGameInterface = ({
       setActiveTab('chat')
     }
   }, [gameData?.status, gameData?.phase, activeTab])
+  
+  // Listen for switchToFlipSuite events from LobbyFinal
+  useEffect(() => {
+    const handleSwitchToFlipSuite = (event) => {
+      console.log('🎯 TabbedGameInterface: Switching to Flip Suite from LobbyFinal', event.detail)
+      setActiveTab('game')
+      
+      // Force focus to ensure the tab switch is visible
+      setTimeout(() => {
+        console.log('🎯 TabbedGameInterface: Confirming tab switch to game')
+        setActiveTab('game')
+      }, 100)
+    }
+    
+    window.addEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
+    
+    return () => {
+      window.removeEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
+    }
+  }, [])
   
   // Listen for socket events that might trigger tab changes
   useEffect(() => {

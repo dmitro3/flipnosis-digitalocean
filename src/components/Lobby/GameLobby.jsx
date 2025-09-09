@@ -7,8 +7,8 @@ import styled from '@emotion/styled'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 
-// Component imports - REMOVED GamePage and GameOrchestrator imports
-import GameBackground from '../GameOrchestrator/GameBackground'
+// Component imports - Use new LobbyFinal
+import LobbyFinal from '../LobbyFinal'
 import { TabbedGameInterface } from '../TabbedGame'
 
 // Lobby-specific hooks
@@ -158,23 +158,11 @@ const GameLobby = () => {
     )
   }
   
-  // Main render - just the TabbedGameInterface
+  // Main render - use new LobbyFinal
   return (
     <ThemeProvider theme={theme}>
       <Container>
-        <GameBackground />
-        <GameContainer>
-          <TabbedGameInterface
-            gameData={gameData}
-            gameId={gameId || listingId}
-            socket={socketService}
-            connected={connected}
-            offers={offers}
-            isCreator={isCreator()}
-            coinConfig={coinConfig}
-            onOfferAccepted={handleOfferAccepted}
-          />
-        </GameContainer>
+        <LobbyFinal />
       </Container>
     </ThemeProvider>
   )

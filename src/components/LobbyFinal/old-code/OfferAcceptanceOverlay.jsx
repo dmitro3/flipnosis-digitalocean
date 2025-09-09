@@ -267,6 +267,21 @@ const OfferAcceptanceOverlay = ({
           }))
         }, 500)
         
+        // ADDITIONAL: Force transport with multiple attempts
+        setTimeout(() => {
+          console.log('🚀 FORCE transport attempt 1')
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameId, force: true, attempt: 1 }
+          }))
+        }, 1000)
+        
+        setTimeout(() => {
+          console.log('🚀 FORCE transport attempt 2')
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameId, force: true, attempt: 2 }
+          }))
+        }, 2000)
+        
       } else {
         showError(result.error || 'Failed to deposit ETH')
       }
