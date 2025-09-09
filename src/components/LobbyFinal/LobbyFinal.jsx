@@ -614,12 +614,13 @@ const LobbyFinal = () => {
       console.log('💬 Chat message received:', data)
       const newMsg = {
         id: Date.now() + Math.random(),
-        sender: data.from || data.sender,
+        sender: data.from || data.sender || data.sender_address,
         message: data.message,
         timestamp: new Date().toLocaleTimeString(),
-        isCurrentUser: (data.from || data.sender)?.toLowerCase() === address?.toLowerCase()
+        isCurrentUser: (data.from || data.sender || data.sender_address)?.toLowerCase() === address?.toLowerCase()
       }
       setMessages(prev => [...prev, newMsg])
+      console.log('💬 Added message to chat:', newMsg)
     }
     
     // Chat history handler
@@ -745,10 +746,23 @@ const LobbyFinal = () => {
   const sendMessage = () => {
     if (!newMessage.trim()) return
     
+    console.log('💬 Sending chat message:', { message: newMessage.trim(), from: address })
+    
     socketService.emit('chat_message', {
       message: newMessage.trim(),
-      from: address
+      from: address,
+      gameId: gameId
     })
+    
+    // Add optimistic message
+    const optimisticMessage = {
+      id: Date.now() + Math.random(),
+      sender: address,
+      message: newMessage.trim(),
+      timestamp: new Date().toLocaleTimeString(),
+      isCurrentUser: true
+    }
+    setMessages(prev => [...prev, optimisticMessage])
     
     setNewMessage('')
   }
@@ -849,11 +863,30 @@ const LobbyFinal = () => {
   
   // Check if user is creator
   const isCreator = () => {
-    return gameData?.creator?.toLowerCase() === address?.toLowerCase()
+    if (!gameData || !address) {
+      console.log('🔍 isCreator check failed:', { hasGameData: !!gameData, hasAddress: !!address })
+      return false
+    }
+    
+    const creatorAddress = gameData.creator
+    if (!creatorAddress) {
+      console.log('🔍 No creator address found in gameData:', Object.keys(gameData))
+      return false
+    }
+    
+    const isCreatorResult = address.toLowerCase() === creatorAddress.toLowerCase()
+    console.log('🔍 isCreator result:', { 
+      address: address.toLowerCase(), 
+      creatorAddress: creatorAddress.toLowerCase(), 
+      isCreator: isCreatorResult 
+    })
+    
+    return isCreatorResult
   }
   
   // Check if user is challenger
   const isChallenger = () => {
+    if (!gameData || !address) return false
     return gameData?.challenger?.toLowerCase() === address?.toLowerCase()
   }
   
@@ -987,6 +1020,11 @@ const LobbyFinal = () => {
                 )}
               </OfferItem>
             ))}
+            
+            {/* Debug info */}
+            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1rem' }}>
+              Debug: isCreator() = {isCreator().toString()}, address = {address?.slice(0, 6)}..., creator = {gameData?.creator?.slice(0, 6)}...
+            </div>
             
             {!isCreator() && (
               <OfferInput>
