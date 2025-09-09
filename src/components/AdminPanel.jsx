@@ -1777,6 +1777,8 @@ export default function AdminPanel() {
                           <p><strong>Contract Game ID:</strong> {game.blockchain_game_id || game.contract_game_id || 'N/A'}</p>
                           <p><strong>Creator Deposited:</strong> {game.creator_deposited ? '✅' : '❌'}</p>
                           <p><strong>Challenger Deposited:</strong> {game.challenger_deposited ? '✅' : '❌'}</p>
+                          <p><strong>Debug - contract_game_id:</strong> {game.contract_game_id || 'null'}</p>
+                          <p><strong>Debug - blockchain_game_id:</strong> {game.blockchain_game_id || 'null'}</p>
                           <p><strong>Created:</strong> {formatDate(game.created_at)}</p>
                           {game.deposit_deadline && (
                             <p><strong>Deposit Deadline:</strong> {formatDate(game.deposit_deadline)}</p>
@@ -1801,12 +1803,12 @@ export default function AdminPanel() {
                               </Button>
                             )}
                             
-                            {game.contract_game_id && game.status === 'waiting' && (
+                            {game.contract_game_id && (
                               <Button 
                                 onClick={() => emergencyWithdrawETH(game.contract_game_id)}
-                                style={{ background: '#ffaa00' }}
+                                style={{ background: '#ffaa00', color: '#000' }}
                               >
-                                Emergency Withdraw ETH
+                                🚨 Emergency Withdraw ETH
                               </Button>
                             )}
                             
