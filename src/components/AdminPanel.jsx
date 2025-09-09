@@ -1794,7 +1794,7 @@ export default function AdminPanel() {
                               </Button>
                             )}
                             
-                            {game.contract_game_id && game.status === 'waiting' && (
+                            {game.contract_game_id && (game.status === 'waiting' || game.status === 'awaiting_deposits') && (
                               <Button 
                                 onClick={() => emergencyWithdrawNFT(game.id)}
                                 style={{ background: '#ff8800' }}
