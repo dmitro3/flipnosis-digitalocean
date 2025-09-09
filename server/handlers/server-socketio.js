@@ -139,24 +139,76 @@ function initializeSocketIO(server, dbService) {
       userSockets.set(address.toLowerCase(), socket.id)
       
       socket.emit('room_joined', { roomId, members: io.sockets.adapter.rooms.get(roomId)?.size || 0 })
+      
+      // Send chat history if exists
+      if (dbService && typeof dbService.getChatHistory === 'function') {
+        try {
+          const messages = await dbService.getChatHistory(roomId, 50)
+          socket.emit('chat_history', {
+            roomId,
+            messages
+          })
+          console.log(`📚 Sent ${messages.length} chat messages to ${address}`)
+        } catch (error) {
+          console.error('❌ Error loading chat history:', error)
+        }
+      }
     })
 
     // Chat
-    socket.on('chat_message', (data) => {
+    socket.on('chat_message', async (data) => {
       const { roomId, message, address } = data
-      io.to(roomId).emit('chat_message', { message, address, timestamp: new Date().toISOString() })
+      console.log(`💬 Chat message in ${roomId}:`, message)
+      
+      // Save to database
+      if (dbService && typeof dbService.saveChatMessage === 'function') {
+        try {
+          await dbService.saveChatMessage(roomId, address, message)
+          console.log('✅ Chat message saved to database')
+        } catch (error) {
+          console.error('❌ Error saving chat message:', error)
+        }
+      }
+      
+      // Broadcast to room
+      io.to(roomId).emit('chat_message', { 
+        message, 
+        address, 
+        timestamp: new Date().toISOString() 
+      })
     })
 
     // Offers
     socket.on('crypto_offer', async (data) => {
-      const { gameId, cryptoAmount, address } = data
+      const { gameId, cryptoAmount, address, message } = data
+      console.log(`💰 Crypto offer: ${cryptoAmount} from ${address}`)
+      
       const offer = {
         id: `${Date.now()}_${Math.random()}`,
         type: 'crypto_offer',
         address,
         cryptoAmount,
+        message: message || 'Crypto offer',
         timestamp: new Date().toISOString()
       }
+      
+      // Save to database if available
+      if (dbService && typeof dbService.createOffer === 'function') {
+        try {
+          await dbService.createOffer({
+            id: offer.id,
+            listing_id: gameId,
+            offerer_address: address,
+            offer_price: cryptoAmount,
+            message: message || 'Crypto offer'
+          })
+          console.log('✅ Offer saved to database')
+        } catch (error) {
+          console.error('❌ Error saving offer:', error)
+        }
+      }
+      
+      // Broadcast to room
       io.to(`game_${gameId}`).emit('crypto_offer', offer)
     })
 

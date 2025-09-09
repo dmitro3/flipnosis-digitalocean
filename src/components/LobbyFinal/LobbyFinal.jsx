@@ -569,8 +569,9 @@ const LobbyFinal = () => {
       const response = await fetch(`/api/games/${gameId}/offers`)
       if (response.ok) {
         const data = await response.json()
-        setOffers(data.offers || [])
-        console.log('💰 Offers loaded:', data.offers?.length || 0)
+        // API returns offers directly, not wrapped in an object
+        setOffers(Array.isArray(data) ? data : [])
+        console.log('💰 Offers loaded:', Array.isArray(data) ? data.length : 0)
       }
     } catch (error) {
       console.error('❌ Failed to load offers:', error)
@@ -1037,12 +1038,8 @@ const LobbyFinal = () => {
               </OfferItem>
             ))}
             
-            {/* Debug info - remove this after testing */}
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1rem' }}>
-              Debug: isCreator() = {isCreator().toString()}, address = {address?.slice(0, 6)}..., creator = {gameData?.creator?.slice(0, 6)}..., gameStatus = {gameData?.status}
-            </div>
             
-            {(!isCreator() || !gameData?.creator) && (
+            {!isCreator() && gameData?.creator && (
               <OfferInput>
                 <InputGroup>
                   <InputLabel>Offer Price (USD)</InputLabel>
