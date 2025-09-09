@@ -916,23 +916,35 @@ export default function AdminPanel() {
     }
   }
 
-  // Withdraw platform fees
-  const withdrawPlatformFees = async () => {
-    if (!contractService.currentChain) {
-      addNotification('error', 'Contract not initialized')
+  // Emergency withdraw ETH for a specific game
+  const emergencyWithdrawETH = async (gameId) => {
+    if (!contractService.isReady()) {
+      addNotification('error', 'Wallet not connected or contract service not initialized.')
       return
     }
     
     try {
-      const result = await contractService.withdrawPlatformFees()
+      setLoading(true)
+      
+      // Get the current user's address as the recipient
+      const recipient = contractService.account
+      if (!recipient) {
+        throw new Error('No wallet address found')
+      }
+      
+      const result = await contractService.emergencyWithdrawETH(gameId, recipient)
       
       if (result.success) {
-        addNotification('success', `Platform fees withdrawn successfully! Transaction: ${result.transactionHash}`)
+        addNotification('success', `ETH withdrawn successfully from game ${gameId}! Transaction: ${result.transactionHash}`)
+        await loadData() // Refresh the data
       } else {
         throw new Error(result.error)
       }
     } catch (error) {
-      addNotification('error', 'Failed to withdraw platform fees: ' + error.message)
+      console.error('Error emergency withdrawing ETH:', error)
+      addNotification('error', 'Failed to withdraw ETH: ' + error.message)
+    } finally {
+      setLoading(false)
     }
   }
   
@@ -1789,6 +1801,15 @@ export default function AdminPanel() {
                               </Button>
                             )}
                             
+                            {game.contract_game_id && game.status === 'waiting' && (
+                              <Button 
+                                onClick={() => emergencyWithdrawETH(game.contract_game_id)}
+                                style={{ background: '#ffaa00' }}
+                              >
+                                Emergency Withdraw ETH
+                              </Button>
+                            )}
+                            
                             <Button 
                               onClick={() => {
                                 navigator.clipboard.writeText(`${window.location.origin}/game/${game.id}`)
@@ -1948,14 +1969,17 @@ export default function AdminPanel() {
                   padding: '2rem',
                   marginBottom: '2rem'
                 }}>
-                  <h4>Withdraw Platform Fees</h4>
-                  <p>Withdraw accumulated platform fees from the contract.</p>
-                  <Button 
-                    onClick={withdrawPlatformFees}
-                    style={{ background: '#FFD700', color: '#000', marginTop: '1rem' }}
-                  >
-                    💰 Withdraw Fees
-                  </Button>
+                  <h4>Platform Fees</h4>
+                  <p>Platform fees are automatically sent to the fee receiver when games are completed. Use the "Emergency Withdraw ETH" buttons on individual games to withdraw stuck funds.</p>
+                  <div style={{ 
+                    background: 'rgba(255, 170, 0, 0.2)', 
+                    padding: '1rem', 
+                    borderRadius: '8px', 
+                    marginTop: '1rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    <strong>Note:</strong> For your 40 games with stuck ETH, use the "Emergency Withdraw ETH" button on each game in the Games tab.
+                  </div>
                 </div>
                 
                 <div style={{ 
