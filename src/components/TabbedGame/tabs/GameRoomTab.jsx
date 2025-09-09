@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
-import GameRoom from '../../GameRoom/GameRoom'
-import GameCoin from '../../GameOrchestrator/GameCoin'
-import GameEngine from '../../GameEngine/GameEngine'
+import FlipSuiteFinal from '../../FlipSuiteFinal/FlipSuiteFinal'
 import { useToast } from '../../../contexts/ToastContext'
 
 const TabContainer = styled.div`
@@ -373,16 +371,9 @@ const GameRoomTab = ({
   }
   
   const renderActiveGame = () => {
-    // FORCE ALWAYS use new GameEngine - legacy system disabled to prevent conflicts
-    console.log('🆕 Using NEW GameEngine component (legacy disabled)')
-    return (
-      <GameEngine
-        gameId={gameId}
-        gameData={gameData}
-        address={address}
-        coinConfig={coinConfig}
-      />
-    )
+    // Use new FlipSuiteFinal component - clean, working game room
+    console.log('🆕 Using NEW FlipSuiteFinal component')
+    return <FlipSuiteFinal />
   }
   
   const renderActiveGameLegacy = () => {

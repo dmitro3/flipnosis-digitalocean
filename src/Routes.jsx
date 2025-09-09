@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
 import GameLobby from "./components/Lobby/GameLobby";  // Changed from GamePage
+import FlipSuiteFinal from "./components/FlipSuiteFinal";  // New clean game room
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 
@@ -28,6 +29,10 @@ export const router = createBrowserRouter([
       {
         path: "game/:gameId",
         element: <GameLobby />,  // Changed from GamePage
+      },
+      {
+        path: "flip-suite/:gameId",
+        element: <FlipSuiteFinal />,  // New clean game room
       },
       {
         path: "admin",
