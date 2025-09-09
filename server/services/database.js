@@ -174,7 +174,7 @@ class DatabaseService {
   async saveChatMessage(roomId, senderAddress, message, messageType = 'chat', messageData = null) {
     return new Promise((resolve, reject) => {
       this.db.run(`
-        INSERT INTO messages (room_id, sender_address, message, message_type, message_data)
+        INSERT INTO chat_messages (room_id, sender_address, message, message_type, message_data)
         VALUES (?, ?, ?, ?, ?)
       `, [roomId, senderAddress, message, messageType, messageData ? JSON.stringify(messageData) : null], function(err) {
         if (err) reject(err)
@@ -186,7 +186,7 @@ class DatabaseService {
   async getChatHistory(roomId, limit = 100) {
     return new Promise((resolve, reject) => {
       this.db.all(`
-        SELECT * FROM messages 
+        SELECT * FROM chat_messages 
         WHERE room_id = ? 
         ORDER BY created_at ASC 
         LIMIT ?
@@ -330,9 +330,35 @@ class DatabaseService {
     })
   }
 
+  async saveOffer(roomId, fromAddress, toAddress, nftId, nftData) {
+    return new Promise((resolve, reject) => {
+      const offerId = `${roomId}_${fromAddress}_${toAddress}_${Date.now()}`
+      this.db.run(`
+        INSERT INTO offers (id, listing_id, offerer_address, offer_price, message, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [offerId, roomId, fromAddress, 0, JSON.stringify({ nftId, nftData }), 'pending', new Date().toISOString()], function(err) {
+        if (err) reject(err)
+        else resolve(this.lastID)
+      })
+    })
+  }
+
   async updateOfferStatus(offerId, status) {
     return new Promise((resolve, reject) => {
       this.db.run('UPDATE offers SET status = ? WHERE id = ?', [status, offerId], function(err) {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+  }
+
+  async updateOfferStatusByDetails(roomId, fromAddress, toAddress, nftId, status) {
+    return new Promise((resolve, reject) => {
+      this.db.run(`
+        UPDATE offers 
+        SET status = ? 
+        WHERE listing_id = ? AND offerer_address = ? AND message LIKE ?
+      `, [status, roomId, fromAddress, `%${nftId}%`], function(err) {
         if (err) reject(err)
         else resolve()
       })

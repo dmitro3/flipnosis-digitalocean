@@ -59,19 +59,20 @@ const GameBoard = styled.div`
 
 const PlayerCard = styled.div`
   background: linear-gradient(135deg, 
-    ${props => props.isCreator ? 
-      'rgba(255, 215, 0, 0.15)' : 
-      'rgba(0, 255, 65, 0.15)'
-    } 0%, 
-    rgba(0, 0, 0, 0.5) 100%
-  );
-  border: 2px solid ${props => props.isCreator ? '#FFD700' : '#00FF41'};
+    ${props => props.isCreator ? 'rgba(255, 215, 0, 0.1)' : 'rgba(0, 123, 255, 0.1)'} 0%, 
+    ${props => props.isCreator ? 'rgba(255, 165, 0, 0.2)' : 'rgba(0, 86, 179, 0.2)'} 100%);
+  border: 2px solid ${props => props.isCreator ? '#FFD700' : '#007BFF'};
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 0 30px ${props => props.isCreator ? 
-    'rgba(255, 215, 0, 0.3)' : 
-    'rgba(0, 255, 65, 0.3)'
-  };
+  text-align: center;
+  position: relative;
+  
+  ${props => props.isActive && `
+    box-shadow: 0 0 20px ${props.isCreator ? 'rgba(255, 215, 0, 0.5)' : 'rgba(0, 123, 255, 0.5)'};
+    transform: scale(1.05);
+  `}
+  
+  transition: all 0.3s ease;
 `
 
 const PlayerHeader = styled.div`
@@ -79,17 +80,12 @@ const PlayerHeader = styled.div`
   align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 `
 
 const PlayerLabel = styled.div`
-  flex: 1;
-  color: ${props => props.isCreator ? '#FFD700' : '#00FF41'};
+  font-size: 1.2rem;
   font-weight: bold;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  color: ${props => props.isCreator ? '#FFD700' : '#007BFF'};
 `
 
 const PlayerStats = styled.div`
@@ -104,19 +100,18 @@ const StatRow = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
 `
 
 const StatLabel = styled.span`
-  color: #CCCCCC;
   font-size: 0.9rem;
+  opacity: 0.8;
 `
 
 const StatValue = styled.span`
-  color: white;
   font-weight: bold;
-  font-size: 1rem;
+  color: ${props => props.isWinner ? '#00FF00' : props.isLoser ? '#FF0000' : 'inherit'};
 `
 
 const RoundWins = styled.div`
@@ -126,145 +121,121 @@ const RoundWins = styled.div`
   margin-top: 1rem;
 `
 
-const RoundDot = styled.div`
-  width: 32px;
-  height: 32px;
+const WinIndicator = styled.div`
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: ${props => {
-    if (props.isWon) return props.isCreator ? '#FFD700' : '#00FF41';
-    if (props.isLost) return '#FF1493';
-    return 'rgba(255, 255, 255, 0.1)';
-  }};
-  border: 2px solid ${props => {
-    if (props.isWon) return props.isCreator ? '#FFA500' : '#00CC33';
-    if (props.isLost) return '#FF0066';
-    return 'rgba(255, 255, 255, 0.2)';
-  }};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: ${props => props.isWon || props.isLost ? '#000' : '#666'};
-  box-shadow: ${props => props.isWon ? 
-    `0 0 10px ${props.isCreator ? 'rgba(255, 215, 0, 0.5)' : 'rgba(0, 255, 65, 0.5)'}` : 
-    'none'
-  };
-`
-
-const CenterArea = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
+  background: ${props => props.won ? '#00FF00' : 'rgba(255, 255, 255, 0.2)'};
+  border: 2px solid ${props => props.won ? '#00FF00' : 'rgba(255, 255, 255, 0.3)'};
 `
 
 const CoinContainer = styled.div`
-  position: relative;
-  min-height: 400px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 400px;
 `
 
 const GameStatus = styled.div`
   text-align: center;
-  padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.6);
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-radius: 1rem;
-  min-width: 300px;
-`
-
-const StatusText = styled.div`
+  margin-bottom: 2rem;
   font-size: 1.2rem;
   font-weight: bold;
-  color: #FFD700;
-  margin-bottom: 0.5rem;
 `
 
-const RoundInfo = styled.div`
-  font-size: 1rem;
-  color: #CCCCCC;
-`
-
-const ChoiceSection = styled.div`
+const ChoiceButtons = styled.div`
   display: flex;
-  gap: 2rem;
-  justify-content: center;
-  margin-top: 1rem;
+  gap: 1rem;
+  margin-bottom: 2rem;
 `
 
 const ChoiceButton = styled.button`
   padding: 1rem 2rem;
   font-size: 1.2rem;
   font-weight: bold;
-  border: 2px solid ${props => props.choice === 'heads' ? '#00FF41' : '#FF1493'};
-  background: linear-gradient(135deg, 
-    ${props => props.choice === 'heads' ? 
-      'rgba(0, 255, 65, 0.2)' : 
-      'rgba(255, 20, 147, 0.2)'
-    } 0%, 
-    rgba(0, 0, 0, 0.5) 100%
-  );
-  color: white;
-  border-radius: 1rem;
-  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
   transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: ${props => props.disabled ? 0.5 : 1};
+  background: ${props => props.selected ? '#FFD700' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.selected ? '#000' : '#fff'};
+  border: 2px solid ${props => props.selected ? '#FFD700' : 'rgba(255, 255, 255, 0.3)'};
   
-  &:hover:not(:disabled) {
+  &:hover {
+    background: ${props => props.selected ? '#FFD700' : 'rgba(255, 255, 255, 0.2)'};
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px ${props => props.choice === 'heads' ? 
-      'rgba(0, 255, 65, 0.4)' : 
-      'rgba(255, 20, 147, 0.4)'
-    };
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 `
 
-const PowerBarContainer = styled.div`
+const PowerSlider = styled.div`
   width: 100%;
-  max-width: 400px;
-  margin-top: 1rem;
-  opacity: ${props => props.show ? 1 : 0};
-  transition: opacity 0.3s ease;
+  max-width: 300px;
+  margin-bottom: 2rem;
 `
 
-const PowerBarLabel = styled.div`
-  color: #FFD700;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+const PowerLabel = styled.div`
   text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: bold;
 `
 
-const PowerBar = styled.div`
-  height: 30px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid #FFD700;
-  border-radius: 15px;
-  position: relative;
-  overflow: hidden;
+const Slider = styled.input`
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  -webkit-appearance: none;
+  
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #FFD700;
+    cursor: pointer;
+  }
+  
+  &::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #FFD700;
+    cursor: pointer;
+    border: none;
+  }
 `
 
-const PowerFill = styled.div`
-  height: 100%;
-  width: ${props => props.power}%;
-  background: linear-gradient(90deg, 
-    #FFD700 0%, 
-    #FFA500 30%, 
-    #FF6B00 60%, 
-    #FF1493 100%
-  );
-  border-radius: 13px;
-  transition: width 0.15s ease-out;
-  box-shadow: ${props => props.charging ? 
-    '0 0 15px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3)' :
-    '0 0 8px rgba(255, 215, 0, 0.6)'
-  };
+const FlipButton = styled.button`
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #000;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
 `
 
 const ForfeitButton = styled.button`
@@ -297,8 +268,9 @@ const FlipSuiteFinal = () => {
   
   // Game state
   const [gameState, setGameState] = useState({
-    phase: 'connecting', // connecting, waiting, choosing, charging, flipping, result, completed
+    phase: 'connecting', // connecting, waiting, choosing, flipping, result, completed
     currentRound: 1,
+    totalRounds: 5,
     creatorScore: 0,
     challengerScore: 0,
     currentTurn: null,
@@ -316,7 +288,7 @@ const FlipSuiteFinal = () => {
   // UI state
   const [connected, setConnected] = useState(false)
   const [playerChoice, setPlayerChoice] = useState(null)
-  const [powerLevel, setPowerLevel] = useState(0)
+  const [powerLevel, setPowerLevel] = useState(50)
   const [isCharging, setIsCharging] = useState(false)
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
@@ -342,6 +314,10 @@ const FlipSuiteFinal = () => {
   const canMakeChoice = useCallback(() => {
     return isMyTurn() && gameState.phase === 'choosing' && !playerChoice
   }, [isMyTurn, gameState.phase, playerChoice])
+  
+  const canFlip = useCallback(() => {
+    return isMyTurn() && gameState.phase === 'choosing' && playerChoice && powerLevel > 0
+  }, [isMyTurn, gameState.phase, playerChoice, powerLevel])
   
   // Socket.io connection
   useEffect(() => {
@@ -372,17 +348,35 @@ const FlipSuiteFinal = () => {
     
     // Game state updates
     const handleGameStateUpdate = (data) => {
-      console.log('📊 Game state update:', data)
+      console.log('🔄 Game state update:', data)
       setGameState(prev => ({ ...prev, ...data }))
+    }
+    
+    // Game started
+    const handleGameStarted = (data) => {
+      console.log('🚀 Game started:', data)
+      setGameState(prev => ({
+        ...prev,
+        phase: data.phase || 'choosing',
+        status: data.status || 'active',
+        creator: data.creator || prev.creator,
+        challenger: data.challenger || prev.challenger,
+        currentTurn: data.currentTurn || data.creator,
+        currentRound: data.currentRound || 1,
+        totalRounds: data.totalRounds || 5,
+        creatorScore: data.creatorScore || 0,
+        challengerScore: data.challengerScore || 0
+      }))
+      showInfo('🎮 Game started! Choose heads or tails!')
     }
     
     // Round start
     const handleRoundStart = (data) => {
-      console.log('🎲 Round start:', data)
+      console.log('🔄 Round start:', data)
       setGameState(prev => ({
         ...prev,
-        currentRound: data.round,
         phase: 'choosing',
+        currentRound: data.round,
         currentTurn: data.currentTurn,
         creatorChoice: null,
         challengerChoice: null,
@@ -392,25 +386,17 @@ const FlipSuiteFinal = () => {
         roundWinner: null
       }))
       setPlayerChoice(null)
-      setPowerLevel(0)
-      setIsCharging(false)
-      
-      // Start countdown for choice
-      if (data.round <= 4) {
-        startChoiceCountdown()
-      }
+      setPowerLevel(50)
+      showInfo(`🎯 Round ${data.round} starting! It's ${data.currentTurn === address ? 'your' : 'opponent\'s'} turn!`)
     }
     
-    // Round 5 auto-flip
-    const handleAutoFlip = (data) => {
-      console.log('🎲 Auto-flip round 5:', data)
+    // Choice made
+    const handleChoiceMade = (data) => {
+      console.log('🎯 Choice made:', data)
       setGameState(prev => ({
         ...prev,
-        phase: 'flipping',
-        creatorChoice: data.autoChoice,
-        challengerChoice: data.autoChoice,
-        creatorPower: 10,
-        challengerPower: 10
+        [data.isCreator ? 'creatorChoice' : 'challengerChoice']: data.choice,
+        [data.isCreator ? 'creatorPower' : 'challengerPower']: data.power
       }))
     }
     
@@ -420,16 +406,18 @@ const FlipSuiteFinal = () => {
       setGameState(prev => ({
         ...prev,
         phase: 'result',
-        flipResult: data.result,
+        flipResult: data.flipResult,
         roundWinner: data.roundWinner,
         creatorScore: data.creatorScore,
-        challengerScore: data.challengerScore
+        challengerScore: data.challengerScore,
+        creatorChoice: data.creatorChoice,
+        challengerChoice: data.challengerChoice
       }))
       
       // Show result popup
       setResultData({
         isWinner: data.roundWinner === address,
-        flipResult: data.result,
+        flipResult: data.flipResult,
         playerChoice: isCreator() ? data.creatorChoice : data.challengerChoice,
         roundWinner: data.roundWinner,
         round: data.round
@@ -438,8 +426,10 @@ const FlipSuiteFinal = () => {
       
       if (data.roundWinner === address) {
         showSuccess(`🎉 You won round ${data.round}!`)
-      } else {
+      } else if (data.roundWinner) {
         showInfo(`😔 You lost round ${data.round}`)
+      } else {
+        showInfo(`🤝 Round ${data.round} was a tie!`)
       }
     }
     
@@ -468,195 +458,158 @@ const FlipSuiteFinal = () => {
     
     // Register event listeners
     socketService.on('game_state_update', handleGameStateUpdate)
+    socketService.on('game_started', handleGameStarted)
     socketService.on('round_start', handleRoundStart)
-    socketService.on('auto_flip_round_5', handleAutoFlip)
+    socketService.on('choice_made', handleChoiceMade)
     socketService.on('flip_result', handleFlipResult)
     socketService.on('game_complete', handleGameComplete)
     
     return () => {
       socketService.off('game_state_update', handleGameStateUpdate)
+      socketService.off('game_started', handleGameStarted)
       socketService.off('round_start', handleRoundStart)
-      socketService.off('auto_flip_round_5', handleAutoFlip)
+      socketService.off('choice_made', handleChoiceMade)
       socketService.off('flip_result', handleFlipResult)
       socketService.off('game_complete', handleGameComplete)
     }
-  }, [connected, address, isCreator])
+  }, [connected, address, isCreator, showSuccess, showError, showInfo])
   
-  // Choice countdown
-  const startChoiceCountdown = () => {
-    setCountdown(20)
-    
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          setCountdown(null)
-          
-          // Auto-choose if it's player's turn
-          if (isMyTurn() && !playerChoice) {
-            const autoChoice = Math.random() < 0.5 ? 'heads' : 'tails'
-            handlePlayerChoice(autoChoice)
-            showInfo('⏰ Time\'s up! Auto-selected choice.')
-          }
-          
-          return null
-        }
-        return prev - 1
-      })
-    }, 1000)
-    
-    countdownIntervalRef.current = interval
-  }
-  
-  // Player choice handler
-  const handlePlayerChoice = (choice) => {
+  // Game actions
+  const handleChoice = (choice) => {
     if (!canMakeChoice()) return
     
     setPlayerChoice(choice)
+    showInfo(`You chose ${choice}! Now set your power level.`)
+  }
+  
+  const handlePowerChange = (event) => {
+    setPowerLevel(parseInt(event.target.value))
+  }
+  
+  const handleFlip = () => {
+    if (!canFlip()) return
     
-    // Send choice to server
+    console.log('🎯 Making choice:', { choice: playerChoice, power: powerLevel })
+    
     socketService.emit('player_choice', {
       gameId,
-      choice,
-      player: address
+      address,
+      choice: playerChoice,
+      power: powerLevel
     })
     
-    showSuccess(`You chose ${choice.toUpperCase()}!`)
-    
-    // Stop countdown
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current)
-      setCountdown(null)
-    }
+    setGameState(prev => ({ ...prev, phase: 'flipping' }))
+    showInfo('🎲 Flipping coin...')
   }
   
-  // Power charging
-  const startPowerCharging = () => {
-    if (!isMyTurn() || gameState.phase !== 'choosing' || playerChoice) return
-    
-    setIsCharging(true)
-    setPowerLevel(1)
-    
-    const startTime = Date.now()
-    const interval = setInterval(() => {
-      const elapsed = (Date.now() - startTime) / 1000
-      const newPower = Math.min(10, Math.max(1, 1 + (elapsed * 2))) // 1-10 over 4.5 seconds
-      setPowerLevel(newPower)
-      
-      if (newPower >= 10) {
-        stopPowerCharging()
-      }
-    }, 50)
-    
-    powerIntervalRef.current = interval
-  }
-  
-  const stopPowerCharging = () => {
-    if (!isCharging) return
-    
-    const finalPower = Math.round(powerLevel)
-    
-    setIsCharging(false)
-    if (powerIntervalRef.current) {
-      clearInterval(powerIntervalRef.current)
-      powerIntervalRef.current = null
-    }
-    
-    // Send power to server
-    socketService.emit('power_charged', {
-      gameId,
-      power: finalPower,
-      player: address
-    })
-    
-    showSuccess(`Power charged to ${finalPower}/10!`)
-  }
-  
-  // Forfeit handler
   const handleForfeit = () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to forfeit? Your opponent will win both the NFT and crypto.'
-    )
-    if (confirmed) {
-      socketService.emit('forfeit_game', {
-        gameId,
-        player: address
-      })
-      navigate('/marketplace')
+    if (window.confirm('Are you sure you want to forfeit this game?')) {
+      navigate('/')
+      showInfo('Game forfeited')
     }
   }
   
-  // Result popup handlers
   const handleResultClose = () => {
     setShowResultPopup(false)
     setResultData(null)
   }
   
-  const handleClaimWinnings = () => {
-    if (resultData?.isWinner) {
-      // Navigate to claim page or handle winnings
-      navigate(`/claim/${gameId}`)
-    } else {
-      navigate('/marketplace')
+  // Render game status
+  const renderGameStatus = () => {
+    if (gameState.phase === 'connecting') {
+      return 'Connecting to game...'
+    } else if (gameState.phase === 'waiting') {
+      return 'Waiting for game to start...'
+    } else if (gameState.phase === 'choosing') {
+      if (isMyTurn()) {
+        return `Round ${gameState.currentRound} - Your turn! Choose heads or tails`
+      } else {
+        return `Round ${gameState.currentRound} - Waiting for ${gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} to choose`
+      }
+    } else if (gameState.phase === 'flipping') {
+      return 'Flipping coin...'
+    } else if (gameState.phase === 'result') {
+      return `Round ${gameState.currentRound} - ${gameState.roundWinner ? `${gameState.roundWinner === address ? 'You' : 'Opponent'} won!` : 'Tie!'}`
+    } else if (gameState.phase === 'completed') {
+      return `Game Complete - ${gameState.gameWinner === address ? 'You won!' : 'You lost!'}`
     }
+    return 'Unknown game state'
   }
   
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (powerIntervalRef.current) {
-        clearInterval(powerIntervalRef.current)
-      }
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current)
-      }
-    }
-  }, [])
-  
-  // Render helpers
-  const getStatusText = () => {
-    switch (gameState.phase) {
-      case 'connecting':
-        return 'Connecting to game...'
-      case 'waiting':
-        return 'Waiting for game to start...'
-      case 'choosing':
-        if (gameState.currentRound === 5) {
-          return 'Round 5 - Auto-flip starting...'
-        }
-        if (isMyTurn()) {
-          return `Round ${gameState.currentRound} - Choose heads or tails!`
-        }
-        return `Round ${gameState.currentRound} - Waiting for opponent...`
-      case 'charging':
-        if (isMyTurn()) {
-          return 'Charge your power!'
-        }
-        return 'Opponent is charging power...'
-      case 'flipping':
-        return 'Coin is flipping...'
-      case 'result':
-        return `Round ${gameState.currentRound} complete!`
-      case 'completed':
-        return 'Game completed!'
-      default:
-        return 'Game active'
-    }
+  // Render choice buttons
+  const renderChoiceButtons = () => {
+    if (gameState.phase !== 'choosing' || !isMyTurn()) return null
+    
+    return (
+      <ChoiceButtons>
+        <ChoiceButton
+          selected={playerChoice === 'heads'}
+          onClick={() => handleChoice('heads')}
+          disabled={!canMakeChoice()}
+        >
+          HEADS
+        </ChoiceButton>
+        <ChoiceButton
+          selected={playerChoice === 'tails'}
+          onClick={() => handleChoice('tails')}
+          disabled={!canMakeChoice()}
+        >
+          TAILS
+        </ChoiceButton>
+      </ChoiceButtons>
+    )
   }
   
-  const getCurrentChooser = () => {
-    if (gameState.currentRound <= 4) {
-      return gameState.currentRound % 2 === 1 ? 'creator' : 'challenger'
+  // Render power slider
+  const renderPowerSlider = () => {
+    if (gameState.phase !== 'choosing' || !isMyTurn() || !playerChoice) return null
+    
+    return (
+      <PowerSlider>
+        <PowerLabel>Power Level: {powerLevel}%</PowerLabel>
+        <Slider
+          type="range"
+          min="1"
+          max="100"
+          value={powerLevel}
+          onChange={handlePowerChange}
+        />
+      </PowerSlider>
+    )
+  }
+  
+  // Render flip button
+  const renderFlipButton = () => {
+    if (gameState.phase !== 'choosing' || !isMyTurn() || !playerChoice) return null
+    
+    return (
+      <FlipButton
+        onClick={handleFlip}
+        disabled={!canFlip()}
+      >
+        🎲 FLIP COIN
+      </FlipButton>
+    )
+  }
+  
+  // Render round wins
+  const renderRoundWins = (isCreator) => {
+    const wins = isCreator ? gameState.creatorScore : gameState.challengerScore
+    const rounds = []
+    
+    for (let i = 1; i <= gameState.totalRounds; i++) {
+      rounds.push(
+        <WinIndicator key={i} won={i <= wins} />
+      )
     }
-    return 'auto' // Round 5 is auto
+    
+    return <RoundWins>{rounds}</RoundWins>
   }
   
   if (gameState.phase === 'connecting') {
     return (
       <GameContainer>
-        <GameStatus>
-          <StatusText>Connecting to game...</StatusText>
-        </GameStatus>
+        <GameStatus>Connecting to game...</GameStatus>
       </GameContainer>
     )
   }
@@ -685,7 +638,7 @@ const FlipSuiteFinal = () => {
       {/* Game Board */}
       <GameBoard>
         {/* Creator Card */}
-        <PlayerCard isCreator={true}>
+        <PlayerCard isCreator={true} isActive={gameState.currentTurn === gameState.creator}>
           <PlayerHeader>
             <ProfilePicture 
               address={gameState.creator}
@@ -713,97 +666,26 @@ const FlipSuiteFinal = () => {
             </StatRow>
           </PlayerStats>
           
-          <RoundWins>
-            {[1, 2, 3, 4, 5].map(round => (
-              <RoundDot 
-                key={round}
-                isCreator={true}
-                isWon={round <= gameState.creatorScore}
-                isLost={round <= gameState.challengerScore}
-              >
-                {round}
-              </RoundDot>
-            ))}
-          </RoundWins>
+          {renderRoundWins(true)}
         </PlayerCard>
         
-        {/* Center Area */}
-        <CenterArea>
-          <GameStatus>
-            <StatusText>{getStatusText()}</StatusText>
-            <RoundInfo>
-              Round {gameState.currentRound}/5 • First to 3 wins
-              {countdown && (
-                <div style={{ marginTop: '0.5rem', color: '#FF6B6B' }}>
-                  {countdown}s remaining
-                </div>
-              )}
-            </RoundInfo>
-          </GameStatus>
+        {/* Coin Container */}
+        <CoinContainer>
+          <GameStatus>{renderGameStatus()}</GameStatus>
           
-          <CoinContainer>
-            <OptimizedGoldCoin
-              isFlipping={gameState.phase === 'flipping'}
-              flipResult={gameState.flipResult}
-              flipDuration={3000}
-              isPlayerTurn={isMyTurn() && gameState.phase === 'choosing'}
-              onPowerCharge={startPowerCharging}
-              onPowerRelease={stopPowerCharging}
-              chargingPlayer={isMyTurn() ? address : null}
-              creatorPower={gameState.creatorPower}
-              joinerPower={gameState.challengerPower}
-              creatorChoice={gameState.creatorChoice}
-              joinerChoice={gameState.challengerChoice}
-              isCreator={isCreator()}
-              size={280}
-              gamePhase={gameState.phase}
-            />
-          </CoinContainer>
+          {renderChoiceButtons()}
+          {renderPowerSlider()}
+          {renderFlipButton()}
           
-          {/* Choice Buttons */}
-          {gameState.phase === 'choosing' && canMakeChoice() && gameState.currentRound <= 4 && (
-            <ChoiceSection>
-              <ChoiceButton
-                choice="heads"
-                onClick={() => handlePlayerChoice('heads')}
-                disabled={!canMakeChoice()}
-              >
-                👑 Heads
-              </ChoiceButton>
-              <ChoiceButton
-                choice="tails"
-                onClick={() => handlePlayerChoice('tails')}
-                disabled={!canMakeChoice()}
-              >
-                💎 Tails
-              </ChoiceButton>
-            </ChoiceSection>
-          )}
-          
-          {/* Power Bar */}
-          <PowerBarContainer show={gameState.phase === 'choosing' && isMyTurn()}>
-            <PowerBarLabel>
-              {isCharging ? '⚡ Charging Power ⚡' : 'Power Level'}
-            </PowerBarLabel>
-            <PowerBar>
-              <PowerFill 
-                power={powerLevel * 10}
-                charging={isCharging}
-              />
-            </PowerBar>
-            <div style={{ 
-              textAlign: 'center', 
-              marginTop: '0.5rem', 
-              fontSize: '0.9rem', 
-              color: '#FFD700' 
-            }}>
-              {powerLevel}/10
-            </div>
-          </PowerBarContainer>
-        </CenterArea>
+          <OptimizedGoldCoin
+            isSpinning={gameState.phase === 'flipping'}
+            result={gameState.flipResult}
+            power={isCreator() ? gameState.creatorPower : gameState.challengerPower}
+          />
+        </CoinContainer>
         
         {/* Challenger Card */}
-        <PlayerCard isCreator={false}>
+        <PlayerCard isCreator={false} isActive={gameState.currentTurn === gameState.challenger}>
           <PlayerHeader>
             <ProfilePicture 
               address={gameState.challenger}
@@ -831,27 +713,16 @@ const FlipSuiteFinal = () => {
             </StatRow>
           </PlayerStats>
           
-          <RoundWins>
-            {[1, 2, 3, 4, 5].map(round => (
-              <RoundDot 
-                key={round}
-                isCreator={false}
-                isWon={round <= gameState.challengerScore}
-                isLost={round <= gameState.creatorScore}
-              >
-                {round}
-              </RoundDot>
-            ))}
-          </RoundWins>
+          {renderRoundWins(false)}
         </PlayerCard>
       </GameBoard>
       
       {/* Result Popup */}
-      {showResultPopup && resultData && (
+      {showResultPopup && (
         <GameResultPopup
-          resultData={resultData}
+          isOpen={showResultPopup}
           onClose={handleResultClose}
-          onClaimWinnings={handleClaimWinnings}
+          result={resultData}
         />
       )}
     </GameContainer>
