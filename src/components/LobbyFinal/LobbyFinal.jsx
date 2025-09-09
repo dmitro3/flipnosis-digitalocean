@@ -614,10 +614,10 @@ const LobbyFinal = () => {
       console.log('💬 Chat message received:', data)
       const newMsg = {
         id: Date.now() + Math.random(),
-        sender: data.from || data.sender || data.sender_address,
+        sender: data.address || data.from || data.sender,
         message: data.message,
-        timestamp: new Date().toLocaleTimeString(),
-        isCurrentUser: (data.from || data.sender || data.sender_address)?.toLowerCase() === address?.toLowerCase()
+        timestamp: new Date(data.timestamp || Date.now()).toLocaleTimeString(),
+        isCurrentUser: (data.address || data.from || data.sender)?.toLowerCase() === address?.toLowerCase()
       }
       setMessages(prev => [...prev, newMsg])
       console.log('💬 Added message to chat:', newMsg)
@@ -641,7 +641,15 @@ const LobbyFinal = () => {
     // Offer handler
     const handleOffer = (data) => {
       console.log('💰 New offer received:', data)
-      setOffers(prev => [...prev, data])
+      const newOffer = {
+        id: data.id || Date.now() + Math.random(),
+        offerer_address: data.address,
+        offer_price: data.cryptoAmount,
+        message: data.message || 'Crypto offer',
+        timestamp: data.timestamp || new Date().toISOString(),
+        status: 'pending'
+      }
+      setOffers(prev => [...prev, newOffer])
     }
     
     // Offer accepted handler
@@ -748,10 +756,11 @@ const LobbyFinal = () => {
     
     console.log('💬 Sending chat message:', { message: newMessage.trim(), from: address })
     
+    // Send to server with correct format
     socketService.emit('chat_message', {
+      roomId: `game_${gameId}`,
       message: newMessage.trim(),
-      from: address,
-      gameId: gameId
+      address: address
     })
     
     // Add optimistic message
@@ -776,23 +785,23 @@ const LobbyFinal = () => {
     
     setIsCreatingOffer(true)
     try {
-      const response = await fetch(`/api/games/${gameId}/offers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          offerer_address: address,
-          offer_price: parseFloat(newOffer.price),
-          message: newOffer.message
-        })
+      console.log('💰 Creating offer via Socket.io:', { 
+        gameId, 
+        cryptoAmount: parseFloat(newOffer.price), 
+        address 
       })
       
-      if (response.ok) {
-        showSuccess('Offer created successfully!')
-        setNewOffer({ price: '', message: '' })
-        loadOffers()
-      } else {
-        showError('Failed to create offer')
-      }
+      // Send offer via Socket.io
+      socketService.emit('crypto_offer', {
+        gameId: gameId,
+        cryptoAmount: parseFloat(newOffer.price),
+        address: address,
+        message: newOffer.message
+      })
+      
+      showSuccess('Offer created successfully!')
+      setNewOffer({ price: '', message: '' })
+      
     } catch (error) {
       console.error('❌ Error creating offer:', error)
       showError('Failed to create offer')
@@ -806,10 +815,17 @@ const LobbyFinal = () => {
     try {
       showInfo('Accepting offer...')
       
+      console.log('✅ Accepting offer via Socket.io:', { 
+        offerId, 
+        accepterAddress: address, 
+        cryptoAmount: offerPrice 
+      })
+      
       socketService.emit('accept_offer', {
         offerId,
         accepterAddress: address,
-        cryptoAmount: offerPrice
+        cryptoAmount: offerPrice,
+        gameId: gameId
       })
       
       showSuccess('Offer accepted! Game starting...')
@@ -1021,12 +1037,12 @@ const LobbyFinal = () => {
               </OfferItem>
             ))}
             
-            {/* Debug info */}
+            {/* Debug info - remove this after testing */}
             <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1rem' }}>
-              Debug: isCreator() = {isCreator().toString()}, address = {address?.slice(0, 6)}..., creator = {gameData?.creator?.slice(0, 6)}...
+              Debug: isCreator() = {isCreator().toString()}, address = {address?.slice(0, 6)}..., creator = {gameData?.creator?.slice(0, 6)}..., gameStatus = {gameData?.status}
             </div>
             
-            {!isCreator() && (
+            {(!isCreator() || !gameData?.creator) && (
               <OfferInput>
                 <InputGroup>
                   <InputLabel>Offer Price (USD)</InputLabel>
