@@ -988,7 +988,7 @@ const LobbyFinal = () => {
               </OfferItem>
             ))}
             
-            {!isCreator() && gameData.status === 'waiting_challenger' && (
+            {!isCreator() && (
               <OfferInput>
                 <InputGroup>
                   <InputLabel>Offer Price (USD)</InputLabel>
