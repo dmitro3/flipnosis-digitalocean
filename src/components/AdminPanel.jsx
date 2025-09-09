@@ -1715,6 +1715,25 @@ export default function AdminPanel() {
                             >
                               🔗 Copy URL
                             </Button>
+                            
+                            {/* Emergency Withdraw ETH button - find associated game */}
+                            {(() => {
+                              // Find the game associated with this listing
+                              const associatedGame = games.find(game => 
+                                game.nft_contract === listing.nft_contract && 
+                                game.nft_token_id === listing.nft_token_id &&
+                                game.contract_game_id
+                              )
+                              
+                              return associatedGame ? (
+                                <Button 
+                                  onClick={() => emergencyWithdrawETH(associatedGame.contract_game_id)}
+                                  style={{ background: '#ffaa00', color: '#000' }}
+                                >
+                                  🚨 Emergency Withdraw ETH
+                                </Button>
+                              ) : null
+                            })()}
                           </div>
                         </GameDetails>
                       )}
