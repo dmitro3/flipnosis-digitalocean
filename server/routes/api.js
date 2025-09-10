@@ -452,7 +452,22 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       })
       
       if (existingGame) {
+        console.log(`✅ Game already exists: ${gameId}`)
         return res.json({ success: true, gameId, already_exists: true })
+      }
+      
+      // Check if blockchain_game_id already exists
+      const blockchainGameId = ethers.id(gameId)
+      const existingBlockchainGame = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM games WHERE blockchain_game_id = ?', [blockchainGameId], (err, result) => {
+          if (err) reject(err)
+          else resolve(result)
+        })
+      })
+      
+      if (existingBlockchainGame) {
+        console.log(`⚠️ Blockchain game ID already exists: ${blockchainGameId}`)
+        return res.status(409).json({ error: 'Game with this blockchain ID already exists' })
       }
       
       // Parse coin_data if it's a string
@@ -471,14 +486,16 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator, challenger,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            price_usd, rounds, coin_data, status, creator_deposited, game_type, chain, payment_token,
+            final_price, price_usd, rounds, coin_data, status, creator_deposited, game_type, chain, payment_token,
             nft_deposited, nft_deposit_time, nft_deposit_hash, nft_deposit_verified, last_nft_check_time
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
-          gameId, listing.id, ethers.id(gameId), listing.creator, '', // challenger is empty initially
+          gameId, listing.id, blockchainGameId, listing.creator, '', // challenger is empty initially
           listing.nft_contract, listing.nft_token_id, listing.nft_name, 
           listing.nft_image, listing.nft_collection,
-          listing.asking_price, 5, // rounds - default to 5 rounds
+          listing.asking_price, // final_price (required field)
+          listing.asking_price, // price_usd (for compatibility)
+          5, // rounds - default to 5 rounds
           JSON.stringify(coinData), 
           'awaiting_deposit', // Status for game created but NFT not deposited yet
           false, // creator_deposited
@@ -749,13 +766,15 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           INSERT INTO games (
             id, listing_id, blockchain_game_id, creator,
             nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
+            final_price, price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
             game_type, chain, payment_token
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           gameId, listingId, blockchainGameId, creator,
           listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
-          listing.asking_price, listing.coin_data, 'awaiting_challenger', depositDeadline, false, false,
+          listing.asking_price, // final_price (required field)
+          listing.asking_price, // price_usd (for compatibility)
+          listing.coin_data, 'awaiting_challenger', depositDeadline, false, false,
           'nft-vs-crypto', 'base', 'ETH'
         ], function(err) {
           if (err) reject(err)
