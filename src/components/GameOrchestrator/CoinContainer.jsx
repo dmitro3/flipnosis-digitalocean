@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from '@emotion/styled'
-import LobbyCoin from '../Lobby/LobbyCoin'
+import LobbyCoin from '../../legacy/components/Lobby/LobbyCoin'
 
 const CoinContainerStyled = styled.div`
   background: transparent;

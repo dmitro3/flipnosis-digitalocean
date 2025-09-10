@@ -714,12 +714,9 @@ const LobbyFinal = () => {
         setShowDepositOverlay(false)
         setDepositState(null)
         
-        // Transport to flip suite
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameId, immediate: true }
-          }))
-        }, 1000)
+        // Navigate directly to the server-side game
+        console.log('🎮 Navigating to server-side game:', gameId)
+        navigate(`/game/${gameId}`)
       }
     }
     

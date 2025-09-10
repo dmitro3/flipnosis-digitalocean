@@ -4,7 +4,7 @@ import CreateFlip from "./pages/CreateFlip";
 import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
-import GameLobby from "./components/Lobby/GameLobby";  // Changed from GamePage
+import LobbyFinal from "./components/LobbyFinal";  // Direct lobby component
 import FlipSuiteFinal from "./components/FlipSuiteFinal";  // New clean game room
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
@@ -24,7 +24,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "game/listing_:listingId",
-        element: <GameLobby />,  // Lobby for listing pages
+        element: <LobbyFinal />,  // Direct lobby for listing pages
       },
       {
         path: "game/:gameId",

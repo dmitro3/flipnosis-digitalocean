@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import styled from '@emotion/styled'
-import ChatContainer from '../../Lobby/ChatContainer'
-import OffersContainer from '../../Lobby/OffersContainer'
+import ChatContainer from '../../../legacy/components/Lobby/ChatContainer'
+import OffersContainer from '../../../legacy/components/Lobby/OffersContainer'
 
 const TabContainer = styled.div`
   height: 100%;

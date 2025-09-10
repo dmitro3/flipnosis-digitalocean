@@ -7,7 +7,7 @@ import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
 import GameResultPopup from '../GameResultPopup'
-import { useLobbyState } from '../Lobby/hooks/useLobbyState'
+import { useLobbyState } from '../LobbyFinal/old-code/useLobbyState'
 
 // ===== PURE CLIENT RENDERER =====
 // This component ONLY renders server state
