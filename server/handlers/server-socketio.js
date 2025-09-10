@@ -209,8 +209,27 @@ class GameServer {
         currentTurn: gameState.currentTurn
       })
       
-      // Emit initial game state
-      this.io.to(`game_${gameId}`).emit('game_state_update', gameState)
+      // Emit complete game state with all required fields
+      this.io.to(`game_${gameId}`).emit('game_state_update', {
+        gameId: gameState.gameId,
+        phase: gameState.phase,
+        status: 'active',
+        currentRound: gameState.currentRound,
+        totalRounds: gameState.totalRounds,
+        creatorScore: gameState.creatorScore,
+        challengerScore: gameState.challengerScore,
+        creator: gameState.creator,
+        challenger: gameState.challenger,
+        currentTurn: gameState.currentTurn,
+        creatorChoice: gameState.creatorChoice,
+        challengerChoice: gameState.challengerChoice,
+        creatorPower: gameState.creatorPower,
+        challengerPower: gameState.challengerPower,
+        flipResult: gameState.flipResult,
+        roundWinner: gameState.roundWinner,
+        gameWinner: gameState.gameWinner,
+        createdAt: gameState.createdAt
+      })
       
     } else {
       // Just confirm the deposit
@@ -289,125 +308,145 @@ class GameServer {
     }
     
     if (gameState) {
-      socket.emit('game_state_update', gameState)
+      // Send complete game state with all required fields
+      socket.emit('game_state_update', {
+        gameId: gameState.gameId,
+        phase: gameState.phase,
+        status: 'active',
+        currentRound: gameState.currentRound,
+        totalRounds: gameState.totalRounds,
+        creatorScore: gameState.creatorScore,
+        challengerScore: gameState.challengerScore,
+        creator: gameState.creator,
+        challenger: gameState.challenger,
+        currentTurn: gameState.currentTurn,
+        creatorChoice: gameState.creatorChoice,
+        challengerChoice: gameState.challengerChoice,
+        creatorPower: gameState.creatorPower,
+        challengerPower: gameState.challengerPower,
+        flipResult: gameState.flipResult,
+        roundWinner: gameState.roundWinner,
+        gameWinner: gameState.gameWinner,
+        createdAt: gameState.createdAt
+      })
     }
   }
 
-  // ===== GAME LOGIC FUNCTIONS =====
+// ===== GAME LOGIC FUNCTIONS =====
   initializeGameState(gameId, gameData) {
-    return {
-      gameId,
-      phase: 'choosing', // choosing, flipping, result, completed
-      status: 'active',
-      currentRound: 1,
-      totalRounds: 5,
-      creatorScore: 0,
-      challengerScore: 0,
-      creator: gameData.creator,
-      challenger: gameData.challenger,
-      currentTurn: gameData.creator, // Creator always goes first
-      creatorChoice: null,
-      challengerChoice: null,
-      creatorPower: 0,
-      challengerPower: 0,
-      flipResult: null,
-      roundWinner: null,
-      gameWinner: null,
-      createdAt: new Date().toISOString()
-    }
+  return {
+    gameId,
+    phase: 'choosing', // choosing, flipping, result, completed
+    status: 'active',
+    currentRound: 1,
+    totalRounds: 5,
+    creatorScore: 0,
+    challengerScore: 0,
+    creator: gameData.creator,
+    challenger: gameData.challenger,
+    currentTurn: gameData.creator, // Creator always goes first
+    creatorChoice: null,
+    challengerChoice: null,
+    creatorPower: 0,
+    challengerPower: 0,
+    flipResult: null,
+    roundWinner: null,
+    gameWinner: null,
+    createdAt: new Date().toISOString()
   }
+}
 
   async executePlayerFlip(gameId, gameState, currentPlayer) {
-    console.log(`🎲 Executing flip for ${currentPlayer} in game ${gameId}`)
-    
-    // Determine the choices
-    const isCreator = currentPlayer.toLowerCase() === gameState.creator.toLowerCase()
-    const playerChoice = isCreator ? gameState.creatorChoice : gameState.challengerChoice
-    const opponentChoice = isCreator ? gameState.challengerChoice : gameState.creatorChoice
-    
-    // If opponent hasn't chosen yet, they get the opposite choice
-    const finalOpponentChoice = opponentChoice || (playerChoice === 'heads' ? 'tails' : 'heads')
-    
-    // Update opponent's choice if they haven't chosen
-    if (!opponentChoice) {
-      if (isCreator) {
-        gameState.challengerChoice = finalOpponentChoice
-      } else {
-        gameState.creatorChoice = finalOpponentChoice
-      }
-    }
-    
-    // Generate flip result (server-side for security)
-    const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
-    gameState.flipResult = flipResult
-    
-    // Determine round winner
-    const creatorWon = gameState.creatorChoice === flipResult
-    const challengerWon = gameState.challengerChoice === flipResult
-    
-    if (creatorWon) {
-      gameState.creatorScore++
-      gameState.roundWinner = gameState.creator
-    } else if (challengerWon) {
-      gameState.challengerScore++
-      gameState.roundWinner = gameState.challenger
+  console.log(`🎲 Executing flip for ${currentPlayer} in game ${gameId}`)
+  
+  // Determine the choices
+  const isCreator = currentPlayer.toLowerCase() === gameState.creator.toLowerCase()
+  const playerChoice = isCreator ? gameState.creatorChoice : gameState.challengerChoice
+  const opponentChoice = isCreator ? gameState.challengerChoice : gameState.creatorChoice
+  
+  // If opponent hasn't chosen yet, they get the opposite choice
+  const finalOpponentChoice = opponentChoice || (playerChoice === 'heads' ? 'tails' : 'heads')
+  
+  // Update opponent's choice if they haven't chosen
+  if (!opponentChoice) {
+    if (isCreator) {
+      gameState.challengerChoice = finalOpponentChoice
     } else {
-      gameState.roundWinner = null // Tie
+      gameState.creatorChoice = finalOpponentChoice
     }
-    
-    // Update game state
-    gameState.phase = 'result'
+  }
+  
+  // Generate flip result (server-side for security)
+  const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
+  gameState.flipResult = flipResult
+  
+  // Determine round winner
+  const creatorWon = gameState.creatorChoice === flipResult
+  const challengerWon = gameState.challengerChoice === flipResult
+  
+  if (creatorWon) {
+    gameState.creatorScore++
+    gameState.roundWinner = gameState.creator
+  } else if (challengerWon) {
+    gameState.challengerScore++
+    gameState.roundWinner = gameState.challenger
+  } else {
+    gameState.roundWinner = null // Tie
+  }
+  
+  // Update game state
+  gameState.phase = 'result'
     this.gameStateManager.updateGame(gameId, gameState)
-    
-    // Emit flip result to all players
+  
+  // Emit flip result to all players
     this.io.to(`game_${gameId}`).emit('flip_result', {
+    gameId,
+    round: gameState.currentRound,
+    flipResult,
+    creatorChoice: gameState.creatorChoice,
+    challengerChoice: gameState.challengerChoice,
+    roundWinner: gameState.roundWinner,
+    creatorScore: gameState.creatorScore,
+    challengerScore: gameState.challengerScore
+  })
+  
+  // Check for game completion
+  if (gameState.creatorScore >= 3 || gameState.challengerScore >= 3) {
+    gameState.phase = 'completed'
+    gameState.gameWinner = gameState.creatorScore >= 3 ? gameState.creator : gameState.challenger
+      this.gameStateManager.updateGame(gameId, gameState)
+    
+      this.io.to(`game_${gameId}`).emit('game_complete', {
       gameId,
-      round: gameState.currentRound,
-      flipResult,
-      creatorChoice: gameState.creatorChoice,
-      challengerChoice: gameState.challengerChoice,
-      roundWinner: gameState.roundWinner,
+      winner: gameState.gameWinner,
       creatorScore: gameState.creatorScore,
       challengerScore: gameState.challengerScore
     })
-    
-    // Check for game completion
-    if (gameState.creatorScore >= 3 || gameState.challengerScore >= 3) {
-      gameState.phase = 'completed'
-      gameState.gameWinner = gameState.creatorScore >= 3 ? gameState.creator : gameState.challenger
-      this.gameStateManager.updateGame(gameId, gameState)
-      
-      this.io.to(`game_${gameId}`).emit('game_complete', {
-        gameId,
-        winner: gameState.gameWinner,
-        creatorScore: gameState.creatorScore,
-        challengerScore: gameState.challengerScore
-      })
-    } else {
-      // Start next round after a delay
-      setTimeout(() => {
+  } else {
+    // Start next round after a delay
+    setTimeout(() => {
         this.startNextRound(gameId, gameState)
-      }, 3000)
-    }
+    }, 3000)
   }
+}
 
   startNextRound(gameId, gameState) {
-    gameState.currentRound++
-    gameState.phase = 'choosing'
-    gameState.creatorChoice = null
-    gameState.challengerChoice = null
-    gameState.creatorPower = 0
-    gameState.challengerPower = 0
-    gameState.flipResult = null
-    gameState.roundWinner = null
-    
-    // Switch turns - if creator went first last round, challenger goes first this round
-    gameState.currentTurn = gameState.currentTurn === gameState.creator 
-      ? gameState.challenger 
-      : gameState.creator
-    
+  gameState.currentRound++
+  gameState.phase = 'choosing'
+  gameState.creatorChoice = null
+  gameState.challengerChoice = null
+  gameState.creatorPower = 0
+  gameState.challengerPower = 0
+  gameState.flipResult = null
+  gameState.roundWinner = null
+  
+  // Switch turns - if creator went first last round, challenger goes first this round
+  gameState.currentTurn = gameState.currentTurn === gameState.creator 
+    ? gameState.challenger 
+    : gameState.creator
+  
     this.gameStateManager.updateGame(gameId, gameState)
-    
+  
     this.io.to(`game_${gameId}`).emit('round_start', {
       gameId,
       round: gameState.currentRound,
@@ -416,25 +455,44 @@ class GameServer {
       challengerScore: gameState.challengerScore
     })
     
-    // Also emit game state update to ensure all clients are in sync
-    this.io.to(`game_${gameId}`).emit('game_state_update', gameState)
+    // Also emit complete game state update to ensure all clients are in sync
+    this.io.to(`game_${gameId}`).emit('game_state_update', {
+      gameId: gameState.gameId,
+      phase: gameState.phase,
+      status: 'active',
+      currentRound: gameState.currentRound,
+      totalRounds: gameState.totalRounds,
+      creatorScore: gameState.creatorScore,
+      challengerScore: gameState.challengerScore,
+      creator: gameState.creator,
+      challenger: gameState.challenger,
+      currentTurn: gameState.currentTurn,
+      creatorChoice: gameState.creatorChoice,
+      challengerChoice: gameState.challengerChoice,
+      creatorPower: gameState.creatorPower,
+      challengerPower: gameState.challengerPower,
+      flipResult: gameState.flipResult,
+      roundWinner: gameState.roundWinner,
+      gameWinner: gameState.gameWinner,
+      createdAt: gameState.createdAt
+    })
   }
 
-  // ===== DISCONNECTION =====
+    // ===== DISCONNECTION =====
   handleDisconnect(socket) {
-    console.log('❌ Disconnected:', socket.id)
-    
+      console.log('❌ Disconnected:', socket.id)
+      
     const data = this.socketData.get(socket.id)
-    if (data) {
+      if (data) {
       this.userSockets.delete(data.address.toLowerCase())
       this.socketData.delete(socket.id)
-      
-      // Remove from game room tracking
-      if (data.gameId) {
+        
+        // Remove from game room tracking
+        if (data.gameId) {
         const gameRoom = this.gameRooms.get(data.gameId)
-        if (gameRoom) {
-          gameRoom.delete(socket.id)
-          if (gameRoom.size === 0) {
+          if (gameRoom) {
+            gameRoom.delete(socket.id)
+            if (gameRoom.size === 0) {
             this.gameRooms.delete(data.gameId)
           }
         }

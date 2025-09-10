@@ -226,12 +226,12 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
 
   // ===== HELPER FUNCTIONS =====
   const isCreator = useCallback(() => {
-    return address && gameData?.creator && address.toLowerCase() === gameData.creator.toLowerCase()
-  }, [address, gameData?.creator])
+    return address && serverGameState?.creator && address.toLowerCase() === serverGameState.creator.toLowerCase()
+  }, [address, serverGameState?.creator])
 
   const isChallenger = useCallback(() => {
-    return address && gameData?.challenger && address.toLowerCase() === gameData.challenger.toLowerCase()
-  }, [address, gameData?.challenger])
+    return address && serverGameState?.challenger && address.toLowerCase() === serverGameState.challenger.toLowerCase()
+  }, [address, serverGameState?.challenger])
 
   const isMyTurn = useCallback(() => {
     return serverGameState && serverGameState.currentTurn && 
