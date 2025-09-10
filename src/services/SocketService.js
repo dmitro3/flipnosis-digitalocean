@@ -51,10 +51,14 @@ class SocketService {
     return new Promise((resolve, reject) => {
       try {
         // Connect to Socket.io server
-        const wsUrl = getWsUrl().replace('/ws', '') // Remove /ws suffix for socket.io
-        console.log('🔌 Connecting to Socket.io:', wsUrl)
+        const wsUrl = getWsUrl()
+        if (!wsUrl) {
+          throw new Error('Failed to get WebSocket URL')
+        }
+        const socketUrl = wsUrl.replace('/ws', '') // Remove /ws suffix for socket.io
+        console.log('🔌 Connecting to Socket.io:', socketUrl)
         
-        this.socket = io(wsUrl, {
+        this.socket = io(socketUrl, {
           transports: ['websocket', 'polling'],
           reconnection: true,
           reconnectionAttempts: 10,

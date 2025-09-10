@@ -8,6 +8,12 @@ export const getApiUrl = (path) => {
 }
 
 export const getWsUrl = () => {
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined' || !window.location) {
+    console.warn('⚠️ getWsUrl called outside browser environment')
+    return 'ws://localhost:3000' // Fallback for SSR
+  }
+  
   // Socket.io URL - no /ws suffix needed
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.host
