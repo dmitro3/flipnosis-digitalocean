@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import styled from '@emotion/styled'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
@@ -8,11 +8,12 @@ import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
 import GameResultPopup from '../GameResultPopup'
 
-// ===== CLEAN CLIENT ARCHITECTURE =====
-// Purely reactive to server state - no local game logic
-// Server is the single source of truth
+// ===== PURE CLIENT RENDERER =====
+// This component ONLY renders server state
+// No game logic, no local state management
+// All actions go to server, all state comes from server
 
-// === STYLED COMPONENTS ===
+// === STYLED COMPONENTS (unchanged) ===
 const GameContainer = styled.div`
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -200,179 +201,137 @@ const LoadingSpinner = styled.div`
   }
 `
 
-// === MAIN COMPONENT ===
+const SpectatorCount = styled.div`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  color: #00ff88;
+`
+
+// === MAIN COMPONENT - PURE RENDERER ===
 const FlipSuiteFinal = ({ gameData, coinConfig }) => {
   const { gameId } = useParams()
   const { address } = useAccount()
   const { showSuccess, showError, showInfo } = useToast()
   const navigate = useNavigate()
   
-  // ===== PURELY REACTIVE STATE =====
-  // All state comes from server - no local game logic
-  const [serverGameState, setServerGameState] = useState(null)
+  // ===== SERVER STATE ONLY =====
+  const [serverState, setServerState] = useState(null)
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
-  
-  // Local UI state only
-  const [playerChoice, setPlayerChoice] = useState(null)
-  const [powerLevel, setPowerLevel] = useState(0)
-  const [isCharging, setIsCharging] = useState(false)
-  const [chargingPower, setChargingPower] = useState(0)
+  const [role, setRole] = useState('spectator') // creator, challenger, spectator
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
   
-  const chargingIntervalRef = useRef(null)
-  const initializedRef = useRef(false)
+  // No local game state - everything comes from server
 
   // ===== HELPER FUNCTIONS =====
   const isCreator = useCallback(() => {
-    return address && serverGameState?.creator && address.toLowerCase() === serverGameState.creator.toLowerCase()
-  }, [address, serverGameState?.creator])
+    return role === 'creator'
+  }, [role])
 
   const isChallenger = useCallback(() => {
-    return address && serverGameState?.challenger && address.toLowerCase() === serverGameState.challenger.toLowerCase()
-  }, [address, serverGameState?.challenger])
+    return role === 'challenger'
+  }, [role])
 
   const isMyTurn = useCallback(() => {
-    return serverGameState && serverGameState.currentTurn && 
-           address && serverGameState.currentTurn.toLowerCase() === address.toLowerCase()
-  }, [serverGameState, address])
+    return serverState && address && 
+           serverState.currentTurn?.toLowerCase() === address.toLowerCase()
+  }, [serverState, address])
 
   const canMakeChoice = useCallback(() => {
-    return serverGameState && 
-           serverGameState.phase === 'choosing' && 
-           isMyTurn() && 
-           !playerChoice
-  }, [serverGameState, isMyTurn, playerChoice])
+    if (!serverState || !isMyTurn()) return false
+    
+    const myChoice = isCreator() ? serverState.creatorChoice : serverState.challengerChoice
+    return serverState.gamePhase === 'waiting_choice' && !myChoice
+  }, [serverState, isMyTurn, isCreator])
 
-  const canFlip = useCallback(() => {
-    return serverGameState && 
-           serverGameState.phase === 'choosing' && 
-           isMyTurn() && 
-           playerChoice && 
-           powerLevel > 0
-  }, [serverGameState, isMyTurn, playerChoice, powerLevel])
+  const canChargePower = useCallback(() => {
+    if (!serverState || !isMyTurn()) return false
+    
+    const myChoice = isCreator() ? serverState.creatorChoice : serverState.challengerChoice
+    const isCharging = isCreator() ? serverState.creatorCharging : serverState.challengerCharging
+    
+    return serverState.gamePhase === 'charging_power' && myChoice && !isCharging
+  }, [serverState, isMyTurn, isCreator])
 
   // ===== SOCKET EVENT HANDLERS =====
   const handleGameStateUpdate = useCallback((data) => {
     console.log('📊 Game state update received:', data)
-    setServerGameState(data)
+    setServerState(data)
     setLoading(false)
+    
+    // Check for round results
+    if (data.gamePhase === 'showing_result' && data.roundWinner) {
+      setResultData({
+        isWinner: data.roundWinner === address,
+        flipResult: data.flipResult,
+        playerChoice: isCreator() ? data.creatorChoice : data.challengerChoice,
+        roundWinner: data.roundWinner,
+        round: data.currentRound
+      })
+      setShowResultPopup(true)
+    }
+    
+    // Check for game completion
+    if (data.phase === 'game_complete' && data.gameWinner) {
+      setResultData({
+        isWinner: data.gameWinner === address,
+        isGameComplete: true,
+        finalScore: `${data.creatorScore}-${data.challengerScore}`,
+        gameWinner: data.gameWinner
+      })
+      setShowResultPopup(true)
+    }
+  }, [address, isCreator])
+
+  const handleRoomJoined = useCallback((data) => {
+    console.log('🏠 Room joined:', data)
+    setRole(data.role)
   }, [])
 
   const handleGameStarted = useCallback((data) => {
     console.log('🎮 Game started:', data)
-    setServerGameState(data)
-    setLoading(false)
-    showSuccess('🎮 Game started!')
+    showSuccess('Game started!')
   }, [showSuccess])
 
-  const handleRoundStart = useCallback((data) => {
-    console.log('🔄 Round started:', data)
-    setServerGameState(prev => ({
-      ...prev,
-      currentRound: data.round,
-      currentTurn: data.currentTurn,
-      creatorScore: data.creatorScore,
-      challengerScore: data.challengerScore,
-      phase: 'choosing',
-      creatorChoice: null,
-      challengerChoice: null,
-      creatorPower: 0,
-      challengerPower: 0,
-      flipResult: null,
-      roundWinner: null
-    }))
-    setPlayerChoice(null)
-    setPowerLevel(0)
-    showInfo(`Round ${data.round} started!`)
+  const handleFlipExecuting = useCallback((data) => {
+    console.log('🎲 Flip executing:', data)
+    showInfo('Coin is flipping...')
   }, [showInfo])
-
-  const handleChoiceMade = useCallback((data) => {
-    console.log('🎯 Choice made:', data)
-    setServerGameState(prev => ({
-      ...prev,
-      [data.isCreator ? 'creatorChoice' : 'challengerChoice']: data.choice,
-      [data.isCreator ? 'creatorPower' : 'challengerPower']: data.power
-    }))
-  }, [])
-
-  const handleFlipResult = useCallback((data) => {
-    console.log('🏆 Flip result:', data)
-    setServerGameState(prev => ({
-      ...prev,
-      phase: 'result',
-      flipResult: data.flipResult,
-      roundWinner: data.roundWinner,
-      creatorScore: data.creatorScore,
-      challengerScore: data.challengerScore,
-      creatorChoice: data.creatorChoice,
-      challengerChoice: data.challengerChoice
-    }))
-    
-    // Show result popup
-    setResultData({
-      isWinner: data.roundWinner === address,
-      flipResult: data.flipResult,
-      playerChoice: isCreator() ? data.creatorChoice : data.challengerChoice,
-      roundWinner: data.roundWinner,
-      round: data.round
-    })
-    setShowResultPopup(true)
-    
-    if (data.roundWinner === address) {
-      showSuccess(`🎉 You won round ${data.round}!`)
-    } else if (data.roundWinner) {
-      showInfo(`😔 You lost round ${data.round}`)
-    } else {
-      showInfo(`🤝 Round ${data.round} was a tie!`)
-    }
-  }, [address, isCreator, showSuccess, showInfo])
-
-  const handleGameComplete = useCallback((data) => {
-    console.log('🏆 Game complete:', data)
-    setServerGameState(prev => ({
-      ...prev,
-      phase: 'completed',
-      gameWinner: data.winner
-    }))
-    
-    setResultData({
-      isWinner: data.winner === address,
-      isGameComplete: true,
-      finalScore: `${data.creatorScore}-${data.challengerScore}`
-    })
-    setShowResultPopup(true)
-    
-    if (data.winner === address) {
-      showSuccess('🎉 Congratulations! You won the game!')
-    } else {
-      showError('😔 You lost this game. Better luck next time!')
-    }
-  }, [address, showSuccess, showError])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
-    if (!gameId || !address || initializedRef.current) return
+    if (!gameId || !address) return
 
     console.log('🔌 Connecting to game server...')
-    initializedRef.current = true
 
     const connectToGame = async () => {
       try {
-        await socketService.connect(gameId, address)
+        // Connect to socket
+        await socketService.connect()
         setConnected(true)
         
         // Register event listeners
+        socketService.on('room_joined', handleRoomJoined)
         socketService.on('game_state_update', handleGameStateUpdate)
         socketService.on('game_started', handleGameStarted)
-        socketService.on('round_start', handleRoundStart)
-        socketService.on('choice_made', handleChoiceMade)
-        socketService.on('flip_result', handleFlipResult)
-        socketService.on('game_complete', handleGameComplete)
+        socketService.on('flip_executing', handleFlipExecuting)
+        
+        // Join room
+        socketService.emit('join_room', { 
+          roomId: `game_${gameId}`, 
+          address 
+        })
         
         // Request current game state
-        socketService.emit('request_game_state', { gameId })
+        setTimeout(() => {
+          socketService.emit('request_game_state', { gameId })
+        }, 100)
         
       } catch (error) {
         console.error('❌ Failed to connect to game server:', error)
@@ -383,98 +342,78 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
     connectToGame()
 
     return () => {
-      // Cleanup
+      // Cleanup listeners
+      socketService.off('room_joined', handleRoomJoined)
       socketService.off('game_state_update', handleGameStateUpdate)
       socketService.off('game_started', handleGameStarted)
-      socketService.off('round_start', handleRoundStart)
-      socketService.off('choice_made', handleChoiceMade)
-      socketService.off('flip_result', handleFlipResult)
-      socketService.off('game_complete', handleGameComplete)
+      socketService.off('flip_executing', handleFlipExecuting)
     }
-  }, [gameId, address, handleGameStateUpdate, handleGameStarted, handleRoundStart, handleChoiceMade, handleFlipResult, handleGameComplete, showError])
+  }, [gameId, address]) // Removed callback dependencies for simplicity
 
-  // ===== POWER CHARGING LOGIC =====
-  const startCharging = useCallback(() => {
-    if (!canMakeChoice()) return
-    
-    console.log('⚡ Starting power charge')
-    setIsCharging(true)
-    setChargingPower(1)
-    
-    const startTime = Date.now()
-    chargingIntervalRef.current = setInterval(() => {
-      setChargingPower(prev => {
-        const elapsed = Date.now() - startTime
-        const progress = Math.min(elapsed / 4500, 1) // 4.5 seconds to reach max
-        const newPower = Math.min(10, Math.max(1, 1 + (progress * 9))) // 1-10 range
-        setPowerLevel(newPower)
-        return newPower
-      })
-    }, 50)
-  }, [canMakeChoice])
-
-  const stopCharging = useCallback(() => {
-    if (!isCharging) return
-    
-    const finalPower = Math.round(chargingPower)
-    console.log('⚡ Stopping power charge at:', finalPower)
-    
-    if (chargingIntervalRef.current) {
-      clearInterval(chargingIntervalRef.current)
-      chargingIntervalRef.current = null
-    }
-    
-    setIsCharging(false)
-    setPowerLevel(finalPower)
-  }, [isCharging, chargingPower])
-
-  // Cleanup charging on unmount
-  useEffect(() => {
-    return () => {
-      if (chargingIntervalRef.current) {
-        clearInterval(chargingIntervalRef.current)
-      }
-    }
-  }, [])
-
-  // ===== GAME ACTIONS =====
+  // ===== USER ACTIONS - ALL GO TO SERVER =====
   const handleChoice = useCallback((choice) => {
     if (!canMakeChoice()) return
     
-    setPlayerChoice(choice)
-    showInfo(`You chose ${choice}! Now set your power level.`)
-  }, [canMakeChoice, showInfo])
-
-  const handleFlip = useCallback(() => {
-    if (!canFlip()) return
-    
-    console.log('🎯 Making choice:', { choice: playerChoice, power: powerLevel })
-    
+    console.log('🎯 Sending choice to server:', choice)
     socketService.emit('player_choice', {
       gameId,
       address,
-      choice: playerChoice,
-      power: powerLevel
+      choice
     })
-  }, [canFlip, playerChoice, powerLevel, gameId, address])
+    
+    showInfo(`You chose ${choice}!`)
+  }, [canMakeChoice, gameId, address, showInfo])
+
+  const handlePowerChargeStart = useCallback(() => {
+    if (!canChargePower()) return
+    
+    console.log('⚡ Starting power charge')
+    socketService.emit('start_power_charge', {
+      gameId,
+      address
+    })
+  }, [canChargePower, gameId, address])
+
+  const handlePowerChargeStop = useCallback(() => {
+    if (!serverState) return
+    
+    const isCharging = isCreator() ? serverState.creatorCharging : serverState.challengerCharging
+    if (!isCharging) return
+    
+    console.log('⚡ Stopping power charge')
+    socketService.emit('stop_power_charge', {
+      gameId,
+      address
+    })
+  }, [serverState, isCreator, gameId, address])
 
   // ===== RENDER HELPERS =====
   const getStatusText = () => {
     if (loading) return 'Loading game...'
     if (!connected) return 'Connecting...'
-    if (!serverGameState) return 'Waiting for game state...'
+    if (!serverState) return 'Waiting for game state...'
     
-    switch (serverGameState.phase) {
-      case 'choosing':
-        if (canMakeChoice()) return 'Choose heads or tails!'
-        if (isMyTurn()) return 'Waiting for your choice...'
-        return `Waiting for ${isCreator() ? 'challenger' : 'creator'} to choose...`
-      case 'flipping':
+    const { gamePhase, currentTurn } = serverState
+    const isYourTurn = isMyTurn()
+    
+    switch (gamePhase) {
+      case 'waiting_choice':
+        if (isYourTurn) return 'Choose heads or tails!'
+        return `Waiting for ${currentTurn === serverState.creator ? 'creator' : 'challenger'} to choose...`
+      
+      case 'charging_power':
+        if (isYourTurn) return 'Hold the coin to charge power!'
+        return `${currentTurn === serverState.creator ? 'Creator' : 'Challenger'} is charging power...`
+      
+      case 'executing_flip':
         return 'Coin is flipping...'
-      case 'result':
-        return `Round ${serverGameState.currentRound} complete!`
-      case 'completed':
-        return 'Game completed!'
+      
+      case 'showing_result':
+        return `Round ${serverState.currentRound} complete!`
+      
+      case 'round_transition':
+        return 'Starting next round...'
+      
       default:
         return 'Game active'
     }
@@ -503,6 +442,19 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
     )
   }
 
+  if (!serverState) {
+    return (
+      <GameContainer>
+        <StatusText>Waiting for game state...</StatusText>
+      </GameContainer>
+    )
+  }
+
+  // Get power values for display
+  const myPower = isCreator() ? serverState.creatorPowerProgress : serverState.challengerPowerProgress
+  const myFinalPower = isCreator() ? serverState.creatorFinalPower : serverState.challengerFinalPower
+  const myCharging = isCreator() ? serverState.creatorCharging : serverState.challengerCharging
+
   return (
     <GameContainer>
       {/* Game Header */}
@@ -513,76 +465,95 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
         </ConnectionStatus>
       </GameHeader>
 
+      {/* Spectator Count */}
+      {serverState.spectators && serverState.spectators.length > 0 && (
+        <SpectatorCount>
+          👁️ {serverState.spectators.length} watching
+        </SpectatorCount>
+      )}
+
       {/* Game Board */}
       <GameBoard>
         {/* Creator Card */}
-        <PlayerCard isCreator={true} isActive={serverGameState?.currentTurn === serverGameState?.creator}>
+        <PlayerCard 
+          isCreator={true} 
+          isActive={serverState.currentTurn === serverState.creator}
+        >
           <PlayerHeader>
-            <ProfilePicture address={serverGameState?.creator} size={40} />
+            <ProfilePicture address={serverState.creator} size={40} />
             <PlayerLabel isCreator={true}>👑 Creator</PlayerLabel>
           </PlayerHeader>
           <PlayerStats>
             <StatRow>
               <StatLabel>Name:</StatLabel>
-              <StatValue isCreator={true}>{getPlayerName(serverGameState?.creator)}</StatValue>
+              <StatValue isCreator={true}>{getPlayerName(serverState.creator)}</StatValue>
             </StatRow>
             <StatRow>
               <StatLabel>Score:</StatLabel>
-              <StatValue isCreator={true}>{serverGameState?.creatorScore || 0}</StatValue>
+              <StatValue isCreator={true}>{serverState.creatorScore}</StatValue>
             </StatRow>
             <StatRow>
               <StatLabel>Choice:</StatLabel>
-              <StatValue isCreator={true}>{serverGameState?.creatorChoice || 'Choosing...'}</StatValue>
+              <StatValue isCreator={true}>
+                {serverState.creatorChoice || 'Waiting...'}
+              </StatValue>
             </StatRow>
             <StatRow>
               <StatLabel>Power:</StatLabel>
-              <StatValue isCreator={true}>{serverGameState?.creatorPower || 0}</StatValue>
+              <StatValue isCreator={true}>
+                {Math.round(serverState.creatorFinalPower)}
+              </StatValue>
             </StatRow>
           </PlayerStats>
+          {serverState.creatorCharging && (
+            <PowerBar>
+              <PowerFill power={serverState.creatorPowerProgress} />
+            </PowerBar>
+          )}
         </PlayerCard>
 
         {/* Coin Area */}
         <CoinArea>
           <GameStatus>
             <StatusText>{getStatusText()}</StatusText>
-            {serverGameState && (
+            {serverState && (
               <div style={{ fontSize: '1.2rem', marginTop: '1rem' }}>
-                Round {serverGameState.currentRound}/5
+                Round {serverState.currentRound}/{serverState.totalRounds}
               </div>
             )}
           </GameStatus>
 
           <OptimizedGoldCoin
-            isFlipping={serverGameState?.phase === 'flipping'}
-            flipResult={serverGameState?.flipResult}
-            flipDuration={3000}
+            isFlipping={serverState.coinState?.isFlipping}
+            flipResult={serverState.coinState?.flipResult}
+            flipDuration={serverState.coinState?.flipDuration || 3000}
             onFlipComplete={() => console.log('Flip animation complete')}
-            onPowerCharge={startCharging}
-            onPowerRelease={stopCharging}
-            isPlayerTurn={isMyTurn() && serverGameState?.phase === 'choosing'}
-            isCharging={isCharging}
-            creatorPower={serverGameState?.creatorPower || 0}
-            joinerPower={serverGameState?.challengerPower || 0}
-            customHeadsImage={coinConfig?.headsImage}
-            customTailsImage={coinConfig?.tailsImage}
+            onPowerCharge={handlePowerChargeStart}
+            onPowerRelease={handlePowerChargeStop}
+            isPlayerTurn={isMyTurn() && serverState.gamePhase === 'charging_power'}
+            isCharging={myCharging}
+            creatorPower={serverState.creatorFinalPower}
+            joinerPower={serverState.challengerFinalPower}
+            customHeadsImage={serverState.coinData?.headsImage || coinConfig?.headsImage}
+            customTailsImage={serverState.coinData?.tailsImage || coinConfig?.tailsImage}
             size={240}
-            material={coinConfig?.material || 'gold'}
+            material={serverState.coinData?.material || coinConfig?.material || 'gold'}
           />
 
-          {/* Power Bar */}
-          {serverGameState?.phase === 'choosing' && isMyTurn() && (
+          {/* Power Display */}
+          {isMyTurn() && myCharging && (
             <div style={{ textAlign: 'center' }}>
               <div style={{ marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
-                {isCharging ? '⚡ Hold to Charge Power ⚡' : 'Ready to Flip'}
+                ⚡ Hold to Charge Power ⚡
               </div>
               <div style={{ marginBottom: '0.5rem', fontSize: '1.5rem', color: '#00ff88' }}>
-                {powerLevel} / 10
+                {Math.round(myFinalPower)} / 10
               </div>
               <PowerBar>
-                <PowerFill power={powerLevel * 10} />
+                <PowerFill power={myPower} />
               </PowerBar>
               <div style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '0.5rem' }}>
-                {isCharging ? 'Release to flip!' : 'Hold coin to charge'}
+                Release to lock in power!
               </div>
             </div>
           )}
@@ -604,52 +575,46 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
               </ChoiceButton>
             </ChoiceButtons>
           )}
-
-          {/* Flip Button */}
-          {canFlip() && (
-            <button
-              onClick={handleFlip}
-              style={{
-                padding: '1rem 2rem',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                marginTop: '1rem'
-              }}
-            >
-              🎲 FLIP COIN!
-            </button>
-          )}
         </CoinArea>
 
         {/* Challenger Card */}
-        <PlayerCard isCreator={false} isActive={serverGameState?.currentTurn === serverGameState?.challenger}>
+        <PlayerCard 
+          isCreator={false} 
+          isActive={serverState.currentTurn === serverState.challenger}
+        >
           <PlayerHeader>
-            <ProfilePicture address={serverGameState?.challenger} size={40} />
+            <ProfilePicture address={serverState.challenger} size={40} />
             <PlayerLabel isCreator={false}>⚔️ Challenger</PlayerLabel>
           </PlayerHeader>
           <PlayerStats>
             <StatRow>
               <StatLabel>Name:</StatLabel>
-              <StatValue isCreator={false}>{getPlayerName(serverGameState?.challenger)}</StatValue>
+              <StatValue isCreator={false}>
+                {getPlayerName(serverState.challenger)}
+              </StatValue>
             </StatRow>
             <StatRow>
               <StatLabel>Score:</StatLabel>
-              <StatValue isCreator={false}>{serverGameState?.challengerScore || 0}</StatValue>
+              <StatValue isCreator={false}>{serverState.challengerScore}</StatValue>
             </StatRow>
             <StatRow>
               <StatLabel>Choice:</StatLabel>
-              <StatValue isCreator={false}>{serverGameState?.challengerChoice || 'Choosing...'}</StatValue>
+              <StatValue isCreator={false}>
+                {serverState.challengerChoice || 'Waiting...'}
+              </StatValue>
             </StatRow>
             <StatRow>
               <StatLabel>Power:</StatLabel>
-              <StatValue isCreator={false}>{serverGameState?.challengerPower || 0}</StatValue>
+              <StatValue isCreator={false}>
+                {Math.round(serverState.challengerFinalPower)}
+              </StatValue>
             </StatRow>
           </PlayerStats>
+          {serverState.challengerCharging && (
+            <PowerBar>
+              <PowerFill power={serverState.challengerPowerProgress} />
+            </PowerBar>
+          )}
         </PlayerCard>
       </GameBoard>
 

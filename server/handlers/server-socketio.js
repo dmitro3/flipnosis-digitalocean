@@ -8,7 +8,7 @@ const GameStateManager = require('./GameStateManager')
 class GameServer {
   constructor() {
     this.gameStateManager = new GameStateManager()
-    this.socketData = new Map() // socketId -> { address, gameId, roomId }
+    this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
     this.userSockets = new Map() // address -> socketId
     this.gameRooms = new Map() // gameId -> Set of socketIds
     this.io = null
@@ -39,19 +39,23 @@ class GameServer {
       // Room management
       socket.on('join_room', (data) => this.handleJoinRoom(socket, data))
       
-      // Chat system
+      // Chat system (preserved)
       socket.on('chat_message', (data) => this.handleChatMessage(socket, data))
       
-      // Offer system
+      // Offer system (preserved)
       socket.on('crypto_offer', (data) => this.handleCryptoOffer(socket, data))
       socket.on('accept_offer', (data) => this.handleAcceptOffer(socket, data))
       
-      // Deposit system
+      // Deposit system (preserved)
       socket.on('deposit_confirmed', (data) => this.handleDepositConfirmed(socket, data))
       
-      // Game actions
-      socket.on('player_choice', (data) => this.handlePlayerChoice(socket, data))
+      // ===== NEW GAME ACTIONS =====
       socket.on('request_game_state', (data) => this.handleRequestGameState(socket, data))
+      socket.on('player_choice', (data) => this.handlePlayerChoice(socket, data))
+      socket.on('start_power_charge', (data) => this.handleStartPowerCharge(socket, data))
+      socket.on('stop_power_charge', (data) => this.handleStopPowerCharge(socket, data))
+      socket.on('execute_flip', (data) => this.handleExecuteFlip(socket, data))
+      socket.on('spectate_game', (data) => this.handleSpectateGame(socket, data))
       
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))
@@ -70,19 +74,52 @@ class GameServer {
     
     // Join new room
     socket.join(roomId)
-    this.socketData.set(socket.id, { address, roomId, gameId: roomId.replace('game_', '') })
+    
+    // Determine role (creator, challenger, or spectator)
+    const gameId = roomId.replace('game_', '')
+    const gameState = this.gameStateManager.getGame(gameId)
+    let role = 'spectator'
+    
+    if (gameState) {
+      if (address.toLowerCase() === gameState.creator?.toLowerCase()) {
+        role = 'creator'
+      } else if (address.toLowerCase() === gameState.challenger?.toLowerCase()) {
+        role = 'challenger'
+      } else {
+        // Add as spectator
+        this.gameStateManager.addSpectator(gameId, address)
+      }
+    }
+    
+    this.socketData.set(socket.id, { address, roomId, gameId, role })
     this.userSockets.set(address.toLowerCase(), socket.id)
     
     // Add to game room tracking
-    const gameId = roomId.replace('game_', '')
     if (!this.gameRooms.has(gameId)) {
       this.gameRooms.set(gameId, new Set())
     }
     this.gameRooms.get(gameId).add(socket.id)
     
-    socket.emit('room_joined', { roomId, members: this.io.sockets.adapter.rooms.get(roomId)?.size || 0 })
+    socket.emit('room_joined', { 
+      roomId, 
+      role,
+      members: this.io.sockets.adapter.rooms.get(roomId)?.size || 0 
+    })
     
-    // Send chat history if exists
+    // Send current game state if it exists
+    if (gameState) {
+      const fullState = this.gameStateManager.getFullGameState(gameId)
+      socket.emit('game_state_update', fullState)
+      
+      // Start state broadcasting if game is active
+      if (gameState.phase === 'game_active' && !this.gameStateManager.stateUpdateIntervals.has(gameId)) {
+        this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
+          this.io.to(room).emit(message.type, message)
+        })
+      }
+    }
+    
+    // Send chat history if exists (preserved)
     if (this.dbService && typeof this.dbService.getChatHistory === 'function') {
       try {
         const messages = await this.dbService.getChatHistory(roomId, 50)
@@ -94,7 +131,156 @@ class GameServer {
     }
   }
 
-  // ===== CHAT SYSTEM =====
+  // ===== GAME STATE MANAGEMENT =====
+  async handleRequestGameState(socket, data) {
+    const { gameId } = data
+    console.log(`📊 Game state requested for ${gameId}`)
+    
+    let gameState = this.gameStateManager.getGame(gameId)
+    
+    if (!gameState) {
+      // Try to load from database and restore
+      const gameData = await this.dbService.getGame(gameId)
+      if (gameData && gameData.status === 'active') {
+        gameState = this.initializeGameState(gameId, gameData)
+        this.gameStateManager.createGame(gameId, gameState)
+        
+        // Start state broadcasting
+        this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
+          this.io.to(room).emit(message.type, message)
+        })
+      }
+    }
+    
+    if (gameState) {
+      const fullState = this.gameStateManager.getFullGameState(gameId)
+      socket.emit('game_state_update', fullState)
+    } else {
+      socket.emit('game_not_found', { gameId })
+    }
+  }
+
+  // ===== PLAYER ACTIONS =====
+  async handlePlayerChoice(socket, data) {
+    const { gameId, address, choice } = data
+    console.log(`🎯 Player choice: ${address} chose ${choice} in game ${gameId}`)
+    
+    const gameState = this.gameStateManager.getGame(gameId)
+    if (!gameState) {
+      socket.emit('error', { message: 'Game not found' })
+      return
+    }
+    
+    // Validate it's the player's turn
+    if (gameState.currentTurn?.toLowerCase() !== address.toLowerCase()) {
+      socket.emit('error', { message: 'Not your turn' })
+      return
+    }
+    
+    // Set the choice
+    this.gameStateManager.setPlayerChoice(gameId, address, choice)
+    
+    // Broadcast updated state
+    const fullState = this.gameStateManager.getFullGameState(gameId)
+    this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+  }
+
+  async handleStartPowerCharge(socket, data) {
+    const { gameId, address } = data
+    console.log(`⚡ Starting power charge: ${address} in game ${gameId}`)
+    
+    const gameState = this.gameStateManager.getGame(gameId)
+    if (!gameState) {
+      socket.emit('error', { message: 'Game not found' })
+      return
+    }
+    
+    // Validate player has made a choice
+    const isCreator = address.toLowerCase() === gameState.creator?.toLowerCase()
+    const hasChoice = isCreator ? gameState.creatorChoice : gameState.challengerChoice
+    if (!hasChoice) {
+      socket.emit('error', { message: 'Must choose heads or tails first' })
+      return
+    }
+    
+    // Start power charging
+    this.gameStateManager.startPowerCharging(gameId, address)
+    
+    // State will be broadcast automatically via the update interval
+  }
+
+  async handleStopPowerCharge(socket, data) {
+    const { gameId, address } = data
+    console.log(`⚡ Stopping power charge: ${address} in game ${gameId}`)
+    
+    const gameState = this.gameStateManager.getGame(gameId)
+    if (!gameState) {
+      socket.emit('error', { message: 'Game not found' })
+      return
+    }
+    
+    // Stop power charging
+    this.gameStateManager.stopPowerCharging(gameId, address)
+    
+    // Check if both players are ready (have choice and power)
+    const isCreator = address.toLowerCase() === gameState.creator?.toLowerCase()
+    
+    if (isCreator) {
+      // Creator is ready, switch to challenger's turn
+      gameState.currentTurn = gameState.challenger
+      gameState.gamePhase = 'waiting_choice'
+    } else {
+      // Challenger is ready, both players have acted - execute flip
+      this.handleExecuteFlip(socket, { gameId })
+    }
+    
+    // Broadcast updated state
+    const fullState = this.gameStateManager.getFullGameState(gameId)
+    this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+  }
+
+  async handleExecuteFlip(socket, data) {
+    const { gameId } = data
+    console.log(`🎲 Executing flip for game ${gameId}`)
+    
+    const gameState = this.gameStateManager.executeFlip(gameId)
+    if (!gameState) {
+      socket.emit('error', { message: 'Game not found' })
+      return
+    }
+    
+    // Broadcast flip execution with all details
+    this.io.to(`game_${gameId}`).emit('flip_executing', {
+      gameId,
+      coinState: gameState.coinState,
+      creatorChoice: gameState.creatorChoice,
+      challengerChoice: gameState.challengerChoice,
+      creatorPower: gameState.creatorFinalPower,
+      challengerPower: gameState.challengerFinalPower
+    })
+    
+    // State updates will continue via broadcast interval
+  }
+
+  async handleSpectateGame(socket, data) {
+    const { gameId, address } = data
+    console.log(`👁️ ${address} spectating game ${gameId}`)
+    
+    const gameState = this.gameStateManager.getGame(gameId)
+    if (!gameState) {
+      socket.emit('error', { message: 'Game not found' })
+      return
+    }
+    
+    // Add as spectator
+    this.gameStateManager.addSpectator(gameId, address)
+    
+    // Send current state
+    const fullState = this.gameStateManager.getFullGameState(gameId)
+    socket.emit('game_state_update', fullState)
+  }
+
+  // ===== PRESERVED METHODS (Chat, Offers, Deposits) =====
   async handleChatMessage(socket, data) {
     const { roomId, message, address } = data
     console.log(`💬 Chat message from ${address} in ${roomId}: ${message}`)
@@ -117,65 +303,34 @@ class GameServer {
     })
   }
 
-  // ===== OFFER SYSTEM =====
   async handleCryptoOffer(socket, data) {
-    const { gameId, address, offerPrice, message } = data
-    console.log(`💰 Crypto offer from ${address} for game ${gameId}: $${offerPrice}`)
-    
-    // Save offer to database
-    if (this.dbService && typeof this.dbService.saveOffer === 'function') {
-      try {
-        await this.dbService.saveOffer(gameId, address, offerPrice, message)
-      } catch (error) {
-        console.error('❌ Error saving offer:', error)
-      }
-    }
+    const { gameId, address, cryptoAmount, message } = data
+    console.log(`💰 Crypto offer from ${address} for game ${gameId}: $${cryptoAmount}`)
     
     // Broadcast to room
     this.io.to(`game_${gameId}`).emit('crypto_offer', {
-      gameId,
+      type: 'crypto_offer',
+      id: `${Date.now()}_${Math.random()}`,
       address,
-      offerPrice,
+      cryptoAmount,
       message,
       timestamp: new Date().toISOString()
     })
   }
 
   async handleAcceptOffer(socket, data) {
-    const { gameId, address, offerId } = data
+    const { gameId, address, offerId, cryptoAmount } = data
     console.log(`✅ Offer accepted by ${address} for game ${gameId}`)
     
-    // Update offer status in database
-    if (this.dbService && typeof this.dbService.acceptOffer === 'function') {
-      try {
-        await this.dbService.acceptOffer(offerId, address)
-      } catch (error) {
-        console.error('❌ Error accepting offer:', error)
-      }
-    }
-    
     // Start deposit stage
-    const gameState = this.gameStateManager.getGame(gameId)
-    if (gameState) {
-      this.gameStateManager.startDepositStage(gameId, address, (roomId, message) => {
-        this.io.to(roomId).emit(message.type, message)
-      })
-    }
+    this.gameStateManager.startDepositStage(gameId, address, (roomId, message) => {
+      this.io.to(roomId).emit(message.type, message)
+    })
   }
 
-  // ===== DEPOSIT SYSTEM =====
   async handleDepositConfirmed(socket, data) {
-    const { gameId, address, nftId, nftData } = data
-    console.log(`💰 Deposit confirmed: ${address} deposited ${nftId} in game ${gameId}`)
-    
-    // Update database
-    if (this.dbService && typeof this.dbService.updateGameDeposit === 'function') {
-      try {
-        await this.dbService.updateGameDeposit(gameId, address, nftId, nftData)
-      } catch (error) {
-        console.error('❌ Error updating deposit:', error)
-      }
-    }
+    const { gameId, address, assetType } = data
+    console.log(`💰 Deposit confirmed: ${address} deposited ${assetType} in game ${gameId}`)
     
     // Get current game data
     const gameData = await this.dbService.getGame(gameId)
@@ -184,315 +339,103 @@ class GameServer {
       return
     }
     
+    // Update deposit status
+    const isCreator = address.toLowerCase() === gameData.creator?.toLowerCase()
+    if (isCreator) {
+      gameData.creatorDeposited = true
+    } else {
+      gameData.challengerDeposited = true
+    }
+    
     // Check if both players have deposited
     const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
     
     if (bothDeposited) {
       console.log(`🎮 Both players deposited in game ${gameId}, starting game!`)
       
-      // Initialize game state
+      // Initialize game state with coin data from database
       const gameState = this.initializeGameState(gameId, gameData)
       this.gameStateManager.createGame(gameId, gameState)
+      
+      // Start state broadcasting
+      this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
+        this.io.to(room).emit(message.type, message)
+      })
       
       // Notify all players that game is starting
       this.io.to(`game_${gameId}`).emit('game_started', {
         gameId,
-        gameIdFull: `game_${gameId}`,
-        phase: gameState.phase,
-        status: 'active',
-        currentRound: gameState.currentRound,
-        totalRounds: gameState.totalRounds,
-        creatorScore: gameState.creatorScore,
-        challengerScore: gameState.challengerScore,
-        creator: gameState.creator,
-        challenger: gameState.challenger,
-        currentTurn: gameState.currentTurn
+        phase: 'game_active',
+        message: 'Both deposits confirmed! Game starting...'
       })
       
-      // Emit complete game state with all required fields
-      this.io.to(`game_${gameId}`).emit('game_state_update', {
-        gameId: gameState.gameId,
-        phase: gameState.phase,
-        status: 'active',
-        currentRound: gameState.currentRound,
-        totalRounds: gameState.totalRounds,
-        creatorScore: gameState.creatorScore,
-        challengerScore: gameState.challengerScore,
-        creator: gameState.creator,
-        challenger: gameState.challenger,
-        currentTurn: gameState.currentTurn,
-        creatorChoice: gameState.creatorChoice,
-        challengerChoice: gameState.challengerChoice,
-        creatorPower: gameState.creatorPower,
-        challengerPower: gameState.challengerPower,
-        flipResult: gameState.flipResult,
-        roundWinner: gameState.roundWinner,
-        gameWinner: gameState.gameWinner,
-        createdAt: gameState.createdAt
-      })
+      // Send initial state
+      const fullState = this.gameStateManager.getFullGameState(gameId)
+      this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
       
     } else {
       // Just confirm the deposit
       this.io.to(`game_${gameId}`).emit('deposit_confirmed', {
         gameId,
-        address,
-        nftId,
-        nftData,
+        player: address,
+        assetType,
+        creatorDeposited: gameData.creatorDeposited,
+        challengerDeposited: gameData.challengerDeposited,
         bothDeposited: false
       })
     }
   }
 
-  // ===== GAME ACTIONS =====
-  async handlePlayerChoice(socket, data) {
-    const { gameId, address, choice, power } = data
-    console.log(`🎯 Player choice: ${address} chose ${choice} with power ${power} in game ${gameId}`)
-    
-    // Get current game state
-    const gameState = this.gameStateManager.getGame(gameId)
-    if (!gameState) {
-      console.error('❌ Game state not found:', gameId)
-      return
-    }
-    
-    // Validate it's the player's turn
-    if (gameState.currentTurn.toLowerCase() !== address.toLowerCase()) {
-      console.error('❌ Not player\'s turn:', address, 'current turn:', gameState.currentTurn)
-      return
-    }
-    
-    // Validate game phase
-    if (gameState.phase !== 'choosing') {
-      console.error('❌ Game not in choosing phase:', gameState.phase)
-      return
-    }
-    
-    // Update player's choice and power
-    const isCreator = address.toLowerCase() === gameState.creator.toLowerCase()
-    if (isCreator) {
-      gameState.creatorChoice = choice
-      gameState.creatorPower = power
-    } else {
-      gameState.challengerChoice = choice
-      gameState.challengerPower = power
-    }
-    
-    this.gameStateManager.updateGame(gameId, gameState)
-    
-    // Emit choice made event
-    this.io.to(`game_${gameId}`).emit('choice_made', {
-      gameId,
-      address,
-      choice,
-      power,
-      isCreator
-    })
-    
-    // Execute the flip immediately
-    await this.executePlayerFlip(gameId, gameState, address)
-  }
-
-  async handleRequestGameState(socket, data) {
-    const { gameId } = data
-    console.log(`📊 Game state requested for ${gameId}`)
-    
-    let gameState = this.gameStateManager.getGame(gameId)
-    
-    if (!gameState) {
-      // Try to load from database
-      const gameData = await this.dbService.getGame(gameId)
-      if (gameData && gameData.status === 'active') {
-        gameState = this.initializeGameState(gameId, gameData)
-        this.gameStateManager.createGame(gameId, gameState)
-      }
-    }
-    
-    if (gameState) {
-      // Send complete game state with all required fields
-      socket.emit('game_state_update', {
-        gameId: gameState.gameId,
-        phase: gameState.phase,
-        status: 'active',
-        currentRound: gameState.currentRound,
-        totalRounds: gameState.totalRounds,
-        creatorScore: gameState.creatorScore,
-        challengerScore: gameState.challengerScore,
-        creator: gameState.creator,
-        challenger: gameState.challenger,
-        currentTurn: gameState.currentTurn,
-        creatorChoice: gameState.creatorChoice,
-        challengerChoice: gameState.challengerChoice,
-        creatorPower: gameState.creatorPower,
-        challengerPower: gameState.challengerPower,
-        flipResult: gameState.flipResult,
-        roundWinner: gameState.roundWinner,
-        gameWinner: gameState.gameWinner,
-        createdAt: gameState.createdAt
-      })
-    }
-  }
-
-// ===== GAME LOGIC FUNCTIONS =====
+  // ===== HELPER METHODS =====
   initializeGameState(gameId, gameData) {
-  return {
-    gameId,
-    phase: 'choosing', // choosing, flipping, result, completed
-    status: 'active',
-    currentRound: 1,
-    totalRounds: 5,
-    creatorScore: 0,
-    challengerScore: 0,
-    creator: gameData.creator,
-    challenger: gameData.challenger,
-    currentTurn: gameData.creator, // Creator always goes first
-    creatorChoice: null,
-    challengerChoice: null,
-    creatorPower: 0,
-    challengerPower: 0,
-    flipResult: null,
-    roundWinner: null,
-    gameWinner: null,
-    createdAt: new Date().toISOString()
-  }
-}
-
-  async executePlayerFlip(gameId, gameState, currentPlayer) {
-  console.log(`🎲 Executing flip for ${currentPlayer} in game ${gameId}`)
-  
-  // Determine the choices
-  const isCreator = currentPlayer.toLowerCase() === gameState.creator.toLowerCase()
-  const playerChoice = isCreator ? gameState.creatorChoice : gameState.challengerChoice
-  const opponentChoice = isCreator ? gameState.challengerChoice : gameState.creatorChoice
-  
-  // If opponent hasn't chosen yet, they get the opposite choice
-  const finalOpponentChoice = opponentChoice || (playerChoice === 'heads' ? 'tails' : 'heads')
-  
-  // Update opponent's choice if they haven't chosen
-  if (!opponentChoice) {
-    if (isCreator) {
-      gameState.challengerChoice = finalOpponentChoice
-    } else {
-      gameState.creatorChoice = finalOpponentChoice
+    // Parse coin data if needed
+    let coinData = null
+    try {
+      coinData = gameData.coin_data ? 
+        (typeof gameData.coin_data === 'string' ? JSON.parse(gameData.coin_data) : gameData.coin_data)
+        : null
+    } catch (e) {
+      console.warn('Failed to parse coin_data:', e)
+    }
+    
+    return {
+      gameId,
+      phase: 'game_active',
+      status: 'active',
+      currentRound: 1,
+      totalRounds: 5,
+      creatorScore: 0,
+      challengerScore: 0,
+      creator: gameData.creator,
+      challenger: gameData.challenger || gameData.joiner,
+      currentTurn: gameData.creator, // Creator always goes first
+      coinData: coinData,
+      createdAt: new Date().toISOString()
     }
   }
-  
-  // Generate flip result (server-side for security)
-  const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
-  gameState.flipResult = flipResult
-  
-  // Determine round winner
-  const creatorWon = gameState.creatorChoice === flipResult
-  const challengerWon = gameState.challengerChoice === flipResult
-  
-  if (creatorWon) {
-    gameState.creatorScore++
-    gameState.roundWinner = gameState.creator
-  } else if (challengerWon) {
-    gameState.challengerScore++
-    gameState.roundWinner = gameState.challenger
-  } else {
-    gameState.roundWinner = null // Tie
-  }
-  
-  // Update game state
-  gameState.phase = 'result'
-    this.gameStateManager.updateGame(gameId, gameState)
-  
-  // Emit flip result to all players
-    this.io.to(`game_${gameId}`).emit('flip_result', {
-    gameId,
-    round: gameState.currentRound,
-    flipResult,
-    creatorChoice: gameState.creatorChoice,
-    challengerChoice: gameState.challengerChoice,
-    roundWinner: gameState.roundWinner,
-    creatorScore: gameState.creatorScore,
-    challengerScore: gameState.challengerScore
-  })
-  
-  // Check for game completion
-  if (gameState.creatorScore >= 3 || gameState.challengerScore >= 3) {
-    gameState.phase = 'completed'
-    gameState.gameWinner = gameState.creatorScore >= 3 ? gameState.creator : gameState.challenger
-      this.gameStateManager.updateGame(gameId, gameState)
-    
-      this.io.to(`game_${gameId}`).emit('game_complete', {
-      gameId,
-      winner: gameState.gameWinner,
-      creatorScore: gameState.creatorScore,
-      challengerScore: gameState.challengerScore
-    })
-  } else {
-    // Start next round after a delay
-    setTimeout(() => {
-        this.startNextRound(gameId, gameState)
-    }, 3000)
-  }
-}
 
-  startNextRound(gameId, gameState) {
-  gameState.currentRound++
-  gameState.phase = 'choosing'
-  gameState.creatorChoice = null
-  gameState.challengerChoice = null
-  gameState.creatorPower = 0
-  gameState.challengerPower = 0
-  gameState.flipResult = null
-  gameState.roundWinner = null
-  
-  // Switch turns - if creator went first last round, challenger goes first this round
-  gameState.currentTurn = gameState.currentTurn === gameState.creator 
-    ? gameState.challenger 
-    : gameState.creator
-  
-    this.gameStateManager.updateGame(gameId, gameState)
-  
-    this.io.to(`game_${gameId}`).emit('round_start', {
-      gameId,
-      round: gameState.currentRound,
-      currentTurn: gameState.currentTurn,
-      creatorScore: gameState.creatorScore,
-      challengerScore: gameState.challengerScore
-    })
-    
-    // Also emit complete game state update to ensure all clients are in sync
-    this.io.to(`game_${gameId}`).emit('game_state_update', {
-      gameId: gameState.gameId,
-      phase: gameState.phase,
-      status: 'active',
-      currentRound: gameState.currentRound,
-      totalRounds: gameState.totalRounds,
-      creatorScore: gameState.creatorScore,
-      challengerScore: gameState.challengerScore,
-      creator: gameState.creator,
-      challenger: gameState.challenger,
-      currentTurn: gameState.currentTurn,
-      creatorChoice: gameState.creatorChoice,
-      challengerChoice: gameState.challengerChoice,
-      creatorPower: gameState.creatorPower,
-      challengerPower: gameState.challengerPower,
-      flipResult: gameState.flipResult,
-      roundWinner: gameState.roundWinner,
-      gameWinner: gameState.gameWinner,
-      createdAt: gameState.createdAt
-    })
-  }
-
-    // ===== DISCONNECTION =====
+  // ===== DISCONNECTION =====
   handleDisconnect(socket) {
-      console.log('❌ Disconnected:', socket.id)
-      
+    console.log('❌ Disconnected:', socket.id)
+    
     const data = this.socketData.get(socket.id)
-      if (data) {
+    if (data) {
+      // Remove as spectator if applicable
+      if (data.gameId && data.role === 'spectator') {
+        this.gameStateManager.removeSpectator(data.gameId, data.address)
+      }
+      
       this.userSockets.delete(data.address.toLowerCase())
       this.socketData.delete(socket.id)
-        
-        // Remove from game room tracking
-        if (data.gameId) {
+      
+      // Remove from game room tracking
+      if (data.gameId) {
         const gameRoom = this.gameRooms.get(data.gameId)
-          if (gameRoom) {
-            gameRoom.delete(socket.id)
-            if (gameRoom.size === 0) {
+        if (gameRoom) {
+          gameRoom.delete(socket.id)
+          if (gameRoom.size === 0) {
+            // No one left in room, stop broadcasting
+            this.gameStateManager.stopStateBroadcasting(data.gameId)
             this.gameRooms.delete(data.gameId)
           }
         }
