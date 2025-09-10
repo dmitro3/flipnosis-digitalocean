@@ -497,7 +497,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     const connectToGame = async () => {
       try {
         // Connect to socket
-        await socketService.connect()
+        await socketService.connect(gameId, address)
         setConnected(true)
         
         // Register event listeners

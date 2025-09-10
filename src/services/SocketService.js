@@ -14,6 +14,12 @@ class SocketService {
   }
 
   connect(gameId, address) {
+    // Validate parameters
+    if (!gameId) {
+      console.error('❌ SocketService.connect: gameId is required')
+      return Promise.reject(new Error('gameId is required'))
+    }
+    
     // If already connected to this room, just return
     const roomId = `game_${gameId.replace('game_', '')}`
     
@@ -44,7 +50,7 @@ class SocketService {
     }
 
     this.currentRoom = roomId
-    this.gameId = gameId.replace('game_', '')
+    this.gameId = gameId ? gameId.replace('game_', '') : ''
     this.address = address
     this.connecting = true
 
