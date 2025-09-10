@@ -7,7 +7,7 @@ import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
 import GameResultPopup from '../GameResultPopup'
-import { useLobbyState } from '../LobbyFinal/old-code/useLobbyState'
+// Removed useLobbyState dependency - using direct API calls instead
 
 // ===== PURE CLIENT RENDERER =====
 // This component ONLY renders server state
@@ -308,13 +308,37 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const navigate = useNavigate()
   
   // ===== GAME DATA LOADING =====
-  const { 
-    gameData, 
-    coinConfig, 
-    loading: gameDataLoading, 
-    error: gameDataError,
-    loadGameData 
-  } = useLobbyState(gameId)
+  const [gameData, setGameData] = useState(null)
+  const [coinConfig, setCoinConfig] = useState(null)
+  const [gameDataLoading, setGameDataLoading] = useState(true)
+  const [gameDataError, setGameDataError] = useState(null)
+  
+  const loadGameData = useCallback(async () => {
+    if (!gameId) return
+    
+    try {
+      setGameDataLoading(true)
+      const response = await fetch(`/api/games/${gameId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setGameData(data)
+        setCoinConfig(data.coinData || null)
+        setGameDataError(null)
+      } else {
+        setGameDataError('Failed to load game data')
+      }
+    } catch (error) {
+      console.error('❌ Failed to load game data:', error)
+      setGameDataError(error.message)
+    } finally {
+      setGameDataLoading(false)
+    }
+  }, [gameId])
+  
+  // Load game data on mount
+  useEffect(() => {
+    loadGameData()
+  }, [loadGameData])
   
   // ===== SERVER STATE ONLY =====
   const [serverState, setServerState] = useState(null)
@@ -400,10 +424,6 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     setRole(data.role)
   }, [])
 
-  const handleGameStarted = useCallback((data) => {
-    console.log('🎮 Game started:', data)
-    showSuccess('Game started!')
-  }, [showSuccess])
 
   const handleFlipExecuting = useCallback((data) => {
     console.log('🎲 Flip executing:', data)

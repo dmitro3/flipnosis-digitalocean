@@ -823,17 +823,6 @@ const OptimizedGoldCoin = React.memo(({
       )}
     </div>
   )
-}
-
-}, (prevProps, nextProps) => {
-  // Only re-render if these specific props change
-  return prevProps.isFlipping === nextProps.isFlipping &&
-         prevProps.flipResult === nextProps.flipResult &&
-         prevProps.customHeadsImage === nextProps.customHeadsImage &&
-         prevProps.customTailsImage === nextProps.customTailsImage &&
-         prevProps.isPlayerTurn === nextProps.isPlayerTurn &&
-         prevProps.isCharging === nextProps.isCharging &&
-         prevProps.size === nextProps.size
 })
 
 export default OptimizedGoldCoin 
