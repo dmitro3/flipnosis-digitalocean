@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useToast } from '../../../contexts/ToastContext'
 import { getApiUrl } from '../../../config/api'
 import socketService from '../../../services/SocketService'
 
 export const useLobbyState = (gameId, address) => {
   const { showSuccess, showError, showInfo } = useToast()
+  const navigate = useNavigate()
 
   // Core lobby state
   const [gameData, setGameData] = useState(null)
@@ -404,6 +406,10 @@ export const useLobbyState = (gameId, address) => {
           joiner_address: challengerAddress
         }))
         showSuccess('Game is starting!')
+        
+        // Navigate to the server-side game
+        console.log('🎮 Navigating to server-side game:', gameId)
+        navigate(`/game/${gameId}`)
       }
     }
 

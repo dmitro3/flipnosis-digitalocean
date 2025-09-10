@@ -9,7 +9,7 @@ import { useToast } from '../../contexts/ToastContext'
 
 // Component imports - Use new LobbyFinal
 import LobbyFinal from '../LobbyFinal'
-import { TabbedGameInterface } from '../TabbedGame'
+// Removed TabbedGameInterface import - using server-side FlipSuiteFinal instead
 
 // Lobby-specific hooks
 import { useLobbyState } from './hooks/useLobbyState'

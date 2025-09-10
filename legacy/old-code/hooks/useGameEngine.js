@@ -569,4 +569,17 @@ export const useGameEngine = (gameId, address, gameData) => {
   }
 }
 
-export default useGameEngine
+// DISABLED - Using new server-side game state management instead
+// export default useGameEngine
+export default function useDisabledGameEngine() {
+  console.warn('useGameEngine has been disabled. Use server-side game state instead.')
+  return {
+    gameState: null,
+    isGameReady: false,
+    connected: false,
+    handleChoice: () => {},
+    handlePowerChargeStart: () => {},
+    handlePowerChargeStop: () => {},
+    requestGameState: () => {}
+  }
+}

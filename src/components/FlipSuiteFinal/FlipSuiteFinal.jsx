@@ -7,6 +7,7 @@ import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
 import GameResultPopup from '../GameResultPopup'
+import { useLobbyState } from '../Lobby/hooks/useLobbyState'
 
 // ===== PURE CLIENT RENDERER =====
 // This component ONLY renders server state
@@ -213,11 +214,20 @@ const SpectatorCount = styled.div`
 `
 
 // === MAIN COMPONENT - PURE RENDERER ===
-const FlipSuiteFinal = ({ gameData, coinConfig }) => {
+const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) => {
   const { gameId } = useParams()
   const { address } = useAccount()
   const { showSuccess, showError, showInfo } = useToast()
   const navigate = useNavigate()
+  
+  // ===== GAME DATA LOADING =====
+  const { 
+    gameData, 
+    coinConfig, 
+    loading: gameDataLoading, 
+    error: gameDataError,
+    loadGameData 
+  } = useLobbyState(gameId)
   
   // ===== SERVER STATE ONLY =====
   const [serverState, setServerState] = useState(null)
@@ -226,6 +236,10 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
   const [role, setRole] = useState('spectator') // creator, challenger, spectator
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
+  
+  // Use props if provided, otherwise use loaded data
+  const finalGameData = propGameData || gameData
+  const finalCoinConfig = propCoinConfig || coinConfig
   
   // No local game state - everything comes from server
 
@@ -304,9 +318,19 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
     showInfo('Coin is flipping...')
   }, [showInfo])
 
+  const handleGameReady = useCallback((data) => {
+    console.log('🎮 Game ready event received:', data)
+    showInfo('Game is ready!')
+  }, [showInfo])
+
+  const handleRoundResult = useCallback((data) => {
+    console.log('🎲 Round result received:', data)
+    // Server will handle all game logic, we just display the result
+  }, [])
+
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
-    if (!gameId || !address) return
+    if (!gameId || !address || !finalGameData) return
 
     console.log('🔌 Connecting to game server...')
 
@@ -320,7 +344,9 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
         socketService.on('room_joined', handleRoomJoined)
         socketService.on('game_state_update', handleGameStateUpdate)
         socketService.on('game_started', handleGameStarted)
+        socketService.on('game_ready', handleGameReady)
         socketService.on('flip_executing', handleFlipExecuting)
+        socketService.on('round_result', handleRoundResult)
         
         // Join room
         socketService.emit('join_room', { 
@@ -346,9 +372,11 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
       socketService.off('room_joined', handleRoomJoined)
       socketService.off('game_state_update', handleGameStateUpdate)
       socketService.off('game_started', handleGameStarted)
+      socketService.off('game_ready', handleGameReady)
       socketService.off('flip_executing', handleFlipExecuting)
+      socketService.off('round_result', handleRoundResult)
     }
-  }, [gameId, address]) // Removed callback dependencies for simplicity
+  }, [gameId, address, finalGameData]) // Added finalGameData dependency
 
   // ===== USER ACTIONS - ALL GO TO SERVER =====
   const handleChoice = useCallback((choice) => {
@@ -425,6 +453,27 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
   }
 
   // ===== RENDER =====
+  // Show loading state for game data
+  if (gameDataLoading) {
+    return (
+      <GameContainer>
+        <LoadingSpinner />
+        <StatusText>Loading game data...</StatusText>
+      </GameContainer>
+    )
+  }
+
+  // Show error state for game data
+  if (gameDataError) {
+    return (
+      <GameContainer>
+        <StatusText>Error loading game: {gameDataError}</StatusText>
+        <button onClick={() => navigate('/')}>Back to Home</button>
+      </GameContainer>
+    )
+  }
+
+  // Show loading state for server connection
   if (loading) {
     return (
       <GameContainer>
@@ -534,10 +583,10 @@ const FlipSuiteFinal = ({ gameData, coinConfig }) => {
             isCharging={myCharging}
             creatorPower={serverState.creatorFinalPower}
             joinerPower={serverState.challengerFinalPower}
-            customHeadsImage={serverState.coinData?.headsImage || coinConfig?.headsImage}
-            customTailsImage={serverState.coinData?.tailsImage || coinConfig?.tailsImage}
+            customHeadsImage={serverState.coinData?.headsImage || finalCoinConfig?.headsImage}
+            customTailsImage={serverState.coinData?.tailsImage || finalCoinConfig?.tailsImage}
             size={240}
-            material={serverState.coinData?.material || coinConfig?.material || 'gold'}
+            material={serverState.coinData?.material || finalCoinConfig?.material || 'gold'}
           />
 
           {/* Power Display */}

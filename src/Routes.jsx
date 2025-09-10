@@ -24,15 +24,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "game/listing_:listingId",
-        element: <GameLobby />,  // Changed from GamePage
+        element: <GameLobby />,  // Lobby for listing pages
       },
       {
         path: "game/:gameId",
-        element: <GameLobby />,  // Changed from GamePage
-      },
-      {
-        path: "flip-suite/:gameId",
-        element: <FlipSuiteFinal />,  // New clean game room
+        element: <FlipSuiteFinal />,  // Direct to server-side game
       },
       {
         path: "admin",

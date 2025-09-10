@@ -307,4 +307,8 @@ const TabbedGameInterface = ({
   )
 }
 
-export default TabbedGameInterface
+// DISABLED - Using new server-side FlipSuiteFinal instead
+// export default TabbedGameInterface
+export default function DisabledTabbedGameInterface() {
+  return <div>This component has been disabled. Use FlipSuiteFinal instead.</div>
+}
