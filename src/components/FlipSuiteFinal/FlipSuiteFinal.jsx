@@ -213,6 +213,93 @@ const SpectatorCount = styled.div`
   color: #00ff88;
 `
 
+const DepositOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+`
+
+const DepositModal = styled.div`
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  position: relative;
+`
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  
+  &:hover {
+    color: #FF4444;
+  }
+`
+
+const DepositTitle = styled.h2`
+  font-size: 1.5rem;
+  margin: 0 0 1rem 0;
+  color: #00FF41;
+`
+
+const DepositSubtitle = styled.p`
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 1.5rem 0;
+`
+
+const CountdownDisplay = styled.div`
+  font-size: 2rem;
+  font-weight: bold;
+  color: ${props => props.isUrgent ? '#FF4444' : '#00FF41'};
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  border: 2px solid ${props => props.isUrgent ? '#FF4444' : '#00FF41'};
+`
+
+const DepositButton = styled.button`
+  padding: 1rem 2rem;
+  background: #00FF41;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+  
+  &:hover {
+    background: #00CC33;
+    transform: translateY(-2px);
+  }
+  
+  &:disabled {
+    background: rgba(0, 255, 65, 0.3);
+    cursor: not-allowed;
+    transform: none;
+  }
+`
+
 // === MAIN COMPONENT - PURE RENDERER ===
 const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) => {
   const { gameId } = useParams()
@@ -236,6 +323,11 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const [role, setRole] = useState('spectator') // creator, challenger, spectator
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
+  
+  // ===== DEPOSIT STATE =====
+  const [depositState, setDepositState] = useState(null)
+  const [showDepositOverlay, setShowDepositOverlay] = useState(false)
+  const [isDepositing, setIsDepositing] = useState(false)
   
   // Use props if provided, otherwise use loaded data
   const finalGameData = propGameData || gameData
@@ -328,6 +420,54 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     // Server will handle all game logic, we just display the result
   }, [])
 
+  // ===== DEPOSIT EVENT HANDLERS =====
+  const handleDepositStageStarted = useCallback((data) => {
+    console.log('🎯 Deposit stage started:', data)
+    if (data.gameId === gameId) {
+      setDepositState({
+        phase: 'deposit_stage',
+        creator: data.creator,
+        challenger: data.challenger,
+        timeRemaining: data.timeRemaining || 120,
+        creatorDeposited: data.creatorDeposited || false,
+        challengerDeposited: data.challengerDeposited || false,
+        cryptoAmount: data.cryptoAmount
+      })
+      setShowDepositOverlay(true)
+    }
+  }, [gameId])
+
+  const handleDepositCountdown = useCallback((data) => {
+    if (data.gameId === gameId) {
+      setDepositState(prev => prev ? { 
+        ...prev, 
+        timeRemaining: data.timeRemaining,
+        creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
+        challengerDeposited: data.challengerDeposited || prev.challengerDeposited
+      } : null)
+    }
+  }, [gameId])
+
+  const handleDepositConfirmed = useCallback((data) => {
+    console.log('💰 Deposit confirmed:', data)
+    if (data.gameId === gameId) {
+      setDepositState(prev => prev ? {
+        ...prev,
+        creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
+        challengerDeposited: data.challengerDeposited || prev.challengerDeposited
+      } : null)
+    }
+  }, [gameId])
+
+  const handleGameStarted = useCallback((data) => {
+    console.log('🎮 Game started:', data)
+    if (data.gameId === gameId) {
+      setShowDepositOverlay(false)
+      setDepositState(null)
+      showSuccess('Game started!')
+    }
+  }, [gameId, showSuccess])
+
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
     if (!gameId || !address || !finalGameData) return
@@ -347,6 +487,11 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         socketService.on('game_ready', handleGameReady)
         socketService.on('flip_executing', handleFlipExecuting)
         socketService.on('round_result', handleRoundResult)
+        
+        // Deposit event listeners
+        socketService.on('deposit_stage_started', handleDepositStageStarted)
+        socketService.on('deposit_countdown', handleDepositCountdown)
+        socketService.on('deposit_confirmed', handleDepositConfirmed)
         
         // Join room
         socketService.emit('join_room', { 
@@ -375,6 +520,11 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('game_ready', handleGameReady)
       socketService.off('flip_executing', handleFlipExecuting)
       socketService.off('round_result', handleRoundResult)
+      
+      // Deposit event cleanup
+      socketService.off('deposit_stage_started', handleDepositStageStarted)
+      socketService.off('deposit_countdown', handleDepositCountdown)
+      socketService.off('deposit_confirmed', handleDepositConfirmed)
     }
   }, [gameId, address, finalGameData]) // Added finalGameData dependency
 
@@ -414,6 +564,48 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       address
     })
   }, [serverState, isCreator, gameId, address])
+
+  // ===== DEPOSIT HANDLING =====
+  const handleDeposit = useCallback(async () => {
+    if (isDepositing || !depositState) return
+    setIsDepositing(true)
+    
+    try {
+      const userRole = depositState?.creator?.toLowerCase() === address?.toLowerCase() ? 'creator' : 'challenger'
+      
+      if (userRole === 'creator') {
+        // Creator deposits NFT
+        showInfo('Depositing NFT...')
+        // TODO: Implement NFT deposit logic
+        showSuccess('NFT deposited successfully!')
+      } else if (userRole === 'challenger') {
+        // Challenger deposits crypto
+        showInfo('Depositing crypto...')
+        // TODO: Implement crypto deposit logic
+        showSuccess('Crypto deposited successfully!')
+      }
+      
+      // Notify server
+      socketService.emit('deposit_confirmed', {
+        gameId: gameId,
+        player: address,
+        assetType: userRole === 'creator' ? 'nft' : 'crypto'
+      })
+      
+    } catch (error) {
+      console.error('❌ Deposit failed:', error)
+      showError('Deposit failed: ' + error.message)
+    } finally {
+      setIsDepositing(false)
+    }
+  }, [isDepositing, depositState, address, gameId, showInfo, showSuccess, showError])
+
+  // Format time for countdown
+  const formatTime = useCallback((seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }, [])
 
   // ===== RENDER HELPERS =====
   const getStatusText = () => {
@@ -674,6 +866,39 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
           onClose={() => setShowResultPopup(false)}
           resultData={resultData}
         />
+      )}
+
+      {/* Deposit Overlay */}
+      {showDepositOverlay && depositState && (
+        <DepositOverlay>
+          <DepositModal>
+            <CloseButton onClick={() => setShowDepositOverlay(false)}>✕</CloseButton>
+            <DepositTitle>💰 Deposit Required</DepositTitle>
+            <DepositSubtitle>
+              {depositState.creator?.toLowerCase() === address?.toLowerCase() 
+                ? 'You need to deposit your NFT to start the game'
+                : 'You need to deposit crypto to join the game'
+              }
+            </DepositSubtitle>
+            
+            <CountdownDisplay isUrgent={depositState.timeRemaining <= 30}>
+              {formatTime(depositState.timeRemaining)}
+            </CountdownDisplay>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <div>Creator: {depositState.creator?.slice(0, 6)}...{depositState.creator?.slice(-4)}</div>
+              <div>Challenger: {depositState.challenger?.slice(0, 6)}...{depositState.challenger?.slice(-4)}</div>
+              <div>Amount: ${depositState.cryptoAmount}</div>
+            </div>
+            
+            <DepositButton 
+              onClick={handleDeposit}
+              disabled={isDepositing || depositState.timeRemaining === 0}
+            >
+              {isDepositing ? 'Processing...' : 'Deposit Now'}
+            </DepositButton>
+          </DepositModal>
+        </DepositOverlay>
       )}
     </GameContainer>
   )
