@@ -163,7 +163,7 @@ class GameServer {
         if (gameData) {
           console.log(`🔍 Game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
         }
-        if (gameData && gameData.status === 'active') {
+        if (gameData && (gameData.status === 'active' || gameData.status === 'awaiting_deposit' || gameData.status === 'awaiting_challenger')) {
           gameState = this.initializeGameState(gameId, gameData)
           this.gameStateManager.createGame(gameId, gameState)
           
