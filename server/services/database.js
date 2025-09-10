@@ -98,6 +98,30 @@ class DatabaseService {
     })
   }
 
+  // Unified getGame method that tries both ID formats
+  async getGame(gameId) {
+    return new Promise((resolve, reject) => {
+      // First try the full game ID (e.g., "game_1757519849057_c6ac033837fd8420")
+      this.db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, game) => {
+        if (err) {
+          reject(err)
+          return
+        }
+        
+        if (game) {
+          resolve(game)
+          return
+        }
+        
+        // If not found, try as blockchain_game_id
+        this.db.get('SELECT * FROM games WHERE blockchain_game_id = ?', [gameId], (err, game) => {
+          if (err) reject(err)
+          else resolve(game)
+        })
+      })
+    })
+  }
+
   async updateGameStatus(gameId, status) {
     return new Promise((resolve, reject) => {
       this.db.run('UPDATE games SET status = ? WHERE id = ?', [status, gameId], function(err) {

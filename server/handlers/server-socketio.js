@@ -76,7 +76,7 @@ class GameServer {
     socket.join(roomId)
     
     // Determine role (creator, challenger, or spectator)
-    const gameId = roomId.replace('game_', '')
+    const gameId = roomId // Keep the full game ID including 'game_' prefix
     const gameState = this.gameStateManager.getGame(gameId)
     let role = 'spectator'
     
@@ -137,10 +137,16 @@ class GameServer {
     console.log(`📊 Game state requested for ${gameId}`)
     
     let gameState = this.gameStateManager.getGame(gameId)
+    console.log(`🔍 GameStateManager lookup result:`, gameState ? 'found' : 'not found')
     
     if (!gameState) {
       // Try to load from database and restore
+      console.log(`🔍 Attempting database lookup for game: ${gameId}`)
       const gameData = await this.dbService.getGame(gameId)
+      console.log(`🔍 Database lookup result:`, gameData ? 'found' : 'not found')
+      if (gameData) {
+        console.log(`🔍 Game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
+      }
       if (gameData && gameData.status === 'active') {
         gameState = this.initializeGameState(gameId, gameData)
         this.gameStateManager.createGame(gameId, gameState)
