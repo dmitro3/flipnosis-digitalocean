@@ -1,7 +1,7 @@
 # Check Deployment Status
 # This shows you exactly what's deployed
 
-$DROPLET_IP = "143.198.166.196"
+$DROPLET_IP = "159.69.242.154"
 
 Write-Host "CHECKING DEPLOYMENT STATUS" -ForegroundColor Green
 Write-Host "============================" -ForegroundColor Green
