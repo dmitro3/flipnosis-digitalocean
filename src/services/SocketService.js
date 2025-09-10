@@ -21,7 +21,7 @@ class SocketService {
     }
     
     // If already connected to this room, just return
-    const roomId = `game_${gameId.replace('game_', '')}`
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
     
     if (this.connected && this.currentRoom === roomId && this.socket) {
       console.log('✅ Already connected to room:', roomId)

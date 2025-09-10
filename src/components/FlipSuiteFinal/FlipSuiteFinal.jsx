@@ -515,7 +515,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         
         // Join room
         socketService.emit('join_room', { 
-          roomId: `game_${gameId}`, 
+          roomId: gameId.startsWith('game_') ? gameId : `game_${gameId}`, 
           address 
         })
         

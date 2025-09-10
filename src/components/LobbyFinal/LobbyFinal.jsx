@@ -602,7 +602,7 @@ const LobbyFinal = () => {
     
     // Send to server with correct format
     socketService.emit('chat_message', {
-      roomId: `game_${gameId}`,
+      roomId: gameId.startsWith('game_') ? gameId : `game_${gameId}`,
       message: newMessage.trim(),
       address: address
     })
