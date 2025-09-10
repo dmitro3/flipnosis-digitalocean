@@ -488,6 +488,12 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     }
   }, [gameId, showSuccess])
 
+  const handleGameNotFound = useCallback((data) => {
+    console.error('❌ Game not found:', data)
+    setLoading(false)
+    showError(`Game not found: ${data.gameId || 'Unknown'} - ${data.error || 'Game may not exist or has ended'}`)
+  }, [showError])
+
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
     if (!gameId || !address || !finalGameData) return
@@ -507,6 +513,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         socketService.on('game_ready', handleGameReady)
         socketService.on('flip_executing', handleFlipExecuting)
         socketService.on('round_result', handleRoundResult)
+        socketService.on('game_not_found', handleGameNotFound)
         
         // Deposit event listeners
         socketService.on('deposit_stage_started', handleDepositStageStarted)
@@ -540,6 +547,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('game_ready', handleGameReady)
       socketService.off('flip_executing', handleFlipExecuting)
       socketService.off('round_result', handleRoundResult)
+      socketService.off('game_not_found', handleGameNotFound)
       
       // Deposit event cleanup
       socketService.off('deposit_stage_started', handleDepositStageStarted)

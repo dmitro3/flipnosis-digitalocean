@@ -133,36 +133,58 @@ class GameServer {
 
   // ===== GAME STATE MANAGEMENT =====
   async handleRequestGameState(socket, data) {
+    console.log(`🔍 handleRequestGameState called with data:`, data)
+    console.log(`🔍 Socket ID: ${socket.id}`)
+    
+    if (!data) {
+      console.error('❌ No data provided to handleRequestGameState')
+      socket.emit('game_not_found', { error: 'No data provided' })
+      return
+    }
+    
     const { gameId } = data
     console.log(`📊 Game state requested for ${gameId}`)
     
-    let gameState = this.gameStateManager.getGame(gameId)
-    console.log(`🔍 GameStateManager lookup result:`, gameState ? 'found' : 'not found')
-    
-    if (!gameState) {
-      // Try to load from database and restore
-      console.log(`🔍 Attempting database lookup for game: ${gameId}`)
-      const gameData = await this.dbService.getGame(gameId)
-      console.log(`🔍 Database lookup result:`, gameData ? 'found' : 'not found')
-      if (gameData) {
-        console.log(`🔍 Game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
-      }
-      if (gameData && gameData.status === 'active') {
-        gameState = this.initializeGameState(gameId, gameData)
-        this.gameStateManager.createGame(gameId, gameState)
-        
-        // Start state broadcasting
-        this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
-          this.io.to(room).emit(message.type, message)
-        })
-      }
+    if (!gameId) {
+      console.error('❌ No gameId provided to handleRequestGameState')
+      socket.emit('game_not_found', { error: 'No gameId provided' })
+      return
     }
     
-    if (gameState) {
-      const fullState = this.gameStateManager.getFullGameState(gameId)
-      socket.emit('game_state_update', fullState)
-    } else {
-      socket.emit('game_not_found', { gameId })
+    try {
+      let gameState = this.gameStateManager.getGame(gameId)
+      console.log(`🔍 GameStateManager lookup result:`, gameState ? 'found' : 'not found')
+      
+      if (!gameState) {
+        // Try to load from database and restore
+        console.log(`🔍 Attempting database lookup for game: ${gameId}`)
+        const gameData = await this.dbService.getGame(gameId)
+        console.log(`🔍 Database lookup result:`, gameData ? 'found' : 'not found')
+        if (gameData) {
+          console.log(`🔍 Game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
+        }
+        if (gameData && gameData.status === 'active') {
+          gameState = this.initializeGameState(gameId, gameData)
+          this.gameStateManager.createGame(gameId, gameState)
+          
+          // Start state broadcasting
+          this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
+            this.io.to(room).emit(message.type, message)
+          })
+        }
+      }
+      
+      if (gameState) {
+        const fullState = this.gameStateManager.getFullGameState(gameId)
+        console.log(`📤 Sending game_state_update to socket ${socket.id}:`, fullState ? 'state found' : 'no state')
+        socket.emit('game_state_update', fullState)
+      } else {
+        console.log(`📤 Sending game_not_found to socket ${socket.id} for gameId: ${gameId}`)
+        socket.emit('game_not_found', { gameId })
+      }
+    } catch (error) {
+      console.error('❌ Error in handleRequestGameState:', error)
+      socket.emit('game_not_found', { gameId, error: error.message })
     }
   }
 
