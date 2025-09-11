@@ -542,7 +542,7 @@ const GameRoomTab = ({
             customHeadsImage={coinConfig?.headsImage}
             customTailsImage={coinConfig?.tailsImage}
             size={240}
-            material={coinConfig?.material || 'gold'}
+            material={coinConfig?.material}
           />
 
           {/* Choice Buttons */}

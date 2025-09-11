@@ -390,7 +390,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
             customHeadsImage={coinConfig?.headsImage}
             customTailsImage={coinConfig?.tailsImage}
             size={180}
-            material={coinConfig?.material || 'gold'}
+            material={coinConfig?.material}
             isInteractive={true}
             onCoinClick={handleDemoFlip}
           />
@@ -406,7 +406,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
                 Custom Coin Design
               </div>
               <div style={{ fontSize: '0.8rem', color: '#aaa' }}>
-                Material: {coinConfig.material || 'Gold'}<br/>
+                Material: {coinConfig.material?.name || 'Gold'}<br/>
                 Heads: {coinConfig.headsImage ? 'Custom' : 'Default'}<br/>
                 Tails: {coinConfig.tailsImage ? 'Custom' : 'Default'}
               </div>
