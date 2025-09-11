@@ -7,51 +7,112 @@ import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
 import GameResultPopup from '../GameResultPopup'
-// Removed useLobbyState dependency - using direct API calls instead
+// Import tab components
+import NFTDetailsTab from './tabs/NFTDetailsTab'
+import ChatOffersTab from './tabs/ChatOffersTab'
+import GameRoomTab from './tabs/GameRoomTab'
 
-// ===== PURE CLIENT RENDERER =====
-// This component ONLY renders server state
-// No game logic, no local state management
-// All actions go to server, all state comes from server
+// ===== TABBED GAME INTERFACE =====
+// This component integrates the beautiful legacy tabbed interface
+// with the current server-side game architecture
+// Tabs: Details (NFT verification) → Chat/Offers → Game Room
 
-// === STYLED COMPONENTS (unchanged) ===
-const GameContainer = styled.div`
-  min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+// === TABBED INTERFACE STYLED COMPONENTS ===
+const TabbedContainer = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-  color: white;
+  height: 100vh;
+  min-height: 600px;
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid rgba(0, 191, 255, 0.3);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
+  
+  @media (max-width: 768px) {
+    min-height: 500px;
+    border-radius: 0;
+    border: none;
+  }
 `
 
-const GameHeader = styled.div`
+const TabsHeader = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  max-width: 1200px;
-  margin-bottom: 2rem;
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid rgba(0, 191, 255, 0.3);
+  
+  @media (max-width: 768px) {
+    flex-direction: row;
+    overflow-x: auto;
+  }
 `
 
-const GameTitle = styled.h1`
-  font-size: 2rem;
+const Tab = styled.button`
+  flex: 1;
+  padding: 1.5rem 2rem;
+  background: ${props => props.active ? 
+    'linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(0, 255, 65, 0.1))' : 
+    'transparent'
+  };
+  color: ${props => props.active ? '#00BFFF' : '#FFFFFF'};
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  font-size: 1.2rem;
   font-weight: bold;
-  background: linear-gradient(45deg, #FFD700, #FFA500);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  position: relative;
+  
+  &:hover {
+    background: ${props => props.active ? 
+      'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(0, 255, 65, 0.2))' : 
+      'rgba(255, 255, 255, 0.05)'
+    };
+  }
+  
+  &:last-child {
+    border-right: none;
+  }
+  
+  /* Tab-specific colors */
+  &:nth-child(1) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(255, 20, 147, 0.3), rgba(255, 105, 180, 0.2));
+      color: #FF1493;
+      text-shadow: 0 0 10px #FF1493;
+    `}
+  }
+  
+  &:nth-child(2) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(0, 255, 65, 0.3), rgba(57, 255, 20, 0.2));
+      color: #00FF41;
+      text-shadow: 0 0 10px #00FF41;
+    `}
+  }
+  
+  &:nth-child(3) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.2));
+      color: #FFD700;
+      text-shadow: 0 0 10px #FFD700;
+    `}
+  }
+  
+  @media (max-width: 768px) {
+    flex: 1;
+    padding: 1rem 0.5rem;
+    font-size: 0.9rem;
+    min-width: 120px;
+  }
 `
 
-const ConnectionStatus = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: ${props => props.connected ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)'};
-  border: 1px solid ${props => props.connected ? '#00FF00' : '#FF0000'};
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
+const TabContent = styled.div`
+  flex: 1;
+  overflow: hidden;
+  position: relative;
 `
 
 const GameBoard = styled.div`
@@ -307,6 +368,10 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const { showSuccess, showError, showInfo } = useToast()
   const navigate = useNavigate()
   
+  // ===== TAB STATE =====
+  const [activeTab, setActiveTab] = useState('details') // 'details', 'chat', 'game'
+  const [isGameReady, setIsGameReady] = useState(false)
+  
   // ===== GAME DATA LOADING =====
   const [gameData, setGameData] = useState(null)
   const [coinConfig, setCoinConfig] = useState(null)
@@ -476,6 +541,14 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
         challengerDeposited: data.challengerDeposited || prev.challengerDeposited
       } : null)
+      
+      // Check if both players have deposited - unlock game tab
+      const bothDeposited = data.creatorDeposited && data.challengerDeposited
+      if (bothDeposited) {
+        setIsGameReady(true)
+        // Auto-switch to game tab when both deposits confirmed
+        setTimeout(() => setActiveTab('game'), 1000)
+      }
     }
   }, [gameId])
 
@@ -484,6 +557,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     if (data.gameId === gameId) {
       setShowDepositOverlay(false)
       setDepositState(null)
+      setIsGameReady(true)
+      setActiveTab('game') // Switch to game tab when game starts
       showSuccess('Game started!')
     }
   }, [gameId, showSuccess])
@@ -635,6 +710,58 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }, [])
 
+  // ===== TAB SWITCHING LOGIC =====
+  const handleTabChange = useCallback((tabId) => {
+    console.log(`📑 Switching to tab: ${tabId}`)
+    setActiveTab(tabId)
+  }, [])
+
+  // Check if game is ready based on game data
+  useEffect(() => {
+    if (!finalGameData) return
+    
+    const readyStatuses = ['active', 'in_progress', 'playing']
+    const readyPhases = ['active', 'game_active', 'playing']
+    
+    const statusReady = readyStatuses.includes(finalGameData.status)
+    const phaseReady = readyPhases.includes(finalGameData.phase)
+    const bothDeposited = finalGameData.creatorDeposited && finalGameData.challengerDeposited
+    
+    const gameReady = statusReady || phaseReady || bothDeposited
+    setIsGameReady(gameReady)
+    
+    console.log('🎮 Game readiness check:', {
+      status: finalGameData.status,
+      phase: finalGameData.phase,
+      bothDeposited,
+      gameReady
+    })
+  }, [finalGameData])
+
+  // ===== TAB RENDERING =====
+  const renderTabContent = () => {
+    const commonProps = {
+      gameData: finalGameData,
+      gameId,
+      socket: socketService,
+      connected,
+      address,
+      coinConfig: finalCoinConfig,
+      isCreator: finalGameData?.creator?.toLowerCase() === address?.toLowerCase()
+    }
+
+    switch (activeTab) {
+      case 'details':
+        return <NFTDetailsTab {...commonProps} />
+      case 'chat':
+        return <ChatOffersTab {...commonProps} />
+      case 'game':
+        return <GameRoomTab {...commonProps} isGameReady={isGameReady} />
+      default:
+        return <NFTDetailsTab {...commonProps} />
+    }
+  }
+
   // ===== RENDER HELPERS =====
   const getStatusText = () => {
     if (loading) return 'Loading game...'
@@ -676,216 +803,91 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   // Show loading state for game data
   if (gameDataLoading) {
     return (
-      <GameContainer>
-        <LoadingSpinner />
-        <StatusText>Loading game data...</StatusText>
-      </GameContainer>
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
+          <LoadingSpinner />
+          <div style={{ marginLeft: '1rem' }}>Loading game data...</div>
+        </div>
+      </TabbedContainer>
     )
   }
 
   // Show error state for game data
   if (gameDataError) {
     return (
-      <GameContainer>
-        <StatusText>Error loading game: {gameDataError}</StatusText>
-        <button onClick={() => navigate('/')}>Back to Home</button>
-      </GameContainer>
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
+          Error loading game: {gameDataError}
+        </div>
+      </TabbedContainer>
     )
   }
 
   // Show loading state for server connection
   if (loading) {
     return (
-      <GameContainer>
-        <LoadingSpinner />
-        <StatusText>Loading game...</StatusText>
-      </GameContainer>
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
+          <LoadingSpinner />
+          <div style={{ marginLeft: '1rem' }}>Loading game...</div>
+        </div>
+      </TabbedContainer>
     )
   }
 
   if (!connected) {
     return (
-      <GameContainer>
-        <StatusText>Connecting to game server...</StatusText>
-      </GameContainer>
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
+          Connecting to game server...
+        </div>
+      </TabbedContainer>
     )
   }
 
-  if (!serverState) {
+  if (!finalGameData) {
     return (
-      <GameContainer>
-        <StatusText>Waiting for game state...</StatusText>
-      </GameContainer>
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
+          Game not found
+        </div>
+      </TabbedContainer>
     )
   }
-
-  // Get power values for display
-  const myPower = isCreator() ? serverState.creatorPowerProgress : serverState.challengerPowerProgress
-  const myFinalPower = isCreator() ? serverState.creatorFinalPower : serverState.challengerFinalPower
-  const myCharging = isCreator() ? serverState.creatorCharging : serverState.challengerCharging
 
   return (
-    <GameContainer>
-      {/* Game Header */}
-      <GameHeader>
-        <GameTitle>🎮 NFT Flip Battle</GameTitle>
-        <ConnectionStatus connected={connected}>
-          {connected ? '🟢 Connected' : '🔴 Disconnected'}
-        </ConnectionStatus>
-      </GameHeader>
-
-      {/* Spectator Count */}
-      {serverState.spectators && serverState.spectators.length > 0 && (
-        <SpectatorCount>
-          👁️ {serverState.spectators.length} watching
-        </SpectatorCount>
-      )}
-
-      {/* Game Board */}
-      <GameBoard>
-        {/* Creator Card */}
-        <PlayerCard 
-          isCreator={true} 
-          isActive={serverState.currentTurn === serverState.creator}
+    <TabbedContainer>
+      {/* Tab Header */}
+      <TabsHeader>
+        <Tab 
+          active={activeTab === 'details'} 
+          onClick={() => handleTabChange('details')}
         >
-          <PlayerHeader>
-            <ProfilePicture address={serverState.creator} size={40} />
-            <PlayerLabel isCreator={true}>👑 Creator</PlayerLabel>
-          </PlayerHeader>
-          <PlayerStats>
-            <StatRow>
-              <StatLabel>Name:</StatLabel>
-              <StatValue isCreator={true}>{getPlayerName(serverState.creator)}</StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Score:</StatLabel>
-              <StatValue isCreator={true}>{serverState.creatorScore}</StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Choice:</StatLabel>
-              <StatValue isCreator={true}>
-                {serverState.creatorChoice || 'Waiting...'}
-              </StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Power:</StatLabel>
-              <StatValue isCreator={true}>
-                {Math.round(serverState.creatorFinalPower)}
-              </StatValue>
-            </StatRow>
-          </PlayerStats>
-          {serverState.creatorCharging && (
-            <PowerBar>
-              <PowerFill power={serverState.creatorPowerProgress} />
-            </PowerBar>
-          )}
-        </PlayerCard>
-
-        {/* Coin Area */}
-        <CoinArea>
-          <GameStatus>
-            <StatusText>{getStatusText()}</StatusText>
-            {serverState && (
-              <div style={{ fontSize: '1.2rem', marginTop: '1rem' }}>
-                Round {serverState.currentRound}/{serverState.totalRounds}
-              </div>
-            )}
-          </GameStatus>
-
-          <OptimizedGoldCoin
-            isFlipping={serverState.coinState?.isFlipping}
-            flipResult={serverState.coinState?.flipResult}
-            flipDuration={serverState.coinState?.flipDuration || 3000}
-            onFlipComplete={() => console.log('Flip animation complete')}
-            onPowerCharge={handlePowerChargeStart}
-            onPowerRelease={handlePowerChargeStop}
-            isPlayerTurn={isMyTurn() && serverState.gamePhase === 'charging_power'}
-            isCharging={myCharging}
-            creatorPower={serverState.creatorFinalPower}
-            joinerPower={serverState.challengerFinalPower}
-            customHeadsImage={serverState.coinData?.headsImage || finalCoinConfig?.headsImage}
-            customTailsImage={serverState.coinData?.tailsImage || finalCoinConfig?.tailsImage}
-            size={240}
-            material={serverState.coinData?.material || finalCoinConfig?.material || 'gold'}
-          />
-
-          {/* Power Display */}
-          {isMyTurn() && myCharging && (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ marginBottom: '0.5rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
-                ⚡ Hold to Charge Power ⚡
-              </div>
-              <div style={{ marginBottom: '0.5rem', fontSize: '1.5rem', color: '#00ff88' }}>
-                {Math.round(myFinalPower)} / 10
-              </div>
-              <PowerBar>
-                <PowerFill power={myPower} />
-              </PowerBar>
-              <div style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '0.5rem' }}>
-                Release to lock in power!
-              </div>
-            </div>
-          )}
-
-          {/* Choice Buttons */}
-          {canMakeChoice() && (
-            <ChoiceButtons>
-              <ChoiceButton 
-                choice="heads" 
-                onClick={() => handleChoice('heads')}
-              >
-                👑 Heads
-              </ChoiceButton>
-              <ChoiceButton 
-                choice="tails" 
-                onClick={() => handleChoice('tails')}
-              >
-                💎 Tails
-              </ChoiceButton>
-            </ChoiceButtons>
-          )}
-        </CoinArea>
-
-        {/* Challenger Card */}
-        <PlayerCard 
-          isCreator={false} 
-          isActive={serverState.currentTurn === serverState.challenger}
+          🎨 Flip Deets
+        </Tab>
+        <Tab 
+          active={activeTab === 'chat'} 
+          onClick={() => handleTabChange('chat')}
         >
-          <PlayerHeader>
-            <ProfilePicture address={serverState.challenger} size={40} />
-            <PlayerLabel isCreator={false}>⚔️ Challenger</PlayerLabel>
-          </PlayerHeader>
-          <PlayerStats>
-            <StatRow>
-              <StatLabel>Name:</StatLabel>
-              <StatValue isCreator={false}>
-                {getPlayerName(serverState.challenger)}
-              </StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Score:</StatLabel>
-              <StatValue isCreator={false}>{serverState.challengerScore}</StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Choice:</StatLabel>
-              <StatValue isCreator={false}>
-                {serverState.challengerChoice || 'Waiting...'}
-              </StatValue>
-            </StatRow>
-            <StatRow>
-              <StatLabel>Power:</StatLabel>
-              <StatValue isCreator={false}>
-                {Math.round(serverState.challengerFinalPower)}
-              </StatValue>
-            </StatRow>
-          </PlayerStats>
-          {serverState.challengerCharging && (
-            <PowerBar>
-              <PowerFill power={serverState.challengerPowerProgress} />
-            </PowerBar>
-          )}
-        </PlayerCard>
-      </GameBoard>
+          💬 Flip Lounge
+        </Tab>
+        <Tab 
+          active={activeTab === 'game'} 
+          onClick={() => handleTabChange('game')}
+          disabled={!isGameReady}
+          style={{ 
+            opacity: isGameReady ? 1 : 0.5, 
+            cursor: isGameReady ? 'pointer' : 'not-allowed' 
+          }}
+        >
+          🎮 Flip Suite {!isGameReady && '(Locked)'}
+        </Tab>
+      </TabsHeader>
+
+      {/* Tab Content */}
+      <TabContent>
+        {renderTabContent()}
+      </TabContent>
 
       {/* Result Popup */}
       {showResultPopup && resultData && (
