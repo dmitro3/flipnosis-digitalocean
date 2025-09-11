@@ -930,7 +930,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
           </DepositModal>
         </DepositOverlay>
       )}
-    </GameContainer>
+    </TabbedContainer>
   )
 }
 
