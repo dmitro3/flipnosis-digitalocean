@@ -501,6 +501,15 @@ const ChatOffersTab = ({
     const handleOffer = (data) => {
       console.log('💰 New offer received:', data)
       console.log('💰 Current offers before adding:', offers.length)
+      
+      // Check if this offer is from the current user (to avoid duplicates from optimistic updates)
+      const isFromCurrentUser = data.address?.toLowerCase() === address?.toLowerCase()
+      
+      if (isFromCurrentUser) {
+        console.log('💰 Skipping offer from current user (already added optimistically)')
+        return
+      }
+      
       const newOffer = {
         id: data.id || Date.now() + Math.random(),
         offerer_address: data.address,
@@ -575,6 +584,17 @@ const ChatOffersTab = ({
         }
         console.log('💰 Sending offer data:', offerData)
         socketService.emit('crypto_offer', offerData)
+        
+        // Add optimistic offer
+        const optimisticOffer = {
+          id: Date.now() + Math.random(),
+          offerer_address: address,
+          offer_price: parseFloat(newOffer.price),
+          message: newOffer.message || 'Crypto offer',
+          timestamp: new Date().toISOString(),
+          status: 'pending'
+        }
+        setOffers(prev => [...prev, optimisticOffer])
         
         console.log('✅ Offer sent via Socket.io')
         setNewOffer({ price: '', message: '' })

@@ -569,6 +569,24 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     showError(`Game not found: ${data.gameId || 'Unknown'} - ${data.error || 'Game may not exist or has ended'}`)
   }, [showError])
 
+  const handleOfferAccepted = useCallback((data) => {
+    console.log('🎯 Offer accepted event received:', data)
+    if (data.gameId === gameId) {
+      // Start deposit stage for the accepted offer
+      setDepositState({
+        phase: 'deposit_stage',
+        creator: finalGameData?.creator,
+        challenger: data.challengerAddress || data.challenger,
+        timeRemaining: 120,
+        creatorDeposited: finalGameData?.creatorDeposited || false,
+        challengerDeposited: false,
+        cryptoAmount: data.cryptoAmount || data.finalPrice
+      })
+      setShowDepositOverlay(true)
+      showSuccess('Offer accepted! Please complete your deposit.')
+    }
+  }, [gameId, finalGameData, showSuccess])
+
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
     if (!gameId || !address || !finalGameData) return
@@ -594,6 +612,9 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         socketService.on('deposit_stage_started', handleDepositStageStarted)
         socketService.on('deposit_countdown', handleDepositCountdown)
         socketService.on('deposit_confirmed', handleDepositConfirmed)
+        
+        // Offer event listeners
+        socketService.on('offer_accepted', handleOfferAccepted)
         
         // Join room
         socketService.emit('join_room', { 
@@ -628,6 +649,9 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('deposit_stage_started', handleDepositStageStarted)
       socketService.off('deposit_countdown', handleDepositCountdown)
       socketService.off('deposit_confirmed', handleDepositConfirmed)
+      
+      // Offer event cleanup
+      socketService.off('offer_accepted', handleOfferAccepted)
     }
   }, [gameId, address, finalGameData]) // Added finalGameData dependency
 

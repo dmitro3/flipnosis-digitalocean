@@ -372,8 +372,18 @@ class GameServer {
   }
 
   async handleAcceptOffer(socket, data) {
-    const { gameId, address, offerId, cryptoAmount } = data
+    const { gameId, address, offerId, cryptoAmount, challengerAddress } = data
     console.log(`✅ Offer accepted by ${address} for game ${gameId}`)
+    
+    // Broadcast offer accepted event to all players in the room
+    this.io.to(`game_${gameId}`).emit('offer_accepted', {
+      type: 'offer_accepted',
+      gameId: gameId,
+      accepterAddress: address,
+      challengerAddress: challengerAddress,
+      cryptoAmount: cryptoAmount,
+      timestamp: new Date().toISOString()
+    })
     
     // Start deposit stage
     this.gameStateManager.startDepositStage(gameId, address, (roomId, message) => {
