@@ -481,6 +481,22 @@ const ChatOffersTab = ({
       setMessages(prev => [...prev, newMsg])
     }
     
+    // Chat history handler - FIXED: Now listens for server-sent chat history
+    const handleChatHistory = (data) => {
+      console.log('📜 Chat history received:', data.messages?.length || 0, 'messages')
+      if (data.messages && Array.isArray(data.messages)) {
+        const formattedMessages = data.messages.map(msg => ({
+          id: msg.id || Date.now() + Math.random(),
+          sender: msg.sender_address || msg.sender,
+          message: msg.message,
+          timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
+          isCurrentUser: (msg.sender_address || msg.sender)?.toLowerCase() === address?.toLowerCase()
+        }))
+        setMessages(formattedMessages)
+        console.log('📜 Updated messages from chat history:', formattedMessages.length)
+      }
+    }
+    
     // Offer handler
     const handleOffer = (data) => {
       console.log('💰 New offer received:', data)
@@ -502,10 +518,12 @@ const ChatOffersTab = ({
     }
     
     socketService.on('chat_message', handleChatMessage)
+    socketService.on('chat_history', handleChatHistory)
     socketService.on('crypto_offer', handleOffer)
     
     return () => {
       socketService.off('chat_message', handleChatMessage)
+      socketService.off('chat_history', handleChatHistory)
       socketService.off('crypto_offer', handleOffer)
     }
   }, [socketService, address])
