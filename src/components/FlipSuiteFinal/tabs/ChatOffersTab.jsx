@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import styled from '@emotion/styled'
+import ProfilePicture from '../../ProfilePicture'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -32,6 +33,10 @@ const ChatSection = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid rgba(0, 191, 255, 0.3);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(0, 191, 255, 0.2);
 `
 
 const OffersSection = styled.div`
@@ -39,6 +44,10 @@ const OffersSection = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid rgba(0, 255, 65, 0.3);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
 `
 
 const SectionHeader = styled.div`
@@ -378,7 +387,7 @@ const CreateOfferButton = styled.button`
 const ChatOffersTab = ({ 
   gameData, 
   gameId, 
-  socket, 
+  socket: socketService, 
   connected, 
   address,
   isCreator 
@@ -444,7 +453,7 @@ const ChatOffersTab = ({
   
   // Socket event handlers
   useEffect(() => {
-    if (!socket) return
+    if (!socketService) return
     
     // Chat message handler
     const handleChatMessage = (data) => {
@@ -462,6 +471,7 @@ const ChatOffersTab = ({
     // Offer handler
     const handleOffer = (data) => {
       console.log('💰 New offer received:', data)
+      console.log('💰 Current offers before adding:', offers.length)
       const newOffer = {
         id: data.id || Date.now() + Math.random(),
         offerer_address: data.address,
@@ -470,17 +480,22 @@ const ChatOffersTab = ({
         timestamp: data.timestamp || new Date().toISOString(),
         status: 'pending'
       }
-      setOffers(prev => [...prev, newOffer])
+      setOffers(prev => {
+        console.log('💰 Adding offer to state:', newOffer)
+        const updatedOffers = [...prev, newOffer]
+        console.log('💰 Updated offers count:', updatedOffers.length)
+        return updatedOffers
+      })
     }
     
-    socket.on('chat_message', handleChatMessage)
-    socket.on('crypto_offer', handleOffer)
+    socketService.on('chat_message', handleChatMessage)
+    socketService.on('crypto_offer', handleOffer)
     
     return () => {
-      socket.off('chat_message', handleChatMessage)
-      socket.off('crypto_offer', handleOffer)
+      socketService.off('chat_message', handleChatMessage)
+      socketService.off('crypto_offer', handleOffer)
     }
-  }, [socket, address])
+  }, [socketService, address])
   
   // Auto-scroll chat
   useEffect(() => {
@@ -494,7 +509,7 @@ const ChatOffersTab = ({
     console.log('💬 Sending chat message:', { message: newMessage.trim(), from: address })
     
     // Send to server
-    socket.emit('chat_message', {
+    socketService.emit('chat_message', {
       roomId: gameId.startsWith('game_') ? gameId : `game_${gameId}`,
       message: newMessage.trim(),
       address: address
@@ -520,17 +535,19 @@ const ChatOffersTab = ({
     setIsCreatingOffer(true)
     
     try {
-      // Send via WebSocket like the legacy version
-      if (socket && connected) {
-        socket.emit('crypto_offer', {
+      // Send via Socket.io like the legacy version
+      if (socketService && connected) {
+        const offerData = {
           address: address,
           cryptoAmount: parseFloat(newOffer.price)
-        })
+        }
+        console.log('💰 Sending offer data:', offerData)
+        socketService.emit('crypto_offer', offerData)
         
-        console.log('✅ Offer sent via WebSocket')
+        console.log('✅ Offer sent via Socket.io')
         setNewOffer({ price: '', message: '' })
       } else {
-        console.error('❌ WebSocket not connected')
+        console.error('❌ Socket.io not connected')
       }
     } catch (error) {
       console.error('❌ Error creating offer:', error)
@@ -542,20 +559,20 @@ const ChatOffersTab = ({
   // Accept offer
   const acceptOffer = async (offer) => {
     try {
-      // Send via WebSocket like the legacy version
-      if (socket && connected) {
-        socket.emit('accept_offer', {
+      // Send via Socket.io like the legacy version
+      if (socketService && connected) {
+        socketService.emit('accept_offer', {
           offerId: offer.id,
           accepterAddress: address,
           challengerAddress: offer.offerer_address,
           cryptoAmount: offer.offer_price
         })
         
-        console.log('✅ Offer acceptance sent via WebSocket')
+        console.log('✅ Offer acceptance sent via Socket.io')
         // Remove the accepted offer
         setOffers(prev => prev.filter(o => o.id !== offer.id))
       } else {
-        console.error('❌ WebSocket not connected')
+        console.error('❌ Socket.io not connected')
       }
     } catch (error) {
       console.error('❌ Error accepting offer:', error)
@@ -580,7 +597,15 @@ const ChatOffersTab = ({
                 {messages.map((message, index) => (
                   <Message key={message.id} isCurrentUser={message.isCurrentUser}>
                     <MessageSender isCurrentUser={message.isCurrentUser}>
-                      💬 {message.isCurrentUser ? 'You' : `${message.sender?.slice(0, 6)}...${message.sender?.slice(-4)}`}
+                      <ProfilePicture 
+                        address={message.sender}
+                        size={40}
+                        style={{
+                          borderRadius: '8px',
+                          border: '2px solid rgba(255, 255, 255, 0.2)'
+                        }}
+                      />
+                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>💬 {message.isCurrentUser ? 'You' : `${message.sender?.slice(0, 6)}...${message.sender?.slice(-4)}`}</span>
                     </MessageSender>
                     <MessageBubble isCurrentUser={message.isCurrentUser} index={index}>
                       {message.message}

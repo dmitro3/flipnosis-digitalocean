@@ -84,7 +84,7 @@ const NFTHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(255, 20, 147, 0.3);
 `
@@ -98,10 +98,10 @@ const NFTTitle = styled.h2`
 
 const VerificationBadge = styled.div`
   padding: 0.5rem 1rem;
-  background: rgba(0, 255, 65, 0.2);
-  border: 1px solid #00FF41;
+  background: ${props => props.verified ? 'rgba(0, 255, 65, 0.2)' : 'rgba(255, 149, 0, 0.2)'};
+  border: 1px solid ${props => props.verified ? '#00FF41' : '#FF9500'};
   border-radius: 0.5rem;
-  color: #00FF41;
+  color: ${props => props.verified ? '#00FF41' : '#FF9500'};
   font-size: 0.8rem;
   font-weight: bold;
   text-transform: uppercase;
@@ -124,15 +124,15 @@ const NFTImage = styled.img`
 `
 
 const NFTInfo = styled.div`
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 `
 
 const InfoRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
-  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 `
 
@@ -152,9 +152,9 @@ const PriceDisplay = styled.div`
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.1));
   border: 2px solid #FFD700;
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 0.75rem;
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 `
 
 const PriceLabel = styled.div`
@@ -173,7 +173,7 @@ const PriceValue = styled.div`
 const SocialButtons = styled.div`
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 `
 
 const SocialButton = styled.button`
@@ -292,6 +292,8 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
   const [demoResult, setDemoResult] = useState(null)
 
   const handleDemoFlip = () => {
+    // For demo coin, we'll trigger a temporary flip animation
+    // by temporarily setting the flip state
     setIsDemoFlipping(true)
     setDemoResult(null)
     
@@ -319,7 +321,9 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
       <NFTSection>
         <NFTHeader>
           <NFTTitle>🎨 NFT Details</NFTTitle>
-          <VerificationBadge>✓ Verified</VerificationBadge>
+          <VerificationBadge verified={gameData?.nft_verified || gameData?.verified}>
+            {gameData?.nft_verified || gameData?.verified ? '✓ Verified' : '⚠️ Unverified'}
+          </VerificationBadge>
         </NFTHeader>
 
         <NFTImage 
@@ -393,6 +397,13 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
             material={coinConfig?.material}
             isInteractive={true}
             onCoinClick={handleDemoFlip}
+            isPlayerTurn={false}
+            gamePhase="demo"
+            creatorPower={0}
+            joinerPower={0}
+            isCreator={false}
+            creatorChoice={null}
+            joinerChoice={null}
           />
 
           <CoinInfo>
