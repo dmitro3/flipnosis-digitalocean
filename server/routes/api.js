@@ -1644,8 +1644,22 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     }
   })
 
+  // Handle preflight requests for deposit-confirmed endpoint
+  router.options('/games/:gameId/deposit-confirmed', (req, res) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*')
+    res.header('Access-Control-Allow-Credentials', 'true')
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+    res.status(200).end()
+  })
+
   // New route: Confirm deposit received (called by frontend after successful deposit)
   router.post('/games/:gameId/deposit-confirmed', async (req, res) => {
+    // Set CORS headers
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*')
+    res.header('Access-Control-Allow-Credentials', 'true')
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
     const { gameId } = req.params
     const { player, assetType, transactionHash, nftDeposited, nftDepositTime, nftDepositHash, nftDepositVerified, lastNftCheckTime } = req.body
     

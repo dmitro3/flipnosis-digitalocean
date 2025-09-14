@@ -416,8 +416,32 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
 
   const handleGameReady = useCallback((data) => {
     console.log('🎮 Game ready event received:', data)
-    showInfo('Game is ready!')
-  }, [showInfo])
+    
+    // Handle both gameId formats (with and without 'game_' prefix)
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const componentGameId = gameId?.replace('game_', '') || gameId
+    
+    if (eventGameId === componentGameId) {
+      console.log('✅ Game ready for current game')
+      setIsGameReady(true)
+      setShowDepositOverlay(false)
+      setDepositState(null)
+      setActiveTab('game')
+      showInfo('Game is ready! Both players can now play.')
+      
+      // Trigger the switch to flip suite event for both players
+      window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+        detail: { 
+          gameId: gameId, 
+          immediate: true,
+          gameReady: true,
+          bothDeposited: data.creatorDeposited && data.challengerDeposited
+        }
+      }))
+    } else {
+      console.log('❌ Game ready gameId mismatch:', { eventGameId, componentGameId })
+    }
+  }, [gameId, showInfo])
 
   const handleRoundResult = useCallback((data) => {
     console.log('🎲 Round result received:', data)
@@ -442,10 +466,33 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         creatorDeposited: data.creatorDeposited !== undefined ? data.creatorDeposited : prev.creatorDeposited,
         challengerDeposited: data.challengerDeposited !== undefined ? data.challengerDeposited : prev.challengerDeposited
       } : null)
+      
+      // Dispatch custom event for OfferAcceptanceOverlay to listen to
+      window.dispatchEvent(new CustomEvent('deposit_countdown', { detail: data }))
     } else {
       console.log('❌ Countdown update gameId mismatch:', { eventGameId, componentGameId })
     }
   }, [gameId])
+
+  const handleDepositTimeout = useCallback((data) => {
+    console.log('⏰ Deposit timeout:', data)
+    
+    // Handle both gameId formats (with and without 'game_' prefix)
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const componentGameId = gameId?.replace('game_', '') || gameId
+    
+    if (eventGameId === componentGameId) {
+      console.log('✅ Deposit timeout for current game')
+      setShowDepositOverlay(false)
+      setDepositState(null)
+      showError('Deposit time expired! Game cancelled.')
+      
+      // Dispatch custom event for OfferAcceptanceOverlay to listen to
+      window.dispatchEvent(new CustomEvent('deposit_timeout', { detail: data }))
+    } else {
+      console.log('❌ Deposit timeout gameId mismatch:', { eventGameId, componentGameId })
+    }
+  }, [gameId, showError])
 
   const handleDepositConfirmed = useCallback((data) => {
     console.log('💰 Deposit confirmed:', data)
@@ -528,7 +575,17 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         showSuccess('Offer accepted! Please complete your deposit.')
       } else if (isCreator) {
         console.log('✅ You are the creator - waiting for challenger to deposit')
-        // Don't show deposit overlay for creator - they already deposited their NFT
+        // Show deposit overlay for creator too - they need to see the waiting state
+        setDepositState({
+          phase: 'deposit_stage',
+          creator: finalGameData?.creator,
+          challenger: data.challengerAddress || data.challenger,
+          timeRemaining: 120,
+          creatorDeposited: true, // Creator already deposited NFT
+          challengerDeposited: false,
+          cryptoAmount: data.cryptoAmount || data.finalPrice
+        })
+        setShowDepositOverlay(true)
         showSuccess('Offer accepted! Waiting for challenger to deposit.')
       } else {
         console.log('❌ Neither challenger nor creator - ignoring')
@@ -562,6 +619,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         // Deposit event listeners
         // Removed deposit_stage_started listener - now using OfferAcceptanceOverlay
         socketService.on('deposit_countdown', handleDepositCountdown)
+        socketService.on('deposit_timeout', handleDepositTimeout)
         socketService.on('deposit_confirmed', handleDepositConfirmed)
         
         // Offer event listeners
@@ -599,6 +657,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       // Deposit event cleanup
       // Removed deposit_stage_started cleanup - now using OfferAcceptanceOverlay
       socketService.off('deposit_countdown', handleDepositCountdown)
+      socketService.off('deposit_timeout', handleDepositTimeout)
       socketService.off('deposit_confirmed', handleDepositConfirmed)
       
       // Offer event cleanup

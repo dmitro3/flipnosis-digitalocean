@@ -26,10 +26,10 @@ const RPC_URL = process.env.RPC_URL || 'https://base-mainnet.g.alchemy.com/v2/ho
 
 // ===== MIDDLEWARE =====
 app.use(cors({
-  origin: true,
+  origin: ['https://flipnosis.fun', 'https://www.flipnosis.fun', 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Access-Control-Allow-Origin']
 }))
 
 app.use(express.json({ limit: '50mb' }))

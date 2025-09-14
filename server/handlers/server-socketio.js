@@ -21,8 +21,12 @@ class GameServer {
     
     this.dbService = dbService
     this.io = socketIO(server, {
-      cors: { origin: true, credentials: true },
-      transports: ['websocket', 'polling']
+      cors: { 
+        origin: ['https://flipnosis.fun', 'https://www.flipnosis.fun', 'http://localhost:3000', 'http://localhost:5173'],
+        credentials: true 
+      },
+      transports: ['websocket', 'polling'],
+      allowEIO3: true
     })
 
     this.setupEventHandlers()
@@ -390,10 +394,51 @@ class GameServer {
       timestamp: new Date().toISOString()
     })
     
-    // Don't start server-side deposit stage - let client handle it with OfferAcceptanceOverlay
-    // this.gameStateManager.startDepositStage(gameId, challengerAddress, (roomId, message) => {
-    //   this.io.to(roomId).emit(message.type, message)
-    // }, cryptoAmount)
+    // Start synchronized deposit countdown for both players
+    this.startDepositCountdown(gameId, roomId, 120) // 2 minutes
+  }
+
+  startDepositCountdown(gameId, roomId, initialTime) {
+    console.log(`⏰ Starting deposit countdown for game ${gameId}: ${initialTime} seconds`)
+    
+    let timeLeft = initialTime
+    
+    const countdownInterval = setInterval(() => {
+      // Broadcast countdown to all players in the room
+      this.io.to(roomId).emit('deposit_countdown', {
+        gameId,
+        timeRemaining: timeLeft,
+        message: `Deposit time remaining: ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`
+      })
+      
+      timeLeft--
+      
+      if (timeLeft < 0) {
+        clearInterval(countdownInterval)
+        console.log(`⏰ Deposit countdown expired for game ${gameId}`)
+        
+        // Notify all players that deposit time has expired
+        this.io.to(roomId).emit('deposit_timeout', {
+          gameId,
+          message: 'Deposit time expired! Game cancelled.'
+        })
+        
+        // Clean up the game state
+        this.gameStateManager.removeGame(gameId)
+      }
+    }, 1000)
+    
+    // Store the interval so we can clear it if deposits complete early
+    this.depositCountdowns = this.depositCountdowns || {}
+    this.depositCountdowns[gameId] = countdownInterval
+  }
+
+  clearDepositCountdown(gameId) {
+    if (this.depositCountdowns && this.depositCountdowns[gameId]) {
+      clearInterval(this.depositCountdowns[gameId])
+      delete this.depositCountdowns[gameId]
+      console.log(`⏰ Cleared deposit countdown for game ${gameId}`)
+    }
   }
 
   async handleDepositConfirmed(socket, data) {
@@ -418,8 +463,13 @@ class GameServer {
     // Check if both players have deposited
     const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
     
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    
     if (bothDeposited) {
       console.log(`🎮 Both players deposited in game ${gameId}, starting game!`)
+      
+      // Clear the deposit countdown since both players have deposited
+      this.clearDepositCountdown(gameId)
       
       // Initialize game state with coin data from database
       const gameState = this.initializeGameState(gameId, gameData)
@@ -431,7 +481,6 @@ class GameServer {
       })
       
       // Notify all players that game is starting
-      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
       this.io.to(roomId).emit('game_started', {
         gameId,
         phase: 'game_active',
@@ -442,9 +491,17 @@ class GameServer {
       const fullState = this.gameStateManager.getFullGameState(gameId)
       this.io.to(roomId).emit('game_state_update', fullState)
       
+      // Emit game ready event to trigger UI switch
+      this.io.to(roomId).emit('game_ready', {
+        gameId,
+        phase: 'game_active',
+        message: 'Game ready! Both players can now play.',
+        creatorDeposited: true,
+        challengerDeposited: true
+      })
+      
     } else {
-      // Just confirm the deposit
-      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+      // Just confirm the deposit and notify all players
       this.io.to(roomId).emit('deposit_confirmed', {
         gameId,
         player: address,

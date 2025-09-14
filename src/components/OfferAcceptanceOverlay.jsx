@@ -142,38 +142,34 @@ const OfferAcceptanceOverlay = ({
   const [timeLeft, setTimeLeft] = useState(120)
   const [isDepositing, setIsDepositing] = useState(false)
   
-  // Use server time if available
-  useEffect(() => {
-    if (acceptedOffer?.timeRemaining !== undefined) {
-      setTimeLeft(acceptedOffer.timeRemaining)
-    }
-  }, [acceptedOffer?.timeRemaining])
-
-  // Only run local countdown as backup
+  // Listen for server-synchronized countdown updates
   useEffect(() => {
     if (!isVisible || !acceptedOffer) return
     
-    // If we have server time remaining, use that
-    if (acceptedOffer.timeRemaining !== undefined) {
-      setTimeLeft(acceptedOffer.timeRemaining)
-      return // Don't run local timer
+    const handleDepositCountdown = (event) => {
+      const data = event.detail
+      if (data.gameId === gameId) {
+        setTimeLeft(data.timeRemaining)
+      }
     }
     
-    // Fallback to local timer if no server sync
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          showError('Deposit time expired!')
-          onClose()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [isVisible, acceptedOffer?.timeRemaining, acceptedOffer, showError, onClose])
+    const handleDepositTimeout = (event) => {
+      const data = event.detail
+      if (data.gameId === gameId) {
+        showError('Deposit time expired!')
+        onClose()
+      }
+    }
+    
+    // Listen for server countdown updates
+    window.addEventListener('deposit_countdown', handleDepositCountdown)
+    window.addEventListener('deposit_timeout', handleDepositTimeout)
+    
+    return () => {
+      window.removeEventListener('deposit_countdown', handleDepositCountdown)
+      window.removeEventListener('deposit_timeout', handleDepositTimeout)
+    }
+  }, [isVisible, acceptedOffer, gameId, showError, onClose])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -244,7 +240,7 @@ const OfferAcceptanceOverlay = ({
           })
         })
         
-        showSuccess('Deposit confirmed! Redirecting to flip suite...')
+        showSuccess('Deposit confirmed! Game starting...')
         
         // Close overlay first
         onClose()
@@ -254,33 +250,8 @@ const OfferAcceptanceOverlay = ({
           onDepositComplete(acceptedOffer)
         }
         
-        // Navigate to flip suite tab - immediate transport for Player 2
-        console.log('🚀 Player 2 deposit complete - transporting to flip suite...')
-        window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-          detail: { gameId: gameId, immediate: true }
-        }))
-        
-        // Also trigger again after a short delay as fallback
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameId, fallback: true }
-          }))
-        }, 500)
-        
-        // ADDITIONAL: Force transport with multiple attempts
-        setTimeout(() => {
-          console.log('🚀 FORCE transport attempt 1')
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameId, force: true, attempt: 1 }
-          }))
-        }, 1000)
-        
-        setTimeout(() => {
-          console.log('🚀 FORCE transport attempt 2')
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameId, force: true, attempt: 2 }
-          }))
-        }, 2000)
+        // The server will handle the game_ready event and trigger the UI switch
+        // No need for multiple transport attempts - let the server coordinate this
         
       } else {
         showError(result.error || 'Failed to deposit ETH')
