@@ -9,6 +9,7 @@ import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
 import GameResultPopup from '../GameResultPopup'
+import UnifiedDepositOverlay from '../UnifiedDepositOverlay'
 // Import tab components
 import NFTDetailsTab from './tabs/NFTDetailsTab'
 import ChatOffersTab from './tabs/ChatOffersTab'
@@ -276,92 +277,7 @@ const SpectatorCount = styled.div`
   color: #00ff88;
 `
 
-const DepositOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
-`
-
-const DepositModal = styled.div`
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 2rem;
-  max-width: 500px;
-  width: 90%;
-  text-align: center;
-  position: relative;
-`
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  
-  &:hover {
-    color: #FF4444;
-  }
-`
-
-const DepositTitle = styled.h2`
-  font-size: 1.5rem;
-  margin: 0 0 1rem 0;
-  color: #00FF41;
-`
-
-const DepositSubtitle = styled.p`
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0 0 1.5rem 0;
-`
-
-const CountdownDisplay = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: ${props => props.isUrgent ? '#FF4444' : '#00FF41'};
-  margin: 1rem 0;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-  border: 2px solid ${props => props.isUrgent ? '#FF4444' : '#00FF41'};
-`
-
-const DepositButton = styled.button`
-  padding: 1rem 2rem;
-  background: #00FF41;
-  color: #000;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
-  
-  &:hover {
-    background: #00CC33;
-    transform: translateY(-2px);
-  }
-  
-  &:disabled {
-    background: rgba(0, 255, 65, 0.3);
-    cursor: not-allowed;
-    transform: none;
-  }
-`
+// Deposit overlay styled components removed - now using UnifiedDepositOverlay component
 
 // === MAIN COMPONENT - PURE RENDERER ===
 const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) => {
@@ -798,87 +714,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   }, [serverState, isCreator, gameId, address])
 
   // ===== DEPOSIT HANDLING =====
-  const handleDeposit = useCallback(async () => {
-    if (isDepositing || !depositState) return
-    setIsDepositing(true)
-    
-    try {
-      const userRole = depositState?.creator?.toLowerCase() === address?.toLowerCase() ? 'creator' : 'challenger'
-      
-      if (userRole === 'creator') {
-        // Creator deposits NFT - should already be deposited
-        showInfo('NFT already deposited!')
-        showSuccess('NFT is ready for game!')
-      } else if (userRole === 'challenger') {
-        // Challenger deposits crypto
-        showInfo('Depositing crypto...')
-        
-        if (!depositState?.cryptoAmount) {
-          throw new Error('Crypto amount not found')
-        }
-        
-        if (!contractService) {
-          throw new Error('Contract service not available. Please connect your wallet.')
-        }
-        
-        // Call real crypto deposit contract method
-        const result = await contractService.depositETH(gameId, depositState.cryptoAmount)
-        
-        if (result.success) {
-          showSuccess('Crypto deposited successfully!')
-          
-          // Notify server via Socket.io
-          socketService.emit('deposit_confirmed', {
-            gameId: gameId,
-            player: address,
-            assetType: 'crypto',
-            transactionHash: result.transactionHash
-          })
-          
-          // Also confirm via API endpoint
-          try {
-            await fetch(`/api/games/${gameId}/deposit-confirmed`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                player: address,
-                assetType: 'eth',
-                transactionHash: result.transactionHash
-              })
-            })
-          } catch (apiError) {
-            console.warn('⚠️ API confirmation failed:', apiError)
-          }
-          
-          // Transport to game room immediately
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-              detail: { gameId: gameId, immediate: true, player2: true }
-            }))
-          }, 1000)
-          
-        } else {
-          throw new Error(result.error || 'Crypto deposit failed')
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Deposit failed:', error)
-      
-      // Handle insufficient funds error with helpful message
-      if (error.message?.includes('Insufficient funds') || error.message?.includes('exceeds the balance')) {
-        const errorMsg = error.message.includes('Insufficient funds') 
-          ? error.message 
-          : 'Insufficient funds. You need more ETH to cover the deposit amount and gas fees.'
-        
-        showError(errorMsg + ' 💡 Tip: You can get ETH from exchanges like Coinbase, Binance, or use a faucet for testnet ETH.')
-      } else {
-        showError('Deposit failed: ' + error.message)
-      }
-    } finally {
-      setIsDepositing(false)
-    }
-  }, [isDepositing, depositState, address, gameId, showInfo, showSuccess, showError, contractService])
+  // Deposit handling is now done by UnifiedDepositOverlay component
 
   // Format time for countdown
   const formatTime = useCallback((seconds) => {
@@ -1077,77 +913,27 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
 
       {/* Deposit Overlay */}
       {showDepositOverlay && depositState && (
-        <DepositOverlay>
-          <DepositModal>
-            <CloseButton onClick={() => setShowDepositOverlay(false)}>✕</CloseButton>
-            <DepositTitle>💰 Deposit Required</DepositTitle>
-            <DepositSubtitle>
-              {depositState.creator?.toLowerCase() === address?.toLowerCase() 
-                ? 'Your NFT is already deposited. Waiting for challenger...'
-                : 'You need to deposit crypto to join the game'
-              }
-            </DepositSubtitle>
-            
-            <CountdownDisplay isUrgent={depositState.timeRemaining <= 30}>
-              {formatTime(depositState.timeRemaining)}
-            </CountdownDisplay>
-            
-            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
-              <div style={{ marginBottom: '0.5rem' }}>
-                <strong>Creator:</strong> {depositState.creator?.slice(0, 6)}...{depositState.creator?.slice(-4)}
-                <span style={{ color: '#00FF41', marginLeft: '0.5rem' }}>✅ NFT Deposited</span>
-              </div>
-              <div style={{ marginBottom: '0.5rem' }}>
-                <strong>Challenger:</strong> {depositState.challenger?.slice(0, 6)}...{depositState.challenger?.slice(-4)}
-                <span style={{ color: depositState.challengerDeposited ? '#00FF41' : '#FFA500', marginLeft: '0.5rem' }}>
-                  {depositState.challengerDeposited ? '✅ Crypto Deposited' : '⏳ Awaiting Crypto'}
-                </span>
-              </div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#00FF41' }}>
-                Amount: ${depositState.cryptoAmount}
-              </div>
-            </div>
-            
-            {/* Only show deposit button for challenger who hasn't deposited yet */}
-            {depositState.challenger?.toLowerCase() === address?.toLowerCase() && !depositState.challengerDeposited && (
-              <DepositButton 
-                onClick={handleDeposit}
-                disabled={isDepositing || depositState.timeRemaining === 0}
-              >
-                {isDepositing ? 'Processing Deposit...' : `Deposit $${depositState.cryptoAmount} Crypto`}
-              </DepositButton>
-            )}
-            
-            {/* Show waiting message for creator */}
-            {depositState.creator?.toLowerCase() === address?.toLowerCase() && (
-              <div style={{ 
-                textAlign: 'center', 
-                color: '#00BFFF', 
-                padding: '1rem',
-                background: 'rgba(0, 191, 255, 0.1)',
-                borderRadius: '0.5rem',
-                border: '1px solid rgba(0, 191, 255, 0.3)'
-              }}>
-                ✅ Your NFT is already deposited<br/>
-                ⏳ Waiting for challenger to deposit crypto...
-              </div>
-            )}
-            
-            {/* Show success message when both deposited */}
-            {depositState.challengerDeposited && (
-              <div style={{ 
-                textAlign: 'center', 
-                color: '#00FF41', 
-                padding: '1rem',
-                background: 'rgba(0, 255, 65, 0.1)',
-                borderRadius: '0.5rem',
-                border: '1px solid rgba(0, 255, 65, 0.3)'
-              }}>
-                🎮 Both deposits confirmed! Starting game...
-              </div>
-            )}
-          </DepositModal>
-        </DepositOverlay>
+        <UnifiedDepositOverlay
+          gameId={gameId}
+          address={address}
+          gameData={finalGameData}
+          depositState={depositState}
+          onDepositComplete={() => {
+            setShowDepositOverlay(false)
+            setDepositState(null)
+            setIsGameReady(true)
+            // Transport to game room
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+                detail: { gameId: gameId, immediate: true }
+              }))
+            }, 1000)
+          }}
+          onTimeout={() => {
+            setShowDepositOverlay(false)
+            setDepositState(null)
+          }}
+        />
       )}
     </TabbedContainer>
   )
