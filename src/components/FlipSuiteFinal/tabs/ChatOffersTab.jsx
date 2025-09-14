@@ -411,7 +411,9 @@ const ChatOffersTab = ({
   // Load chat history
   const loadChatHistory = useCallback(async () => {
     try {
-      const response = await fetch(`/api/chat/${gameId}?limit=100`)
+      // Use the same roomId format as when sending messages
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+      const response = await fetch(`/api/chat/${roomId}?limit=100`)
       if (response.ok) {
         const data = await response.json()
         if (data.messages && Array.isArray(data.messages)) {
@@ -423,8 +425,10 @@ const ChatOffersTab = ({
             isCurrentUser: (msg.sender_address || msg.sender)?.toLowerCase() === address?.toLowerCase()
           }))
           setMessages(formattedMessages)
-          console.log(`📜 Loaded ${formattedMessages.length} chat messages`)
+          console.log(`📜 Loaded ${formattedMessages.length} chat messages for room ${roomId}`)
         }
+      } else {
+        console.error('❌ Failed to load chat history - response not ok:', response.status)
       }
     } catch (error) {
       console.error('❌ Failed to load chat history:', error)
@@ -458,12 +462,21 @@ const ChatOffersTab = ({
     // Chat message handler
     const handleChatMessage = (data) => {
       console.log('💬 Chat message received:', data)
+      
+      // Check if this message is from the current user (to avoid duplicates from optimistic updates)
+      const isFromCurrentUser = (data.address || data.from || data.sender)?.toLowerCase() === address?.toLowerCase()
+      
+      if (isFromCurrentUser) {
+        console.log('💬 Skipping message from current user (already added optimistically)')
+        return
+      }
+      
       const newMsg = {
         id: Date.now() + Math.random(),
         sender: data.address || data.from || data.sender,
         message: data.message,
         timestamp: new Date(data.timestamp || Date.now()).toLocaleTimeString(),
-        isCurrentUser: (data.address || data.from || data.sender)?.toLowerCase() === address?.toLowerCase()
+        isCurrentUser: false
       }
       setMessages(prev => [...prev, newMsg])
     }
@@ -538,6 +551,7 @@ const ChatOffersTab = ({
       // Send via Socket.io like the legacy version
       if (socketService && connected) {
         const offerData = {
+          gameId: gameId,
           address: address,
           cryptoAmount: parseFloat(newOffer.price)
         }
