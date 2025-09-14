@@ -411,9 +411,9 @@ const ChatOffersTab = ({
   // Load chat history
   const loadChatHistory = useCallback(async () => {
     try {
-      // Use the same roomId format as when sending messages
-      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-      const response = await fetch(`/api/chat/${roomId}?limit=100`)
+      // API expects just the gameId, not the full roomId
+      const cleanGameId = gameId.startsWith('game_') ? gameId.replace('game_', '') : gameId
+      const response = await fetch(`/api/chat/${cleanGameId}?limit=100`)
       if (response.ok) {
         const data = await response.json()
         if (data.messages && Array.isArray(data.messages)) {
@@ -425,7 +425,7 @@ const ChatOffersTab = ({
             isCurrentUser: (msg.sender_address || msg.sender)?.toLowerCase() === address?.toLowerCase()
           }))
           setMessages(formattedMessages)
-          console.log(`📜 Loaded ${formattedMessages.length} chat messages for room ${roomId}`)
+          console.log(`📜 Loaded ${formattedMessages.length} chat messages for game ${cleanGameId}`)
         }
       } else {
         console.error('❌ Failed to load chat history - response not ok:', response.status)
