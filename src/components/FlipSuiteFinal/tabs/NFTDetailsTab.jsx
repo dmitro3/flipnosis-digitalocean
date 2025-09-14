@@ -149,15 +149,15 @@ const InfoValue = styled.span`
 `
 
 const PriceDisplay = styled.div`
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.1));
-  border: 2px solid #FFD700;
+  background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 200, 0, 0.1));
+  border: 2px solid #00FF00;
   border-radius: 0.75rem;
   padding: 0.75rem;
   text-align: center;
   margin-bottom: 1rem;
   max-width: 200px;
   margin-left: auto;
-  margin-right: auto;
+  margin-right: 0;
 `
 
 const PriceLabel = styled.div`
@@ -167,10 +167,10 @@ const PriceLabel = styled.div`
 `
 
 const PriceValue = styled.div`
-  color: #FFD700;
+  color: #00FF00;
   font-size: 1.8rem;
   font-weight: bold;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
 `
 
 const SocialButtons = styled.div`
@@ -367,8 +367,8 @@ const CoinContainer = styled.div`
   align-items: center;
   gap: 1rem;
   width: 100%;
-  padding: 2rem 0;
-  min-height: 400px;
+  padding: 1.5rem 0;
+  min-height: 300px;
   justify-content: center;
 `
 
@@ -516,7 +516,50 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
               src={getNFTImage()} 
               alt={getNFTName()}
             />
-            
+          </NFTImageContainer>
+
+          <NFTDetailsContainer>
+            <NFTInfo>
+              <InfoRow>
+                <InfoLabel>Name:</InfoLabel>
+                <InfoValue>{getNFTName()}</InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel>Collection:</InfoLabel>
+                <InfoValue>{getNFTCollection()}</InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel>Token ID:</InfoLabel>
+                <InfoValue>#{getNFTTokenId()}</InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel>Contract:</InfoLabel>
+                <InfoValue 
+                  onClick={handleCopyContract}
+                  style={{ 
+                    cursor: getNFTContract() !== 'Unknown' ? 'pointer' : 'default',
+                    textDecoration: getNFTContract() !== 'Unknown' ? 'underline' : 'none',
+                    color: getNFTContract() !== 'Unknown' ? '#00BFFF' : 'white'
+                  }}
+                  title={getNFTContract() !== 'Unknown' ? 'Click to copy full address' : ''}
+                >
+                  {getNFTContract() !== 'Unknown' ? 
+                    `${getNFTContract().slice(0, 6)}...${getNFTContract().slice(-4)}` : 
+                    'Unknown'
+                  }
+                </InfoValue>
+              </InfoRow>
+              <InfoRow>
+                <InfoLabel>Chain:</InfoLabel>
+                <InfoValue>{getNFTChain()}</InfoValue>
+              </InfoRow>
+            </NFTInfo>
+
+            <PriceDisplay>
+              <PriceLabel>Price</PriceLabel>
+              <PriceValue>${gameData.price_usd || 0}</PriceValue>
+            </PriceDisplay>
+
             {/* Share Buttons - 2x2 Grid */}
             <ShareButtonsContainer>
               <ActionButton 
@@ -576,49 +619,6 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
                 </ActionButton>
               </a>
             </ShareButtonsContainer>
-          </NFTImageContainer>
-
-          <NFTDetailsContainer>
-            <NFTInfo>
-              <InfoRow>
-                <InfoLabel>Name:</InfoLabel>
-                <InfoValue>{getNFTName()}</InfoValue>
-              </InfoRow>
-              <InfoRow>
-                <InfoLabel>Collection:</InfoLabel>
-                <InfoValue>{getNFTCollection()}</InfoValue>
-              </InfoRow>
-              <InfoRow>
-                <InfoLabel>Token ID:</InfoLabel>
-                <InfoValue>#{getNFTTokenId()}</InfoValue>
-              </InfoRow>
-              <InfoRow>
-                <InfoLabel>Contract:</InfoLabel>
-                <InfoValue 
-                  onClick={handleCopyContract}
-                  style={{ 
-                    cursor: getNFTContract() !== 'Unknown' ? 'pointer' : 'default',
-                    textDecoration: getNFTContract() !== 'Unknown' ? 'underline' : 'none',
-                    color: getNFTContract() !== 'Unknown' ? '#00BFFF' : 'white'
-                  }}
-                  title={getNFTContract() !== 'Unknown' ? 'Click to copy full address' : ''}
-                >
-                  {getNFTContract() !== 'Unknown' ? 
-                    `${getNFTContract().slice(0, 6)}...${getNFTContract().slice(-4)}` : 
-                    'Unknown'
-                  }
-                </InfoValue>
-              </InfoRow>
-              <InfoRow>
-                <InfoLabel>Chain:</InfoLabel>
-                <InfoValue>{getNFTChain()}</InfoValue>
-              </InfoRow>
-            </NFTInfo>
-
-            <PriceDisplay>
-              <PriceLabel>Price</PriceLabel>
-              <PriceValue>${gameData.price_usd || 0}</PriceValue>
-            </PriceDisplay>
           </NFTDetailsContainer>
         </NFTContent>
       </NFTSection>
