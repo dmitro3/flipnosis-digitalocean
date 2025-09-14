@@ -558,16 +558,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         showSuccess('Offer accepted! Please complete your deposit.')
       } else if (isCreator) {
         console.log('✅ You are the creator - waiting for challenger to deposit')
-        setDepositState({
-          phase: 'deposit_stage',
-          creator: finalGameData?.creator,
-          challenger: data.challengerAddress || data.challenger,
-          timeRemaining: 120,
-          creatorDeposited: true, // Creator already deposited NFT
-          challengerDeposited: false,
-          cryptoAmount: data.cryptoAmount || data.finalPrice
-        })
-        setShowDepositOverlay(true)
+        // Don't show deposit overlay for creator - they already deposited their NFT
         showSuccess('Offer accepted! Waiting for challenger to deposit.')
       } else {
         console.log('❌ Neither challenger nor creator - ignoring')
