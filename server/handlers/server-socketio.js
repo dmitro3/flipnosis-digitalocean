@@ -440,8 +440,7 @@ class GameServer {
       
       // Send initial state
       const fullState = this.gameStateManager.getFullGameState(gameId)
-      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    this.io.to(roomId).emit('game_state_update', fullState)
+      this.io.to(roomId).emit('game_state_update', fullState)
       
     } else {
       // Just confirm the deposit
