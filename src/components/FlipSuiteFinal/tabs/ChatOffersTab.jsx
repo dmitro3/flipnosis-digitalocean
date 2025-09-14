@@ -16,30 +16,27 @@ const ContentContainer = styled.div`
 
 const UnifiedContainer = styled.div`
   height: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
+  display: flex;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
   
   @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
+    flex-direction: column;
+    gap: 1rem;
   }
 `
 
 const ChatSection = styled.div`
   height: 100%;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  flex: 1;
   display: flex;
   flex-direction: column;
-  
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
 `
 
 const OffersSection = styled.div`
   height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
 `
@@ -86,26 +83,96 @@ const Message = styled.div`
 
 const MessageBubble = styled.div`
   background: ${props => props.isCurrentUser ? 
-    'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(0, 255, 65, 0.2))' : 
+    'rgba(0, 191, 255, 0.2)' : 
     'rgba(255, 255, 255, 0.1)'
   };
-  border: 1px solid ${props => props.isCurrentUser ? 
-    'rgba(0, 191, 255, 0.4)' : 
-    'rgba(255, 255, 255, 0.2)'
-  };
-  border-radius: 1rem;
-  padding: 0.75rem 1rem;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  padding: 1rem;
   max-width: 80%;
   word-wrap: break-word;
   color: white;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   line-height: 1.4;
+  animation: 
+    slideIn 0.3s ease-out,
+    rotatingBorder 3s linear infinite,
+    borderPulse 1.5s ease-in-out infinite;
+  animation-delay: ${props => props.index * 0.1}s, ${props => props.index * 0.1}s, ${props => props.index * 0.1}s;
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes rotatingBorder {
+    0% {
+      border-color: rgba(255, 20, 147, 0.8);
+      box-shadow: 
+        0 0 20px rgba(255, 20, 147, 0.6),
+        0 0 40px rgba(255, 20, 147, 0.3),
+        inset 0 0 20px rgba(255, 20, 147, 0.1);
+    }
+    20% {
+      border-color: rgba(255, 255, 0, 0.8);
+      box-shadow: 
+        0 0 20px rgba(255, 255, 0, 0.6),
+        0 0 40px rgba(255, 255, 0, 0.3),
+        inset 0 0 20px rgba(255, 255, 0, 0.1);
+    }
+    40% {
+      border-color: rgba(0, 255, 65, 0.8);
+      box-shadow: 
+        0 0 20px rgba(0, 255, 65, 0.6),
+        0 0 40px rgba(0, 255, 65, 0.3),
+        inset 0 0 20px rgba(0, 255, 65, 0.1);
+    }
+    60% {
+      border-color: rgba(0, 191, 255, 0.8);
+      box-shadow: 
+        0 0 20px rgba(0, 191, 255, 0.6),
+        0 0 40px rgba(0, 191, 255, 0.3),
+        inset 0 0 20px rgba(0, 191, 255, 0.1);
+    }
+    80% {
+      border-color: rgba(138, 43, 226, 0.8);
+      box-shadow: 
+        0 0 20px rgba(138, 43, 226, 0.6),
+        0 0 40px rgba(138, 43, 226, 0.3),
+        inset 0 0 20px rgba(138, 43, 226, 0.1);
+    }
+    100% {
+      border-color: rgba(255, 20, 147, 0.8);
+      box-shadow: 
+        0 0 20px rgba(255, 20, 147, 0.6),
+        0 0 40px rgba(255, 20, 147, 0.3),
+        inset 0 0 20px rgba(255, 20, 147, 0.1);
+    }
+  }
+  
+  @keyframes borderPulse {
+    0%, 100% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
 `
 
 const MessageSender = styled.div`
-  font-size: 0.8rem;
-  color: #aaa;
-  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  color: ${props => props.isCurrentUser ? '#00BFFF' : '#FFD700'};
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `
 
 const MessageTime = styled.div`
@@ -448,41 +515,22 @@ const ChatOffersTab = ({
   
   // Create offer
   const createOffer = async () => {
-    if (!newOffer.price || !newOffer.message.trim()) return
+    if (!newOffer.price) return
     
     setIsCreatingOffer(true)
     
     try {
-      const response = await fetch(`/api/games/${gameId}/offers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          offerer_address: address,
-          offer_price: parseFloat(newOffer.price),
-          message: newOffer.message.trim()
+      // Send via WebSocket like the legacy version
+      if (socket && connected) {
+        socket.emit('crypto_offer', {
+          address: address,
+          cryptoAmount: parseFloat(newOffer.price)
         })
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        console.log('✅ Offer created:', result)
         
-        // Add optimistic offer
-        const optimisticOffer = {
-          id: Date.now() + Math.random(),
-          offerer_address: address,
-          offer_price: parseFloat(newOffer.price),
-          message: newOffer.message.trim(),
-          timestamp: new Date().toISOString(),
-          status: 'pending'
-        }
-        setOffers(prev => [...prev, optimisticOffer])
-        
+        console.log('✅ Offer sent via WebSocket')
         setNewOffer({ price: '', message: '' })
       } else {
-        console.error('❌ Failed to create offer')
+        console.error('❌ WebSocket not connected')
       }
     } catch (error) {
       console.error('❌ Error creating offer:', error)
@@ -492,24 +540,22 @@ const ChatOffersTab = ({
   }
   
   // Accept offer
-  const acceptOffer = async (offerId) => {
+  const acceptOffer = async (offer) => {
     try {
-      const response = await fetch(`/api/games/${gameId}/offers/${offerId}/accept`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          accepter_address: address
+      // Send via WebSocket like the legacy version
+      if (socket && connected) {
+        socket.emit('accept_offer', {
+          offerId: offer.id,
+          accepterAddress: address,
+          challengerAddress: offer.offerer_address,
+          cryptoAmount: offer.offer_price
         })
-      })
-      
-      if (response.ok) {
-        console.log('✅ Offer accepted')
+        
+        console.log('✅ Offer acceptance sent via WebSocket')
         // Remove the accepted offer
-        setOffers(prev => prev.filter(offer => offer.id !== offerId))
+        setOffers(prev => prev.filter(o => o.id !== offer.id))
       } else {
-        console.error('❌ Failed to accept offer')
+        console.error('❌ WebSocket not connected')
       }
     } catch (error) {
       console.error('❌ Error accepting offer:', error)
@@ -531,12 +577,12 @@ const ChatOffersTab = ({
             
             <SectionContent>
               <ChatMessages ref={chatMessagesRef}>
-                {messages.map((message) => (
+                {messages.map((message, index) => (
                   <Message key={message.id} isCurrentUser={message.isCurrentUser}>
-                    <MessageSender>
-                      {message.isCurrentUser ? 'You' : `${message.sender?.slice(0, 6)}...${message.sender?.slice(-4)}`}
+                    <MessageSender isCurrentUser={message.isCurrentUser}>
+                      💬 {message.isCurrentUser ? 'You' : `${message.sender?.slice(0, 6)}...${message.sender?.slice(-4)}`}
                     </MessageSender>
-                    <MessageBubble isCurrentUser={message.isCurrentUser}>
+                    <MessageBubble isCurrentUser={message.isCurrentUser} index={index}>
                       {message.message}
                     </MessageBubble>
                     <MessageTime>{message.timestamp}</MessageTime>
@@ -585,15 +631,11 @@ const ChatOffersTab = ({
                       From: {offer.offerer_address?.slice(0, 6)}...{offer.offerer_address?.slice(-4)}
                     </OfferSender>
                     
-                    <OfferMessage>
-                      {offer.message}
-                    </OfferMessage>
-                    
                     {isCreator && offer.status === 'pending' && (
                       <OfferActions>
                         <ActionButton 
                           className="accept"
-                          onClick={() => acceptOffer(offer.id)}
+                          onClick={() => acceptOffer(offer)}
                         >
                           Accept
                         </ActionButton>
@@ -627,17 +669,19 @@ const ChatOffersTab = ({
                       type="number"
                       placeholder="Offer amount (USD)"
                       value={newOffer.price}
-                      onChange={(e) => setNewOffer(prev => ({ ...prev, price: e.target.value }))}
-                    />
-                    <OfferInput
-                      type="text"
-                      placeholder="Your message..."
-                      value={newOffer.message}
-                      onChange={(e) => setNewOffer(prev => ({ ...prev, message: e.target.value }))}
+                      onChange={(e) => {
+                        // Only allow digits and decimal point
+                        const value = e.target.value.replace(/[^0-9.]/g, '')
+                        // Prevent multiple decimal points
+                        const parts = value.split('.')
+                        if (parts.length <= 2) {
+                          setNewOffer(prev => ({ ...prev, price: value }))
+                        }
+                      }}
                     />
                     <CreateOfferButton 
                       onClick={createOffer}
-                      disabled={isCreatingOffer || !newOffer.price || !newOffer.message.trim()}
+                      disabled={isCreatingOffer || !newOffer.price}
                     >
                       {isCreatingOffer ? 'Creating...' : 'Make Offer'}
                     </CreateOfferButton>

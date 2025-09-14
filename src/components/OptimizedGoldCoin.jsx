@@ -69,6 +69,9 @@ const OptimizedGoldCoin = React.memo(({
   customTailsImage = null,
   gamePhase = 'choosing',
   material = null,
+  isInteractive = false,
+  onCoinClick = null,
+  onFlipComplete = null,
 }) => {
   // Add performance throttling for mobile
   const [frameRate, setFrameRate] = useState(60)
@@ -310,9 +313,9 @@ const OptimizedGoldCoin = React.memo(({
         // Simple rotation for all performance levels
         coin.rotation.x += 0.01 * (1 + intensity * 0.5)
       } else {
-        // Idle animation
+        // Idle animation - slow rotation only
         if (perfLevel !== 'low') {
-          coin.rotation.x += 0.003
+          coin.rotation.x += 0.001 // Much slower rotation for idle state
           coin.position.y = Math.sin(time * 2) * 0.01
         }
         
@@ -456,6 +459,11 @@ const OptimizedGoldCoin = React.memo(({
         // Animation complete - winner should be announced immediately now
         isAnimatingRef.current = false;
         console.log('🏁 Desktop coin animation fully complete - winner should be announced now');
+        
+        // Call onFlipComplete callback if provided
+        if (onFlipComplete) {
+          onFlipComplete();
+        }
       }
     };
     
@@ -548,6 +556,13 @@ const OptimizedGoldCoin = React.memo(({
     e.preventDefault()
     e.stopPropagation()
     
+    // Handle demo coin click (interactive mode)
+    if (isInteractive && onCoinClick) {
+      console.log('🪙 Demo coin clicked')
+      onCoinClick()
+      return
+    }
+    
     // Allow interaction if player has made their choice, even if still in choosing phase
     const hasMadeChoice = (isCreator && creatorChoice) || (!isCreator && joinerChoice)
     
@@ -631,6 +646,13 @@ const OptimizedGoldCoin = React.memo(({
   const handleTouchStart = (e) => {
     e.preventDefault()
     e.stopPropagation()
+    
+    // Handle demo coin click (interactive mode)
+    if (isInteractive && onCoinClick) {
+      console.log('🪙 Demo coin touched')
+      onCoinClick()
+      return
+    }
     
     // Allow interaction if player has made their choice, even if still in choosing phase
     const hasMadeChoice = (isCreator && creatorChoice) || (!isCreator && joinerChoice)
@@ -764,7 +786,7 @@ const OptimizedGoldCoin = React.memo(({
           width: `${size}px`,
           height: `${size}px`,
           position: 'relative',
-          cursor: (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) ? 'pointer' : 'default',
+          cursor: (isInteractive || (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active'))) ? 'pointer' : 'default',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           touchAction: 'none'

@@ -32,22 +32,22 @@ const TabContainer = styled.div`
 
 const NFTSection = styled.div`
   background: rgba(0, 0, 40, 0.95);
-  padding: 1.25rem;
+  padding: 1rem;
   border-radius: 1rem;
   border: 2px solid #FF1493;
   backdrop-filter: blur(10px);
   box-shadow: 0 0 30px rgba(255, 20, 147, 0.3), inset 0 0 20px rgba(255, 20, 147, 0.1);
   position: relative;
   overflow: hidden;
-  flex: 2;
+  flex: 1.2;
   height: fit-content;
   max-height: 100%;
   min-height: 0;
   z-index: 1;
   
   @media (max-width: 1200px) {
-    padding: 1rem;
-    flex: 1.5;
+    padding: 0.75rem;
+    flex: 1;
   }
   
   @media (max-width: 768px) {
@@ -110,7 +110,7 @@ const VerificationBadge = styled.div`
 
 const NFTImage = styled.img`
   width: 100%;
-  max-width: 300px;
+  max-width: 200px;
   height: auto;
   border-radius: 0.75rem;
   border: 2px solid rgba(255, 20, 147, 0.3);
