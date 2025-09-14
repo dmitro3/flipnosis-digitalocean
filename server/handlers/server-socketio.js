@@ -335,6 +335,31 @@ class GameServer {
     const { gameId, address, cryptoAmount, message } = data
     console.log(`💰 Crypto offer from ${address} for game ${gameId}: $${cryptoAmount}`)
     
+    // Save to database
+    if (this.dbService && typeof this.dbService.createOffer === 'function') {
+      try {
+        // Get the game's listing_id from the database
+        const game = await this.dbService.getGameById(gameId)
+        if (!game) {
+          console.error('❌ Game not found:', gameId)
+          return
+        }
+        
+        const offerId = `${gameId}_${address}_${Date.now()}`
+        const offerData = {
+          id: offerId,
+          listing_id: game.listing_id, // Use the actual listing_id from the game
+          offerer_address: address,
+          offer_price: cryptoAmount,
+          message: message || 'Crypto offer'
+        }
+        await this.dbService.createOffer(offerData)
+        console.log(`💾 Saved offer to database: ${offerId} for listing: ${game.listing_id}`)
+      } catch (error) {
+        console.error('❌ Error saving offer to database:', error)
+      }
+    }
+    
     // Broadcast to room
     this.io.to(`game_${gameId}`).emit('crypto_offer', {
       type: 'crypto_offer',
