@@ -390,10 +390,10 @@ class GameServer {
       timestamp: new Date().toISOString()
     })
     
-    // Start deposit stage - challenger is the person who made the offer
-    this.gameStateManager.startDepositStage(gameId, challengerAddress, (roomId, message) => {
-      this.io.to(roomId).emit(message.type, message)
-    }, cryptoAmount)
+    // Don't start server-side deposit stage - let client handle it with OfferAcceptanceOverlay
+    // this.gameStateManager.startDepositStage(gameId, challengerAddress, (roomId, message) => {
+    //   this.io.to(roomId).emit(message.type, message)
+    // }, cryptoAmount)
   }
 
   async handleDepositConfirmed(socket, data) {
