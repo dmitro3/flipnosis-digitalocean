@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useToast } from '../../contexts/ToastContext'
 import { useWallet } from '../../contexts/WalletContext'
+import { useContractService } from '../../utils/useContractService'
 import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
@@ -367,7 +368,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const { gameId } = useParams()
   const { address } = useAccount()
   const { showSuccess, showError, showInfo } = useToast()
-  const { contractService } = useWallet()
+  const { contractService } = useContractService()
   const navigate = useNavigate()
   
   // ===== TAB STATE =====
@@ -511,34 +512,57 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const handleDepositStageStarted = useCallback((data) => {
     console.log('🎯 Deposit stage started:', data)
     if (data.gameId === gameId) {
-      setDepositState({
-        phase: 'deposit_stage',
-        creator: data.creator,
-        challenger: data.challenger,
-        timeRemaining: data.timeRemaining || 120,
-        creatorDeposited: data.creatorDeposited || false,
-        challengerDeposited: data.challengerDeposited || false,
-        cryptoAmount: data.cryptoAmount
-      })
-      setShowDepositOverlay(true)
+      const isChallenger = data.challenger?.toLowerCase() === address?.toLowerCase()
+      const isCreator = data.creator?.toLowerCase() === address?.toLowerCase()
+      
+      console.log('🎯 Player roles in deposit stage:', { isChallenger, isCreator, challenger: data.challenger, creator: data.creator, address })
+      
+      if (isChallenger || isCreator) {
+        setDepositState({
+          phase: 'deposit_stage',
+          creator: data.creator,
+          challenger: data.challenger,
+          timeRemaining: data.timeRemaining || 120,
+          creatorDeposited: true, // Creator already deposited NFT
+          challengerDeposited: data.challengerDeposited || false,
+          cryptoAmount: data.cryptoAmount
+        })
+        setShowDepositOverlay(true)
+      } else {
+        console.log('❌ Neither challenger nor creator - not showing deposit overlay')
+      }
     }
-  }, [gameId])
+  }, [gameId, address])
 
   const handleDepositCountdown = useCallback((data) => {
     console.log('⏰ Deposit countdown update:', data)
-    if (data.gameId === gameId) {
+    
+    // Handle both gameId formats (with and without 'game_' prefix)
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const componentGameId = gameId?.replace('game_', '') || gameId
+    
+    if (eventGameId === componentGameId) {
+      console.log('✅ Countdown update matches current game')
       setDepositState(prev => prev ? { 
         ...prev, 
         timeRemaining: data.timeRemaining,
         creatorDeposited: data.creatorDeposited !== undefined ? data.creatorDeposited : prev.creatorDeposited,
         challengerDeposited: data.challengerDeposited !== undefined ? data.challengerDeposited : prev.challengerDeposited
       } : null)
+    } else {
+      console.log('❌ Countdown update gameId mismatch:', { eventGameId, componentGameId })
     }
   }, [gameId])
 
   const handleDepositConfirmed = useCallback((data) => {
     console.log('💰 Deposit confirmed:', data)
-    if (data.gameId === gameId) {
+    
+    // Handle both gameId formats (with and without 'game_' prefix)
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const componentGameId = gameId?.replace('game_', '') || gameId
+    
+    if (eventGameId === componentGameId) {
+      console.log('✅ Deposit confirmed for current game')
       setDepositState(prev => prev ? {
         ...prev,
         creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
@@ -548,10 +572,20 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       // Check if both players have deposited - unlock game tab
       const bothDeposited = data.creatorDeposited && data.challengerDeposited
       if (bothDeposited) {
+        console.log('🎮 Both players deposited - game ready!')
         setIsGameReady(true)
-        // Auto-switch to game tab when both deposits confirmed
-        setTimeout(() => setActiveTab('game'), 1000)
+        setShowDepositOverlay(false)
+        setDepositState(null)
+        
+        // Transport to game room
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameId, immediate: true }
+          }))
+        }, 1000)
       }
+    } else {
+      console.log('❌ Deposit confirmed gameId mismatch:', { eventGameId, componentGameId })
     }
   }, [gameId])
 
@@ -574,21 +608,51 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
 
   const handleOfferAccepted = useCallback((data) => {
     console.log('🎯 Offer accepted event received:', data)
-    if (data.gameId === gameId) {
-      // Start deposit stage for the accepted offer
-      setDepositState({
-        phase: 'deposit_stage',
-        creator: finalGameData?.creator,
-        challenger: data.challengerAddress || data.challenger,
-        timeRemaining: 120,
-        creatorDeposited: finalGameData?.creatorDeposited || false,
-        challengerDeposited: false,
-        cryptoAmount: data.cryptoAmount || data.finalPrice
-      })
-      setShowDepositOverlay(true)
-      showSuccess('Offer accepted! Please complete your deposit.')
+    
+    // Handle both gameId formats (with and without 'game_' prefix)
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const componentGameId = gameId?.replace('game_', '') || gameId
+    
+    if (eventGameId === componentGameId) {
+      console.log('✅ Offer accepted for current game')
+      const isChallenger = (data.challengerAddress || data.challenger)?.toLowerCase() === address?.toLowerCase()
+      const isCreator = finalGameData?.creator?.toLowerCase() === address?.toLowerCase()
+      
+      console.log('🎯 Player roles:', { isChallenger, isCreator, challenger: data.challengerAddress || data.challenger, creator: finalGameData?.creator, address })
+      
+      if (isChallenger) {
+        console.log('✅ You are the challenger - need to deposit')
+        setDepositState({
+          phase: 'deposit_stage',
+          creator: finalGameData?.creator,
+          challenger: data.challengerAddress || data.challenger,
+          timeRemaining: 120,
+          creatorDeposited: true, // Creator already deposited NFT
+          challengerDeposited: false,
+          cryptoAmount: data.cryptoAmount || data.finalPrice
+        })
+        setShowDepositOverlay(true)
+        showSuccess('Offer accepted! Please complete your deposit.')
+      } else if (isCreator) {
+        console.log('✅ You are the creator - waiting for challenger to deposit')
+        setDepositState({
+          phase: 'deposit_stage',
+          creator: finalGameData?.creator,
+          challenger: data.challengerAddress || data.challenger,
+          timeRemaining: 120,
+          creatorDeposited: true, // Creator already deposited NFT
+          challengerDeposited: false,
+          cryptoAmount: data.cryptoAmount || data.finalPrice
+        })
+        setShowDepositOverlay(true)
+        showSuccess('Offer accepted! Waiting for challenger to deposit.')
+      } else {
+        console.log('❌ Neither challenger nor creator - ignoring')
+      }
+    } else {
+      console.log('❌ Offer accepted gameId mismatch:', { eventGameId, componentGameId })
     }
-  }, [gameId, finalGameData, showSuccess])
+  }, [gameId, finalGameData, address, showSuccess])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
