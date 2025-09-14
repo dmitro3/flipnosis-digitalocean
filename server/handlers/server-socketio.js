@@ -210,7 +210,8 @@ class GameServer {
     
     // Broadcast updated state
     const fullState = this.gameStateManager.getFullGameState(gameId)
-    this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    this.io.to(roomId).emit('game_state_update', fullState)
   }
 
   async handleStartPowerCharge(socket, data) {
@@ -264,7 +265,8 @@ class GameServer {
     
     // Broadcast updated state
     const fullState = this.gameStateManager.getFullGameState(gameId)
-    this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    this.io.to(roomId).emit('game_state_update', fullState)
   }
 
   async handleExecuteFlip(socket, data) {
@@ -278,7 +280,8 @@ class GameServer {
     }
     
     // Broadcast flip execution with all details
-    this.io.to(`game_${gameId}`).emit('flip_executing', {
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    this.io.to(roomId).emit('flip_executing', {
       gameId,
       coinState: gameState.coinState,
       creatorChoice: gameState.creatorChoice,
@@ -361,7 +364,8 @@ class GameServer {
     }
     
     // Broadcast to room
-    this.io.to(`game_${gameId}`).emit('crypto_offer', {
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    this.io.to(roomId).emit('crypto_offer', {
       type: 'crypto_offer',
       id: `${Date.now()}_${Math.random()}`,
       address,
@@ -376,7 +380,8 @@ class GameServer {
     console.log(`✅ Offer accepted by ${address} for game ${gameId}`)
     
     // Broadcast offer accepted event to all players in the room
-    this.io.to(`game_${gameId}`).emit('offer_accepted', {
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    this.io.to(roomId).emit('offer_accepted', {
       type: 'offer_accepted',
       gameId: gameId,
       accepterAddress: address,
@@ -426,7 +431,8 @@ class GameServer {
       })
       
       // Notify all players that game is starting
-      this.io.to(`game_${gameId}`).emit('game_started', {
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+      this.io.to(roomId).emit('game_started', {
         gameId,
         phase: 'game_active',
         message: 'Both deposits confirmed! Game starting...'
@@ -434,11 +440,13 @@ class GameServer {
       
       // Send initial state
       const fullState = this.gameStateManager.getFullGameState(gameId)
-      this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    this.io.to(roomId).emit('game_state_update', fullState)
       
     } else {
       // Just confirm the deposit
-      this.io.to(`game_${gameId}`).emit('deposit_confirmed', {
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+      this.io.to(roomId).emit('deposit_confirmed', {
         gameId,
         player: address,
         assetType,

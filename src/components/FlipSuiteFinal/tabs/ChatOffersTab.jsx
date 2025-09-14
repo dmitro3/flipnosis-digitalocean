@@ -614,8 +614,9 @@ const ChatOffersTab = ({
       // Send via Socket.io like the legacy version
       if (socketService && connected) {
         socketService.emit('accept_offer', {
+          gameId: gameId,
+          address: address,
           offerId: offer.id,
-          accepterAddress: address,
           challengerAddress: offer.offerer_address,
           cryptoAmount: offer.offer_price
         })
