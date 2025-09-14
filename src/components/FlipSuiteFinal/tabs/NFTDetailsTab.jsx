@@ -155,6 +155,9 @@ const PriceDisplay = styled.div`
   padding: 0.75rem;
   text-align: center;
   margin-bottom: 1rem;
+  max-width: 200px;
+  margin-left: auto;
+  margin-right: auto;
 `
 
 const PriceLabel = styled.div`
@@ -364,6 +367,9 @@ const CoinContainer = styled.div`
   align-items: center;
   gap: 1rem;
   width: 100%;
+  padding: 2rem 0;
+  min-height: 400px;
+  justify-content: center;
 `
 
 const CoinInfo = styled.div`
@@ -470,6 +476,19 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
     }, 2000)
   }
 
+  const handleCopyContract = async () => {
+    const contractAddress = getNFTContract()
+    if (contractAddress && contractAddress !== 'Unknown') {
+      try {
+        await navigator.clipboard.writeText(contractAddress)
+        // You could add a toast notification here if you have one
+        console.log('Contract address copied to clipboard')
+      } catch (err) {
+        console.error('Failed to copy contract address:', err)
+      }
+    }
+  }
+
   if (!gameData) {
     return (
       <TabContainer>
@@ -485,7 +504,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
       {/* NFT Details Section */}
       <NFTSection>
         <NFTHeader>
-          <NFTTitle>🎨 NFT Details</NFTTitle>
+          <NFTTitle>NFT Details</NFTTitle>
           <VerificationBadge verified={gameData?.nft_verified || gameData?.verified}>
             {gameData?.nft_verified || gameData?.verified ? '✓ Verified' : '⚠️ Unverified'}
           </VerificationBadge>
@@ -575,7 +594,15 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
               </InfoRow>
               <InfoRow>
                 <InfoLabel>Contract:</InfoLabel>
-                <InfoValue>
+                <InfoValue 
+                  onClick={handleCopyContract}
+                  style={{ 
+                    cursor: getNFTContract() !== 'Unknown' ? 'pointer' : 'default',
+                    textDecoration: getNFTContract() !== 'Unknown' ? 'underline' : 'none',
+                    color: getNFTContract() !== 'Unknown' ? '#00BFFF' : 'white'
+                  }}
+                  title={getNFTContract() !== 'Unknown' ? 'Click to copy full address' : ''}
+                >
                   {getNFTContract() !== 'Unknown' ? 
                     `${getNFTContract().slice(0, 6)}...${getNFTContract().slice(-4)}` : 
                     'Unknown'
@@ -589,7 +616,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
             </NFTInfo>
 
             <PriceDisplay>
-              <PriceLabel>Game Value</PriceLabel>
+              <PriceLabel>Price</PriceLabel>
               <PriceValue>${gameData.price_usd || 0}</PriceValue>
             </PriceDisplay>
           </NFTDetailsContainer>
@@ -599,7 +626,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
       {/* Demo Coin Section */}
       <CoinSection>
         <CoinHeader>
-          <CoinTitle>🪙 Game Coin</CoinTitle>
+          <CoinTitle>Game Coin</CoinTitle>
         </CoinHeader>
 
         <CoinContainer>
