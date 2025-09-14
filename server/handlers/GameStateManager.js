@@ -474,7 +474,7 @@ class GameStateManager {
   }
 
   // ===== DEPOSIT STAGE MANAGEMENT =====
-  startDepositStage(gameId, challenger, broadcastFn) {
+  startDepositStage(gameId, challenger, broadcastFn, cryptoAmount = null) {
     const game = this.games.get(gameId)
     if (!game) {
       console.error(`❌ Game not found: ${gameId}`)
@@ -486,6 +486,7 @@ class GameStateManager {
     game.challenger = challenger
     game.depositStartTime = Date.now()
     game.depositTimeRemaining = 120
+    game.cryptoAmount = cryptoAmount
     game.updatedAt = new Date().toISOString()
     
     console.log(`⏱️ Starting deposit stage for game ${gameId}`)
@@ -500,7 +501,8 @@ class GameStateManager {
       timeRemaining: game.depositTimeRemaining,
       depositStartTime: game.depositStartTime,
       creatorDeposited: game.creatorDeposited || false,
-      challengerDeposited: false
+      challengerDeposited: false,
+      cryptoAmount: game.cryptoAmount
     }
     
     // Broadcast to room
@@ -516,7 +518,8 @@ class GameStateManager {
         gameId: gameId,
         timeRemaining: game.depositTimeRemaining,
         creatorDeposited: game.creatorDeposited || false,
-        challengerDeposited: game.challengerDeposited || false
+        challengerDeposited: game.challengerDeposited || false,
+        cryptoAmount: game.cryptoAmount
       }
       
       broadcastFn(`game_${gameId}`, countdownMessage)

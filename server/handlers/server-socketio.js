@@ -390,10 +390,10 @@ class GameServer {
       timestamp: new Date().toISOString()
     })
     
-    // Start deposit stage
-    this.gameStateManager.startDepositStage(gameId, address, (roomId, message) => {
+    // Start deposit stage - challenger is the person who made the offer
+    this.gameStateManager.startDepositStage(gameId, challengerAddress, (roomId, message) => {
       this.io.to(roomId).emit(message.type, message)
-    })
+    }, cryptoAmount)
   }
 
   async handleDepositConfirmed(socket, data) {

@@ -3,6 +3,7 @@ import styled from '@emotion/styled'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { useToast } from '../../contexts/ToastContext'
+import { useWallet } from '../../contexts/WalletContext'
 import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
@@ -366,6 +367,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const { gameId } = useParams()
   const { address } = useAccount()
   const { showSuccess, showError, showInfo } = useToast()
+  const { contractService } = useWallet()
   const navigate = useNavigate()
   
   // ===== TAB STATE =====
@@ -523,12 +525,13 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   }, [gameId])
 
   const handleDepositCountdown = useCallback((data) => {
+    console.log('⏰ Deposit countdown update:', data)
     if (data.gameId === gameId) {
       setDepositState(prev => prev ? { 
         ...prev, 
         timeRemaining: data.timeRemaining,
-        creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
-        challengerDeposited: data.challengerDeposited || prev.challengerDeposited
+        creatorDeposited: data.creatorDeposited !== undefined ? data.creatorDeposited : prev.creatorDeposited,
+        challengerDeposited: data.challengerDeposited !== undefined ? data.challengerDeposited : prev.challengerDeposited
       } : null)
     }
   }, [gameId])
@@ -655,6 +658,44 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     }
   }, [gameId, address, finalGameData]) // Added finalGameData dependency
 
+  // ===== SWITCH TO FLIP SUITE EVENT LISTENER =====
+  useEffect(() => {
+    const handleSwitchToFlipSuite = (event) => {
+      console.log('🚀 switchToFlipSuite event received:', event.detail)
+      const { gameId: eventGameId, immediate, player2, fallback, force, attempt } = event.detail
+      
+      // Only handle events for this game
+      if (eventGameId === gameId) {
+        console.log('🚀 Switching to flip suite tab for game:', gameId)
+        setIsGameReady(true)
+        setActiveTab('game')
+        setShowDepositOverlay(false)
+        setDepositState(null)
+        
+        if (immediate) {
+          console.log('🚀 Immediate switch to game tab')
+        }
+        if (player2) {
+          console.log('🚀 Player 2 transport to game tab')
+        }
+        if (fallback) {
+          console.log('🚀 Fallback transport to game tab')
+        }
+        if (force) {
+          console.log(`🚀 Force transport attempt ${attempt} to game tab`)
+        }
+      }
+    }
+
+    // Add event listener
+    window.addEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
+    }
+  }, [gameId])
+
   // ===== USER ACTIONS - ALL GO TO SERVER =====
   const handleChoice = useCallback((choice) => {
     if (!canMakeChoice()) return
@@ -701,31 +742,79 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       const userRole = depositState?.creator?.toLowerCase() === address?.toLowerCase() ? 'creator' : 'challenger'
       
       if (userRole === 'creator') {
-        // Creator deposits NFT
-        showInfo('Depositing NFT...')
-        // TODO: Implement NFT deposit logic
-        showSuccess('NFT deposited successfully!')
+        // Creator deposits NFT - should already be deposited
+        showInfo('NFT already deposited!')
+        showSuccess('NFT is ready for game!')
       } else if (userRole === 'challenger') {
         // Challenger deposits crypto
         showInfo('Depositing crypto...')
-        // TODO: Implement crypto deposit logic
-        showSuccess('Crypto deposited successfully!')
+        
+        if (!depositState?.cryptoAmount) {
+          throw new Error('Crypto amount not found')
+        }
+        
+        if (!contractService) {
+          throw new Error('Contract service not available. Please connect your wallet.')
+        }
+        
+        // Call real crypto deposit contract method
+        const result = await contractService.depositETH(gameId, depositState.cryptoAmount)
+        
+        if (result.success) {
+          showSuccess('Crypto deposited successfully!')
+          
+          // Notify server via Socket.io
+          socketService.emit('deposit_confirmed', {
+            gameId: gameId,
+            player: address,
+            assetType: 'crypto',
+            transactionHash: result.transactionHash
+          })
+          
+          // Also confirm via API endpoint
+          try {
+            await fetch(`/api/games/${gameId}/deposit-confirmed`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                player: address,
+                assetType: 'eth',
+                transactionHash: result.transactionHash
+              })
+            })
+          } catch (apiError) {
+            console.warn('⚠️ API confirmation failed:', apiError)
+          }
+          
+          // Transport to game room immediately
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+              detail: { gameId: gameId, immediate: true, player2: true }
+            }))
+          }, 1000)
+          
+        } else {
+          throw new Error(result.error || 'Crypto deposit failed')
+        }
       }
-      
-      // Notify server
-      socketService.emit('deposit_confirmed', {
-        gameId: gameId,
-        player: address,
-        assetType: userRole === 'creator' ? 'nft' : 'crypto'
-      })
       
     } catch (error) {
       console.error('❌ Deposit failed:', error)
-      showError('Deposit failed: ' + error.message)
+      
+      // Handle insufficient funds error with helpful message
+      if (error.message?.includes('Insufficient funds') || error.message?.includes('exceeds the balance')) {
+        const errorMsg = error.message.includes('Insufficient funds') 
+          ? error.message 
+          : 'Insufficient funds. You need more ETH to cover the deposit amount and gas fees.'
+        
+        showError(errorMsg + ' 💡 Tip: You can get ETH from exchanges like Coinbase, Binance, or use a faucet for testnet ETH.')
+      } else {
+        showError('Deposit failed: ' + error.message)
+      }
     } finally {
       setIsDepositing(false)
     }
-  }, [isDepositing, depositState, address, gameId, showInfo, showSuccess, showError])
+  }, [isDepositing, depositState, address, gameId, showInfo, showSuccess, showError, contractService])
 
   // Format time for countdown
   const formatTime = useCallback((seconds) => {
@@ -930,7 +1019,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
             <DepositTitle>💰 Deposit Required</DepositTitle>
             <DepositSubtitle>
               {depositState.creator?.toLowerCase() === address?.toLowerCase() 
-                ? 'You need to deposit your NFT to start the game'
+                ? 'Your NFT is already deposited. Waiting for challenger...'
                 : 'You need to deposit crypto to join the game'
               }
             </DepositSubtitle>
@@ -939,18 +1028,60 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
               {formatTime(depositState.timeRemaining)}
             </CountdownDisplay>
             
-            <div style={{ marginBottom: '1rem' }}>
-              <div>Creator: {depositState.creator?.slice(0, 6)}...{depositState.creator?.slice(-4)}</div>
-              <div>Challenger: {depositState.challenger?.slice(0, 6)}...{depositState.challenger?.slice(-4)}</div>
-              <div>Amount: ${depositState.cryptoAmount}</div>
+            <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+              <div style={{ marginBottom: '0.5rem' }}>
+                <strong>Creator:</strong> {depositState.creator?.slice(0, 6)}...{depositState.creator?.slice(-4)}
+                <span style={{ color: '#00FF41', marginLeft: '0.5rem' }}>✅ NFT Deposited</span>
+              </div>
+              <div style={{ marginBottom: '0.5rem' }}>
+                <strong>Challenger:</strong> {depositState.challenger?.slice(0, 6)}...{depositState.challenger?.slice(-4)}
+                <span style={{ color: depositState.challengerDeposited ? '#00FF41' : '#FFA500', marginLeft: '0.5rem' }}>
+                  {depositState.challengerDeposited ? '✅ Crypto Deposited' : '⏳ Awaiting Crypto'}
+                </span>
+              </div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#00FF41' }}>
+                Amount: ${depositState.cryptoAmount}
+              </div>
             </div>
             
-            <DepositButton 
-              onClick={handleDeposit}
-              disabled={isDepositing || depositState.timeRemaining === 0}
-            >
-              {isDepositing ? 'Processing...' : 'Deposit Now'}
-            </DepositButton>
+            {/* Only show deposit button for challenger who hasn't deposited yet */}
+            {depositState.challenger?.toLowerCase() === address?.toLowerCase() && !depositState.challengerDeposited && (
+              <DepositButton 
+                onClick={handleDeposit}
+                disabled={isDepositing || depositState.timeRemaining === 0}
+              >
+                {isDepositing ? 'Processing Deposit...' : `Deposit $${depositState.cryptoAmount} Crypto`}
+              </DepositButton>
+            )}
+            
+            {/* Show waiting message for creator */}
+            {depositState.creator?.toLowerCase() === address?.toLowerCase() && (
+              <div style={{ 
+                textAlign: 'center', 
+                color: '#00BFFF', 
+                padding: '1rem',
+                background: 'rgba(0, 191, 255, 0.1)',
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(0, 191, 255, 0.3)'
+              }}>
+                ✅ Your NFT is already deposited<br/>
+                ⏳ Waiting for challenger to deposit crypto...
+              </div>
+            )}
+            
+            {/* Show success message when both deposited */}
+            {depositState.challengerDeposited && (
+              <div style={{ 
+                textAlign: 'center', 
+                color: '#00FF41', 
+                padding: '1rem',
+                background: 'rgba(0, 255, 65, 0.1)',
+                borderRadius: '0.5rem',
+                border: '1px solid rgba(0, 255, 65, 0.3)'
+              }}>
+                🎮 Both deposits confirmed! Starting game...
+              </div>
+            )}
           </DepositModal>
         </DepositOverlay>
       )}
