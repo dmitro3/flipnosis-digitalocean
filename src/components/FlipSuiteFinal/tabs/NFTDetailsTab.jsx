@@ -246,6 +246,9 @@ const ActionButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  width: 100%;
+  min-height: 2.5rem;
+  box-sizing: border-box;
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -522,7 +525,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
                     console.error('NFT contract details not available')
                   }
                 }}
-                style={{ textDecoration: 'none' }}
+                style={{ textDecoration: 'none', width: '100%', display: 'block' }}
               >
                 <ActionButton className="opensea">
                   <img 
@@ -547,7 +550,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
                     console.error('NFT contract details not available')
                   }
                 }}
-                style={{ textDecoration: 'none' }}
+                style={{ textDecoration: 'none', width: '100%', display: 'block' }}
               >
                 <ActionButton className="explorer">
                   🔍 Explorer
@@ -596,8 +599,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
       {/* Demo Coin Section */}
       <CoinSection>
         <CoinHeader>
-          <CoinTitle>🪙 Demo Coin</CoinTitle>
-          <DemoLabel>Interactive</DemoLabel>
+          <CoinTitle>🪙 Game Coin</CoinTitle>
         </CoinHeader>
 
         <CoinContainer>
@@ -622,23 +624,7 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
             joinerChoice={null}
           />
 
-          <CoinInfo>
-            Click the coin to see a demo flip!<br/>
-            This shows how the actual game coin will look and behave.
-          </CoinInfo>
 
-          {coinConfig && (
-            <div style={{ marginTop: '1rem', textAlign: 'center', color: '#00BFFF' }}>
-              <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                Custom Coin Design
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#aaa' }}>
-                Material: {coinConfig.material?.name || 'Gold'}<br/>
-                Heads: {coinConfig.headsImage ? 'Custom' : 'Default'}<br/>
-                Tails: {coinConfig.tailsImage ? 'Custom' : 'Default'}
-              </div>
-            </div>
-          )}
         </CoinContainer>
       </CoinSection>
     </TabContainer>
