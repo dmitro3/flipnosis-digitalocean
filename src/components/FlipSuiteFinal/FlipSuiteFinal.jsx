@@ -9,7 +9,7 @@ import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
 import GameResultPopup from '../GameResultPopup'
-import UnifiedDepositOverlay from '../UnifiedDepositOverlay'
+import OfferAcceptanceOverlay from '../OfferAcceptanceOverlay'
 // Import tab components
 import NFTDetailsTab from './tabs/NFTDetailsTab'
 import ChatOffersTab from './tabs/ChatOffersTab'
@@ -433,7 +433,10 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       
       console.log('🎯 Player roles in deposit stage:', { isChallenger, isCreator, challenger: data.challenger, creator: data.creator, address })
       
-      if (isChallenger || isCreator) {
+      // Only show deposit overlay for the challenger (Player 2)
+      // Creator (Player 1) already deposited their NFT, so they don't need to see the deposit overlay
+      if (isChallenger) {
+        console.log('✅ Showing deposit overlay for challenger only')
         setDepositState({
           phase: 'deposit_stage',
           creator: data.creator,
@@ -444,6 +447,10 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
           cryptoAmount: data.cryptoAmount
         })
         setShowDepositOverlay(true)
+      } else if (isCreator) {
+        console.log('✅ Creator - NFT already deposited, not showing deposit overlay')
+        // Creator doesn't need to see the deposit overlay since their NFT is already deposited
+        // They should just wait for the challenger to deposit
       } else {
         console.log('❌ Neither challenger nor creator - not showing deposit overlay')
       }
@@ -913,11 +920,21 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
 
       {/* Deposit Overlay */}
       {showDepositOverlay && depositState && (
-        <UnifiedDepositOverlay
+        <OfferAcceptanceOverlay
+          isVisible={showDepositOverlay}
+          acceptedOffer={{
+            offerer_address: depositState.challenger,
+            cryptoAmount: depositState.cryptoAmount,
+            timeRemaining: depositState.timeRemaining,
+            isCreatorWaiting: address?.toLowerCase() === depositState.creator?.toLowerCase()
+          }}
+          gameData={finalGameData}
           gameId={gameId}
           address={address}
-          gameData={finalGameData}
-          depositState={depositState}
+          onClose={() => {
+            setShowDepositOverlay(false)
+            setDepositState(null)
+          }}
           onDepositComplete={() => {
             setShowDepositOverlay(false)
             setDepositState(null)
@@ -928,10 +945,6 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
                 detail: { gameId: gameId, immediate: true }
               }))
             }, 1000)
-          }}
-          onTimeout={() => {
-            setShowDepositOverlay(false)
-            setDepositState(null)
           }}
         />
       )}

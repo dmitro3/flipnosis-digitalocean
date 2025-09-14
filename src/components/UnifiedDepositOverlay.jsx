@@ -581,7 +581,7 @@ export default function UnifiedDepositOverlay({
                 {isDepositing ? 'Depositing Crypto...' : `Deposit $${depositState.cryptoAmount} Crypto`}
               </DepositButton>
               <InfoMessage>
-                ⚠️ You must deposit crypto to start the game
+                ⚠️ You need to deposit crypto to join the game
                 {balanceCheck && !balanceCheck.sufficient && (
                   <div style={{ color: '#ff6b6b', marginTop: '0.5rem' }}>
                     💡 Get ETH from exchanges like Coinbase, Binance, or use a faucet for testnet ETH
