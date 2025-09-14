@@ -317,54 +317,7 @@ const CompactActionButton = styled.button`
   }
 `
 
-const CompactActionButton = styled.button`
-  padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  color: white;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  min-height: 2rem;
-  box-sizing: border-box;
-  white-space: nowrap;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    transform: translateY(-2px);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-  
-  &.share-x {
-    background: linear-gradient(135deg, #1da1f2 0%, #0d8bd9 50%, #1da1f2 100%);
-    border-color: #1da1f2;
-  }
-  
-  &.share-tg {
-    background: linear-gradient(135deg, #0088cc 0%, #006699 50%, #0088cc 100%);
-    border-color: #0088cc;
-  }
-  
-  &.opensea {
-    background: linear-gradient(135deg, #2081e2 0%, #1a6bb8 50%, #2081e2 100%);
-    border-color: #2081e2;
-  }
-  
-  &.explorer {
-    background: linear-gradient(135deg, #6c757d 0%, #7a8288 50%, #6c757d 100%);
-    border-color: #6c757d;
-  }
-`
+// CompactActionButton already defined above - removing duplicate
 
 const CoinSection = styled.div`
   background: rgba(0, 0, 40, 0.95);
