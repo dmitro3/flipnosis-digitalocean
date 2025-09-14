@@ -74,13 +74,11 @@ const OptimizedGoldCoin = React.memo(({
   onFlipComplete = null,
 }) => {
   // Add performance throttling for mobile
-  const [frameRate, setFrameRate] = useState(60)
+  const [frameRate, setFrameRate] = useState(30) // Default to 30 FPS to save resources
   
   useEffect(() => {
-    // Detect if performance is poor
-    if (window.navigator.hardwareConcurrency < 4) {
-      setFrameRate(30) // Reduce to 30 FPS on weaker devices
-    }
+    // Keep at 30 FPS for better performance
+    setFrameRate(30)
   }, [])
   // Add missing state variables
   const [currentPower, setCurrentPower] = useState(0)
@@ -318,8 +316,8 @@ const OptimizedGoldCoin = React.memo(({
         coin.position.x = 0
         coin.position.y = 0
         coin.position.z = 0
-        // Very slow rotation - about 1 full rotation per 90 seconds (1/3 pace)
-        coin.rotation.x += 0.000033
+        // Very slow rotation - about 1 full rotation per 180 seconds (half speed)
+        coin.rotation.x += 0.0000165
       }
 
       renderer.render(scene, camera)

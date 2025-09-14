@@ -436,8 +436,8 @@ const FinalCoin = ({
           } else {
             // Idle state - very slow, gentle rotation
             coin.scale.set(1, 1, 1)
-            // Very slow rotation - about 1 full rotation per 90 seconds (1/3 pace)
-            coin.rotation.x += 0.000033
+            // Very slow rotation - about 1 full rotation per 180 seconds (half speed)
+            coin.rotation.x += 0.0000165
           }
         }
 

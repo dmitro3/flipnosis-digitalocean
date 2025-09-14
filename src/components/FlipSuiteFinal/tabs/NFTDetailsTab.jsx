@@ -456,12 +456,13 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
     // For demo coin, we'll trigger a temporary flip animation
     // by temporarily setting the flip state
     setIsDemoFlipping(true)
-    setDemoResult(null)
     
-    // Simulate flip animation
+    // Set a temporary result immediately to trigger the animation
+    const result = Math.random() > 0.5 ? 'heads' : 'tails'
+    setDemoResult(result)
+    
+    // Stop flipping after animation duration
     setTimeout(() => {
-      const result = Math.random() > 0.5 ? 'heads' : 'tails'
-      setDemoResult(result)
       setIsDemoFlipping(false)
     }, 2000)
   }
