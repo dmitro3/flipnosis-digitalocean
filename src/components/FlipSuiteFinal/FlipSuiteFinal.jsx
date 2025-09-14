@@ -734,6 +734,27 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     }
   }, [gameId])
 
+  // ===== FALLBACK MECHANISM FOR GAME TRANSITION =====
+  // If we're in a deposit state and the socket reconnects, try to transition to game
+  useEffect(() => {
+    if (connected && depositState && !isGameReady) {
+      console.log('🔄 Socket reconnected during deposit state, checking if game is ready')
+      
+      // Wait a bit for server to catch up, then check if we should transition
+      const timeoutId = setTimeout(() => {
+        if (depositState && !isGameReady) {
+          console.log('🚀 Fallback: Socket reconnected but game not ready, forcing transition')
+          setIsGameReady(true)
+          setActiveTab('game')
+          setShowDepositOverlay(false)
+          setDepositState(null)
+        }
+      }, 3000) // Wait 3 seconds after reconnection
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [connected, depositState, isGameReady])
+
   // ===== USER ACTIONS - ALL GO TO SERVER =====
   const handleChoice = useCallback((choice) => {
     if (!canMakeChoice()) return

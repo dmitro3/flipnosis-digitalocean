@@ -1663,8 +1663,16 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     res.status(200).end()
   })
 
+  // Test endpoint to check if server is responding
+  router.get('/test', (req, res) => {
+    console.log('🧪 Test endpoint called')
+    res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  })
+
   // New route: Confirm deposit received (called by frontend after successful deposit)
   router.post('/games/:gameId/deposit-confirmed', async (req, res) => {
+    console.log('🚀 Deposit confirmation endpoint called')
+    
     // Set CORS headers
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*')
     res.header('Access-Control-Allow-Credentials', 'true')

@@ -383,6 +383,31 @@ class GameServer {
     const { gameId, address, offerId, cryptoAmount, challengerAddress } = data
     console.log(`✅ Offer accepted by ${address} for game ${gameId}`)
     
+    // UPDATE GAMES TABLE WITH CHALLENGER INFORMATION
+    try {
+      if (this.dbService && this.dbService.db) {
+        await new Promise((resolve, reject) => {
+          this.dbService.db.run(`
+            UPDATE games 
+            SET challenger = ?, status = 'awaiting_deposits', joiner = ?
+            WHERE id = ?
+          `, [challengerAddress, challengerAddress, gameId], function(err) {
+            if (err) {
+              console.error('❌ Error updating games table with challenger:', err)
+              reject(err)
+            } else {
+              console.log(`✅ Updated games table with challenger: ${challengerAddress}`)
+              resolve()
+            }
+          })
+        })
+      } else {
+        console.warn('⚠️ Database service not available for challenger update')
+      }
+    } catch (error) {
+      console.error('❌ Error updating games table with challenger:', error)
+    }
+    
     // Broadcast offer accepted event to all players in the room
     const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
     this.io.to(roomId).emit('offer_accepted', {

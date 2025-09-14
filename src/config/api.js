@@ -1,6 +1,12 @@
 // API Configuration
 export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://flipnosis.fun'
 
+export const API_CONFIG = {
+  baseUrl: API_BASE_URL,
+  timeout: 10000,
+  retries: 3
+}
+
 export const getApiUrl = (path) => {
   // Ensure path starts with /api if it doesn't already
   const apiPath = path.startsWith('/api') ? path : `/api${path}`

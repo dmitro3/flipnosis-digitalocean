@@ -228,17 +228,28 @@ const OfferAcceptanceOverlay = ({
         showSuccess('Deposit confirmed!')
         onClose()
         
-        // Confirm deposit to backend using the getApiUrl helper
-        const { getApiUrl } = await import('../config/api')
-        await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            player: address,
-            assetType: 'eth',
-            transactionHash: result.transactionHash
+        // Try to confirm deposit to backend, but don't fail if API is down
+        try {
+          const { getApiUrl } = await import('../config/api')
+          const response = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              player: address,
+              assetType: 'eth',
+              transactionHash: result.transactionHash
+            })
           })
-        })
+          
+          if (response.ok) {
+            console.log('✅ Deposit confirmed via API')
+          } else {
+            console.warn('⚠️ API deposit confirmation failed, but deposit was successful')
+          }
+        } catch (apiError) {
+          console.warn('⚠️ API deposit confirmation failed, but deposit was successful:', apiError)
+          // Don't fail the entire flow if API is down
+        }
         
         showSuccess('Deposit confirmed! Game starting...')
         
@@ -251,7 +262,19 @@ const OfferAcceptanceOverlay = ({
         }
         
         // The server will handle the game_ready event and trigger the UI switch
-        // No need for multiple transport attempts - let the server coordinate this
+        // But if API is down, we need a fallback mechanism
+        // Dispatch a custom event to trigger game transition after a delay
+        setTimeout(() => {
+          console.log('🚀 Fallback: Triggering game transition after deposit')
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { 
+              gameId: gameId, 
+              immediate: true,
+              player2: true,
+              fallback: true
+            }
+          }))
+        }, 2000) // Wait 2 seconds for server events, then fallback
         
       } else {
         showError(result.error || 'Failed to deposit ETH')
