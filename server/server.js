@@ -103,19 +103,19 @@ async function initializeServices() {
 initializeServices()
   .then(({ dbService, blockchainService, cleanupService }) => {
     // Initialize Socket.io server
-    const io = initializeSocketIO(server, dbService)
+    const gameServer = initializeSocketIO(server, dbService)
     console.log('✅ Socket.io server initialized')
     
     // Handle any pending blockchain events
     if (global.pendingBlockchainEvents) {
       global.pendingBlockchainEvents.forEach(event => {
-        io.to(`game_${event.gameId}`).emit('game_ready', event)
+        gameServer.io.to(`game_${event.gameId}`).emit('game_ready', event)
       })
       global.pendingBlockchainEvents = []
     }
     
     // Setup API routes
-    const apiRouter = createApiRoutes(dbService, blockchainService, { io })
+    const apiRouter = createApiRoutes(dbService, blockchainService, gameServer)
     app.use('/api', apiRouter)
     console.log('✅ API routes configured')
     

@@ -3,9 +3,19 @@ const crypto = require('crypto')
 const ethers = require('ethers')
 const { XPService } = require('../services/xpService')
 
-function createApiRoutes(dbService, blockchainService, wsHandlers) {
+function createApiRoutes(dbService, blockchainService, gameServer) {
   const router = express.Router()
   const db = dbService.db
+  
+  // Helper function to send message to specific user
+  const sendToUser = (address, event, data) => {
+    if (gameServer && gameServer.userSockets) {
+      const socketId = gameServer.userSockets.get(address.toLowerCase())
+      if (socketId) {
+        gameServer.io.to(socketId).emit(event, data)
+      }
+    }
+  }
   
   // Initialize XP Service
   const xpService = new XPService(dbService.databasePath)
@@ -659,7 +669,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         db.get('SELECT creator FROM listings WHERE id = ?', [listingId], (err, listing) => {
           if (listing) {
             // Send direct notification to listing creator
-            wsHandlers.sendToUser(listing.creator, {
+            sendToUser(listing.creator, 'new_offer', {
               type: 'new_offer',
               listingId,
               offerId,
@@ -668,7 +678,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             })
             
             // Broadcast to all users in the listing room for real-time updates
-            wsHandlers.broadcastToRoom(listingId, {
+            gameServer.io.to(listingId).emit('listing_updated', {
               type: 'new_offer',
               listingId,
               offerId,
@@ -847,7 +857,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       // Notify offerer
       db.get('SELECT * FROM offers WHERE id = ?', [offerId], (err, offer) => {
         if (offer) {
-          wsHandlers.sendToUser(offer.offerer_address, {
+          sendToUser(offer.offerer_address, 'offer_accepted', {
             type: 'offer_rejected',
             offerId
           })
@@ -1097,7 +1107,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           console.log('✅ NFT deposited and verified, game now awaiting challenger')
           
           // Broadcast to room
-          wsHandlers.broadcastToRoom(gameId, {
+          gameServer.io.to(gameId).emit('offer_accepted', {
             type: 'nft_deposited',
             gameId,
             message: 'NFT deposited! Game is now open for challengers.'
@@ -1124,14 +1134,14 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           console.log(`✅ Updated game ${gameId}: challenger_deposited = true, status = active`)
           
           // Notify all players
-          wsHandlers.broadcastToRoom(gameId, {
+          gameServer.io.to(gameId).emit('offer_accepted', {
             type: 'game_started',
             gameId,
             message: 'Both assets deposited - game starting!'
           })
           
           // Also broadcast deposit received message
-          wsHandlers.broadcastToRoom(gameId, {
+          gameServer.io.to(gameId).emit('offer_accepted', {
             type: 'deposit_received',
             gameId,
             player,
@@ -1189,14 +1199,14 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
                 console.log('⚡ Ready NFT used for instant game start:', game.nft_name)
                 
                 // Notify players
-                wsHandlers.broadcastToRoom(gameId, {
+                gameServer.io.to(gameId).emit('offer_accepted', {
                   type: 'ready_nft_used',
                   player,
                   nft_name: game.nft_name,
                   message: 'Pre-loaded NFT used - waiting for challenger deposit'
                 })
                 
-                wsHandlers.broadcastToRoom(gameId, {
+                gameServer.io.to(gameId).emit('offer_accepted', {
                   type: 'deposit_confirmed',
                   player,
                   assetType: 'nft'
@@ -1660,21 +1670,28 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
     res.header('Access-Control-Allow-Credentials', 'true')
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+    
     const { gameId } = req.params
     const { player, assetType, transactionHash, nftDeposited, nftDepositTime, nftDepositHash, nftDepositVerified, lastNftCheckTime } = req.body
     
     try {
-      console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash }) // Fixed database reference
+      console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash })
       
       // Get game details
       const game = await new Promise((resolve, reject) => {
         db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, result) => {
-          if (err) reject(err)
-          else resolve(result)
+          if (err) {
+            console.error('❌ Database error getting game:', err)
+            reject(err)
+          } else {
+            console.log('🎮 Game found:', { id: result?.id, creator: result?.creator, challenger: result?.challenger })
+            resolve(result)
+          }
         })
       })
       
       if (!game) {
+        console.error('❌ Game not found:', gameId)
         return res.status(404).json({ error: 'Game not found' })
       }
       
@@ -1705,9 +1722,16 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       updateValues.push(gameId)
       
       await new Promise((resolve, reject) => {
-        db.run(`UPDATE games SET ${updateFields.join(', ')} WHERE id = ?`, updateValues, function(err) {
-          if (err) reject(err)
-          else resolve()
+        const updateQuery = `UPDATE games SET ${updateFields.join(', ')} WHERE id = ?`
+        console.log('🔄 Updating game with query:', updateQuery, 'Values:', updateValues)
+        db.run(updateQuery, updateValues, function(err) {
+          if (err) {
+            console.error('❌ Database update error:', err)
+            reject(err)
+          } else {
+            console.log('✅ Game updated successfully')
+            resolve()
+          }
         })
       })
       
@@ -1715,6 +1739,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
       if (blockchainService.hasOwnerWallet()) {
         try {
           const gameReadyResult = await blockchainService.isGameReady(gameId)
+          console.log('🔍 Game ready check result:', gameReadyResult)
           
           if (gameReadyResult.success && gameReadyResult.isReady) {
             console.log('🎮 Both assets deposited - Game is ready!')
@@ -1730,8 +1755,18 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             // Get updated game data for engine initialization
             const gameData = await new Promise((resolve, reject) => {
               db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
-                if (err) reject(err)
-                else resolve(row)
+                if (err) {
+                  console.error('❌ Error getting updated game data:', err)
+                  reject(err)
+                } else {
+                  console.log('🎮 Updated game data:', { 
+                    id: row?.id, 
+                    creator_deposited: row?.creator_deposited, 
+                    challenger_deposited: row?.challenger_deposited,
+                    status: row?.status 
+                  })
+                  resolve(row)
+                }
               })
             })
             
@@ -1739,45 +1774,124 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
             console.log('🎮 Game is now active:', gameId)
             
             // Broadcast game started
-            wsHandlers.broadcastToRoom(gameId, {
-              type: 'game_started',
-              gameId,
-              message: 'Both players have deposited! Game is now active.',
-              bothDeposited: true
-            })
-            
-            wsHandlers.broadcastToRoom(gameId, {
-              type: 'deposit_received',
-              gameId,
-              player,
-              assetType,
-              bothDeposited: true
-            })
+            try {
+              gameServer.io.to(gameId).emit('game_started', {
+                type: 'game_started',
+                gameId,
+                message: 'Both players have deposited! Game is now active.',
+                bothDeposited: true
+              })
+              
+              gameServer.io.to(gameId).emit('deposit_received', {
+                type: 'deposit_received',
+                gameId,
+                player,
+                assetType,
+                bothDeposited: true
+              })
+              console.log('✅ Socket events emitted successfully')
+            } catch (socketError) {
+              console.error('❌ Socket emission error:', socketError)
+            }
             
             console.log(`🎮 Game ${gameId} is now active with both deposits confirmed`)
           } else {
             // Only one deposit so far or verification failed
             console.log('🎮 Game not ready yet or verification failed:', gameReadyResult)
-            wsHandlers.broadcastToRoom(gameId, {
-              type: 'deposit_received',
-              gameId,
-              player,
-              assetType,
-              bothDeposited: false
+            console.log('🔍 Current game state after deposit:', { 
+              gameId, 
+              player, 
+              assetType, 
+              creatorDeposited: game.creator_deposited, 
+              challengerDeposited: game.challenger_deposited 
             })
+            try {
+              gameServer.io.to(gameId).emit('deposit_received', {
+                type: 'deposit_received',
+                gameId,
+                player,
+                assetType,
+                bothDeposited: false
+              })
+            } catch (socketError) {
+              console.error('❌ Socket emission error:', socketError)
+            }
           }
         } catch (blockchainError) {
           console.warn('⚠️ Blockchain verification failed, but deposit was recorded:', blockchainError.message)
           // Don't fail the entire request if blockchain verification fails
           // The deposit was already recorded in the database above
-          wsHandlers.broadcastToRoom(gameId, {
+          
+          // Check database state as fallback
+          const updatedGame = await new Promise((resolve, reject) => {
+            db.get('SELECT creator_deposited, challenger_deposited FROM games WHERE id = ?', [gameId], (err, row) => {
+              if (err) reject(err)
+              else resolve(row)
+            })
+          })
+          
+          const bothDepositedInDB = updatedGame?.creator_deposited && updatedGame?.challenger_deposited
+          console.log('🔍 Fallback database check:', { bothDepositedInDB, updatedGame })
+          
+          try {
+            gameServer.io.to(gameId).emit('deposit_received', {
+              type: 'deposit_received',
+              gameId,
+              player,
+              assetType,
+              bothDeposited: bothDepositedInDB,
+              verificationPending: !bothDepositedInDB
+            })
+            
+            // If both deposited in database, emit game_ready event
+            if (bothDepositedInDB) {
+              gameServer.io.to(gameId).emit('game_ready', {
+                gameId,
+                phase: 'game_active',
+                message: 'Game ready! Both players can now play.',
+                creatorDeposited: true,
+                challengerDeposited: true
+              })
+            }
+          } catch (socketError) {
+            console.error('❌ Socket emission error:', socketError)
+          }
+        }
+      } else {
+        // No blockchain service available, check database state directly
+        console.log('⚠️ No blockchain service available, checking database state directly')
+        
+        const updatedGame = await new Promise((resolve, reject) => {
+          db.get('SELECT creator_deposited, challenger_deposited FROM games WHERE id = ?', [gameId], (err, row) => {
+            if (err) reject(err)
+            else resolve(row)
+          })
+        })
+        
+        const bothDepositedInDB = updatedGame?.creator_deposited && updatedGame?.challenger_deposited
+        console.log('🔍 Database-only check:', { bothDepositedInDB, updatedGame })
+        
+        try {
+          gameServer.io.to(gameId).emit('deposit_received', {
             type: 'deposit_received',
             gameId,
             player,
             assetType,
-            bothDeposited: false,
-            verificationPending: true
+            bothDeposited: bothDepositedInDB
           })
+          
+          // If both deposited in database, emit game_ready event
+          if (bothDepositedInDB) {
+            gameServer.io.to(gameId).emit('game_ready', {
+              gameId,
+              phase: 'game_active',
+              message: 'Game ready! Both players can now play.',
+              creatorDeposited: true,
+              challengerDeposited: true
+            })
+          }
+        } catch (socketError) {
+          console.error('❌ Socket emission error:', socketError)
         }
       }
       
@@ -1817,7 +1931,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
           console.log('✅ Game completed on blockchain:', completeResult.transactionHash)
           
           // Broadcast completion
-          wsHandlers.broadcastToRoom(gameId, {
+          gameServer.io.to(gameId).emit('offer_accepted', {
             type: 'game_completed',
             gameId,
             winner,
@@ -1841,7 +1955,7 @@ function createApiRoutes(dbService, blockchainService, wsHandlers) {
         }
       } else {
         // No blockchain service - just update database
-        wsHandlers.broadcastToRoom(gameId, {
+                gameServer.io.to(gameId).emit('offer_accepted', {
           type: 'game_completed',
           gameId,
           winner,

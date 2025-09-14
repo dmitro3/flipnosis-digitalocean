@@ -529,6 +529,35 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     }
   }, [gameId])
 
+  const handleDepositReceived = useCallback((data) => {
+    console.log('💰 Deposit received event:', data)
+    
+    // Handle both gameId formats (with and without 'game_' prefix)
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const componentGameId = gameId?.replace('game_', '') || gameId
+    
+    if (eventGameId === componentGameId) {
+      console.log('✅ Deposit received for current game')
+      
+      // Check if both players have deposited - unlock game tab
+      if (data.bothDeposited) {
+        console.log('🎮 Both players deposited - game ready!')
+        setIsGameReady(true)
+        setShowDepositOverlay(false)
+        setDepositState(null)
+        
+        // Transport to game room
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
+            detail: { gameId: gameId, immediate: true }
+          }))
+        }, 1000)
+      }
+    } else {
+      console.log('❌ Deposit received gameId mismatch:', { eventGameId, componentGameId })
+    }
+  }, [gameId])
+
   const handleGameStarted = useCallback((data) => {
     console.log('🎮 Game started:', data)
     if (data.gameId === gameId) {
@@ -621,6 +650,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         socketService.on('deposit_countdown', handleDepositCountdown)
         socketService.on('deposit_timeout', handleDepositTimeout)
         socketService.on('deposit_confirmed', handleDepositConfirmed)
+        socketService.on('deposit_received', handleDepositReceived)
         
         // Offer event listeners
         socketService.on('offer_accepted', handleOfferAccepted)
@@ -659,6 +689,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('deposit_countdown', handleDepositCountdown)
       socketService.off('deposit_timeout', handleDepositTimeout)
       socketService.off('deposit_confirmed', handleDepositConfirmed)
+      socketService.off('deposit_received', handleDepositReceived)
       
       // Offer event cleanup
       socketService.off('offer_accepted', handleOfferAccepted)
