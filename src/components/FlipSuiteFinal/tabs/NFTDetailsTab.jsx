@@ -154,10 +154,10 @@ const PriceDisplay = styled.div`
   border-radius: 0.75rem;
   padding: 0.75rem;
   text-align: center;
-  margin-bottom: 1rem;
-  max-width: 150px;
+  margin-top: 1rem;
+  max-width: 200px;
   margin-left: auto;
-  margin-right: 0;
+  margin-right: auto;
 `
 
 const PriceAndButtonsContainer = styled.div`
@@ -598,6 +598,12 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
               src={getNFTImage()} 
               alt={getNFTName()}
             />
+            
+            {/* Price beneath the image */}
+            <PriceDisplay>
+              <PriceLabel>Price</PriceLabel>
+              <PriceValue>${gameData.price_usd || 0}</PriceValue>
+            </PriceDisplay>
           </NFTImageContainer>
 
           <NFTDetailsContainer>
@@ -637,72 +643,65 @@ const NFTDetailsTab = ({ gameData, gameId, coinConfig, address }) => {
               </InfoRow>
             </NFTInfo>
 
-            {/* Price and Buttons on Same Line */}
-            <PriceAndButtonsContainer>
-              <CompactShareButtonsContainer>
-                <CompactActionButton 
-                  className="share-x"
-                  onClick={() => handleShare('twitter')}
-                >
-                  X
-                </CompactActionButton>
-                <CompactActionButton 
-                  className="share-tg"
-                  onClick={() => handleShare('telegram')}
-                >
-                  TG
-                </CompactActionButton>
-                <a
-                  href={getNFTContract() !== 'Unknown' && getNFTTokenId() !== 'Unknown' ? 
-                    `${getMarketplaceUrl(getNFTChain())}/${getNFTContract()}/${getNFTTokenId()}` :
-                    '#'
+            {/* Share Buttons - 2x2 Grid */}
+            <ShareButtonsContainer>
+              <ActionButton 
+                className="share-x"
+                onClick={() => handleShare('twitter')}
+              >
+                Share on X
+              </ActionButton>
+              <ActionButton 
+                className="share-tg"
+                onClick={() => handleShare('telegram')}
+              >
+                Share on TG
+              </ActionButton>
+              <a
+                href={getNFTContract() !== 'Unknown' && getNFTTokenId() !== 'Unknown' ? 
+                  `${getMarketplaceUrl(getNFTChain())}/${getNFTContract()}/${getNFTTokenId()}` :
+                  '#'
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (getNFTContract() === 'Unknown' || getNFTTokenId() === 'Unknown') {
+                    e.preventDefault()
+                    console.error('NFT contract details not available')
                   }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => {
-                    if (getNFTContract() === 'Unknown' || getNFTTokenId() === 'Unknown') {
-                      e.preventDefault()
-                      console.error('NFT contract details not available')
-                    }
-                  }}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <CompactActionButton className="opensea">
-                    <img 
-                      src="/images/opensea.png" 
-                      alt="OpenSea" 
-                      style={{ 
-                        width: '12px', 
-                        height: '12px',
-                        objectFit: 'contain'
-                      }} 
-                    />
-                    OS
-                  </CompactActionButton>
-                </a>
-                <a
-                  href={getExplorerUrl(getNFTChain(), getNFTContract(), getNFTTokenId())}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => {
-                    if (getNFTContract() === 'Unknown' || getNFTTokenId() === 'Unknown') {
-                      e.preventDefault()
-                      console.error('NFT contract details not available')
-                    }
-                  }}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <CompactActionButton className="explorer">
-                    🔍
-                  </CompactActionButton>
-                </a>
-              </CompactShareButtonsContainer>
-              
-              <PriceDisplay>
-                <PriceLabel>Price</PriceLabel>
-                <PriceValue>${gameData.price_usd || 0}</PriceValue>
-              </PriceDisplay>
-            </PriceAndButtonsContainer>
+                }}
+                style={{ textDecoration: 'none', width: '100%', display: 'block' }}
+              >
+                <ActionButton className="opensea">
+                  <img 
+                    src="/images/opensea.png" 
+                    alt="OpenSea" 
+                    style={{ 
+                      width: '16px', 
+                      height: '16px',
+                      objectFit: 'contain'
+                    }} 
+                  />
+                  OpenSea
+                </ActionButton>
+              </a>
+              <a
+                href={getExplorerUrl(getNFTChain(), getNFTContract(), getNFTTokenId())}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (getNFTContract() === 'Unknown' || getNFTTokenId() === 'Unknown') {
+                    e.preventDefault()
+                    console.error('NFT contract details not available')
+                  }
+                }}
+                style={{ textDecoration: 'none', width: '100%', display: 'block' }}
+              >
+                <ActionButton className="explorer">
+                  🔍 Explorer
+                </ActionButton>
+              </a>
+            </ShareButtonsContainer>
           </NFTDetailsContainer>
         </NFTContent>
       </NFTSection>
