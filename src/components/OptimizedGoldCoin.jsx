@@ -313,16 +313,13 @@ const OptimizedGoldCoin = React.memo(({
         // Simple rotation for all performance levels
         coin.rotation.x += 0.01 * (1 + intensity * 0.5)
       } else {
-        // Idle animation - slow rotation only
-        if (perfLevel !== 'low') {
-          coin.rotation.x += 0.001 // Much slower rotation for idle state
-          coin.position.y = Math.sin(time * 2) * 0.01
-        }
-        
-        // Reset transforms
+        // Idle state - keep coin completely still
+        // Reset transforms to ensure coin is stable
         coin.scale.set(1, 1, 1)
         coin.position.x = 0
+        coin.position.y = 0
         coin.position.z = 0
+        // Keep rotation stable - no continuous rotation
       }
 
       renderer.render(scene, camera)

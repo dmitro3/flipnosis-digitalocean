@@ -434,9 +434,9 @@ const FinalCoin = ({
               coin.material[1].emissiveIntensity = 0.3 * chargeIntensity
             }
           } else {
-            // Gentle idle rotation - rotate forward (like falling towards us)
-            coin.rotation.x += 0.005
+            // Idle state - keep coin completely still
             coin.scale.set(1, 1, 1)
+            // No continuous rotation in idle state
           }
         }
 
