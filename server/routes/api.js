@@ -1856,8 +1856,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
               verificationPending: !bothDepositedInDB
             })
             
-            // If both deposited in database, emit game_ready event
+            // If both deposited in database, emit game_ready event and clear countdown
             if (bothDepositedInDB) {
+              // Clear the deposit countdown since both players have deposited
+              gameServer.clearDepositCountdown(gameId)
+              
               gameServer.io.to(gameId).emit('game_ready', {
                 gameId,
                 phase: 'game_active',
@@ -1885,6 +1888,16 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         console.log('🔍 Database-only check:', { bothDepositedInDB, updatedGame })
         
         try {
+          // Emit deposit_confirmed event to notify all players
+          gameServer.io.to(gameId).emit('deposit_confirmed', {
+            gameId,
+            player,
+            assetType,
+            creatorDeposited: updatedGame?.creator_deposited || false,
+            challengerDeposited: updatedGame?.challenger_deposited || false,
+            bothDeposited: bothDepositedInDB
+          })
+          
           gameServer.io.to(gameId).emit('deposit_received', {
             type: 'deposit_received',
             gameId,
@@ -1893,8 +1906,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
             bothDeposited: bothDepositedInDB
           })
           
-          // If both deposited in database, emit game_ready event
+          // If both deposited in database, emit game_ready event and clear countdown
           if (bothDepositedInDB) {
+            // Clear the deposit countdown since both players have deposited
+            gameServer.clearDepositCountdown(gameId)
+            
             gameServer.io.to(gameId).emit('game_ready', {
               gameId,
               phase: 'game_active',

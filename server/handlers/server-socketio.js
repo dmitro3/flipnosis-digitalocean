@@ -592,17 +592,19 @@ class GameServer {
       
     } else {
       console.log(`⏳ Only one player deposited, waiting for the other...`)
-      // Just confirm the deposit and notify all players
-      this.io.to(roomId).emit('deposit_confirmed', {
-        gameId,
-        player: address,
-        assetType,
-        creatorDeposited: gameData.creatorDeposited,
-        challengerDeposited: gameData.challengerDeposited,
-        bothDeposited: false
-      })
-      console.log(`📤 Sent deposit_confirmed event to room ${roomId}`)
     }
+    
+    // ALWAYS emit deposit_confirmed event to notify all players when any player deposits
+    // This ensures the other player gets notified immediately
+    this.io.to(roomId).emit('deposit_confirmed', {
+      gameId,
+      player: address,
+      assetType,
+      creatorDeposited: gameData.creatorDeposited,
+      challengerDeposited: gameData.challengerDeposited,
+      bothDeposited: bothDeposited
+    })
+    console.log(`📤 Sent deposit_confirmed event to room ${roomId} - bothDeposited: ${bothDeposited}`)
     } catch (error) {
       console.error('❌ Error in handleDepositConfirmed:', error)
       // Don't crash the server - just log the error
