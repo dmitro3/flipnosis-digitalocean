@@ -2027,7 +2027,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           UPDATE games 
           SET challenger = ?, status = 'awaiting_deposits'
           WHERE id = ?
-        `, [challengerAddress, challengerAddress, gameId], (err) => {
+        `, [challengerAddress, gameId], (err) => {
           if (err) reject(err)
           else resolve()
         })

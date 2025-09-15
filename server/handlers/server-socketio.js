@@ -391,7 +391,7 @@ class GameServer {
             UPDATE games 
             SET challenger = ?, status = 'awaiting_deposits'
             WHERE id = ?
-          `, [challengerAddress, challengerAddress, gameId], function(err) {
+          `, [challengerAddress, gameId], function(err) {
             if (err) {
               console.error('❌ Error updating games table with challenger:', err)
               reject(err)
