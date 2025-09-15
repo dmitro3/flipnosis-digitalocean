@@ -155,3 +155,5 @@ Write-Host "   - Proper game suite navigation after successful deposit" -Foregro
 Write-Host "   - WebSocket connection stability improvements" -ForegroundColor White
 
 Write-Host "🌐 Test the fixes at: https://flipnosis.fun" -ForegroundColor Cyan
+
+

@@ -389,7 +389,7 @@ class GameServer {
         await new Promise((resolve, reject) => {
           this.dbService.db.run(`
             UPDATE games 
-            SET challenger = ?, status = 'awaiting_deposits', joiner = ?
+            SET challenger = ?, status = 'awaiting_deposits'
             WHERE id = ?
           `, [challengerAddress, challengerAddress, gameId], function(err) {
             if (err) {
@@ -559,7 +559,7 @@ class GameServer {
       creatorScore: 0,
       challengerScore: 0,
       creator: gameData.creator,
-      challenger: gameData.challenger || gameData.joiner,
+      challenger: gameData.challenger,
       currentTurn: gameData.creator, // Creator always goes first
       coinData: coinData,
       createdAt: new Date().toISOString()

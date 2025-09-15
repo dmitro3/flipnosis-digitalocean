@@ -508,7 +508,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           5, // rounds - default to 5 rounds
           JSON.stringify(coinData), 
           'awaiting_deposit', // Status for game created but NFT not deposited yet
-          false, // creator_deposited
+          true, // creator_deposited - NFT was just deposited
           'nft-vs-crypto', // game_type
           'base', // chain
           'ETH', // payment_token
@@ -1233,7 +1233,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       }
       
       db.all(
-        'SELECT * FROM games WHERE creator = ? OR joiner = ? ORDER BY created_at DESC',
+        'SELECT * FROM games WHERE creator = ? OR challenger = ? ORDER BY created_at DESC',
         [address, address],
         (err, games) => {
           if (err) {
@@ -1491,9 +1491,9 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       updateValues.push(updates.status)
     }
     
-    if (updates.joiner !== undefined) {
+    if (updates.challenger !== undefined) {
       updateFields.push('challenger = ?')
-      updateValues.push(updates.joiner)
+      updateValues.push(updates.challenger)
     }
     
     if (updateFields.length === 0) {
@@ -2025,7 +2025,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       await new Promise((resolve, reject) => {
         db.run(`
           UPDATE games 
-          SET challenger = ?, status = 'awaiting_deposits', joiner = ?
+          SET challenger = ?, status = 'awaiting_deposits'
           WHERE id = ?
         `, [challengerAddress, challengerAddress, gameId], (err) => {
           if (err) reject(err)
@@ -2053,7 +2053,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
             await new Promise((resolve, reject) => {
               db.run(`
                 UPDATE games 
-                SET challenger = NULL, joiner = NULL, status = 'waiting'
+                SET challenger = NULL, status = 'waiting'
                 WHERE id = ?
               `, [gameId], (err) => {
                 if (err) reject(err)
