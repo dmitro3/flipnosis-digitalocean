@@ -482,8 +482,32 @@ class GameServer {
     const isCreator = address.toLowerCase() === gameData.creator?.toLowerCase()
     if (isCreator) {
       gameData.creatorDeposited = true
+      // Save to database
+      await new Promise((resolve, reject) => {
+        this.dbService.db.run(`
+          UPDATE games 
+          SET creator_deposited = true, creator_deposit_time = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `, [gameId], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      console.log(`✅ Creator deposit saved to database for game ${gameId}`)
     } else {
       gameData.challengerDeposited = true
+      // Save to database
+      await new Promise((resolve, reject) => {
+        this.dbService.db.run(`
+          UPDATE games 
+          SET challenger_deposited = true, challenger_deposit_time = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `, [gameId], (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+      console.log(`✅ Challenger deposit saved to database for game ${gameId}`)
     }
     
     // Check if both players have deposited
