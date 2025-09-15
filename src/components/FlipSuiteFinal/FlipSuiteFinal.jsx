@@ -517,12 +517,12 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         setShowDepositOverlay(false)
         setDepositState(null)
         
-        // Transport to game room
+        // Transport to game room - wait 3 seconds for server to process deposit
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
             detail: { gameId: gameId, immediate: true }
           }))
-        }, 1000)
+        }, 3000)
       }
     } else {
       console.log('❌ Deposit confirmed gameId mismatch:', { eventGameId, componentGameId })
@@ -546,12 +546,12 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         setShowDepositOverlay(false)
         setDepositState(null)
         
-        // Transport to game room
+        // Transport to game room - wait 3 seconds for server to process deposit
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
             detail: { gameId: gameId, immediate: true }
           }))
-        }, 1000)
+        }, 3000)
       }
     } else {
       console.log('❌ Deposit received gameId mismatch:', { eventGameId, componentGameId })
@@ -1011,12 +1011,12 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
             setShowDepositOverlay(false)
             setDepositState(null)
             setIsGameReady(true)
-            // Transport to game room
+            // Transport to game room - wait 3 seconds for server to process deposit
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
                 detail: { gameId: gameId, immediate: true }
               }))
-            }, 1000)
+            }, 3000)
           }}
         />
       )}
