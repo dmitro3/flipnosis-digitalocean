@@ -480,38 +480,76 @@ class GameServer {
       
       // Update deposit status
     const isCreator = address.toLowerCase() === gameData.creator?.toLowerCase()
+    console.log(`🔍 Processing deposit for ${isCreator ? 'creator' : 'challenger'}: ${address}`)
+    console.log(`🔍 Game data before update:`, {
+      creator: gameData.creator,
+      challenger: gameData.challenger,
+      creatorDeposited: gameData.creatorDeposited,
+      challengerDeposited: gameData.challengerDeposited
+    })
+    
     if (isCreator) {
       gameData.creatorDeposited = true
       // Save to database
-      await new Promise((resolve, reject) => {
-        this.dbService.db.run(`
-          UPDATE games 
-          SET creator_deposited = true, creator_deposit_time = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `, [gameId], (err) => {
-          if (err) reject(err)
-          else resolve()
+      try {
+        await new Promise((resolve, reject) => {
+          this.dbService.db.run(`
+            UPDATE games 
+            SET creator_deposited = true, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `, [gameId], (err) => {
+            if (err) {
+              console.error(`❌ Database error updating creator deposit:`, err)
+              reject(err)
+            } else {
+              console.log(`✅ Creator deposit saved to database for game ${gameId}`)
+              resolve()
+            }
+          })
         })
-      })
-      console.log(`✅ Creator deposit saved to database for game ${gameId}`)
+      } catch (error) {
+        console.error(`❌ Failed to save creator deposit to database:`, error)
+        throw error
+      }
     } else {
       gameData.challengerDeposited = true
       // Save to database
-      await new Promise((resolve, reject) => {
-        this.dbService.db.run(`
-          UPDATE games 
-          SET challenger_deposited = true, challenger_deposit_time = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `, [gameId], (err) => {
-          if (err) reject(err)
-          else resolve()
+      try {
+        await new Promise((resolve, reject) => {
+          this.dbService.db.run(`
+            UPDATE games 
+            SET challenger_deposited = true, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `, [gameId], (err) => {
+            if (err) {
+              console.error(`❌ Database error updating challenger deposit:`, err)
+              reject(err)
+            } else {
+              console.log(`✅ Challenger deposit saved to database for game ${gameId}`)
+              resolve()
+            }
+          })
         })
-      })
-      console.log(`✅ Challenger deposit saved to database for game ${gameId}`)
+      } catch (error) {
+        console.error(`❌ Failed to save challenger deposit to database:`, error)
+        throw error
+      }
     }
+    
+    console.log(`🔍 Game data after update:`, {
+      creator: gameData.creator,
+      challenger: gameData.challenger,
+      creatorDeposited: gameData.creatorDeposited,
+      challengerDeposited: gameData.challengerDeposited
+    })
     
     // Check if both players have deposited
     const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
+    console.log(`🔍 Both players deposited check:`, {
+      creatorDeposited: gameData.creatorDeposited,
+      challengerDeposited: gameData.challengerDeposited,
+      bothDeposited: bothDeposited
+    })
     
     const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
     
@@ -550,7 +588,10 @@ class GameServer {
         challengerDeposited: true
       })
       
+      console.log(`✅ Game started and events sent for game ${gameId}`)
+      
     } else {
+      console.log(`⏳ Only one player deposited, waiting for the other...`)
       // Just confirm the deposit and notify all players
       this.io.to(roomId).emit('deposit_confirmed', {
         gameId,
@@ -560,6 +601,7 @@ class GameServer {
         challengerDeposited: gameData.challengerDeposited,
         bothDeposited: false
       })
+      console.log(`📤 Sent deposit_confirmed event to room ${roomId}`)
     }
     } catch (error) {
       console.error('❌ Error in handleDepositConfirmed:', error)
