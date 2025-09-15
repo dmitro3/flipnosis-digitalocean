@@ -467,15 +467,16 @@ class GameServer {
   }
 
   async handleDepositConfirmed(socket, data) {
-    const { gameId, address, assetType } = data
-    console.log(`💰 Deposit confirmed: ${address} deposited ${assetType} in game ${gameId}`)
-    
-    // Get current game data
-    const gameData = await this.dbService.getGame(gameId)
-    if (!gameData) {
-      console.error('❌ Game not found:', gameId)
-      return
-    }
+    try {
+      const { gameId, address, assetType } = data
+      console.log(`💰 Deposit confirmed: ${address} deposited ${assetType} in game ${gameId}`)
+      
+      // Get current game data
+      const gameData = await this.dbService.getGame(gameId)
+      if (!gameData) {
+        console.error('❌ Game not found:', gameId)
+        return
+      }
     
     // Update deposit status
     const isCreator = address.toLowerCase() === gameData.creator?.toLowerCase()
@@ -535,6 +536,9 @@ class GameServer {
         challengerDeposited: gameData.challengerDeposited,
         bothDeposited: false
       })
+    } catch (error) {
+      console.error('❌ Error in handleDepositConfirmed:', error)
+      // Don't crash the server - just log the error
     }
   }
 

@@ -1028,7 +1028,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       // Add parsed coin data to response
       game.coinData = coinData
       
-      console.log(`🔍 API: Game data found - challenger: ${game.challenger}, joiner: ${game.joiner}, status: ${game.status}`)
+      console.log(`🔍 API: Game data found - challenger: ${game.challenger}, status: ${game.status}`)
       
       // Get round information and accepted offer data
       db.all('SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number', [gameId], (err, rounds) => {
@@ -1683,6 +1683,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     const { player, assetType, transactionHash, nftDeposited, nftDepositTime, nftDepositHash, nftDepositVerified, lastNftCheckTime } = req.body
     
     try {
+      // Validate required fields
+      if (!gameId || !player || !assetType) {
+        console.error('❌ Missing required fields:', { gameId, player, assetType })
+        return res.status(400).json({ error: 'Missing required fields' })
+      }
       console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash })
       
       // Get game details

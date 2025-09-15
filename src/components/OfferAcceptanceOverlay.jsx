@@ -274,7 +274,7 @@ const OfferAcceptanceOverlay = ({
               fallback: true
             }
           }))
-        }, 5000) // Wait 5 seconds for server events, then fallback
+        }, 10000) // Wait 10 seconds for server events, then fallback
         
       } else {
         showError(result.error || 'Failed to deposit ETH')

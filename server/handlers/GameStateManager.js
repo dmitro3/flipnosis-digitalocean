@@ -481,7 +481,7 @@ class GameStateManager {
       return false
     }
     
-    // Update game state
+    // Update game state (no timer - handled by ServerSocketIO)
     game.phase = this.PHASES.DEPOSIT_STAGE
     game.challenger = challenger
     game.depositStartTime = Date.now()
@@ -508,29 +508,7 @@ class GameStateManager {
     // Broadcast to room
     broadcastFn(`game_${gameId}`, initialMessage)
     
-    // Start countdown timer
-    const timer = setInterval(() => {
-      game.depositTimeRemaining--
-      
-      // Broadcast countdown update
-      const countdownMessage = {
-        type: 'deposit_countdown',
-        gameId: gameId,
-        timeRemaining: game.depositTimeRemaining,
-        creatorDeposited: game.creatorDeposited || false,
-        challengerDeposited: game.challengerDeposited || false,
-        cryptoAmount: game.cryptoAmount
-      }
-      
-      broadcastFn(`game_${gameId}`, countdownMessage)
-      
-      // Handle timeout
-      if (game.depositTimeRemaining <= 0) {
-        this.handleDepositTimeout(gameId, broadcastFn)
-      }
-    }, 1000)
-    
-    this.timers.set(gameId, timer)
+    // No timer here - ServerSocketIO handles the countdown
     return true
   }
 
