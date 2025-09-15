@@ -477,8 +477,8 @@ class GameServer {
         console.error('❌ Game not found:', gameId)
         return
       }
-    
-    // Update deposit status
+      
+      // Update deposit status
     const isCreator = address.toLowerCase() === gameData.creator?.toLowerCase()
     if (isCreator) {
       gameData.creatorDeposited = true
