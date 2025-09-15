@@ -256,27 +256,18 @@ const OfferAcceptanceOverlay = ({
         // Close overlay first
         onClose()
         
-        // Notify parent component after a delay to allow server processing
-        if (onDepositComplete) {
-          setTimeout(() => {
-            onDepositComplete(acceptedOffer)
-          }, 3000)
-        }
-        
-        // The server will handle the game_ready event and trigger the UI switch
-        // But if API is down, we need a fallback mechanism
-        // Dispatch a custom event to trigger game transition after a delay
+        // Simple approach: Wait 5 seconds for server to process, then transport
+        console.log('🚀 Deposit complete, waiting 5 seconds for server processing...')
         setTimeout(() => {
-          console.log('🚀 Fallback: Triggering game transition after deposit')
+          console.log('🚀 Transporting to game after server processing delay')
           window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
             detail: { 
               gameId: gameId, 
               immediate: true,
-              player2: true,
-              fallback: true
+              player2: true
             }
           }))
-        }, 10000) // Wait 10 seconds for server events, then fallback
+        }, 5000)
         
       } else {
         showError(result.error || 'Failed to deposit ETH')

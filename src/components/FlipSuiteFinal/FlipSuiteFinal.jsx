@@ -429,15 +429,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       setActiveTab('game')
       showInfo('Game is ready! Both players can now play.')
       
-      // Trigger the switch to flip suite event for both players
-      window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-        detail: { 
-          gameId: gameId, 
-          immediate: true,
-          gameReady: true,
-          bothDeposited: data.creatorDeposited && data.challengerDeposited
-        }
-      }))
+      // Game is ready - just switch to game tab, no transport needed
+      console.log('🎮 Game ready event received, switching to game tab')
     } else {
       console.log('❌ Game ready gameId mismatch:', { eventGameId, componentGameId })
     }
@@ -517,12 +510,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         setShowDepositOverlay(false)
         setDepositState(null)
         
-        // Transport to game room - wait 3 seconds for server to process deposit
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameId, immediate: true }
-          }))
-        }, 3000)
+        // Both players deposited - game is ready, just switch to game tab
+        console.log('🎮 Both players deposited - switching to game tab')
       }
     } else {
       console.log('❌ Deposit confirmed gameId mismatch:', { eventGameId, componentGameId })
@@ -546,12 +535,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         setShowDepositOverlay(false)
         setDepositState(null)
         
-        // Transport to game room - wait 3 seconds for server to process deposit
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { gameId: gameId, immediate: true }
-          }))
-        }, 3000)
+        // Both players deposited - game is ready, just switch to game tab
+        console.log('🎮 Both players deposited - switching to game tab')
       }
     } else {
       console.log('❌ Deposit received gameId mismatch:', { eventGameId, componentGameId })
@@ -734,26 +719,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     }
   }, [gameId])
 
-  // ===== FALLBACK MECHANISM FOR GAME TRANSITION =====
-  // If we're in a deposit state and the socket reconnects, try to transition to game
-  useEffect(() => {
-    if (connected && depositState && !isGameReady) {
-      console.log('🔄 Socket reconnected during deposit state, checking if game is ready')
-      
-      // Wait a bit for server to catch up, then check if we should transition
-      const timeoutId = setTimeout(() => {
-        if (depositState && !isGameReady) {
-          console.log('🚀 Fallback: Socket reconnected but game not ready, forcing transition')
-          setIsGameReady(true)
-          setActiveTab('game')
-          setShowDepositOverlay(false)
-          setDepositState(null)
-        }
-      }, 3000) // Wait 3 seconds after reconnection
-      
-      return () => clearTimeout(timeoutId)
-    }
-  }, [connected, depositState, isGameReady])
+  // ===== SIMPLIFIED: NO FALLBACK MECHANISM =====
+  // Let the simple transport handle everything
 
   // ===== USER ACTIONS - ALL GO TO SERVER =====
   const handleChoice = useCallback((choice) => {
@@ -1011,12 +978,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
             setShowDepositOverlay(false)
             setDepositState(null)
             setIsGameReady(true)
-            // Transport to game room - wait 3 seconds for server to process deposit
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-                detail: { gameId: gameId, immediate: true }
-              }))
-            }, 3000)
+            // Deposit complete - let the simple transport handle the rest
+            console.log('🎮 Deposit complete - waiting for transport')
           }}
         />
       )}
