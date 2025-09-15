@@ -536,6 +536,7 @@ class GameServer {
         challengerDeposited: gameData.challengerDeposited,
         bothDeposited: false
       })
+    }
     } catch (error) {
       console.error('❌ Error in handleDepositConfirmed:', error)
       // Don't crash the server - just log the error
