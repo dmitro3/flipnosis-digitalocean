@@ -256,9 +256,11 @@ const OfferAcceptanceOverlay = ({
         // Close overlay first
         onClose()
         
-        // Notify parent component
+        // Notify parent component after a delay to allow server processing
         if (onDepositComplete) {
-          onDepositComplete(acceptedOffer)
+          setTimeout(() => {
+            onDepositComplete(acceptedOffer)
+          }, 3000)
         }
         
         // The server will handle the game_ready event and trigger the UI switch
