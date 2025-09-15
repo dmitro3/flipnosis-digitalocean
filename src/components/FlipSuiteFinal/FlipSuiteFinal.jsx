@@ -680,7 +680,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
           handleDepositTimeout(data)
         })
         socketService.on('deposit_confirmed', (data) => {
-          console.log('💰 deposit_confirmed event received:', data)
+          console.log('💰 deposit_confirmed event received from server:', data)
+          console.log('🔍 This is the server telling us about a deposit confirmation')
           handleDepositConfirmed(data)
         })
         socketService.on('deposit_received', (data) => {

@@ -225,6 +225,13 @@ const OfferAcceptanceOverlay = ({
           transactionHash: result.transactionHash
         })
         
+        // Check if socket is connected before sending
+        if (!socketService.isConnected()) {
+          console.error('❌ Socket.io not connected, cannot send deposit_confirmed')
+          showError('Connection lost. Please refresh and try again.')
+          return
+        }
+        
         socketService.emit('deposit_confirmed', {
           gameId: gameId,
           player: address,
@@ -232,7 +239,14 @@ const OfferAcceptanceOverlay = ({
           transactionHash: result.transactionHash
         })
         
-        console.log('✅ Deposit confirmed via Socket.io')
+        console.log('✅ Deposit confirmed event sent via Socket.io')
+        
+        // Listen for the server's response to confirm it was received
+        const responseHandler = (data) => {
+          console.log('📥 Server response to deposit_confirmed:', data)
+          socketService.off('deposit_confirmed', responseHandler)
+        }
+        socketService.on('deposit_confirmed', responseHandler)
         showSuccess('Deposit confirmed!')
         onClose()
         
