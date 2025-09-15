@@ -488,7 +488,11 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   }, [gameId, showError])
 
   const handleDepositConfirmed = useCallback((data) => {
-    console.log('💰 Deposit confirmed:', data)
+    console.log('💰 Deposit confirmed event received:', data)
+    console.log('🔍 Current gameId:', gameId)
+    console.log('🔍 Event gameId:', data.gameId)
+    console.log('🔍 Current address:', address)
+    console.log('🔍 Event player:', data.player)
     
     // Handle both gameId formats (with and without 'game_' prefix)
     const eventGameId = data.gameId?.replace('game_', '') || data.gameId
@@ -496,6 +500,14 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     
     if (eventGameId === componentGameId) {
       console.log('✅ Deposit confirmed for current game')
+      console.log('🔍 Deposit data details:', {
+        creatorDeposited: data.creatorDeposited,
+        challengerDeposited: data.challengerDeposited,
+        player: data.player,
+        assetType: data.assetType,
+        transactionHash: data.transactionHash
+      })
+      
       setDepositState(prev => prev ? {
         ...prev,
         creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
@@ -512,11 +524,16 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         
         // Both players deposited - game is ready, just switch to game tab
         console.log('🎮 Both players deposited - switching to game tab')
+      } else {
+        console.log('⏳ Waiting for other player to deposit:', {
+          creatorDeposited: data.creatorDeposited,
+          challengerDeposited: data.challengerDeposited
+        })
       }
     } else {
       console.log('❌ Deposit confirmed gameId mismatch:', { eventGameId, componentGameId })
     }
-  }, [gameId])
+  }, [gameId, address])
 
   const handleDepositReceived = useCallback((data) => {
     console.log('💰 Deposit received event:', data)
@@ -621,24 +638,63 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         await socketService.connect(gameId, address)
         setConnected(true)
         
-        // Register event listeners
-        socketService.on('room_joined', handleRoomJoined)
-        socketService.on('game_state_update', handleGameStateUpdate)
-        socketService.on('game_started', handleGameStarted)
-        socketService.on('game_ready', handleGameReady)
-        socketService.on('flip_executing', handleFlipExecuting)
-        socketService.on('round_result', handleRoundResult)
-        socketService.on('game_not_found', handleGameNotFound)
+        // Register event listeners with debugging
+        console.log('🔌 Registering Socket.io event listeners...')
         
-        // Deposit event listeners
-        // Removed deposit_stage_started listener - now using OfferAcceptanceOverlay
-        socketService.on('deposit_countdown', handleDepositCountdown)
-        socketService.on('deposit_timeout', handleDepositTimeout)
-        socketService.on('deposit_confirmed', handleDepositConfirmed)
-        socketService.on('deposit_received', handleDepositReceived)
+        socketService.on('room_joined', (data) => {
+          console.log('🏠 room_joined event received:', data)
+          handleRoomJoined(data)
+        })
+        socketService.on('game_state_update', (data) => {
+          console.log('📊 game_state_update event received:', data)
+          handleGameStateUpdate(data)
+        })
+        socketService.on('game_started', (data) => {
+          console.log('🎮 game_started event received:', data)
+          handleGameStarted(data)
+        })
+        socketService.on('game_ready', (data) => {
+          console.log('🎮 game_ready event received:', data)
+          handleGameReady(data)
+        })
+        socketService.on('flip_executing', (data) => {
+          console.log('🎲 flip_executing event received:', data)
+          handleFlipExecuting(data)
+        })
+        socketService.on('round_result', (data) => {
+          console.log('🎲 round_result event received:', data)
+          handleRoundResult(data)
+        })
+        socketService.on('game_not_found', (data) => {
+          console.log('❌ game_not_found event received:', data)
+          handleGameNotFound(data)
+        })
         
-        // Offer event listeners
-        socketService.on('offer_accepted', handleOfferAccepted)
+        // Deposit event listeners with debugging
+        socketService.on('deposit_countdown', (data) => {
+          console.log('⏰ deposit_countdown event received:', data)
+          handleDepositCountdown(data)
+        })
+        socketService.on('deposit_timeout', (data) => {
+          console.log('⏰ deposit_timeout event received:', data)
+          handleDepositTimeout(data)
+        })
+        socketService.on('deposit_confirmed', (data) => {
+          console.log('💰 deposit_confirmed event received:', data)
+          handleDepositConfirmed(data)
+        })
+        socketService.on('deposit_received', (data) => {
+          console.log('💰 deposit_received event received:', data)
+          handleDepositReceived(data)
+        })
+        
+        // Offer event listeners with debugging
+        socketService.on('offer_accepted', (data) => {
+          console.log('✅ offer_accepted event received:', data)
+          handleOfferAccepted(data)
+        })
+        
+        console.log('✅ All Socket.io event listeners registered')
         
         // Join room
         socketService.emit('join_room', { 

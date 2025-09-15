@@ -217,7 +217,14 @@ const OfferAcceptanceOverlay = ({
       const result = await contractService.depositETH(gameId, depositAmount)
 
       if (result.success) {
-        // Notify server via Socket.io
+        // Notify server via Socket.io ONLY (no HTTP API)
+        console.log('📤 Sending deposit_confirmed via Socket.io:', {
+          gameId: gameId,
+          player: address,
+          assetType: 'crypto',
+          transactionHash: result.transactionHash
+        })
+        
         socketService.emit('deposit_confirmed', {
           gameId: gameId,
           player: address,
@@ -225,41 +232,22 @@ const OfferAcceptanceOverlay = ({
           transactionHash: result.transactionHash
         })
         
+        console.log('✅ Deposit confirmed via Socket.io')
         showSuccess('Deposit confirmed!')
         onClose()
-        
-        // Try to confirm deposit to backend, but don't fail if API is down
-        try {
-          const { getApiUrl } = await import('../config/api')
-          const response = await fetch(getApiUrl(`/games/${gameId}/deposit-confirmed`), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              player: address,
-              assetType: 'eth',
-              transactionHash: result.transactionHash
-            })
-          })
-          
-          if (response.ok) {
-            console.log('✅ Deposit confirmed via API')
-          } else {
-            console.warn('⚠️ API deposit confirmation failed, but deposit was successful')
-          }
-        } catch (apiError) {
-          console.warn('⚠️ API deposit confirmation failed, but deposit was successful:', apiError)
-          // Don't fail the entire flow if API is down
-        }
         
         showSuccess('Deposit confirmed! Game starting...')
         
         // Close overlay first
         onClose()
         
-        // Simple approach: Wait 5 seconds for server to process, then transport
-        console.log('🚀 Deposit complete, waiting 5 seconds for server processing...')
+        // Wait for server to process the Socket.io deposit_confirmed event
+        console.log('🚀 Deposit complete, waiting for server to process Socket.io event...')
+        console.log('🔍 Socket.io connection status:', socketService.isConnected())
+        
+        // Give server time to process the Socket.io event and notify other players
         setTimeout(() => {
-          console.log('🚀 Transporting to game after server processing delay')
+          console.log('🚀 Transporting to game after Socket.io processing delay')
           window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
             detail: { 
               gameId: gameId, 
@@ -267,7 +255,7 @@ const OfferAcceptanceOverlay = ({
               player2: true
             }
           }))
-        }, 5000)
+        }, 3000) // Reduced to 3 seconds since we're only using Socket.io now
         
       } else {
         showError(result.error || 'Failed to deposit ETH')
