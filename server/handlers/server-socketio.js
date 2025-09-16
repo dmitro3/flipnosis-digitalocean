@@ -381,6 +381,7 @@ class GameServer {
   async handleAcceptOffer(socket, data) {
     const { gameId, address, offerId, cryptoAmount, challengerAddress } = data
     console.log(`✅ Offer accepted by ${address} for game ${gameId}`)
+    console.log(`🎯 Challenger address received: ${challengerAddress}`)
     
     // Update database with challenger
     try {
@@ -391,10 +392,24 @@ class GameServer {
             SET challenger = ?, status = 'awaiting_deposits'
             WHERE id = ?
           `, [challengerAddress, gameId], function(err) {
-            if (err) reject(err)
-            else resolve()
+            if (err) {
+              console.error('❌ Database error updating challenger:', err)
+              reject(err)
+            } else {
+              console.log(`✅ Successfully updated challenger ${challengerAddress} for game ${gameId}`)
+              resolve()
+            }
           })
         })
+        
+        // Verify the update
+        const updatedGame = await new Promise((resolve, reject) => {
+          this.dbService.db.get('SELECT challenger FROM games WHERE id = ?', [gameId], (err, row) => {
+            if (err) reject(err)
+            else resolve(row)
+          })
+        })
+        console.log(`🔍 Verification - Challenger in DB: ${updatedGame?.challenger}`)
       }
     } catch (error) {
       console.error('❌ Error updating challenger:', error)
@@ -462,6 +477,11 @@ class GameServer {
     } catch (e) {
       console.warn('Failed to parse coin_data:', e)
     }
+    
+    console.log(`🔍 Initializing game state for ${gameId}:`)
+    console.log(`  - Creator: ${gameData.creator}`)
+    console.log(`  - Challenger: ${gameData.challenger}`)
+    console.log(`  - Status: ${gameData.status}`)
     
     return {
       gameId,

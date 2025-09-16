@@ -655,19 +655,21 @@ const LobbyFinal = () => {
   }
   
   // Accept offer
-  const acceptOffer = async (offerId, offerPrice) => {
+  const acceptOffer = async (offerId, offerPrice, offererAddress) => {
     try {
       showInfo('Accepting offer...')
       
       console.log('✅ Accepting offer via Socket.io:', { 
         offerId, 
         accepterAddress: address, 
+        challengerAddress: offererAddress,
         cryptoAmount: offerPrice 
       })
       
       socketService.emit('accept_offer', {
         offerId,
         accepterAddress: address,
+        challengerAddress: offererAddress,
         cryptoAmount: offerPrice,
         gameId: gameId
       })
@@ -829,7 +831,7 @@ const LobbyFinal = () => {
                   <OfferActions>
                     <ActionButton 
                       className="accept"
-                      onClick={() => acceptOffer(offer.id, offer.offer_price)}
+                      onClick={() => acceptOffer(offer.id, offer.offer_price, offer.offerer_address)}
                     >
                       Accept
                     </ActionButton>
