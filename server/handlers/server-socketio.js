@@ -502,7 +502,10 @@ class GameServer {
       challenger: gameData.challenger,
       currentTurn: gameData.creator, // Creator always goes first
       coinData: coinData,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      // Add deposit status fields for game readiness check
+      creatorDeposited: gameData.creator_deposited || true, // Creator always deposited to create game
+      challengerDeposited: gameData.challenger_deposited || false
     }
   }
 

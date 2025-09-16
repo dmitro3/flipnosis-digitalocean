@@ -1140,7 +1140,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           const existingGameState = gameServer.gameStateManager.getGame(gameId)
           if (existingGameState) {
             existingGameState.status = 'active'
-            console.log(`🔄 Updated cached game state status to active`)
+            existingGameState.challengerDeposited = true
+            console.log(`🔄 Updated cached game state status to active and challengerDeposited to true`)
           }
           
           // Stop the deposit countdown since both players have deposited
