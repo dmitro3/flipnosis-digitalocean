@@ -1143,6 +1143,10 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
             console.log(`🔄 Updated cached game state status to active`)
           }
           
+          // Stop the deposit countdown since both players have deposited
+          gameServer.clearDepositCountdown(gameId)
+          console.log(`⏰ Stopped deposit countdown for game ${gameId}`)
+          
           // Notify all players
           gameServer.io.to(gameId).emit('offer_accepted', {
             type: 'game_started',
