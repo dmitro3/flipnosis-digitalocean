@@ -353,6 +353,49 @@ const GameRoomTab = ({
     }
   }, [isGameReady, gameId, socket])
   
+  // Polling mechanism to check for challenger presence
+  useEffect(() => {
+    if (!gameId || !socket) return
+    
+    let pollInterval = null
+    let pollCount = 0
+    const maxPolls = 30 // 1 minute at 2-second intervals
+    
+    const checkChallengerPresence = async () => {
+      try {
+        // Request fresh game state from server
+        socket.emit('request_game_state', { gameId })
+        pollCount++
+        
+        // Stop polling after max attempts
+        if (pollCount >= maxPolls && pollInterval) {
+          clearInterval(pollInterval)
+          pollInterval = null
+          console.log('🔄 Challenger polling stopped - max attempts reached')
+        }
+      } catch (error) {
+        console.error('Challenger polling error:', error)
+      }
+    }
+    
+    // Start polling if game is active but challenger might not be visible yet
+    // Only poll if we don't have both players present and deposited
+    const hasBothPlayers = gameData?.challenger && gameData?.creator
+    const bothDeposited = gameData?.creatorDeposited && gameData?.challengerDeposited
+    
+    if (gameData?.status === 'active' && gameData?.phase === 'game_active' && (!hasBothPlayers || !bothDeposited)) {
+      console.log('🔄 Starting challenger presence polling...', { hasBothPlayers, bothDeposited })
+      pollInterval = setInterval(checkChallengerPresence, 2000)
+    }
+    
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval)
+        console.log('🔄 Challenger polling stopped - cleanup')
+      }
+    }
+  }, [gameId, socket, gameData?.status, gameData?.phase, gameData?.challenger, gameData?.creator, gameData?.creatorDeposited, gameData?.challengerDeposited])
+
   // Listen for socket events to update game state
   useEffect(() => {
     if (!socket) return
@@ -360,6 +403,12 @@ const GameRoomTab = ({
     const handleGameStateUpdate = (data) => {
       console.log('📊 Game state update received:', data)
       setGameState(data)
+      
+      // Stop challenger polling if both players are present
+      if (data.challenger && data.creator) {
+        console.log('✅ Both players present - challenger polling can stop')
+        // The polling will stop automatically when the component unmounts or conditions change
+      }
     }
     
     const handleGameReady = (data) => {
