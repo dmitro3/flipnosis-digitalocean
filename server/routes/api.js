@@ -7,6 +7,9 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
   const router = express.Router()
   const db = dbService.db
   
+  // gameServer is now properly passed in and available
+  console.log('✅ API routes initialized with gameServer:', !!gameServer)
+  
   // Helper function to send message to specific user
   const sendToUser = (address, event, data) => {
     if (gameServer && gameServer.userSockets) {
@@ -1673,275 +1676,88 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
   router.post('/games/:gameId/deposit-confirmed', async (req, res) => {
     console.log('🚀 Deposit confirmation endpoint called')
     
-    // Set CORS headers
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*')
-    res.header('Access-Control-Allow-Credentials', 'true')
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-    
     const { gameId } = req.params
-    const { player, assetType, transactionHash, nftDeposited, nftDepositTime, nftDepositHash, nftDepositVerified, lastNftCheckTime } = req.body
+    const { player, assetType, transactionHash } = req.body
     
     try {
-      // Validate required fields
       if (!gameId || !player || !assetType) {
         console.error('❌ Missing required fields:', { gameId, player, assetType })
         return res.status(400).json({ error: 'Missing required fields' })
       }
+      
       console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash })
       
       // Get game details
-      const game = await new Promise((resolve, reject) => {
-        db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, result) => {
-          if (err) {
-            console.error('❌ Database error getting game:', err)
-            reject(err)
-          } else {
-            console.log('🎮 Game found:', { id: result?.id, creator: result?.creator, challenger: result?.challenger })
-            resolve(result)
-          }
-        })
-      })
+      const game = await dbService.getGame(gameId)
       
       if (!game) {
         console.error('❌ Game not found:', gameId)
         return res.status(404).json({ error: 'Game not found' })
       }
       
-      // Update deposit status in database with NFT tracking fields
-      let updateFields = []
-      let updateValues = []
+      // Determine if this is creator or challenger
+      const isCreator = player.toLowerCase() === game.creator?.toLowerCase()
       
-      if (assetType === 'nft' && player.toLowerCase() === game.creator.toLowerCase()) {
-        updateFields.push('creator_deposited = true')
-        // Also update NFT deposit tracking fields if provided
-        if (nftDeposited !== undefined) updateFields.push('nft_deposited = ?')
-        if (nftDepositTime !== undefined) updateFields.push('nft_deposit_time = ?')
-        if (nftDepositHash !== undefined) updateFields.push('nft_deposit_hash = ?')
-        if (nftDepositVerified !== undefined) updateFields.push('nft_deposit_verified = ?')
-        if (lastNftCheckTime !== undefined) updateFields.push('last_nft_check_time = ?')
-        
-        if (nftDeposited !== undefined) updateValues.push(nftDeposited)
-        if (nftDepositTime !== undefined) updateValues.push(nftDepositTime)
-        if (nftDepositHash !== undefined) updateValues.push(nftDepositHash)
-        if (nftDepositVerified !== undefined) updateValues.push(nftDepositVerified)
-        if (lastNftCheckTime !== undefined) updateValues.push(lastNftCheckTime)
-      } else if (assetType === 'eth' && player.toLowerCase() === game.challenger.toLowerCase()) {
-        updateFields.push('challenger_deposited = true')
-      } else {
-        return res.status(400).json({ error: 'Invalid deposit confirmation' })
+      // Update database
+      if (isCreator && assetType === 'nft') {
+        await new Promise((resolve, reject) => {
+          dbService.db.run(
+            'UPDATE games SET creator_deposited = true, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [gameId],
+            (err) => {
+              if (err) reject(err)
+              else resolve()
+            }
+          )
+        })
+        game.creator_deposited = true
+      } else if (!isCreator && assetType === 'eth') {
+        await new Promise((resolve, reject) => {
+          dbService.db.run(
+            'UPDATE games SET challenger_deposited = true, status = "active", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [gameId],
+            (err) => {
+              if (err) reject(err)
+              else resolve()
+            }
+          )
+        })
+        game.challenger_deposited = true
       }
       
-      updateValues.push(gameId)
+      const bothDeposited = game.creator_deposited && game.challenger_deposited
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
       
-      await new Promise((resolve, reject) => {
-        const updateQuery = `UPDATE games SET ${updateFields.join(', ')} WHERE id = ?`
-        console.log('🔄 Updating game with query:', updateQuery, 'Values:', updateValues)
-        db.run(updateQuery, updateValues, function(err) {
-          if (err) {
-            console.error('❌ Database update error:', err)
-            reject(err)
-          } else {
-            console.log('✅ Game updated successfully')
-            resolve()
-          }
-        })
+      // Emit deposit confirmation to all players
+      gameServer.io.to(roomId).emit('deposit_confirmed', {
+        gameId,
+        player,
+        assetType,
+        creatorDeposited: game.creator_deposited,
+        challengerDeposited: game.challenger_deposited,
+        bothDeposited
       })
       
-      // Check if both players have deposited using contract
-      if (blockchainService.hasOwnerWallet()) {
-        try {
-          const gameReadyResult = await blockchainService.isGameReady(gameId)
-          console.log('🔍 Game ready check result:', gameReadyResult)
-          
-          if (gameReadyResult.success && gameReadyResult.isReady) {
-            console.log('🎮 Both assets deposited - Game is ready!')
-            
-            // Update game status to active
-            await new Promise((resolve, reject) => {
-              db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], function(err) {
-                if (err) reject(err)
-                else resolve()
-              })
-            })
-            
-            // Get updated game data for engine initialization
-            const gameData = await new Promise((resolve, reject) => {
-              db.get('SELECT * FROM games WHERE id = ?', [gameId], (err, row) => {
-                if (err) {
-                  console.error('❌ Error getting updated game data:', err)
-                  reject(err)
-                } else {
-                  console.log('🎮 Updated game data:', { 
-                    id: row?.id, 
-                    creator_deposited: row?.creator_deposited, 
-                    challenger_deposited: row?.challenger_deposited,
-                    status: row?.status 
-                  })
-                  resolve(row)
-                }
-              })
-            })
-            
-            // Game is now active - game rooms will be created when players join
-            console.log('🎮 Game is now active:', gameId)
-            
-            // Broadcast game started
-            try {
-              gameServer.io.to(gameId).emit('game_started', {
-                type: 'game_started',
-                gameId,
-                message: 'Both players have deposited! Game is now active.',
-                bothDeposited: true
-              })
-              
-              gameServer.io.to(gameId).emit('deposit_received', {
-                type: 'deposit_received',
-                gameId,
-                player,
-                assetType,
-                bothDeposited: true
-              })
-              console.log('✅ Socket events emitted successfully')
-            } catch (socketError) {
-              console.error('❌ Socket emission error:', socketError)
-            }
-            
-            console.log(`🎮 Game ${gameId} is now active with both deposits confirmed`)
-          } else {
-            // Only one deposit so far or verification failed
-            console.log('🎮 Game not ready yet or verification failed:', gameReadyResult)
-            console.log('🔍 Current game state after deposit:', { 
-              gameId, 
-              player, 
-              assetType, 
-              creatorDeposited: game.creator_deposited, 
-              challengerDeposited: game.challenger_deposited 
-            })
-            try {
-              gameServer.io.to(gameId).emit('deposit_received', {
-                type: 'deposit_received',
-                gameId,
-                player,
-                assetType,
-                bothDeposited: false
-              })
-            } catch (socketError) {
-              console.error('❌ Socket emission error:', socketError)
-            }
-          }
-        } catch (blockchainError) {
-          console.warn('⚠️ Blockchain verification failed, but deposit was recorded:', blockchainError.message)
-          // Don't fail the entire request if blockchain verification fails
-          // The deposit was already recorded in the database above
-          
-          // Check database state as fallback
-          const updatedGame = await new Promise((resolve, reject) => {
-            db.get('SELECT creator_deposited, challenger_deposited FROM games WHERE id = ?', [gameId], (err, row) => {
-              if (err) reject(err)
-              else resolve(row)
-            })
-          })
-          
-          const bothDepositedInDB = updatedGame?.creator_deposited && updatedGame?.challenger_deposited
-          console.log('🔍 Fallback database check:', { bothDepositedInDB, updatedGame })
-          
-          try {
-            gameServer.io.to(gameId).emit('deposit_received', {
-              type: 'deposit_received',
-              gameId,
-              player,
-              assetType,
-              bothDeposited: bothDepositedInDB,
-              verificationPending: !bothDepositedInDB
-            })
-            
-            // If both deposited in database, emit game_ready event and clear countdown
-            if (bothDepositedInDB) {
-              // Clear the deposit countdown since both players have deposited
-              gameServer.clearDepositCountdown(gameId)
-              
-              // Update game status to active
-              await new Promise((resolve, reject) => {
-                db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], (err) => {
-                  if (err) reject(err)
-                  else resolve()
-                })
-              })
-              
-              // Emit the transport ready event to move both players
-              setTimeout(() => {
-                gameServer.io.to(`game_${gameId}`).emit('game_transport_ready', {
-                  gameId,
-                  phase: 'game_active',
-                  message: 'Game initialized! Transporting all players...',
-                  transportNow: true
-                })
-              }, 500)
-            }
-          } catch (socketError) {
-            console.error('❌ Socket emission error:', socketError)
-          }
+      if (bothDeposited) {
+        console.log('🎮 Both players deposited - triggering transport!')
+        
+        // Clear countdown
+        if (gameServer.clearDepositCountdown) {
+          gameServer.clearDepositCountdown(gameId)
         }
-      } else {
-        // No blockchain service available, check database state directly
-        console.log('⚠️ No blockchain service available, checking database state directly')
         
-        const updatedGame = await new Promise((resolve, reject) => {
-          db.get('SELECT creator_deposited, challenger_deposited FROM games WHERE id = ?', [gameId], (err, row) => {
-            if (err) reject(err)
-            else resolve(row)
-          })
-        })
-        
-        const bothDepositedInDB = updatedGame?.creator_deposited && updatedGame?.challenger_deposited
-        console.log('🔍 Database-only check:', { bothDepositedInDB, updatedGame })
-        
-        try {
-          // Emit deposit_confirmed event to notify all players
-          gameServer.io.to(gameId).emit('deposit_confirmed', {
+        // CRITICAL: Emit the transport ready event
+        setTimeout(() => {
+          console.log('🚀 Emitting game_transport_ready to room:', roomId)
+          gameServer.io.to(roomId).emit('game_transport_ready', {
             gameId,
-            player,
-            assetType,
-            creatorDeposited: updatedGame?.creator_deposited || false,
-            challengerDeposited: updatedGame?.challenger_deposited || false,
-            bothDeposited: bothDepositedInDB
+            phase: 'game_active',
+            message: 'Game initialized! Transporting all players...',
+            creator: game.creator,
+            challenger: game.challenger,
+            transportNow: true
           })
-          
-          gameServer.io.to(gameId).emit('deposit_received', {
-            type: 'deposit_received',
-            gameId,
-            player,
-            assetType,
-            bothDeposited: bothDepositedInDB
-          })
-          
-          // If both deposited in database, emit game_ready event and clear countdown
-          if (bothDepositedInDB) {
-            // Clear the deposit countdown since both players have deposited
-            gameServer.clearDepositCountdown(gameId)
-            
-            // Update game status to active
-            await new Promise((resolve, reject) => {
-              db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], (err) => {
-                if (err) reject(err)
-                else resolve()
-              })
-            })
-            
-            // Emit the transport ready event to move both players
-            setTimeout(() => {
-              gameServer.io.to(`game_${gameId}`).emit('game_transport_ready', {
-                gameId,
-                phase: 'game_active',
-                message: 'Game initialized! Transporting all players...',
-                transportNow: true
-              })
-            }, 500)
-          }
-        } catch (socketError) {
-          console.error('❌ Socket emission error:', socketError)
-        }
+        }, 500)
       }
       
       res.json({ success: true, message: 'Deposit confirmed' })

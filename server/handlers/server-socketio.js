@@ -620,7 +620,12 @@ const gameServer = new GameServer()
 
 // ===== EXPORT FUNCTION =====
 function initializeSocketIO(server, dbService) {
-  return gameServer.initialize(server, dbService)
+  const io = gameServer.initialize(server, dbService)
+  return {
+    io,
+    gameServer, // Export the gameServer instance
+    clearDepositCountdown: (gameId) => gameServer.clearDepositCountdown(gameId)
+  }
 }
 
 module.exports = { initializeSocketIO }

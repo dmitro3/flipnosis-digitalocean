@@ -243,59 +243,41 @@ const OfferAcceptanceOverlay = ({
       const result = await contractService.depositETH(gameId, depositAmount)
 
       if (result.success) {
-        // Notify server via Socket.io ONLY (no HTTP API)
-        console.log('📤 Sending deposit_confirmed via Socket.io:', {
-          gameId: gameId,
-          player: address,
-          assetType: 'crypto',
-          transactionHash: result.transactionHash
-        })
+        console.log('✅ Deposit transaction confirmed:', result.transactionHash)
+        setIsDepositing(false)
         
-        // Check if socket is connected before sending
-        if (!socketService.isConnected()) {
-          console.error('❌ Socket.io not connected, cannot send deposit_confirmed')
-          showError('Connection lost. Please refresh and try again.')
-          return
+        try {
+          // Notify backend via API
+          const response = await fetch(`${window.location.origin}/api/games/${gameId}/deposit-confirmed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gameId,
+              player: address,
+              assetType: 'eth',
+              transactionHash: result.transactionHash
+            })
+          })
+          
+          if (!response.ok) {
+            console.error('Failed to confirm deposit with backend')
+          } else {
+            console.log('✅ Backend notified of deposit')
+          }
+          
+          // Also emit via Socket if available
+          if (socketService && socketService.emit) {
+            socketService.emit('deposit_confirmed', {
+              gameId,
+              address,
+              assetType: 'eth',
+              transactionHash: result.transactionHash
+            })
+          }
+          
+        } catch (error) {
+          console.error('Error notifying backend:', error)
         }
-        
-        socketService.emit('deposit_confirmed', {
-          gameId: gameId,
-          player: address,
-          assetType: 'crypto',
-          transactionHash: result.transactionHash
-        })
-        
-        console.log('✅ Deposit confirmed event sent via Socket.io')
-        
-        // Listen for the server's response to confirm it was received
-        const responseHandler = (data) => {
-          console.log('📥 Server response to deposit_confirmed:', data)
-          socketService.off('deposit_confirmed', responseHandler)
-        }
-        socketService.on('deposit_confirmed', responseHandler)
-        showSuccess('Deposit confirmed!')
-        onClose()
-        
-        showSuccess('Deposit confirmed! Game starting...')
-        
-        // Close overlay first
-        onClose()
-        
-        // Wait for server to process the Socket.io deposit_confirmed event
-        console.log('🚀 Deposit complete, waiting for server to process Socket.io event...')
-        console.log('🔍 Socket.io connection status:', socketService.isConnected())
-        
-        // Give server time to process the Socket.io event and notify other players
-        setTimeout(() => {
-          console.log('🚀 Transporting to game after Socket.io processing delay')
-          window.dispatchEvent(new CustomEvent('switchToFlipSuite', {
-            detail: { 
-              gameId: gameId, 
-              immediate: true,
-              player2: true
-            }
-          }))
-        }, 3000) // Reduced to 3 seconds since we're only using Socket.io now
         
       } else {
         showError(result.error || 'Failed to deposit ETH')
