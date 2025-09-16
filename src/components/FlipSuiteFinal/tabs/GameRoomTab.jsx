@@ -603,7 +603,7 @@ const GameRoomTab = ({
           />
 
           {/* Choice Buttons */}
-          {gameState.phase === 'choosing' && gameState.currentTurn === address && (
+          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && gameState.currentTurn === address && (
             <ChoiceButtons>
               <ChoiceButton 
                 choice="heads" 

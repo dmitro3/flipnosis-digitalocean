@@ -379,6 +379,44 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     setServerState(data)
     setLoading(false)
     
+    // Update gameData with player information from server state
+    if (data.creator || data.challenger) {
+      setGameData(prevGameData => {
+        if (!prevGameData) return prevGameData
+        
+        const updatedGameData = { ...prevGameData }
+        
+        // Update creator info if present
+        if (data.creator) {
+          updatedGameData.creator = data.creator
+        }
+        
+        // Update challenger info if present
+        if (data.challenger) {
+          updatedGameData.challenger = data.challenger
+        }
+        
+        // Update deposit status if present
+        if (data.creatorDeposited !== undefined) {
+          updatedGameData.creatorDeposited = data.creatorDeposited
+        }
+        if (data.challengerDeposited !== undefined) {
+          updatedGameData.challengerDeposited = data.challengerDeposited
+        }
+        
+        // Update status and phase
+        if (data.status) {
+          updatedGameData.status = data.status
+        }
+        if (data.phase) {
+          updatedGameData.phase = data.phase
+        }
+        
+        console.log('🔄 Updated gameData with server state:', updatedGameData)
+        return updatedGameData
+      })
+    }
+    
     // Check for round results
     if (data.gamePhase === 'showing_result' && data.roundWinner) {
       setResultData({
