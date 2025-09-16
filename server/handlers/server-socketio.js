@@ -410,6 +410,13 @@ class GameServer {
           })
         })
         console.log(`🔍 Verification - Challenger in DB: ${updatedGame?.challenger}`)
+        
+        // Update the cached game state with the new challenger
+        const existingGameState = this.gameStateManager.getGame(gameId)
+        if (existingGameState) {
+          existingGameState.challenger = challengerAddress
+          console.log(`🔄 Updated cached game state challenger: ${challengerAddress}`)
+        }
       }
     } catch (error) {
       console.error('❌ Error updating challenger:', error)

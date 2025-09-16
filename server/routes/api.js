@@ -1136,6 +1136,13 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           console.log('🎮 Both assets deposited - game is now active!')
           console.log(`✅ Updated game ${gameId}: challenger_deposited = true, status = active`)
           
+          // Update the cached game state status
+          const existingGameState = gameServer.gameStateManager.getGame(gameId)
+          if (existingGameState) {
+            existingGameState.status = 'active'
+            console.log(`🔄 Updated cached game state status to active`)
+          }
+          
           // Notify all players
           gameServer.io.to(gameId).emit('offer_accepted', {
             type: 'game_started',
