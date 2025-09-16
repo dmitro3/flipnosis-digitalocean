@@ -1666,6 +1666,34 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     res.status(200).end()
   })
 
+  // Simple status endpoint for polling
+  router.get('/games/:gameId/status', async (req, res) => {
+    const { gameId } = req.params
+    
+    try {
+      const game = await dbService.getGame(gameId)
+      
+      if (!game) {
+        return res.status(404).json({ error: 'Game not found' })
+      }
+      
+      // Return minimal status info for polling
+      res.json({
+        gameId: game.id,
+        status: game.status,
+        creator_deposited: Boolean(game.creator_deposited),
+        challenger_deposited: Boolean(game.challenger_deposited),
+        both_deposited: Boolean(game.creator_deposited && game.challenger_deposited),
+        phase: game.phase,
+        creator: game.creator,
+        challenger: game.challenger
+      })
+    } catch (error) {
+      console.error('Error getting game status:', error)
+      res.status(500).json({ error: 'Failed to get game status' })
+    }
+  })
+
   // Test endpoint to check if server is responding
   router.get('/test', (req, res) => {
     console.log('🧪 Test endpoint called')
@@ -1674,31 +1702,20 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
 
   // New route: Confirm deposit received (called by frontend after successful deposit)
   router.post('/games/:gameId/deposit-confirmed', async (req, res) => {
-    console.log('🚀 Deposit confirmation endpoint called')
-    
     const { gameId } = req.params
     const { player, assetType, transactionHash } = req.body
     
     try {
-      if (!gameId || !player || !assetType) {
-        console.error('❌ Missing required fields:', { gameId, player, assetType })
-        return res.status(400).json({ error: 'Missing required fields' })
-      }
+      console.log('💰 Deposit confirmation received:', { gameId, player, assetType })
       
-      console.log('💰 Deposit confirmation received:', { gameId, player, assetType, transactionHash })
-      
-      // Get game details
       const game = await dbService.getGame(gameId)
-      
       if (!game) {
-        console.error('❌ Game not found:', gameId)
         return res.status(404).json({ error: 'Game not found' })
       }
       
-      // Determine if this is creator or challenger
       const isCreator = player.toLowerCase() === game.creator?.toLowerCase()
       
-      // Update database
+      // Update database only - no socket events needed
       if (isCreator && assetType === 'nft') {
         await new Promise((resolve, reject) => {
           dbService.db.run(
@@ -1710,7 +1727,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
             }
           )
         })
-        game.creator_deposited = true
+        console.log('✅ Creator deposit saved to database')
       } else if (!isCreator && assetType === 'eth') {
         await new Promise((resolve, reject) => {
           dbService.db.run(
@@ -1722,49 +1739,15 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
             }
           )
         })
-        game.challenger_deposited = true
+        console.log('✅ Challenger deposit saved to database')
       }
       
-      const bothDeposited = game.creator_deposited && game.challenger_deposited
-      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-      
-      // Emit deposit confirmation to all players
-      gameServer.io.to(roomId).emit('deposit_confirmed', {
-        gameId,
-        player,
-        assetType,
-        creatorDeposited: game.creator_deposited,
-        challengerDeposited: game.challenger_deposited,
-        bothDeposited
-      })
-      
-      if (bothDeposited) {
-        console.log('🎮 Both players deposited - triggering transport!')
-        
-        // Clear countdown
-        if (gameServer.clearDepositCountdown) {
-          gameServer.clearDepositCountdown(gameId)
-        }
-        
-        // CRITICAL: Emit the transport ready event
-        setTimeout(() => {
-          console.log('🚀 Emitting game_transport_ready to room:', roomId)
-          gameServer.io.to(roomId).emit('game_transport_ready', {
-            gameId,
-            phase: 'game_active',
-            message: 'Game initialized! Transporting all players...',
-            creator: game.creator,
-            challenger: game.challenger,
-            transportNow: true
-          })
-        }, 500)
-      }
-      
-      res.json({ success: true, message: 'Deposit confirmed' })
+      // That's it! Polling will detect the change
+      res.json({ success: true, message: 'Deposit recorded' })
       
     } catch (error) {
-      console.error('❌ Error confirming deposit:', error)
-      res.status(500).json({ error: 'Failed to confirm deposit', details: error.message })
+      console.error('❌ Error recording deposit:', error)
+      res.status(500).json({ error: 'Failed to record deposit' })
     }
   })
 

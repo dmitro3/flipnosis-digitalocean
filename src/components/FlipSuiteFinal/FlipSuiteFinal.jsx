@@ -466,28 +466,6 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     }
   }, [gameId, showError])
 
-  const handleDepositConfirmed = useCallback((data) => {
-    console.log('💰 Deposit confirmed event received:', data)
-    
-    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
-    const componentGameId = gameId?.replace('game_', '') || gameId
-    
-    if (eventGameId === componentGameId) {
-      console.log('✅ Deposit confirmed for current game')
-      
-      // Update local deposit state
-      setDepositState(prev => prev ? {
-        ...prev,
-        creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
-        challengerDeposited: data.challengerDeposited || prev.challengerDeposited
-      } : null)
-      
-      // Don't do anything else here - wait for game_transport_ready event
-      if (data.bothDeposited) {
-        console.log('🎮 Both players deposited - waiting for transport signal...')
-      }
-    }
-  }, [gameId])
 
 
 
@@ -558,7 +536,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         await socketService.connect(gameId, address)
         setConnected(true)
         
-        // Register event listeners
+        // Register event listeners (remove deposit-related ones)
         console.log('📌 Registering Socket.io event listeners...')
         
         socketService.on('room_joined', handleRoomJoined)
@@ -567,26 +545,11 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         socketService.on('round_result', handleRoundResult)
         socketService.on('game_not_found', handleGameNotFound)
         
-        // Deposit events
+        // Keep countdown for UI display only
         socketService.on('deposit_countdown', handleDepositCountdown)
         socketService.on('deposit_timeout', handleDepositTimeout)
-        socketService.on('deposit_confirmed', handleDepositConfirmed)
         
-        // THE KEY EVENT - Game transport ready
-        socketService.on('game_transport_ready', (data) => {
-          console.log('🚀 Game transport ready received:', data)
-          if (data.gameId === gameId && data.transportNow) {
-            // Clear any deposit UI
-            setShowDepositOverlay(false)
-            setDepositState(null)
-            // Enable and switch to game tab
-            setIsGameReady(true)
-            setActiveTab('game')
-            showSuccess('Game starting! Get ready to flip!')
-          }
-        })
-        
-        // Offer accepted event
+        // Offer accepted event (keep this)
         socketService.on('offer_accepted', handleOfferAccepted)
         
         console.log('✅ All Socket.io event listeners registered')
@@ -619,12 +582,40 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('game_not_found', handleGameNotFound)
       socketService.off('deposit_countdown', handleDepositCountdown)
       socketService.off('deposit_timeout', handleDepositTimeout)
-      socketService.off('deposit_confirmed', handleDepositConfirmed)
-      socketService.off('game_transport_ready')
       socketService.off('offer_accepted', handleOfferAccepted)
     }
   }, [gameId, address, finalGameData])
 
+  // ADD this new useEffect to handle polling-based transport:
+  useEffect(() => {
+    const handlePollingTransport = (event) => {
+      if (event.detail?.gameId === gameId && event.detail?.transportNow) {
+        console.log('🚀 Polling transport signal received!')
+        
+        // Clear any deposit UI
+        setShowDepositOverlay(false)
+        setDepositState(null)
+        
+        // Enable and switch to game tab
+        setIsGameReady(true)
+        setActiveTab('game')
+        
+        // Show success message
+        showSuccess('Game starting! Get ready to flip!')
+        
+        // Request fresh game state
+        if (socketService && socketService.emit) {
+          socketService.emit('request_game_state', { gameId })
+        }
+      }
+    }
+    
+    window.addEventListener('polling_transport_ready', handlePollingTransport)
+    
+    return () => {
+      window.removeEventListener('polling_transport_ready', handlePollingTransport)
+    }
+  }, [gameId, showSuccess])
 
   // ===== SIMPLIFIED: NO FALLBACK MECHANISM =====
   // Let the simple transport handle everything

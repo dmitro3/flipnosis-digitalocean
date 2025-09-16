@@ -171,31 +171,85 @@ const OfferAcceptanceOverlay = ({
     }
   }, [isVisible, acceptedOffer, gameId, showError, onClose])
 
-  // Listen for game transport ready event to close overlay
+  // Primary polling mechanism for deposit status
   useEffect(() => {
-    const handleGameTransport = (event) => {
-      if (event.detail?.gameId === gameId && event.detail?.transportNow) {
-        onClose()
+    if (!isVisible || !gameId) return
+    
+    let pollInterval = null
+    let pollCount = 0
+    const maxPolls = 60 // 2 minutes at 2-second intervals
+    
+    const checkDepositStatus = async () => {
+      try {
+        const response = await fetch(`/api/games/${gameId}/status`)
+        if (response.ok) {
+          const data = await response.json()
+          
+          console.log(`🔍 Deposit poll ${++pollCount}: creator=${data.creator_deposited}, challenger=${data.challenger_deposited}`)
+          
+          // Update local state if needed
+          if (data.creator_deposited && !data.challenger_deposited) {
+            setStatusMessage('NFT verified. Waiting for challenger deposit...')
+          }
+          
+          // Check if both players have deposited
+          if (data.creator_deposited && data.challenger_deposited) {
+            console.log('🎮 Both deposits confirmed via polling! Transporting all players...')
+            
+            // Clear the interval
+            if (pollInterval) {
+              clearInterval(pollInterval)
+              pollInterval = null
+            }
+            
+            // Close overlay
+            setStatusMessage('Game ready! Transporting...')
+            
+            // Dispatch transport event for both players
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('polling_transport_ready', {
+                detail: { 
+                  gameId, 
+                  transportNow: true,
+                  source: 'polling'
+                }
+              }))
+              
+              // Close the overlay
+              onClose()
+            }, 500)
+            
+            return // Exit early since game is ready
+          }
+        }
+      } catch (error) {
+        console.error('Polling error:', error)
+      }
+      
+      // Stop polling after max attempts
+      if (pollCount >= maxPolls && pollInterval) {
+        clearInterval(pollInterval)
+        console.log('⏰ Polling timeout - deposit window expired')
+        setStatusMessage('Deposit time expired')
       }
     }
     
-    window.addEventListener('game_transport_ready', handleGameTransport)
-    return () => window.removeEventListener('game_transport_ready', handleGameTransport)
-  }, [gameId, onClose])
+    // Start polling every 2 seconds
+    console.log('🔄 Starting deposit status polling for game:', gameId)
+    pollInterval = setInterval(checkDepositStatus, 2000)
+    
+    // Also check immediately
+    checkDepositStatus()
+    
+    // Cleanup
+    return () => {
+      if (pollInterval) {
+        console.log('🛑 Stopping deposit polling')
+        clearInterval(pollInterval)
+      }
+    }
+  }, [isVisible, gameId, onClose])
 
-  // Also listen for the socket event
-  useEffect(() => {
-    if (!socketService.socket) return
-    
-    const handleTransport = (data) => {
-      if (data.gameId === gameId && data.transportNow) {
-        onClose()
-      }
-    }
-    
-    socketService.on('game_transport_ready', handleTransport)
-    return () => socketService.off('game_transport_ready', handleTransport)
-  }, [gameId, onClose])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
