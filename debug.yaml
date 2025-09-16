@@ -1,357 +1,1338 @@
-✅ Rainbow Kit configuration created successfully
-index-d64ffd76.js:226 🧪 Testing WebSocket service...
-index-d64ffd76.js:226 Test 1 - Service import: zT {socket: null, connected: false, connecting: false, gameId: null, address: null, …}
-index-d64ffd76.js:226 Test 1 - Service type: object
-index-d64ffd76.js:226 Test 1 - Service methods: (12) ['constructor', 'connect', 'scheduleReconnect', 'setupPingInterval', 'send', 'processMessageQueue', 'on', 'off', 'notifyHandlers', 'disconnect', 'isConnected', 'getConnectionStatus']
-index-d64ffd76.js:226 Test 2 - isConnected method exists: true
-index-d64ffd76.js:226 Test 2 - isInitialized method exists: false
-index-d64ffd76.js:226 Test 3 - isConnected result: false
-index-d64ffd76.js:226 Test 4 - isInitialized method not available
-index-d64ffd76.js:226 🧪 WebSocket service test complete
-index-d64ffd76.js:226 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
-index-d64ffd76.js:226 🚀 Application starting... {timestamp: '2025-09-15T21:02:45.692Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://flipnosis.fun/game/game_1757970132760_ff90e20ac2693deb'}
-index-d64ffd76.js:226 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-09-15T21:02:45.698Z'}
-index-d64ffd76.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-d64ffd76.js:31 🔧 Initializing contract service from WalletContext...
-index-d64ffd76.js:31 ⚡ Contract service already initialized
-index-d64ffd76.js:31 ✅ Contract service initialized successfully
-index-d64ffd76.js:226 🔌 Connecting to game server...
-index-d64ffd76.js:189 🔌 Connecting to Socket.io: wss://flipnosis.fun
-index-d64ffd76.js:226 🎮 Game readiness check: {status: 'awaiting_deposit', phase: 'waiting', bothDeposited: undefined, gameReady: undefined}
-index-d64ffd76.js:189 ✅ Socket.io connected
-index-d64ffd76.js:189 📤 Emitted: join_room
-index-d64ffd76.js:226 🔌 Registering Socket.io event listeners...
-index-d64ffd76.js:189 ✅ Listener registered for: room_joined
-index-d64ffd76.js:189 ✅ Listener registered for: game_state_update
-index-d64ffd76.js:189 ✅ Listener registered for: game_started
-index-d64ffd76.js:189 ✅ Listener registered for: game_ready
-index-d64ffd76.js:189 ✅ Listener registered for: flip_executing
-index-d64ffd76.js:189 ✅ Listener registered for: round_result
-index-d64ffd76.js:189 ✅ Listener registered for: game_not_found
-index-d64ffd76.js:189 ✅ Listener registered for: deposit_countdown
-index-d64ffd76.js:189 ✅ Listener registered for: deposit_timeout
-index-d64ffd76.js:189 ✅ Listener registered for: deposit_confirmed
-index-d64ffd76.js:189 ✅ Listener registered for: deposit_received
-index-d64ffd76.js:189 ✅ Listener registered for: offer_accepted
-index-d64ffd76.js:226 ✅ All Socket.io event listeners registered
-index-d64ffd76.js:189 📤 Emitted: join_room
-index-d64ffd76.js:226 🏠 room_joined event received: {roomId: 'game_1757970132760_ff90e20ac2693deb', role: 'creator', members: 2}
-index-d64ffd76.js:226 🏠 Room joined: {roomId: 'game_1757970132760_ff90e20ac2693deb', role: 'creator', members: 2}
-index-d64ffd76.js:226 📊 game_state_update event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', phase: 'game_active', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-d64ffd76.js:226 📊 Game state update received: {gameId: 'game_1757970132760_ff90e20ac2693deb', phase: 'game_active', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-d64ffd76.js:226 🏠 room_joined event received: {roomId: 'game_1757970132760_ff90e20ac2693deb', role: 'creator', members: 2}
-index-d64ffd76.js:226 🏠 Room joined: {roomId: 'game_1757970132760_ff90e20ac2693deb', role: 'creator', members: 2}
-index-d64ffd76.js:226 📊 game_state_update event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', phase: 'game_active', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-d64ffd76.js:226 📊 Game state update received: {gameId: 'game_1757970132760_ff90e20ac2693deb', phase: 'game_active', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-d64ffd76.js:189 📤 Emitted: request_game_state
-index-d64ffd76.js:226 📊 game_state_update event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', phase: 'game_active', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-d64ffd76.js:226 📊 Game state update received: {gameId: 'game_1757970132760_ff90e20ac2693deb', phase: 'game_active', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-d64ffd76.js:201 🪙 Demo coin clicked
-index-d64ffd76.js:201 🏁 Desktop coin animation fully complete - winner should be announced now
-index-d64ffd76.js:209 Demo flip complete
-index-d64ffd76.js:226 📑 Switching to tab: chat
-index-d64ffd76.js:189 ✅ Listener registered for: chat_message
-index-d64ffd76.js:189 ✅ Listener registered for: chat_history
-index-d64ffd76.js:189 ✅ Listener registered for: crypto_offer
-index-d64ffd76.js:209 📜 Loaded 0 chat messages for game 1757970132760_ff90e20ac2693deb
-index-d64ffd76.js:209 💰 Offers loaded: 0
-index-d64ffd76.js:209 💰 New offer received: {type: 'crypto_offer', id: '1757970180733_0.9263085962874167', address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.12, timestamp: '2025-09-15T21:03:00.733Z'}
-index-d64ffd76.js:209 💰 Current offers before adding: 0
-index-d64ffd76.js:209 💰 Adding offer to state: {id: '1757970180733_0.9263085962874167', offerer_address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', offer_price: 0.12, message: 'Crypto offer', timestamp: '2025-09-15T21:03:00.733Z', …}
-index-d64ffd76.js:209 💰 Updated offers count: 1
-index-d64ffd76.js:189 📤 Emitted: accept_offer
-index-d64ffd76.js:209 ✅ Offer acceptance sent via Socket.io
-index-d64ffd76.js:226 ✅ offer_accepted event received: {type: 'offer_accepted', gameId: 'game_1757970132760_ff90e20ac2693deb', accepterAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challengerAddress: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.12, …}
-index-d64ffd76.js:226 🎯 Offer accepted event received: {type: 'offer_accepted', gameId: 'game_1757970132760_ff90e20ac2693deb', accepterAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challengerAddress: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.12, …}
-index-d64ffd76.js:226 ✅ Offer accepted for current game
-index-d64ffd76.js:226 🎯 Player roles: {isChallenger: false, isCreator: true, challenger: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
-index-d64ffd76.js:226 ✅ You are the creator - waiting for challenger to deposit
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 120, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 120, message: 'Deposit time remaining: 2:00'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 120, message: 'Deposit time remaining: 2:00'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 120, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 119, message: 'Deposit time remaining: 1:59'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 119, message: 'Deposit time remaining: 1:59'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 119, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 118, message: 'Deposit time remaining: 1:58'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 118, message: 'Deposit time remaining: 1:58'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 118, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 118, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 117, message: 'Deposit time remaining: 1:57'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 117, message: 'Deposit time remaining: 1:57'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 117, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 116, message: 'Deposit time remaining: 1:56'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 116, message: 'Deposit time remaining: 1:56'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 116, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 115, message: 'Deposit time remaining: 1:55'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 115, message: 'Deposit time remaining: 1:55'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 115, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 114, message: 'Deposit time remaining: 1:54'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 114, message: 'Deposit time remaining: 1:54'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 114, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 113, message: 'Deposit time remaining: 1:53'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 113, message: 'Deposit time remaining: 1:53'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 112, message: 'Deposit time remaining: 1:52'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 112, message: 'Deposit time remaining: 1:52'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 112, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 111, message: 'Deposit time remaining: 1:51'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 111, message: 'Deposit time remaining: 1:51'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 111, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 110, message: 'Deposit time remaining: 1:50'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 110, message: 'Deposit time remaining: 1:50'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 110, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 109, message: 'Deposit time remaining: 1:49'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 109, message: 'Deposit time remaining: 1:49'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 109, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 108, message: 'Deposit time remaining: 1:48'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 108, message: 'Deposit time remaining: 1:48'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 108, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 107, message: 'Deposit time remaining: 1:47'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 107, message: 'Deposit time remaining: 1:47'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 107, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 106, message: 'Deposit time remaining: 1:46'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 106, message: 'Deposit time remaining: 1:46'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 106, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 105, message: 'Deposit time remaining: 1:45'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 105, message: 'Deposit time remaining: 1:45'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 105, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 104, message: 'Deposit time remaining: 1:44'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 104, message: 'Deposit time remaining: 1:44'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 104, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 103, message: 'Deposit time remaining: 1:43'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 103, message: 'Deposit time remaining: 1:43'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 103, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 102, message: 'Deposit time remaining: 1:42'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 102, message: 'Deposit time remaining: 1:42'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 102, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 101, message: 'Deposit time remaining: 1:41'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 101, message: 'Deposit time remaining: 1:41'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 101, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 100, message: 'Deposit time remaining: 1:40'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 100, message: 'Deposit time remaining: 1:40'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 100, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 99, message: 'Deposit time remaining: 1:39'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 99, message: 'Deposit time remaining: 1:39'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 99, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-d64ffd76.js:226 ⏰ deposit_countdown event received: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 98, message: 'Deposit time remaining: 1:38'}
-index-d64ffd76.js:226 ⏰ Deposit countdown update: {gameId: 'game_1757970132760_ff90e20ac2693deb', timeRemaining: 98, message: 'Deposit time remaining: 1:38'}
-index-d64ffd76.js:226 ✅ Countdown update matches current game
-index-d64ffd76.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 98, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-
-And player 2
-
-
-🔌 Socket.io disconnected: transport close index-d64ffd76.js:189:43192
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-🚀 Transporting to game after Socket.io processing delay index-d64ffd76.js:201:34736
-🚀 switchToFlipSuite event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", immediate: true, player2: true }
-index-d64ffd76.js:226:9118
-🚀 Switching to flip suite tab for game: game_1757970132760_ff90e20ac2693deb index-d64ffd76.js:226:9271
-🚀 Immediate switch to game tab index-d64ffd76.js:226:9363
-🚀 Player 2 transport to game tab index-d64ffd76.js:226:9414
-✅ Listener removed for: chat_message index-d64ffd76.js:189:43935
-✅ Listener removed for: chat_history index-d64ffd76.js:189:43935
-✅ Listener removed for: crypto_offer index-d64ffd76.js:189:43935
-🎮 GameRoomTab: Game readiness check: 
-Object { status: "awaiting_deposit", phase: "waiting", bothDeposited: undefined, gameReady: undefined }
-index-d64ffd76.js:214:2065
-✅ Listener registered for: game_state_update index-d64ffd76.js:189:43846
-✅ Listener registered for: game_ready index-d64ffd76.js:189:43846
-✅ Listener registered for: game_started index-d64ffd76.js:189:43846
-✅ Listener registered for: round_result index-d64ffd76.js:189:43846
-📤 Emitted: request_game_state index-d64ffd76.js:189:43717
-📊 game_state_update event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-d64ffd76.js:226:7390
-📊 Game state update received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-d64ffd76.js:226:1809
-📊 Game state update received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-d64ffd76.js:214:2226
-🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628 index-d64ffd76.js:31:99500
-WebGL warning: drawElementsInstanced: Drawing to a destination rect smaller than the viewport rect. (This warning will only be given once)
-🌐 Profile API response: 
-Object { status: 200, ok: true, statusText: "" }
-index-d64ffd76.js:31:99605
-🌐 Profile data received: 
-Object { address: "0xdd6377919ef1ad4babbead667efe3f6607558628", hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false }
-index-d64ffd76.js:31:99731
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 110, message: "Deposit time remaining: 1:50" }
-index-d64ffd76.js:226:7912
+PLayer 2
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 91, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 110, message: "Deposit time remaining: 1:50" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 109, message: "Deposit time remaining: 1:49" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 90, message: "Deposit time remaining: 1:30" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 90, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
+🚨 Unhandled rejection: TypeError: can't access property "includes", args.site.enabledFeatures is undefined
+    isFeatureBroken <anonymous code>:980
+    updateFeaturesInner <anonymous code>:9240
+    updateFeaturesInner <anonymous code>:9239
+    update <anonymous code>:9232
+    <anonymous> <anonymous code>:9261
+index-bbc2e6f6.js:226:48086
+🚨 Unhandled promise rejection: 
+Object { reason: TypeError, promise: Promise { "rejected" }, stack: "isFeatureBroken@<anonymous code>:980:143\nupdateFeaturesInner/<@<anonymous code>:9240:12\nupdateFeaturesInner@<anonymous code>:9239:22\nasync*update@<anonymous code>:9232:24\n@<anonymous code>:9261:15\n", url: "https://www.flipnosis.fun/game/game_1758032691861_9833881b286df73f", timestamp: "2025-09-16T14:26:09.572Z" }
+index-bbc2e6f6.js:8:8278
+Uncaught (in promise) TypeError: can't access property "includes", args.site.enabledFeatures is undefined
+    isFeatureBroken <anonymous code>:980
+    updateFeaturesInner <anonymous code>:9240
+    updateFeaturesInner <anonymous code>:9239
+    update <anonymous code>:9232
+    <anonymous> <anonymous code>:9261
+<anonymous code>:980:143
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 109, message: "Deposit time remaining: 1:49" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 108, message: "Deposit time remaining: 1:48" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 89, message: "Deposit time remaining: 1:29" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 89, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 108, message: "Deposit time remaining: 1:48" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 107, message: "Deposit time remaining: 1:47" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 88, message: "Deposit time remaining: 1:28" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 88, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 107, message: "Deposit time remaining: 1:47" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 106, message: "Deposit time remaining: 1:46" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 87, message: "Deposit time remaining: 1:27" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 87, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 106, message: "Deposit time remaining: 1:46" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 105, message: "Deposit time remaining: 1:45" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 86, message: "Deposit time remaining: 1:26" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 86, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 105, message: "Deposit time remaining: 1:45" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 104, message: "Deposit time remaining: 1:44" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 85, message: "Deposit time remaining: 1:25" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 85, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 104, message: "Deposit time remaining: 1:44" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 103, message: "Deposit time remaining: 1:43" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 84, message: "Deposit time remaining: 1:24" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 84, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 103, message: "Deposit time remaining: 1:43" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 102, message: "Deposit time remaining: 1:42" }
-index-d64ffd76.js:226:7912
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 83, message: "Deposit time remaining: 1:23" }
+index-bbc2e6f6.js:226:2507
+✅ Countdown update matches current game index-bbc2e6f6.js:226:2639
+🎯 OfferAcceptanceOverlay render: 
+Object { isVisible: true, acceptedOffer: true, timeLeft: 83, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.12, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-bbc2e6f6.js:201:36029
+🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f index-bbc2e6f6.js:201:33984
+🔍 Deposit poll 1: creator=true, challenger=true index-bbc2e6f6.js:201:33226
+🎮 Both deposits confirmed via polling! Transporting all players... index-bbc2e6f6.js:201:33493
+Polling error: ReferenceError: setStatusMessage is not defined
+    Y https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    Qx https://www.flipnosis.fun/assets/index-bbc2e6f6.js:201
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+index-bbc2e6f6.js:201:33815
 ⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 102, message: "Deposit time remaining: 1:42" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 101, message: "Deposit time remaining: 1:41" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 101, message: "Deposit time remaining: 1:41" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 100, message: "Deposit time remaining: 1:40" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 100, message: "Deposit time remaining: 1:40" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 99, message: "Deposit time remaining: 1:39" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 99, message: "Deposit time remaining: 1:39" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 98, message: "Deposit time remaining: 1:38" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 98, message: "Deposit time remaining: 1:38" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 97, message: "Deposit time remaining: 1:37" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 97, message: "Deposit time remaining: 1:37" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 96, message: "Deposit time remaining: 1:36" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 96, message: "Deposit time remaining: 1:36" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 95, message: "Deposit time remaining: 1:35" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 95, message: "Deposit time remaining: 1:35" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 94, message: "Deposit time remaining: 1:34" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 94, message: "Deposit time remaining: 1:34" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 93, message: "Deposit time remaining: 1:33" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 93, message: "Deposit time remaining: 1:33" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 92, message: "Deposit time remaining: 1:32" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 92, message: "Deposit time remaining: 1:32" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 91, message: "Deposit time remaining: 1:31" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 91, message: "Deposit time remaining: 1:31" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 90, message: "Deposit time remaining: 1:30" }
-index-d64ffd76.js:226:7912
-⏰ Deposit countdown update: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 90, message: "Deposit time remaining: 1:30" }
-index-d64ffd76.js:226:2941
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
-⏰ deposit_countdown event received: 
-Object { gameId: "game_1757970132760_ff90e20ac2693deb", timeRemaining: 89, message: "Deposit time remaining: 1:29" }
-index-d64ffd76.js:226:7912
-✅ Countdown update matches current game index-d64ffd76.js:226:3073
+Object { gameId: "game_1758032691861_9833881b286df73f", timeRemaining: 82, message: "Deposit time remaining: 1:22" }
+index-bbc2e6f6.js:226:2507
+Polling error: ReferenceError: setStatusMessage is not defined index-bbc2e6f6.js:201:33815
 
 ​
 
+
+
+PLayer 1
+✅ Rainbow Kit configuration created successfully
+index-bbc2e6f6.js:226 🧪 Testing WebSocket service...
+index-bbc2e6f6.js:226 Test 1 - Service import: zT {socket: null, connected: false, connecting: false, gameId: null, address: null, …}
+index-bbc2e6f6.js:226 Test 1 - Service type: object
+index-bbc2e6f6.js:226 Test 1 - Service methods: (12) ['constructor', 'connect', 'scheduleReconnect', 'setupPingInterval', 'send', 'processMessageQueue', 'on', 'off', 'notifyHandlers', 'disconnect', 'isConnected', 'getConnectionStatus']
+index-bbc2e6f6.js:226 Test 2 - isConnected method exists: true
+index-bbc2e6f6.js:226 Test 2 - isInitialized method exists: false
+index-bbc2e6f6.js:226 Test 3 - isConnected result: false
+index-bbc2e6f6.js:226 Test 4 - isInitialized method not available
+index-bbc2e6f6.js:226 🧪 WebSocket service test complete
+index-bbc2e6f6.js:226 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
+index-bbc2e6f6.js:226 🚀 Application starting... {timestamp: '2025-09-16T14:24:19.323Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://flipnosis.fun/'}
+index-bbc2e6f6.js:226 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-09-16T14:24:19.331Z'}
+index-bbc2e6f6.js:168 🔍 Fetching data from: https://flipnosis.fun/api/listings
+index-bbc2e6f6.js:31 🔧 Initializing contract service from WalletContext...
+index-bbc2e6f6.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 ✅ Contract service initialized successfully
+index-bbc2e6f6.js:168 📊 Listings response status: 200 
+index-bbc2e6f6.js:168 ✅ Listings loaded: 29 items
+index-bbc2e6f6.js:168 🔍 Fetching data from: https://flipnosis.fun/api/games
+index-bbc2e6f6.js:168 📊 Games response status: 200 
+index-bbc2e6f6.js:168 ✅ Games loaded: 32 items
+index-bbc2e6f6.js:168 🔄 Auto-selecting most recent flip: CABC #1444
+index-bbc2e6f6.js:168 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-bbc2e6f6.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
+index-bbc2e6f6.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: false, headsLength: 0}
+index-bbc2e6f6.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-bbc2e6f6.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
+index-bbc2e6f6.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: false, tailsLength: 0}
+index-bbc2e6f6.js:168 🪙 Custom coin loaded: {hasHeads: false, hasTails: false, headsLength: 0, tailsLength: 0}
+index-bbc2e6f6.js:31 📞 Manually loading NFTs for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 🚀 loadNFTs called with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 🔍 Current chain info: {chainId: 8453, currentChain: {…}, availableChains: Array(7)}
+index-bbc2e6f6.js:31 🔍 Loading NFTs for: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', chain: 'Base', network: 'base-mainnet'}
+index-bbc2e6f6.js:31 🎨 Total NFTs found: 37
+index-bbc2e6f6.js:31 ✅ Loaded NFTs: 37
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafkreib2amqj2zcewaw2sdtzjq27tyq6hcdiyv7ofp6ymiytqlf7t4gb7y
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1307
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1308
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1312
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieq4pxcymnusz7jjae7vn4ucpekhbzixfcs5tksda6wcmsx3xuud4/3919
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibzsjsiwiy73paonxcno5wvcyhkaud3zfyix327etkldpta7vg3li/image.webp
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiddueexahniaic5xxvj4krsbqtwvfvja3ctnjbgt3zhmr77x3z25y/image.webp
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeigfe3z2kpavb4eiiqaxzrdcdtlzliviy4hmbz2wvdpqmdrv66fxty/399
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic4i7lavwkayrd7ewmnedhy4x6zun6pwzkecxmqug6hwh6ybxjwem/4062
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiaa3l7kbebplqnnb7oqxpdkibcg3rgx24lq4rv55d75bwwcvmtzdm/9
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic3by4zpmw4pfgisa2gqaoke4c5teisby623n3g3mqouufxf4zbpm/image.jpeg
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeidbpalzkhnolrztlnqlf55bdbs3rwmhq4nepsowyvapcewusoy5wu/6988
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieptfg7ltc3dnzy2yndvhjdhw764mtai6h5bs7pk4uikgxhjlb4ju/4817
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeib7ucfcaoyvg3iaxkt4d7n5c2y4z3ygls4vem7n64ohb4mvbwacza/1099
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2262
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2284
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmX96SimuRFFwfyCA11iiFSjyY7KXcFSU6kpAkvExanBL2
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiggm7mpviuho43jlvrnqbzlls35k72ypqgzpyjqzdpoj3gwxrg5hi
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8443
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8571
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmXk1y42pJ3owtaqBK1XYGuq17mpYQGTjb14wt8HHi7bZi
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiei5lso47b5c4rpiist25s2samafxjhuxt6ipf3uvjnxddoqse7ja/8036
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiajxidbvrf4pzugxelsuioy2quxlldziceuuwrrlfdlgz67yz4i4u/3531
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeib6j7dynf46tz3bjjlf55kyf7ubrkdqnil3ov6nj4juqjth2mhf5u/1022
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihnycrbh2sgkpver6ttnzx3dxwc7tekzfi2qvc32zxalqchrtzmx4/59
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeih4gcctkzfrt2ymz6lwrl6b2iggwymisijjzjhq4qdu2koxphgaxi/2624
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicuqneluz2zkylaub667lgn43pf2am2mo2yhqywcjd7ji5sq6yk6y/2535
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiava3asjrljldv4t54hz46x7xbky6g7ap6v7vddifohl2szjv5p3e/4281.png
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibdzsebbeahueqn5fr5vhmgj77femfnzqzpjkkhzvor2l7n6anhm4/3023
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicokheinuxbqhgrnzhpnplksgkyf4sm5it2mxz7plhp5vpvhumjrq/image.png
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid7syd6tj5iez5lzeg2efnqejcxh6rex6ln2saqbeuymijzdfuabm/2561
+index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicst6aup3a2kcbve45sw3od3cltpsewbf723hk43budowfq35tad4/2384
+2index-bbc2e6f6.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmbhsSeehQgBiQB7BVgbBmoPUzWuwsiAm9Y9AXmZ4cyymr
+index-bbc2e6f6.js:182 🎨 NFT selected: {contractAddress: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406', name: 'BASE APE TEAM #8406', collection: 'BASE APE TEAM', image: 'https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406', …}
+index-bbc2e6f6.js:168 🪙 Coin selected: {id: 'stinger', type: 'default', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png'}
+index-bbc2e6f6.js:168 🪙 Sending optimized coin to parent: {id: 'stinger', type: 'default', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png'}
+index-bbc2e6f6.js:182 🪙 Coin selected in CreateFlip: {id: 'stinger', type: 'default', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png'}
+index-bbc2e6f6.js:168 🪙 Material selected: {id: 'glass', name: 'Glass', description: 'Crystal Clear & Elegant', edgeColor: '#87CEEB', physics: {…}, …}
+index-bbc2e6f6.js:182 🪙 Material selected in CreateFlip: {id: 'glass', name: 'Glass', description: 'Crystal Clear & Elegant', edgeColor: '#87CEEB', physics: {…}, …}
+index-bbc2e6f6.js:182 ✅ Listing created: {success: true, listingId: 'listing_1758032692307_be638ab9c819125a', gameId: 'game_1758032691861_9833881b286df73f'}
+index-bbc2e6f6.js:182 💰 Game price: $0.12 (120000 microdollars)
+index-bbc2e6f6.js:182 💸 Listing fee: $0.00 (free)
+index-bbc2e6f6.js:31 🎮 Creating game (approve + deposit NFT): {gameId: 'game_1758032691861_9833881b286df73f', nftContract: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406', priceInMicrodollars: 120000, paymentType: 0}
+index-bbc2e6f6.js:31 🔓 Approving NFT for transfer: {nftContract: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406'}
+index-bbc2e6f6.js:31 🔓 NFT approval tx: 0x4fc39f208a1cc3ad59ef0dfff75f62dc5d403961aa3a0c15f2a1a3cbc800c6f7
+index-bbc2e6f6.js:31 ✅ NFT approval confirmed
+index-bbc2e6f6.js:31 📦 Depositing NFT for game: {gameId: 'game_1758032691861_9833881b286df73f', nftContract: '0x035003062428fD92384317d7a853d8b4Dff9888a', tokenId: '8406'}
+index-bbc2e6f6.js:31 🔍 Checking existing deposit for game: 0x67616d655f313735383033323639313836315f39383333383831623238366400
+index-bbc2e6f6.js:31 🔍 Existing deposit data: (5) ['0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', 0n, false, 0n]
+index-bbc2e6f6.js:31 📦 NFT deposit tx: 0xd29e12dd922f9038d6d274802d528bec9f8f37ea3bd2338dd70f3d162fcb612c
+index-bbc2e6f6.js:31 ✅ NFT deposit confirmed
+index-bbc2e6f6.js:31 🔍 Verifying NFT deposit...
+index-bbc2e6f6.js:31 🔍 Verification result: (5) ['0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x035003062428fD92384317d7a853d8b4Dff9888a', 8406n, false, 1758032711n]
+index-bbc2e6f6.js:31 🔍 Array format - depositor: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-bbc2e6f6.js:31 ✅ NFT deposit verified successfully
+index-bbc2e6f6.js:226 🔌 Connecting to game server...
+index-bbc2e6f6.js:189 🔌 Connecting to Socket.io: wss://flipnosis.fun
+index-bbc2e6f6.js:226 🎮 Game readiness check: {status: 'awaiting_deposit', phase: 'waiting', bothDeposited: undefined, gameReady: undefined}
+index-bbc2e6f6.js:189 ✅ Socket.io connected
+index-bbc2e6f6.js:189 📤 Emitted: join_room
+index-bbc2e6f6.js:226 📌 Registering Socket.io event listeners...
+index-bbc2e6f6.js:189 ✅ Listener registered for: room_joined
+index-bbc2e6f6.js:189 ✅ Listener registered for: game_state_update
+index-bbc2e6f6.js:189 ✅ Listener registered for: flip_executing
+index-bbc2e6f6.js:189 ✅ Listener registered for: round_result
+index-bbc2e6f6.js:189 ✅ Listener registered for: game_not_found
+index-bbc2e6f6.js:189 ✅ Listener registered for: deposit_countdown
+index-bbc2e6f6.js:189 ✅ Listener registered for: deposit_timeout
+index-bbc2e6f6.js:189 ✅ Listener registered for: offer_accepted
+index-bbc2e6f6.js:226 ✅ All Socket.io event listeners registered
+index-bbc2e6f6.js:189 📤 Emitted: join_room
+index-bbc2e6f6.js:226 🏠 Room joined: {roomId: 'game_1758032691861_9833881b286df73f', role: 'spectator', members: 1}
+index-bbc2e6f6.js:226 🏠 Room joined: {roomId: 'game_1758032691861_9833881b286df73f', role: 'spectator', members: 1}
+index-bbc2e6f6.js:189 📤 Emitted: request_game_state
+index-bbc2e6f6.js:226 📊 Game state update received: {gameId: 'game_1758032691861_9833881b286df73f', phase: 'game_active', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
+index-bbc2e6f6.js:201 🪙 Demo coin clicked
+index-bbc2e6f6.js:226 📑 Switching to tab: chat
+index-bbc2e6f6.js:189 ✅ Listener registered for: chat_message
+index-bbc2e6f6.js:189 ✅ Listener registered for: chat_history
+index-bbc2e6f6.js:189 ✅ Listener registered for: crypto_offer
+index-bbc2e6f6.js:209 📜 Loaded 0 chat messages for game 1758032691861_9833881b286df73f
+index-bbc2e6f6.js:209 💰 Offers loaded: 0
+index-bbc2e6f6.js:201 🏁 Desktop coin animation fully complete - winner should be announced now
+index-bbc2e6f6.js:209 Demo flip complete
+index-bbc2e6f6.js:209 💬 Sending chat message: {message: 'gdfgdfg', from: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-bbc2e6f6.js:189 📤 Emitted: chat_message
+index-bbc2e6f6.js:209 💬 Chat message received: {type: 'chat_message', message: 'gdfgdfg', from: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', timestamp: '2025-09-16T14:25:23.706Z'}
+index-bbc2e6f6.js:209 💬 Skipping message from current user (already added optimistically)
+index-bbc2e6f6.js:209 💬 Chat message received: {type: 'chat_message', message: 'fffffffffff', from: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', timestamp: '2025-09-16T14:25:33.393Z'}
+index-bbc2e6f6.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-bbc2e6f6.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-bbc2e6f6.js:31 🌐 Profile data received: {address: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
+index-bbc2e6f6.js:209 💰 New offer received: {type: 'crypto_offer', id: '1758032736662_0.5067171576556957', address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.11, timestamp: '2025-09-16T14:25:36.662Z'}
+index-bbc2e6f6.js:209 💰 Current offers before adding: 0
+index-bbc2e6f6.js:209 💰 Adding offer to state: {id: '1758032736662_0.5067171576556957', offerer_address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', offer_price: 0.11, message: 'Crypto offer', timestamp: '2025-09-16T14:25:36.662Z', …}
+index-bbc2e6f6.js:209 💰 Updated offers count: 1
+index-bbc2e6f6.js:189 📤 Emitted: accept_offer
+index-bbc2e6f6.js:209 ✅ Offer acceptance sent via Socket.io
+index-bbc2e6f6.js:226 🎯 Offer accepted event received: {type: 'offer_accepted', gameId: 'game_1758032691861_9833881b286df73f', accepterAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challengerAddress: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.11, …}
+index-bbc2e6f6.js:226 ✅ Offer accepted for current game
+index-bbc2e6f6.js:226 🎯 Player roles: {isChallenger: false, isCreator: true, challenger: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-bbc2e6f6.js:226 ✅ You are the creator - waiting for challenger to deposit
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 120, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 120, message: 'Deposit time remaining: 2:00'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 120, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 119, message: 'Deposit time remaining: 1:59'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 119, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 118, message: 'Deposit time remaining: 1:58'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 118, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 118, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 117, message: 'Deposit time remaining: 1:57'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 117, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 116, message: 'Deposit time remaining: 1:56'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 116, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 115, message: 'Deposit time remaining: 1:55'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 115, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 114, message: 'Deposit time remaining: 1:54'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 114, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 113, message: 'Deposit time remaining: 1:53'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 112, message: 'Deposit time remaining: 1:52'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 112, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 111, message: 'Deposit time remaining: 1:51'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 111, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 110, message: 'Deposit time remaining: 1:50'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 110, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 109, message: 'Deposit time remaining: 1:49'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 109, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 108, message: 'Deposit time remaining: 1:48'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 108, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33350)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 🎯 Offer accepted event received: {type: 'game_started', gameId: 'game_1758032691861_9833881b286df73f', message: 'Both assets deposited - game starting!'}
+index-bbc2e6f6.js:226 ✅ Offer accepted for current game
+index-bbc2e6f6.js:226 🎯 Player roles: {isChallenger: false, isCreator: true, challenger: undefined, creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-bbc2e6f6.js:226 ✅ You are the creator - waiting for challenger to deposit
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 108, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:226 🎯 Offer accepted event received: {type: 'deposit_received', gameId: 'game_1758032691861_9833881b286df73f', player: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', assetType: 'eth', bothDeposited: true}
+index-bbc2e6f6.js:226 ✅ Offer accepted for current game
+index-bbc2e6f6.js:226 🎯 Player roles: {isChallenger: false, isCreator: true, challenger: undefined, creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-bbc2e6f6.js:226 ✅ You are the creator - waiting for challenger to deposit
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 108, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🛑 Stopping deposit polling
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 107, message: 'Deposit time remaining: 1:47'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 107, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 106, message: 'Deposit time remaining: 1:46'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 106, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 105, message: 'Deposit time remaining: 1:45'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 105, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 105, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 104, message: 'Deposit time remaining: 1:44'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 104, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 103, message: 'Deposit time remaining: 1:43'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 103, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 102, message: 'Deposit time remaining: 1:42'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 102, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 101, message: 'Deposit time remaining: 1:41'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 101, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 100, message: 'Deposit time remaining: 1:40'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 100, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 99, message: 'Deposit time remaining: 1:39'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 99, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 98, message: 'Deposit time remaining: 1:38'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 98, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 97, message: 'Deposit time remaining: 1:37'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 97, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 96, message: 'Deposit time remaining: 1:36'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 96, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 95, message: 'Deposit time remaining: 1:35'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 95, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 94, message: 'Deposit time remaining: 1:34'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 94, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 93, message: 'Deposit time remaining: 1:33'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 93, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 92, message: 'Deposit time remaining: 1:32'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 92, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 91, message: 'Deposit time remaining: 1:31'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 91, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 90, message: 'Deposit time remaining: 1:30'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 90, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 89, message: 'Deposit time remaining: 1:29'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 89, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 88, message: 'Deposit time remaining: 1:28'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 88, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 87, message: 'Deposit time remaining: 1:27'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 87, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 86, message: 'Deposit time remaining: 1:26'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 86, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 85, message: 'Deposit time remaining: 1:25'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 85, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 84, message: 'Deposit time remaining: 1:24'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 84, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 83, message: 'Deposit time remaining: 1:23'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 83, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 82, message: 'Deposit time remaining: 1:22'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 82, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 81, message: 'Deposit time remaining: 1:21'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 81, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 80, message: 'Deposit time remaining: 1:20'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 80, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 79, message: 'Deposit time remaining: 1:19'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 79, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 78, message: 'Deposit time remaining: 1:18'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 78, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 77, message: 'Deposit time remaining: 1:17'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 77, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 76, message: 'Deposit time remaining: 1:16'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 76, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 75, message: 'Deposit time remaining: 1:15'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 75, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 74, message: 'Deposit time remaining: 1:14'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 74, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 73, message: 'Deposit time remaining: 1:13'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 73, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 72, message: 'Deposit time remaining: 1:12'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 72, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 71, message: 'Deposit time remaining: 1:11'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 71, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 70, message: 'Deposit time remaining: 1:10'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 70, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 69, message: 'Deposit time remaining: 1:09'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 69, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 68, message: 'Deposit time remaining: 1:08'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 68, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 67, message: 'Deposit time remaining: 1:07'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 67, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 66, message: 'Deposit time remaining: 1:06'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 66, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 65, message: 'Deposit time remaining: 1:05'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 65, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting deposit status polling for game: game_1758032691861_9833881b286df73f
+index-bbc2e6f6.js:201 🔍 Deposit poll 1: creator=true, challenger=true
+index-bbc2e6f6.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
+index-bbc2e6f6.js:201 Polling error: ReferenceError: setStatusMessage is not defined
+    at Y (index-bbc2e6f6.js:201:33597)
+Y @ index-bbc2e6f6.js:201
+await in Y
+(anonymous) @ index-bbc2e6f6.js:201
+ol @ vendor-7e712de7.js:32
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-bbc2e6f6.js:226 ⏰ Deposit countdown update: {gameId: 'game_1758032691861_9833881b286df73f', timeRemaining: 64, message: 'Deposit time remaining: 1:04'}
+index-bbc2e6f6.js:226 ✅ Countdown update matches current game
+index-bbc2e6f6.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 64, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
+index-bbc2e6f6.js:201 🔄 Starting 

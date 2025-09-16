@@ -141,6 +141,7 @@ const OfferAcceptanceOverlay = ({
   const { contractService } = useContractService()
   const [timeLeft, setTimeLeft] = useState(120)
   const [isDepositing, setIsDepositing] = useState(false)
+  const [statusMessage, setStatusMessage] = useState('')
   
   // Listen for server-synchronized countdown updates
   useEffect(() => {
@@ -230,7 +231,6 @@ const OfferAcceptanceOverlay = ({
       if (pollCount >= maxPolls && pollInterval) {
         clearInterval(pollInterval)
         console.log('⏰ Polling timeout - deposit window expired')
-        setStatusMessage('Deposit time expired')
       }
     }
     
