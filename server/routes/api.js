@@ -1854,12 +1854,14 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
   })
 
   // Route: Store challenger details when deposit button is clicked
+  // NOTE: This route is legacy and not used in the current flow
+  // The current flow uses socket.io accept_offer event instead
   router.post('/games/:gameId/store-challenger', async (req, res) => {
     const { gameId } = req.params
     const { challengerAddress } = req.body
     
     try {
-      console.log(`🎯 Storing challenger details for game ${gameId}: ${challengerAddress}`)
+      console.log(`🎯 LEGACY ROUTE: Storing challenger details for game ${gameId}: ${challengerAddress}`)
       
       // Update game with challenger information
       await new Promise((resolve, reject) => {
@@ -1873,40 +1875,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         })
       })
       
-      console.log(`✅ Stored challenger ${challengerAddress} for game ${gameId}`)
-      
-      // Start a 2-minute timer to clear challenger field if deposit doesn't complete
-      setTimeout(async () => {
-        try {
-          // Check if deposit was completed
-          const gameData = await new Promise((resolve, reject) => {
-            db.get('SELECT challenger_deposited FROM games WHERE id = ?', [gameId], (err, row) => {
-              if (err) reject(err)
-              else resolve(row)
-            })
-          })
-          
-          // If deposit wasn't completed, clear the challenger field
-          if (gameData && !gameData.challenger_deposited) {
-            console.log(`⏰ Deposit timeout for game ${gameId}, clearing challenger field`)
-            
-            await new Promise((resolve, reject) => {
-              db.run(`
-                UPDATE games 
-                SET challenger = NULL, status = 'waiting'
-                WHERE id = ?
-              `, [gameId], (err) => {
-                if (err) reject(err)
-                else resolve()
-              })
-            })
-            
-            console.log(`✅ Cleared challenger field for game ${gameId} due to timeout`)
-          }
-        } catch (error) {
-          console.error('❌ Error checking deposit timeout:', error)
-        }
-      }, 2 * 60 * 1000) // 2 minutes
+      console.log(`✅ LEGACY ROUTE: Stored challenger ${challengerAddress} for game ${gameId}`)
       
       res.json({ success: true, message: 'Challenger details stored' })
       
