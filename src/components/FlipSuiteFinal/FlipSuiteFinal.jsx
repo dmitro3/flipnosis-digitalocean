@@ -414,27 +414,6 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     showInfo('Coin is flipping...')
   }, [showInfo])
 
-  const handleGameReady = useCallback((data) => {
-    console.log('🎮 Game ready event received:', data)
-    
-    // Handle both gameId formats (with and without 'game_' prefix)
-    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
-    const componentGameId = gameId?.replace('game_', '') || gameId
-    
-    if (eventGameId === componentGameId) {
-      console.log('✅ Game ready for current game')
-      setIsGameReady(true)
-      setShowDepositOverlay(false)
-      setDepositState(null)
-      setActiveTab('game')
-      showInfo('Game is ready! Both players can now play.')
-      
-      // Game is ready - just switch to game tab, no transport needed
-      console.log('🎮 Game ready event received, switching to game tab')
-    } else {
-      console.log('❌ Game ready gameId mismatch:', { eventGameId, componentGameId })
-    }
-  }, [gameId, showInfo])
 
   const handleRoundResult = useCallback((data) => {
     console.log('🎲 Round result received:', data)
@@ -489,87 +468,28 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
 
   const handleDepositConfirmed = useCallback((data) => {
     console.log('💰 Deposit confirmed event received:', data)
-    console.log('🔍 Current gameId:', gameId)
-    console.log('🔍 Event gameId:', data.gameId)
-    console.log('🔍 Current address:', address)
-    console.log('🔍 Event player:', data.player)
     
-    // Handle both gameId formats (with and without 'game_' prefix)
     const eventGameId = data.gameId?.replace('game_', '') || data.gameId
     const componentGameId = gameId?.replace('game_', '') || gameId
     
     if (eventGameId === componentGameId) {
       console.log('✅ Deposit confirmed for current game')
-      console.log('🔍 Deposit data details:', {
-        creatorDeposited: data.creatorDeposited,
-        challengerDeposited: data.challengerDeposited,
-        player: data.player,
-        assetType: data.assetType,
-        transactionHash: data.transactionHash
-      })
       
+      // Update local deposit state
       setDepositState(prev => prev ? {
         ...prev,
         creatorDeposited: data.creatorDeposited || prev.creatorDeposited,
         challengerDeposited: data.challengerDeposited || prev.challengerDeposited
       } : null)
       
-      // Check if both players have deposited - unlock game tab
-      const bothDeposited = data.creatorDeposited && data.challengerDeposited
-      if (bothDeposited) {
-        console.log('🎮 Both players deposited - game ready!')
-        setIsGameReady(true)
-        setShowDepositOverlay(false)
-        setDepositState(null)
-        
-        // Both players deposited - game is ready, just switch to game tab
-        console.log('🎮 Both players deposited - switching to game tab')
-      } else {
-        console.log('⏳ Waiting for other player to deposit:', {
-          creatorDeposited: data.creatorDeposited,
-          challengerDeposited: data.challengerDeposited
-        })
-      }
-    } else {
-      console.log('❌ Deposit confirmed gameId mismatch:', { eventGameId, componentGameId })
-    }
-  }, [gameId, address])
-
-  const handleDepositReceived = useCallback((data) => {
-    console.log('💰 Deposit received event:', data)
-    
-    // Handle both gameId formats (with and without 'game_' prefix)
-    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
-    const componentGameId = gameId?.replace('game_', '') || gameId
-    
-    if (eventGameId === componentGameId) {
-      console.log('✅ Deposit received for current game')
-      
-      // Check if both players have deposited - unlock game tab
+      // Don't do anything else here - wait for game_transport_ready event
       if (data.bothDeposited) {
-        console.log('🎮 Both players deposited - game ready!')
-        setIsGameReady(true)
-        setShowDepositOverlay(false)
-        setDepositState(null)
-        
-        // Both players deposited - game is ready, just switch to game tab
-        console.log('🎮 Both players deposited - switching to game tab')
+        console.log('🎮 Both players deposited - waiting for transport signal...')
       }
-    } else {
-      console.log('❌ Deposit received gameId mismatch:', { eventGameId, componentGameId })
     }
   }, [gameId])
 
-  const handleGameStarted = useCallback((data) => {
-    console.log('🎮 Game started:', data)
-    if (data.gameId === gameId) {
-      setShowDepositOverlay(false)
-      setDepositState(null)
-      setIsGameReady(true)
-      setActiveTab('game') // Switch to game tab when game starts
-      showSuccess('Game started!')
-    }
-  }, [gameId, showSuccess])
+
 
   const handleGameNotFound = useCallback((data) => {
     console.error('❌ Game not found:', data)
@@ -638,62 +558,36 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         await socketService.connect(gameId, address)
         setConnected(true)
         
-        // Register event listeners with debugging
-        console.log('🔌 Registering Socket.io event listeners...')
+        // Register event listeners
+        console.log('📌 Registering Socket.io event listeners...')
         
-        socketService.on('room_joined', (data) => {
-          console.log('🏠 room_joined event received:', data)
-          handleRoomJoined(data)
-        })
-        socketService.on('game_state_update', (data) => {
-          console.log('📊 game_state_update event received:', data)
-          handleGameStateUpdate(data)
-        })
-        socketService.on('game_started', (data) => {
-          console.log('🎮 game_started event received:', data)
-          handleGameStarted(data)
-        })
-        socketService.on('game_ready', (data) => {
-          console.log('🎮 game_ready event received:', data)
-          handleGameReady(data)
-        })
-        socketService.on('flip_executing', (data) => {
-          console.log('🎲 flip_executing event received:', data)
-          handleFlipExecuting(data)
-        })
-        socketService.on('round_result', (data) => {
-          console.log('🎲 round_result event received:', data)
-          handleRoundResult(data)
-        })
-        socketService.on('game_not_found', (data) => {
-          console.log('❌ game_not_found event received:', data)
-          handleGameNotFound(data)
+        socketService.on('room_joined', handleRoomJoined)
+        socketService.on('game_state_update', handleGameStateUpdate)
+        socketService.on('flip_executing', handleFlipExecuting)
+        socketService.on('round_result', handleRoundResult)
+        socketService.on('game_not_found', handleGameNotFound)
+        
+        // Deposit events
+        socketService.on('deposit_countdown', handleDepositCountdown)
+        socketService.on('deposit_timeout', handleDepositTimeout)
+        socketService.on('deposit_confirmed', handleDepositConfirmed)
+        
+        // THE KEY EVENT - Game transport ready
+        socketService.on('game_transport_ready', (data) => {
+          console.log('🚀 Game transport ready received:', data)
+          if (data.gameId === gameId && data.transportNow) {
+            // Clear any deposit UI
+            setShowDepositOverlay(false)
+            setDepositState(null)
+            // Enable and switch to game tab
+            setIsGameReady(true)
+            setActiveTab('game')
+            showSuccess('Game starting! Get ready to flip!')
+          }
         })
         
-        // Deposit event listeners with debugging
-        socketService.on('deposit_countdown', (data) => {
-          console.log('⏰ deposit_countdown event received:', data)
-          handleDepositCountdown(data)
-        })
-        socketService.on('deposit_timeout', (data) => {
-          console.log('⏰ deposit_timeout event received:', data)
-          handleDepositTimeout(data)
-        })
-        socketService.on('deposit_confirmed', (data) => {
-          console.log('💰 deposit_confirmed event received from server:', data)
-          console.log('🔍 This is the server telling us about a deposit confirmation')
-          handleDepositConfirmed(data)
-        })
-        socketService.on('deposit_received', (data) => {
-          console.log('💰 deposit_received event received:', data)
-          handleDepositReceived(data)
-        })
-        
-        // Offer event listeners with debugging
-        socketService.on('offer_accepted', (data) => {
-          console.log('✅ offer_accepted event received:', data)
-          handleOfferAccepted(data)
-        })
+        // Offer accepted event
+        socketService.on('offer_accepted', handleOfferAccepted)
         
         console.log('✅ All Socket.io event listeners registered')
         
@@ -720,61 +614,17 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       // Cleanup listeners
       socketService.off('room_joined', handleRoomJoined)
       socketService.off('game_state_update', handleGameStateUpdate)
-      socketService.off('game_started', handleGameStarted)
-      socketService.off('game_ready', handleGameReady)
       socketService.off('flip_executing', handleFlipExecuting)
       socketService.off('round_result', handleRoundResult)
       socketService.off('game_not_found', handleGameNotFound)
-      
-      // Deposit event cleanup
-      // Removed deposit_stage_started cleanup - now using OfferAcceptanceOverlay
       socketService.off('deposit_countdown', handleDepositCountdown)
       socketService.off('deposit_timeout', handleDepositTimeout)
       socketService.off('deposit_confirmed', handleDepositConfirmed)
-      socketService.off('deposit_received', handleDepositReceived)
-      
-      // Offer event cleanup
+      socketService.off('game_transport_ready')
       socketService.off('offer_accepted', handleOfferAccepted)
     }
-  }, [gameId, address, finalGameData]) // Added finalGameData dependency
+  }, [gameId, address, finalGameData])
 
-  // ===== SWITCH TO FLIP SUITE EVENT LISTENER =====
-  useEffect(() => {
-    const handleSwitchToFlipSuite = (event) => {
-      console.log('🚀 switchToFlipSuite event received:', event.detail)
-      const { gameId: eventGameId, immediate, player2, fallback, force, attempt } = event.detail
-      
-      // Only handle events for this game
-      if (eventGameId === gameId) {
-        console.log('🚀 Switching to flip suite tab for game:', gameId)
-        setIsGameReady(true)
-        setActiveTab('game')
-        setShowDepositOverlay(false)
-        setDepositState(null)
-        
-        if (immediate) {
-          console.log('🚀 Immediate switch to game tab')
-        }
-        if (player2) {
-          console.log('🚀 Player 2 transport to game tab')
-        }
-        if (fallback) {
-          console.log('🚀 Fallback transport to game tab')
-        }
-        if (force) {
-          console.log(`🚀 Force transport attempt ${attempt} to game tab`)
-        }
-      }
-    }
-
-    // Add event listener
-    window.addEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('switchToFlipSuite', handleSwitchToFlipSuite)
-    }
-  }, [gameId])
 
   // ===== SIMPLIFIED: NO FALLBACK MECHANISM =====
   // Let the simple transport handle everything

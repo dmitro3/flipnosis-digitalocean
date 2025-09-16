@@ -1861,13 +1861,23 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
               // Clear the deposit countdown since both players have deposited
               gameServer.clearDepositCountdown(gameId)
               
-              gameServer.io.to(gameId).emit('game_ready', {
-                gameId,
-                phase: 'game_active',
-                message: 'Game ready! Both players can now play.',
-                creatorDeposited: true,
-                challengerDeposited: true
+              // Update game status to active
+              await new Promise((resolve, reject) => {
+                db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], (err) => {
+                  if (err) reject(err)
+                  else resolve()
+                })
               })
+              
+              // Emit the transport ready event to move both players
+              setTimeout(() => {
+                gameServer.io.to(`game_${gameId}`).emit('game_transport_ready', {
+                  gameId,
+                  phase: 'game_active',
+                  message: 'Game initialized! Transporting all players...',
+                  transportNow: true
+                })
+              }, 500)
             }
           } catch (socketError) {
             console.error('❌ Socket emission error:', socketError)
@@ -1911,13 +1921,23 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
             // Clear the deposit countdown since both players have deposited
             gameServer.clearDepositCountdown(gameId)
             
-            gameServer.io.to(gameId).emit('game_ready', {
-              gameId,
-              phase: 'game_active',
-              message: 'Game ready! Both players can now play.',
-              creatorDeposited: true,
-              challengerDeposited: true
+            // Update game status to active
+            await new Promise((resolve, reject) => {
+              db.run('UPDATE games SET status = "active" WHERE id = ?', [gameId], (err) => {
+                if (err) reject(err)
+                else resolve()
+              })
             })
+            
+            // Emit the transport ready event to move both players
+            setTimeout(() => {
+              gameServer.io.to(`game_${gameId}`).emit('game_transport_ready', {
+                gameId,
+                phase: 'game_active',
+                message: 'Game initialized! Transporting all players...',
+                transportNow: true
+              })
+            }, 500)
           }
         } catch (socketError) {
           console.error('❌ Socket emission error:', socketError)

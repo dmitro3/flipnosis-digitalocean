@@ -345,6 +345,14 @@ const GameRoomTab = ({
     })
   }, [gameData])
   
+  // When tab becomes active and game is ready, request fresh state
+  useEffect(() => {
+    if (isGameReady && socket) {
+      console.log('🎮 Game room tab active, requesting game state...')
+      socket.emit('request_game_state', { gameId })
+    }
+  }, [isGameReady, gameId, socket])
+  
   // Listen for socket events to update game state
   useEffect(() => {
     if (!socket) return

@@ -171,6 +171,32 @@ const OfferAcceptanceOverlay = ({
     }
   }, [isVisible, acceptedOffer, gameId, showError, onClose])
 
+  // Listen for game transport ready event to close overlay
+  useEffect(() => {
+    const handleGameTransport = (event) => {
+      if (event.detail?.gameId === gameId && event.detail?.transportNow) {
+        onClose()
+      }
+    }
+    
+    window.addEventListener('game_transport_ready', handleGameTransport)
+    return () => window.removeEventListener('game_transport_ready', handleGameTransport)
+  }, [gameId, onClose])
+
+  // Also listen for the socket event
+  useEffect(() => {
+    if (!socketService.socket) return
+    
+    const handleTransport = (data) => {
+      if (data.gameId === gameId && data.transportNow) {
+        onClose()
+      }
+    }
+    
+    socketService.on('game_transport_ready', handleTransport)
+    return () => socketService.off('game_transport_ready', handleTransport)
+  }, [gameId, onClose])
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60

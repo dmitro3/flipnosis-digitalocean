@@ -479,135 +479,81 @@ class GameServer {
       }
       
       // Update deposit status
-    const isCreator = address.toLowerCase() === gameData.creator?.toLowerCase()
-    console.log(`🔍 Processing deposit for ${isCreator ? 'creator' : 'challenger'}: ${address}`)
-    console.log(`🔍 Game data before update:`, {
-      creator: gameData.creator,
-      challenger: gameData.challenger,
-      creatorDeposited: gameData.creatorDeposited,
-      challengerDeposited: gameData.challengerDeposited
-    })
-    
-    if (isCreator) {
-      gameData.creatorDeposited = true
-      // Save to database
-      try {
+      const isCreator = address.toLowerCase() === gameData.creator?.toLowerCase()
+      
+      if (isCreator && assetType === 'nft') {
+        gameData.creatorDeposited = true
         await new Promise((resolve, reject) => {
           this.dbService.db.run(`
             UPDATE games 
             SET creator_deposited = true, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
           `, [gameId], (err) => {
-            if (err) {
-              console.error(`❌ Database error updating creator deposit:`, err)
-              reject(err)
-            } else {
-              console.log(`✅ Creator deposit saved to database for game ${gameId}`)
-              resolve()
-            }
+            if (err) reject(err)
+            else resolve()
           })
         })
-      } catch (error) {
-        console.error(`❌ Failed to save creator deposit to database:`, error)
-        throw error
-      }
-    } else {
-      gameData.challengerDeposited = true
-      // Save to database
-      try {
+      } else if (!isCreator && assetType === 'eth') {
+        gameData.challengerDeposited = true
         await new Promise((resolve, reject) => {
           this.dbService.db.run(`
             UPDATE games 
-            SET challenger_deposited = true, updated_at = CURRENT_TIMESTAMP
+            SET challenger_deposited = true, status = 'active', updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
           `, [gameId], (err) => {
-            if (err) {
-              console.error(`❌ Database error updating challenger deposit:`, err)
-              reject(err)
-            } else {
-              console.log(`✅ Challenger deposit saved to database for game ${gameId}`)
-              resolve()
-            }
+            if (err) reject(err)
+            else resolve()
           })
         })
-      } catch (error) {
-        console.error(`❌ Failed to save challenger deposit to database:`, error)
-        throw error
       }
-    }
-    
-    console.log(`🔍 Game data after update:`, {
-      creator: gameData.creator,
-      challenger: gameData.challenger,
-      creatorDeposited: gameData.creatorDeposited,
-      challengerDeposited: gameData.challengerDeposited
-    })
-    
-    // Check if both players have deposited
-    const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
-    console.log(`🔍 Both players deposited check:`, {
-      creatorDeposited: gameData.creatorDeposited,
-      challengerDeposited: gameData.challengerDeposited,
-      bothDeposited: bothDeposited
-    })
-    
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    
-    if (bothDeposited) {
-      console.log(`🎮 Both players deposited in game ${gameId}, starting game!`)
       
-      // Clear the deposit countdown since both players have deposited
-      this.clearDepositCountdown(gameId)
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+      const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
       
-      // Initialize game state with coin data from database
-      const gameState = this.initializeGameState(gameId, gameData)
-      this.gameStateManager.createGame(gameId, gameState)
-      
-      // Start state broadcasting
-      this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
-        this.io.to(room).emit(message.type, message)
-      })
-      
-      // Notify all players that game is starting
-      this.io.to(roomId).emit('game_started', {
+      // First, always acknowledge the deposit
+      this.io.to(roomId).emit('deposit_confirmed', {
         gameId,
-        phase: 'game_active',
-        message: 'Both deposits confirmed! Game starting...'
+        player: address,
+        assetType,
+        creatorDeposited: gameData.creatorDeposited,
+        challengerDeposited: gameData.challengerDeposited,
+        bothDeposited: bothDeposited
       })
       
-      // Send initial state
-      const fullState = this.gameStateManager.getFullGameState(gameId)
-      this.io.to(roomId).emit('game_state_update', fullState)
-      
-      // Emit game ready event to trigger UI switch
-      this.io.to(roomId).emit('game_ready', {
-        gameId,
-        phase: 'game_active',
-        message: 'Game ready! Both players can now play.',
-        creatorDeposited: true,
-        challengerDeposited: true
-      })
-      
-      console.log(`✅ Game started and events sent for game ${gameId}`)
-      
-    } else {
-      console.log(`⏳ Only one player deposited, waiting for the other...`)
-    }
-    
-    // ALWAYS emit deposit_confirmed event to notify all players when any player deposits
-    // This ensures the other player gets notified immediately
-    this.io.to(roomId).emit('deposit_confirmed', {
-      gameId,
-      player: address,
-      assetType,
-      creatorDeposited: gameData.creatorDeposited,
-      challengerDeposited: gameData.challengerDeposited,
-      bothDeposited: bothDeposited
-    })
-    console.log(`📤 Sent deposit_confirmed event to room ${roomId} - bothDeposited: ${bothDeposited}`)
+      if (bothDeposited) {
+        console.log(`🎮 Both players deposited in game ${gameId}, initializing game!`)
+        
+        // Clear any deposit countdowns
+        this.clearDepositCountdown(gameId)
+        
+        // Initialize game state
+        const gameState = this.initializeGameState(gameId, gameData)
+        this.gameStateManager.createGame(gameId, gameState)
+        
+        // Start state broadcasting
+        this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
+          this.io.to(room).emit(message.type, message)
+        })
+        
+        // Send ONE authoritative event that both players will respond to
+        setTimeout(() => {
+          // Small delay to ensure state is ready
+          this.io.to(roomId).emit('game_transport_ready', {
+            gameId,
+            phase: 'game_active',
+            message: 'Game initialized! Transporting all players...',
+            creator: gameData.creator,
+            challenger: gameData.challenger,
+            transportNow: true
+          })
+          
+          // Also send initial game state
+          const fullState = this.gameStateManager.getFullGameState(gameId)
+          this.io.to(roomId).emit('game_state_update', fullState)
+        }, 500)
+      }
     } catch (error) {
       console.error('❌ Error in handleDepositConfirmed:', error)
-      // Don't crash the server - just log the error
     }
   }
 
