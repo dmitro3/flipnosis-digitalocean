@@ -1379,10 +1379,10 @@ const getAllItems = () => {
                   <div style={{ 
                     display: 'grid', 
                     gridTemplateColumns: window.innerWidth <= 768 ? 'repeat(2, 1fr)' : 
-                                       window.innerWidth <= 1200 ? 'repeat(auto-fill, minmax(220px, 1fr))' :
-                                       window.innerWidth <= 1600 ? 'repeat(auto-fill, minmax(240px, 1fr))' :
-                                       window.innerWidth <= 2000 ? 'repeat(auto-fill, minmax(260px, 1fr))' :
-                                       'repeat(auto-fill, minmax(280px, 1fr))',
+                                       window.innerWidth <= 1200 ? 'repeat(4, 1fr)' :
+                                       window.innerWidth <= 1600 ? 'repeat(5, 1fr)' :
+                                       window.innerWidth <= 2000 ? 'repeat(6, 1fr)' :
+                                       'repeat(7, 1fr)',
                     gap: window.innerWidth <= 768 ? '0.5rem' : 
                          window.innerWidth <= 1200 ? '1rem' : 
                          window.innerWidth <= 1600 ? '1.25rem' : '1.5rem',
