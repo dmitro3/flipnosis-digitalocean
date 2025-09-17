@@ -3,6 +3,7 @@ import styled from '@emotion/styled'
 import OptimizedGoldCoin from '../../OptimizedGoldCoin'
 import ProfilePicture from '../../ProfilePicture'
 import WinLoseAnimation from '../../WinLoseAnimation'
+import RoundResultAnimation from '../RoundResultAnimation'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -850,6 +851,8 @@ const GameRoomTab = ({
     
     const handleRoundResult = (data) => {
       console.log('🎲 Round result received:', data)
+      
+      // Update game state with round result
       setGameState(prev => ({
         ...prev,
         currentRound: data.currentRound,
@@ -857,6 +860,7 @@ const GameRoomTab = ({
         challengerScore: data.challengerScore,
         lastResult: data.flipResult,
         roundWinner: data.roundWinner,
+        flipResult: data.flipResult,
         gamePhase: 'showing_result'
       }))
       
@@ -864,23 +868,25 @@ const GameRoomTab = ({
       const isActualCreator = address?.toLowerCase() === gameData?.creator?.toLowerCase()
       const isActualChallenger = address?.toLowerCase() === gameData?.challenger?.toLowerCase()
       
-      console.log('🎬 Animation check:', {
+      console.log('🎬 Round animation check:', {
         isActualCreator,
         isActualChallenger,
         roundWinner: data.roundWinner,
         creator: gameData?.creator,
         challenger: gameData?.challenger,
-        address
+        address,
+        flipResult: data.flipResult
       })
       
       if (isActualCreator || isActualChallenger) {
         const playerWon = (isActualCreator && data.roundWinner?.toLowerCase() === gameData?.creator?.toLowerCase()) ||
                           (isActualChallenger && data.roundWinner?.toLowerCase() === gameData?.challenger?.toLowerCase())
         
-        console.log('🎬 Setting up round animation:', {
+        console.log('🎬 Triggering round animation:', {
           playerWon,
           playerScore: isActualCreator ? data.creatorScore : data.challengerScore,
-          opponentScore: isActualCreator ? data.challengerScore : data.creatorScore
+          opponentScore: isActualCreator ? data.challengerScore : data.creatorScore,
+          flipResult: data.flipResult
         })
         
         setRoundResult({
@@ -893,6 +899,7 @@ const GameRoomTab = ({
           playerChoice: isActualCreator ? data.creatorChoice : data.challengerChoice
         })
         setShowWinLoseAnimation(true)
+        console.log('🎬 Round animation triggered!')
       }
     }
     
@@ -1179,7 +1186,7 @@ const GameRoomTab = ({
 
         {/* Coin Area or Game End */}
         <CoinArea>
-          {gameState.gamePhase === 'game_complete' ? (
+          {(gameState.gamePhase === 'game_complete' || gameState.phase === 'game_complete') ? (
             // Game End UI
             <GameEndContainer isWinner={gameState.gameWinner?.toLowerCase() === address?.toLowerCase()}>
               <GameEndTitle isWinner={gameState.gameWinner?.toLowerCase() === address?.toLowerCase()}>
@@ -1219,7 +1226,7 @@ const GameRoomTab = ({
 
               <OptimizedGoldCoin
                 isFlipping={gameState.coinState?.isFlipping}
-                flipResult={gameState.coinState?.flipResult}
+                flipResult={gameState.flipResult || gameState.coinState?.flipResult}
                 flipDuration={gameState.coinState?.flipDuration || 1000}
                 onFlipComplete={() => console.log('Flip animation complete')}
                 customHeadsImage={coinConfig?.headsImage}
@@ -1232,6 +1239,9 @@ const GameRoomTab = ({
                 serverControlled={true} // Pure server-driven mode
                 totalRotations={gameState.coinState?.totalRotations}
                 finalRotation={gameState.coinState?.finalRotation}
+                // Pass server power values to ensure consistent animation
+                creatorPower={gameState.creatorFinalPower || 1}
+                joinerPower={gameState.challengerFinalPower || 1}
               />
             </>
           )}
@@ -1464,8 +1474,8 @@ const GameRoomTab = ({
         </CountdownContainer>
       )}
       
-      {/* Win/Lose Animation */}
-      <WinLoseAnimation
+      {/* Round Result Animation with WebM videos */}
+      <RoundResultAnimation
         isVisible={showWinLoseAnimation}
         isWin={roundResult?.isWin}
         playerScore={roundResult?.playerScore}
@@ -1476,7 +1486,7 @@ const GameRoomTab = ({
           setShowWinLoseAnimation(false)
           setRoundResult(null)
           // Server now handles round progression automatically - no manual request needed
-          console.log('🎬 Win/Lose animation complete - server will handle next round')
+          console.log('🎬 Round result animation complete - server will handle next round')
         }}
       />
     </TabContainer>

@@ -405,7 +405,7 @@ class GameStateManager {
     // Broadcast round result immediately for UI updates
     if (broadcastFn) {
       const roomId = `game_${gameId}`
-      broadcastFn(roomId, 'round_result', {
+      const roundResultData = {
         gameId,
         currentRound: game.currentRound,
         roundWinner: game.roundWinner,
@@ -414,6 +414,12 @@ class GameStateManager {
         challengerScore: game.challengerScore,
         creatorChoice: game.creatorChoice,
         challengerChoice: game.challengerChoice
+      }
+      
+      console.log(`📡 Broadcasting round_result:`, roundResultData)
+      broadcastFn(roomId, {
+        type: 'round_result',
+        ...roundResultData
       })
     }
     
@@ -426,12 +432,18 @@ class GameStateManager {
       // Broadcast game completion
       if (broadcastFn) {
         const roomId = `game_${gameId}`
-        broadcastFn(roomId, 'game_complete', {
+        const gameCompleteData = {
           gameId,
           gameWinner: game.gameWinner,
           finalScore: `${game.creatorScore}-${game.challengerScore}`,
           creatorScore: game.creatorScore,
           challengerScore: game.challengerScore
+        }
+        
+        console.log(`🏆 Broadcasting game_complete:`, gameCompleteData)
+        broadcastFn(roomId, {
+          type: 'game_complete',
+          ...gameCompleteData
         })
       }
     } else {
