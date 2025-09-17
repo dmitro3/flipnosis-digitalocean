@@ -602,6 +602,10 @@ class GameStateManager {
       // Coin customization
       coinData: game.coinData,
       
+      // Deposit status
+      creatorDeposited: game.creatorDeposited,
+      challengerDeposited: game.challengerDeposited,
+      
       // Metadata
       updatedAt: game.updatedAt
     }
@@ -640,6 +644,10 @@ class GameStateManager {
     game.currentTurn = game.creator // Creator always goes first
     game.turnStartTime = Date.now()
     game.roundStartTime = Date.now()
+    
+    // Mark both deposits as confirmed
+    game.creatorDeposited = true
+    game.challengerDeposited = true
     
     // Start the initial countdown for round 1
     if (broadcastFn) {

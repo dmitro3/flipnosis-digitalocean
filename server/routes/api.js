@@ -1838,14 +1838,19 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           if (activated) {
             console.log('🎮 Game activated after challenger deposit!')
             
-            // Broadcast game started event
+            // Get the updated game state after activation
+            const fullGameState = gameServer.gameStateManager.getFullGameState(gameId)
+            
+            // Broadcast game started event with full state
             gameServer.io.to(`game_${gameId}`).emit('game_started', {
               type: 'game_started',
               gameId,
               message: 'Both players deposited - game starting!',
-              phase: 'game_active',
-              gamePhase: 'waiting_choice'
+              ...fullGameState // Include all game state data
             })
+            
+            // Also broadcast updated game state immediately
+            gameServer.io.to(`game_${gameId}`).emit('game_state_update', fullGameState)
           }
         }
       }

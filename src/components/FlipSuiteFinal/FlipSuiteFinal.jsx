@@ -523,18 +523,30 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const handleGameStarted = useCallback((data) => {
     console.log('🎮 Game started event received:', data)
     
-    // Close deposit overlay and switch to game
-    setShowDepositOverlay(false)
-    setDepositState(null)
-    setIsGameReady(true)
-    setActiveTab('game')
+    // Handle both gameId formats (with and without 'game_' prefix)
+    const eventGameId = data.gameId?.replace('game_', '') || data.gameId
+    const componentGameId = gameId?.replace('game_', '') || gameId
     
-    // Request fresh game state
-    if (socketService && socketService.emit) {
-      socketService.emit('request_game_state', { gameId })
+    if (eventGameId === componentGameId) {
+      console.log('✅ Game started for current game - activating UI')
+      
+      // Close deposit overlay and switch to game
+      setShowDepositOverlay(false)
+      setDepositState(null)
+      setIsGameReady(true)
+      setActiveTab('game')
+      
+      // Request fresh game state to get updated phase
+      if (socketService && socketService.emit) {
+        setTimeout(() => {
+          socketService.emit('request_game_state', { gameId })
+        }, 500) // Small delay to ensure server state is updated
+      }
+      
+      showSuccess('Game started! Both players are ready to flip!')
+    } else {
+      console.log('❌ Game started gameId mismatch:', { eventGameId, componentGameId })
     }
-    
-    showSuccess('Game started! Both players are ready to flip!')
   }, [gameId, showSuccess])
 
   const handleOfferAccepted = useCallback((data) => {

@@ -589,7 +589,7 @@ class GameServer {
       updatedAt: new Date().toISOString(),
       
       // Add deposit status fields for game readiness check
-      creatorDeposited: gameData.creator_deposited || true, // Creator always deposited to create game
+      creatorDeposited: gameData.creator_deposited || false,
       challengerDeposited: gameData.challenger_deposited || false
     }
   }
