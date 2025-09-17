@@ -638,10 +638,14 @@ const GameRoomTab = ({
       console.log('📊 Game state update received:', data)
       setGameState(data)
       
+      // Update countdown from server if provided
+      if (data.roundCountdown !== undefined) {
+        setRoundCountdown(data.roundCountdown)
+      }
+      
       // Stop challenger polling if both players are present
       if (data.challenger && data.creator) {
         console.log('✅ Both players present - challenger polling can stop')
-        // The polling will stop automatically when the component unmounts or conditions change
       }
     }
     
@@ -665,6 +669,23 @@ const GameRoomTab = ({
       })
     }
     
+    const handleFlipExecuting = (data) => {
+      console.log('🎲 Flip executing received from server:', data)
+      // Update game state with synchronized coin flip data
+      setGameState(prev => ({
+        ...prev,
+        coinState: data.coinState,
+        creatorChoice: data.creatorChoice,
+        challengerChoice: data.challengerChoice,
+        creatorFinalPower: data.creatorPower,
+        challengerFinalPower: data.challengerPower,
+        gamePhase: 'executing_flip'
+      }))
+      
+      // Clear countdown when flip starts
+      setRoundCountdown(null)
+    }
+    
     const handleRoundResult = (data) => {
       console.log('🎲 Round result:', data)
       setGameState(prev => ({
@@ -672,13 +693,15 @@ const GameRoomTab = ({
         currentRound: data.currentRound,
         creatorScore: data.creatorScore,
         challengerScore: data.challengerScore,
-        lastResult: data.result
+        lastResult: data.result,
+        gamePhase: 'result'
       }))
     }
     
     socket.on('game_state_update', handleGameStateUpdate)
     socket.on('game_ready', handleGameReady)
     socket.on('game_started', handleGameStarted)
+    socket.on('flip_executing', handleFlipExecuting)
     socket.on('round_result', handleRoundResult)
     
     // Request current game state when mounting
@@ -688,6 +711,7 @@ const GameRoomTab = ({
       socket.off('game_state_update', handleGameStateUpdate)
       socket.off('game_ready', handleGameReady)
       socket.off('game_started', handleGameStarted)
+      socket.off('flip_executing', handleFlipExecuting)
       socket.off('round_result', handleRoundResult)
     }
   }, [socket, gameId])
@@ -731,33 +755,8 @@ const GameRoomTab = ({
     fetchPlayerNames()
   }, [gameData?.creator, gameData?.challenger])
   
-  // Round countdown timer
-  useEffect(() => {
-    let countdownInterval = null
-    
-    // Start countdown when game is in choosing phase
-    if (gameState?.phase === 'choosing' || gameState?.gamePhase === 'waiting_choice') {
-      setRoundCountdown(20) // 20 second countdown
-      
-      countdownInterval = setInterval(() => {
-        setRoundCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownInterval)
-            return null
-          }
-          return prev - 1
-        })
-      }, 1000)
-    } else {
-      setRoundCountdown(null)
-    }
-    
-    return () => {
-      if (countdownInterval) {
-        clearInterval(countdownInterval)
-      }
-    }
-  }, [gameState?.phase, gameState?.gamePhase])
+  // Server-controlled countdown - no client-side timer needed
+  // The countdown is now managed by the server and received via game_state_update
   
   const getGameStatus = () => {
     if (!gameData) return 'Loading...'
@@ -903,18 +902,18 @@ const GameRoomTab = ({
           <OptimizedGoldCoin
             isFlipping={gameState.coinState?.isFlipping}
             flipResult={gameState.coinState?.flipResult}
-            flipDuration={gameState.coinState?.flipDuration || 1000} // Dynamic duration from server
+            flipDuration={gameState.coinState?.flipDuration || 1000}
             onFlipComplete={() => console.log('Flip animation complete')}
             customHeadsImage={coinConfig?.headsImage}
             customTailsImage={coinConfig?.tailsImage}
             size={240}
             material={coinConfig?.material}
-            isPlayerTurn={gameState.currentTurn === address}
+            isPlayerTurn={false} // Server controls everything
             gamePhase={gameState.gamePhase}
             isInteractive={false}
-            creatorPower={gameState.creatorFinalPower || 1.0}
-            joinerPower={gameState.challengerFinalPower || 1.0}
-            powerUsed={gameState.coinState?.powerUsed || 1.0}
+            serverControlled={true} // Pure server-driven mode
+            totalRotations={gameState.coinState?.totalRotations}
+            finalRotation={gameState.coinState?.finalRotation}
           />
 
           {/* Choice Buttons */}

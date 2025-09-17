@@ -7,6 +7,7 @@ class GameStateManager {
     this.timers = new Map() // gameId -> interval timers
     this.powerTimers = new Map() // gameId -> power charging timers
     this.stateUpdateIntervals = new Map() // gameId -> state broadcast intervals
+    this.countdownTimers = new Map() // gameId -> round countdown timers
   }
 
   // ===== GAME PHASES =====
@@ -263,12 +264,70 @@ class GameStateManager {
     return { shouldFlip: true }
   }
 
+  // ===== ROUND COUNTDOWN =====
+  startRoundCountdown(gameId, broadcastFn) {
+    const game = this.games.get(gameId)
+    if (!game) return
+    
+    // Clear any existing countdown
+    this.stopRoundCountdown(gameId)
+    
+    game.roundCountdown = 20
+    console.log(`⏰ Starting 20-second countdown for game ${gameId}`)
+    
+    const countdownInterval = setInterval(() => {
+      const game = this.games.get(gameId)
+      if (!game) {
+        clearInterval(countdownInterval)
+        return
+      }
+      
+      game.roundCountdown--
+      
+      if (game.roundCountdown <= 0) {
+        clearInterval(countdownInterval)
+        this.countdownTimers.delete(gameId)
+        game.roundCountdown = null
+        
+        // Auto-flip with default power if time runs out
+        console.log('⏰ Countdown expired, auto-flipping...')
+        this.executeFlip(gameId)
+      }
+      
+      // Broadcast updated state with countdown
+      if (broadcastFn) {
+        const fullState = this.getFullGameState(gameId)
+        if (fullState) {
+          broadcastFn(`game_${gameId}`, 'game_state_update', fullState)
+        }
+      }
+    }, 1000)
+    
+    this.countdownTimers.set(gameId, countdownInterval)
+  }
+  
+  stopRoundCountdown(gameId) {
+    const countdownTimer = this.countdownTimers.get(gameId)
+    if (countdownTimer) {
+      clearInterval(countdownTimer)
+      this.countdownTimers.delete(gameId)
+      
+      const game = this.games.get(gameId)
+      if (game) {
+        game.roundCountdown = null
+      }
+    }
+  }
+
   // ===== FLIP EXECUTION =====
   executeFlip(gameId) {
     const game = this.games.get(gameId)
     if (!game) return null
 
     console.log(`🎲 Executing flip for game ${gameId}`)
+    
+    // Stop countdown when flip starts
+    this.stopRoundCountdown(gameId)
     
     // Set final choices if not set
     if (!game.creatorChoice) game.creatorChoice = 'heads'
