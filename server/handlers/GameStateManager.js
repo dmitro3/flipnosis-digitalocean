@@ -291,7 +291,7 @@ class GameStateManager {
         
         // Auto-flip with default power if time runs out
         console.log('⏰ Countdown expired, auto-flipping...')
-        this.executeFlip(gameId)
+        this.executeFlip(gameId, broadcastFn)
       }
       
       // Broadcast updated state with countdown
@@ -320,7 +320,7 @@ class GameStateManager {
   }
 
   // ===== FLIP EXECUTION =====
-  executeFlip(gameId) {
+  executeFlip(gameId, broadcastFn) {
     const game = this.games.get(gameId)
     if (!game) return null
 
@@ -386,30 +386,60 @@ class GameStateManager {
     
     // Schedule result phase based on actual flip duration
     setTimeout(() => {
-      this.showResult(gameId)
+      this.showResult(gameId, broadcastFn)
     }, flipDuration)
     
     game.updatedAt = new Date().toISOString()
     return game
   }
 
-  showResult(gameId) {
+  showResult(gameId, broadcastFn) {
     const game = this.games.get(gameId)
     if (!game) return
 
     game.gamePhase = this.GAME_PHASES.SHOWING_RESULT
     game.coinState.isFlipping = false
     
+    console.log(`🎯 Round ${game.currentRound} result: ${game.roundWinner} won! Score: ${game.creatorScore}-${game.challengerScore}`)
+    
+    // Broadcast round result immediately for UI updates
+    if (broadcastFn) {
+      const roomId = `game_${gameId}`
+      broadcastFn(roomId, 'round_result', {
+        gameId,
+        currentRound: game.currentRound,
+        roundWinner: game.roundWinner,
+        flipResult: game.flipResult,
+        creatorScore: game.creatorScore,
+        challengerScore: game.challengerScore,
+        creatorChoice: game.creatorChoice,
+        challengerChoice: game.challengerChoice
+      })
+    }
+    
     // Check for game completion
     if (game.creatorScore >= 3 || game.challengerScore >= 3 || game.currentRound >= game.totalRounds) {
       game.phase = this.PHASES.GAME_COMPLETE
       game.gameWinner = game.creatorScore > game.challengerScore ? game.creator : game.challenger
       console.log(`🏆 Game complete! Winner: ${game.gameWinner}`)
+      
+      // Broadcast game completion
+      if (broadcastFn) {
+        const roomId = `game_${gameId}`
+        broadcastFn(roomId, 'game_complete', {
+          gameId,
+          gameWinner: game.gameWinner,
+          finalScore: `${game.creatorScore}-${game.challengerScore}`,
+          creatorScore: game.creatorScore,
+          challengerScore: game.challengerScore
+        })
+      }
     } else {
-      // Schedule next round
+      // AUTO-START next round after 2 seconds (server-controlled)
       setTimeout(() => {
-        this.startNextRound(gameId)
-      }, 3000)
+        console.log(`🔄 Auto-starting next round for game ${gameId}`)
+        this.startNextRound(gameId, broadcastFn)
+      }, 2000)
     }
     
     game.updatedAt = new Date().toISOString()
@@ -428,7 +458,7 @@ class GameStateManager {
     }
 
     game.currentRound++
-    game.gamePhase = this.GAME_PHASES.CHOOSING
+    game.gamePhase = this.GAME_PHASES.WAITING_CHOICE
     
     // Reset round state
     game.creatorChoice = null
@@ -798,7 +828,7 @@ class GameStateManager {
     
     // In turn-based mode, immediately execute flip when current player finishes
     console.log(`🎲 Auto-completing power charge - executing flip for turn-based game`)
-    this.executeFlip(gameId)
+    this.executeFlip(gameId, null) // No broadcast function available in auto-completion context
     
     game.updatedAt = new Date().toISOString()
   }

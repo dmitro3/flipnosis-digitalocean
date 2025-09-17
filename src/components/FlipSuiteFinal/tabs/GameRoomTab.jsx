@@ -592,10 +592,17 @@ const GameRoomTab = ({
     const hasCreator = gameData.creator
     const hasChallenger = gameData.challenger
     const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
-    const gameActive = gameData.status === 'active' && gameData.phase === 'game_active'
+    const gameActive = gameData.status === 'active' && (gameData.phase === 'game_active' || gameData.phase === 'deposit_stage')
     
     // Must have both players AND both deposits AND active status
     const gameReady = hasCreator && hasChallenger && bothDeposited && gameActive
+    
+    // CRITICAL: Only allow actual players to see the game as ready
+    const isActualCreator = address?.toLowerCase() === hasCreator?.toLowerCase()
+    const isActualChallenger = address?.toLowerCase() === hasChallenger?.toLowerCase()
+    const isActualPlayer = isActualCreator || isActualChallenger
+    
+    const finalGameReady = gameReady && isActualPlayer
     
     console.log('🎮 GameRoomTab: STRICT Game readiness check:', {
       hasCreator: !!hasCreator,
@@ -603,9 +610,11 @@ const GameRoomTab = ({
       bothDeposited,
       gameActive,
       gameReady,
+      isActualPlayer,
+      finalGameReady,
       currentUser: address,
-      isCreator: address?.toLowerCase() === hasCreator?.toLowerCase(),
-      isChallenger: address?.toLowerCase() === hasChallenger?.toLowerCase()
+      isCreator: isActualCreator,
+      isChallenger: isActualChallenger
     })
   }, [gameData, address])
   
@@ -1220,10 +1229,8 @@ const GameRoomTab = ({
         onAnimationComplete={() => {
           setShowWinLoseAnimation(false)
           setRoundResult(null)
-          // Request next round or game completion
-          if (socket) {
-            socket.emit('request_next_round', { gameId })
-          }
+          // Server now handles round progression automatically - no manual request needed
+          console.log('🎬 Win/Lose animation complete - server will handle next round')
         }}
       />
     </TabContainer>

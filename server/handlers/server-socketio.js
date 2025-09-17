@@ -81,10 +81,32 @@ class GameServer {
     
     // Determine role (creator, challenger, or spectator)
     const gameId = roomId // Keep the full game ID including 'game_' prefix
-    const gameState = this.gameStateManager.getGame(gameId)
+    let gameState = this.gameStateManager.getGame(gameId)
     let role = 'spectator'
     
-    if (gameState) {
+    // If no game state, try to load from database first
+    if (!gameState && this.dbService) {
+      try {
+        const gameData = await this.dbService.getGame(gameId)
+        if (gameData) {
+          console.log(`🔍 Loaded game from DB for role detection:`, {
+            creator: gameData.creator,
+            challenger: gameData.challenger,
+            joiningAddress: address
+          })
+          
+          // Check roles against database data
+          if (address.toLowerCase() === gameData.creator?.toLowerCase()) {
+            role = 'creator'
+          } else if (address.toLowerCase() === gameData.challenger?.toLowerCase()) {
+            role = 'challenger'
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading game for role detection:', error)
+      }
+    } else if (gameState) {
+      // Use existing game state
       if (address.toLowerCase() === gameState.creator?.toLowerCase()) {
         role = 'creator'
       } else if (address.toLowerCase() === gameState.challenger?.toLowerCase()) {
@@ -94,6 +116,8 @@ class GameServer {
         this.gameStateManager.addSpectator(gameId, address)
       }
     }
+    
+    console.log(`🎭 Role assigned: ${address} → ${role}`)
     
     this.socketData.set(socket.id, { address, roomId, gameId, role })
     this.userSockets.set(address.toLowerCase(), socket.id)
@@ -271,7 +295,11 @@ class GameServer {
     const { gameId } = data
     console.log(`🎲 Executing flip for game ${gameId}`)
     
-    const gameState = this.gameStateManager.executeFlip(gameId)
+    // Pass broadcast function to executeFlip so it can handle round progression
+    const gameState = this.gameStateManager.executeFlip(gameId, (roomId, eventType, data) => {
+      this.io.to(roomId).emit(eventType, data)
+    })
+    
     if (!gameState) {
       socket.emit('error', { message: 'Game not found' })
       return

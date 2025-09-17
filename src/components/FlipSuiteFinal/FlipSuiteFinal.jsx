@@ -529,17 +529,29 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     
     if (eventGameId === componentGameId) {
       console.log('✅ Offer accepted for current game')
-      const isChallenger = (data.challengerAddress || data.challenger)?.toLowerCase() === address?.toLowerCase()
-      const isCreator = finalGameData?.creator?.toLowerCase() === address?.toLowerCase()
       
-      console.log('🎯 Player roles:', { isChallenger, isCreator, challenger: data.challengerAddress || data.challenger, creator: finalGameData?.creator, address })
+      // Use data from the event itself, not finalGameData which might be stale
+      const eventCreator = data.accepterAddress || finalGameData?.creator
+      const eventChallenger = data.challengerAddress || data.challenger
+      
+      const isChallenger = eventChallenger?.toLowerCase() === address?.toLowerCase()
+      const isCreator = eventCreator?.toLowerCase() === address?.toLowerCase()
+      
+      console.log('🎯 Player roles (using event data):', { 
+        isChallenger, 
+        isCreator, 
+        eventChallenger, 
+        eventCreator, 
+        address,
+        dataKeys: Object.keys(data)
+      })
       
       if (isChallenger) {
         console.log('✅ You are the challenger - need to deposit')
         setDepositState({
           phase: 'deposit_stage',
-          creator: finalGameData?.creator,
-          challenger: data.challengerAddress || data.challenger,
+          creator: eventCreator,
+          challenger: eventChallenger,
           timeRemaining: 120,
           creatorDeposited: true, // Creator already deposited NFT
           challengerDeposited: false,
@@ -552,8 +564,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         // Show deposit overlay for creator too - they need to see the waiting state
         setDepositState({
           phase: 'deposit_stage',
-          creator: finalGameData?.creator,
-          challenger: data.challengerAddress || data.challenger,
+          creator: eventCreator,
+          challenger: eventChallenger,
           timeRemaining: 120,
           creatorDeposited: true, // Creator already deposited NFT
           challengerDeposited: false,
@@ -562,12 +574,18 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         setShowDepositOverlay(true)
         showSuccess('Offer accepted! Waiting for challenger to deposit.')
       } else {
-        console.log('❌ Neither challenger nor creator - ignoring')
+        console.log('❌ Neither challenger nor creator - ignoring', {
+          eventCreator,
+          eventChallenger,
+          address,
+          isCreator,
+          isChallenger
+        })
       }
     } else {
       console.log('❌ Offer accepted gameId mismatch:', { eventGameId, componentGameId })
     }
-  }, [gameId, address, showSuccess])
+  }, [gameId, address, showSuccess, finalGameData])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
