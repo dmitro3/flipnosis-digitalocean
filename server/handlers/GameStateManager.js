@@ -116,12 +116,23 @@ class GameStateManager {
     const game = this.games.get(gameId)
     if (!game) return false
 
+    // Verify it's actually this player's turn
+    if (game.currentTurn?.toLowerCase() !== playerAddress.toLowerCase()) {
+      console.log(`❌ Not ${playerAddress}'s turn (current turn: ${game.currentTurn})`)
+      return false
+    }
+
     const isCreator = playerAddress.toLowerCase() === game.creator.toLowerCase()
     
+    // Set the active player's choice
     if (isCreator) {
       game.creatorChoice = choice
+      // Auto-assign opposite to challenger
+      game.challengerChoice = choice === 'heads' ? 'tails' : 'heads'
     } else {
       game.challengerChoice = choice
+      // Auto-assign opposite to creator
+      game.creatorChoice = choice === 'heads' ? 'tails' : 'heads'
     }
     
     // Clear any existing turn timer since player made their choice
@@ -132,6 +143,7 @@ class GameStateManager {
     game.updatedAt = new Date().toISOString()
     
     console.log(`🎯 ${isCreator ? 'Creator' : 'Challenger'} chose ${choice}`)
+    console.log(`🎯 Auto-assigned ${isCreator ? game.challengerChoice : game.creatorChoice} to ${isCreator ? 'challenger' : 'creator'}`)
     
     // Start power charging timer
     this.startTurnTimer(gameId, 20000, () => {
@@ -146,6 +158,12 @@ class GameStateManager {
     const game = this.games.get(gameId)
     if (!game) return false
 
+    // Only allow the current turn player to charge power
+    if (game.currentTurn?.toLowerCase() !== playerAddress.toLowerCase()) {
+      console.log(`❌ Not ${playerAddress}'s turn to charge power`)
+      return false
+    }
+
     const isCreator = playerAddress.toLowerCase() === game.creator.toLowerCase()
     const startTime = Date.now()
     
@@ -153,7 +171,7 @@ class GameStateManager {
       game.creatorCharging = true
       game.creatorPowerProgress = 0
       
-      // Create power charging timer
+      // Create power charging timer - much smoother updates
       const powerTimer = setInterval(() => {
         if (!game.creatorCharging) {
           clearInterval(powerTimer)
@@ -161,10 +179,10 @@ class GameStateManager {
         }
         
         const elapsed = Date.now() - startTime
-        const progress = Math.min(elapsed / 4500, 1) // 4.5 seconds to max
+        const progress = Math.min(elapsed / 3000, 1) // 3 seconds to max (faster)
         game.creatorPowerProgress = progress * 100
         game.creatorFinalPower = Math.min(10, Math.max(1, 1 + (progress * 9)))
-      }, 50)
+      }, 16) // 60fps updates for smooth animation
       
       this.powerTimers.set(`${gameId}_creator`, powerTimer)
     } else {
@@ -178,10 +196,10 @@ class GameStateManager {
         }
         
         const elapsed = Date.now() - startTime
-        const progress = Math.min(elapsed / 4500, 1)
+        const progress = Math.min(elapsed / 3000, 1) // 3 seconds to max (faster)
         game.challengerPowerProgress = progress * 100
         game.challengerFinalPower = Math.min(10, Math.max(1, 1 + (progress * 9)))
-      }, 50)
+      }, 16) // 60fps updates for smooth animation
       
       this.powerTimers.set(`${gameId}_challenger`, powerTimer)
     }
@@ -194,6 +212,12 @@ class GameStateManager {
   stopPowerCharging(gameId, playerAddress) {
     const game = this.games.get(gameId)
     if (!game) return false
+
+    // Only allow the current turn player to stop charging
+    if (game.currentTurn?.toLowerCase() !== playerAddress.toLowerCase()) {
+      console.log(`❌ Not ${playerAddress}'s turn to stop charging`)
+      return false
+    }
 
     const isCreator = playerAddress.toLowerCase() === game.creator.toLowerCase()
     
@@ -215,8 +239,16 @@ class GameStateManager {
       console.log(`⚡ Challenger stopped charging at power: ${game.challengerFinalPower}`)
     }
     
+    // Since this is turn-based, immediately execute the flip when current player finishes
+    console.log(`🎲 Current player finished charging power - executing flip immediately`)
+    
+    // Clear any remaining turn timer
+    this.clearTurnTimer(gameId)
+    
     game.updatedAt = new Date().toISOString()
-    return true
+    
+    // Return special flag to indicate flip should execute
+    return { shouldFlip: true }
   }
 
   // ===== FLIP EXECUTION =====
@@ -672,26 +704,9 @@ class GameStateManager {
       game.challengerPowerProgress = 15
     }
     
-    // Check if both players have completed their actions
-    const bothReady = game.creatorChoice && game.challengerChoice && 
-                     (game.creatorFinalPower > 0 || !game.creatorCharging) && 
-                     (game.challengerFinalPower > 0 || !game.challengerCharging)
-    
-    if (bothReady) {
-      // Execute the flip
-      this.executeFlip(gameId)
-    } else {
-      // Switch to other player's turn
-      game.currentTurn = game.currentTurn === game.creator ? game.challenger : game.creator
-      game.gamePhase = this.GAME_PHASES.WAITING_CHOICE
-      game.actionDeadline = Date.now() + 20000
-      game.turnStartTime = Date.now()
-      
-      // Start timer for the other player
-      this.startTurnTimer(gameId, 20000, () => {
-        this.autoMakeChoice(gameId, game.currentTurn)
-      })
-    }
+    // In turn-based mode, immediately execute flip when current player finishes
+    console.log(`🎲 Auto-completing power charge - executing flip for turn-based game`)
+    this.executeFlip(gameId)
     
     game.updatedAt = new Date().toISOString()
   }

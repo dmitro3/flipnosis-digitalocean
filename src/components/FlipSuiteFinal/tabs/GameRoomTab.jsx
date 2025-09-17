@@ -292,19 +292,77 @@ const ChoiceButton = styled.button`
 `
 
 const PowerBar = styled.div`
-  width: 200px;
-  height: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
+  width: 300px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
   overflow: hidden;
   margin: 1rem 0;
+  position: relative;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 `
 
 const PowerFill = styled.div`
   height: 100%;
-  background: linear-gradient(90deg, #00ff88, #00cc6a);
+  background: linear-gradient(90deg, 
+    #ff4444 0%, 
+    #ffaa00 25%, 
+    #ffff00 50%, 
+    #88ff00 75%, 
+    #00ff88 100%);
   width: ${props => props.power}%;
-  transition: width 0.1s ease;
+  transition: width 0.05s linear;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.3) 50%, 
+      transparent 100%);
+    animation: ${props => props.power > 0 ? 'shimmer 1s infinite' : 'none'};
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+`
+
+const PowerText = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  z-index: 1;
+`
+
+const PulseButton = styled(ChoiceButton)`
+  @keyframes pulse {
+    0% { 
+      transform: scale(1);
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+    }
+    50% { 
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(0, 255, 136, 0.8);
+    }
+    100% { 
+      transform: scale(1);
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+    }
+  }
 `
 
 const GameRoomTab = ({ 
@@ -629,39 +687,104 @@ const GameRoomTab = ({
             </ChoiceButtons>
           )}
 
+          {/* Waiting for other player */}
+          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && gameState.currentTurn !== address && (
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <div style={{ color: '#ffaa00', fontSize: '1.4rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+                ⏳ Waiting for {gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} to choose
+              </div>
+              <div style={{ color: '#ccc', fontSize: '1rem' }}>
+                {gameState.currentTurn?.slice(0, 6)}...{gameState.currentTurn?.slice(-4)} is making their choice
+              </div>
+            </div>
+          )}
+
+          {/* Waiting during power charging */}
+          {gameState.gamePhase === 'charging_power' && gameState.currentTurn !== address && (
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <div style={{ color: '#00ff88', fontSize: '1.4rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+                ⚡ {gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} is charging power
+              </div>
+              <div style={{ color: '#ccc', fontSize: '1rem', marginBottom: '1rem' }}>
+                Your choice: {address === gameState.creator ? gameState.creatorChoice : gameState.challengerChoice}
+              </div>
+              <PowerBar>
+                <PowerFill 
+                  power={
+                    gameState.currentTurn === gameState.creator ? gameState.creatorPowerProgress : gameState.challengerPowerProgress
+                  } 
+                />
+                <PowerText>
+                  {(gameState.currentTurn === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '0.0'}/10
+                </PowerText>
+              </PowerBar>
+            </div>
+          )}
+
           {/* Power Charging */}
           {gameState.gamePhase === 'charging_power' && gameState.currentTurn === address && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <div style={{ color: '#00ff88', fontSize: '1.2rem', marginBottom: '1rem' }}>
+              <div style={{ color: '#00ff88', fontSize: '1.4rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+                🎯 Your choice: {address === gameState.creator ? gameState.creatorChoice : gameState.challengerChoice}
+              </div>
+              <div style={{ color: '#ffaa00', fontSize: '1.2rem', marginBottom: '1rem' }}>
                 Hold to charge your flip power!
               </div>
+              
               <PowerBar>
                 <PowerFill 
                   power={
                     address === gameState.creator ? gameState.creatorPowerProgress : gameState.challengerPowerProgress
                   } 
                 />
+                <PowerText>
+                  {(address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '0.0'}/10
+                </PowerText>
               </PowerBar>
-              <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '1rem' }}>
-                Power: {
-                  (address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '0.0'
-                }/10
+              
+              <div style={{ fontSize: '1rem', color: '#ccc', marginBottom: '1.5rem' }}>
+                {address === gameState.creator ? 
+                  `Opponent gets: ${gameState.challengerChoice}` : 
+                  `Opponent gets: ${gameState.creatorChoice}`
+                }
               </div>
-              <ChoiceButton
-                onMouseDown={() => socket.emit('start_power_charge', { gameId, address })}
-                onMouseUp={() => socket.emit('stop_power_charge', { gameId, address })}
-                onTouchStart={() => socket.emit('start_power_charge', { gameId, address })}
-                onTouchEnd={() => socket.emit('stop_power_charge', { gameId, address })}
+              
+              <PulseButton
+                onMouseDown={() => {
+                  socket.emit('start_power_charge', { gameId, address })
+                }}
+                onMouseUp={() => {
+                  socket.emit('stop_power_charge', { gameId, address })
+                }}
+                onMouseLeave={() => {
+                  // Also stop if mouse leaves button while holding
+                  socket.emit('stop_power_charge', { gameId, address })
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  socket.emit('start_power_charge', { gameId, address })
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault()
+                  socket.emit('stop_power_charge', { gameId, address })
+                }}
                 style={{ 
                   background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
                   color: '#000',
                   padding: '1.5rem 3rem',
                   fontSize: '1.3rem',
-                  userSelect: 'none'
+                  userSelect: 'none',
+                  cursor: 'pointer',
+                  border: '3px solid #00ff88',
+                  animation: 'pulse 2s infinite'
                 }}
               >
-                ⚡ CHARGE POWER ⚡
-              </ChoiceButton>
+                ⚡ HOLD TO CHARGE ⚡
+              </PulseButton>
+              
+              <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
+                Release when you're satisfied with your power level!
+              </div>
             </div>
           )}
         </CoinArea>

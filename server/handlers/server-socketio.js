@@ -252,41 +252,13 @@ class GameServer {
     }
     
     // Stop power charging
-    this.gameStateManager.stopPowerCharging(gameId, address)
+    const result = this.gameStateManager.stopPowerCharging(gameId, address)
     
-    // Check if both players have completed their actions (choice + power)
-    const bothHaveChoices = gameState.creatorChoice && gameState.challengerChoice
-    const bothFinishedPower = (gameState.creatorFinalPower > 0 || !gameState.creatorCharging) && 
-                             (gameState.challengerFinalPower > 0 || !gameState.challengerCharging)
-    
-    console.log(`🔍 Power charge complete check: bothHaveChoices=${bothHaveChoices}, bothFinishedPower=${bothFinishedPower}`)
-    
-    if (bothHaveChoices && bothFinishedPower) {
-      // Both players are ready - execute the flip
-      console.log(`🎲 Both players ready, executing flip for game ${gameId}`)
+    // In turn-based mode, execute flip immediately when current player finishes
+    if (result && result.shouldFlip) {
+      console.log(`🎲 Current player finished - executing flip for game ${gameId}`)
       this.handleExecuteFlip(socket, { gameId })
     } else {
-      // Check if we need to switch turns
-      const isCreator = address.toLowerCase() === gameState.creator?.toLowerCase()
-      const currentPlayerFinished = isCreator ? 
-        (gameState.creatorChoice && gameState.creatorFinalPower > 0) :
-        (gameState.challengerChoice && gameState.challengerFinalPower > 0)
-      
-      if (currentPlayerFinished && gameState.currentTurn === address) {
-        // Switch to other player's turn
-        gameState.currentTurn = gameState.currentTurn === gameState.creator ? gameState.challenger : gameState.creator
-        gameState.gamePhase = 'waiting_choice'
-        gameState.actionDeadline = Date.now() + 20000 // 20 seconds for next player
-        gameState.turnStartTime = Date.now()
-        
-        // Start timer for the other player
-        this.gameStateManager.startTurnTimer(gameId, 20000, () => {
-          this.gameStateManager.autoMakeChoice(gameId, gameState.currentTurn)
-        })
-        
-        console.log(`🔄 Switched turn to ${gameState.currentTurn}`)
-      }
-      
       // Broadcast updated state
       const fullState = this.gameStateManager.getFullGameState(gameId)
       const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
