@@ -171,7 +171,7 @@ class GameStateManager {
       game.creatorCharging = true
       game.creatorPowerProgress = 0
       
-      // Create power charging timer - much smoother updates
+      // Create power charging timer - smooth 0.1 increments
       const powerTimer = setInterval(() => {
         if (!game.creatorCharging) {
           clearInterval(powerTimer)
@@ -179,9 +179,15 @@ class GameStateManager {
         }
         
         const elapsed = Date.now() - startTime
-        const progress = Math.min(elapsed / 3000, 1) // 3 seconds to max (faster)
+        const progress = Math.min(elapsed / 3000, 1) // 3 seconds to max
         game.creatorPowerProgress = progress * 100
-        game.creatorFinalPower = Math.min(10, Math.max(1, 1 + (progress * 9)))
+        
+        // Calculate power in 0.1 increments: 1.0, 1.1, 1.2, ..., 10.0
+        const rawPower = 1 + (progress * 9) // 1.0 to 10.0
+        game.creatorFinalPower = Math.round(rawPower * 10) / 10 // Round to 0.1 increments
+        
+        // Ensure bounds
+        game.creatorFinalPower = Math.min(10.0, Math.max(1.0, game.creatorFinalPower))
       }, 16) // 60fps updates for smooth animation
       
       this.powerTimers.set(`${gameId}_creator`, powerTimer)
@@ -196,9 +202,15 @@ class GameStateManager {
         }
         
         const elapsed = Date.now() - startTime
-        const progress = Math.min(elapsed / 3000, 1) // 3 seconds to max (faster)
+        const progress = Math.min(elapsed / 3000, 1) // 3 seconds to max
         game.challengerPowerProgress = progress * 100
-        game.challengerFinalPower = Math.min(10, Math.max(1, 1 + (progress * 9)))
+        
+        // Calculate power in 0.1 increments: 1.0, 1.1, 1.2, ..., 10.0
+        const rawPower = 1 + (progress * 9) // 1.0 to 10.0
+        game.challengerFinalPower = Math.round(rawPower * 10) / 10 // Round to 0.1 increments
+        
+        // Ensure bounds
+        game.challengerFinalPower = Math.min(10.0, Math.max(1.0, game.challengerFinalPower))
       }, 16) // 60fps updates for smooth animation
       
       this.powerTimers.set(`${gameId}_challenger`, powerTimer)
@@ -262,24 +274,36 @@ class GameStateManager {
     if (!game.creatorChoice) game.creatorChoice = 'heads'
     if (!game.challengerChoice) game.challengerChoice = game.creatorChoice === 'heads' ? 'tails' : 'heads'
     
-    // Generate flip result
+    // Generate flip result - ALWAYS RANDOM regardless of power
     const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
     
-    // Calculate flip animation parameters
-    const baseRotations = 3 + Math.floor(Math.random() * 3) // 3-5 rotations
-    const totalRotations = baseRotations * 2 * Math.PI
+    // Calculate flip duration based on current player's power level
+    const isCreatorTurn = game.currentTurn?.toLowerCase() === game.creator?.toLowerCase()
+    const playerPower = isCreatorTurn ? game.creatorFinalPower : game.challengerFinalPower
+    
+    // Power determines flip duration: 1.0 = 1 second, 10.0 = 10 seconds
+    // This creates strategic depth - higher power = longer flip = more suspense
+    const flipDuration = Math.max(1000, Math.min(10000, playerPower * 1000))
+    
+    // Calculate animation parameters based on duration
+    // More power = more rotations for longer flip
+    const rotationsPerSecond = 2 // Base rotation speed
+    const totalRotations = (flipDuration / 1000) * rotationsPerSecond * 2 * Math.PI
     const finalRotation = flipResult === 'heads' ? 0 : Math.PI
+    
+    console.log(`⚡ Flip power: ${playerPower.toFixed(1)}, Duration: ${flipDuration}ms, Rotations: ${(totalRotations / (2 * Math.PI)).toFixed(1)}`)
     
     // Update coin state for animation
     game.coinState = {
       rotation: { x: 0, y: 0, z: 0 },
-      velocity: { x: 0, y: totalRotations / 3, z: 0 }, // Velocity for 3 second animation
+      velocity: { x: 0, y: totalRotations / (flipDuration / 1000), z: 0 },
       isFlipping: true,
       flipStartTime: Date.now(),
-      flipDuration: 3000,
+      flipDuration: flipDuration,
       flipResult: flipResult,
       totalRotations: totalRotations,
-      finalRotation: finalRotation
+      finalRotation: finalRotation,
+      powerUsed: playerPower // Track power used for this flip
     }
     
     game.gamePhase = this.GAME_PHASES.EXECUTING_FLIP
@@ -299,12 +323,12 @@ class GameStateManager {
       game.roundWinner = null // Tie (shouldn't happen)
     }
     
-    console.log(`🎯 Flip result: ${flipResult}, Winner: ${game.roundWinner}`)
+    console.log(`🎯 Flip result: ${flipResult}, Winner: ${game.roundWinner}, Power used: ${playerPower.toFixed(1)}`)
     
-    // Schedule result phase
+    // Schedule result phase based on actual flip duration
     setTimeout(() => {
       this.showResult(gameId)
-    }, 3000)
+    }, flipDuration)
     
     game.updatedAt = new Date().toISOString()
     return game

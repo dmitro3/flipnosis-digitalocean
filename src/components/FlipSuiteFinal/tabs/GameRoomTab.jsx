@@ -463,6 +463,79 @@ const TurnIndicator = styled.div`
   };
 `
 
+// Neon countdown timer (bottom left)
+const CountdownContainer = styled.div`
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #FF1493;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(255, 20, 147, 0.4);
+  z-index: 1000;
+  min-width: 150px;
+  
+  @media (max-width: 768px) {
+    bottom: 1rem;
+    left: 1rem;
+    padding: 1rem;
+    min-width: 120px;
+  }
+`
+
+const CountdownText = styled.div`
+  color: ${props => props.isUrgent ? '#FF4444' : '#FF1493'};
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: ${props => props.isUrgent ? 
+    '0 0 20px #FF4444, 0 0 40px #FF4444, 0 0 60px #FF4444' :
+    '0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493'
+  };
+  animation: ${props => props.isUrgent ? 'urgentPulse 0.5s linear infinite' : 'neonPulse 2s linear infinite'};
+  margin-bottom: 0.5rem;
+  
+  @keyframes neonPulse {
+    0%, 100% { 
+      text-shadow: 0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493;
+    }
+    50% { 
+      text-shadow: 0 0 30px #FF1493, 0 0 60px #FF1493, 0 0 90px #FF1493;
+    }
+  }
+  
+  @keyframes urgentPulse {
+    0%, 100% { 
+      text-shadow: 0 0 20px #FF4444, 0 0 40px #FF4444, 0 0 60px #FF4444;
+      transform: scale(1);
+    }
+    50% { 
+      text-shadow: 0 0 30px #FF4444, 0 0 60px #FF4444, 0 0 90px #FF4444;
+      transform: scale(1.05);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
+`
+
+const CountdownLabel = styled.div`
+  color: #FFA500;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+`
+
 const GameRoomTab = ({ 
   gameData, 
   gameId, 
@@ -474,6 +547,11 @@ const GameRoomTab = ({
   isGameReady
 }) => {
   const [gameState, setGameState] = useState(null)
+  const [playerNames, setPlayerNames] = useState({
+    creator: null,
+    challenger: null
+  })
+  const [roundCountdown, setRoundCountdown] = useState(null)
   
   // Check if game is ready to play
   useEffect(() => {
@@ -614,6 +692,73 @@ const GameRoomTab = ({
     }
   }, [socket, gameId])
   
+  // Fetch player names
+  useEffect(() => {
+    const fetchPlayerNames = async () => {
+      if (!gameData) return
+      
+      const names = { creator: null, challenger: null }
+      
+      // Fetch creator name
+      if (gameData.creator) {
+        try {
+          const response = await fetch(`/api/profile/${gameData.creator}`)
+          if (response.ok) {
+            const profile = await response.json()
+            names.creator = profile.name || profile.username || null
+          }
+        } catch (error) {
+          console.error('Error fetching creator profile:', error)
+        }
+      }
+      
+      // Fetch challenger name
+      if (gameData.challenger) {
+        try {
+          const response = await fetch(`/api/profile/${gameData.challenger}`)
+          if (response.ok) {
+            const profile = await response.json()
+            names.challenger = profile.name || profile.username || null
+          }
+        } catch (error) {
+          console.error('Error fetching challenger profile:', error)
+        }
+      }
+      
+      setPlayerNames(names)
+    }
+    
+    fetchPlayerNames()
+  }, [gameData?.creator, gameData?.challenger])
+  
+  // Round countdown timer
+  useEffect(() => {
+    let countdownInterval = null
+    
+    // Start countdown when game is in choosing phase
+    if (gameState?.phase === 'choosing' || gameState?.gamePhase === 'waiting_choice') {
+      setRoundCountdown(20) // 20 second countdown
+      
+      countdownInterval = setInterval(() => {
+        setRoundCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval)
+            return null
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      setRoundCountdown(null)
+    }
+    
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+      }
+    }
+  }, [gameState?.phase, gameState?.gamePhase])
+  
   const getGameStatus = () => {
     if (!gameData) return 'Loading...'
     
@@ -719,11 +864,13 @@ const GameRoomTab = ({
         >
           <PlayerHeader>
             <ProfilePicture address={gameData.creator} size={40} />
-            <PlayerLabel isCreator={true}>👑 Creator</PlayerLabel>
+            <PlayerLabel isCreator={true}>
+              {playerNames.creator || `${gameData.creator?.slice(0, 6)}...${gameData.creator?.slice(-4)}`}
+            </PlayerLabel>
           </PlayerHeader>
           <PlayerStats>
             <StatRow>
-              <StatLabel>Name:</StatLabel>
+              <StatLabel>Wallet:</StatLabel>
               <StatValue isCreator={true}>
                 {gameData.creator?.slice(0, 6)}...{gameData.creator?.slice(-4)}
               </StatValue>
@@ -741,7 +888,7 @@ const GameRoomTab = ({
             <StatRow>
               <StatLabel>Power:</StatLabel>
               <StatValue isCreator={true}>
-                {gameState.creatorFinalPower?.toFixed(1) || '0.0'}/10
+                {gameState.creatorFinalPower?.toFixed(1) || '1.0'}/10.0
               </StatValue>
             </StatRow>
           </PlayerStats>
@@ -756,7 +903,7 @@ const GameRoomTab = ({
           <OptimizedGoldCoin
             isFlipping={gameState.coinState?.isFlipping}
             flipResult={gameState.coinState?.flipResult}
-            flipDuration={gameState.coinState?.flipDuration || 3000}
+            flipDuration={gameState.coinState?.flipDuration || 1000} // Dynamic duration from server
             onFlipComplete={() => console.log('Flip animation complete')}
             customHeadsImage={coinConfig?.headsImage}
             customTailsImage={coinConfig?.tailsImage}
@@ -765,6 +912,9 @@ const GameRoomTab = ({
             isPlayerTurn={gameState.currentTurn === address}
             gamePhase={gameState.gamePhase}
             isInteractive={false}
+            creatorPower={gameState.creatorFinalPower || 1.0}
+            joinerPower={gameState.challengerFinalPower || 1.0}
+            powerUsed={gameState.coinState?.powerUsed || 1.0}
           />
 
           {/* Choice Buttons */}
@@ -813,7 +963,7 @@ const GameRoomTab = ({
                   } 
                 />
                 <PowerText>
-                  {(gameState.currentTurn === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '0.0'}/10
+                  {(gameState.currentTurn === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '1.0'}/10.0
                 </PowerText>
               </PowerBar>
             </div>
@@ -836,7 +986,7 @@ const GameRoomTab = ({
                   } 
                 />
                 <PowerText>
-                  {(address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '0.0'}/10
+                  {(address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '1.0'}/10.0
                 </PowerText>
               </PowerBar>
               
@@ -894,11 +1044,13 @@ const GameRoomTab = ({
         >
           <PlayerHeader>
             <ProfilePicture address={gameData.challenger} size={40} />
-            <PlayerLabel isCreator={false}>⚔️ Challenger</PlayerLabel>
+            <PlayerLabel isCreator={false}>
+              {playerNames.challenger || `${gameData.challenger?.slice(0, 6)}...${gameData.challenger?.slice(-4)}`}
+            </PlayerLabel>
           </PlayerHeader>
           <PlayerStats>
             <StatRow>
-              <StatLabel>Name:</StatLabel>
+              <StatLabel>Wallet:</StatLabel>
               <StatValue isCreator={false}>
                 {gameData.challenger?.slice(0, 6)}...{gameData.challenger?.slice(-4)}
               </StatValue>
@@ -916,7 +1068,7 @@ const GameRoomTab = ({
             <StatRow>
               <StatLabel>Power:</StatLabel>
               <StatValue isCreator={false}>
-                {gameState.challengerFinalPower?.toFixed(1) || '0.0'}/10
+                {gameState.challengerFinalPower?.toFixed(1) || '1.0'}/10.0
               </StatValue>
             </StatRow>
           </PlayerStats>
@@ -966,6 +1118,16 @@ const GameRoomTab = ({
       <GameContent>
         {isGameReady ? renderActiveGame() : renderWaitingState()}
       </GameContent>
+      
+      {/* Neon Countdown Timer - Bottom Left */}
+      {roundCountdown && (
+        <CountdownContainer>
+          <CountdownText isUrgent={roundCountdown <= 5}>
+            {roundCountdown}s
+          </CountdownText>
+          <CountdownLabel>Time Left</CountdownLabel>
+        </CountdownContainer>
+      )}
     </TabContainer>
   )
 }
