@@ -185,17 +185,32 @@ const GameBoard = styled.div`
 
 const PlayerCard = styled.div`
   background: linear-gradient(135deg, 
-    ${props => props.isCreator ? 'rgba(255, 215, 0, 0.1)' : 'rgba(0, 123, 255, 0.1)'} 0%, 
-    ${props => props.isCreator ? 'rgba(255, 165, 0, 0.2)' : 'rgba(0, 86, 179, 0.2)'} 100%);
-  border: 2px solid ${props => props.isCreator ? '#FFD700' : '#007BFF'};
+    ${props => props.isCreator ? 
+      'rgba(255, 20, 147, 0.15)' :   // Neon Pink with transparency
+      'rgba(0, 255, 65, 0.15)'       // Neon Green for challenger
+    } 0%, 
+    rgba(0, 0, 0, 0.5) 100%          // Transparent black gradient
+  );
+  border: 2px solid ${props => props.isCreator ? '#FF1493' : '#00FF41'};
   border-radius: 1rem;
   padding: 1.5rem;
   text-align: center;
   position: relative;
+  height: fit-content;
+  box-shadow: 0 0 30px ${props => props.isCreator ? 
+    'rgba(255, 20, 147, 0.4)' :      // Pink glow
+    'rgba(0, 255, 65, 0.3)'          // Green glow
+  };
   
   ${props => props.isActive && `
-    box-shadow: 0 0 20px ${props.isCreator ? 'rgba(255, 215, 0, 0.5)' : 'rgba(0, 123, 255, 0.5)'};
-    transform: scale(1.05);
+    box-shadow: 0 0 40px ${props.isCreator ? 'rgba(255, 20, 147, 0.6)' : 'rgba(0, 255, 65, 0.5)'};
+    transform: scale(1.02);
+    animation: activePulse 2s ease-in-out infinite;
+    
+    @keyframes activePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.9; }
+    }
   `}
   
   transition: all 0.3s ease;
@@ -211,7 +226,10 @@ const PlayerHeader = styled.div`
 const PlayerLabel = styled.div`
   font-size: 1.2rem;
   font-weight: bold;
-  color: ${props => props.isCreator ? '#FFD700' : '#007BFF'};
+  color: ${props => props.isCreator ? '#FF1493' : '#00FF41'};
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px ${props => props.isCreator ? '#FF1493' : '#00FF41'};
 `
 
 const PlayerStats = styled.div`
@@ -233,7 +251,7 @@ const StatLabel = styled.span`
 
 const StatValue = styled.span`
   font-weight: bold;
-  color: ${props => props.isCreator ? '#FFD700' : '#007BFF'};
+  color: ${props => props.isCreator ? '#FF1493' : '#00FF41'};
 `
 
 const CoinArea = styled.div`
@@ -256,7 +274,20 @@ const GameStatus = styled.div`
 const StatusText = styled.h2`
   margin: 0;
   font-size: 1.5rem;
-  color: #00ff88;
+  color: #00BFFF;
+  text-shadow: 0 0 20px #00BFFF, 0 0 40px #00BFFF, 0 0 60px #00BFFF;
+  animation: neonPulse 2s linear infinite;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  
+  @keyframes neonPulse {
+    0%, 100% { 
+      text-shadow: 0 0 20px #00BFFF, 0 0 40px #00BFFF, 0 0 60px #00BFFF;
+    }
+    50% { 
+      text-shadow: 0 0 30px #00BFFF, 0 0 60px #00BFFF, 0 0 90px #00BFFF;
+    }
+  }
 `
 
 const ChoiceButtons = styled.div`
@@ -266,28 +297,60 @@ const ChoiceButtons = styled.div`
 `
 
 const ChoiceButton = styled.button`
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+  padding: 1.5rem 3rem;
+  font-size: 1.2rem;
   font-weight: bold;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
+  border-radius: 1rem;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  opacity: ${props => props.disabled ? 0.5 : 1};
   
-  background: ${props => props.choice === 'heads' 
-    ? 'linear-gradient(135deg, #ffd700, #ffed4e)' 
-    : 'linear-gradient(135deg, #c0392b, #e74c3c)'};
-  color: ${props => props.choice === 'heads' ? '#000' : '#fff'};
+  background: linear-gradient(135deg, 
+    ${props => props.choice === 'heads' ? 
+      'rgba(0, 255, 65, 0.2)' :      // Green for heads
+      'rgba(255, 20, 147, 0.2)'      // Pink for tails
+    } 0%, 
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  border: 2px solid ${props => props.choice === 'heads' ? '#00FF41' : '#FF1493'};
+  color: white;
   
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      transparent, 
+      ${props => props.choice === 'heads' ? 
+        'rgba(0, 255, 65, 0.3)' : 
+        'rgba(255, 20, 147, 0.3)'
+      }, 
+      transparent
+    );
+    transition: left 0.5s ease;
   }
   
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+  &:hover:not(:disabled):before {
+    left: 100%;
+  }
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px ${props => props.choice === 'heads' ? 
+      'rgba(0, 255, 65, 0.4)' : 
+      'rgba(255, 20, 147, 0.4)'
+    };
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
 `
 
@@ -363,6 +426,41 @@ const PulseButton = styled(ChoiceButton)`
       box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
     }
   }
+`
+
+// Neon waiting message component
+const OpponentChoosingMessage = styled.div`
+  padding: 1.5rem 3rem;
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 140, 0, 0.1) 100%);
+  border: 2px solid #FFA500;
+  border-radius: 1rem;
+  color: #FFA500;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.3);
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.02); }
+  }
+`
+
+// Turn indicator with neon glow
+const TurnIndicator = styled.div`
+  color: ${props => props.isMyTurn ? '#00BFFF' : '#FF1493'};
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: ${props => props.isMyTurn ? 
+    '0 0 15px #00BFFF, 0 0 30px #00BFFF' : 
+    '0 0 15px #FF1493, 0 0 30px #FF1493'
+  };
 `
 
 const GameRoomTab = ({ 
@@ -690,24 +788,24 @@ const GameRoomTab = ({
           {/* Waiting for other player */}
           {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && gameState.currentTurn !== address && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <div style={{ color: '#ffaa00', fontSize: '1.4rem', marginBottom: '1rem', fontWeight: 'bold' }}>
-                ⏳ Waiting for {gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} to choose
-              </div>
-              <div style={{ color: '#ccc', fontSize: '1rem' }}>
+              <OpponentChoosingMessage>
+                🤔 {gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} is choosing...
+              </OpponentChoosingMessage>
+              <TurnIndicator isMyTurn={false}>
                 {gameState.currentTurn?.slice(0, 6)}...{gameState.currentTurn?.slice(-4)} is making their choice
-              </div>
+              </TurnIndicator>
             </div>
           )}
 
           {/* Waiting during power charging */}
           {gameState.gamePhase === 'charging_power' && gameState.currentTurn !== address && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <div style={{ color: '#00ff88', fontSize: '1.4rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+              <OpponentChoosingMessage style={{ background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)', borderColor: '#00FF88', color: '#00FF88' }}>
                 ⚡ {gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} is charging power
-              </div>
-              <div style={{ color: '#ccc', fontSize: '1rem', marginBottom: '1rem' }}>
+              </OpponentChoosingMessage>
+              <TurnIndicator isMyTurn={false} style={{ color: '#00FF88', textShadow: '0 0 15px #00FF88, 0 0 30px #00FF88' }}>
                 Your choice: {address === gameState.creator ? gameState.creatorChoice : gameState.challengerChoice}
-              </div>
+              </TurnIndicator>
               <PowerBar>
                 <PowerFill 
                   power={
