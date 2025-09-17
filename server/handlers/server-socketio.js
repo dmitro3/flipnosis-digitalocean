@@ -530,7 +530,7 @@ class GameServer {
     console.log(`  - Status: ${gameData.status}`)
     
     // Check if both players are deposited to determine initial game phase
-    const bothDeposited = (gameData.creator_deposited || true) && (gameData.challenger_deposited || false)
+    const bothDeposited = Boolean(gameData.creator_deposited && gameData.challenger_deposited)
     const initialPhase = bothDeposited ? 'game_active' : 'deposit_stage'
     const initialGamePhase = bothDeposited ? 'waiting_choice' : null
     
