@@ -195,7 +195,7 @@ const OfferAcceptanceOverlay = ({
           
           // Check if both players have deposited
           if (data.creator_deposited && data.challenger_deposited) {
-            console.log('🎮 Both deposits confirmed via polling! Transporting all players...')
+            console.log('🎮 Both deposits confirmed via polling! Activating game and transporting players...')
             
             // Clear the interval
             if (pollInterval) {
@@ -204,9 +204,15 @@ const OfferAcceptanceOverlay = ({
             }
             
             // Close overlay
-            setStatusMessage('Game ready! Transporting...')
+            setStatusMessage('Game ready! Activating...')
             
-            // Dispatch transport event for both players
+            // FIRST: Tell the server to activate the game via Socket.io
+            if (window.socketService && window.socketService.emit) {
+              console.log('📤 Emitting activate_game to server')
+              window.socketService.emit('activate_game', { gameId })
+            }
+            
+            // THEN: Dispatch transport event for both players
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('polling_transport_ready', {
                 detail: { 
