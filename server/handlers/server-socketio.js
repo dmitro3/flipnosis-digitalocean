@@ -55,10 +55,11 @@ class GameServer {
       // ===== NEW GAME ACTIONS =====
       socket.on('request_game_state', (data) => this.handleRequestGameState(socket, data))
       socket.on('player_choice', (data) => this.handlePlayerChoice(socket, data))
-      socket.on('start_power_charge', (data) => this.handleStartPowerCharge(socket, data))
-      socket.on('stop_power_charge', (data) => this.handleStopPowerCharge(socket, data))
-      socket.on('execute_flip', (data) => this.handleExecuteFlip(socket, data))
-      socket.on('spectate_game', (data) => this.handleSpectateGame(socket, data))
+    socket.on('start_power_charge', (data) => this.handleStartPowerCharge(socket, data))
+    socket.on('stop_power_charge', (data) => this.handleStopPowerCharge(socket, data))
+    socket.on('execute_flip', (data) => this.handleExecuteFlip(socket, data))
+    socket.on('spectate_game', (data) => this.handleSpectateGame(socket, data))
+    socket.on('request_next_round', (data) => this.handleRequestNextRound(socket, data))
       
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))
@@ -306,6 +307,22 @@ class GameServer {
     // Send current state
     const fullState = this.gameStateManager.getFullGameState(gameId)
     socket.emit('game_state_update', fullState)
+  }
+
+  async handleRequestNextRound(socket, data) {
+    const { gameId } = data
+    console.log(`🔄 Next round requested for game ${gameId}`)
+    
+    // Start next round
+    const gameState = this.gameStateManager.startNextRound(gameId, (roomId, eventType, data) => {
+      this.io.to(roomId).emit(eventType, data)
+    })
+    
+    if (gameState) {
+      console.log(`✅ Next round started for game ${gameId}`)
+    } else {
+      console.log(`❌ Could not start next round for game ${gameId}`)
+    }
   }
 
   // ===== PRESERVED METHODS (Chat, Offers, Deposits) =====

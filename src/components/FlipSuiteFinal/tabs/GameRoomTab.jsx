@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import OptimizedGoldCoin from '../../OptimizedGoldCoin'
 import ProfilePicture from '../../ProfilePicture'
+import WinLoseAnimation from '../../WinLoseAnimation'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -355,29 +356,33 @@ const ChoiceButton = styled.button`
 `
 
 const PowerBar = styled.div`
-  width: 300px;
-  height: 30px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 15px;
+  width: 350px;
+  height: 40px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 20, 0.9));
+  border: 3px solid #FFD700;
+  border-radius: 20px;
   overflow: hidden;
   margin: 1rem 0;
   position: relative;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 
+    0 0 20px rgba(255, 215, 0, 0.4),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
 `
 
 const PowerFill = styled.div`
   height: 100%;
   background: linear-gradient(90deg, 
-    #ff4444 0%, 
-    #ffaa00 25%, 
-    #ffff00 50%, 
-    #88ff00 75%, 
-    #00ff88 100%);
-  width: ${props => props.power}%;
-  transition: width 0.05s linear;
+    #FFD700 0%,
+    #FFA500 20%,
+    #FF6B00 40%,
+    #FF1493 60%,
+    #8A2BE2 80%,
+    #00BFFF 100%
+  );
+  width: ${props => Math.max(0, Math.min(100, props.power))}%;
+  transition: width 0.1s ease-out;
   position: relative;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
   
   &::after {
     content: '';
@@ -388,12 +393,12 @@ const PowerFill = styled.div`
     bottom: 0;
     background: linear-gradient(90deg, 
       transparent 0%, 
-      rgba(255, 255, 255, 0.3) 50%, 
+      rgba(255, 255, 255, 0.4) 50%, 
       transparent 100%);
-    animation: ${props => props.power > 0 ? 'shimmer 1s infinite' : 'none'};
+    animation: ${props => props.power > 0 ? 'powerShimmer 2s infinite' : 'none'};
   }
   
-  @keyframes shimmer {
+  @keyframes powerShimmer {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
   }
@@ -404,11 +409,33 @@ const PowerText = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
+  color: #FFD700;
   font-weight: bold;
-  font-size: 0.9rem;
-  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+  font-size: 1rem;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
   z-index: 1;
+  letter-spacing: 1px;
+`
+
+const PowerTicks = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  pointer-events: none;
+`
+
+const PowerTick = styled.div`
+  width: 2px;
+  height: 60%;
+  background: rgba(255, 255, 255, 0.6);
+  opacity: ${props => props.active ? 1 : 0.3};
+  transition: opacity 0.2s ease;
 `
 
 const PulseButton = styled(ChoiceButton)`
@@ -552,32 +579,35 @@ const GameRoomTab = ({
     challenger: null
   })
   const [roundCountdown, setRoundCountdown] = useState(null)
+  const [showWinLoseAnimation, setShowWinLoseAnimation] = useState(false)
+  const [roundResult, setRoundResult] = useState(null)
   
-  // Check if game is ready to play
+  // Check if game is ready to play - STRICT ACCESS CONTROL
   useEffect(() => {
     if (!gameData) {
       return
     }
     
-    // Check various status fields for game readiness
-    const readyStatuses = ['active', 'in_progress', 'playing']
-    const readyPhases = ['active', 'game_active', 'playing']
-    
-    const statusReady = readyStatuses.includes(gameData.status)
-    const phaseReady = readyPhases.includes(gameData.phase)
-    
-    // Also check if both players have deposited
+    // STRICT: Game is only ready when BOTH players have deposited AND game is active
+    const hasCreator = gameData.creator
+    const hasChallenger = gameData.challenger
     const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
+    const gameActive = gameData.status === 'active' && gameData.phase === 'game_active'
     
-    const gameReady = statusReady || phaseReady || bothDeposited
+    // Must have both players AND both deposits AND active status
+    const gameReady = hasCreator && hasChallenger && bothDeposited && gameActive
     
-    console.log('🎮 GameRoomTab: Game readiness check:', {
-      status: gameData.status,
-      phase: gameData.phase,
+    console.log('🎮 GameRoomTab: STRICT Game readiness check:', {
+      hasCreator: !!hasCreator,
+      hasChallenger: !!hasChallenger,
       bothDeposited,
-      gameReady
+      gameActive,
+      gameReady,
+      currentUser: address,
+      isCreator: address?.toLowerCase() === hasCreator?.toLowerCase(),
+      isChallenger: address?.toLowerCase() === hasChallenger?.toLowerCase()
     })
-  }, [gameData])
+  }, [gameData, address])
   
   // When tab becomes active and game is ready, request fresh state
   useEffect(() => {
@@ -696,6 +726,24 @@ const GameRoomTab = ({
         lastResult: data.result,
         gamePhase: 'result'
       }))
+      
+      // Show win/lose animation
+      const isActualCreator = address?.toLowerCase() === gameData.creator?.toLowerCase()
+      const isActualChallenger = address?.toLowerCase() === gameData.challenger?.toLowerCase()
+      
+      if (isActualCreator || isActualChallenger) {
+        const playerWon = (isActualCreator && data.roundWinner === gameData.creator) ||
+                          (isActualChallenger && data.roundWinner === gameData.challenger)
+        
+        setRoundResult({
+          isWin: playerWon,
+          playerScore: isActualCreator ? data.creatorScore : data.challengerScore,
+          opponentScore: isActualCreator ? data.challengerScore : data.creatorScore,
+          currentRound: data.currentRound,
+          totalRounds: 5
+        })
+        setShowWinLoseAnimation(true)
+      }
     }
     
     socket.on('game_state_update', handleGameStateUpdate)
@@ -853,6 +901,23 @@ const GameRoomTab = ({
         </WaitingState>
       )
     }
+    
+    // ACCESS CONTROL: Only allow actual players to interact
+    const isActualCreator = address?.toLowerCase() === gameData.creator?.toLowerCase()
+    const isActualChallenger = address?.toLowerCase() === gameData.challenger?.toLowerCase()
+    const isPlayer = isActualCreator || isActualChallenger
+    
+    if (!isPlayer) {
+      return (
+        <WaitingState>
+          <WaitingIcon>👁️</WaitingIcon>
+          <WaitingTitle>Spectator Mode</WaitingTitle>
+          <WaitingDescription>
+            You are watching this game. Only the two players can participate.
+          </WaitingDescription>
+        </WaitingState>
+      )
+    }
 
     return (
       <GameBoard>
@@ -958,9 +1023,17 @@ const GameRoomTab = ({
               <PowerBar>
                 <PowerFill 
                   power={
-                    gameState.currentTurn === gameState.creator ? gameState.creatorPowerProgress : gameState.challengerPowerProgress
-                  } 
+                    (((gameState.currentTurn === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower) || 1.0) - 1.0) * (100/9)
+                  }
                 />
+                <PowerTicks>
+                  {[2, 4, 6, 8].map(level => (
+                    <PowerTick 
+                      key={level} 
+                      active={((gameState.currentTurn === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower) || 1.0) >= level}
+                    />
+                  ))}
+                </PowerTicks>
                 <PowerText>
                   {(gameState.currentTurn === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '1.0'}/10.0
                 </PowerText>
@@ -981,9 +1054,17 @@ const GameRoomTab = ({
               <PowerBar>
                 <PowerFill 
                   power={
-                    address === gameState.creator ? gameState.creatorPowerProgress : gameState.challengerPowerProgress
-                  } 
+                    (((address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower) || 1.0) - 1.0) * (100/9)
+                  }
                 />
+                <PowerTicks>
+                  {[2, 4, 6, 8].map(level => (
+                    <PowerTick 
+                      key={level} 
+                      active={((address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower) || 1.0) >= level}
+                    />
+                  ))}
+                </PowerTicks>
                 <PowerText>
                   {(address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '1.0'}/10.0
                 </PowerText>
@@ -1127,6 +1208,24 @@ const GameRoomTab = ({
           <CountdownLabel>Time Left</CountdownLabel>
         </CountdownContainer>
       )}
+      
+      {/* Win/Lose Animation */}
+      <WinLoseAnimation
+        isVisible={showWinLoseAnimation}
+        isWin={roundResult?.isWin}
+        playerScore={roundResult?.playerScore}
+        opponentScore={roundResult?.opponentScore}
+        currentRound={roundResult?.currentRound}
+        totalRounds={roundResult?.totalRounds}
+        onAnimationComplete={() => {
+          setShowWinLoseAnimation(false)
+          setRoundResult(null)
+          // Request next round or game completion
+          if (socket) {
+            socket.emit('request_next_round', { gameId })
+          }
+        }}
+      />
     </TabContainer>
   )
 }

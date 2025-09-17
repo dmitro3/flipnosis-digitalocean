@@ -1715,6 +1715,11 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           // Create the game state in GameStateManager
           gameServer.gameStateManager.createGame(gameId, initialGameState)
           
+          // Start countdown for first round
+          gameServer.gameStateManager.startRoundCountdown(gameId, (roomId, eventType, data) => {
+            gameServer.io.to(roomId).emit(eventType, data)
+          })
+          
           // Start state broadcasting
           gameServer.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
             gameServer.io.to(room).emit(message.type, message)

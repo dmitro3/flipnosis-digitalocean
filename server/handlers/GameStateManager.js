@@ -415,20 +415,28 @@ class GameStateManager {
     game.updatedAt = new Date().toISOString()
   }
 
-  startNextRound(gameId) {
+  startNextRound(gameId, broadcastFn) {
     const game = this.games.get(gameId)
-    if (!game) return
+    if (!game) return null
+
+    // Check if game is complete first
+    const maxScore = Math.max(game.creatorScore, game.challengerScore)
+    if (maxScore >= 3) {
+      console.log(`🎉 Game ${gameId} is complete! Winner: ${game.creatorScore > game.challengerScore ? 'Creator' : 'Challenger'}`)
+      game.gamePhase = this.GAME_PHASES.GAME_COMPLETE
+      return game
+    }
 
     game.currentRound++
-    game.gamePhase = this.GAME_PHASES.WAITING_CHOICE
+    game.gamePhase = this.GAME_PHASES.CHOOSING
     
     // Reset round state
     game.creatorChoice = null
     game.challengerChoice = null
     game.creatorPowerProgress = 0
     game.challengerPowerProgress = 0
-    game.creatorFinalPower = 0
-    game.challengerFinalPower = 0
+    game.creatorFinalPower = 1.0
+    game.challengerFinalPower = 1.0
     game.creatorCharging = false
     game.challengerCharging = false
     game.flipResult = null
@@ -440,26 +448,26 @@ class GameStateManager {
       velocity: { x: 0, y: 0, z: 0 },
       isFlipping: false,
       flipStartTime: null,
-      flipDuration: 3000,
+      flipDuration: 1000,
       flipResult: null,
       totalRotations: 0,
       finalRotation: 0
     }
     
-    // Switch turns
-    game.currentTurn = game.currentTurn === game.creator ? game.challenger : game.creator
+    // Alternate who goes first each round
+    game.currentTurn = game.currentRound % 2 === 1 ? game.creator : game.challenger
     game.turnStartTime = Date.now()
     game.roundStartTime = Date.now()
-    game.actionDeadline = Date.now() + 20000 // 20 seconds for next choice
     
-    console.log(`🔄 Starting round ${game.currentRound}, ${game.currentTurn}'s turn`)
+    console.log(`🔄 Starting round ${game.currentRound}, ${game.currentTurn === game.creator ? 'Creator' : 'Challenger'} goes first`)
     
-    // Start timer for the new round
-    this.startTurnTimer(gameId, 20000, () => {
-      this.autoMakeChoice(gameId, game.currentTurn)
-    })
+    // Start countdown for this round
+    if (broadcastFn) {
+      this.startRoundCountdown(gameId, broadcastFn)
+    }
     
     game.updatedAt = new Date().toISOString()
+    return game
   }
 
   // ===== STATE BROADCASTING =====
@@ -544,6 +552,7 @@ class GameStateManager {
       // Timing
       turnStartTime: game.turnStartTime,
       roundStartTime: game.roundStartTime,
+      roundCountdown: game.roundCountdown,
       
       // Spectators
       spectators: game.spectators,
