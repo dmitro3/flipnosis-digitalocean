@@ -560,11 +560,11 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     } else {
       console.log('❌ Offer accepted gameId mismatch:', { eventGameId, componentGameId })
     }
-  }, [gameId, finalGameData, address, showSuccess])
+  }, [gameId, address, showSuccess])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
-    if (!gameId || !address || !finalGameData) return
+    if (!gameId || !address) return
 
     console.log('🔌 Connecting to game server...')
 
@@ -622,7 +622,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('deposit_timeout', handleDepositTimeout)
       socketService.off('offer_accepted', handleOfferAccepted)
     }
-  }, [gameId, address, finalGameData])
+  }, [gameId, address])
 
   // ADD this new useEffect to handle polling-based transport:
   useEffect(() => {
