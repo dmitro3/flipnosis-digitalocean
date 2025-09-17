@@ -299,8 +299,9 @@ class GameServer {
             this.io.to(room).emit(message.type, message)
           })
           
-          // Start round countdown
+          // Start round countdown with proper broadcast function
           this.gameStateManager.startRoundCountdown(gameId, (roomId, eventType, eventData) => {
+            console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
             this.io.to(roomId).emit(eventType, eventData)
           })
           

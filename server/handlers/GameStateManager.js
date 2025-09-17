@@ -385,7 +385,9 @@ class GameStateManager {
     console.log(`🎯 Flip result: ${flipResult}, Winner: ${game.roundWinner}, Power used: ${playerPower.toFixed(1)}`)
     
     // Schedule result phase based on actual flip duration
+    console.log(`⏰ Scheduling showResult to run in ${flipDuration}ms for game ${gameId}`)
     setTimeout(() => {
+      console.log(`⏰ Timeout fired - calling showResult for game ${gameId}`)
       this.showResult(gameId, broadcastFn)
     }, flipDuration)
     
@@ -417,7 +419,7 @@ class GameStateManager {
       }
       
       console.log(`📡 Broadcasting round_result:`, roundResultData)
-      broadcastFn(roomId, {
+      broadcastFn(roomId, 'round_result', {
         type: 'round_result',
         ...roundResultData
       })
@@ -441,7 +443,7 @@ class GameStateManager {
         }
         
         console.log(`🏆 Broadcasting game_complete:`, gameCompleteData)
-        broadcastFn(roomId, {
+        broadcastFn(roomId, 'game_complete', {
           type: 'game_complete',
           ...gameCompleteData
         })
