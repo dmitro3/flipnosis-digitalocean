@@ -712,13 +712,13 @@ const GameRoomTab = ({
       return
     }
     
-    // STRICT: Game is only ready when BOTH players have deposited AND game is active
+    // STRICT: Game is only ready when BOTH players have deposited AND game is ACTIVE phase
     const hasCreator = gameData.creator
     const hasChallenger = gameData.challenger
     const bothDeposited = gameData.creatorDeposited && gameData.challengerDeposited
-    const gameActive = gameData.status === 'active' && (gameData.phase === 'game_active' || gameData.phase === 'deposit_stage')
+    const gameActive = gameData.status === 'active' && gameData.phase === 'game_active' // MUST be game_active phase
     
-    // Must have both players AND both deposits AND active status
+    // Must have both players AND both deposits AND active game phase
     const gameReady = hasCreator && hasChallenger && bothDeposited && gameActive
     
     // CRITICAL: Only allow actual players to see the game as ready

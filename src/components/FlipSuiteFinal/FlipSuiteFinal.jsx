@@ -520,6 +520,23 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     showError(`Game not found: ${data.gameId || 'Unknown'} - ${data.error || 'Game may not exist or has ended'}`)
   }, [showError])
 
+  const handleGameStarted = useCallback((data) => {
+    console.log('🎮 Game started event received:', data)
+    
+    // Close deposit overlay and switch to game
+    setShowDepositOverlay(false)
+    setDepositState(null)
+    setIsGameReady(true)
+    setActiveTab('game')
+    
+    // Request fresh game state
+    if (socketService && socketService.emit) {
+      socketService.emit('request_game_state', { gameId })
+    }
+    
+    showSuccess('Game started! Both players are ready to flip!')
+  }, [gameId, showSuccess])
+
   const handleOfferAccepted = useCallback((data) => {
     console.log('🎯 Offer accepted event received:', data)
     
@@ -615,6 +632,9 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         // Offer accepted event (keep this)
         socketService.on('offer_accepted', handleOfferAccepted)
         
+        // Game started event (when both deposits complete)
+        socketService.on('game_started', handleGameStarted)
+        
         console.log('✅ All Socket.io event listeners registered')
         
         // Join room
@@ -646,6 +666,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('deposit_countdown', handleDepositCountdown)
       socketService.off('deposit_timeout', handleDepositTimeout)
       socketService.off('offer_accepted', handleOfferAccepted)
+      socketService.off('game_started', handleGameStarted)
     }
   }, [gameId, address])
 
@@ -740,14 +761,13 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   useEffect(() => {
     if (!finalGameData) return
     
-    const readyStatuses = ['active', 'in_progress', 'playing']
-    const readyPhases = ['active', 'game_active', 'playing']
-    
-    const statusReady = readyStatuses.includes(finalGameData.status)
-    const phaseReady = readyPhases.includes(finalGameData.phase)
+    // STRICT: Only allow game access when phase is specifically 'game_active'
+    const statusReady = finalGameData.status === 'active'
+    const phaseReady = finalGameData.phase === 'game_active'
     const bothDeposited = finalGameData.creatorDeposited && finalGameData.challengerDeposited
     
-    const gameReady = statusReady || phaseReady || bothDeposited
+    // ALL conditions must be met for game to be ready
+    const gameReady = statusReady && phaseReady && bothDeposited
     setIsGameReady(gameReady)
     
     console.log('🎮 Game readiness check:', {

@@ -627,6 +627,36 @@ class GameStateManager {
     return true
   }
 
+  // ===== DEPOSIT COMPLETION HANDLING =====
+  activateGameAfterDeposits(gameId, broadcastFn) {
+    const game = this.games.get(gameId)
+    if (!game) return false
+    
+    console.log(`🎮 Activating game after deposits: ${gameId}`)
+    
+    // Transition to active game state
+    game.phase = this.PHASES.GAME_ACTIVE
+    game.gamePhase = this.GAME_PHASES.WAITING_CHOICE
+    game.currentTurn = game.creator // Creator always goes first
+    game.turnStartTime = Date.now()
+    game.roundStartTime = Date.now()
+    
+    // Start the initial countdown for round 1
+    if (broadcastFn) {
+      this.startRoundCountdown(gameId, broadcastFn)
+    }
+    
+    // Start the first turn timer (20 seconds for choice)
+    this.startTurnTimer(gameId, 20000, () => {
+      this.autoMakeChoice(gameId, game.currentTurn)
+    })
+    
+    game.updatedAt = new Date().toISOString()
+    console.log(`✅ Game activated: ${gameId}, Creator goes first with 20s countdown`)
+    
+    return true
+  }
+
   // ===== GAME STATE MANAGEMENT =====
   getGame(gameId) {
     return this.games.get(gameId)

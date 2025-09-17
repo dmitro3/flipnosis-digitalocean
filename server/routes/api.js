@@ -1828,6 +1828,26 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           )
         })
         console.log('✅ Challenger deposit saved to database')
+        
+        // CRITICAL: Activate the game now that both players have deposited
+        if (gameServer && gameServer.gameStateManager) {
+          const activated = gameServer.gameStateManager.activateGameAfterDeposits(gameId, (roomId, message) => {
+            gameServer.io.to(roomId).emit(message.type, message)
+          })
+          
+          if (activated) {
+            console.log('🎮 Game activated after challenger deposit!')
+            
+            // Broadcast game started event
+            gameServer.io.to(`game_${gameId}`).emit('game_started', {
+              type: 'game_started',
+              gameId,
+              message: 'Both players deposited - game starting!',
+              phase: 'game_active',
+              gamePhase: 'waiting_choice'
+            })
+          }
+        }
       }
       
       // That's it! Polling will detect the change
