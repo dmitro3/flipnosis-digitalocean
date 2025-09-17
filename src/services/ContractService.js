@@ -1081,6 +1081,50 @@ class ContractService {
     }
   }
 
+  // Winner withdrawal function - allows winner to claim both NFT and crypto
+  async withdrawWinnings(gameId) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🏆 Winner withdrawing winnings for game:', gameId)
+      
+      const winnerAddress = this.walletClient.account.address
+      console.log('🏆 Winner address:', winnerAddress)
+      
+      // First withdraw the NFT to the winner
+      const nftResult = await this.emergencyWithdrawNFT(gameId, winnerAddress)
+      if (!nftResult.success) {
+        console.error('❌ NFT withdrawal failed:', nftResult.error)
+        return { success: false, error: `NFT withdrawal failed: ${nftResult.error}` }
+      }
+      
+      console.log('✅ NFT withdrawal successful:', nftResult.transactionHash)
+      
+      // Then withdraw the ETH to the winner
+      const ethResult = await this.emergencyWithdrawETH(gameId, winnerAddress)
+      if (!ethResult.success) {
+        console.error('❌ ETH withdrawal failed:', ethResult.error)
+        return { success: false, error: `ETH withdrawal failed: ${ethResult.error}` }
+      }
+      
+      console.log('✅ ETH withdrawal successful:', ethResult.transactionHash)
+      
+      return { 
+        success: true, 
+        nftTx: nftResult.transactionHash,
+        ethTx: ethResult.transactionHash,
+        message: 'Successfully withdrew both NFT and crypto!'
+      }
+      
+    } catch (error) {
+      console.error('❌ Error withdrawing winnings:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Get ETH amount for a given USD amount
   async getETHAmount(usdAmount) {
     if (!this.isReady()) {

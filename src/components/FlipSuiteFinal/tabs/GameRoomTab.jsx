@@ -166,6 +166,128 @@ const ActionButton = styled.button`
   }
 `
 
+// Game End UI Styles
+const GameEndContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: linear-gradient(135deg, 
+    ${props => props.isWinner ? 
+      'rgba(0, 255, 65, 0.15)' :   // Green for winner
+      'rgba(255, 20, 147, 0.15)'   // Pink for loser
+    } 0%, 
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  border: 3px solid ${props => props.isWinner ? '#00FF41' : '#FF1493'};
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 0 40px ${props => props.isWinner ? 
+    'rgba(0, 255, 65, 0.4)' :      // Green glow for winner
+    'rgba(255, 20, 147, 0.4)'      // Pink glow for loser
+  };
+  animation: ${props => props.isWinner ? 'winnerPulse' : 'loserPulse'} 2s ease-in-out infinite;
+  
+  @keyframes winnerPulse {
+    0%, 100% { 
+      box-shadow: 0 0 40px rgba(0, 255, 65, 0.4);
+      transform: scale(1);
+    }
+    50% { 
+      box-shadow: 0 0 60px rgba(0, 255, 65, 0.6);
+      transform: scale(1.02);
+    }
+  }
+  
+  @keyframes loserPulse {
+    0%, 100% { 
+      box-shadow: 0 0 40px rgba(255, 20, 147, 0.4);
+    }
+    50% { 
+      box-shadow: 0 0 60px rgba(255, 20, 147, 0.6);
+    }
+  }
+`
+
+const GameEndTitle = styled.h1`
+  font-size: 3rem;
+  font-weight: bold;
+  color: ${props => props.isWinner ? '#00FF41' : '#FF1493'};
+  text-shadow: ${props => props.isWinner ? 
+    '0 0 20px #00FF41, 0 0 40px #00FF41, 0 0 60px #00FF41' :
+    '0 0 20px #FF1493, 0 0 40px #FF1493, 0 0 60px #FF1493'
+  };
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 1rem;
+  text-align: center;
+`
+
+const GameEndSubtitle = styled.p`
+  font-size: 1.2rem;
+  color: #CCC;
+  text-align: center;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  line-height: 1.5;
+`
+
+const FinalScore = styled.div`
+  font-size: 2rem;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 0 20px #FFD700;
+  margin-bottom: 2rem;
+  text-align: center;
+`
+
+const WithdrawButton = styled.button`
+  padding: 1.5rem 3rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  border: 3px solid #FFD700;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+  
+  &:hover {
+    background: linear-gradient(135deg, #FFA500, #FF8C00);
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`
+
+const HomeButton = styled.button`
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #666, #444);
+  color: white;
+  border: 2px solid #666;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  
+  &:hover {
+    background: linear-gradient(135deg, #777, #555);
+    transform: translateY(-2px);
+  }
+`
+
 // Active Game Styles
 const GameBoard = styled.div`
   display: grid;
@@ -581,6 +703,7 @@ const GameRoomTab = ({
   const [roundCountdown, setRoundCountdown] = useState(null)
   const [showWinLoseAnimation, setShowWinLoseAnimation] = useState(false)
   const [roundResult, setRoundResult] = useState(null)
+  const [isWithdrawing, setIsWithdrawing] = useState(false)
   
   // Check if game is ready to play - STRICT ACCESS CONTROL
   useEffect(() => {
@@ -726,33 +849,67 @@ const GameRoomTab = ({
     }
     
     const handleRoundResult = (data) => {
-      console.log('🎲 Round result:', data)
+      console.log('🎲 Round result received:', data)
       setGameState(prev => ({
         ...prev,
         currentRound: data.currentRound,
         creatorScore: data.creatorScore,
         challengerScore: data.challengerScore,
-        lastResult: data.result,
-        gamePhase: 'result'
+        lastResult: data.flipResult,
+        roundWinner: data.roundWinner,
+        gamePhase: 'showing_result'
       }))
       
-      // Show win/lose animation
-      const isActualCreator = address?.toLowerCase() === gameData.creator?.toLowerCase()
-      const isActualChallenger = address?.toLowerCase() === gameData.challenger?.toLowerCase()
+      // Show win/lose animation for actual players
+      const isActualCreator = address?.toLowerCase() === gameData?.creator?.toLowerCase()
+      const isActualChallenger = address?.toLowerCase() === gameData?.challenger?.toLowerCase()
+      
+      console.log('🎬 Animation check:', {
+        isActualCreator,
+        isActualChallenger,
+        roundWinner: data.roundWinner,
+        creator: gameData?.creator,
+        challenger: gameData?.challenger,
+        address
+      })
       
       if (isActualCreator || isActualChallenger) {
-        const playerWon = (isActualCreator && data.roundWinner === gameData.creator) ||
-                          (isActualChallenger && data.roundWinner === gameData.challenger)
+        const playerWon = (isActualCreator && data.roundWinner?.toLowerCase() === gameData?.creator?.toLowerCase()) ||
+                          (isActualChallenger && data.roundWinner?.toLowerCase() === gameData?.challenger?.toLowerCase())
+        
+        console.log('🎬 Setting up round animation:', {
+          playerWon,
+          playerScore: isActualCreator ? data.creatorScore : data.challengerScore,
+          opponentScore: isActualCreator ? data.challengerScore : data.creatorScore
+        })
         
         setRoundResult({
           isWin: playerWon,
           playerScore: isActualCreator ? data.creatorScore : data.challengerScore,
           opponentScore: isActualCreator ? data.challengerScore : data.creatorScore,
           currentRound: data.currentRound,
-          totalRounds: 5
+          totalRounds: 5,
+          flipResult: data.flipResult,
+          playerChoice: isActualCreator ? data.creatorChoice : data.challengerChoice
         })
         setShowWinLoseAnimation(true)
       }
+    }
+    
+    const handleGameComplete = (data) => {
+      console.log('🏆 Game complete received:', data)
+      setGameState(prev => ({
+        ...prev,
+        gamePhase: 'game_complete',
+        gameWinner: data.gameWinner,
+        creatorScore: data.creatorScore,
+        challengerScore: data.challengerScore,
+        finalScore: data.finalScore
+      }))
+      
+      // Hide any existing animations
+      setShowWinLoseAnimation(false)
+      setRoundResult(null)
     }
     
     socket.on('game_state_update', handleGameStateUpdate)
@@ -760,6 +917,7 @@ const GameRoomTab = ({
     socket.on('game_started', handleGameStarted)
     socket.on('flip_executing', handleFlipExecuting)
     socket.on('round_result', handleRoundResult)
+    socket.on('game_complete', handleGameComplete)
     
     // Request current game state when mounting
     socket.emit('request_game_state', { gameId })
@@ -770,6 +928,7 @@ const GameRoomTab = ({
       socket.off('game_started', handleGameStarted)
       socket.off('flip_executing', handleFlipExecuting)
       socket.off('round_result', handleRoundResult)
+      socket.off('game_complete', handleGameComplete)
     }
   }, [socket, gameId])
   
@@ -811,6 +970,57 @@ const GameRoomTab = ({
     
     fetchPlayerNames()
   }, [gameData?.creator, gameData?.challenger])
+  
+  // Withdrawal functionality
+  const handleWithdraw = async () => {
+    if (!gameData || !address) return
+    
+    setIsWithdrawing(true)
+    try {
+      console.log('🏦 Starting withdrawal process for game:', gameData.id)
+      
+      // Import contract service
+      const contractService = (await import('../../../services/ContractService')).default
+      
+      // Call the withdrawal function
+      const result = await contractService.withdrawWinnings(gameData.id)
+      console.log('🏦 Withdrawal result:', result)
+      
+      if (result.success) {
+        console.log('✅ Withdrawal successful:', result)
+        
+        // Show success message via toast context (assuming it's available)
+        const event = new CustomEvent('showToast', {
+          detail: {
+            type: 'success',
+            message: `Withdrawal successful! NFT: ${result.nftTx?.slice(0, 10)}... ETH: ${result.ethTx?.slice(0, 10)}...`
+          }
+        })
+        window.dispatchEvent(event)
+        
+        // Redirect to home after successful withdrawal
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 3000)
+      } else {
+        throw new Error(result.error || 'Withdrawal failed')
+      }
+      
+    } catch (error) {
+      console.error('❌ Withdrawal failed:', error)
+      
+      // Show error message
+      const event = new CustomEvent('showToast', {
+        detail: {
+          type: 'error',
+          message: `Withdrawal failed: ${error.message}`
+        }
+      })
+      window.dispatchEvent(event)
+    } finally {
+      setIsWithdrawing(false)
+    }
+  }
   
   // Server-controlled countdown - no client-side timer needed
   // The countdown is now managed by the server and received via game_state_update
@@ -967,28 +1177,64 @@ const GameRoomTab = ({
           </PlayerStats>
         </PlayerCard>
 
-        {/* Coin Area */}
+        {/* Coin Area or Game End */}
         <CoinArea>
-          <GameStatus>
-            <StatusText>Round {gameState.currentRound}/{gameState.totalRounds}</StatusText>
-          </GameStatus>
+          {gameState.gamePhase === 'game_complete' ? (
+            // Game End UI
+            <GameEndContainer isWinner={gameState.gameWinner?.toLowerCase() === address?.toLowerCase()}>
+              <GameEndTitle isWinner={gameState.gameWinner?.toLowerCase() === address?.toLowerCase()}>
+                {gameState.gameWinner?.toLowerCase() === address?.toLowerCase() ? '🏆 You Won!' : '💔 You Lost'}
+              </GameEndTitle>
+              
+              <FinalScore>
+                Final Score: {gameState.finalScore || `${gameState.creatorScore}-${gameState.challengerScore}`}
+              </FinalScore>
+              
+              <GameEndSubtitle>
+                {gameState.gameWinner?.toLowerCase() === address?.toLowerCase() 
+                  ? 'Congratulations! You can now withdraw both the NFT and crypto from this game.'
+                  : 'Better luck next time! The winner takes all in this flip battle.'
+                }
+              </GameEndSubtitle>
+              
+              {gameState.gameWinner?.toLowerCase() === address?.toLowerCase() ? (
+                <WithdrawButton 
+                  onClick={handleWithdraw}
+                  disabled={isWithdrawing}
+                >
+                  {isWithdrawing ? '⏳ Withdrawing...' : '💰 Withdraw Winnings'}
+                </WithdrawButton>
+              ) : (
+                <HomeButton onClick={() => window.location.href = '/'}>
+                  🏠 Return Home
+                </HomeButton>
+              )}
+            </GameEndContainer>
+          ) : (
+            // Regular Game UI
+            <>
+              <GameStatus>
+                <StatusText>Round {gameState.currentRound}/{gameState.totalRounds}</StatusText>
+              </GameStatus>
 
-          <OptimizedGoldCoin
-            isFlipping={gameState.coinState?.isFlipping}
-            flipResult={gameState.coinState?.flipResult}
-            flipDuration={gameState.coinState?.flipDuration || 1000}
-            onFlipComplete={() => console.log('Flip animation complete')}
-            customHeadsImage={coinConfig?.headsImage}
-            customTailsImage={coinConfig?.tailsImage}
-            size={240}
-            material={coinConfig?.material}
-            isPlayerTurn={false} // Server controls everything
-            gamePhase={gameState.gamePhase}
-            isInteractive={false}
-            serverControlled={true} // Pure server-driven mode
-            totalRotations={gameState.coinState?.totalRotations}
-            finalRotation={gameState.coinState?.finalRotation}
-          />
+              <OptimizedGoldCoin
+                isFlipping={gameState.coinState?.isFlipping}
+                flipResult={gameState.coinState?.flipResult}
+                flipDuration={gameState.coinState?.flipDuration || 1000}
+                onFlipComplete={() => console.log('Flip animation complete')}
+                customHeadsImage={coinConfig?.headsImage}
+                customTailsImage={coinConfig?.tailsImage}
+                size={240}
+                material={coinConfig?.material}
+                isPlayerTurn={false} // Server controls everything
+                gamePhase={gameState.gamePhase}
+                isInteractive={false}
+                serverControlled={true} // Pure server-driven mode
+                totalRotations={gameState.coinState?.totalRotations}
+                finalRotation={gameState.coinState?.finalRotation}
+              />
+            </>
+          )}
 
           {/* Choice Buttons */}
           {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && gameState.currentTurn === address && (
