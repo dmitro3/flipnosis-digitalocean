@@ -375,6 +375,13 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
 
   // ===== SOCKET EVENT HANDLERS =====
   const handleGameStateUpdate = useCallback((data) => {
+    console.log('🔍 DEBUG: Game state received:', {
+      gameId: data.gameId,
+      currentTurn: data.currentTurn,
+      gamePhase: data.gamePhase,
+      address: address,
+      isMyTurn: data.currentTurn?.toLowerCase() === address?.toLowerCase()
+    })
     console.log('📊 Game state update received:', data)
     setServerState(data)
     setLoading(false)

@@ -600,6 +600,9 @@ const GameRoomTab = ({
             customTailsImage={coinConfig?.tailsImage}
             size={240}
             material={coinConfig?.material}
+            isPlayerTurn={gameState.currentTurn === address}
+            gamePhase={gameState.gamePhase}
+            isInteractive={false}
           />
 
           {/* Choice Buttons */}

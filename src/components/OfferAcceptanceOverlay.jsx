@@ -248,7 +248,7 @@ const OfferAcceptanceOverlay = ({
         clearInterval(pollInterval)
       }
     }
-  }, [isVisible, gameId, onClose])
+  }, [isVisible, gameId])
 
 
   const formatTime = (seconds) => {
