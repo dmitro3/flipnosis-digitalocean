@@ -1689,16 +1689,87 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         return res.status(404).json({ error: 'Game not found' })
       }
       
+      const bothDeposited = Boolean(game.creator_deposited && game.challenger_deposited)
+      
+      // If both players are deposited and game hasn't been initialized yet, initialize it
+      if (bothDeposited && gameServer && gameServer.gameStateManager) {
+        const existingGameState = gameServer.gameStateManager.getGame(gameId)
+        
+        if (!existingGameState) {
+          console.log(`🎮 Both players deposited - initializing game state for ${gameId}`)
+          
+          // Initialize game state with both players ready
+          const initialGameState = {
+            gameId,
+            phase: 'game_active',
+            gamePhase: 'waiting_choice',
+            status: 'active',
+            creator: game.creator,
+            challenger: game.challenger,
+            currentTurn: game.creator,
+            creatorDeposited: true,
+            challengerDeposited: true,
+            coin_data: game.coin_data
+          }
+          
+          // Create the game state in GameStateManager
+          gameServer.gameStateManager.createGame(gameId, initialGameState)
+          
+          // Start state broadcasting
+          gameServer.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
+            gameServer.io.to(room).emit(message.type, message)
+          })
+          
+          // Update database status to active
+          try {
+            await new Promise((resolve, reject) => {
+              dbService.db.run(`
+                UPDATE games 
+                SET status = 'active', phase = 'game_active'
+                WHERE id = ?
+              `, [gameId], function(err) {
+                if (err) reject(err)
+                else resolve()
+              })
+            })
+            console.log(`✅ Updated game ${gameId} status to active in database`)
+          } catch (dbError) {
+            console.error('Error updating game status in database:', dbError)
+          }
+          
+          // Broadcast game ready event to all connected clients
+          const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+          gameServer.io.to(roomId).emit('game_state_update', {
+            gameId,
+            phase: 'game_active',
+            gamePhase: 'waiting_choice',
+            status: 'active',
+            creator: game.creator,
+            challenger: game.challenger,
+            currentTurn: game.creator,
+            creatorDeposited: true,
+            challengerDeposited: true,
+            currentRound: 1,
+            totalRounds: 5,
+            creatorScore: 0,
+            challengerScore: 0
+          })
+          
+          console.log(`🎮 Game ${gameId} initialized and ready to play!`)
+        }
+      }
+      
       // Return minimal status info for polling
       res.json({
         gameId: game.id,
         status: game.status,
         creator_deposited: Boolean(game.creator_deposited),
         challenger_deposited: Boolean(game.challenger_deposited),
-        both_deposited: Boolean(game.creator_deposited && game.challenger_deposited),
+        both_deposited: bothDeposited,
         phase: game.phase,
         creator: game.creator,
-        challenger: game.challenger
+        challenger: game.challenger,
+        game_ready: bothDeposited && (game.status === 'active' || game.phase === 'game_active')
       })
     } catch (error) {
       console.error('Error getting game status:', error)

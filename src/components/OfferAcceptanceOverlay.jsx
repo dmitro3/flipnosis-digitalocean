@@ -385,11 +385,13 @@ const OfferAcceptanceOverlay = ({
     <OverlayContainer>
       <CloseButton onClick={onClose}>✕</CloseButton>
       
-      <OverlayTitle>🎯 Offer Accepted!</OverlayTitle>
+      <OverlayTitle>
+        {acceptedOffer.isCreatorWaiting ? '⏳ Waiting for Player 2' : '🎯 Offer Accepted!'}
+      </OverlayTitle>
       <OverlaySubtitle>
         {acceptedOffer.isCreatorWaiting
-          ? 'Waiting for challenger to deposit'
-          : acceptedOffer.offerer_address === address 
+          ? 'Your NFT is secured. Waiting for challenger to deposit their crypto.'
+          : acceptedOffer.offerer_address?.toLowerCase() === address?.toLowerCase()
             ? 'You need to deposit to join the game'
             : 'Waiting for challenger to deposit'
         }
@@ -419,7 +421,13 @@ const OfferAcceptanceOverlay = ({
       )}
 
       {/* Show waiting message for creator or when challenger needs to deposit */}
-      {(acceptedOffer.isCreatorWaiting || acceptedOffer.offerer_address !== address) && (
+      {acceptedOffer.isCreatorWaiting && (
+        <OverlaySubtitle style={{ color: '#FFD700', fontWeight: 'bold', marginTop: '1rem' }}>
+          ✨ Game will start automatically once challenger deposits
+        </OverlaySubtitle>
+      )}
+      
+      {!acceptedOffer.isCreatorWaiting && acceptedOffer.offerer_address?.toLowerCase() !== address?.toLowerCase() && (
         <OverlaySubtitle>
           Waiting for {acceptedOffer.offerer_address?.slice(0, 6)}...{acceptedOffer.offerer_address?.slice(-4)} to deposit
         </OverlaySubtitle>

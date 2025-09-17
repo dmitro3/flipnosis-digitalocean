@@ -582,6 +582,12 @@ const GameRoomTab = ({
                 {gameState.creatorChoice || 'Waiting...'}
               </StatValue>
             </StatRow>
+            <StatRow>
+              <StatLabel>Power:</StatLabel>
+              <StatValue isCreator={true}>
+                {gameState.creatorFinalPower?.toFixed(1) || '0.0'}/10
+              </StatValue>
+            </StatRow>
           </PlayerStats>
         </PlayerCard>
 
@@ -610,17 +616,53 @@ const GameRoomTab = ({
             <ChoiceButtons>
               <ChoiceButton 
                 choice="heads" 
-                onClick={() => socket.emit('make_choice', { gameId, choice: 'heads' })}
+                onClick={() => socket.emit('player_choice', { gameId, address, choice: 'heads' })}
               >
                 👑 Heads
               </ChoiceButton>
               <ChoiceButton 
                 choice="tails" 
-                onClick={() => socket.emit('make_choice', { gameId, choice: 'tails' })}
+                onClick={() => socket.emit('player_choice', { gameId, address, choice: 'tails' })}
               >
                 💎 Tails
               </ChoiceButton>
             </ChoiceButtons>
+          )}
+
+          {/* Power Charging */}
+          {gameState.gamePhase === 'charging_power' && gameState.currentTurn === address && (
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <div style={{ color: '#00ff88', fontSize: '1.2rem', marginBottom: '1rem' }}>
+                Hold to charge your flip power!
+              </div>
+              <PowerBar>
+                <PowerFill 
+                  power={
+                    address === gameState.creator ? gameState.creatorPowerProgress : gameState.challengerPowerProgress
+                  } 
+                />
+              </PowerBar>
+              <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '1rem' }}>
+                Power: {
+                  (address === gameState.creator ? gameState.creatorFinalPower : gameState.challengerFinalPower)?.toFixed(1) || '0.0'
+                }/10
+              </div>
+              <ChoiceButton
+                onMouseDown={() => socket.emit('start_power_charge', { gameId, address })}
+                onMouseUp={() => socket.emit('stop_power_charge', { gameId, address })}
+                onTouchStart={() => socket.emit('start_power_charge', { gameId, address })}
+                onTouchEnd={() => socket.emit('stop_power_charge', { gameId, address })}
+                style={{ 
+                  background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
+                  color: '#000',
+                  padding: '1.5rem 3rem',
+                  fontSize: '1.3rem',
+                  userSelect: 'none'
+                }}
+              >
+                ⚡ CHARGE POWER ⚡
+              </ChoiceButton>
+            </div>
           )}
         </CoinArea>
 
@@ -648,6 +690,12 @@ const GameRoomTab = ({
               <StatLabel>Choice:</StatLabel>
               <StatValue isCreator={false}>
                 {gameState.challengerChoice || 'Waiting...'}
+              </StatValue>
+            </StatRow>
+            <StatRow>
+              <StatLabel>Power:</StatLabel>
+              <StatValue isCreator={false}>
+                {gameState.challengerFinalPower?.toFixed(1) || '0.0'}/10
               </StatValue>
             </StatRow>
           </PlayerStats>

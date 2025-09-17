@@ -77,7 +77,7 @@ class GameStateManager {
       },
       
       // Timing
-      actionDeadline: null,
+      actionDeadline: gameState.phase === this.PHASES.GAME_ACTIVE ? Date.now() + 20000 : null, // 20 second timer for first choice
       roundStartTime: Date.now(),
       turnStartTime: Date.now(),
       
@@ -99,6 +99,15 @@ class GameStateManager {
 
     this.games.set(gameId, cleanGameState)
     console.log(`🎮 Game created with full state: ${gameId}`)
+    
+    // Start the first turn timer if game is active
+    if (cleanGameState.phase === this.PHASES.GAME_ACTIVE && cleanGameState.gamePhase === this.GAME_PHASES.WAITING_CHOICE) {
+      this.startTurnTimer(gameId, 20000, () => {
+        // Auto-choose heads for the player if they don't respond
+        this.autoMakeChoice(gameId, cleanGameState.currentTurn)
+      })
+    }
+    
     return cleanGameState
   }
 
@@ -115,10 +124,21 @@ class GameStateManager {
       game.challengerChoice = choice
     }
     
+    // Clear any existing turn timer since player made their choice
+    this.clearTurnTimer(gameId)
+    
     game.gamePhase = this.GAME_PHASES.CHARGING_POWER
+    game.actionDeadline = Date.now() + 20000 // 20 seconds to charge power
     game.updatedAt = new Date().toISOString()
     
     console.log(`🎯 ${isCreator ? 'Creator' : 'Challenger'} chose ${choice}`)
+    
+    // Start power charging timer
+    this.startTurnTimer(gameId, 20000, () => {
+      // Auto-complete power charging with minimal power if player doesn't act
+      this.autoCompletePowerCharging(gameId, playerAddress)
+    })
+    
     return true
   }
 
@@ -315,8 +335,15 @@ class GameStateManager {
     game.currentTurn = game.currentTurn === game.creator ? game.challenger : game.creator
     game.turnStartTime = Date.now()
     game.roundStartTime = Date.now()
+    game.actionDeadline = Date.now() + 20000 // 20 seconds for next choice
     
     console.log(`🔄 Starting round ${game.currentRound}, ${game.currentTurn}'s turn`)
+    
+    // Start timer for the new round
+    this.startTurnTimer(gameId, 20000, () => {
+      this.autoMakeChoice(gameId, game.currentTurn)
+    })
+    
     game.updatedAt = new Date().toISOString()
   }
 
@@ -448,11 +475,17 @@ class GameStateManager {
   }
 
   deleteGame(gameId) {
-    // Clear any timers
-    if (this.timers.has(gameId)) {
-      clearInterval(this.timers.get(gameId))
-      this.timers.delete(gameId)
-    }
+    // Clear any timers (including turn timers)
+    this.timers.forEach((timer, key) => {
+      if (key.startsWith(gameId)) {
+        if (key.includes('_turn')) {
+          clearTimeout(timer)
+        } else {
+          clearInterval(timer)
+        }
+        this.timers.delete(key)
+      }
+    })
     
     // Clear power timers
     this.powerTimers.forEach((timer, key) => {
@@ -577,14 +610,105 @@ class GameStateManager {
     return game ? game.currentTurn : null
   }
 
+  // ===== TURN TIMER MANAGEMENT =====
+  startTurnTimer(gameId, duration, onTimeout) {
+    // Clear any existing timer
+    this.clearTurnTimer(gameId)
+    
+    console.log(`⏰ Starting turn timer for game ${gameId}: ${duration}ms`)
+    
+    const timer = setTimeout(() => {
+      console.log(`⏰ Turn timer expired for game ${gameId}`)
+      if (onTimeout) {
+        onTimeout()
+      }
+    }, duration)
+    
+    this.timers.set(`${gameId}_turn`, timer)
+  }
+  
+  clearTurnTimer(gameId) {
+    const timerKey = `${gameId}_turn`
+    if (this.timers.has(timerKey)) {
+      clearTimeout(this.timers.get(timerKey))
+      this.timers.delete(timerKey)
+      console.log(`⏰ Cleared turn timer for game ${gameId}`)
+    }
+  }
+  
+  // ===== AUTO-COMPLETION METHODS =====
+  autoMakeChoice(gameId, playerAddress) {
+    const game = this.games.get(gameId)
+    if (!game) return
+    
+    console.log(`🤖 Auto-making choice for ${playerAddress} in game ${gameId}`)
+    
+    // Default to heads
+    const defaultChoice = 'heads'
+    this.setPlayerChoice(gameId, playerAddress, defaultChoice)
+    
+    // Auto-start power charging with minimal power
+    setTimeout(() => {
+      this.autoCompletePowerCharging(gameId, playerAddress)
+    }, 1000) // Give 1 second for the choice to register
+  }
+  
+  autoCompletePowerCharging(gameId, playerAddress) {
+    const game = this.games.get(gameId)
+    if (!game) return
+    
+    console.log(`🤖 Auto-completing power charging for ${playerAddress} in game ${gameId}`)
+    
+    const isCreator = playerAddress.toLowerCase() === game.creator.toLowerCase()
+    
+    // Set minimal power (1.5 out of 10)
+    if (isCreator) {
+      game.creatorFinalPower = 1.5
+      game.creatorCharging = false
+      game.creatorPowerProgress = 15
+    } else {
+      game.challengerFinalPower = 1.5
+      game.challengerCharging = false
+      game.challengerPowerProgress = 15
+    }
+    
+    // Check if both players have completed their actions
+    const bothReady = game.creatorChoice && game.challengerChoice && 
+                     (game.creatorFinalPower > 0 || !game.creatorCharging) && 
+                     (game.challengerFinalPower > 0 || !game.challengerCharging)
+    
+    if (bothReady) {
+      // Execute the flip
+      this.executeFlip(gameId)
+    } else {
+      // Switch to other player's turn
+      game.currentTurn = game.currentTurn === game.creator ? game.challenger : game.creator
+      game.gamePhase = this.GAME_PHASES.WAITING_CHOICE
+      game.actionDeadline = Date.now() + 20000
+      game.turnStartTime = Date.now()
+      
+      // Start timer for the other player
+      this.startTurnTimer(gameId, 20000, () => {
+        this.autoMakeChoice(gameId, game.currentTurn)
+      })
+    }
+    
+    game.updatedAt = new Date().toISOString()
+  }
+
   // ===== CLEANUP =====
   cleanup() {
     console.log('🧹 Cleaning up GameStateManager...')
     
-    // Clear all timers
-    this.timers.forEach((timer, gameId) => {
-      clearInterval(timer)
-      console.log(`⏰ Cleared timer for game ${gameId}`)
+    // Clear all timers (includes both interval and timeout timers)
+    this.timers.forEach((timer, key) => {
+      if (key.includes('_turn')) {
+        clearTimeout(timer)
+        console.log(`⏰ Cleared turn timeout for ${key}`)
+      } else {
+        clearInterval(timer)
+        console.log(`⏰ Cleared interval timer for ${key}`)
+      }
     })
     this.timers.clear()
     

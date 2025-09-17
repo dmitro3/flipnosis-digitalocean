@@ -254,22 +254,44 @@ class GameServer {
     // Stop power charging
     this.gameStateManager.stopPowerCharging(gameId, address)
     
-    // Check if both players are ready (have choice and power)
-    const isCreator = address.toLowerCase() === gameState.creator?.toLowerCase()
+    // Check if both players have completed their actions (choice + power)
+    const bothHaveChoices = gameState.creatorChoice && gameState.challengerChoice
+    const bothFinishedPower = (gameState.creatorFinalPower > 0 || !gameState.creatorCharging) && 
+                             (gameState.challengerFinalPower > 0 || !gameState.challengerCharging)
     
-    if (isCreator) {
-      // Creator is ready, switch to challenger's turn
-      gameState.currentTurn = gameState.challenger
-      gameState.gamePhase = 'waiting_choice'
-    } else {
-      // Challenger is ready, both players have acted - execute flip
+    console.log(`🔍 Power charge complete check: bothHaveChoices=${bothHaveChoices}, bothFinishedPower=${bothFinishedPower}`)
+    
+    if (bothHaveChoices && bothFinishedPower) {
+      // Both players are ready - execute the flip
+      console.log(`🎲 Both players ready, executing flip for game ${gameId}`)
       this.handleExecuteFlip(socket, { gameId })
+    } else {
+      // Check if we need to switch turns
+      const isCreator = address.toLowerCase() === gameState.creator?.toLowerCase()
+      const currentPlayerFinished = isCreator ? 
+        (gameState.creatorChoice && gameState.creatorFinalPower > 0) :
+        (gameState.challengerChoice && gameState.challengerFinalPower > 0)
+      
+      if (currentPlayerFinished && gameState.currentTurn === address) {
+        // Switch to other player's turn
+        gameState.currentTurn = gameState.currentTurn === gameState.creator ? gameState.challenger : gameState.creator
+        gameState.gamePhase = 'waiting_choice'
+        gameState.actionDeadline = Date.now() + 20000 // 20 seconds for next player
+        gameState.turnStartTime = Date.now()
+        
+        // Start timer for the other player
+        this.gameStateManager.startTurnTimer(gameId, 20000, () => {
+          this.gameStateManager.autoMakeChoice(gameId, gameState.currentTurn)
+        })
+        
+        console.log(`🔄 Switched turn to ${gameState.currentTurn}`)
+      }
+      
+      // Broadcast updated state
+      const fullState = this.gameStateManager.getFullGameState(gameId)
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+      this.io.to(roomId).emit('game_state_update', fullState)
     }
-    
-    // Broadcast updated state
-    const fullState = this.gameStateManager.getFullGameState(gameId)
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    this.io.to(roomId).emit('game_state_update', fullState)
   }
 
   async handleExecuteFlip(socket, data) {
@@ -490,9 +512,17 @@ class GameServer {
     console.log(`  - Challenger: ${gameData.challenger}`)
     console.log(`  - Status: ${gameData.status}`)
     
+    // Check if both players are deposited to determine initial game phase
+    const bothDeposited = (gameData.creator_deposited || true) && (gameData.challenger_deposited || false)
+    const initialPhase = bothDeposited ? 'game_active' : 'deposit_stage'
+    const initialGamePhase = bothDeposited ? 'waiting_choice' : null
+    
+    console.log(`🎮 Game initialization: bothDeposited=${bothDeposited}, phase=${initialPhase}, gamePhase=${initialGamePhase}`)
+    
     return {
       gameId,
-      phase: 'game_active',
+      phase: initialPhase,
+      gamePhase: initialGamePhase,
       status: 'active',
       currentRound: 1,
       totalRounds: 5,
@@ -501,8 +531,46 @@ class GameServer {
       creator: gameData.creator,
       challenger: gameData.challenger,
       currentTurn: gameData.creator, // Creator always goes first
+      
+      // Player choices and power (reset for new game)
+      creatorChoice: null,
+      challengerChoice: null,
+      creatorPowerProgress: 0,
+      challengerPowerProgress: 0,
+      creatorFinalPower: 0,
+      challengerFinalPower: 0,
+      creatorCharging: false,
+      challengerCharging: false,
+      
+      // Coin state for synchronized animation
+      coinState: {
+        rotation: { x: 0, y: 0, z: 0 },
+        velocity: { x: 0, y: 0, z: 0 },
+        isFlipping: false,
+        flipStartTime: null,
+        flipDuration: 3000,
+        flipResult: null,
+        totalRotations: 0,
+        finalRotation: 0
+      },
+      
+      // Timing
+      actionDeadline: bothDeposited ? Date.now() + 20000 : null, // 20 second timer for first choice
+      roundStartTime: bothDeposited ? Date.now() : null,
+      turnStartTime: bothDeposited ? Date.now() : null,
+      
+      // Results
+      flipResult: null,
+      roundWinner: null,
+      gameWinner: null,
+      
+      // Spectators
+      spectators: [],
+      
       coinData: coinData,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      
       // Add deposit status fields for game readiness check
       creatorDeposited: gameData.creator_deposited || true, // Creator always deposited to create game
       challengerDeposited: gameData.challenger_deposited || false
