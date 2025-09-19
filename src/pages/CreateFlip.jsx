@@ -289,6 +289,11 @@ const CreateFlip = () => {
   const [entryFee, setEntryFee] = useState('5.00')
   const [serviceFee, setServiceFee] = useState('0.10') // Changed to 10 cents
 
+  // Debug game mode changes
+  useEffect(() => {
+    console.log('🎮 Game mode changed to:', gameMode)
+  }, [gameMode])
+
   // Progress tracking state
   const [currentStep, setCurrentStep] = useState(0) // 0: not started, 1: approve, 2: pay fee, 3: deposit NFT
   const [stepStatus, setStepStatus] = useState({
@@ -542,9 +547,30 @@ const CreateFlip = () => {
 
             {/* Game Mode Selection - Prominent at top */}
             <FormGroup style={{ marginBottom: '2rem' }}>
-              <Label style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '1rem' }}>
-                Choose Game Mode
+              <Label style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '1rem', color: theme.colors.neonPink }}>
+                🎮 Choose Game Mode
               </Label>
+              
+              {/* Simple Dropdown Alternative */}
+              <div style={{ marginBottom: '1rem' }}>
+                <Select 
+                  value={gameMode} 
+                  onChange={(e) => setGameMode(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '1rem',
+                    fontSize: '1.1rem',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '2px solid ' + theme.colors.neonBlue,
+                    borderRadius: '0.5rem',
+                    color: theme.colors.textPrimary
+                  }}
+                >
+                  <option value="nft-vs-crypto">⚔️ 1v1 Duel (Classic NFT vs Crypto)</option>
+                  <option value="battle-royale">🏆 Battle Royale (8-Player Tournament)</option>
+                </Select>
+              </div>
+              
               <GameModeSelector>
                 <ModeCard 
                   selected={gameMode === 'nft-vs-crypto'}
