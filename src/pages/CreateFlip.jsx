@@ -536,9 +536,63 @@ const CreateFlip = () => {
       <Container>
         <ContentWrapper>
           <GlassCard>
-            <NeonText style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              Create Your Flip
+            <NeonText style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              {gameMode === 'battle-royale' ? 'Create Battle Royale' : 'Create Your Flip'}
             </NeonText>
+
+            {/* Game Mode Selection - Prominent at top */}
+            <FormGroup style={{ marginBottom: '2rem' }}>
+              <Label style={{ textAlign: 'center', fontSize: '1.1rem', marginBottom: '1rem' }}>
+                Choose Game Mode
+              </Label>
+              <GameModeSelector>
+                <ModeCard 
+                  selected={gameMode === 'nft-vs-crypto'}
+                  onClick={() => setGameMode('nft-vs-crypto')}
+                >
+                  <div className="mode-icon">⚔️</div>
+                  <h3 className="mode-title">1v1 Duel</h3>
+                  <p className="mode-description">Classic head-to-head NFT vs Crypto battle</p>
+                  <div className="mode-details">
+                    <div className="detail-item">
+                      <span className="label">Players:</span>
+                      <span className="value">2</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Format:</span>
+                      <span className="value">Best of 5</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Entry:</span>
+                      <span className="value">Custom Price</span>
+                    </div>
+                  </div>
+                </ModeCard>
+                
+                <ModeCard 
+                  selected={gameMode === 'battle-royale'}
+                  onClick={() => setGameMode('battle-royale')}
+                >
+                  <div className="mode-icon">🏆</div>
+                  <h3 className="mode-title">Battle Royale</h3>
+                  <p className="mode-description">8-player elimination tournament</p>
+                  <div className="mode-details">
+                    <div className="detail-item">
+                      <span className="label">Players:</span>
+                      <span className="value">8</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Format:</span>
+                      <span className="value">Elimination</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="label">Entry:</span>
+                      <span className="value">${entryFee} + ${serviceFee}</span>
+                    </div>
+                  </div>
+                </ModeCard>
+              </GameModeSelector>
+            </FormGroup>
             
             {/* Network Check */}
             {isConnected && chainId !== 8453 && (
@@ -610,58 +664,6 @@ const CreateFlip = () => {
             </ProgressContainer>
 
             <form onSubmit={handleSubmit}>
-              {/* Game Mode Selection */}
-              <FormGroup>
-                <Label>Choose Game Mode</Label>
-                <GameModeSelector>
-                  <ModeCard 
-                    selected={gameMode === 'nft-vs-crypto'}
-                    onClick={() => setGameMode('nft-vs-crypto')}
-                  >
-                    <div className="mode-icon">⚔️</div>
-                    <h3 className="mode-title">1v1 Duel</h3>
-                    <p className="mode-description">Classic head-to-head NFT vs Crypto battle</p>
-                    <div className="mode-details">
-                      <div className="detail-item">
-                        <span className="label">Players:</span>
-                        <span className="value">2</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">Format:</span>
-                        <span className="value">Best of 5</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">Entry:</span>
-                        <span className="value">Custom Price</span>
-                      </div>
-                    </div>
-                  </ModeCard>
-                  
-                  <ModeCard 
-                    selected={gameMode === 'battle-royale'}
-                    onClick={() => setGameMode('battle-royale')}
-                  >
-                    <div className="mode-icon">🏆</div>
-                    <h3 className="mode-title">Battle Royale</h3>
-                    <p className="mode-description">8-player elimination tournament</p>
-                    <div className="mode-details">
-                      <div className="detail-item">
-                        <span className="label">Players:</span>
-                        <span className="value">8</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">Format:</span>
-                        <span className="value">Elimination</span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="label">Entry:</span>
-                        <span className="value">${entryFee} + ${serviceFee}</span>
-                      </div>
-                    </div>
-                  </ModeCard>
-                </GameModeSelector>
-              </FormGroup>
-
               {/* NFT Selection */}
               <FormGroup>
                 <Label>Select Your NFT</Label>
@@ -753,7 +755,7 @@ const CreateFlip = () => {
                     marginTop: '0.5rem',
                     display: 'block'
                   }}>
-                    💡 Each player pays Entry Fee + Service Fee to join. You get all entry fees (${(parseFloat(entryFee) * 8).toFixed(2)}) minus 3.5% platform fee.
+                    💡 Each player pays Entry Fee + Service Fee to join. You get all entry fees (${(parseFloat(entryFee) * 8).toFixed(2)}) minus 3.5% platform fee. Service fee is just 10¢ per player!
                   </small>
                   {entryFee && serviceFee && (
                     <div style={{ 
@@ -827,8 +829,23 @@ const CreateFlip = () => {
                       <li>Players who don't match the target are eliminated</li>
                       <li>Last player standing wins your NFT</li>
                       <li>You receive all entry fees minus platform fee</li>
-                      <li>All players use default coins (no custom selection)</li>
+                      <li><strong>Players bring their own custom coins</strong> - no coin selection needed</li>
                     </ul>
+                    <div style={{ 
+                      marginTop: '1rem', 
+                      padding: '0.75rem',
+                      background: 'rgba(0, 255, 136, 0.1)',
+                      border: '1px solid rgba(0, 255, 136, 0.3)',
+                      borderRadius: '0.5rem'
+                    }}>
+                      <p style={{ margin: '0', color: theme.colors.textPrimary, fontWeight: 'bold' }}>
+                        💎 <strong>Coin Customization:</strong>
+                      </p>
+                      <p style={{ margin: '0.5rem 0 0 0', color: theme.colors.textSecondary, fontSize: '0.8rem' }}>
+                        Players can upload their own coin designs when they join the Battle Royale, 
+                        making each game unique and personalized!
+                      </p>
+                    </div>
                   </div>
                 </FormGroup>
               )}
