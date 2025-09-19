@@ -389,7 +389,7 @@ class GameStateManager {
     setTimeout(() => {
       console.log(`⏰ Timeout fired - calling showResult for game ${gameId}`)
       this.showResult(gameId, broadcastFn)
-    }, flipDuration)
+    }, flipDuration + 500) // Add 500ms buffer to ensure animation completes
     
     game.updatedAt = new Date().toISOString()
     return game
@@ -508,6 +508,12 @@ class GameStateManager {
     // Start countdown for this round
     if (broadcastFn) {
       this.startRoundCountdown(gameId, broadcastFn)
+      
+      // Broadcast updated game state for new round
+      const fullState = this.getFullGameState(gameId)
+      if (fullState) {
+        broadcastFn(`game_${gameId}`, 'game_state_update', fullState)
+      }
     }
     
     game.updatedAt = new Date().toISOString()
@@ -531,10 +537,7 @@ class GameStateManager {
       if (game.phase === this.PHASES.GAME_ACTIVE) {
         const state = this.getFullGameState(gameId)
         if (state) {
-          broadcastFn(`game_${gameId}`, {
-            type: 'game_state_update',
-            ...state
-          })
+          broadcastFn(`game_${gameId}`, 'game_state_update', state)
         }
       }
     }, 50)

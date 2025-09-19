@@ -1,359 +1,386 @@
-✅ Rainbow Kit configuration created successfully
-index-82021153.js:253 🧪 Testing WebSocket service...
-index-82021153.js:253 Test 1 - Service import: uT {socket: null, connected: false, connecting: false, gameId: null, address: null, …}
-index-82021153.js:253 Test 1 - Service type: object
-index-82021153.js:253 Test 1 - Service methods: (12) ['constructor', 'connect', 'scheduleReconnect', 'setupPingInterval', 'send', 'processMessageQueue', 'on', 'off', 'notifyHandlers', 'disconnect', 'isConnected', 'getConnectionStatus']
-index-82021153.js:253 Test 2 - isConnected method exists: true
-index-82021153.js:253 Test 2 - isInitialized method exists: false
-index-82021153.js:253 Test 3 - isConnected result: false
-index-82021153.js:253 Test 4 - isInitialized method not available
-index-82021153.js:253 🧪 WebSocket service test complete
-index-82021153.js:253 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
-index-82021153.js:253 🚀 Application starting... {timestamp: '2025-09-17T17:08:33.521Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://flipnosis.fun/create'}
-index-82021153.js:253 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-09-17T17:08:33.525Z'}
-index-82021153.js:168 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 🔧 Initializing contract service from WalletContext...
-index-82021153.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 ✅ Contract service initialized successfully
-index-82021153.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-82021153.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
-index-82021153.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: false, headsLength: 0}
-index-82021153.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-82021153.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
-index-82021153.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: false, tailsLength: 0}
-index-82021153.js:168 🪙 Custom coin loaded: {hasHeads: false, hasTails: false, headsLength: 0, tailsLength: 0}
-index-82021153.js:31 📞 Manually loading NFTs for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 🚀 loadNFTs called with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 🔍 Current chain info: {chainId: 8453, currentChain: {…}, availableChains: Array(7)}
-index-82021153.js:31 🔍 Loading NFTs for: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', chain: 'Base', network: 'base-mainnet'}
-index-82021153.js:31 🎨 Total NFTs found: 41
-index-82021153.js:31 ✅ Loaded NFTs: 41
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafkreib2amqj2zcewaw2sdtzjq27tyq6hcdiyv7ofp6ymiytqlf7t4gb7y
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiddueexahniaic5xxvj4krsbqtwvfvja3ctnjbgt3zhmr77x3z25y/image.webp
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1307
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1308
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieq4pxcymnusz7jjae7vn4ucpekhbzixfcs5tksda6wcmsx3xuud4/3919
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibzsjsiwiy73paonxcno5wvcyhkaud3zfyix327etkldpta7vg3li/image.webp
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifaaeqknktdsrfb3l5kghisanm5aiovw43dxrs4xjgaujvkvrs57y/3570
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic4i7lavwkayrd7ewmnedhy4x6zun6pwzkecxmqug6hwh6ybxjwem/4062
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiaa3l7kbebplqnnb7oqxpdkibcg3rgx24lq4rv55d75bwwcvmtzdm/9
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic3by4zpmw4pfgisa2gqaoke4c5teisby623n3g3mqouufxf4zbpm/image.jpeg
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeigfe3z2kpavb4eiiqaxzrdcdtlzliviy4hmbz2wvdpqmdrv66fxty/399
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieptfg7ltc3dnzy2yndvhjdhw764mtai6h5bs7pk4uikgxhjlb4ju/4817
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeib7ucfcaoyvg3iaxkt4d7n5c2y4z3ygls4vem7n64ohb4mvbwacza/1099
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2262
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmXk1y42pJ3owtaqBK1XYGuq17mpYQGTjb14wt8HHi7bZi
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2284
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmX96SimuRFFwfyCA11iiFSjyY7KXcFSU6kpAkvExanBL2
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiggm7mpviuho43jlvrnqbzlls35k72ypqgzpyjqzdpoj3gwxrg5hi
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeih4gcctkzfrt2ymz6lwrl6b2iggwymisijjzjhq4qdu2koxphgaxi/2624
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiajxidbvrf4pzugxelsuioy2quxlldziceuuwrrlfdlgz67yz4i4u/3531
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicuqneluz2zkylaub667lgn43pf2am2mo2yhqywcjd7ji5sq6yk6y/2535
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiava3asjrljldv4t54hz46x7xbky6g7ap6v7vddifohl2szjv5p3e/4281.png
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibdzsebbeahueqn5fr5vhmgj77femfnzqzpjkkhzvor2l7n6anhm4/3023
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid7syd6tj5iez5lzeg2efnqejcxh6rex6ln2saqbeuymijzdfuabm/2561
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicokheinuxbqhgrnzhpnplksgkyf4sm5it2mxz7plhp5vpvhumjrq/image.png
-2index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmbhsSeehQgBiQB7BVgbBmoPUzWuwsiAm9Y9AXmZ4cyymr
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeia3bv353ec4za7be3cjdv32we7q42w7yrjsh3vp3w5oyugk5zh7xu/6353
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeidbpalzkhnolrztlnqlf55bdbs3rwmhq4nepsowyvapcewusoy5wu/6988
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiei5lso47b5c4rpiist25s2samafxjhuxt6ipf3uvjnxddoqse7ja/8036
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8443
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8571
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeib6j7dynf46tz3bjjlf55kyf7ubrkdqnil3ov6nj4juqjth2mhf5u/1022
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid4lrubj72y3xnz7sggkoamtua4douc5pscqd3sqm2guzsysqtvqi/1444
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihnycrbh2sgkpver6ttnzx3dxwc7tekzfi2qvc32zxalqchrtzmx4/59
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicst6aup3a2kcbve45sw3od3cltpsewbf723hk43budowfq35tad4/2384
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753
-index-82021153.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1312
-index-82021153.js:182 🎨 NFT selected: {contractAddress: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '3753', name: 'CABC #3753', collection: 'Based CABC 2026', image: 'https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753', …}
-index-82021153.js:168 🪙 Coin selected: {id: 'stinger', type: 'default', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png'}
-index-82021153.js:168 🪙 Sending optimized coin to parent: {id: 'stinger', type: 'default', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png'}
-index-82021153.js:182 🪙 Coin selected in CreateFlip: {id: 'stinger', type: 'default', name: 'Stinger', headsImage: '/coins/stingerh.png', tailsImage: '/coins/stingert.png'}
-index-82021153.js:168 🪙 Material selected: {id: 'penny', name: 'Penny', description: 'Lightweight & Fast', edgeColor: '#CD7F32', physics: {…}, …}
-index-82021153.js:182 🪙 Material selected in CreateFlip: {id: 'penny', name: 'Penny', description: 'Lightweight & Fast', edgeColor: '#CD7F32', physics: {…}, …}
-index-82021153.js:182 ✅ Listing created: {success: true, listingId: 'listing_1758128927889_7495d02c89b68832', gameId: 'game_1758128927192_3864fb742b3be983'}
-index-82021153.js:182 💰 Game price: $0.11 (110000 microdollars)
-index-82021153.js:182 💸 Listing fee: $0.00 (free)
-index-82021153.js:31 🎮 Creating game (approve + deposit NFT): {gameId: 'game_1758128927192_3864fb742b3be983', nftContract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '3753', priceInMicrodollars: 110000, paymentType: 0}
-index-82021153.js:31 🔓 Approving NFT for transfer: {nftContract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '3753'}
-index-82021153.js:31 🔓 NFT approval tx: 0x040f7af385f9246c331be018ecf9a54efdb7efd7092b708e0f90be0f788fe1e1
-index-82021153.js:31 ✅ NFT approval confirmed
-index-82021153.js:31 📦 Depositing NFT for game: {gameId: 'game_1758128927192_3864fb742b3be983', nftContract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '3753'}
-index-82021153.js:31 🔍 Checking existing deposit for game: 0x67616d655f313735383132383932373139325f33383634666237343262336200
-index-82021153.js:31 🔍 Existing deposit data: (5) ['0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', 0n, false, 0n]
-index-82021153.js:31 📦 NFT deposit tx: 0x3392b00855762944b940e0eb7153f2c2a5742c32155050183d8268866160fb0c
-index-82021153.js:31 ✅ NFT deposit confirmed
-index-82021153.js:31 🔍 Verifying NFT deposit...
-index-82021153.js:31 🔍 Verification result: (5) ['0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', '0x4B8B400DDD95285733b111E2C249556bf76b552f', 3753n, false, 1758128949n]
-index-82021153.js:31 🔍 Array format - depositor: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-82021153.js:31 ✅ NFT deposit verified successfully
-index-82021153.js:253 🔌 Connecting to game server...
-index-82021153.js:189 🔌 Connecting to Socket.io: wss://flipnosis.fun
-index-82021153.js:253 🎮 Game readiness check: {status: 'awaiting_deposit', phase: 'waiting', bothDeposited: undefined, gameReady: false}
-index-82021153.js:189 ✅ Socket.io connected
-index-82021153.js:189 📤 Emitted: join_room
-index-82021153.js:253 📌 Registering Socket.io event listeners...
-index-82021153.js:189 ✅ Listener registered for: room_joined
-index-82021153.js:189 ✅ Listener registered for: game_state_update
-index-82021153.js:189 ✅ Listener registered for: flip_executing
-index-82021153.js:189 ✅ Listener registered for: round_result
-index-82021153.js:189 ✅ Listener registered for: game_not_found
-index-82021153.js:189 ✅ Listener registered for: deposit_countdown
-index-82021153.js:189 ✅ Listener registered for: deposit_timeout
-index-82021153.js:189 ✅ Listener registered for: offer_accepted
-index-82021153.js:189 ✅ Listener registered for: game_started
-index-82021153.js:253 ✅ All Socket.io event listeners registered
-index-82021153.js:189 📤 Emitted: join_room
-index-82021153.js:253 🏠 Room joined: {roomId: 'game_1758128927192_3864fb742b3be983', role: 'creator', members: 1}
-index-82021153.js:253 🏠 Room joined: {roomId: 'game_1758128927192_3864fb742b3be983', role: 'creator', members: 1}
-index-82021153.js:189 📤 Emitted: request_game_state
-index-82021153.js:253 🔍 DEBUG: Game state received: {gameId: 'game_1758128927192_3864fb742b3be983', currentTurn: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', gamePhase: 'waiting_choice', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isMyTurn: true}
-index-82021153.js:253 📊 Game state update received: {gameId: 'game_1758128927192_3864fb742b3be983', phase: 'deposit_stage', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:253 🔄 Updated gameData with server state: {id: 'game_1758128927192_3864fb742b3be983', listing_id: 'listing_1758128927889_7495d02c89b68832', offer_id: null, blockchain_game_id: '0x955b554b3da3bb395d7d3f4b70fc5752a3521b6a7b400f6b96eee8646b03d3d4', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:253 🎮 Game readiness check: {status: 'active', phase: 'deposit_stage', bothDeposited: undefined, gameReady: false}
-index-82021153.js:201 🪙 Demo coin clicked
-index-82021153.js:201 🏁 Desktop coin animation fully complete - winner should be announced now
-index-82021153.js:209 Demo flip complete
-index-82021153.js:253 📑 Switching to tab: chat
-index-82021153.js:189 ✅ Listener registered for: chat_message
-index-82021153.js:189 ✅ Listener registered for: chat_history
-index-82021153.js:189 ✅ Listener registered for: crypto_offer
-index-82021153.js:209 📜 Loaded 0 chat messages for game 1758128927192_3864fb742b3be983
-index-82021153.js:209 💰 Offers loaded: 0
-index-82021153.js:209 💬 Chat message received: {type: 'chat_message', message: 'cvxcv', from: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', timestamp: '2025-09-17T17:09:29.472Z'}
-index-82021153.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
-index-82021153.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
-index-82021153.js:31 🌐 Profile data received: {address: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
-index-82021153.js:209 💬 Sending chat message: {message: 'vbcvb', from: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
-index-82021153.js:189 📤 Emitted: chat_message
-index-82021153.js:209 💬 Chat message received: {type: 'chat_message', message: 'vbcvb', from: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', timestamp: '2025-09-17T17:09:32.556Z'}
-index-82021153.js:209 💬 Skipping message from current user (already added optimistically)
-index-82021153.js:209 💰 New offer received: {type: 'crypto_offer', id: '1758128976518_0.1972614524521734', address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.1, timestamp: '2025-09-17T17:09:36.518Z'}
-index-82021153.js:209 💰 Current offers before adding: 0
-index-82021153.js:209 💰 Adding offer to state: {id: '1758128976518_0.1972614524521734', offerer_address: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', offer_price: 0.1, message: 'Crypto offer', timestamp: '2025-09-17T17:09:36.518Z', …}
-index-82021153.js:209 💰 Updated offers count: 1
-index-82021153.js:189 📤 Emitted: accept_offer
-index-82021153.js:209 ✅ Offer acceptance sent via Socket.io
-index-82021153.js:253 🎯 Offer accepted event received: {type: 'offer_accepted', gameId: 'game_1758128927192_3864fb742b3be983', accepterAddress: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', challengerAddress: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', cryptoAmount: 0.1, …}
-index-82021153.js:253 ✅ Offer accepted for current game
-index-82021153.js:253 🎯 Player roles (using event data): {isChallenger: false, isCreator: true, eventChallenger: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', eventCreator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:253 ✅ You are the creator - waiting for challenger to deposit
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 120, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:201 🔄 Starting deposit status polling for game: game_1758128927192_3864fb742b3be983
-index-82021153.js:201 🔍 Deposit poll 1: creator=true, challenger=false
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 120, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 120, message: 'Deposit time remaining: 2:00'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 120, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 119, message: 'Deposit time remaining: 1:59'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 119, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:201 🔍 Deposit poll 2: creator=true, challenger=false
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 119, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 118, message: 'Deposit time remaining: 1:58'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 118, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 117, message: 'Deposit time remaining: 1:57'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 117, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:201 🔍 Deposit poll 3: creator=true, challenger=false
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 117, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 116, message: 'Deposit time remaining: 1:56'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 116, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 115, message: 'Deposit time remaining: 1:55'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 115, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:201 🔍 Deposit poll 4: creator=true, challenger=false
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 115, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 114, message: 'Deposit time remaining: 1:54'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 114, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 ⏰ Deposit countdown update: {gameId: 'game_1758128927192_3864fb742b3be983', timeRemaining: 113, message: 'Deposit time remaining: 1:53'}
-index-82021153.js:253 ✅ Countdown update matches current game
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:201 🔍 Deposit poll 5: creator=true, challenger=false
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 🎯 Offer accepted event received: {type: 'game_started', gameId: 'game_1758128927192_3864fb742b3be983', message: 'Both assets deposited - game starting!'}
-index-82021153.js:253 ✅ Offer accepted for current game
-index-82021153.js:253 🎯 Player roles (using event data): {isChallenger: false, isCreator: false, eventChallenger: undefined, eventCreator: undefined, address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:253 ❌ Neither challenger nor creator - ignoring {eventCreator: undefined, eventChallenger: undefined, address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isCreator: false, isChallenger: false}
-index-82021153.js:253 🎯 Offer accepted event received: {type: 'deposit_received', gameId: 'game_1758128927192_3864fb742b3be983', player: '0xf51D1e69b6857De81432d0D628c45B27dbcE97B6', assetType: 'eth', bothDeposited: true}
-index-82021153.js:253 ✅ Offer accepted for current game
-index-82021153.js:253 🎯 Player roles (using event data): {isChallenger: false, isCreator: false, eventChallenger: undefined, eventCreator: undefined, address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:253 ❌ Neither challenger nor creator - ignoring {eventCreator: undefined, eventChallenger: undefined, address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isCreator: false, isChallenger: false}
-index-82021153.js:201 🔍 Deposit poll 6: creator=true, challenger=true
-index-82021153.js:201 🎮 Both deposits confirmed via polling! Transporting all players...
-index-82021153.js:201 🎯 OfferAcceptanceOverlay render: {isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: Array(4), acceptedOfferData: {…}, …}
-index-82021153.js:253 🚀 Polling transport signal received!
-index-82021153.js:189 📤 Emitted: request_game_state
-index-82021153.js:189 ✅ Listener removed for: chat_message
-index-82021153.js:189 ✅ Listener removed for: chat_history
-index-82021153.js:189 ✅ Listener removed for: crypto_offer
-index-82021153.js:241 🎮 GameRoomTab: STRICT Game readiness check: {hasCreator: true, hasChallenger: false, bothDeposited: undefined, gameActive: false, gameReady: '', …}
-index-82021153.js:241 🎮 Game room tab active, requesting game state...
-index-82021153.js:189 📤 Emitted: request_game_state
-index-82021153.js:189 ✅ Listener registered for: game_state_update
-index-82021153.js:189 ✅ Listener registered for: game_ready
-index-82021153.js:189 ✅ Listener registered for: game_started
-index-82021153.js:189 ✅ Listener registered for: flip_executing
-index-82021153.js:189 ✅ Listener registered for: round_result
-index-82021153.js:189 ✅ Listener registered for: game_complete
-index-82021153.js:189 📤 Emitted: request_game_state
-index-82021153.js:253 🔍 DEBUG: Game state received: {gameId: 'game_1758128927192_3864fb742b3be983', currentTurn: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', gamePhase: 'waiting_choice', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isMyTurn: true}
-index-82021153.js:253 📊 Game state update received: {gameId: 'game_1758128927192_3864fb742b3be983', phase: 'deposit_stage', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:241 📊 Game state update received: {gameId: 'game_1758128927192_3864fb742b3be983', phase: 'deposit_stage', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:241 ✅ Both players present - challenger polling can stop
-index-82021153.js:253 🔍 DEBUG: Game state received: {gameId: 'game_1758128927192_3864fb742b3be983', currentTurn: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', gamePhase: 'waiting_choice', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isMyTurn: true}
-index-82021153.js:253 📊 Game state update received: {gameId: 'game_1758128927192_3864fb742b3be983', phase: 'deposit_stage', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:241 📊 Game state update received: {gameId: 'game_1758128927192_3864fb742b3be983', phase: 'deposit_stage', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:241 ✅ Both players present - challenger polling can stop
-index-82021153.js:253 🔍 DEBUG: Game state received: {gameId: 'game_1758128927192_3864fb742b3be983', currentTurn: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', gamePhase: 'waiting_choice', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isMyTurn: true}
-index-82021153.js:253 📊 Game state update received: {gameId: 'game_1758128927192_3864fb742b3be983', phase: 'deposit_stage', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:241 📊 Game state update received: {gameId: 'game_1758128927192_3864fb742b3be983', phase: 'deposit_stage', gamePhase: 'waiting_choice', status: 'active', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:241 ✅ Both players present - challenger polling can stop
-index-82021153.js:253 🔄 Updated gameData with server state: {id: 'game_1758128927192_3864fb742b3be983', listing_id: 'listing_1758128927889_7495d02c89b68832', offer_id: null, blockchain_game_id: '0x955b554b3da3bb395d7d3f4b70fc5752a3521b6a7b400f6b96eee8646b03d3d4', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:253 🔄 Updated gameData with server state: {id: 'game_1758128927192_3864fb742b3be983', listing_id: 'listing_1758128927889_7495d02c89b68832', offer_id: null, blockchain_game_id: '0x955b554b3da3bb395d7d3f4b70fc5752a3521b6a7b400f6b96eee8646b03d3d4', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:253 🔄 Updated gameData with server state: {id: 'game_1758128927192_3864fb742b3be983', listing_id: 'listing_1758128927889_7495d02c89b68832', offer_id: null, blockchain_game_id: '0x955b554b3da3bb395d7d3f4b70fc5752a3521b6a7b400f6b96eee8646b03d3d4', creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', …}
-index-82021153.js:241 🎮 GameRoomTab: STRICT Game readiness check: {hasCreator: true, hasChallenger: true, bothDeposited: undefined, gameActive: false, gameReady: undefined, …}
-index-82021153.js:253 🎮 Game readiness check: {status: 'active', phase: 'deposit_stage', bothDeposited: undefined, gameReady: false}
+Player 2
 
-and player 2
-
-✅ Countdown update matches current game index-82021153.js:253:3234
-🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 115, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 115, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-🔍 Deposit poll 4: creator=true, challenger=false index-82021153.js:201:33307
-⏰ Deposit countdown update: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", timeRemaining: 114, message: "Deposit time remaining: 1:54" }
-index-82021153.js:253:3102
-✅ Countdown update matches current game index-82021153.js:253:3234
-🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 114, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-⏰ Deposit countdown update: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", timeRemaining: 113, message: "Deposit time remaining: 1:53" }
-index-82021153.js:253:3102
-✅ Countdown update matches current game index-82021153.js:253:3234
-🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-🔍 Deposit poll 5: creator=true, challenger=false index-82021153.js:201:33307
-🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-💰 ETH deposit tx: 0x598d83cee9c26f627bc5c9bc27d41c76d94dcd01acc150fd9607c3a93fc883cb index-82021153.js:31:81974
-✅ ETH deposit confirmed index-82021153.js:31:82113
-✅ Deposit transaction confirmed: 0x598d83cee9c26f627bc5c9bc27d41c76d94dcd01acc150fd9607c3a93fc883cb index-82021153.js:201:34987
-🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-🎯 Offer accepted event received: 
-Object { type: "game_started", gameId: "game_1758128927192_3864fb742b3be983", message: "Both assets deposited - game starting!" }
-index-82021153.js:253:4496
-✅ Offer accepted for current game index-82021153.js:253:4637
+✅ Offer accepted for current game index-37d625e1.js:253:4908
 🎯 Player roles (using event data): 
 Object { isChallenger: false, isCreator: false, eventChallenger: undefined, eventCreator: undefined, address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", dataKeys: (3) […] }
-index-82021153.js:253:4842
+index-37d625e1.js:253:5113
 ❌ Neither challenger nor creator - ignoring 
 Object { eventCreator: undefined, eventChallenger: undefined, address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: false }
-index-82021153.js:253:5563
+index-37d625e1.js:253:5834
 🎯 Offer accepted event received: 
-Object { type: "deposit_received", gameId: "game_1758128927192_3864fb742b3be983", player: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", assetType: "eth", bothDeposited: true }
-index-82021153.js:253:4496
-✅ Offer accepted for current game index-82021153.js:253:4637
+Object { type: "deposit_received", gameId: "game_1758289802474_0280222742d42087", player: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", assetType: "eth", bothDeposited: true }
+index-37d625e1.js:253:4767
+✅ Offer accepted for current game index-37d625e1.js:253:4908
 🎯 Player roles (using event data): 
 Object { isChallenger: false, isCreator: false, eventChallenger: undefined, eventCreator: undefined, address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", dataKeys: (5) […] }
-index-82021153.js:253:4842
+index-37d625e1.js:253:5113
 ❌ Neither challenger nor creator - ignoring 
 Object { eventCreator: undefined, eventChallenger: undefined, address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: false }
-index-82021153.js:253:5563
-✅ Backend notified of deposit index-82021153.js:201:35293
-📤 Emitted: deposit_confirmed index-82021153.js:189:43711
+index-37d625e1.js:253:5834
+✅ Backend notified of deposit index-37d625e1.js:201:35434
+📤 Emitted: deposit_confirmed index-37d625e1.js:189:47752
 🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-🔍 Deposit poll 6: creator=true, challenger=true index-82021153.js:201:33307
-🎮 Both deposits confirmed via polling! Transporting all players... index-82021153.js:201:33559
+Object { isVisible: true, acceptedOffer: true, timeLeft: 112, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.1, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-37d625e1.js:201:36178
+🔍 Deposit poll 6: creator=true, challenger=true index-37d625e1.js:201:33278
+🎮 Both deposits confirmed via polling! Activating game and transporting players... index-37d625e1.js:201:33530
+📤 Emitting activate_game to server index-37d625e1.js:201:33739
+📤 Emitted: activate_game index-37d625e1.js:189:47752
 🎯 OfferAcceptanceOverlay render: 
-Object { isVisible: true, acceptedOffer: true, timeLeft: 113, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.11, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
-index-82021153.js:201:36037
-🚀 Polling transport signal received! index-82021153.js:253:6874
-📤 Emitted: request_game_state index-82021153.js:189:43711
-✅ Listener removed for: chat_message index-82021153.js:189:43929
-✅ Listener removed for: chat_history index-82021153.js:189:43929
-✅ Listener removed for: crypto_offer index-82021153.js:189:43929
+Object { isVisible: true, acceptedOffer: true, timeLeft: 112, acceptedOfferKeys: (4) […], acceptedOfferData: {…}, gameDataPrice: null, gameDataPriceUsd: 0.1, isCreatorWaiting: false, offererAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentAddress: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", … }
+index-37d625e1.js:201:36178
+🚀 Polling transport signal received! index-37d625e1.js:253:7143
+📤 Emitted: request_game_state index-37d625e1.js:189:47752
+✅ Listener removed for: chat_message index-37d625e1.js:189:47970
+✅ Listener removed for: chat_history index-37d625e1.js:189:47970
+✅ Listener removed for: crypto_offer index-37d625e1.js:189:47970
 🎮 GameRoomTab: STRICT Game readiness check: 
 Object { hasCreator: true, hasChallenger: false, bothDeposited: undefined, gameActive: false, gameReady: "", isActualPlayer: false, finalGameReady: "", currentUser: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: false }
-index-82021153.js:241:3755
-🎮 Game room tab active, requesting game state... index-82021153.js:241:4002
-📤 Emitted: request_game_state index-82021153.js:189:43711
-✅ Listener registered for: game_state_update index-82021153.js:189:43840
-✅ Listener registered for: game_ready index-82021153.js:189:43840
-✅ Listener registered for: game_started index-82021153.js:189:43840
-✅ Listener registered for: flip_executing index-82021153.js:189:43840
-✅ Listener registered for: round_result index-82021153.js:189:43840
-✅ Listener registered for: game_complete index-82021153.js:189:43840
-📤 Emitted: request_game_state index-82021153.js:189:43711
+index-37d625e1.js:241:3755
+🎮 Game room tab active, requesting game state... index-37d625e1.js:241:4002
+📤 Emitted: request_game_state index-37d625e1.js:189:47752
+✅ Listener registered for: game_state_update index-37d625e1.js:189:47881
+✅ Listener registered for: game_ready index-37d625e1.js:189:47881
+✅ Listener registered for: game_started index-37d625e1.js:189:47881
+✅ Listener registered for: flip_executing index-37d625e1.js:189:47881
+✅ Listener registered for: round_result index-37d625e1.js:189:47881
+✅ Listener registered for: game_complete index-37d625e1.js:189:47881
+📤 Emitted: request_game_state index-37d625e1.js:189:47752
 🔍 DEBUG: Game state received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", gamePhase: "waiting_choice", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isMyTurn: false }
-index-82021153.js:253:1803
+Object { gameId: "game_1758289802474_0280222742d42087", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", gamePhase: "waiting_choice", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isMyTurn: false }
+index-37d625e1.js:253:1819
 📊 Game state update received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", phase: "deposit_stage", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-82021153.js:253:1982
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:253:1998
 📊 Game state update received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", phase: "deposit_stage", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-82021153.js:241:4874
-✅ Both players present - challenger polling can stop index-82021153.js:241:4999
-🔍 DEBUG: Game state received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", gamePhase: "waiting_choice", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isMyTurn: false }
-index-82021153.js:253:1803
-📊 Game state update received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", phase: "deposit_stage", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-82021153.js:253:1982
-📊 Game state update received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", phase: "deposit_stage", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-82021153.js:241:4874
-✅ Both players present - challenger polling can stop index-82021153.js:241:4999
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:241:4874
+✅ Both players present - challenger polling can stop index-37d625e1.js:241:4999
 🔄 Updated gameData with server state: 
-Object { id: "game_1758128927192_3864fb742b3be983", listing_id: "listing_1758128927889_7495d02c89b68832", offer_id: null, blockchain_game_id: "0x955b554b3da3bb395d7d3f4b70fc5752a3521b6a7b400f6b96eee8646b03d3d4", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x4B8B400DDD95285733b111E2C249556bf76b552f", nft_token_id: "3753", nft_name: "CABC #3753", nft_image: "https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753", … }
-index-82021153.js:253:2401
-🔄 Updated gameData with server state: 
-Object { id: "game_1758128927192_3864fb742b3be983", listing_id: "listing_1758128927889_7495d02c89b68832", offer_id: null, blockchain_game_id: "0x955b554b3da3bb395d7d3f4b70fc5752a3521b6a7b400f6b96eee8646b03d3d4", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x4B8B400DDD95285733b111E2C249556bf76b552f", nft_token_id: "3753", nft_name: "CABC #3753", nft_image: "https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753", … }
-index-82021153.js:253:2401
+Object { id: "game_1758289802474_0280222742d42087", listing_id: "listing_1758289802683_356e28199399756a", offer_id: null, blockchain_game_id: "0xf6ff0b1deb3a196cba8bbeb7cd4f1ce0a8c2260690fedfe88ecaa5ae875a9dcc", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "1099", nft_name: "BASE APE TEAM #1099", nft_image: "https://ipfs.io/ipfs/bafybeib7ucfcaoyvg3iaxkt4d7n5c2y4z3ygls4vem7n64ohb4mvbwacza/1099", … }
+index-37d625e1.js:253:2417
+🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628 index-37d625e1.js:31:101507
 🎮 GameRoomTab: STRICT Game readiness check: 
-Object { hasCreator: true, hasChallenger: true, bothDeposited: undefined, gameActive: false, gameReady: undefined, isActualPlayer: true, finalGameReady: undefined, currentUser: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: true }
-index-82021153.js:241:3755
+Object { hasCreator: true, hasChallenger: true, bothDeposited: true, gameActive: true, gameReady: true, isActualPlayer: true, finalGameReady: true, currentUser: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: true }
+index-37d625e1.js:241:3755
 🎮 Game readiness check: 
-Object { status: "active", phase: "deposit_stage", bothDeposited: undefined, gameReady: false }
-index-82021153.js:253:7975
+Object { status: "active", phase: "game_active", bothDeposited: true, gameReady: true }
+index-37d625e1.js:253:8248
+WebGL warning: drawElementsInstanced: Drawing to a destination rect smaller than the viewport rect. (This warning will only be given once)
 🔍 DEBUG: Game state received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", gamePhase: "waiting_choice", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isMyTurn: false }
-index-82021153.js:253:1803
+Object { gameId: "game_1758289802474_0280222742d42087", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", gamePhase: "waiting_choice", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isMyTurn: false }
+index-37d625e1.js:253:1819
 📊 Game state update received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", phase: "deposit_stage", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-82021153.js:253:1982
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:253:1998
 📊 Game state update received: 
-Object { gameId: "game_1758128927192_3864fb742b3be983", phase: "deposit_stage", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
-index-82021153.js:241:4874
-✅ Both players present - challenger polling can stop index-82021153.js:241:4999
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:241:4874
+✅ Both players present - challenger polling can stop index-37d625e1.js:241:4999
+🔍 DEBUG: Game state received: 
+Object { gameId: "game_1758289802474_0280222742d42087", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", gamePhase: "waiting_choice", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isMyTurn: false }
+index-37d625e1.js:253:1819
+📊 Game state update received: 
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:253:1998
+📊 Game state update received: 
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "waiting_choice", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:241:4874
+✅ Both players present - challenger polling can stop index-37d625e1.js:241:4999
 🔄 Updated gameData with server state: 
-Object { id: "game_1758128927192_3864fb742b3be983", listing_id: "listing_1758128927889_7495d02c89b68832", offer_id: null, blockchain_game_id: "0x955b554b3da3bb395d7d3f4b70fc5752a3521b6a7b400f6b96eee8646b03d3d4", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x4B8B400DDD95285733b111E2C249556bf76b552f", nft_token_id: "3753", nft_name: "CABC #3753", nft_image: "https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753", … }
-index-82021153.js:253:2401
+Object { id: "game_1758289802474_0280222742d42087", listing_id: "listing_1758289802683_356e28199399756a", offer_id: null, blockchain_game_id: "0xf6ff0b1deb3a196cba8bbeb7cd4f1ce0a8c2260690fedfe88ecaa5ae875a9dcc", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "1099", nft_name: "BASE APE TEAM #1099", nft_image: "https://ipfs.io/ipfs/bafybeib7ucfcaoyvg3iaxkt4d7n5c2y4z3ygls4vem7n64ohb4mvbwacza/1099", … }
+index-37d625e1.js:253:2417
+🔄 Updated gameData with server state: 
+Object { id: "game_1758289802474_0280222742d42087", listing_id: "listing_1758289802683_356e28199399756a", offer_id: null, blockchain_game_id: "0xf6ff0b1deb3a196cba8bbeb7cd4f1ce0a8c2260690fedfe88ecaa5ae875a9dcc", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "1099", nft_name: "BASE APE TEAM #1099", nft_image: "https://ipfs.io/ipfs/bafybeib7ucfcaoyvg3iaxkt4d7n5c2y4z3ygls4vem7n64ohb4mvbwacza/1099", … }
+index-37d625e1.js:253:2417
 🎮 GameRoomTab: STRICT Game readiness check: 
-Object { hasCreator: true, hasChallenger: true, bothDeposited: undefined, gameActive: false, gameReady: undefined, isActualPlayer: true, finalGameReady: undefined, currentUser: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: true }
-index-82021153.js:241:3755
+Object { hasCreator: true, hasChallenger: true, bothDeposited: true, gameActive: true, gameReady: true, isActualPlayer: true, finalGameReady: true, currentUser: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: true }
+index-37d625e1.js:241:3755
 🎮 Game readiness check: 
-Object { status: "active", phase: "deposit_stage", bothDeposited: undefined, gameReady: false }
-index-82021153.js:253:7975
+Object { status: "active", phase: "game_active", bothDeposited: true, gameReady: true }
+index-37d625e1.js:253:8248
+🌐 Profile API response: 
+Object { status: 200, ok: true, statusText: "" }
+index-37d625e1.js:31:101612
+🌐 Profile data received: 
+Object { address: "0xdd6377919ef1ad4babbead667efe3f6607558628", hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false }
+index-37d625e1.js:31:101738
+🔍 DEBUG: Game state received: 
+Object { gameId: "game_1758289802474_0280222742d42087", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", gamePhase: "charging_power", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isMyTurn: false }
+index-37d625e1.js:253:1819
+📊 Game state update received: 
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "charging_power", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:253:1998
+📊 Game state update received: 
+Object { gameId: "game_1758289802474_0280222742d42087", phase: "game_active", gamePhase: "charging_power", status: "active", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", currentTurn: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", currentRound: 1, totalRounds: 5, creatorScore: 0, … }
+index-37d625e1.js:241:4874
+✅ Both players present - challenger polling can stop index-37d625e1.js:241:4999
+🔄 Updated gameData with server state: 
+Object { id: "game_1758289802474_0280222742d42087", listing_id: "listing_1758289802683_356e28199399756a", offer_id: null, blockchain_game_id: "0xf6ff0b1deb3a196cba8bbeb7cd4f1ce0a8c2260690fedfe88ecaa5ae875a9dcc", creator: "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", challenger: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", nft_contract: "0x035003062428fD92384317d7a853d8b4Dff9888a", nft_token_id: "1099", nft_name: "BASE APE TEAM #1099", nft_image: "https://ipfs.io/ipfs/bafybeib7ucfcaoyvg3iaxkt4d7n5c2y4z3ygls4vem7n64ohb4mvbwacza/1099", … }
+index-37d625e1.js:253:2417
+🎮 GameRoomTab: STRICT Game readiness check: 
+Object { hasCreator: true, hasChallenger: true, bothDeposited: true, gameActive: true, gameReady: true, isActualPlayer: true, finalGameReady: true, currentUser: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6", isCreator: false, isChallenger: true }
+index-37d625e1.js:241:3755
+🎮 Game readiness check: 
+Object { status: "active", phase: "game_active", bothDeposited: true, gameReady: true }
+index-37d625e1.js:253:8248
+🎲 Flip executing: 
+Object { gameId: "game_1758289802474_0280222742d42087", coinState: {…}, creatorChoice: "heads", challengerChoice: "tails", creatorPower: 5.3, challengerPower: 0 }
+index-37d625e1.js:253:2961
+🎲 Flip executing received from server: 
+Object { gameId: "game_1758289802474_0280222742d42087", coinState: {…}, creatorChoice: "heads", challengerChoice: "tails", creatorPower: 5.3, challengerPower: 0 }
+index-37d625e1.js:241:5432
+🏁 Desktop coin animation fully complete - winner should be announced now index-37d625e1.js:201:5642
+Flip animation complete index-37d625e1.js:241:12162
+
+Player 1
+✅ Rainbow Kit configuration created successfully
+index-37d625e1.js:253 🧪 Testing WebSocket service...
+index-37d625e1.js:253 Test 1 - Service import: fS
+index-37d625e1.js:253 Test 1 - Service type: object
+index-37d625e1.js:253 Test 1 - Service methods: Array(12)
+index-37d625e1.js:253 Test 2 - isConnected method exists: true
+index-37d625e1.js:253 Test 2 - isInitialized method exists: false
+index-37d625e1.js:253 Test 3 - isConnected result: false
+index-37d625e1.js:253 Test 4 - isInitialized method not available
+index-37d625e1.js:253 🧪 WebSocket service test complete
+index-37d625e1.js:253 Rainbow Kit Config: Object
+index-37d625e1.js:253 🚀 Application starting... Object
+index-37d625e1.js:253 🔍 App.jsx - Starting render: Object
+index-37d625e1.js:168 🔍 Fetching data from: https://flipnosis.fun/api/listings
+index-37d625e1.js:168 📊 Listings response status: 200 
+index-37d625e1.js:168 ✅ Listings loaded: 31 items
+index-37d625e1.js:168 🔍 Fetching data from: https://flipnosis.fun/api/games
+index-37d625e1.js:31 🔧 Initializing contract service from WalletContext...
+index-37d625e1.js:31 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 ✅ Contract service initialized successfully
+index-37d625e1.js:168 📊 Games response status: 200 
+index-37d625e1.js:168 ✅ Games loaded: 54 items
+index-37d625e1.js:168 🔄 Auto-selecting most recent flip: BASE APE TEAM #399
+index-37d625e1.js:168 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 🌐 Profile API response: Object
+index-37d625e1.js:31 🌐 Profile data received: Object
+index-37d625e1.js:31 🪙 Profile loaded for heads: Object
+index-37d625e1.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 🌐 Profile API response: Object
+index-37d625e1.js:31 🌐 Profile data received: Object
+index-37d625e1.js:31 🪙 Profile loaded for tails: Object
+index-37d625e1.js:168 🪙 Custom coin loaded: Object
+index-37d625e1.js:31 📞 Manually loading NFTs for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 🚀 loadNFTs called with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 🔍 Current chain info: Object
+index-37d625e1.js:31 🔍 Loading NFTs for: Object
+index-37d625e1.js:31 🎨 Total NFTs found: 40
+index-37d625e1.js:31 ✅ Loaded NFTs: 40
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeib7ucfcaoyvg3iaxkt4d7n5c2y4z3ygls4vem7n64ohb4mvbwacza/1099
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2262
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2284
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifaaeqknktdsrfb3l5kghisanm5aiovw43dxrs4xjgaujvkvrs57y/3570
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic4i7lavwkayrd7ewmnedhy4x6zun6pwzkecxmqug6hwh6ybxjwem/4062
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieptfg7ltc3dnzy2yndvhjdhw764mtai6h5bs7pk4uikgxhjlb4ju/4817
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeia3bv353ec4za7be3cjdv32we7q42w7yrjsh3vp3w5oyugk5zh7xu/6353
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeidbpalzkhnolrztlnqlf55bdbs3rwmhq4nepsowyvapcewusoy5wu/6988
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiei5lso47b5c4rpiist25s2samafxjhuxt6ipf3uvjnxddoqse7ja/8036
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8406
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8443
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8571
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibzsjsiwiy73paonxcno5wvcyhkaud3zfyix327etkldpta7vg3li/image.webp
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiddueexahniaic5xxvj4krsbqtwvfvja3ctnjbgt3zhmr77x3z25y/image.webp
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmXk1y42pJ3owtaqBK1XYGuq17mpYQGTjb14wt8HHi7bZi
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmX96SimuRFFwfyCA11iiFSjyY7KXcFSU6kpAkvExanBL2
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihnycrbh2sgkpver6ttnzx3dxwc7tekzfi2qvc32zxalqchrtzmx4/59
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeib6j7dynf46tz3bjjlf55kyf7ubrkdqnil3ov6nj4juqjth2mhf5u/1022
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid4lrubj72y3xnz7sggkoamtua4douc5pscqd3sqm2guzsysqtvqi/1444
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicst6aup3a2kcbve45sw3od3cltpsewbf723hk43budowfq35tad4/2384
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicuqneluz2zkylaub667lgn43pf2am2mo2yhqywcjd7ji5sq6yk6y/2535
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeih4gcctkzfrt2ymz6lwrl6b2iggwymisijjzjhq4qdu2koxphgaxi/2624
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibdzsebbeahueqn5fr5vhmgj77femfnzqzpjkkhzvor2l7n6anhm4/3023
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiajxidbvrf4pzugxelsuioy2quxlldziceuuwrrlfdlgz67yz4i4u/3531
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicokheinuxbqhgrnzhpnplksgkyf4sm5it2mxz7plhp5vpvhumjrq/image.png
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiaa3l7kbebplqnnb7oqxpdkibcg3rgx24lq4rv55d75bwwcvmtzdm/9
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiggm7mpviuho43jlvrnqbzlls35k72ypqgzpyjqzdpoj3gwxrg5hi
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1307
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafkreib2amqj2zcewaw2sdtzjq27tyq6hcdiyv7ofp6ymiytqlf7t4gb7y
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1308
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1312
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieq4pxcymnusz7jjae7vn4ucpekhbzixfcs5tksda6wcmsx3xuud4/3919
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic3by4zpmw4pfgisa2gqaoke4c5teisby623n3g3mqouufxf4zbpm/image.jpeg
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiava3asjrljldv4t54hz46x7xbky6g7ap6v7vddifohl2szjv5p3e/4281.png
+index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid7syd6tj5iez5lzeg2efnqejcxh6rex6ln2saqbeuymijzdfuabm/2561
+2index-37d625e1.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmbhsSeehQgBiQB7BVgbBmoPUzWuwsiAm9Y9AXmZ4cyymr
+index-37d625e1.js:182 🎨 NFT selected: Object
+index-37d625e1.js:168 🪙 Coin selected: Object
+index-37d625e1.js:168 🪙 Sending optimized coin to parent: Object
+index-37d625e1.js:182 🪙 Coin selected in CreateFlip: Object
+index-37d625e1.js:168 🪙 Material selected: Object
+index-37d625e1.js:182 🪙 Material selected in CreateFlip: Object
+index-37d625e1.js:182 ✅ Listing created: Object
+index-37d625e1.js:182 💰 Game price: $0.1 (100000 microdollars)
+index-37d625e1.js:182 💸 Listing fee: $0.00 (free)
+index-37d625e1.js:31 🎮 Creating game (approve + deposit NFT): Object
+index-37d625e1.js:31 🔓 Approving NFT for transfer: Object
+index-37d625e1.js:31 🔓 NFT approval tx: 0xbef38c867f33d0bb5b0c263ec35fdd89ee216443d5314fd9801a063ef3d49447
+index-37d625e1.js:31 ✅ NFT approval confirmed
+index-37d625e1.js:31 📦 Depositing NFT for game: Object
+index-37d625e1.js:31 🔍 Checking existing deposit for game: 0x67616d655f313735383238393830323437345f30323830323232373432643400
+index-37d625e1.js:31 🔍 Existing deposit data: Array(5)
+index-37d625e1.js:31 📦 NFT deposit tx: 0xe94b2ef0c38ef3930a3caae9b3511b277b95719222eb5dd5e7ebc116ffe199e5
+index-37d625e1.js:31 ✅ NFT deposit confirmed
+index-37d625e1.js:31 🔍 Verifying NFT deposit...
+index-37d625e1.js:31 🔍 Verification result: Array(5)
+index-37d625e1.js:31 🔍 Array format - depositor: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-37d625e1.js:31 ✅ NFT deposit verified successfully
+index-37d625e1.js:253 🔌 Connecting to game server...
+index-37d625e1.js:189 🔌 Connecting to Socket.io: wss://flipnosis.fun
+index-37d625e1.js:253 🎮 Game readiness check: Object
+index-37d625e1.js:189 ✅ Socket.io connected
+index-37d625e1.js:189 📤 Emitted: join_room
+index-37d625e1.js:253 📌 Registering Socket.io event listeners...
+index-37d625e1.js:189 ✅ Listener registered for: room_joined
+index-37d625e1.js:189 ✅ Listener registered for: game_state_update
+index-37d625e1.js:189 ✅ Listener registered for: flip_executing
+index-37d625e1.js:189 ✅ Listener registered for: round_result
+index-37d625e1.js:189 ✅ Listener registered for: game_not_found
+index-37d625e1.js:189 ✅ Listener registered for: deposit_countdown
+index-37d625e1.js:189 ✅ Listener registered for: deposit_timeout
+index-37d625e1.js:189 ✅ Listener registered for: offer_accepted
+index-37d625e1.js:189 ✅ Listener registered for: game_started
+index-37d625e1.js:253 ✅ All Socket.io event listeners registered
+index-37d625e1.js:189 📤 Emitted: join_room
+index-37d625e1.js:253 🏠 Room joined: Object
+index-37d625e1.js:253 🏠 Room joined: Object
+index-37d625e1.js:189 📤 Emitted: request_game_state
+index-37d625e1.js:253 🔍 DEBUG: Game state received: Object
+index-37d625e1.js:253 📊 Game state update received: Object
+index-37d625e1.js:253 🔄 Updated gameData with server state: Object
+index-37d625e1.js:253 🎮 Game readiness check: Object
+index-37d625e1.js:201 🪙 Demo coin clicked
+index-37d625e1.js:253 📑 Switching to tab: chat
+index-37d625e1.js:189 ✅ Listener registered for: chat_message
+index-37d625e1.js:189 ✅ Listener registered for: chat_history
+index-37d625e1.js:189 ✅ Listener registered for: crypto_offer
+index-37d625e1.js:209 📜 Loaded 0 chat messages for game 1758289802474_0280222742d42087
+index-37d625e1.js:209 💰 Offers loaded: 0
+index-37d625e1.js:201 🏁 Desktop coin animation fully complete - winner should be announced now
+index-37d625e1.js:209 Demo flip complete
+index-37d625e1.js:209 💬 Chat message received: Object
+index-37d625e1.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-37d625e1.js:31 🌐 Profile API response: Object
+index-37d625e1.js:31 🌐 Profile data received: Object
+index-37d625e1.js:209 💰 New offer received: Object
+index-37d625e1.js:209 💰 Current offers before adding: 0
+index-37d625e1.js:209 💰 Adding offer to state: Object
+index-37d625e1.js:209 💰 Updated offers count: 1
+index-37d625e1.js:189 📤 Emitted: accept_offer
+index-37d625e1.js:209 ✅ Offer acceptance sent via Socket.io
+index-37d625e1.js:253 🎯 Offer accepted event received: Object
+index-37d625e1.js:253 ✅ Offer accepted for current game
+index-37d625e1.js:253 🎯 Player roles (using event data): Object
+index-37d625e1.js:253 ✅ You are the creator - waiting for challenger to deposit
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:201 🔄 Starting deposit status polling for game: game_1758289802474_0280222742d42087
+index-37d625e1.js:201 🔍 Deposit poll 1: creator=true, challenger=false
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:201 🔍 Deposit poll 2: creator=true, challenger=false
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:201 🔍 Deposit poll 3: creator=true, challenger=false
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:201 🔍 Deposit poll 4: creator=true, challenger=false
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:201 🔍 Deposit poll 5: creator=true, challenger=false
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 ⏰ Deposit countdown update: Object
+index-37d625e1.js:253 ✅ Countdown update matches current game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 🎯 Offer accepted event received: Object
+index-37d625e1.js:253 ✅ Offer accepted for current game
+index-37d625e1.js:253 🎯 Player roles (using event data): Object
+index-37d625e1.js:253 ❌ Neither challenger nor creator - ignoring Object
+index-37d625e1.js:253 🎯 Offer accepted event received: Object
+index-37d625e1.js:253 ✅ Offer accepted for current game
+index-37d625e1.js:253 🎯 Player roles (using event data): Object
+index-37d625e1.js:253 ❌ Neither challenger nor creator - ignoring Object
+index-37d625e1.js:201 🔍 Deposit poll 6: creator=true, challenger=true
+index-37d625e1.js:201 🎮 Both deposits confirmed via polling! Activating game and transporting players...
+index-37d625e1.js:201 📤 Emitting activate_game to server
+index-37d625e1.js:189 📤 Emitted: activate_game
+index-37d625e1.js:201 🎯 OfferAcceptanceOverlay render: Object
+index-37d625e1.js:253 🚀 Polling transport signal received!
+index-37d625e1.js:189 📤 Emitted: request_game_state
+index-37d625e1.js:189 ✅ Listener removed for: chat_message
+index-37d625e1.js:189 ✅ Listener removed for: chat_history
+index-37d625e1.js:189 ✅ Listener removed for: crypto_offer
+index-37d625e1.js:241 🎮 GameRoomTab: STRICT Game readiness check: Object
+index-37d625e1.js:241 🎮 Game room tab active, requesting game state...
+index-37d625e1.js:189 📤 Emitted: request_game_state
+index-37d625e1.js:189 ✅ Listener registered for: game_state_update
+index-37d625e1.js:189 ✅ Listener registered for: game_ready
+index-37d625e1.js:189 ✅ Listener registered for: game_started
+index-37d625e1.js:189 ✅ Listener registered for: flip_executing
+index-37d625e1.js:189 ✅ Listener registered for: round_result
+index-37d625e1.js:189 ✅ Listener registered for: game_complete
+index-37d625e1.js:189 📤 Emitted: request_game_state
+index-37d625e1.js:253 🔍 DEBUG: Game state received: Object
+index-37d625e1.js:253 📊 Game state update received: Object
+index-37d625e1.js:241 📊 Game state update received: Object
+index-37d625e1.js:241 ✅ Both players present - challenger polling can stop
+index-37d625e1.js:253 🔄 Updated gameData with server state: Object
+index-37d625e1.js:241 🎮 GameRoomTab: STRICT Game readiness check: Object
+index-37d625e1.js:253 🎮 Game readiness check: Object
+index-37d625e1.js:253 🔍 DEBUG: Game state received: Object
+index-37d625e1.js:253 📊 Game state update received: Object
+index-37d625e1.js:241 📊 Game state update received: Object
+index-37d625e1.js:241 ✅ Both players present - challenger polling can stop
+index-37d625e1.js:253 🔍 DEBUG: Game state received: Object
+index-37d625e1.js:253 📊 Game state update received: Object
+index-37d625e1.js:241 📊 Game state update received: Object
+index-37d625e1.js:241 ✅ Both players present - challenger polling can stop
+index-37d625e1.js:253 🔄 Updated gameData with server state: Object
+index-37d625e1.js:253 🔄 Updated gameData with server state: Object
+index-37d625e1.js:241 🎮 GameRoomTab: STRICT Game readiness check: Object
+index-37d625e1.js:253 🎮 Game readiness check: Object
+index-37d625e1.js:189 📤 Emitted: player_choice
+index-37d625e1.js:253 🔍 DEBUG: Game state received: Object
+index-37d625e1.js:253 📊 Game state update received: Object
+index-37d625e1.js:241 📊 Game state update received: Object
+index-37d625e1.js:241 ✅ Both players present - challenger polling can stop
+index-37d625e1.js:253 🔄 Updated gameData with server state: Object
+index-37d625e1.js:241 🎮 GameRoomTab: STRICT Game readiness check: Object
+index-37d625e1.js:253 🎮 Game readiness check: Object
+index-37d625e1.js:189 📤 Emitted: start_power_charge
+index-37d625e1.js:189 📤 Emitted: stop_power_charge
+index-37d625e1.js:253 🎲 Flip executing: Object
+index-37d625e1.js:241 🎲 Flip executing received from server: Object
+index-37d625e1.js:201 🏁 Desktop coin animation fully complete - winner should be announced now
+index-37d625e1.js:241 Flip animation complete
+

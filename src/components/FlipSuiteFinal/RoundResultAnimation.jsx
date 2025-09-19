@@ -106,7 +106,7 @@ const RoundResultAnimation = ({
   const [videoEnded, setVideoEnded] = useState(false)
   
   // Determine which video to play
-  const videoSrc = isWin ? '/Images/Video/LoseWin/final lose win/win.webm' : '/Images/Video/LoseWin/final lose win/lose.webm'
+  const videoSrc = isWin ? '/Images/video/LoseWin/final lose win/win.webm' : '/Images/video/LoseWin/final lose win/lose.webm'
   
   useEffect(() => {
     if (isVisible) {
@@ -134,6 +134,7 @@ const RoundResultAnimation = ({
   
   const handleVideoError = (e) => {
     console.error('🎬 Video playback error:', e)
+    console.log('🎬 Video source attempted:', e.target.src)
     console.log('🎬 Attempting fallback - showing text only')
     setVideoEnded(true)
     
