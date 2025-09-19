@@ -866,23 +866,27 @@ const GameRoomTab = ({
         gamePhase: 'showing_result'
       }))
       
+      // Fix: Use the gameState creator/challenger that we KNOW exists, not gameData
+      const gameCreator = gameState?.creator || gameData?.creator
+      const gameChallenger = gameState?.challenger || gameData?.challenger
+      
       // Show win/lose animation for actual players
-      const isActualCreator = address?.toLowerCase() === gameData?.creator?.toLowerCase()
-      const isActualChallenger = address?.toLowerCase() === gameData?.challenger?.toLowerCase()
+      const isActualCreator = address?.toLowerCase() === gameCreator?.toLowerCase()
+      const isActualChallenger = address?.toLowerCase() === gameChallenger?.toLowerCase()
       
       console.log('🎬 Round animation check:', {
         isActualCreator,
         isActualChallenger,
         roundWinner: data.roundWinner,
-        creator: gameData?.creator,
-        challenger: gameData?.challenger,
+        creator: gameCreator,
+        challenger: gameChallenger,
         address,
         flipResult: data.flipResult
       })
       
       if (isActualCreator || isActualChallenger) {
-        const playerWon = (isActualCreator && data.roundWinner?.toLowerCase() === gameData?.creator?.toLowerCase()) ||
-                          (isActualChallenger && data.roundWinner?.toLowerCase() === gameData?.challenger?.toLowerCase())
+        const playerWon = (isActualCreator && data.roundWinner?.toLowerCase() === gameCreator?.toLowerCase()) ||
+                          (isActualChallenger && data.roundWinner?.toLowerCase() === gameChallenger?.toLowerCase())
         
         console.log('🎬 Triggering round animation:', {
           playerWon,
@@ -923,11 +927,14 @@ const GameRoomTab = ({
     
     const handleNewRound = (data) => {
       console.log('🔄 New round event received:', data)
-      console.log(`🎯 Round ${data.currentRound} - ${data.currentTurn === gameData?.creator ? 'Creator' : 'Challenger'}'s turn`)
+      console.log(`🎯 Round ${data.currentRound} - ${data.currentTurn?.toLowerCase() === gameData?.creator?.toLowerCase() ? 'Creator' : 'Challenger'}'s turn`)
       
       // Clear any existing animations
       setShowWinLoseAnimation(false)
       setRoundResult(null)
+      
+      // Restart the countdown for the new round
+      setRoundCountdown(20)
       
       // Update game state with new round info
       setGameState(prev => ({
@@ -939,7 +946,11 @@ const GameRoomTab = ({
         creatorChoice: null,
         challengerChoice: null,
         creatorCharging: false,
-        challengerCharging: false
+        challengerCharging: false,
+        creatorPowerProgress: 0,
+        challengerPowerProgress: 0,
+        creatorFinalPower: 0,
+        challengerFinalPower: 0
       }))
     }
     
@@ -1273,7 +1284,8 @@ const GameRoomTab = ({
           )}
 
           {/* Choice Buttons */}
-          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && gameState.currentTurn === address && (
+          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && 
+           gameState.currentTurn?.toLowerCase() === address?.toLowerCase() && (
             <ChoiceButtons>
               <ChoiceButton 
                 choice="heads" 
@@ -1291,10 +1303,11 @@ const GameRoomTab = ({
           )}
 
           {/* Waiting for other player */}
-          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && gameState.currentTurn !== address && (
+          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && 
+           gameState.currentTurn?.toLowerCase() !== address?.toLowerCase() && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
               <OpponentChoosingMessage>
-                🤔 {gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} is choosing...
+                🤔 {gameState.currentTurn?.toLowerCase() === gameState.creator?.toLowerCase() ? 'Creator' : 'Challenger'} is choosing...
               </OpponentChoosingMessage>
               <TurnIndicator isMyTurn={false}>
                 {gameState.currentTurn?.slice(0, 6)}...{gameState.currentTurn?.slice(-4)} is making their choice
@@ -1303,10 +1316,10 @@ const GameRoomTab = ({
           )}
 
           {/* Waiting during power charging */}
-          {gameState.gamePhase === 'charging_power' && gameState.currentTurn !== address && (
+          {gameState.gamePhase === 'charging_power' && gameState.currentTurn?.toLowerCase() !== address?.toLowerCase() && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
               <OpponentChoosingMessage style={{ background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)', borderColor: '#00FF88', color: '#00FF88' }}>
-                ⚡ {gameState.currentTurn === gameState.creator ? 'Creator' : 'Challenger'} is charging power
+                ⚡ {gameState.currentTurn?.toLowerCase() === gameState.creator?.toLowerCase() ? 'Creator' : 'Challenger'} is charging power
               </OpponentChoosingMessage>
               <TurnIndicator isMyTurn={false} style={{ color: '#00FF88', textShadow: '0 0 15px #00FF88, 0 0 30px #00FF88' }}>
                 Your choice: {address === gameState.creator ? gameState.creatorChoice : gameState.challengerChoice}
@@ -1333,7 +1346,7 @@ const GameRoomTab = ({
           )}
 
           {/* Power Charging */}
-          {gameState.gamePhase === 'charging_power' && gameState.currentTurn === address && (
+          {gameState.gamePhase === 'charging_power' && gameState.currentTurn?.toLowerCase() === address?.toLowerCase() && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
               <div style={{ color: '#00ff88', fontSize: '1.4rem', marginBottom: '1rem', fontWeight: 'bold' }}>
                 🎯 Your choice: {address === gameState.creator ? gameState.creatorChoice : gameState.challengerChoice}
@@ -1511,8 +1524,8 @@ const GameRoomTab = ({
         onAnimationComplete={() => {
           setShowWinLoseAnimation(false)
           setRoundResult(null)
-          // Server now handles round progression automatically - no manual request needed
-          console.log('🎬 Round result animation complete - server will handle next round')
+          // No need to request next round - server handles it automatically
+          console.log('🎬 Round result animation complete - waiting for server to start next round')
         }}
       />
     </TabContainer>

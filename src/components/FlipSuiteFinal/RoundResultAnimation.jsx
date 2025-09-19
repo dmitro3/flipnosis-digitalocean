@@ -135,7 +135,24 @@ const RoundResultAnimation = ({
   const handleVideoError = (e) => {
     console.error('🎬 Video playback error:', e)
     console.log('🎬 Video source attempted:', e.target.src)
-    console.log('🎬 Attempting fallback - showing text only')
+    
+    // Try alternative paths before falling back to text
+    const currentSrc = e.target.src
+    const altPaths = [
+      `/Images/video/LoseWin/final lose win/${isWin ? 'win' : 'lose'}.webm`,
+      `/public/Images/video/LoseWin/final lose win/${isWin ? 'win' : 'lose'}.webm`,
+      `./Images/video/LoseWin/final lose win/${isWin ? 'win' : 'lose'}.webm`
+    ]
+    
+    const nextPath = altPaths.find(path => !currentSrc.includes(path))
+    
+    if (nextPath) {
+      console.log('🎬 Trying alternative video path:', nextPath)
+      e.target.src = nextPath
+      return
+    }
+    
+    console.log('🎬 All video paths failed - showing text only')
     setVideoEnded(true)
     
     // Show text for 3 seconds then close

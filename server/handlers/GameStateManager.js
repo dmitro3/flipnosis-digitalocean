@@ -452,7 +452,7 @@ class GameStateManager {
         })
       }
     } else {
-      // AUTO-START next round after 3 seconds (give time for animation to show)
+      // AUTO-START next round after 4 seconds (give time for animation to show)
       setTimeout(() => {
         console.log(`🔄 Auto-starting next round for game ${gameId}`)
         const updatedGame = this.startNextRound(gameId, broadcastFn)
@@ -477,7 +477,7 @@ class GameStateManager {
             message: `Round ${updatedGame.currentRound} - ${updatedGame.currentTurn === updatedGame.creator ? 'Creator' : 'Challenger'}'s turn to choose!`
           })
         }
-      }, 3000)
+      }, 4000)
     }
     
     game.updatedAt = new Date().toISOString()
