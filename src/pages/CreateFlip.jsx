@@ -545,6 +545,61 @@ const CreateFlip = () => {
               {gameMode === 'battle-royale' ? 'Create Battle Royale' : 'Create Your Flip'}
             </NeonText>
 
+            {/* VERY PROMINENT Game Mode Dropdown - First Thing User Sees */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(255, 20, 147, 0.2) 0%, rgba(0, 191, 255, 0.2) 100%)',
+              border: '3px solid #ff1493',
+              borderRadius: '1rem',
+              padding: '1.5rem',
+              marginBottom: '2rem',
+              textAlign: 'center'
+            }}>
+              <Label style={{ 
+                fontSize: '1.3rem', 
+                fontWeight: 'bold',
+                color: '#ff1493',
+                marginBottom: '1rem',
+                display: 'block'
+              }}>
+                🎮 SELECT GAME MODE
+              </Label>
+              <Select 
+                value={gameMode} 
+                onChange={(e) => {
+                  setGameMode(e.target.value)
+                  console.log('🎮 Game mode selected:', e.target.value)
+                }}
+                style={{ 
+                  width: '100%', 
+                  padding: '1.2rem',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  border: '2px solid #ff1493',
+                  borderRadius: '0.8rem',
+                  color: '#fff',
+                  textAlign: 'center'
+                }}
+              >
+                <option value="nft-vs-crypto">⚔️ 1v1 DUEL - Classic NFT vs Crypto Battle</option>
+                <option value="battle-royale">🏆 BATTLE ROYALE - 8-Player Tournament (NEW!)</option>
+              </Select>
+              
+              {gameMode === 'battle-royale' && (
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(255, 20, 147, 0.1)',
+                  border: '1px solid #ff1493',
+                  borderRadius: '0.5rem',
+                  color: '#ff1493',
+                  fontWeight: 'bold'
+                }}>
+                  🚀 NEW FEATURE: 8 players compete, winner takes your NFT!
+                </div>
+              )}
+            </div>
+
             {/* Game Mode Selection - Prominent at top */}
             <FormGroup style={{ marginBottom: '2rem' }}>
               <Label style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '1rem', color: theme.colors.neonPink }}>
@@ -730,7 +785,7 @@ const CreateFlip = () => {
                     marginTop: '0.5rem',
                     display: 'block'
                   }}>
-                    💡 You can enter decimal prices (e.g., 0.25 for 25 cents). This is what Player 2 will pay to join your game.
+                    💡 You can enter decimal prices (e.g., 0.30 for 50 cents). This is what Player 2 will pay to join your game.
                   </small>
                   {price && parseFloat(price) > 0 && (
                     <div style={{ 
