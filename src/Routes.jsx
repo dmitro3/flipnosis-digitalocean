@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import Home from "./pages/Home";
 import CreateFlip from "./pages/CreateFlip";
+import CreateBattle from "./pages/CreateBattle";
 import Layout from "./components/Layout";
 import AdminPanel from "./components/AdminPanel";
 import Dashboard from "./components/Dashboard";
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
       {
         path: "create",
         element: <CreateFlip />,
+      },
+      {
+        path: "create-battle",
+        element: <CreateBattle />,
       },
       {
         path: "game/listing_:listingId",

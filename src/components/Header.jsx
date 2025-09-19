@@ -336,6 +336,16 @@ const Header = () => {
 
         <DesktopNav>
           <CreateButton to="/create">Create Flip</CreateButton>
+          <CreateButton 
+            to="/create-battle" 
+            style={{ 
+              background: 'linear-gradient(45deg, #ff1493, #ff69b4)',
+              borderColor: '#ff1493',
+              marginLeft: '0.5rem'
+            }}
+          >
+            🏆 Create Battle
+          </CreateButton>
           {isAdmin && <AdminButton to="/admin">Admin</AdminButton>}
   
           <ConnectButton 
