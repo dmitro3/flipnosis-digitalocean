@@ -252,16 +252,11 @@ class GameStateManager {
       console.log(`⚡ Challenger stopped charging at power: ${game.challengerFinalPower}`)
     }
     
-    // Since this is turn-based, immediately execute the flip when current player finishes
-    console.log(`🎲 Current player finished charging power - executing flip immediately`)
-    
     // Clear any remaining turn timer
     this.clearTurnTimer(gameId)
     
     game.updatedAt = new Date().toISOString()
-    
-    // Return special flag to indicate flip should execute
-    return { shouldFlip: true }
+    return true  // Just return true, don't auto-flip
   }
 
   // ===== ROUND COUNTDOWN =====
@@ -415,7 +410,10 @@ class GameStateManager {
         creatorScore: game.creatorScore,
         challengerScore: game.challengerScore,
         creatorChoice: game.creatorChoice,
-        challengerChoice: game.challengerChoice
+        challengerChoice: game.challengerChoice,
+        // ADD THESE:
+        creator: game.creator,  // Include player addresses!
+        challenger: game.challenger
       }
       
       console.log(`📡 Broadcasting round_result:`, roundResultData)
@@ -678,15 +676,15 @@ class GameStateManager {
     game.creatorDeposited = true
     game.challengerDeposited = true
     
-    // Start the initial countdown for round 1
+    // ADD THIS - Start the countdown!
     if (broadcastFn) {
       this.startRoundCountdown(gameId, broadcastFn)
     }
     
-    // Start the first turn timer (20 seconds for choice)
-    this.startTurnTimer(gameId, 20000, () => {
-      this.autoMakeChoice(gameId, game.currentTurn)
-    })
+    // REMOVE the turn timer - let countdown handle it
+    // this.startTurnTimer(gameId, 20000, () => {
+    //   this.autoMakeChoice(gameId, game.currentTurn)
+    // })
     
     game.updatedAt = new Date().toISOString()
     console.log(`✅ Game activated: ${gameId}, Creator goes first with 20s countdown`)

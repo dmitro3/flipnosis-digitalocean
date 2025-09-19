@@ -390,18 +390,12 @@ class GameServer {
     }
     
     // Stop power charging
-    const result = this.gameStateManager.stopPowerCharging(gameId, address)
+    this.gameStateManager.stopPowerCharging(gameId, address)
     
-    // In turn-based mode, execute flip immediately when current player finishes
-    if (result && result.shouldFlip) {
-      console.log(`🎲 Current player finished - executing flip for game ${gameId}`)
-      this.handleExecuteFlip(socket, { gameId })
-    } else {
-      // Broadcast updated state
-      const fullState = this.gameStateManager.getFullGameState(gameId)
-      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-      this.io.to(roomId).emit('game_state_update', fullState)
-    }
+    // Just broadcast the updated state
+    const fullState = this.gameStateManager.getFullGameState(gameId)
+    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    this.io.to(roomId).emit('game_state_update', fullState)
   }
 
   async handleExecuteFlip(socket, data) {

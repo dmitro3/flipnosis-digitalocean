@@ -852,9 +852,8 @@ const GameRoomTab = ({
     const handleRoundResult = (data) => {
       console.log('🎲 Round result received:', data)
       console.log('🎲 Current address:', address)
-      console.log('🎲 Game data:', { creator: gameData?.creator, challenger: gameData?.challenger })
       
-      // Update game state with round result
+      // Update game state first
       setGameState(prev => ({
         ...prev,
         currentRound: data.currentRound,
@@ -866,9 +865,18 @@ const GameRoomTab = ({
         gamePhase: 'showing_result'
       }))
       
-      // Fix: Use the gameState creator/challenger that we KNOW exists, not gameData
-      const gameCreator = gameState?.creator || gameData?.creator
-      const gameChallenger = gameState?.challenger || gameData?.challenger
+      // CRITICAL FIX: Get the addresses from the EVENT DATA, not gameData!
+      // The server knows who the players are
+      const gameCreator = gameState?.creator || gameData?.creator || data.creator
+      const gameChallenger = gameState?.challenger || gameData?.challenger || data.challenger
+      
+      // Debug log to verify
+      console.log('🎬 Player detection:', {
+        eventData: data,
+        gameCreator,
+        gameChallenger,
+        currentAddress: address
+      })
       
       // Show win/lose animation for actual players
       const isActualCreator = address?.toLowerCase() === gameCreator?.toLowerCase()
@@ -1413,6 +1421,38 @@ const GameRoomTab = ({
               >
                 ⚡ HOLD TO CHARGE ⚡
               </PulseButton>
+              
+              {/* ADD THIS NEW BUTTON */}
+              {(gameState.creatorFinalPower > 0 || gameState.challengerFinalPower > 0) && (
+                <button
+                  onClick={() => socket.emit('execute_flip', { gameId })}
+                  style={{
+                    marginTop: '1rem',
+                    padding: '1rem 2rem',
+                    background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                    color: '#000',
+                    border: '2px solid #FFD700',
+                    borderRadius: '0.5rem',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)'
+                    e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.8)'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)'
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.5)'
+                  }}
+                >
+                  🎲 FLIP THE COIN!
+                </button>
+              )}
               
               <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
                 Release when you're satisfied with your power level!
