@@ -549,6 +549,30 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
     }
   }, [gameId, showSuccess])
 
+  const handleNewRound = useCallback((data) => {
+    console.log('🔄 New round event received in FlipSuiteFinal:', data)
+    
+    // Update server state with new round information
+    setServerState(prev => ({
+      ...prev,
+      currentRound: data.currentRound,
+      currentTurn: data.currentTurn,
+      gamePhase: 'waiting_choice',
+      // Reset choices for new round
+      creatorChoice: null,
+      challengerChoice: null,
+      creatorCharging: false,
+      challengerCharging: false,
+      creatorPowerProgress: 0,
+      challengerPowerProgress: 0,
+      creatorFinalPower: 0,
+      challengerFinalPower: 0
+    }))
+    
+    // Show round notification
+    showInfo(`Round ${data.currentRound} - ${data.currentTurn?.toLowerCase() === gameData?.creator?.toLowerCase() ? 'Creator' : 'Challenger'}'s turn!`)
+  }, [showInfo, gameData])
+
   const handleOfferAccepted = useCallback((data) => {
     console.log('🎯 Offer accepted event received:', data)
     
@@ -647,6 +671,9 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         // Game started event (when both deposits complete)
         socketService.on('game_started', handleGameStarted)
         
+        // New round event (for round progression)
+        socketService.on('new_round', handleNewRound)
+        
         console.log('✅ All Socket.io event listeners registered')
         
         // Join room
@@ -679,6 +706,7 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       socketService.off('deposit_timeout', handleDepositTimeout)
       socketService.off('offer_accepted', handleOfferAccepted)
       socketService.off('game_started', handleGameStarted)
+      socketService.off('new_round', handleNewRound)
     }
   }, [gameId, address])
 

@@ -392,8 +392,12 @@ class GameStateManager {
 
   showResult(gameId, broadcastFn) {
     const game = this.games.get(gameId)
-    if (!game) return
+    if (!game) {
+      console.error(`❌ showResult: Game ${gameId} not found!`)
+      return
+    }
 
+    console.log(`🎯 showResult called for game ${gameId}`)
     game.gamePhase = this.GAME_PHASES.SHOWING_RESULT
     game.coinState.isFlipping = false
     
@@ -427,10 +431,11 @@ class GameStateManager {
     }
     
     // Check for game completion
+    console.log(`🎮 Game completion check: creatorScore=${game.creatorScore}, challengerScore=${game.challengerScore}, currentRound=${game.currentRound}, totalRounds=${game.totalRounds}`)
     if (game.creatorScore >= 3 || game.challengerScore >= 3 || game.currentRound >= game.totalRounds) {
       game.phase = this.PHASES.GAME_COMPLETE
       game.gameWinner = game.creatorScore > game.challengerScore ? game.creator : game.challenger
-      console.log(`🏆 Game complete! Winner: ${game.gameWinner}`)
+      console.log(`🏆 Game complete! Winner: ${game.gameWinner} (creatorScore: ${game.creatorScore}, challengerScore: ${game.challengerScore}, round: ${game.currentRound})`)
       
       // Broadcast game completion
       if (broadcastFn) {
@@ -451,8 +456,9 @@ class GameStateManager {
       }
     } else {
       // AUTO-START next round after 4 seconds (give time for animation to show)
+      console.log(`⏰ Scheduling next round in 4 seconds for game ${gameId}`)
       setTimeout(() => {
-        console.log(`🔄 Auto-starting next round for game ${gameId}`)
+        console.log(`🔄 Auto-starting next round timeout fired for game ${gameId}`)
         const updatedGame = this.startNextRound(gameId, broadcastFn)
         
         // Force broadcast the new round state immediately
@@ -467,6 +473,7 @@ class GameStateManager {
           broadcastFn(roomId, 'game_state_update', newRoundState)
           
           // Also send a specific "new_round" event
+          console.log(`📡 Broadcasting new_round event for game ${gameId}`)
           broadcastFn(roomId, 'new_round', {
             type: 'new_round',
             gameId,
@@ -474,6 +481,8 @@ class GameStateManager {
             currentTurn: updatedGame.currentTurn,
             message: `Round ${updatedGame.currentRound} - ${updatedGame.currentTurn === updatedGame.creator ? 'Creator' : 'Challenger'}'s turn to choose!`
           })
+        } else {
+          console.error(`❌ Failed to broadcast new round: updatedGame=${!!updatedGame}, broadcastFn=${!!broadcastFn}`)
         }
       }, 4000)
     }
@@ -482,8 +491,12 @@ class GameStateManager {
   }
 
   startNextRound(gameId, broadcastFn) {
+    console.log(`🔄 startNextRound called for game ${gameId}`)
     const game = this.games.get(gameId)
-    if (!game) return null
+    if (!game) {
+      console.error(`❌ startNextRound: Game ${gameId} not found!`)
+      return null
+    }
 
     // Check if game is complete first
     const maxScore = Math.max(game.creatorScore, game.challengerScore)
