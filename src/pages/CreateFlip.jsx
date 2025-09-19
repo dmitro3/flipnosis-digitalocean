@@ -541,139 +541,55 @@ const CreateFlip = () => {
       <Container>
         <ContentWrapper>
           <GlassCard>
-            <NeonText style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              {gameMode === 'battle-royale' ? 'Create Battle Royale' : 'Create Your Flip'}
-            </NeonText>
-
-            {/* VERY PROMINENT Game Mode Dropdown - First Thing User Sees */}
+            {/* GAME MODE SELECTOR - VERY FIRST THING */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(255, 20, 147, 0.2) 0%, rgba(0, 191, 255, 0.2) 100%)',
-              border: '3px solid #ff1493',
+              background: 'red',
+              border: '5px solid yellow',
               borderRadius: '1rem',
-              padding: '1.5rem',
+              padding: '2rem',
               marginBottom: '2rem',
               textAlign: 'center'
             }}>
-              <Label style={{ 
-                fontSize: '1.3rem', 
-                fontWeight: 'bold',
-                color: '#ff1493',
-                marginBottom: '1rem',
-                display: 'block'
-              }}>
-                🎮 SELECT GAME MODE
-              </Label>
-              <Select 
+              <h2 style={{ color: 'yellow', fontSize: '2rem', margin: '0 0 1rem 0' }}>
+                🎮 GAME MODE SELECTOR
+              </h2>
+              <select 
                 value={gameMode} 
                 onChange={(e) => {
                   setGameMode(e.target.value)
-                  console.log('🎮 Game mode selected:', e.target.value)
+                  alert('GAME MODE CHANGED TO: ' + e.target.value)
                 }}
                 style={{ 
                   width: '100%', 
-                  padding: '1.2rem',
-                  fontSize: '1.2rem',
+                  padding: '1.5rem',
+                  fontSize: '1.5rem',
                   fontWeight: 'bold',
-                  background: 'rgba(0, 0, 0, 0.5)',
-                  border: '2px solid #ff1493',
-                  borderRadius: '0.8rem',
-                  color: '#fff',
-                  textAlign: 'center'
+                  background: 'black',
+                  border: '3px solid yellow',
+                  borderRadius: '0.5rem',
+                  color: 'yellow'
                 }}
               >
-                <option value="nft-vs-crypto">⚔️ 1v1 DUEL - Classic NFT vs Crypto Battle</option>
-                <option value="battle-royale">🏆 BATTLE ROYALE - 8-Player Tournament (NEW!)</option>
-              </Select>
+                <option value="nft-vs-crypto">⚔️ 1v1 DUEL</option>
+                <option value="battle-royale">🏆 BATTLE ROYALE</option>
+              </select>
               
-              {gameMode === 'battle-royale' && (
-                <div style={{
-                  marginTop: '1rem',
-                  padding: '1rem',
-                  background: 'rgba(255, 20, 147, 0.1)',
-                  border: '1px solid #ff1493',
-                  borderRadius: '0.5rem',
-                  color: '#ff1493',
-                  fontWeight: 'bold'
-                }}>
-                  🚀 NEW FEATURE: 8 players compete, winner takes your NFT!
-                </div>
-              )}
+              <div style={{
+                marginTop: '1rem',
+                padding: '1rem',
+                background: 'yellow',
+                color: 'black',
+                fontWeight: 'bold',
+                fontSize: '1.2rem',
+                borderRadius: '0.5rem'
+              }}>
+                CURRENT MODE: {gameMode === 'battle-royale' ? '🏆 BATTLE ROYALE' : '⚔️ 1v1 DUEL'}
+              </div>
             </div>
 
-            {/* Game Mode Selection - Prominent at top */}
-            <FormGroup style={{ marginBottom: '2rem' }}>
-              <Label style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '1rem', color: theme.colors.neonPink }}>
-                🎮 Choose Game Mode
-              </Label>
-              
-              {/* Simple Dropdown Alternative */}
-              <div style={{ marginBottom: '1rem' }}>
-                <Select 
-                  value={gameMode} 
-                  onChange={(e) => setGameMode(e.target.value)}
-                  style={{ 
-                    width: '100%', 
-                    padding: '1rem',
-                    fontSize: '1.1rem',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '2px solid ' + theme.colors.neonBlue,
-                    borderRadius: '0.5rem',
-                    color: theme.colors.textPrimary
-                  }}
-                >
-                  <option value="nft-vs-crypto">⚔️ 1v1 Duel (Classic NFT vs Crypto)</option>
-                  <option value="battle-royale">🏆 Battle Royale (8-Player Tournament)</option>
-                </Select>
-              </div>
-              
-              <GameModeSelector>
-                <ModeCard 
-                  selected={gameMode === 'nft-vs-crypto'}
-                  onClick={() => setGameMode('nft-vs-crypto')}
-                >
-                  <div className="mode-icon">⚔️</div>
-                  <h3 className="mode-title">1v1 Duel</h3>
-                  <p className="mode-description">Classic head-to-head NFT vs Crypto battle</p>
-                  <div className="mode-details">
-                    <div className="detail-item">
-                      <span className="label">Players:</span>
-                      <span className="value">2</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="label">Format:</span>
-                      <span className="value">Best of 5</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="label">Entry:</span>
-                      <span className="value">Custom Price</span>
-                    </div>
-                  </div>
-                </ModeCard>
-                
-                <ModeCard 
-                  selected={gameMode === 'battle-royale'}
-                  onClick={() => setGameMode('battle-royale')}
-                >
-                  <div className="mode-icon">🏆</div>
-                  <h3 className="mode-title">Battle Royale</h3>
-                  <p className="mode-description">8-player elimination tournament</p>
-                  <div className="mode-details">
-                    <div className="detail-item">
-                      <span className="label">Players:</span>
-                      <span className="value">8</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="label">Format:</span>
-                      <span className="value">Elimination</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="label">Entry:</span>
-                      <span className="value">${entryFee} + ${serviceFee}</span>
-                    </div>
-                  </div>
-                </ModeCard>
-              </GameModeSelector>
-            </FormGroup>
+            <NeonText style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              {gameMode === 'battle-royale' ? 'Create Battle Royale' : 'Create Your Flip'}
+            </NeonText>
             
             {/* Network Check */}
             {isConnected && chainId !== 8453 && (
