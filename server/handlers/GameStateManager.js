@@ -419,10 +419,13 @@ class GameStateManager {
       }
       
       console.log(`📡 Broadcasting round_result:`, roundResultData)
-      broadcastFn(roomId, 'round_result', {
-        type: 'round_result',
-        ...roundResultData
-      })
+      
+      // Broadcast the round result event
+      broadcastFn(roomId, 'round_result', roundResultData)
+      
+      // Also update the game state immediately so clients see the new scores
+      const updatedState = this.getFullGameState(gameId)
+      broadcastFn(roomId, 'game_state_update', updatedState)
     }
     
     // Check for game completion
@@ -449,11 +452,32 @@ class GameStateManager {
         })
       }
     } else {
-      // AUTO-START next round after 2 seconds (server-controlled)
+      // AUTO-START next round after 3 seconds (give time for animation to show)
       setTimeout(() => {
         console.log(`🔄 Auto-starting next round for game ${gameId}`)
-        this.startNextRound(gameId, broadcastFn)
-      }, 2000)
+        const updatedGame = this.startNextRound(gameId, broadcastFn)
+        
+        // Force broadcast the new round state immediately
+        if (updatedGame && broadcastFn) {
+          const roomId = `game_${gameId}`
+          const newRoundState = this.getFullGameState(gameId)
+          console.log(`📡 Broadcasting new round state:`, {
+            currentRound: newRoundState.currentRound,
+            currentTurn: newRoundState.currentTurn,
+            gamePhase: newRoundState.gamePhase
+          })
+          broadcastFn(roomId, 'game_state_update', newRoundState)
+          
+          // Also send a specific "new_round" event
+          broadcastFn(roomId, 'new_round', {
+            type: 'new_round',
+            gameId,
+            currentRound: updatedGame.currentRound,
+            currentTurn: updatedGame.currentTurn,
+            message: `Round ${updatedGame.currentRound} - ${updatedGame.currentTurn === updatedGame.creator ? 'Creator' : 'Challenger'}'s turn to choose!`
+          })
+        }
+      }, 3000)
     }
     
     game.updatedAt = new Date().toISOString()

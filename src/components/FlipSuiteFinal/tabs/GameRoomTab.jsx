@@ -851,6 +851,8 @@ const GameRoomTab = ({
     
     const handleRoundResult = (data) => {
       console.log('🎲 Round result received:', data)
+      console.log('🎲 Current address:', address)
+      console.log('🎲 Game data:', { creator: gameData?.creator, challenger: gameData?.challenger })
       
       // Update game state with round result
       setGameState(prev => ({
@@ -919,12 +921,35 @@ const GameRoomTab = ({
       setRoundResult(null)
     }
     
+    const handleNewRound = (data) => {
+      console.log('🔄 New round event received:', data)
+      console.log(`🎯 Round ${data.currentRound} - ${data.currentTurn === gameData?.creator ? 'Creator' : 'Challenger'}'s turn`)
+      
+      // Clear any existing animations
+      setShowWinLoseAnimation(false)
+      setRoundResult(null)
+      
+      // Update game state with new round info
+      setGameState(prev => ({
+        ...prev,
+        currentRound: data.currentRound,
+        currentTurn: data.currentTurn,
+        gamePhase: 'waiting_choice',
+        // Reset choices for new round
+        creatorChoice: null,
+        challengerChoice: null,
+        creatorCharging: false,
+        challengerCharging: false
+      }))
+    }
+    
     socket.on('game_state_update', handleGameStateUpdate)
     socket.on('game_ready', handleGameReady)
     socket.on('game_started', handleGameStarted)
     socket.on('flip_executing', handleFlipExecuting)
     socket.on('round_result', handleRoundResult)
     socket.on('game_complete', handleGameComplete)
+    socket.on('new_round', handleNewRound)
     
     // Request current game state when mounting
     socket.emit('request_game_state', { gameId })
@@ -936,6 +961,7 @@ const GameRoomTab = ({
       socket.off('flip_executing', handleFlipExecuting)
       socket.off('round_result', handleRoundResult)
       socket.off('game_complete', handleGameComplete)
+      socket.off('new_round', handleNewRound)
     }
   }, [socket, gameId])
   
