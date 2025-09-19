@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
+import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
+import { getApiUrl } from '../../config/api'
 
 const GameContainer = styled.div`
   display: flex;
@@ -342,19 +344,66 @@ const ActionPanel = styled.div`
 `
 
 const BattleRoyaleGameRoom = ({ 
-  gameId, 
-  gameState, 
+  gameId: propGameId, 
+  gameState: propGameState, 
   onMakeChoice, 
   onExecuteFlip, 
   onSpectate 
 }) => {
+  const { gameId: paramGameId } = useParams()
   const { address } = useWallet()
   const { showToast } = useToast()
   
+  // Use gameId from props or URL params
+  const gameId = propGameId || paramGameId
+  
+  const [gameState, setGameState] = useState(propGameState || null)
+  const [loading, setLoading] = useState(!propGameState)
   const [selectedChoice, setSelectedChoice] = useState(null)
+
+  // Fetch game state if not provided as prop
+  useEffect(() => {
+    if (!propGameState && gameId) {
+      const fetchGameState = async () => {
+        try {
+          setLoading(true)
+          const response = await fetch(getApiUrl(`/battle-royale/${gameId}/state`))
+          if (response.ok) {
+            const data = await response.json()
+            setGameState(data)
+          } else {
+            throw new Error('Failed to fetch game state')
+          }
+        } catch (error) {
+          console.error('Error fetching game state:', error)
+          showToast('Failed to load game state', 'error')
+        } finally {
+          setLoading(false)
+        }
+      }
+      fetchGameState()
+    }
+  }, [gameId, propGameState, showToast])
+  
   const [powerLevel, setPowerLevel] = useState(5)
   const [timeLeft, setTimeLeft] = useState(0)
   const [isFlipping, setIsFlipping] = useState(false)
+
+  // Show loading state
+  if (loading || !gameState) {
+    return (
+      <GameContainer>
+        <div style={{ 
+          textAlign: 'center', 
+          color: 'white', 
+          fontSize: '1.2rem',
+          padding: '2rem'
+        }}>
+          {loading ? 'Loading Battle Royale Game...' : 'Game not found'}
+        </div>
+      </GameContainer>
+    )
+  }
 
   // Get current user's player data
   const currentPlayer = gameState.players[address]

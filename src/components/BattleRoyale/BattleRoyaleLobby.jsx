@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
+import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
+import { getApiUrl } from '../../config/api'
 
 const LobbyContainer = styled.div`
   display: flex;
@@ -261,14 +263,44 @@ const JoinButton = styled.button`
   }
 `
 
-const BattleRoyaleLobby = ({ gameId, gameData, onJoinGame, onSpectate }) => {
+const BattleRoyaleLobby = ({ gameId: propGameId, gameData: propGameData, onJoinGame, onSpectate }) => {
+  const { gameId: paramGameId } = useParams()
   const { address } = useWallet()
   const { showToast } = useToast()
   
+  // Use gameId from props or URL params
+  const gameId = propGameId || paramGameId
+  
+  const [gameData, setGameData] = useState(propGameData || null)
+  const [loading, setLoading] = useState(!propGameData)
   const [players, setPlayers] = useState(new Array(8).fill(null))
   const [gameStatus, setGameStatus] = useState('filling')
   const [currentPlayers, setCurrentPlayers] = useState(0)
   const [isJoining, setIsJoining] = useState(false)
+
+  // Fetch game data if not provided as prop
+  useEffect(() => {
+    if (!propGameData && gameId) {
+      const fetchGameData = async () => {
+        try {
+          setLoading(true)
+          const response = await fetch(getApiUrl(`/battle-royale/${gameId}`))
+          if (response.ok) {
+            const data = await response.json()
+            setGameData(data)
+          } else {
+            throw new Error('Failed to fetch game data')
+          }
+        } catch (error) {
+          console.error('Error fetching game data:', error)
+          showToast('Failed to load game data', 'error')
+        } finally {
+          setLoading(false)
+        }
+      }
+      fetchGameData()
+    }
+  }, [gameId, propGameData, showToast])
 
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address === address)
@@ -292,13 +324,29 @@ const BattleRoyaleLobby = ({ gameId, gameData, onJoinGame, onSpectate }) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
   }
 
+  // Show loading state
+  if (loading || !gameData) {
+    return (
+      <LobbyContainer>
+        <div style={{ 
+          textAlign: 'center', 
+          color: 'white', 
+          fontSize: '1.2rem',
+          padding: '2rem'
+        }}>
+          {loading ? 'Loading Battle Royale...' : 'Game not found'}
+        </div>
+      </LobbyContainer>
+    )
+  }
+
   return (
     <LobbyContainer>
       <GameInfo>
         <NFTDisplay>
-          <img src={gameData.nftImage} alt={gameData.nftName} />
-          <h3>{gameData.nftName}</h3>
-          <p>{gameData.nftCollection}</p>
+          <img src={gameData.nftImage || gameData.nft_image || '/placeholder-nft.svg'} alt={gameData.nftName || gameData.nft_name || 'NFT'} />
+          <h3>{gameData.nftName || gameData.nft_name || 'Unknown NFT'}</h3>
+          <p>{gameData.nftCollection || gameData.nft_collection || 'Unknown Collection'}</p>
         </NFTDisplay>
         
         <GameDetails>
@@ -306,17 +354,17 @@ const BattleRoyaleLobby = ({ gameId, gameData, onJoinGame, onSpectate }) => {
           
           <div className="prize-info">
             <div className="prize-label">Winner Takes All</div>
-            <div className="prize-value">{gameData.nftName}</div>
+            <div className="prize-value">{gameData.nftName || gameData.nft_name || 'Unknown NFT'}</div>
           </div>
           
           <div className="entry-info">
             <div className="info-box">
               <div className="label">Entry Fee</div>
-              <div className="value">${gameData.entryFee}</div>
+              <div className="value">${gameData.entryFee || gameData.entry_fee || 0}</div>
             </div>
             <div className="info-box">
               <div className="label">Service Fee</div>
-              <div className="value">${gameData.serviceFee}</div>
+              <div className="value">${gameData.serviceFee || gameData.service_fee || 0}</div>
             </div>
           </div>
         </GameDetails>
@@ -381,7 +429,7 @@ const BattleRoyaleLobby = ({ gameId, gameData, onJoinGame, onSpectate }) => {
             onClick={() => handleSlotClick(players.findIndex(p => p === null))}
             disabled={!canJoin || isJoining}
           >
-            {isJoining ? 'Joining Game...' : `Join Battle Royale - $${(gameData.entryFee + gameData.serviceFee).toFixed(2)}`}
+            {isJoining ? 'Joining Game...' : `Join Battle Royale - $${((gameData.entryFee || gameData.entry_fee || 0) + (gameData.serviceFee || gameData.service_fee || 0)).toFixed(2)}`}
           </JoinButton>
         </div>
       )}

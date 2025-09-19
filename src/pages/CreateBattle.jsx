@@ -339,7 +339,7 @@ const CreateBattle = () => {
           <BattleContainer>
             <BattleHeader>
               <BattleTitle>🏆 Create Battle Royale</BattleTitle>
-              <BattleSubtitle>8-player elimination tournament - Winner takes your NFT!</BattleSubtitle>
+              <BattleSubtitle>8-player elimination tournament</BattleSubtitle>
             </BattleHeader>
             
             {/* Network Check */}
@@ -435,7 +435,12 @@ const CreateBattle = () => {
                 <Label>Battle Royale Fees</Label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>NFT Price (USD)</Label>
+                    <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                      NFT Price (USD) 
+                      <span style={{ color: '#00ff88', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
+                        (enter the price you want for your NFT)
+                      </span>
+                    </Label>
                     <Input
                       type="number"
                       placeholder="80.00"
@@ -459,14 +464,6 @@ const CreateBattle = () => {
                 </div>
                 <small style={{ 
                   color: theme.colors.textSecondary, 
-                  fontSize: '0.8rem',
-                  marginTop: '0.5rem',
-                  display: 'block'
-                }}>
-                  💡 NFT price is divided by 8 players. Each player pays ${(parseFloat(nftPrice || 80) / 8).toFixed(2)} + Service Fee to join. You receive full entry fees minus platform fee.
-                </small>
-                <small style={{ 
-                  color: theme.colors.textSecondary, 
                   fontSize: '0.7rem',
                   marginTop: '0.25rem',
                   display: 'block',
@@ -486,10 +483,6 @@ const CreateBattle = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Per Player Entry:</span>
                       <span>${(parseFloat(nftPrice) / 8).toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Total per Player:</span>
-                      <span>${((parseFloat(nftPrice) / 8) + parseFloat(serviceFee)).toFixed(2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Total Entry Pool:</span>
@@ -514,7 +507,7 @@ const CreateBattle = () => {
                   fontSize: '0.9rem'
                 }}>
                   <ul style={{ margin: '0', paddingLeft: '1.5rem', color: theme.colors.textSecondary }}>
-                    <li><strong>You receive full entry fees minus platform fee</strong></li>
+                    <li><strong>You receive NFT price minus platform fees and gas fees</strong></li>
                     <li>8 players compete in elimination rounds</li>
                     <li>Last player standing wins your NFT</li>
                   </ul>
@@ -580,7 +573,7 @@ const CreateBattle = () => {
                     <LoadingSpinner /> Creating Battle Royale...
                   </>
                 ) : (
-                  '🏆 Create Battle Royale'
+                  '🏆 Create Flip'
                 )}
               </BattleSubmitButton>
             </form>
