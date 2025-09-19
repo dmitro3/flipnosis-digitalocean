@@ -400,30 +400,41 @@ class GameServer {
 
   async handleExecuteFlip(socket, data) {
     const { gameId } = data
-    console.log(`🎲 Executing flip for game ${gameId}`)
+    console.log(`🎲 SERVER: handleExecuteFlip called for game ${gameId}`)
     
-    // Pass broadcast function to executeFlip so it can handle round progression
-    const gameState = this.gameStateManager.executeFlip(gameId, (roomId, eventType, data) => {
-      this.io.to(roomId).emit(eventType, data)
-    })
+    try {
+      // Pass broadcast function to executeFlip so it can handle round progression
+      console.log(`🎲 SERVER: About to call gameStateManager.executeFlip`)
+      const gameState = this.gameStateManager.executeFlip(gameId, (roomId, eventType, data) => {
+        console.log(`🎲 SERVER: Broadcasting ${eventType} to room ${roomId}`)
+        this.io.to(roomId).emit(eventType, data)
+      })
+      console.log(`🎲 SERVER: executeFlip returned:`, gameState ? 'success' : 'null')
     
-    if (!gameState) {
-      socket.emit('error', { message: 'Game not found' })
-      return
+      if (!gameState) {
+        console.log(`🎲 SERVER: executeFlip returned null - game not found`)
+        socket.emit('error', { message: 'Game not found' })
+        return
+      }
+      
+      // Broadcast flip execution with all details
+      console.log(`🎲 SERVER: Broadcasting flip_executing event`)
+      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+      this.io.to(roomId).emit('flip_executing', {
+        gameId,
+        coinState: gameState.coinState,
+        creatorChoice: gameState.creatorChoice,
+        challengerChoice: gameState.challengerChoice,
+        creatorPower: gameState.creatorFinalPower,
+        challengerPower: gameState.challengerFinalPower
+      })
+      
+      console.log(`🎲 SERVER: handleExecuteFlip completed successfully`)
+      // State updates will continue via broadcast interval
+    } catch (error) {
+      console.error(`🎲 SERVER: Error in handleExecuteFlip:`, error)
+      socket.emit('error', { message: 'Failed to execute flip' })
     }
-    
-    // Broadcast flip execution with all details
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    this.io.to(roomId).emit('flip_executing', {
-      gameId,
-      coinState: gameState.coinState,
-      creatorChoice: gameState.creatorChoice,
-      challengerChoice: gameState.challengerChoice,
-      creatorPower: gameState.creatorFinalPower,
-      challengerPower: gameState.challengerFinalPower
-    })
-    
-    // State updates will continue via broadcast interval
   }
 
   async handleSpectateGame(socket, data) {
