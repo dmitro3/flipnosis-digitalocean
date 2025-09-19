@@ -5,10 +5,10 @@ async function main() {
   console.log("=" .repeat(60));
 
   // Contract address on Base
-  const contractAddress = "0x415BBd5933EaDc0570403c65114B7c5a1c7FADb7";
+  const contractAddress = "0xd76B12D50192492ebB56bD226127eE799658fF0a";
   
   // Old admin wallet (current owner)
-  const oldAdminWallet = "0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28";
+  const oldAdminWallet = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628";
   
   // New admin wallet (new owner)
   const newAdminWallet = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628";

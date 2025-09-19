@@ -4,7 +4,7 @@
 The NFT withdrawal function in the admin panel is failing with "contract interaction failed" in MetaMask because the contract ownership has not been transferred to your new wallet address.
 
 ## Root Cause
-- **Old Admin Wallet**: `0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28`
+- **Current Admin Wallet**: `0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`
 - **New Admin Wallet**: `0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`
 - **Contract Address**: `0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69`
 
@@ -43,7 +43,7 @@ npx hardhat run scripts/transfer-ownership.js --network base
 ```
 
 **Prerequisites**:
-1. Connect your old wallet (`0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28`) to MetaMask
+1. Connect your admin wallet (`0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`) to MetaMask
 2. Make sure the old wallet has enough ETH for gas fees
 3. Set the `PRIVATE_KEY` environment variable to the old wallet's private key
 

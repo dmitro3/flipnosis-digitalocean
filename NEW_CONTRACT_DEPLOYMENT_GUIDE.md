@@ -1,7 +1,7 @@
 # New Contract Deployment Guide - Abandoning Compromised Wallet
 
 ## Situation
-- **Old Wallet (Compromised)**: `0x47d80671Bcb7Ec368ef4d3ca6E1C20173CCc9a28`
+- **Current Admin Wallet**: `0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`
 - **New Wallet (Secure)**: `0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`
 - **Old Contract**: `0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69` (owned by compromised wallet)
 - **Action**: Deploy fresh contract with new wallet as owner
