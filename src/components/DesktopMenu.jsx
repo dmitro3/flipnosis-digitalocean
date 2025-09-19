@@ -199,9 +199,9 @@ const DesktopMenu = () => {
                   <Home size={20} />
                   Home
                 </MenuItem>
-                <MenuItem to="/create" onClick={closeMenu}>
+                <MenuItem to="/create-battle" onClick={closeMenu}>
                   <Plus size={20} />
-                  Create Flip
+                  🏆 Create Battle
                 </MenuItem>
                 <MenuItem to="/leaderboard" onClick={closeMenu}>
                   <Trophy size={20} />

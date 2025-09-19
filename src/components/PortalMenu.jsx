@@ -219,9 +219,9 @@ const PortalMenu = ({ isOpen, onClose }) => {
             <Home size={16} />
             Home
           </MenuItem>
-          <MenuItem to="/create" onClick={onClose}>
+          <MenuItem to="/create-battle" onClick={onClose}>
             <Plus size={16} />
-            Create Flip
+            🏆 Create Battle
           </MenuItem>
           <MenuItem to="/leaderboard" onClick={onClose}>
             <Trophy size={16} />
