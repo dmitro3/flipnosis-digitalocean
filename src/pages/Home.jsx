@@ -892,6 +892,58 @@ const getAllItems = () => {
           {/* Add ClaimRewards component */}
           <ClaimRewards />
           
+          {/* CREATE BATTLE BUTTON - VERY PROMINENT */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(255, 20, 147, 0.2) 0%, rgba(138, 43, 226, 0.2) 100%)',
+            border: '3px solid #ff1493',
+            borderRadius: '1rem',
+            padding: '1.5rem',
+            marginBottom: '2rem',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ 
+              color: '#ff1493', 
+              fontSize: '1.8rem', 
+              margin: '0 0 1rem 0',
+              fontWeight: 'bold'
+            }}>
+              🏆 NEW: Battle Royale Mode!
+            </h2>
+            <p style={{ 
+              color: theme.colors.textSecondary, 
+              margin: '0 0 1.5rem 0',
+              fontSize: '1.1rem'
+            }}>
+              8-player elimination tournament - Winner takes the NFT!
+            </p>
+            <Button 
+              as={Link} 
+              to="/create-battle"
+              style={{ 
+                background: 'linear-gradient(45deg, #ff1493, #ff69b4)',
+                color: '#fff',
+                padding: '1rem 2rem',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                border: '2px solid #ff1493',
+                borderRadius: '0.8rem',
+                textDecoration: 'none',
+                display: 'inline-block',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'scale(1.05)'
+                e.target.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.5)'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'scale(1)'
+                e.target.style.boxShadow = 'none'
+              }}
+            >
+              🏆 Create Battle Royale
+            </Button>
+          </div>
+          
           {/* Chain Filters */}
           <TransparentCard style={{ background: theme.colors.bgDark }}>
             <FilterContainer>
