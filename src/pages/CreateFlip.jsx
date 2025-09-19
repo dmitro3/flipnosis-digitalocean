@@ -587,9 +587,31 @@ const CreateFlip = () => {
               </div>
             </div>
 
-            <NeonText style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              {gameMode === 'battle-royale' ? 'Create Battle Royale' : 'Create Your Flip'}
+            <NeonText style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+              {gameMode === 'battle-royale' ? 'Create Battle Royale' : 'Create Flip'}
             </NeonText>
+            {gameMode === 'nft-vs-crypto' && (
+              <p style={{ 
+                textAlign: 'center', 
+                marginBottom: '1rem',
+                color: theme.colors.textSecondary,
+                fontSize: '1.2rem'
+              }}>
+                8-player elimination game<br />
+                Winner takes all
+              </p>
+            )}
+            {gameMode === 'battle-royale' && (
+              <p style={{ 
+                textAlign: 'center', 
+                marginBottom: '1rem',
+                color: theme.colors.textSecondary,
+                fontSize: '1.2rem'
+              }}>
+                8-player elimination tournament<br />
+                Winner takes your NFT!
+              </p>
+            )}
             
             {/* Network Check */}
             {isConnected && chainId !== 8453 && (

@@ -31,6 +31,96 @@ const BattleContainer = styled.div`
   padding: 2rem;
 `
 
+// Styled components for progress steps (matching CreateFlip)
+const ProgressContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  position: relative;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+`
+
+const ProgressStep = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+`
+
+const StepCircle = styled.div`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+  border: 3px solid;
+  
+  ${props => {
+    if (props.completed) {
+      return `
+        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+        border-color: #00ff88;
+        color: white;
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+      `
+    } else if (props.active) {
+      return `
+        background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
+        border-color: #ff1493;
+        color: white;
+        box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+      `
+    } else {
+      return `
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: ${props.theme.colors.textSecondary};
+      `
+    }
+  }}
+`
+
+const StepLabel = styled.div`
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  
+  ${props => {
+    if (props.completed) {
+      return `color: #00ff88;`
+    } else if (props.active) {
+      return `color: #ff1493;`
+    } else {
+      return `color: ${props.theme.colors.textSecondary};`
+    }
+  }}
+`
+
+const ProgressLine = styled.div`
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  right: 25px;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    ${props => props.progress >= 50 ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'} 0%, 
+    ${props => props.progress >= 100 ? '#00ff88' : 'rgba(255, 255, 255, 0.3)'} 100%
+  );
+  border-radius: 2px;
+  z-index: 1;
+`
+
 const BattleHeader = styled.div`
   text-align: center;
   margin-bottom: 2rem;
@@ -116,34 +206,6 @@ const BattleSubmitButton = styled(Button)`
   }
 `
 
-const ProgressStep = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: rgba(255, 20, 147, 0.1);
-  border: 1px solid rgba(255, 20, 147, 0.3);
-  border-radius: 0.5rem;
-  margin: 0.5rem 0;
-  
-  .step-number {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: ${props => props.completed ? '#00ff88' : props.active ? '#ff1493' : '#666'};
-    color: ${props => props.completed || props.active ? '#fff' : '#ccc'};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-  }
-  
-  .step-text {
-    flex: 1;
-    color: ${props => props.completed ? '#00ff88' : props.active ? '#ff1493' : props.theme.colors.textSecondary};
-    font-weight: ${props => props.active ? 'bold' : 'normal'};
-  }
-`
 
 const CreateBattle = () => {
   const navigate = useNavigate()
@@ -151,7 +213,7 @@ const CreateBattle = () => {
   const { address, walletClient, publicClient, nfts, loading: nftsLoading, chainId, switchToBase, isConnected, isConnecting } = useWallet()
   
   const [selectedNFT, setSelectedNFT] = useState(null)
-  const [entryFee, setEntryFee] = useState('5.00')
+  const [nftPrice, setNftPrice] = useState('80.00')
   const [serviceFee, setServiceFee] = useState('0.10')
   const [loading, setLoading] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
@@ -166,6 +228,15 @@ const CreateBattle = () => {
 
   const isFullyConnected = address && walletClient
 
+  // Calculate progress percentage for progress bar
+  const getProgressPercentage = () => {
+    let completed = 0
+    if (stepStatus.create) completed++
+    if (stepStatus.approve) completed++
+    if (stepStatus.deposit) completed++
+    return (completed / 3) * 100
+  }
+
   useEffect(() => {
     console.log('🏆 Battle Royale creation page loaded')
     console.log('🔍 Wallet status:', { address, isConnected, chainId })
@@ -177,8 +248,8 @@ const CreateBattle = () => {
       showError('Please select an NFT')
       return
     }
-    if (!entryFee || parseFloat(entryFee) <= 0) {
-      showError('Please enter a valid entry fee greater than $0')
+    if (!nftPrice || parseFloat(nftPrice) <= 0) {
+      showError('Please enter a valid NFT price greater than $0')
       return
     }
     if (!serviceFee || parseFloat(serviceFee) <= 0) {
@@ -214,7 +285,7 @@ const CreateBattle = () => {
           nft_name: selectedNFT.name,
           nft_image: selectedNFT.image,
           nft_collection: selectedNFT.collection,
-          entry_fee: parseFloat(entryFee),
+          entry_fee: parseFloat(nftPrice) / 8, // Calculate per-player entry fee
           service_fee: parseFloat(serviceFee)
         })
       })
@@ -236,7 +307,7 @@ const CreateBattle = () => {
         battleRoyaleResult.gameId,
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
-        Math.round(parseFloat(entryFee) * 1000000), // Convert to microdollars
+        Math.round((parseFloat(nftPrice) / 8) * 1000000), // Convert to microdollars
         Math.round(parseFloat(serviceFee) * 1000000) // Convert to microdollars
       )
       
@@ -290,23 +361,55 @@ const CreateBattle = () => {
               </div>
             )}
             
-            {/* Progress Steps */}
-            <div style={{ marginBottom: '2rem' }}>
-              <ProgressStep completed={stepStatus.create} active={currentStep === 1}>
-                <div className="step-number">{stepStatus.create ? '✓' : '1'}</div>
-                <div className="step-text">Create Battle Royale Game</div>
+            {/* Enhanced Progress Indicator */}
+            <ProgressContainer>
+              <ProgressLine progress={getProgressPercentage()} />
+              
+              <ProgressStep>
+                <StepCircle 
+                  completed={stepStatus.create}
+                  active={currentStep === 1 && !stepStatus.create}
+                >
+                  {stepStatus.create ? '✓' : '1'}
+                </StepCircle>
+                <StepLabel 
+                  completed={stepStatus.create}
+                  active={currentStep === 1 && !stepStatus.create}
+                >
+                  Create Battle Royale Game
+                </StepLabel>
               </ProgressStep>
               
-              <ProgressStep completed={stepStatus.approve} active={currentStep === 2}>
-                <div className="step-number">{stepStatus.approve ? '✓' : '2'}</div>
-                <div className="step-text">Approve & Deposit NFT</div>
+              <ProgressStep>
+                <StepCircle 
+                  completed={stepStatus.approve}
+                  active={currentStep === 2 && !stepStatus.approve}
+                >
+                  {stepStatus.approve ? '✓' : '2'}
+                </StepCircle>
+                <StepLabel 
+                  completed={stepStatus.approve}
+                  active={currentStep === 2 && !stepStatus.approve}
+                >
+                  Approve & Deposit NFT
+                </StepLabel>
               </ProgressStep>
               
-              <ProgressStep completed={stepStatus.deposit} active={currentStep === 3}>
-                <div className="step-number">{stepStatus.deposit ? '✓' : '3'}</div>
-                <div className="step-text">Battle Royale Ready!</div>
+              <ProgressStep>
+                <StepCircle 
+                  completed={stepStatus.deposit}
+                  active={currentStep === 3 && !stepStatus.deposit}
+                >
+                  {stepStatus.deposit ? '✓' : '3'}
+                </StepCircle>
+                <StepLabel 
+                  completed={stepStatus.deposit}
+                  active={currentStep === 3 && !stepStatus.deposit}
+                >
+                  Battle Royale Ready!
+                </StepLabel>
               </ProgressStep>
-            </div>
+            </ProgressContainer>
 
             <form onSubmit={handleSubmit}>
               {/* NFT Selection */}
@@ -332,12 +435,12 @@ const CreateBattle = () => {
                 <Label>Battle Royale Fees</Label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Entry Fee (USD)</Label>
+                    <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>NFT Price (USD)</Label>
                     <Input
                       type="number"
-                      placeholder="5.00"
-                      value={entryFee}
-                      onChange={(e) => setEntryFee(e.target.value)}
+                      placeholder="80.00"
+                      value={nftPrice}
+                      onChange={(e) => setNftPrice(e.target.value)}
                       min="0"
                       step="0.01"
                     />
@@ -360,9 +463,18 @@ const CreateBattle = () => {
                   marginTop: '0.5rem',
                   display: 'block'
                 }}>
-                  💡 Each player pays Entry Fee + Service Fee to join. You get all entry fees (${(parseFloat(entryFee) * 8).toFixed(2)}) minus 3.5% platform fee. Service fee is just 10¢ per player!
+                  💡 NFT price is divided by 8 players. Each player pays ${(parseFloat(nftPrice || 80) / 8).toFixed(2)} + Service Fee to join. You receive full entry fees minus platform fee.
                 </small>
-                {entryFee && serviceFee && (
+                <small style={{ 
+                  color: theme.colors.textSecondary, 
+                  fontSize: '0.7rem',
+                  marginTop: '0.25rem',
+                  display: 'block',
+                  fontStyle: 'italic'
+                }}>
+                  ⚠️ All fees are approximate and will fluctuate based on gas fees and network conditions.
+                </small>
+                {nftPrice && serviceFee && (
                   <div style={{ 
                     background: 'rgba(255, 20, 147, 0.1)',
                     border: '1px solid rgba(255, 20, 147, 0.3)',
@@ -372,16 +484,20 @@ const CreateBattle = () => {
                     fontSize: '0.9rem'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <span>Per Player Entry:</span>
+                      <span>${(parseFloat(nftPrice) / 8).toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Total per Player:</span>
-                      <span>${(parseFloat(entryFee) + parseFloat(serviceFee)).toFixed(2)}</span>
+                      <span>${((parseFloat(nftPrice) / 8) + parseFloat(serviceFee)).toFixed(2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Total Entry Pool:</span>
-                      <span>${(parseFloat(entryFee) * 8).toFixed(2)}</span>
+                      <span>${parseFloat(nftPrice).toFixed(2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Your Earnings (after 3.5% fee):</span>
-                      <span>${((parseFloat(entryFee) * 8) * 0.965).toFixed(2)}</span>
+                      <span>${(parseFloat(nftPrice) * 0.965).toFixed(2)}</span>
                     </div>
                   </div>
                 )}
@@ -398,15 +514,64 @@ const CreateBattle = () => {
                   fontSize: '0.9rem'
                 }}>
                   <ul style={{ margin: '0', paddingLeft: '1.5rem', color: theme.colors.textSecondary }}>
+                    <li><strong>You receive full entry fees minus platform fee</strong></li>
                     <li>8 players compete in elimination rounds</li>
-                    <li>Each round has a target result (heads or tails)</li>
-                    <li>Players who don't match the target are eliminated</li>
                     <li>Last player standing wins your NFT</li>
-                    <li>You receive all entry fees minus platform fee</li>
-                    <li><strong>Players bring their own custom coins</strong></li>
                   </ul>
                 </div>
               </FormGroup>
+
+              {/* Progress Indicator at Bottom */}
+              <div style={{ marginTop: '2rem', marginBottom: '1rem' }}>
+                <ProgressContainer>
+                  <ProgressLine progress={getProgressPercentage()} />
+                  
+                  <ProgressStep>
+                    <StepCircle 
+                      completed={stepStatus.create}
+                      active={currentStep === 1 && !stepStatus.create}
+                    >
+                      {stepStatus.create ? '✓' : '1'}
+                    </StepCircle>
+                    <StepLabel 
+                      completed={stepStatus.create}
+                      active={currentStep === 1 && !stepStatus.create}
+                    >
+                      Create Battle Royale Game
+                    </StepLabel>
+                  </ProgressStep>
+                  
+                  <ProgressStep>
+                    <StepCircle 
+                      completed={stepStatus.approve}
+                      active={currentStep === 2 && !stepStatus.approve}
+                    >
+                      {stepStatus.approve ? '✓' : '2'}
+                    </StepCircle>
+                    <StepLabel 
+                      completed={stepStatus.approve}
+                      active={currentStep === 2 && !stepStatus.approve}
+                    >
+                      Approve & Deposit NFT
+                    </StepLabel>
+                  </ProgressStep>
+                  
+                  <ProgressStep>
+                    <StepCircle 
+                      completed={stepStatus.deposit}
+                      active={currentStep === 3 && !stepStatus.deposit}
+                    >
+                      {stepStatus.deposit ? '✓' : '3'}
+                    </StepCircle>
+                    <StepLabel 
+                      completed={stepStatus.deposit}
+                      active={currentStep === 3 && !stepStatus.deposit}
+                    >
+                      Battle Royale Ready!
+                    </StepLabel>
+                  </ProgressStep>
+                </ProgressContainer>
+              </div>
 
               {/* Submit Button */}
               <BattleSubmitButton type="submit" disabled={loading || !isFullyConnected}>
