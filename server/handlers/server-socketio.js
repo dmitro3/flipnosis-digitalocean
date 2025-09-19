@@ -192,11 +192,7 @@ class GameServer {
         if (gameData) {
           console.log(`🔍 Game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
         }
-<<<<<<< HEAD
-        if (gameData && (gameData.status === 'active' || gameData.status === 'awaiting_deposit' || gameData.status === 'awaiting_challenger')) {
-=======
-        if (gameData && gameData.status === 'active') {
->>>>>>> 88b3931a56b5f2dea2521efd3d2cc662e2d09e07
+         if (gameData && (gameData.status === 'active' || gameData.status === 'awaiting_deposit' || gameData.status === 'awaiting_challenger')) {
           gameState = this.initializeGameState(gameId, gameData)
           this.gameStateManager.createGame(gameId, gameState)
           
@@ -216,125 +212,122 @@ class GameServer {
         socket.emit('game_not_found', { gameId })
       }
     } catch (error) {
-      console.error('❌ Error in handleRequestGameState:', error)
-      socket.emit('game_not_found', { gameId, error: error.message })
-<<<<<<< HEAD
-    }
-  }
+       console.error('❌ Error in handleRequestGameState:', error)
+       socket.emit('game_not_found', { gameId, error: error.message })
+     }
+   }
 
-  // ===== GAME ACTIVATION =====
-  async handleActivateGame(socket, data) {
-    console.log(`🎮 handleActivateGame called with data:`, data)
-    
-    if (!data) {
-      console.error('❌ No data provided to handleActivateGame')
-      return
-    }
-    
-    const { gameId } = data
-    console.log(`🎮 Game activation requested for ${gameId}`)
-    
-    if (!gameId) {
-      console.error('❌ No gameId provided to handleActivateGame')
-      return
-    }
-    
-    try {
-      // Check if game already exists in GameStateManager
-      let gameState = this.gameStateManager.getGame(gameId)
-      
-      if (gameState) {
-        console.log(`🎮 Game ${gameId} already exists in memory, checking if it needs activation`)
-        
-        // If it's still in deposit_stage, activate it
-        if (gameState.phase === 'deposit_stage') {
-          console.log(`🎮 Activating existing game ${gameId} from deposit_stage to game_active`)
-          
-          // Use the GameStateManager's activation method
-          const success = this.gameStateManager.activateGameAfterDeposits(gameId, (roomId, eventType, eventData) => {
-            this.io.to(roomId).emit(eventType, eventData)
-          })
-          
-          if (success) {
-            console.log(`✅ Game ${gameId} successfully activated`)
-            
-            // Broadcast game started event to all players in the room
-            this.io.to(`game_${gameId}`).emit('game_started', {
-              type: 'game_started',
-              gameId,
-              message: 'Both assets deposited - game starting!'
-            })
-            
-            // Send updated game state to all players
-            const fullState = this.gameStateManager.getFullGameState(gameId)
-            if (fullState) {
-              this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
-            }
-          } else {
-            console.error(`❌ Failed to activate game ${gameId}`)
-          }
-        } else {
-          console.log(`🎮 Game ${gameId} is already in phase ${gameState.phase}, no activation needed`)
-        }
-      } else {
-        console.log(`🎮 Game ${gameId} not in memory, loading from database and activating`)
-        
-        // Load from database
-        const gameData = await this.dbService.getGame(gameId)
-        
-        if (gameData && (gameData.creator_deposited && gameData.challenger_deposited)) {
-          console.log(`🎮 Both players deposited for ${gameId}, creating active game state`)
-          
-          // Create game state directly as active (both deposits confirmed)
-          gameState = this.initializeGameState(gameId, gameData)
-          
-          // Force it to be active since we know both deposits are confirmed
-          gameState.phase = 'game_active'
-          gameState.gamePhase = 'waiting_choice'
-          gameState.creatorDeposited = true
-          gameState.challengerDeposited = true
-          gameState.currentTurn = gameState.creator
-          gameState.actionDeadline = Date.now() + 20000 // 20 seconds for choice
-          
-          // Create the game in GameStateManager
-          this.gameStateManager.createGame(gameId, gameState)
-          
-          // Start state broadcasting
-          this.gameStateManager.startStateBroadcasting(gameId, (roomId, eventType, eventData) => {
-            console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
-            this.io.to(roomId).emit(eventType, eventData)
-          })
-          
-          // Start round countdown with proper broadcast function
-          this.gameStateManager.startRoundCountdown(gameId, (roomId, eventType, eventData) => {
-            console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
-            this.io.to(roomId).emit(eventType, eventData)
-          })
-          
-          console.log(`✅ Game ${gameId} created and activated`)
-          
-          // Broadcast game started event
-          this.io.to(`game_${gameId}`).emit('game_started', {
-            type: 'game_started',
-            gameId,
-            message: 'Both assets deposited - game starting!'
-          })
-          
-          // Send updated game state to all players
-          const fullState = this.gameStateManager.getFullGameState(gameId)
-          if (fullState) {
-            this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
-          }
-        } else {
-          console.error(`❌ Game ${gameId} not found or deposits not confirmed`)
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error in handleActivateGame:', error)
-=======
->>>>>>> 88b3931a56b5f2dea2521efd3d2cc662e2d09e07
-    }
-  }
+   // ===== GAME ACTIVATION =====
+   async handleActivateGame(socket, data) {
+     console.log(`🎮 handleActivateGame called with data:`, data)
+     
+     if (!data) {
+       console.error('❌ No data provided to handleActivateGame')
+       return
+     }
+     
+     const { gameId } = data
+     console.log(`🎮 Game activation requested for ${gameId}`)
+     
+     if (!gameId) {
+       console.error('❌ No gameId provided to handleActivateGame')
+       return
+     }
+     
+     try {
+       // Check if game already exists in GameStateManager
+       let gameState = this.gameStateManager.getGame(gameId)
+       
+       if (gameState) {
+         console.log(`🎮 Game ${gameId} already exists in memory, checking if it needs activation`)
+         
+         // If it's still in deposit_stage, activate it
+         if (gameState.phase === 'deposit_stage') {
+           console.log(`🎮 Activating existing game ${gameId} from deposit_stage to game_active`)
+           
+           // Use the GameStateManager's activation method
+           const success = this.gameStateManager.activateGameAfterDeposits(gameId, (roomId, eventType, eventData) => {
+             this.io.to(roomId).emit(eventType, eventData)
+           })
+           
+           if (success) {
+             console.log(`✅ Game ${gameId} successfully activated`)
+             
+             // Broadcast game started event to all players in the room
+             this.io.to(`game_${gameId}`).emit('game_started', {
+               type: 'game_started',
+               gameId,
+               message: 'Both assets deposited - game starting!'
+             })
+             
+             // Send updated game state to all players
+             const fullState = this.gameStateManager.getFullGameState(gameId)
+             if (fullState) {
+               this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+             }
+           } else {
+             console.error(`❌ Failed to activate game ${gameId}`)
+           }
+         } else {
+           console.log(`🎮 Game ${gameId} is already in phase ${gameState.phase}, no activation needed`)
+         }
+       } else {
+         console.log(`🎮 Game ${gameId} not in memory, loading from database and activating`)
+         
+         // Load from database
+         const gameData = await this.dbService.getGame(gameId)
+         
+         if (gameData && (gameData.creator_deposited && gameData.challenger_deposited)) {
+           console.log(`🎮 Both players deposited for ${gameId}, creating active game state`)
+           
+           // Create game state directly as active (both deposits confirmed)
+           gameState = this.initializeGameState(gameId, gameData)
+           
+           // Force it to be active since we know both deposits are confirmed
+           gameState.phase = 'game_active'
+           gameState.gamePhase = 'waiting_choice'
+           gameState.creatorDeposited = true
+           gameState.challengerDeposited = true
+           gameState.currentTurn = gameState.creator
+           gameState.actionDeadline = Date.now() + 20000 // 20 seconds for choice
+           
+           // Create the game in GameStateManager
+           this.gameStateManager.createGame(gameId, gameState)
+           
+           // Start state broadcasting
+           this.gameStateManager.startStateBroadcasting(gameId, (roomId, eventType, eventData) => {
+             console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
+             this.io.to(roomId).emit(eventType, eventData)
+           })
+           
+           // Start round countdown with proper broadcast function
+           this.gameStateManager.startRoundCountdown(gameId, (roomId, eventType, eventData) => {
+             console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
+             this.io.to(roomId).emit(eventType, eventData)
+           })
+           
+           console.log(`✅ Game ${gameId} created and activated`)
+           
+           // Broadcast game started event
+           this.io.to(`game_${gameId}`).emit('game_started', {
+             type: 'game_started',
+             gameId,
+             message: 'Both assets deposited - game starting!'
+           })
+           
+           // Send updated game state to all players
+           const fullState = this.gameStateManager.getFullGameState(gameId)
+           if (fullState) {
+             this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+           }
+         } else {
+           console.error(`❌ Game ${gameId} not found or deposits not confirmed`)
+         }
+       }
+     } catch (error) {
+       console.error('❌ Error in handleActivateGame:', error)
+     }
+   }
 
   // ===== PLAYER ACTIONS =====
   async handlePlayerChoice(socket, data) {
