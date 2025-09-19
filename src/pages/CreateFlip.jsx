@@ -763,6 +763,48 @@ const CreateFlip = () => {
                 </NFTPreview>
               </FormGroup>
 
+              {/* SIMPLE GAME MODE DROPDOWN - Right beneath NFT selection */}
+              <FormGroup>
+                <Label style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ff1493' }}>
+                  🎮 Game Mode
+                </Label>
+                <Select 
+                  value={gameMode} 
+                  onChange={(e) => {
+                    setGameMode(e.target.value)
+                    console.log('🎮 Game mode changed to:', e.target.value)
+                  }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '1rem',
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    background: '#000',
+                    border: '2px solid #ff1493',
+                    borderRadius: '0.5rem',
+                    color: '#fff'
+                  }}
+                >
+                  <option value="nft-vs-crypto">⚔️ 1v1 Duel (Classic)</option>
+                  <option value="battle-royale">🏆 Battle Royale (8 Players)</option>
+                </Select>
+                
+                {gameMode === 'battle-royale' && (
+                  <div style={{
+                    marginTop: '0.5rem',
+                    padding: '0.75rem',
+                    background: 'rgba(255, 20, 147, 0.1)',
+                    border: '1px solid #ff1493',
+                    borderRadius: '0.5rem',
+                    color: '#ff1493',
+                    fontSize: '0.9rem',
+                    textAlign: 'center'
+                  }}>
+                    🚀 NEW: 8-player elimination tournament!
+                  </div>
+                )}
+              </FormGroup>
+
 
 
 
