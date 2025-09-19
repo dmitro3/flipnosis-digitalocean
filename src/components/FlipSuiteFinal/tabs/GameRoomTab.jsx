@@ -865,10 +865,9 @@ const GameRoomTab = ({
         gamePhase: 'showing_result'
       }))
       
-      // CRITICAL FIX: Get the addresses from the EVENT DATA, not gameData!
-      // The server knows who the players are
-      const gameCreator = gameState?.creator || gameData?.creator || data.creator
-      const gameChallenger = gameState?.challenger || gameData?.challenger || data.challenger
+      // CRITICAL: Pull addresses from multiple sources
+      const gameCreator = data.creator || gameState?.creator || gameData?.creator
+      const gameChallenger = data.challenger || gameState?.challenger || gameData?.challenger
       
       // Debug log to verify
       console.log('🎬 Player detection:', {
@@ -1292,7 +1291,7 @@ const GameRoomTab = ({
           )}
 
           {/* Choice Buttons */}
-          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && 
+          {gameState.gamePhase === 'waiting_choice' && 
            gameState.currentTurn?.toLowerCase() === address?.toLowerCase() && (
             <ChoiceButtons>
               <ChoiceButton 
@@ -1311,7 +1310,7 @@ const GameRoomTab = ({
           )}
 
           {/* Waiting for other player */}
-          {(gameState.phase === 'choosing' || gameState.gamePhase === 'waiting_choice') && 
+          {gameState.gamePhase === 'waiting_choice' && 
            gameState.currentTurn?.toLowerCase() !== address?.toLowerCase() && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
               <OpponentChoosingMessage>
@@ -1395,10 +1394,18 @@ const GameRoomTab = ({
                 }}
                 onMouseUp={() => {
                   socket.emit('stop_power_charge', { gameId, address })
+                  // Add a small delay then execute flip
+                  setTimeout(() => {
+                    socket.emit('execute_flip', { gameId })
+                  }, 100)
                 }}
                 onMouseLeave={() => {
                   // Also stop if mouse leaves button while holding
                   socket.emit('stop_power_charge', { gameId, address })
+                  // Add a small delay then execute flip
+                  setTimeout(() => {
+                    socket.emit('execute_flip', { gameId })
+                  }, 100)
                 }}
                 onTouchStart={(e) => {
                   e.preventDefault()
@@ -1407,6 +1414,10 @@ const GameRoomTab = ({
                 onTouchEnd={(e) => {
                   e.preventDefault()
                   socket.emit('stop_power_charge', { gameId, address })
+                  // Add a small delay then execute flip
+                  setTimeout(() => {
+                    socket.emit('execute_flip', { gameId })
+                  }, 100)
                 }}
                 style={{ 
                   background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
@@ -1422,37 +1433,6 @@ const GameRoomTab = ({
                 ⚡ HOLD TO CHARGE ⚡
               </PulseButton>
               
-              {/* ADD THIS NEW BUTTON */}
-              {(gameState.creatorFinalPower > 0 || gameState.challengerFinalPower > 0) && (
-                <button
-                  onClick={() => socket.emit('execute_flip', { gameId })}
-                  style={{
-                    marginTop: '1rem',
-                    padding: '1rem 2rem',
-                    background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                    color: '#000',
-                    border: '2px solid #FFD700',
-                    borderRadius: '0.5rem',
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
-                    transition: 'all 0.3s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)'
-                    e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 215, 0, 0.8)'
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)'
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.5)'
-                  }}
-                >
-                  🎲 FLIP THE COIN!
-                </button>
-              )}
               
               <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '1rem' }}>
                 Release when you're satisfied with your power level!
