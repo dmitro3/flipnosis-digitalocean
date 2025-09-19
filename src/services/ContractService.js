@@ -72,6 +72,13 @@ const CONTRACT_ABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}, {"internalType": "address", "name": "recipient", "type": "address"}],
+    "name": "emergencyWithdrawUSDC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
   // Direct NFT transfer functions (bypass game system)
   {
     "inputs": [{"internalType": "address", "name": "nftContract", "type": "address"}, {"internalType": "uint256", "name": "tokenId", "type": "uint256"}, {"internalType": "address", "name": "recipient", "type": "address"}],
@@ -1077,6 +1084,38 @@ class ContractService {
       return { success: true, transactionHash: hash, receipt }
     } catch (error) {
       console.error('❌ Error emergency withdrawing ETH:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Emergency withdraw USDC for a specific game
+  async emergencyWithdrawUSDC(gameId, recipient) {
+    if (!this.isReady()) {
+      return { success: false, error: 'Contract service not initialized' }
+    }
+
+    try {
+      await this.ensureBaseNetwork()
+      console.log('🚨 Emergency withdrawing USDC for game:', gameId, 'to recipient:', recipient)
+      
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
+      
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'emergencyWithdrawUSDC',
+        args: [gameIdBytes32, recipient],
+        chain: BASE_CHAIN,
+        account: this.walletClient.account
+      })
+      
+      console.log('🚨 Emergency USDC withdraw tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Emergency USDC withdraw confirmed')
+
+      return { success: true, transactionHash: hash, receipt }
+    } catch (error) {
+      console.error('❌ Error emergency withdrawing USDC:', error)
       return { success: false, error: error.message }
     }
   }

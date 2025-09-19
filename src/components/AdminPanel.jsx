@@ -1324,6 +1324,193 @@ export default function AdminPanel() {
     })
   }
   
+  // Check contract crypto balance
+  const checkContractCrypto = async () => {
+    if (!contractService.isReady()) {
+      addNotification('error', 'Contract service not initialized')
+      return
+    }
+
+    try {
+      setLoading(true)
+      addNotification('info', 'Checking contract crypto balance...')
+      
+      // Get all games from database
+      const response = await fetch(`${API_URL}/api/admin/games`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch games from database')
+      }
+      const data = await response.json()
+      const games = data.games || []
+      
+      let totalETHFound = 0
+      let totalUSDCFound = 0
+      let gamesWithETH = []
+      let gamesWithUSDC = []
+      
+      console.log(`🔍 Checking ${games.length} games for crypto deposits...`)
+      
+      for (const game of games) {
+        try {
+          if (!game || !game.id) continue
+          
+          // Get game state from contract
+          const gameState = await contractService.getGameState(game.id)
+          
+          if (gameState.success) {
+            // Check ETH deposits
+            if (gameState.gameState.ethDeposit.hasDeposit && !gameState.gameState.ethDeposit.claimed) {
+              const ethAmount = parseFloat(gameState.gameState.ethDeposit.amount) || 0
+              totalETHFound += ethAmount
+              gamesWithETH.push({
+                gameId: game.id,
+                contractGameId: game.contract_game_id || game.blockchain_game_id || game.id,
+                amount: ethAmount,
+                depositor: gameState.gameState.ethDeposit.depositor
+              })
+              console.log(`💰 Found ${ethAmount} ETH in game ${game.id}`)
+            }
+            
+            // Check USDC deposits
+            if (gameState.gameState.usdcDeposit.hasDeposit && !gameState.gameState.usdcDeposit.claimed) {
+              const usdcAmount = parseFloat(gameState.gameState.usdcDeposit.amount) || 0
+              totalUSDCFound += usdcAmount
+              gamesWithUSDC.push({
+                gameId: game.id,
+                contractGameId: game.contract_game_id || game.blockchain_game_id || game.id,
+                amount: usdcAmount,
+                depositor: gameState.gameState.usdcDeposit.depositor
+              })
+              console.log(`💰 Found ${usdcAmount} USDC in game ${game.id}`)
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ Error checking game ${game?.id || 'unknown'}:`, error)
+        }
+      }
+      
+      // Display results
+      const ethMessage = gamesWithETH.length > 0 
+        ? `Found ${totalETHFound.toFixed(4)} ETH across ${gamesWithETH.length} games`
+        : 'No ETH found in contract'
+        
+      const usdcMessage = gamesWithUSDC.length > 0 
+        ? `Found ${totalUSDCFound.toFixed(2)} USDC across ${gamesWithUSDC.length} games`
+        : 'No USDC found in contract'
+      
+      addNotification('success', `Contract Balance Check Complete: ${ethMessage}. ${usdcMessage}`)
+      
+      console.log('📊 Contract Crypto Summary:', {
+        totalETH: totalETHFound,
+        totalUSDC: totalUSDCFound,
+        gamesWithETH: gamesWithETH.length,
+        gamesWithUSDC: gamesWithUSDC.length
+      })
+      
+    } catch (error) {
+      console.error('❌ Error checking contract crypto:', error)
+      addNotification('error', 'Failed to check contract crypto: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Emergency withdraw all crypto from contract
+  const emergencyWithdrawAllCrypto = async () => {
+    if (!contractService.isReady()) {
+      addNotification('error', 'Contract service not initialized')
+      return
+    }
+
+    if (!confirm('🚨 EMERGENCY WITHDRAW ALL CRYPTO? This will attempt to withdraw ALL ETH and USDC from every game in the contract. This action cannot be undone!')) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      addNotification('info', 'Starting emergency crypto withdrawal...')
+      
+      // Get all games from database
+      const response = await fetch(`${API_URL}/api/admin/games`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch games from database')
+      }
+      const data = await response.json()
+      const games = data.games || []
+      
+      let totalETHWithdrawn = 0
+      let totalUSDCWithdrawn = 0
+      let successfulWithdrawals = 0
+      let failedWithdrawals = 0
+      
+      console.log(`🚨 Starting emergency withdrawal for ${games.length} games...`)
+      
+      const recipient = contractService.account || walletAddress
+      if (!recipient) {
+        throw new Error('No recipient address found')
+      }
+      
+      for (const game of games) {
+        try {
+          if (!game || !game.id) continue
+          
+          const gameId = game.contract_game_id || game.blockchain_game_id || game.id
+          console.log(`🔍 Checking game ${game.id} (contract: ${gameId})...`)
+          
+          // Try to withdraw ETH first
+          try {
+            const ethResult = await contractService.emergencyWithdrawETH(gameId, recipient)
+            if (ethResult.success) {
+              console.log(`✅ ETH withdrawn from game ${game.id}: ${ethResult.transactionHash}`)
+              successfulWithdrawals++
+              // Note: We can't easily get the exact amount without parsing transaction logs
+            }
+          } catch (ethError) {
+            console.log(`ℹ️ No ETH to withdraw from game ${game.id}:`, ethError.message)
+          }
+          
+          // Try to withdraw USDC
+          try {
+            const usdcResult = await contractService.emergencyWithdrawUSDC(gameId, recipient)
+            if (usdcResult.success) {
+              console.log(`✅ USDC withdrawn from game ${game.id}: ${usdcResult.transactionHash}`)
+              successfulWithdrawals++
+            }
+          } catch (usdcError) {
+            console.log(`ℹ️ No USDC to withdraw from game ${game.id}:`, usdcError.message)
+          }
+          
+        } catch (error) {
+          console.error(`❌ Failed to process game ${game?.id || 'unknown'}:`, error)
+          failedWithdrawals++
+        }
+        
+        // Add small delay to avoid overwhelming the network
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+      
+      const message = `Emergency withdrawal complete! ${successfulWithdrawals} successful withdrawals, ${failedWithdrawals} failed attempts.`
+      
+      if (successfulWithdrawals > 0) {
+        addNotification('success', message + ' Check your wallet for received crypto.')
+      } else {
+        addNotification('info', 'No crypto was found to withdraw from any games.')
+      }
+      
+      console.log('🏁 Emergency withdrawal summary:', {
+        totalGames: games.length,
+        successfulWithdrawals,
+        failedWithdrawals
+      })
+      
+    } catch (error) {
+      console.error('❌ Error during emergency withdrawal:', error)
+      addNotification('error', 'Emergency withdrawal failed: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Add notification
   const addNotification = (type, message) => {
     const id = Date.now()
@@ -1990,8 +2177,37 @@ export default function AdminPanel() {
                   padding: '2rem',
                   marginBottom: '2rem'
                 }}>
-                  <h4>Platform Fees</h4>
-                  <p>Platform fees are automatically sent to the fee receiver when games are completed. Use the "Emergency Withdraw ETH" buttons on individual games to withdraw stuck funds.</p>
+                  <h4>Platform Fees & Crypto Withdrawal</h4>
+                  <p>Platform fees are automatically sent to the fee receiver when games are completed. Use the buttons below to withdraw stuck funds.</p>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '1rem', 
+                    marginTop: '1.5rem',
+                    flexWrap: 'wrap'
+                  }}>
+                    <Button 
+                      onClick={emergencyWithdrawAllCrypto}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #ff4444, #cc0000)', 
+                        color: '#fff',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      🚨 Emergency Withdraw ALL Crypto
+                    </Button>
+                    
+                    <Button 
+                      onClick={checkContractCrypto}
+                      style={{ 
+                        background: '#0088ff', 
+                        color: '#fff'
+                      }}
+                    >
+                      🔍 Check Contract Crypto Balance
+                    </Button>
+                  </div>
+                  
                   <div style={{ 
                     background: 'rgba(255, 170, 0, 0.2)', 
                     padding: '1rem', 
@@ -1999,7 +2215,7 @@ export default function AdminPanel() {
                     marginTop: '1rem',
                     fontSize: '0.9rem'
                   }}>
-                    <strong>Note:</strong> For your 40 games with stuck ETH, use the "Emergency Withdraw ETH" button on each game in the Games tab.
+                    <strong>Note:</strong> The "Emergency Withdraw ALL Crypto" button will scan all games and withdraw ETH/USDC from any games that have crypto deposits. Individual game withdrawals are also available in the Games tab.
                   </div>
                 </div>
                 
