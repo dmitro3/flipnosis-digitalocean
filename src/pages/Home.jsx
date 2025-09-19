@@ -996,6 +996,20 @@ const getAllItems = () => {
                 </>
               )}
             </ViewToggleButton>
+            
+            {/* CREATE BATTLE BUTTON - Right next to view toggle */}
+            <ViewToggleButton
+              as={Link}
+              to="/create-battle"
+              style={{
+                background: 'linear-gradient(45deg, #ff1493, #ff69b4)',
+                borderColor: '#ff1493',
+                color: '#fff',
+                marginLeft: '1rem'
+              }}
+            >
+              🏆 Create Battle
+            </ViewToggleButton>
           </ViewToggleContainer>
 
           {filteredItems.length === 0 ? (
