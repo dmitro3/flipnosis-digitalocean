@@ -79,6 +79,13 @@ const CONTRACT_ABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   },
+  {
+    "inputs": [{"internalType": "bytes32", "name": "gameId", "type": "bytes32"}],
+    "name": "withdrawWinnings",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
   // Direct NFT transfer functions (bypass game system)
   {
     "inputs": [{"internalType": "address", "name": "nftContract", "type": "address"}, {"internalType": "uint256", "name": "tokenId", "type": "uint256"}, {"internalType": "address", "name": "recipient", "type": "address"}],
@@ -1120,7 +1127,7 @@ class ContractService {
     }
   }
 
-  // Winner withdrawal function - allows winner to claim both NFT and crypto
+  // Winner withdrawal function - calls the new contract withdrawWinnings function
   async withdrawWinnings(gameId) {
     if (!this.isReady()) {
       return { success: false, error: 'Contract service not initialized' }
@@ -1133,28 +1140,25 @@ class ContractService {
       const winnerAddress = this.walletClient.account.address
       console.log('🏆 Winner address:', winnerAddress)
       
-      // First withdraw the NFT to the winner
-      const nftResult = await this.emergencyWithdrawNFT(gameId, winnerAddress)
-      if (!nftResult.success) {
-        console.error('❌ NFT withdrawal failed:', nftResult.error)
-        return { success: false, error: `NFT withdrawal failed: ${nftResult.error}` }
-      }
+      const gameIdBytes32 = this.getGameIdBytes32(gameId)
       
-      console.log('✅ NFT withdrawal successful:', nftResult.transactionHash)
+      const hash = await this.walletClient.writeContract({
+        address: this.contractAddress,
+        abi: CONTRACT_ABI,
+        functionName: 'withdrawWinnings',
+        args: [gameIdBytes32],
+        chain: BASE_CHAIN,
+        account: this.walletClient.account
+      })
       
-      // Then withdraw the ETH to the winner
-      const ethResult = await this.emergencyWithdrawETH(gameId, winnerAddress)
-      if (!ethResult.success) {
-        console.error('❌ ETH withdrawal failed:', ethResult.error)
-        return { success: false, error: `ETH withdrawal failed: ${ethResult.error}` }
-      }
-      
-      console.log('✅ ETH withdrawal successful:', ethResult.transactionHash)
-      
+      console.log('🏆 Winner withdrawal tx:', hash)
+      const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+      console.log('✅ Winner withdrawal confirmed')
+
       return { 
         success: true, 
-        nftTx: nftResult.transactionHash,
-        ethTx: ethResult.transactionHash,
+        transactionHash: hash,
+        receipt,
         message: 'Successfully withdrew both NFT and crypto!'
       }
       

@@ -59,6 +59,7 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     event USDCDeposited(bytes32 indexed gameId, address indexed depositor, uint256 amount);
     event GameReady(bytes32 indexed gameId, address nftDepositor, address cryptoDepositor);
     event GameCompleted(bytes32 indexed gameId, address indexed winner);
+    event WinningsWithdrawn(bytes32 indexed gameId, address indexed winner);
     event AssetsReclaimed(bytes32 indexed gameId, address indexed reclaimer, string assetType);
     
     constructor(address _platformFeeReceiver, address _usdcToken) {
@@ -185,7 +186,7 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     }
     
     /**
-     * @notice Complete game and declare winner (only owner/backend)
+     * @notice Complete game and declare winner (only owner/backend) - NO AUTO TRANSFER
      */
     function completeGame(bytes32 gameId, address winner) external onlyOwner nonReentrant {
         require(this.isGameReady(gameId), "Game not ready");
@@ -199,21 +200,35 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             
         require(winner == nftPlayer || winner == cryptoPlayer, "Winner must be a game participant");
         
-        // Mark game as completed
+        // Mark game as completed - NO TRANSFERS HAPPEN HERE
         gameResults[gameId] = GameResult({
             winner: winner,
             completed: true,
             completionTime: block.timestamp
         });
         
-        // Transfer NFT to winner
+        emit GameCompleted(gameId, winner);
+    }
+
+    /**
+     * @notice Winner withdraws their winnings (NFT + crypto)
+     */
+    function withdrawWinnings(bytes32 gameId) external nonReentrant {
+        require(gameResults[gameId].completed == true, "Game not completed");
+        require(gameResults[gameId].winner == msg.sender, "Only winner can withdraw");
+        
         NFTDeposit storage nftDep = nftDeposits[gameId];
-        IERC721(nftDep.nftContract).transferFrom(address(this), winner, nftDep.tokenId);
+        require(!nftDep.claimed, "Winnings already claimed");
+        
+        // Transfer NFT to winner
+        IERC721(nftDep.nftContract).transferFrom(address(this), msg.sender, nftDep.tokenId);
         nftDep.claimed = true;
         
         // Transfer crypto to winner (minus platform fee)
         if (ethDeposits[gameId].depositor != address(0)) {
             ETHDeposit storage ethDep = ethDeposits[gameId];
+            require(!ethDep.claimed, "ETH already claimed");
+            
             uint256 platformFee = (ethDep.amount * platformFeePercent) / BASIS_POINTS;
             uint256 winnerAmount = ethDep.amount - platformFee;
             
@@ -222,12 +237,14 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             require(feeSuccess, "Platform fee transfer failed");
             
             // Transfer remaining to winner
-            (bool winnerSuccess,) = winner.call{value: winnerAmount}("");
+            (bool winnerSuccess,) = msg.sender.call{value: winnerAmount}("");
             require(winnerSuccess, "Winner ETH transfer failed");
             
             ethDep.claimed = true;
         } else {
             USDCDeposit storage usdcDep = usdcDeposits[gameId];
+            require(!usdcDep.claimed, "USDC already claimed");
+            
             uint256 platformFee = (usdcDep.amount * platformFeePercent) / BASIS_POINTS;
             uint256 winnerAmount = usdcDep.amount - platformFee;
             
@@ -235,12 +252,12 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             require(IERC20(usdcToken).transfer(platformFeeReceiver, platformFee), "Platform USDC fee transfer failed");
             
             // Transfer remaining to winner
-            require(IERC20(usdcToken).transfer(winner, winnerAmount), "Winner USDC transfer failed");
+            require(IERC20(usdcToken).transfer(msg.sender, winnerAmount), "Winner USDC transfer failed");
             
             usdcDep.claimed = true;
         }
         
-        emit GameCompleted(gameId, winner);
+        emit WinningsWithdrawn(gameId, msg.sender);
     }
     
     /**

@@ -12,35 +12,35 @@ async function main() {
       ethUsdFeed: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70", // Base ETH/USD
       usdcUsdFeed: "0x7e860098F58bBFC8648a4311b374B1D669a2bc6B", // Base USDC/USD
       usdcToken: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base USDC
-      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0x0000000000000000000000000000000000000000", // Add your admin wallet address
+      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", // Admin wallet address
       rpc: "https://base.blockpi.network/v1/rpc/public"
     },
     ethereum: {
       ethUsdFeed: "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419", // Ethereum ETH/USD
       usdcUsdFeed: "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6", // Ethereum USDC/USD
       usdcToken: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // Ethereum USDC
-      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0x0000000000000000000000000000000000000000", // Add your admin wallet address
+      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", // Admin wallet address
       rpc: "https://eth.llamarpc.com"
     },
     bnb: {
       ethUsdFeed: "0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e", // BNB ETH/USD
       usdcUsdFeed: "0x51597f405303C4377E36123cBc172b13269EA163", // BNB USDC/USD
       usdcToken: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", // BNB USDC
-      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0x0000000000000000000000000000000000000000", // Add your admin wallet address
+      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", // Admin wallet address
       rpc: "https://bsc-dataseed.binance.org/"
     },
     avalanche: {
       ethUsdFeed: "0x976B3D034E162d8bD72D6b9C989d545b839003b0", // Avalanche ETH/USD
       usdcUsdFeed: "0xF096872672F44d6EBA71458D74fe67F9a77a23B9", // Avalanche USDC/USD
       usdcToken: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", // Avalanche USDC
-      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0x0000000000000000000000000000000000000000", // Add your admin wallet address
+      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", // Admin wallet address
       rpc: "https://api.avax.network/ext/bc/C/rpc"
     },
     polygon: {
       ethUsdFeed: "0xF9680D99D6C9589e2a93a78A04A279e509205945", // Polygon ETH/USD
       usdcUsdFeed: "0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7", // Polygon USDC/USD
       usdcToken: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", // Polygon USDC
-      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0x0000000000000000000000000000000000000000", // Add your admin wallet address
+      platformFeeReceiver: process.env.PLATFORM_FEE_RECEIVER || "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628", // Admin wallet address
       rpc: "https://polygon-rpc.com/"
     }
   };
@@ -62,9 +62,8 @@ async function main() {
 
   // Deploy the contract
   const nftFlipGame = await NFTFlipGame.deploy(
-    config.ethUsdFeed,
-    config.usdcToken,
-    config.platformFeeReceiver
+    config.platformFeeReceiver,
+    config.usdcToken
   );
 
   console.log("⏳ Waiting for deployment...");

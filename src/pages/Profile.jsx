@@ -494,6 +494,7 @@ const Profile = () => {
   
   const [activeGames, setActiveGames] = useState([]);
   const [offers, setOffers] = useState([]);
+  const [winnings, setWinnings] = useState([]);
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -564,6 +565,29 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Failed to load user offers:', error);
+    }
+
+    try {
+      // Load user's winnings (completed games where user is the winner)
+      const winningsResponse = await fetch(`/api/users/${targetAddress}/winnings`);
+      if (winningsResponse.ok) {
+        const winningsData = await winningsResponse.json();
+        setWinnings(winningsData || []);
+      } else {
+        // Fallback: filter from games where user is winner
+        const allGamesResponse = await fetch(`/api/users/${targetAddress}/games`);
+        if (allGamesResponse.ok) {
+          const allGames = await allGamesResponse.json();
+          const userWinnings = allGames.filter(game => 
+            game.status === 'completed' && 
+            game.winner && 
+            game.winner.toLowerCase() === targetAddress.toLowerCase()
+          );
+          setWinnings(userWinnings);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load user winnings:', error);
     }
 
     setLoading(false);
@@ -694,6 +718,29 @@ const Profile = () => {
     } catch (error) {
       console.error('Failed to accept offer:', error);
       showError('Failed to accept offer');
+    }
+  };
+
+  // Withdraw winnings
+  const withdrawWinnings = async (gameId) => {
+    try {
+      showInfo('Processing withdrawal...');
+      const result = await contractService.withdrawWinnings(gameId);
+      
+      if (result.success) {
+        showSuccess(`Withdrawal successful! Transaction: ${result.transactionHash?.slice(0, 10)}...`);
+        // Update the winnings list to mark as withdrawn
+        setWinnings(prev => prev.map(game => 
+          game.id === gameId 
+            ? { ...game, withdrawalStatus: 'withdrawn', withdrawalTx: result.transactionHash }
+            : game
+        ));
+      } else {
+        throw new Error(result.error || 'Withdrawal failed');
+      }
+    } catch (error) {
+      console.error('Failed to withdraw winnings:', error);
+      showError(`Withdrawal failed: ${error.message}`);
     }
   };
 
@@ -848,6 +895,12 @@ const Profile = () => {
           onClick={() => setActiveTab('offers')}
         >
           My Offers ({offers.length})
+        </TabButton>
+        <TabButton 
+          active={activeTab === 'winnings'} 
+          onClick={() => setActiveTab('winnings')}
+        >
+          💰 My Winnings
         </TabButton>
       </TabContainer>
 
@@ -1105,6 +1158,161 @@ const Profile = () => {
                             <ExternalLink style={{ width: '1rem', height: '1rem' }} />
                           </ActionButton>
                         )}
+                      </GameActions>
+                    </GameHeader>
+                  </GameCard>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'winnings' && (
+          <div>
+            <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+              💰 My Winnings
+            </h3>
+            
+            {loading ? (
+              <EmptyState>
+                <LoadingSpinner />
+                <div style={{ marginTop: '1rem' }}>Loading winnings...</div>
+              </EmptyState>
+            ) : winnings.length === 0 ? (
+              <EmptyState>
+                <Trophy style={{ width: '4rem', height: '4rem', color: 'rgba(255, 255, 255, 0.3)', marginBottom: '1rem' }} />
+                <h4 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>No Winnings Yet</h4>
+                <div>You haven't won any games yet. Keep playing to earn rewards!</div>
+              </EmptyState>
+            ) : (
+              <div>
+                <div style={{ 
+                  background: 'rgba(0, 255, 65, 0.1)', 
+                  border: '1px solid rgba(0, 255, 65, 0.3)', 
+                  borderRadius: '1rem', 
+                  padding: '1.5rem', 
+                  marginBottom: '2rem',
+                  textAlign: 'center'
+                }}>
+                  <h4 style={{ color: '#00FF41', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    🎉 Congratulations!
+                  </h4>
+                  <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginBottom: '1rem' }}>
+                    You have {winnings.length} game{winnings.length !== 1 ? 's' : ''} to claim winnings from.
+                    Each game contains both the NFT and crypto that you can withdraw to your wallet.
+                  </p>
+                  <div style={{ 
+                    background: 'rgba(255, 193, 7, 0.2)', 
+                    border: '1px solid rgba(255, 193, 7, 0.3)', 
+                    borderRadius: '0.5rem', 
+                    padding: '1rem',
+                    fontSize: '0.9rem',
+                    color: 'rgba(255, 255, 255, 0.9)'
+                  }}>
+                    <strong>⚠️ Important:</strong> You pay the gas fees for withdrawals. 
+                    On Base network, this is usually less than $0.05 per withdrawal.
+                  </div>
+                </div>
+
+                {winnings.map((game) => (
+                  <GameCard key={game.id} style={{
+                    border: game.withdrawalStatus === 'withdrawn' 
+                      ? '2px solid rgba(76, 175, 80, 0.4)' 
+                      : '2px solid rgba(255, 215, 0, 0.4)',
+                    background: game.withdrawalStatus === 'withdrawn'
+                      ? 'rgba(76, 175, 80, 0.1)'
+                      : 'rgba(255, 215, 0, 0.1)'
+                  }}>
+                    <GameHeader>
+                      <GameInfo>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <span style={{
+                            fontFamily: 'monospace',
+                            fontSize: '0.9rem',
+                            color: 'rgba(255, 255, 255, 0.7)'
+                          }}>
+                            🏆 Game #{game.id}
+                          </span>
+                          <StatusBadge status={game.withdrawalStatus === 'withdrawn' ? 3 : 2}>
+                            {game.withdrawalStatus === 'withdrawn' ? '✅ Withdrawn' : '💰 Ready to Claim'}
+                          </StatusBadge>
+                        </div>
+                        
+                        <div style={{ fontSize: '1rem', color: '#fff', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                          🎁 Winnings Available:
+                        </div>
+                        
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: '1fr 1fr', 
+                          gap: '1rem', 
+                          marginBottom: '0.5rem',
+                          padding: '1rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '0.5rem'
+                        }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>NFT:</div>
+                            <div style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 'bold' }}>
+                              {game.nft_name || `Token #${game.nft_token_id}`}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                              {game.nft_collection || 'Unknown Collection'}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>Crypto:</div>
+                            <div style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 'bold' }}>
+                              ${game.final_price || game.price_usd || '0'} USD
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                              (minus 3.5% platform fee)
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                          Won on {new Date(game.completed_at || game.created_at).toLocaleString()}
+                        </div>
+                        
+                        {game.withdrawalTx && (
+                          <div style={{ fontSize: '0.8rem', color: 'rgba(76, 175, 80, 0.8)', marginTop: '0.5rem' }}>
+                            ✅ Withdrawn: {game.withdrawalTx.slice(0, 10)}...{game.withdrawalTx.slice(-6)}
+                          </div>
+                        )}
+                      </GameInfo>
+                      
+                      <GameActions>
+                        {game.withdrawalStatus !== 'withdrawn' ? (
+                          <ActionButton
+                            style={{
+                              background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                              color: '#000',
+                              fontWeight: 'bold'
+                            }}
+                            onClick={() => withdrawWinnings(game.id)}
+                          >
+                            <Coins style={{ width: '1rem', height: '1rem' }} />
+                            Withdraw All
+                          </ActionButton>
+                        ) : (
+                          <ActionButton
+                            style={{
+                              background: 'rgba(76, 175, 80, 0.3)',
+                              color: '#4CAF50',
+                              cursor: 'not-allowed'
+                            }}
+                            disabled
+                          >
+                            <CheckCircle style={{ width: '1rem', height: '1rem' }} />
+                            Withdrawn
+                          </ActionButton>
+                        )}
+                        
+                        <ActionButton onClick={() => navigate(`/game/${game.id}`)}>
+                          View Game
+                          <ExternalLink style={{ width: '1rem', height: '1rem' }} />
+                        </ActionButton>
                       </GameActions>
                     </GameHeader>
                   </GameCard>
