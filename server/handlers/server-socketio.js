@@ -192,7 +192,11 @@ class GameServer {
         if (gameData) {
           console.log(`🔍 Game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
         }
+<<<<<<< HEAD
         if (gameData && (gameData.status === 'active' || gameData.status === 'awaiting_deposit' || gameData.status === 'awaiting_challenger')) {
+=======
+        if (gameData && gameData.status === 'active') {
+>>>>>>> 88b3931a56b5f2dea2521efd3d2cc662e2d09e07
           gameState = this.initializeGameState(gameId, gameData)
           this.gameStateManager.createGame(gameId, gameState)
           
@@ -214,6 +218,7 @@ class GameServer {
     } catch (error) {
       console.error('❌ Error in handleRequestGameState:', error)
       socket.emit('game_not_found', { gameId, error: error.message })
+<<<<<<< HEAD
     }
   }
 
@@ -326,6 +331,8 @@ class GameServer {
       }
     } catch (error) {
       console.error('❌ Error in handleActivateGame:', error)
+=======
+>>>>>>> 88b3931a56b5f2dea2521efd3d2cc662e2d09e07
     }
   }
 
