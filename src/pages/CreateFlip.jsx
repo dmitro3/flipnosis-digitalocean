@@ -82,6 +82,68 @@ const PlaceholderText = styled.div`
   width: 100%;
 `
 
+const GameModeSelector = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+`
+
+const ModeCard = styled.div`
+  padding: 1.5rem;
+  border: 2px solid ${props => props.selected ? props.theme.colors.neonBlue : 'rgba(255, 255, 255, 0.2)'};
+  border-radius: 1rem;
+  background: ${props => props.selected ? 'rgba(0, 191, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.neonPink};
+    background: rgba(255, 20, 147, 0.05);
+  }
+  
+  .mode-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .mode-title {
+    color: ${props => props.theme.colors.textPrimary};
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .mode-description {
+    color: ${props => props.theme.colors.textSecondary};
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  
+  .mode-details {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 0.25rem 0;
+      font-size: 0.8rem;
+      
+      .label {
+        color: ${props => props.theme.colors.textSecondary};
+      }
+      
+      .value {
+        color: ${props => props.theme.colors.textPrimary};
+        font-weight: bold;
+      }
+    }
+  }
+`
+
 const SubmitButton = styled(Button)`
   margin-top: 2rem;
   width: 100%;
@@ -222,6 +284,11 @@ const CreateFlip = () => {
     }
   })
 
+  // Battle Royale mode state
+  const [gameMode, setGameMode] = useState('nft-vs-crypto') // 'nft-vs-crypto' or 'battle-royale'
+  const [entryFee, setEntryFee] = useState('5.00')
+  const [serviceFee, setServiceFee] = useState('0.10') // Changed to 10 cents
+
   // Progress tracking state
   const [currentStep, setCurrentStep] = useState(0) // 0: not started, 1: approve, 2: pay fee, 3: deposit NFT
   const [stepStatus, setStepStatus] = useState({
@@ -261,15 +328,22 @@ const CreateFlip = () => {
       showError('Please select an NFT')
       return
     }
-    if (!price || parseFloat(price) <= 0) {
-      showError('Please enter a valid price')
-      return
-    }
-    
-    // Add minimum price validation (removed hardcoded $1 minimum)
-    if (parseFloat(price) <= 0) {
-      showError('Please enter a valid price greater than $0')
-      return
+
+    // Validate based on game mode
+    if (gameMode === 'nft-vs-crypto') {
+      if (!price || parseFloat(price) <= 0) {
+        showError('Please enter a valid price greater than $0')
+        return
+      }
+    } else if (gameMode === 'battle-royale') {
+      if (!entryFee || parseFloat(entryFee) <= 0) {
+        showError('Please enter a valid entry fee greater than $0')
+        return
+      }
+      if (!serviceFee || parseFloat(serviceFee) <= 0) {
+        showError('Please enter a valid service fee greater than $0')
+        return
+      }
     }
     
     // Check if wallet is on Base network
@@ -293,36 +367,86 @@ const CreateFlip = () => {
     setCurrentStep(1) // Start with step 1
     
     try {
-      // Generate game ID upfront
-      const gameId = `game_${Date.now()}_${Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')}`
-      
-      // Step 1: Create listing in database first (no blockchain yet)
-      showInfo('Creating listing...')
-      const listingResponse = await fetch(getApiUrl('/listings'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creator: address,
-          game_id: gameId,
-          nft_contract: selectedNFT.contractAddress,
-          nft_token_id: selectedNFT.tokenId,
-          nft_name: selectedNFT.name,
-          nft_image: selectedNFT.image,
-          nft_collection: selectedNFT.collection,
-          nft_chain: 'base',
-          asking_price: parseFloat(price),
-          coin_data: JSON.stringify({
-            id: selectedCoin.id,
-            type: selectedCoin.type,
-            name: selectedCoin.name,
-            headsImage: selectedCoin.headsImage,
-            tailsImage: selectedCoin.tailsImage,
-            isCustom: selectedCoin.isCustom,
-            material: selectedMaterial
-          }),
-          game_type: 'nft-vs-crypto' // Hardcoded since there's only one option
+      if (gameMode === 'battle-royale') {
+        // Battle Royale creation flow
+        showInfo('Creating Battle Royale game...')
+        
+        const battleRoyaleResponse = await fetch(getApiUrl('/battle-royale/create'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            creator: address,
+            nft_contract: selectedNFT.contractAddress,
+            nft_token_id: selectedNFT.tokenId,
+            nft_name: selectedNFT.name,
+            nft_image: selectedNFT.image,
+            nft_collection: selectedNFT.collection,
+            entry_fee: parseFloat(entryFee),
+            service_fee: parseFloat(serviceFee)
+          })
         })
-      })
+        
+        if (!battleRoyaleResponse.ok) {
+          const error = await battleRoyaleResponse.json()
+          throw new Error(error.error || 'Failed to create Battle Royale game')
+        }
+        
+        const battleRoyaleResult = await battleRoyaleResponse.json()
+        console.log('✅ Battle Royale game created:', battleRoyaleResult)
+        
+        // Create on blockchain
+        setCurrentStep(2)
+        showInfo('Creating Battle Royale on blockchain...')
+        
+        const createResult = await contractService.createBattleRoyale(
+          battleRoyaleResult.gameId,
+          selectedNFT.contractAddress,
+          selectedNFT.tokenId,
+          Math.round(parseFloat(entryFee) * 1000000), // Convert to microdollars
+          Math.round(parseFloat(serviceFee) * 1000000) // Convert to microdollars
+        )
+        
+        if (!createResult.success) {
+          throw new Error(createResult.error || 'Failed to create Battle Royale on blockchain')
+        }
+        
+        setStepStatus({ approve: true, payFee: true, depositNFT: true })
+        setCurrentStep(3)
+        
+        showSuccess('Battle Royale created successfully! Waiting for 8 players to join.')
+        navigate(`/battle-royale/${battleRoyaleResult.gameId}`)
+        
+      } else {
+        // Regular 1v1 game creation flow
+        const gameId = `game_${Date.now()}_${Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')}`
+        
+        // Step 1: Create listing in database first (no blockchain yet)
+        showInfo('Creating listing...')
+        const listingResponse = await fetch(getApiUrl('/listings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            creator: address,
+            game_id: gameId,
+            nft_contract: selectedNFT.contractAddress,
+            nft_token_id: selectedNFT.tokenId,
+            nft_name: selectedNFT.name,
+            nft_image: selectedNFT.image,
+            nft_collection: selectedNFT.collection,
+            nft_chain: 'base',
+            asking_price: parseFloat(price),
+            coin_data: JSON.stringify({
+              id: selectedCoin.id,
+              type: selectedCoin.type,
+              name: selectedCoin.name,
+              headsImage: selectedCoin.headsImage,
+              tailsImage: selectedCoin.tailsImage,
+              isCustom: selectedCoin.isCustom,
+              material: selectedMaterial
+            }),
+            game_type: gameMode
+          })
+        })
       
       if (!listingResponse.ok) {
         const error = await listingResponse.json()
@@ -384,8 +508,9 @@ const CreateFlip = () => {
       
       // NFT deposit is already handled by createGame() - no need for separate confirmation
       
-      showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.')
-      navigate(`/game/${gameId}`)
+        showSuccess('Game created successfully! Your NFT is deposited and waiting for a challenger.')
+        navigate(`/game/${gameId}`)
+      }
       
     } catch (error) {
       console.error('Error creating game:', error)
@@ -485,6 +610,58 @@ const CreateFlip = () => {
             </ProgressContainer>
 
             <form onSubmit={handleSubmit}>
+              {/* Game Mode Selection */}
+              <FormGroup>
+                <Label>Choose Game Mode</Label>
+                <GameModeSelector>
+                  <ModeCard 
+                    selected={gameMode === 'nft-vs-crypto'}
+                    onClick={() => setGameMode('nft-vs-crypto')}
+                  >
+                    <div className="mode-icon">⚔️</div>
+                    <h3 className="mode-title">1v1 Duel</h3>
+                    <p className="mode-description">Classic head-to-head NFT vs Crypto battle</p>
+                    <div className="mode-details">
+                      <div className="detail-item">
+                        <span className="label">Players:</span>
+                        <span className="value">2</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">Format:</span>
+                        <span className="value">Best of 5</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">Entry:</span>
+                        <span className="value">Custom Price</span>
+                      </div>
+                    </div>
+                  </ModeCard>
+                  
+                  <ModeCard 
+                    selected={gameMode === 'battle-royale'}
+                    onClick={() => setGameMode('battle-royale')}
+                  >
+                    <div className="mode-icon">🏆</div>
+                    <h3 className="mode-title">Battle Royale</h3>
+                    <p className="mode-description">8-player elimination tournament</p>
+                    <div className="mode-details">
+                      <div className="detail-item">
+                        <span className="label">Players:</span>
+                        <span className="value">8</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">Format:</span>
+                        <span className="value">Elimination</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">Entry:</span>
+                        <span className="value">${entryFee} + ${serviceFee}</span>
+                      </div>
+                    </div>
+                  </ModeCard>
+                </GameModeSelector>
+              </FormGroup>
+
               {/* NFT Selection */}
               <FormGroup>
                 <Label>Select Your NFT</Label>
@@ -507,65 +684,154 @@ const CreateFlip = () => {
 
 
 
-              {/* Price */}
-              <FormGroup>
-                <Label>Price (USD)</Label>
-                <Input
-                  type="number"
-                  placeholder="Enter price in USD (e.g., 0.50 for 50 cents)"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  min="0"
-                  step="0.01"
-                />
-                <small style={{ 
-                  color: theme.colors.textSecondary, 
-                  fontSize: '0.8rem',
-                  marginTop: '0.5rem',
-                  display: 'block'
-                }}>
-                  💡 You can enter decimal prices (e.g., 0.25 for 25 cents). This is what Player 2 will pay to join your game.
-                </small>
-                {price && parseFloat(price) > 0 && (
-                  <div style={{ 
-                    background: 'rgba(0, 191, 255, 0.1)',
-                    border: '1px solid rgba(0, 191, 255, 0.3)',
-                    borderRadius: '0.5rem',
-                    padding: '0.75rem',
+              {/* Price/Entry Fee based on game mode */}
+              {gameMode === 'nft-vs-crypto' ? (
+                <FormGroup>
+                  <Label>Price (USD)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Enter price in USD (e.g., 0.50 for 50 cents)"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                  <small style={{ 
+                    color: theme.colors.textSecondary, 
+                    fontSize: '0.8rem',
                     marginTop: '0.5rem',
-                    fontSize: '0.9rem'
+                    display: 'block'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                      <span>Game Price (Player 2 pays):</span>
-                      <span>${parseFloat(price).toFixed(2)}</span>
+                    💡 You can enter decimal prices (e.g., 0.25 for 25 cents). This is what Player 2 will pay to join your game.
+                  </small>
+                  {price && parseFloat(price) > 0 && (
+                    <div style={{ 
+                      background: 'rgba(0, 191, 255, 0.1)',
+                      border: '1px solid rgba(0, 191, 255, 0.3)',
+                      borderRadius: '0.5rem',
+                      padding: '0.75rem',
+                      marginTop: '0.5rem',
+                      fontSize: '0.9rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span>Game Price (Player 2 pays):</span>
+                        <span>${parseFloat(price).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </FormGroup>
+              ) : (
+                <FormGroup>
+                  <Label>Battle Royale Fees</Label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Entry Fee (USD)</Label>
+                      <Input
+                        type="number"
+                        placeholder="5.00"
+                        value={entryFee}
+                        onChange={(e) => setEntryFee(e.target.value)}
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <Label style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Service Fee (USD)</Label>
+                      <Input
+                        type="number"
+                        placeholder="0.10"
+                        value={serviceFee}
+                        onChange={(e) => setServiceFee(e.target.value)}
+                        min="0"
+                        step="0.01"
+                      />
                     </div>
                   </div>
-                )}
-              </FormGroup>
+                  <small style={{ 
+                    color: theme.colors.textSecondary, 
+                    fontSize: '0.8rem',
+                    marginTop: '0.5rem',
+                    display: 'block'
+                  }}>
+                    💡 Each player pays Entry Fee + Service Fee to join. You get all entry fees (${(parseFloat(entryFee) * 8).toFixed(2)}) minus 3.5% platform fee.
+                  </small>
+                  {entryFee && serviceFee && (
+                    <div style={{ 
+                      background: 'rgba(255, 20, 147, 0.1)',
+                      border: '1px solid rgba(255, 20, 147, 0.3)',
+                      borderRadius: '0.5rem',
+                      padding: '0.75rem',
+                      marginTop: '0.5rem',
+                      fontSize: '0.9rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span>Total per Player:</span>
+                        <span>${(parseFloat(entryFee) + parseFloat(serviceFee)).toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span>Total Entry Pool:</span>
+                        <span>${(parseFloat(entryFee) * 8).toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span>Your Earnings (after 3.5% fee):</span>
+                        <span>${((parseFloat(entryFee) * 8) * 0.965).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </FormGroup>
+              )}
 
 
 
-              {/* Coin Selection */}
-              <FormGroup>
-                <CoinSelector
-                  selectedCoin={selectedCoin}
-                  onCoinSelect={(coin) => {
-                    console.log('🪙 Coin selected in CreateFlip:', coin)
-                    setSelectedCoin(coin)
-                  }}
-                />
-              </FormGroup>
+              {/* Coin Selection - Only for 1v1 games */}
+              {gameMode === 'nft-vs-crypto' && (
+                <>
+                  <FormGroup>
+                    <CoinSelector
+                      selectedCoin={selectedCoin}
+                      onCoinSelect={(coin) => {
+                        console.log('🪙 Coin selected in CreateFlip:', coin)
+                        setSelectedCoin(coin)
+                      }}
+                    />
+                  </FormGroup>
 
-              {/* Coin Material Selection */}
-              <FormGroup>
-                <CoinMaterialSelector
-                  selectedMaterial={selectedMaterial}
-                  onMaterialSelect={(material) => {
-                    console.log('🪙 Material selected in CreateFlip:', material)
-                    setSelectedMaterial(material)
-                  }}
-                />
-              </FormGroup>
+                  <FormGroup>
+                    <CoinMaterialSelector
+                      selectedMaterial={selectedMaterial}
+                      onMaterialSelect={(material) => {
+                        console.log('🪙 Material selected in CreateFlip:', material)
+                        setSelectedMaterial(material)
+                      }}
+                    />
+                  </FormGroup>
+                </>
+              )}
+
+              {gameMode === 'battle-royale' && (
+                <FormGroup>
+                  <Label>Battle Royale Info</Label>
+                  <div style={{ 
+                    background: 'rgba(255, 20, 147, 0.1)',
+                    border: '1px solid rgba(255, 20, 147, 0.3)',
+                    borderRadius: '0.5rem',
+                    padding: '1rem',
+                    fontSize: '0.9rem'
+                  }}>
+                    <p style={{ margin: '0 0 1rem 0', color: theme.colors.textPrimary }}>
+                      🏆 <strong>Battle Royale Rules:</strong>
+                    </p>
+                    <ul style={{ margin: '0', paddingLeft: '1.5rem', color: theme.colors.textSecondary }}>
+                      <li>8 players compete in elimination rounds</li>
+                      <li>Each round has a target result (heads or tails)</li>
+                      <li>Players who don't match the target are eliminated</li>
+                      <li>Last player standing wins your NFT</li>
+                      <li>You receive all entry fees minus platform fee</li>
+                      <li>All players use default coins (no custom selection)</li>
+                    </ul>
+                  </div>
+                </FormGroup>
+              )}
 
               {/* Progress Indicator at Bottom */}
               <div style={{ marginTop: '2rem', marginBottom: '1rem' }}>
@@ -623,10 +889,10 @@ const CreateFlip = () => {
               <SubmitButton type="submit" disabled={loading || !isFullyConnected}>
                 {loading ? (
                   <>
-                    <LoadingSpinner /> Creating Game...
+                    <LoadingSpinner /> Creating {gameMode === 'battle-royale' ? 'Battle Royale' : 'Game'}...
                   </>
                 ) : (
-                  'Create Game'
+                  gameMode === 'battle-royale' ? 'Create Battle Royale' : 'Create Game'
                 )}
               </SubmitButton>
             </form>

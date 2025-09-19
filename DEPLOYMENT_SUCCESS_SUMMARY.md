@@ -7,7 +7,7 @@ Your new NFTFlipGame contract has been successfully deployed and is ready to use
 ## 📋 Deployment Details
 
 ### New Contract Information
-- **Contract Address**: `0xd76B12D50192492ebB56bD226127eE799658fF0a`
+- **Contract Address**: `0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb`
 - **Network**: Base Mainnet
 - **Owner**: `0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628` (your new wallet)
 - **Platform Fee Receiver**: `0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628`
@@ -27,7 +27,7 @@ Your new NFTFlipGame contract has been successfully deployed and is ready to use
 
 ### Security Status
 - ✅ **Old contract abandoned** - `0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69`
-- ✅ **New contract secure** - `0xd76B12D50192492ebB56bD226127eE799658fF0a`
+- ✅ **New contract secure** - `0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb`
 - ✅ **Compromised wallet isolated** - No access to new system
 - ✅ **Fresh start** - Clean slate for admin functions
 
@@ -81,7 +81,7 @@ Your new NFTFlipGame contract has been successfully deployed and is ready to use
 
 | Aspect | Old Contract | New Contract |
 |--------|-------------|--------------|
-| Address | `0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69` | `0xd76B12D50192492ebB56bD226127eE799658fF0a` |
+| Address | `0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69` | `0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb` |
 | Owner | Compromised wallet | Your new wallet |
 | Status | Abandoned | Active & Secure |
 | Admin Access | Broken | Fully Functional |

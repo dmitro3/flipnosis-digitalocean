@@ -1,0 +1,40 @@
+{
+  "network": "base",
+  "contractAddress": "0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb",
+  "deployer": "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628",
+  "deploymentTime": "2025-01-19T19:30:00.000Z",
+  "transactionHash": "0xe70f2ba714b0da870689c14077f48edf13cffd2362935d3f3f58d9f09378092d",
+  "features": [
+    "1v1Games",
+    "BattleRoyale"
+  ],
+  "constructorArgs": {
+    "platformFeeReceiver": "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628",
+    "usdcToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  "battleRoyaleConfig": {
+    "maxPlayers": 8,
+    "defaultEntryFee": "5.00",
+    "defaultServiceFee": "0.50",
+    "platformFeePercent": "3.5%"
+  },
+  "contractInfo": {
+    "owner": "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628",
+    "platformFeeReceiver": "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628",
+    "depositTimeout": 120,
+    "platformFeePercent": 350
+  },
+  "verifiedFunctions": [
+    "createBattleRoyale",
+    "joinBattleRoyale",
+    "completeBattleRoyale",
+    "withdrawCreatorFunds",
+    "withdrawWinnerNFT",
+    "getBattleRoyaleGame",
+    "hasBattleRoyaleEntry",
+    "battleRoyaleGames"
+  ],
+  "basescanUrl": "https://basescan.org/address/0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb",
+  "status": "deployed_and_verified",
+  "notes": "Contract successfully deployed with both 1v1 games and Battle Royale functionality. All Battle Royale functions verified and working."
+}

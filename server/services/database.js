@@ -513,6 +513,342 @@ class DatabaseService {
     return this.db
   }
 
+  // ===== BATTLE ROYALE METHODS =====
+  
+  // Create a new Battle Royale game
+  async createBattleRoyaleGame(gameData) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO battle_royale_games (
+          id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+          entry_fee, service_fee, max_players, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `
+      
+      this.db.run(sql, [
+        gameData.id,
+        gameData.creator,
+        gameData.nft_contract,
+        gameData.nft_token_id,
+        gameData.nft_name,
+        gameData.nft_image,
+        gameData.nft_collection,
+        gameData.entry_fee,
+        gameData.service_fee,
+        gameData.max_players || 8,
+        'filling'
+      ], function(err) {
+        if (err) {
+          console.error('❌ Error creating Battle Royale game:', err)
+          reject(err)
+        } else {
+          console.log('✅ Battle Royale game created:', gameData.id)
+          resolve({ id: gameData.id })
+        }
+      })
+    })
+  }
+
+  // Get Battle Royale game by ID
+  async getBattleRoyaleGame(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.get('SELECT * FROM battle_royale_games WHERE id = ?', [gameId], (err, game) => {
+        if (err) {
+          console.error('❌ Error getting Battle Royale game:', err)
+          reject(err)
+        } else {
+          resolve(game)
+        }
+      })
+    })
+  }
+
+  // Get all Battle Royale games with optional status filter
+  async getBattleRoyaleGames(status = null, limit = 50) {
+    return new Promise((resolve, reject) => {
+      let sql = 'SELECT * FROM battle_royale_games'
+      let params = []
+      
+      if (status) {
+        sql += ' WHERE status = ?'
+        params.push(status)
+      }
+      
+      sql += ' ORDER BY created_at DESC LIMIT ?'
+      params.push(limit)
+      
+      this.db.all(sql, params, (err, games) => {
+        if (err) {
+          console.error('❌ Error getting Battle Royale games:', err)
+          reject(err)
+        } else {
+          resolve(games || [])
+        }
+      })
+    })
+  }
+
+  // Add player to Battle Royale game
+  async addBattleRoyalePlayer(gameId, playerData) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO battle_royale_participants (
+          game_id, player_address, slot_number, entry_paid, entry_amount, 
+          entry_payment_hash, status, joined_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `
+      
+      this.db.run(sql, [
+        gameId,
+        playerData.player_address,
+        playerData.slot_number,
+        playerData.entry_paid || false,
+        playerData.entry_amount,
+        playerData.entry_payment_hash,
+        'active'
+      ], function(err) {
+        if (err) {
+          console.error('❌ Error adding Battle Royale player:', err)
+          reject(err)
+        } else {
+          console.log('✅ Player added to Battle Royale:', playerData.player_address)
+          resolve({ playerId: this.lastID })
+        }
+      })
+    })
+  }
+
+  // Get Battle Royale participants
+  async getBattleRoyaleParticipants(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        'SELECT * FROM battle_royale_participants WHERE game_id = ? ORDER BY slot_number',
+        [gameId],
+        (err, participants) => {
+          if (err) {
+            console.error('❌ Error getting Battle Royale participants:', err)
+            reject(err)
+          } else {
+            resolve(participants || [])
+          }
+        }
+      )
+    })
+  }
+
+  // Update Battle Royale game status
+  async updateBattleRoyaleGame(gameId, updates) {
+    return new Promise((resolve, reject) => {
+      const fields = []
+      const values = []
+      
+      Object.keys(updates).forEach(key => {
+        fields.push(`${key} = ?`)
+        values.push(updates[key])
+      })
+      
+      if (fields.length === 0) {
+        resolve({ changes: 0 })
+        return
+      }
+      
+      fields.push('updated_at = datetime(\'now\')')
+      values.push(gameId)
+      
+      const sql = `UPDATE battle_royale_games SET ${fields.join(', ')} WHERE id = ?`
+      
+      this.db.run(sql, values, function(err) {
+        if (err) {
+          console.error('❌ Error updating Battle Royale game:', err)
+          reject(err)
+        } else {
+          console.log(`✅ Battle Royale game updated: ${gameId}`)
+          resolve({ changes: this.changes })
+        }
+      })
+    })
+  }
+
+  // Update Battle Royale participant
+  async updateBattleRoyaleParticipant(gameId, playerAddress, updates) {
+    return new Promise((resolve, reject) => {
+      const fields = []
+      const values = []
+      
+      Object.keys(updates).forEach(key => {
+        fields.push(`${key} = ?`)
+        values.push(updates[key])
+      })
+      
+      if (fields.length === 0) {
+        resolve({ changes: 0 })
+        return
+      }
+      
+      values.push(gameId, playerAddress)
+      const sql = `UPDATE battle_royale_participants SET ${fields.join(', ')} WHERE game_id = ? AND player_address = ?`
+      
+      this.db.run(sql, values, function(err) {
+        if (err) {
+          console.error('❌ Error updating Battle Royale participant:', err)
+          reject(err)
+        } else {
+          console.log(`✅ Battle Royale participant updated: ${playerAddress}`)
+          resolve({ changes: this.changes })
+        }
+      })
+    })
+  }
+
+  // Create Battle Royale round record
+  async createBattleRoyaleRound(roundData) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO battle_royale_rounds (
+          id, game_id, round_number, target_result, players_before, 
+          players_eliminated, eliminated_players, surviving_players,
+          round_duration, round_start_time, round_end_time, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `
+      
+      this.db.run(sql, [
+        roundData.id,
+        roundData.game_id,
+        roundData.round_number,
+        roundData.target_result,
+        roundData.players_before,
+        roundData.players_eliminated,
+        JSON.stringify(roundData.eliminated_players),
+        JSON.stringify(roundData.surviving_players),
+        roundData.round_duration || 20,
+        roundData.round_start_time,
+        roundData.round_end_time
+      ], function(err) {
+        if (err) {
+          console.error('❌ Error creating Battle Royale round:', err)
+          reject(err)
+        } else {
+          console.log('✅ Battle Royale round created:', roundData.id)
+          resolve({ id: roundData.id })
+        }
+      })
+    })
+  }
+
+  // Get Battle Royale rounds for a game
+  async getBattleRoyaleRounds(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        'SELECT * FROM battle_royale_rounds WHERE game_id = ? ORDER BY round_number',
+        [gameId],
+        (err, rounds) => {
+          if (err) {
+            console.error('❌ Error getting Battle Royale rounds:', err)
+            reject(err)
+          } else {
+            // Parse JSON fields
+            const parsedRounds = rounds.map(round => ({
+              ...round,
+              eliminated_players: JSON.parse(round.eliminated_players || '[]'),
+              surviving_players: JSON.parse(round.surviving_players || '[]')
+            }))
+            resolve(parsedRounds)
+          }
+        }
+      )
+    })
+  }
+
+  // Create Battle Royale flip record
+  async createBattleRoyaleFlip(flipData) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO battle_royale_flips (
+          id, game_id, round_id, player_address, choice, power, result, flip_time
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `
+      
+      this.db.run(sql, [
+        flipData.id,
+        flipData.game_id,
+        flipData.round_id,
+        flipData.player_address,
+        flipData.choice,
+        flipData.power,
+        flipData.result
+      ], function(err) {
+        if (err) {
+          console.error('❌ Error creating Battle Royale flip:', err)
+          reject(err)
+        } else {
+          console.log('✅ Battle Royale flip recorded:', flipData.id)
+          resolve({ id: flipData.id })
+        }
+      })
+    })
+  }
+
+  // Get Battle Royale flips for a round
+  async getBattleRoyaleFlips(gameId, roundId = null) {
+    return new Promise((resolve, reject) => {
+      let sql = 'SELECT * FROM battle_royale_flips WHERE game_id = ?'
+      let params = [gameId]
+      
+      if (roundId) {
+        sql += ' AND round_id = ?'
+        params.push(roundId)
+      }
+      
+      sql += ' ORDER BY flip_time'
+      
+      this.db.all(sql, params, (err, flips) => {
+        if (err) {
+          console.error('❌ Error getting Battle Royale flips:', err)
+          reject(err)
+        } else {
+          resolve(flips || [])
+        }
+      })
+    })
+  }
+
+  // Save Battle Royale chat message
+  async saveBattleRoyaleChatMessage(gameId, senderAddress, message) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT INTO battle_royale_chat (game_id, sender_address, message, created_at)
+        VALUES (?, ?, ?, datetime('now'))
+      `
+      
+      this.db.run(sql, [gameId, senderAddress, message], function(err) {
+        if (err) {
+          console.error('❌ Error saving Battle Royale chat message:', err)
+          reject(err)
+        } else {
+          resolve({ id: this.lastID })
+        }
+      })
+    })
+  }
+
+  // Get Battle Royale chat history
+  async getBattleRoyaleChatHistory(gameId, limit = 50) {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        'SELECT * FROM battle_royale_chat WHERE game_id = ? ORDER BY created_at DESC LIMIT ?',
+        [gameId, limit],
+        (err, messages) => {
+          if (err) {
+            console.error('❌ Error getting Battle Royale chat history:', err)
+            reject(err)
+          } else {
+            resolve(messages ? messages.reverse() : [])
+          }
+        }
+      )
+    })
+  }
+
   // ===== BACKUP AND RESTORE =====
   async createBackup() {
     console.log('📦 Creating database backup...')

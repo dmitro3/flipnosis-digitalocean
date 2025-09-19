@@ -1998,6 +1998,251 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
+  // ===== BATTLE ROYALE ENDPOINTS =====
+  
+  // Create Battle Royale game
+  router.post('/battle-royale/create', async (req, res) => {
+    try {
+      const {
+        creator,
+        nft_contract,
+        nft_token_id,
+        nft_name,
+        nft_image,
+        nft_collection,
+        entry_fee,
+        service_fee
+      } = req.body
+
+      // Validate required fields
+      if (!creator || !nft_contract || !nft_token_id || !entry_fee) {
+        return res.status(400).json({
+          error: 'Missing required fields: creator, nft_contract, nft_token_id, entry_fee'
+        })
+      }
+
+      // Generate unique game ID
+      const gameId = `br_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
+
+      // Create game in database
+      const gameData = {
+        id: gameId,
+        creator: creator.toLowerCase(),
+        nft_contract,
+        nft_token_id,
+        nft_name,
+        nft_image,
+        nft_collection,
+        entry_fee: parseFloat(entry_fee),
+        service_fee: parseFloat(service_fee || 0.50),
+        max_players: 8
+      }
+
+      await dbService.createBattleRoyaleGame(gameData)
+
+      console.log(`✅ Battle Royale game created: ${gameId}`)
+      
+      res.json({
+        success: true,
+        gameId,
+        message: 'Battle Royale game created successfully'
+      })
+
+    } catch (error) {
+      console.error('❌ Error creating Battle Royale game:', error)
+      res.status(500).json({
+        error: 'Failed to create Battle Royale game',
+        details: error.message
+      })
+    }
+  })
+
+  // Get Battle Royale game details
+  router.get('/battle-royale/:gameId', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        return res.status(404).json({ error: 'Battle Royale game not found' })
+      }
+
+      const participants = await dbService.getBattleRoyaleParticipants(gameId)
+      const rounds = await dbService.getBattleRoyaleRounds(gameId)
+
+      res.json({
+        success: true,
+        game: {
+          ...game,
+          participants,
+          rounds
+        }
+      })
+
+    } catch (error) {
+      console.error('❌ Error getting Battle Royale game:', error)
+      res.status(500).json({
+        error: 'Failed to get Battle Royale game',
+        details: error.message
+      })
+    }
+  })
+
+  // Get all Battle Royale games (with status filter)
+  router.get('/battle-royale', async (req, res) => {
+    try {
+      const { status, limit } = req.query
+      
+      const games = await dbService.getBattleRoyaleGames(
+        status || null, 
+        parseInt(limit) || 50
+      )
+
+      // Add participant count to each game
+      const gamesWithParticipants = await Promise.all(
+        games.map(async (game) => {
+          const participants = await dbService.getBattleRoyaleParticipants(game.id)
+          return {
+            ...game,
+            current_players: participants.length,
+            participants: participants.map(p => ({
+              address: p.player_address,
+              slot_number: p.slot_number,
+              entry_paid: p.entry_paid,
+              status: p.status
+            }))
+          }
+        })
+      )
+
+      res.json({
+        success: true,
+        games: gamesWithParticipants
+      })
+
+    } catch (error) {
+      console.error('❌ Error getting Battle Royale games:', error)
+      res.status(500).json({
+        error: 'Failed to get Battle Royale games',
+        details: error.message
+      })
+    }
+  })
+
+  // Join Battle Royale game
+  router.post('/battle-royale/:gameId/join', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const { player_address, slot_number, entry_amount, payment_hash } = req.body
+
+      if (!player_address) {
+        return res.status(400).json({ error: 'Player address is required' })
+      }
+
+      // Check if game exists and is accepting players
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        return res.status(404).json({ error: 'Battle Royale game not found' })
+      }
+
+      if (game.status !== 'filling') {
+        return res.status(400).json({ error: 'Game is not accepting new players' })
+      }
+
+      // Check if player already joined
+      const participants = await dbService.getBattleRoyaleParticipants(gameId)
+      const existingPlayer = participants.find(p => p.player_address.toLowerCase() === player_address.toLowerCase())
+      
+      if (existingPlayer) {
+        return res.status(400).json({ error: 'Player already joined this game' })
+      }
+
+      // Check if game is full
+      if (participants.length >= game.max_players) {
+        return res.status(400).json({ error: 'Game is full' })
+      }
+
+      // Find available slot
+      let assignedSlot = slot_number
+      if (!assignedSlot || participants.find(p => p.slot_number === assignedSlot)) {
+        assignedSlot = null
+        for (let i = 1; i <= game.max_players; i++) {
+          if (!participants.find(p => p.slot_number === i)) {
+            assignedSlot = i
+            break
+          }
+        }
+      }
+
+      if (!assignedSlot) {
+        return res.status(400).json({ error: 'No available slots' })
+      }
+
+      // Add player to game
+      const playerData = {
+        player_address: player_address.toLowerCase(),
+        slot_number: assignedSlot,
+        entry_paid: !!payment_hash,
+        entry_amount: parseFloat(entry_amount || game.entry_fee + game.service_fee),
+        entry_payment_hash: payment_hash
+      }
+
+      await dbService.addBattleRoyalePlayer(gameId, playerData)
+
+      // Update game player count
+      const newParticipantCount = participants.length + 1
+      await dbService.updateBattleRoyaleGame(gameId, {
+        current_players: newParticipantCount,
+        status: newParticipantCount >= game.max_players ? 'ready' : 'filling'
+      })
+
+      console.log(`✅ Player ${player_address} joined Battle Royale ${gameId} in slot ${assignedSlot}`)
+
+      res.json({
+        success: true,
+        slot_number: assignedSlot,
+        message: 'Successfully joined Battle Royale game'
+      })
+
+    } catch (error) {
+      console.error('❌ Error joining Battle Royale game:', error)
+      res.status(500).json({
+        error: 'Failed to join Battle Royale game',
+        details: error.message
+      })
+    }
+  })
+
+  // Update Battle Royale game (admin/server use)
+  router.patch('/battle-royale/:gameId', async (req, res) => {
+    try {
+      const { gameId } = req.params
+      const updates = req.body
+
+      // Validate game exists
+      const game = await dbService.getBattleRoyaleGame(gameId)
+      if (!game) {
+        return res.status(404).json({ error: 'Battle Royale game not found' })
+      }
+
+      await dbService.updateBattleRoyaleGame(gameId, updates)
+
+      console.log(`✅ Battle Royale game updated: ${gameId}`)
+
+      res.json({
+        success: true,
+        message: 'Battle Royale game updated successfully'
+      })
+
+    } catch (error) {
+      console.error('❌ Error updating Battle Royale game:', error)
+      res.status(500).json({
+        error: 'Failed to update Battle Royale game',
+        details: error.message
+      })
+    }
+  })
+
   return router
 }
 

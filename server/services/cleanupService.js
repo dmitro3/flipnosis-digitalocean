@@ -8,7 +8,7 @@ class CleanupService {
     this.CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
     this.MAX_AGE_MINUTES = 10 // 10 minutes for games without NFT deposits
     this.CONTRACT_CHECK_COOLDOWN_MS = 2 * 60 * 1000 // 2 minutes between contract checks
-    this.LATEST_CONTRACT_ADDRESS = '0xd76B12D50192492ebB56bD226127eE799658fF0a' // Latest contract only
+    this.LATEST_CONTRACT_ADDRESS = '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb' // Battle Royale contract
     this.GRACE_PERIOD_MINUTES = 5 // 5 minutes grace period for new games
   }
 

@@ -1,5 +1,6 @@
 const socketIO = require('socket.io')
 const GameStateManager = require('./GameStateManager')
+const BattleRoyaleGameManager = require('./BattleRoyaleGameManager')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
 // Single source of truth for all game state management
@@ -8,9 +9,11 @@ const GameStateManager = require('./GameStateManager')
 class GameServer {
   constructor() {
     this.gameStateManager = new GameStateManager()
+    this.battleRoyaleManager = new BattleRoyaleGameManager()
     this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
     this.userSockets = new Map() // address -> socketId
     this.gameRooms = new Map() // gameId -> Set of socketIds
+    this.battleRoyaleRooms = new Map() // gameId -> Set of socketIds
     this.io = null
     this.dbService = null
   }
@@ -61,6 +64,13 @@ class GameServer {
     socket.on('execute_flip', (data) => this.handleExecuteFlip(socket, data))
     socket.on('spectate_game', (data) => this.handleSpectateGame(socket, data))
     socket.on('request_next_round', (data) => this.handleRequestNextRound(socket, data))
+      
+      // ===== BATTLE ROYALE ACTIONS =====
+      socket.on('join_battle_royale', (data) => this.handleJoinBattleRoyale(socket, data))
+      socket.on('battle_royale_choice', (data) => this.handleBattleRoyaleChoice(socket, data))
+      socket.on('battle_royale_flip', (data) => this.handleBattleRoyaleFlip(socket, data))
+      socket.on('spectate_battle_royale', (data) => this.handleSpectateBattleRoyale(socket, data))
+      socket.on('request_battle_royale_state', (data) => this.handleRequestBattleRoyaleState(socket, data))
       
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))
@@ -712,29 +722,181 @@ class GameServer {
     }
   }
 
+  // ===== BATTLE ROYALE HANDLERS =====
+  async handleJoinBattleRoyale(socket, data) {
+    const { gameId, address } = data
+    console.log(`🎮 ${address} joining Battle Royale: ${gameId}`)
+    
+    // Get or create Battle Royale game
+    let game = this.battleRoyaleManager.getGame(gameId)
+    if (!game && this.dbService) {
+      // Try to load from database
+      try {
+        const gameData = await this.dbService.getBattleRoyaleGame(gameId)
+        if (gameData && gameData.status === 'filling') {
+          game = this.battleRoyaleManager.createBattleRoyale(gameId, gameData)
+        }
+      } catch (error) {
+        console.error('❌ Error loading Battle Royale game:', error)
+      }
+    }
+
+    if (!game) {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+      return
+    }
+
+    // Add player to game
+    const success = this.battleRoyaleManager.addPlayer(gameId, address)
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot join game' })
+      return
+    }
+
+    // Join room
+    const roomId = `br_${gameId}`
+    socket.join(roomId)
+    
+    // Track socket
+    this.socketData.set(socket.id, { 
+      address, 
+      gameId, 
+      roomId,
+      gameType: 'battle_royale',
+      role: 'player' 
+    })
+    
+    // Add to room tracking
+    if (!this.battleRoyaleRooms.has(gameId)) {
+      this.battleRoyaleRooms.set(gameId, new Set())
+    }
+    this.battleRoyaleRooms.get(gameId).add(socket.id)
+
+    // Broadcast updated game state
+    const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+    this.io.to(roomId).emit('battle_royale_state_update', fullState)
+
+    console.log(`✅ ${address} joined Battle Royale ${gameId}`)
+  }
+
+  async handleBattleRoyaleChoice(socket, data) {
+    const { gameId, address, choice } = data
+    console.log(`🎯 Battle Royale choice: ${address} chose ${choice} in ${gameId}`)
+    
+    const success = this.battleRoyaleManager.setPlayerChoice(gameId, address, choice)
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot set choice' })
+      return
+    }
+
+    // Broadcast updated state
+    const roomId = `br_${gameId}`
+    const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+    this.io.to(roomId).emit('battle_royale_state_update', fullState)
+  }
+
+  async handleBattleRoyaleFlip(socket, data) {
+    const { gameId, address, power } = data
+    console.log(`🪙 Battle Royale flip: ${address} flipping with power ${power} in ${gameId}`)
+    
+    const success = this.battleRoyaleManager.executePlayerFlip(gameId, address, power, (gameId, eventType, eventData) => {
+      const roomId = `br_${gameId}`
+      this.io.to(roomId).emit(eventType, eventData)
+    })
+
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot execute flip' })
+      return
+    }
+
+    // Broadcast updated state
+    const roomId = `br_${gameId}`
+    const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+    this.io.to(roomId).emit('battle_royale_state_update', fullState)
+  }
+
+  async handleSpectateBattleRoyale(socket, data) {
+    const { gameId, address } = data
+    console.log(`👁️ ${address} spectating Battle Royale: ${gameId}`)
+    
+    const game = this.battleRoyaleManager.getGame(gameId)
+    if (!game) {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+      return
+    }
+
+    // Add as spectator
+    this.battleRoyaleManager.addSpectator(gameId, address)
+    
+    // Join room
+    const roomId = `br_${gameId}`
+    socket.join(roomId)
+    
+    // Track socket
+    this.socketData.set(socket.id, { 
+      address, 
+      gameId, 
+      roomId,
+      gameType: 'battle_royale',
+      role: 'spectator' 
+    })
+
+    // Send current state
+    const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+    socket.emit('battle_royale_state_update', fullState)
+  }
+
+  async handleRequestBattleRoyaleState(socket, data) {
+    const { gameId } = data
+    console.log(`📊 Battle Royale state requested: ${gameId}`)
+    
+    const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+    if (fullState) {
+      socket.emit('battle_royale_state_update', fullState)
+    } else {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+    }
+  }
+
   // ===== DISCONNECTION =====
   handleDisconnect(socket) {
     console.log('❌ Disconnected:', socket.id)
     
     const data = this.socketData.get(socket.id)
     if (data) {
-      // Remove as spectator if applicable
-      if (data.gameId && data.role === 'spectator') {
+      // Handle regular game disconnection
+      if (data.gameType !== 'battle_royale' && data.gameId && data.role === 'spectator') {
         this.gameStateManager.removeSpectator(data.gameId, data.address)
+      }
+      
+      // Handle Battle Royale disconnection
+      if (data.gameType === 'battle_royale' && data.gameId && data.role === 'spectator') {
+        this.battleRoyaleManager.removeSpectator(data.gameId, data.address)
       }
       
       this.userSockets.delete(data.address.toLowerCase())
       this.socketData.delete(socket.id)
       
-      // Remove from game room tracking
-      if (data.gameId) {
+      // Remove from regular game room tracking
+      if (data.gameType !== 'battle_royale' && data.gameId) {
         const gameRoom = this.gameRooms.get(data.gameId)
         if (gameRoom) {
           gameRoom.delete(socket.id)
           if (gameRoom.size === 0) {
-            // No one left in room, stop broadcasting
             this.gameStateManager.stopStateBroadcasting(data.gameId)
             this.gameRooms.delete(data.gameId)
+          }
+        }
+      }
+      
+      // Remove from Battle Royale room tracking
+      if (data.gameType === 'battle_royale' && data.gameId) {
+        const brRoom = this.battleRoyaleRooms.get(data.gameId)
+        if (brRoom) {
+          brRoom.delete(socket.id)
+          if (brRoom.size === 0) {
+            // Consider cleaning up empty Battle Royale games
+            this.battleRoyaleRooms.delete(data.gameId)
           }
         }
       }

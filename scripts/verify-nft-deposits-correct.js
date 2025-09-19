@@ -7,7 +7,7 @@ const DATABASE_PATH = '/opt/flipnosis/app/server/flipz.db'
 
 // Contract configuration - LATEST CONTRACT ADDRESS ONLY
 const RPC_URL = 'https://mainnet.base.org'
-const LATEST_CONTRACT_ADDRESS = '0xd76B12D50192492ebB56bD226127eE799658fF0a'
+const LATEST_CONTRACT_ADDRESS = '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb'
 
 async function verifyNFTDeposits() {
   console.log('🔧 Verifying NFT Deposits with Correct Contract Structure...\n')

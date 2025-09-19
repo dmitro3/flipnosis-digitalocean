@@ -35,7 +35,7 @@ Successfully replaced all instances of the old contract address with the new one
 ## 🔄 Address Change
 
 **Old Contract Address**: `0x6cB1E31F2A3df57A7265ED2eE26dcF8D02CE1B69`  
-**New Contract Address**: `0xd76B12D50192492ebB56bD226127eE799658fF0a`
+**New Contract Address**: `0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb`
 
 ## 📊 Impact
 

@@ -7,7 +7,7 @@ const alchemy = new Alchemy({
 })
 
 async function testContractNFTs() {
-  const contractAddress = '0xd76B12D50192492ebB56bD226127eE799658fF0a'
+  const contractAddress = '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb'
   const walletAddress = '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'
   
   console.log('🔍 Testing NFT queries...')

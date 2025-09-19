@@ -5,7 +5,7 @@ async function main() {
   console.log("=" .repeat(60));
 
   // Contract address on Base
-  const contractAddress = "0xd76B12D50192492ebB56bD226127eE799658fF0a";
+  const contractAddress = "0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb";
   
   // Old admin wallet (current owner)
   const oldAdminWallet = "0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628";

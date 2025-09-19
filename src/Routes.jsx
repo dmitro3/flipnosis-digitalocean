@@ -8,6 +8,8 @@ import LobbyFinal from "./components/LobbyFinal";  // Direct lobby component
 import FlipSuiteFinal from "./components/FlipSuiteFinal";  // New clean game room
 import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
+import BattleRoyaleLobby from "./components/BattleRoyale/BattleRoyaleLobby";
+import BattleRoyaleGameRoom from "./components/BattleRoyale/BattleRoyaleGameRoom";
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +51,14 @@ export const router = createBrowserRouter([
       {
         path: "leaderboard",
         element: <Leaderboard />,
+      },
+      {
+        path: "battle-royale/:gameId",
+        element: <BattleRoyaleLobby />,
+      },
+      {
+        path: "battle-royale/:gameId/play",
+        element: <BattleRoyaleGameRoom />,
       },
     ],
   },

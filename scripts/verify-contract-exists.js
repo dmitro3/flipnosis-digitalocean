@@ -4,7 +4,7 @@ async function verifyContractExists() {
   console.log('🔍 Verifying Contract Exists...\n')
   
   const RPC_URL = 'https://mainnet.base.org'
-  const CONTRACT_ADDRESS = '0xd76B12D50192492ebB56bD226127eE799658fF0a'
+  const CONTRACT_ADDRESS = '0xDE5B1D7Aa9913089710184da2Ba6980D661FDedb'
   
   try {
     const provider = new ethers.JsonRpcProvider(RPC_URL)

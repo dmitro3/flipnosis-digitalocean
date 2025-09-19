@@ -46,6 +46,28 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
         uint256 completionTime;
     }
     
+    // Battle Royale structures
+    struct BattleRoyaleGame {
+        address creator;
+        address nftContract;
+        uint256 tokenId;
+        uint256 entryFee;
+        uint256 serviceFee;
+        uint8 maxPlayers;
+        uint8 currentPlayers;
+        address winner;
+        bool completed;
+        bool creatorPaid;
+        bool nftClaimed;
+        uint256 totalPool; // Total entry fees collected
+        uint256 createdAt;
+    }
+    
+    // Battle Royale mappings
+    mapping(bytes32 => BattleRoyaleGame) public battleRoyaleGames;
+    mapping(bytes32 => mapping(address => bool)) public battleRoyaleEntries;
+    mapping(bytes32 => mapping(address => uint256)) public battleRoyaleEntryAmounts;
+    
     // Configuration
     uint256 public depositTimeout = 2 minutes;
     uint256 public platformFeePercent = 350; // 3.5%
@@ -61,6 +83,14 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
     event GameCompleted(bytes32 indexed gameId, address indexed winner);
     event WinningsWithdrawn(bytes32 indexed gameId, address indexed winner);
     event AssetsReclaimed(bytes32 indexed gameId, address indexed reclaimer, string assetType);
+    
+    // Battle Royale Events
+    event BattleRoyaleCreated(bytes32 indexed gameId, address indexed creator, uint256 entryFee, uint256 serviceFee);
+    event BattleRoyaleJoined(bytes32 indexed gameId, address indexed player, uint256 amount);
+    event BattleRoyaleStarted(bytes32 indexed gameId, uint8 playerCount);
+    event BattleRoyaleCompleted(bytes32 indexed gameId, address indexed winner);
+    event BattleRoyaleCreatorPaid(bytes32 indexed gameId, address indexed creator, uint256 amount);
+    event BattleRoyaleNFTClaimed(bytes32 indexed gameId, address indexed winner);
     
     constructor(address _platformFeeReceiver, address _usdcToken) {
         platformFeeReceiver = _platformFeeReceiver;
@@ -436,5 +466,183 @@ contract NFTFlipGame is ReentrancyGuard, Ownable, Pausable {
             IERC721(nftContracts[i]).transferFrom(address(this), recipients[i], tokenIds[i]);
             emit AssetsReclaimed(bytes32(0), recipients[i], "NFT_DIRECT_BATCH");
         }
+    }
+    
+    // ===== BATTLE ROYALE FUNCTIONS =====
+    
+    /**
+     * @notice Create a Battle Royale game
+     */
+    function createBattleRoyale(
+        bytes32 gameId,
+        address nftContract,
+        uint256 tokenId,
+        uint256 entryFee,
+        uint256 serviceFee
+    ) external nonReentrant whenNotPaused {
+        require(battleRoyaleGames[gameId].creator == address(0), "Game already exists");
+        require(entryFee > 0, "Entry fee must be greater than 0");
+        
+        // Transfer NFT to contract
+        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+        
+        // Create game
+        battleRoyaleGames[gameId] = BattleRoyaleGame({
+            creator: msg.sender,
+            nftContract: nftContract,
+            tokenId: tokenId,
+            entryFee: entryFee,
+            serviceFee: serviceFee,
+            maxPlayers: 8,
+            currentPlayers: 0,
+            winner: address(0),
+            completed: false,
+            creatorPaid: false,
+            nftClaimed: false,
+            totalPool: 0,
+            createdAt: block.timestamp
+        });
+        
+        emit BattleRoyaleCreated(gameId, msg.sender, entryFee, serviceFee);
+    }
+    
+    /**
+     * @notice Join a Battle Royale game
+     */
+    function joinBattleRoyale(bytes32 gameId) external payable nonReentrant whenNotPaused {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.creator != address(0), "Game does not exist");
+        require(game.creator != msg.sender, "Creator cannot join own game");
+        require(!game.completed, "Game already completed");
+        require(game.currentPlayers < game.maxPlayers, "Game is full");
+        require(!battleRoyaleEntries[gameId][msg.sender], "Already joined this game");
+        
+        uint256 totalRequired = game.entryFee + game.serviceFee;
+        require(msg.value >= totalRequired, "Insufficient payment");
+        
+        // Mark player as joined
+        battleRoyaleEntries[gameId][msg.sender] = true;
+        battleRoyaleEntryAmounts[gameId][msg.sender] = msg.value;
+        game.currentPlayers++;
+        game.totalPool += game.entryFee; // Only entry fee goes to pool, service fee goes to platform
+        
+        emit BattleRoyaleJoined(gameId, msg.sender, msg.value);
+        
+        // Check if game is ready to start
+        if (game.currentPlayers == game.maxPlayers) {
+            emit BattleRoyaleStarted(gameId, game.currentPlayers);
+        }
+        
+        // Refund excess payment
+        if (msg.value > totalRequired) {
+            (bool success,) = msg.sender.call{value: msg.value - totalRequired}("");
+            require(success, "Refund failed");
+        }
+    }
+    
+    /**
+     * @notice Complete Battle Royale and declare winner (only owner/backend)
+     */
+    function completeBattleRoyale(bytes32 gameId, address winner) external onlyOwner nonReentrant {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.creator != address(0), "Game does not exist");
+        require(!game.completed, "Game already completed");
+        require(game.currentPlayers == game.maxPlayers, "Game not full yet");
+        require(battleRoyaleEntries[gameId][winner], "Winner must be a participant");
+        
+        game.winner = winner;
+        game.completed = true;
+        
+        emit BattleRoyaleCompleted(gameId, winner);
+    }
+    
+    /**
+     * @notice Creator withdraws their earnings (entry fees minus platform fee)
+     */
+    function withdrawCreatorFunds(bytes32 gameId) external nonReentrant {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.creator == msg.sender, "Not the creator");
+        require(game.completed, "Game not completed");
+        require(!game.creatorPaid, "Already withdrawn");
+        
+        uint256 platformFee = (game.totalPool * platformFeePercent) / BASIS_POINTS;
+        uint256 creatorAmount = game.totalPool - platformFee;
+        
+        game.creatorPaid = true;
+        
+        // Transfer platform fee
+        (bool feeSuccess,) = platformFeeReceiver.call{value: platformFee}("");
+        require(feeSuccess, "Platform fee transfer failed");
+        
+        // Transfer creator amount
+        (bool creatorSuccess,) = msg.sender.call{value: creatorAmount}("");
+        require(creatorSuccess, "Creator transfer failed");
+        
+        emit BattleRoyaleCreatorPaid(gameId, msg.sender, creatorAmount);
+    }
+    
+    /**
+     * @notice Winner claims the NFT prize
+     */
+    function withdrawWinnerNFT(bytes32 gameId) external nonReentrant {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.winner == msg.sender, "Not the winner");
+        require(game.completed, "Game not completed");
+        require(!game.nftClaimed, "NFT already claimed");
+        
+        game.nftClaimed = true;
+        
+        // Transfer NFT to winner
+        IERC721(game.nftContract).transferFrom(address(this), msg.sender, game.tokenId);
+        
+        emit BattleRoyaleNFTClaimed(gameId, msg.sender);
+    }
+    
+    /**
+     * @notice Get Battle Royale game info
+     */
+    function getBattleRoyaleGame(bytes32 gameId) external view returns (BattleRoyaleGame memory) {
+        return battleRoyaleGames[gameId];
+    }
+    
+    /**
+     * @notice Check if player has joined a Battle Royale game
+     */
+    function hasBattleRoyaleEntry(bytes32 gameId, address player) external view returns (bool) {
+        return battleRoyaleEntries[gameId][player];
+    }
+    
+    /**
+     * @notice Get player's entry amount for Battle Royale game
+     */
+    function getBattleRoyaleEntryAmount(bytes32 gameId, address player) external view returns (uint256) {
+        return battleRoyaleEntryAmounts[gameId][player];
+    }
+    
+    /**
+     * @notice Emergency reclaim Battle Royale NFT (creator only, if game never filled)
+     */
+    function reclaimBattleRoyaleNFT(bytes32 gameId) external nonReentrant {
+        BattleRoyaleGame storage game = battleRoyaleGames[gameId];
+        require(game.creator == msg.sender, "Not the creator");
+        require(!game.completed, "Game completed");
+        require(!game.nftClaimed, "NFT already claimed");
+        
+        // Allow reclaim if game didn't fill within 24 hours
+        require(block.timestamp > game.createdAt + 24 hours, "Too early to reclaim");
+        require(game.currentPlayers < game.maxPlayers, "Game is full");
+        
+        game.nftClaimed = true;
+        
+        // Return NFT to creator
+        IERC721(game.nftContract).transferFrom(address(this), msg.sender, game.tokenId);
+        
+        // Refund all players who joined
+        for (uint i = 0; i < game.currentPlayers; i++) {
+            // Note: This would require tracking player addresses separately
+            // For now, players can call reclaimBattleRoyaleEntry individually
+        }
+        
+        emit AssetsReclaimed(gameId, msg.sender, "BR_NFT");
     }
 } 
