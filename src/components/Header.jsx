@@ -335,13 +335,11 @@ const Header = () => {
         </LogoContainer>
 
         <DesktopNav>
-          <CreateButton to="/create">Create Flip</CreateButton>
           <CreateButton 
             to="/create-battle" 
             style={{ 
               background: 'linear-gradient(45deg, #ff1493, #ff69b4)',
-              borderColor: '#ff1493',
-              marginLeft: '0.5rem'
+              borderColor: '#ff1493'
             }}
           >
             🏆 Create Battle
