@@ -763,46 +763,70 @@ const CreateFlip = () => {
                 </NFTPreview>
               </FormGroup>
 
-              {/* SIMPLE GAME MODE DROPDOWN - Right beneath NFT selection */}
-              <FormGroup>
-                <Label style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ff1493' }}>
-                  🎮 Game Mode
+              {/* GAME MODE SELECTION - VERY OBVIOUS */}
+              <FormGroup style={{
+                background: 'rgba(255, 20, 147, 0.15)',
+                border: '3px solid #ff1493',
+                borderRadius: '1rem',
+                padding: '1.5rem',
+                marginBottom: '2rem'
+              }}>
+                <Label style={{ 
+                  fontSize: '1.3rem', 
+                  fontWeight: 'bold', 
+                  color: '#ff1493',
+                  textAlign: 'center',
+                  display: 'block',
+                  marginBottom: '1rem',
+                  textTransform: 'uppercase'
+                }}>
+                  🎮 CHOOSE GAME TYPE
                 </Label>
+                
                 <Select 
                   value={gameMode} 
                   onChange={(e) => {
                     setGameMode(e.target.value)
-                    console.log('🎮 Game mode changed to:', e.target.value)
+                    console.log('🎮 GAME MODE SELECTED:', e.target.value)
+                    alert('Game mode changed to: ' + e.target.value) // Temporary debug
                   }}
                   style={{ 
                     width: '100%', 
-                    padding: '1rem',
-                    fontSize: '1.1rem',
+                    padding: '1.2rem',
+                    fontSize: '1.2rem',
                     fontWeight: 'bold',
                     background: '#000',
-                    border: '2px solid #ff1493',
-                    borderRadius: '0.5rem',
-                    color: '#fff'
+                    border: '3px solid #ff1493',
+                    borderRadius: '0.8rem',
+                    color: '#fff',
+                    textAlign: 'center',
+                    cursor: 'pointer'
                   }}
                 >
-                  <option value="nft-vs-crypto">⚔️ 1v1 Duel (Classic)</option>
-                  <option value="battle-royale">🏆 Battle Royale (8 Players)</option>
+                  <option value="nft-vs-crypto" style={{ background: '#000', color: '#fff' }}>
+                    ⚔️ 1v1 DUEL - Classic NFT vs Crypto Battle
+                  </option>
+                  <option value="battle-royale" style={{ background: '#000', color: '#fff' }}>
+                    🏆 BATTLE ROYALE - 8-Player Tournament (NEW!)
+                  </option>
                 </Select>
                 
-                {gameMode === 'battle-royale' && (
-                  <div style={{
-                    marginTop: '0.5rem',
-                    padding: '0.75rem',
-                    background: 'rgba(255, 20, 147, 0.1)',
-                    border: '1px solid #ff1493',
-                    borderRadius: '0.5rem',
-                    color: '#ff1493',
-                    fontSize: '0.9rem',
-                    textAlign: 'center'
-                  }}>
-                    🚀 NEW: 8-player elimination tournament!
-                  </div>
-                )}
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '1rem',
+                  background: gameMode === 'battle-royale' ? 'rgba(0, 255, 136, 0.1)' : 'rgba(0, 191, 255, 0.1)',
+                  border: `2px solid ${gameMode === 'battle-royale' ? '#00ff88' : '#00bfff'}`,
+                  borderRadius: '0.5rem',
+                  color: gameMode === 'battle-royale' ? '#00ff88' : '#00bfff',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
+                  {gameMode === 'battle-royale' ? 
+                    '🏆 BATTLE ROYALE SELECTED - 8 players will compete for your NFT!' :
+                    '⚔️ 1V1 DUEL SELECTED - One challenger will face you!'
+                  }
+                </div>
               </FormGroup>
 
 
