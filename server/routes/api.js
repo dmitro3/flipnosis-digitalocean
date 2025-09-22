@@ -2180,12 +2180,13 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         return res.status(400).json({ error: 'No available slots' })
       }
 
-      // Add player to game
+      // Add player to game with new pricing (1/7th of total prize + service fee)
+      const entryFeePerPlayer = game.entry_fee / 7 // Each joining player pays 1/7th of total prize
       const playerData = {
         player_address: player_address.toLowerCase(),
         slot_number: assignedSlot,
         entry_paid: !!payment_hash,
-        entry_amount: parseFloat(entry_amount || game.entry_fee + game.service_fee),
+        entry_amount: parseFloat(entry_amount || entryFeePerPlayer + game.service_fee),
         entry_payment_hash: payment_hash
       }
 

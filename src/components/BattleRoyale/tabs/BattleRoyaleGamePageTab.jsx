@@ -221,6 +221,31 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const [players, setPlayers] = useState(new Array(8).fill(null))
   const [gameStatus, setGameStatus] = useState('filling')
   const [currentPlayers, setCurrentPlayers] = useState(0)
+  
+  // Initialize creator in slot 0 when game loads
+  useEffect(() => {
+    if (gameData && gameData.creator) {
+      const newPlayers = [...players]
+      if (!newPlayers[0] || newPlayers[0].address !== gameData.creator) {
+        newPlayers[0] = {
+          address: gameData.creator,
+          joinedAt: new Date().toISOString(),
+          coin: { id: 'plain', type: 'default', name: 'Classic' },
+          isCreator: true,
+          entryPaid: true
+        }
+        setPlayers(newPlayers)
+        setCurrentPlayers(prev => {
+          // Only increment if creator wasn't already counted
+          return prev === 0 ? 1 : prev
+        })
+        setPlayerCoins(prev => ({
+          ...prev,
+          [gameData.creator]: { id: 'plain', type: 'default', name: 'Classic' }
+        }))
+      }
+    }
+  }, [gameData])
   const [isJoining, setIsJoining] = useState(false)
   const [showCoinSelector, setShowCoinSelector] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
@@ -229,6 +254,10 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address === address)
   const canJoin = !userAlreadyJoined && !isCreator && currentPlayers < 8 && gameStatus === 'filling'
+  
+  // Calculate the entry fee for joining players (1/7th of total prize)
+  const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
+  const entryFeePerPlayer = totalPrize / 7 // Each of the 7 joining players pays 1/7th
 
   const handleSlotClick = async (slotIndex) => {
     if (!canJoin || players[slotIndex] !== null) return
@@ -259,8 +288,9 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     try {
       showToast('Opening MetaMask to join game...', 'info')
       
-      // Calculate total amount in USD (entry fee + service fee)
-      const entryFeeUSD = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
+      // Calculate total amount in USD (1/7th of prize + service fee)
+      const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
+      const entryFeeUSD = totalPrize / 7 // Each joining player pays 1/7th of total prize
       const serviceFeeUSD = parseFloat(gameData.serviceFee || gameData.service_fee || 0)
       const totalAmountUSD = entryFeeUSD + serviceFeeUSD
       
@@ -371,7 +401,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
            'Game In Progress'}
         </div>
         <div className="players-count">
-          {currentPlayers} / 8 Players Joined
+          {currentPlayers} / 8 Players Joined (Creator + {currentPlayers - 1} Joiners)
         </div>
       </GameStatus>
 
@@ -431,7 +461,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
       {isCreator && (
         <div style={{ textAlign: 'center', color: '#ff1493' }}>
-          <p>You are the creator of this Battle Royale. You cannot participate but will receive the entry fees when the game completes!</p>
+          <p>🎮 You are the creator and first player! You play for FREE and have a chance to win the NFT and all entry fees!</p>
         </div>
       )}
 
@@ -441,7 +471,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             onClick={() => handleSlotClick(players.findIndex(p => p === null))}
             disabled={!canJoin || isJoining}
           >
-            {isJoining ? 'Joining Game...' : `Join Battle Royale - $${((gameData.entryFee || gameData.entry_fee || 0) + (gameData.serviceFee || gameData.service_fee || 0)).toFixed(2)}`}
+            {isJoining ? 'Joining Game...' : `Join Battle Royale - $${(entryFeePerPlayer + (gameData.serviceFee || gameData.service_fee || 0)).toFixed(2)}`}
           </JoinButton>
         </div>
       )}

@@ -543,7 +543,45 @@ class DatabaseService {
           reject(err)
         } else {
           console.log('✅ Battle Royale game created:', gameData.id)
-          resolve({ id: gameData.id })
+          
+          // Automatically add creator as first player (slot 0) with free entry
+          const addCreatorSql = `
+            INSERT INTO battle_royale_participants (
+              game_id, player_address, slot_number, entry_paid, entry_amount, 
+              status, joined_at
+            ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+          `
+          
+          this.db.run(addCreatorSql, [
+            gameData.id,
+            gameData.creator,
+            0, // Creator gets slot 0
+            true, // Creator is marked as "paid" (free entry)
+            0, // Creator pays nothing
+            'active'
+          ], function(creatorErr) {
+            if (creatorErr) {
+              console.error('❌ Error adding creator as participant:', creatorErr)
+              // Don't reject the whole operation, just log the error
+            } else {
+              console.log('✅ Creator added as first participant:', gameData.creator)
+            }
+            
+            // Update current_players count
+            this.db.run(
+              'UPDATE battle_royale_games SET current_players = 1 WHERE id = ?',
+              [gameData.id],
+              function(updateErr) {
+                if (updateErr) {
+                  console.error('❌ Error updating current_players count:', updateErr)
+                } else {
+                  console.log('✅ Updated current_players count to 1')
+                }
+                
+                resolve({ id: gameData.id })
+              }
+            )
+          })
         }
       })
     })

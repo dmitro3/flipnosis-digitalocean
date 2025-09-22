@@ -80,10 +80,62 @@ class BattleRoyaleGameManager {
 
     this.battleRoyaleGames.set(gameId, battleRoyaleState)
     console.log(`✅ Battle Royale game created: ${gameId}`)
+    
+    // Automatically add the creator as the first player (slot 0) for free
+    this.addCreatorAsPlayer(gameId, gameData.creator)
+    
     return battleRoyaleState
   }
 
   // ===== PLAYER MANAGEMENT =====
+  addCreatorAsPlayer(gameId, creatorAddress) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) {
+      console.error(`❌ Game not found: ${gameId}`)
+      return false
+    }
+
+    if (game.players.has(creatorAddress)) {
+      console.log(`ℹ️ Creator already added to game: ${creatorAddress}`)
+      return true
+    }
+
+    // Create player state for creator (free entry)
+    const creatorState = {
+      address: creatorAddress,
+      slotNumber: 0, // Creator always gets slot 0
+      entryPaid: true, // Creator pays nothing but is marked as "paid"
+      status: 'active',
+      joinedAt: new Date().toISOString(),
+      
+      // Current round state
+      choice: null, // 'heads' or 'tails'
+      power: 0, // 0-10
+      coinResult: null, // actual flip result
+      hasFlipped: false,
+      flipTime: null,
+      
+      // Game stats
+      roundsParticipated: 0,
+      roundsSurvived: 0,
+      eliminatedInRound: null,
+      
+      // Creator-specific
+      isCreator: true,
+      entryAmount: 0 // Creator pays nothing
+    }
+
+    // Add creator to game
+    game.players.set(creatorAddress, creatorState)
+    game.playerSlots[0] = creatorAddress // Creator gets slot 0
+    game.activePlayers.add(creatorAddress)
+    game.currentPlayers++
+    game.lastActivity = Date.now()
+
+    console.log(`✅ Creator ${creatorAddress} added as first player in game ${gameId}`)
+    return true
+  }
+
   addPlayer(gameId, playerAddress, slotNumber = null) {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) {
@@ -107,14 +159,14 @@ class BattleRoyaleGameManager {
     }
 
     if (playerAddress.toLowerCase() === game.creator.toLowerCase()) {
-      console.error(`❌ Creator cannot join own game: ${playerAddress}`)
+      console.error(`❌ Creator already in game as player: ${playerAddress}`)
       return false
     }
 
-    // Find available slot
+    // Find available slot (skip slot 0 as it's reserved for creator)
     let assignedSlot = slotNumber
-    if (assignedSlot === null || game.playerSlots[assignedSlot] !== null) {
-      assignedSlot = game.playerSlots.findIndex(slot => slot === null)
+    if (assignedSlot === null || game.playerSlots[assignedSlot] !== null || assignedSlot === 0) {
+      assignedSlot = game.playerSlots.findIndex((slot, index) => slot === null && index > 0)
       if (assignedSlot === -1) {
         console.error(`❌ No available slots: ${gameId}`)
         return false
@@ -128,6 +180,7 @@ class BattleRoyaleGameManager {
       entryPaid: false, // Will be set to true when blockchain payment confirmed
       status: 'active',
       joinedAt: new Date().toISOString(),
+      entryAmount: game.entryFee + game.serviceFee, // Regular players pay full amount
       
       // Current round state
       choice: null, // 'heads' or 'tails'
@@ -151,7 +204,7 @@ class BattleRoyaleGameManager {
 
     console.log(`✅ Player ${playerAddress} added to slot ${assignedSlot} in game ${gameId}`)
 
-    // Check if game is ready to start
+    // Check if game is ready to start (7 paying players + 1 creator = 8 total)
     if (game.currentPlayers === game.maxPlayers) {
       this.prepareGameStart(gameId)
     }
