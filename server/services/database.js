@@ -654,7 +654,8 @@ class DatabaseService {
             ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
           `
           
-          this.db.run(addCreatorSql, [
+          const self = this
+          self.db.run(addCreatorSql, [
             gameData.id,
             gameData.creator,
             0, // Creator gets slot 0
