@@ -214,7 +214,8 @@ const CoinSelectionModal = styled.div`
 
 const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const { showToast } = useToast()
-  const contractService = useContractService()
+  const { contractService } = useContractService()
+  const { isContractInitialized } = useWallet()
   
   const [players, setPlayers] = useState(new Array(8).fill(null))
   const [gameStatus, setGameStatus] = useState('filling')
@@ -245,8 +246,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   }
 
   const joinGame = async (slotIndex) => {
-    if (!contractService || !gameData) {
-      showToast('Contract service not available', 'error')
+    console.log('🎮 Join game called with:', { slotIndex, contractService: !!contractService, isContractInitialized, gameData: !!gameData })
+    
+    if (!contractService || !isContractInitialized || !gameData) {
+      console.log('❌ Contract service not ready:', { contractService: !!contractService, isContractInitialized, gameData: !!gameData })
+      showToast('Contract service not ready. Please ensure your wallet is connected to Base network.', 'error')
       return
     }
 
@@ -265,6 +269,10 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         serviceFee,
         totalAmount
       })
+      
+      // Debug: Check what methods are available on contractService
+      console.log('🔍 Contract service methods:', Object.getOwnPropertyNames(contractService))
+      console.log('🔍 Contract service prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(contractService)))
       
       // Call the contract service to join the game
       const result = await contractService.joinBattleRoyale(gameId, totalAmount)

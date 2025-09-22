@@ -176,14 +176,20 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   
   // Load game data on mount
   useEffect(() => {
+    console.log('🔄 BattleRoyaleTabbedInterface: Loading game data for gameId:', gameId)
     loadGameData()
   }, [loadGameData])
   
   // ===== TAB SWITCHING LOGIC =====
   const handleTabChange = useCallback((tabId) => {
-    console.log(`📑 Switching to tab: ${tabId}`)
+    console.log(`📑 Switching to tab: ${tabId} (current tab: ${activeTab})`)
     setActiveTab(tabId)
-  }, [])
+  }, [activeTab])
+  
+  // Debug: Track activeTab changes
+  useEffect(() => {
+    console.log(`📑 Active tab changed to: ${activeTab}`)
+  }, [activeTab])
   
   // ===== TAB RENDERING =====
   const renderTabContent = () => {
