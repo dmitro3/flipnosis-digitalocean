@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { useWallet } from '../../../contexts/WalletContext'
 import { useToast } from '../../../contexts/ToastContext'
+import { useContractService } from '../../../utils/useContractService'
 import { getApiUrl } from '../../../config/api'
+import CoinSelector from '../../CoinSelector'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -22,7 +24,7 @@ const PlayersGrid = styled.div`
   gap: 1rem;
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(15px);
-  border: 6px solid rgba(255, 20, 147, 0.3);
+  border: 3px solid rgba(255, 215, 0, 0.6);
   border-radius: 1rem;
   padding: 2rem;
   
@@ -96,6 +98,32 @@ const PlayerSlot = styled.div`
     border-radius: 50%;
     background: ${props => props.occupied ? '#00ff88' : '#666'};
   }
+  
+  .coin-display {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #FFD700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .coin-change-button {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid #FFD700;
+    color: #FFD700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.6rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: rgba(255, 215, 0, 0.3);
+      transform: scale(1.05);
+    }
+  }
 `
 
 const GameStatus = styled.div`
@@ -103,7 +131,7 @@ const GameStatus = styled.div`
   padding: 1rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 1rem;
-  border: 6px solid rgba(255, 20, 147, 0.3);
+  border: 3px solid rgba(255, 215, 0, 0.6);
   backdrop-filter: blur(15px);
   
   .status-text {
@@ -143,13 +171,58 @@ const JoinButton = styled.button`
   }
 `
 
+const CoinSelectionModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  
+  .modal-content {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid #FFD700;
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  
+  .close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #FFD700;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    
+    &:hover {
+      color: #ff6b6b;
+    }
+  }
+`
+
 const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const { showToast } = useToast()
+  const contractService = useContractService()
   
   const [players, setPlayers] = useState(new Array(8).fill(null))
   const [gameStatus, setGameStatus] = useState('filling')
   const [currentPlayers, setCurrentPlayers] = useState(0)
   const [isJoining, setIsJoining] = useState(false)
+  const [showCoinSelector, setShowCoinSelector] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState(null)
+  const [playerCoins, setPlayerCoins] = useState({}) // Store each player's coin choice
 
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address === address)
@@ -158,15 +231,100 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const handleSlotClick = async (slotIndex) => {
     if (!canJoin || players[slotIndex] !== null) return
     
+    // If it's the current user's slot and they want to change coin
+    if (players[slotIndex]?.address === address) {
+      setSelectedSlot(slotIndex)
+      setShowCoinSelector(true)
+      return
+    }
+    
+    // If it's an empty slot and user can join
+    if (players[slotIndex] === null && canJoin) {
+      await joinGame(slotIndex)
+    }
+  }
+
+  const joinGame = async (slotIndex) => {
+    if (!contractService || !gameData) {
+      showToast('Contract service not available', 'error')
+      return
+    }
+
     setIsJoining(true)
     try {
-      // TODO: Implement join game logic
-      console.log('Joining slot:', slotIndex)
-      showToast('Joining game...', 'info')
+      showToast('Opening MetaMask to join game...', 'info')
+      
+      // Calculate total amount (entry fee + service fee)
+      const entryFee = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
+      const serviceFee = parseFloat(gameData.serviceFee || gameData.service_fee || 0)
+      const totalAmount = entryFee + serviceFee
+      
+      console.log('🎮 Joining Battle Royale:', {
+        gameId,
+        entryFee,
+        serviceFee,
+        totalAmount
+      })
+      
+      // Call the contract service to join the game
+      const result = await contractService.joinBattleRoyale(gameId, totalAmount)
+      
+      if (result.success) {
+        showToast('Successfully joined the game!', 'success')
+        
+        // Update local state to show the player in the slot
+        const newPlayers = [...players]
+        newPlayers[slotIndex] = {
+          address: address,
+          joinedAt: new Date().toISOString(),
+          coin: { id: 'plain', type: 'default', name: 'Classic' } // Default coin
+        }
+        setPlayers(newPlayers)
+        setCurrentPlayers(prev => prev + 1)
+        
+        // Set default coin for the player
+        setPlayerCoins(prev => ({
+          ...prev,
+          [address]: { id: 'plain', type: 'default', name: 'Classic' }
+        }))
+        
+        // Update game status if all slots are filled
+        if (currentPlayers + 1 >= 8) {
+          setGameStatus('starting')
+        }
+        
+        console.log('✅ Successfully joined Battle Royale game')
+      } else {
+        throw new Error(result.error || 'Failed to join game')
+      }
     } catch (error) {
-      showToast('Failed to join game', 'error')
+      console.error('❌ Error joining game:', error)
+      showToast(`Failed to join game: ${error.message}`, 'error')
+    } finally {
+      setIsJoining(false)
     }
-    setIsJoining(false)
+  }
+
+  const handleCoinSelect = (coin) => {
+    if (selectedSlot !== null && players[selectedSlot]?.address === address) {
+      // Update the player's coin choice
+      setPlayerCoins(prev => ({
+        ...prev,
+        [address]: coin
+      }))
+      
+      // Update the player object in the slot
+      const newPlayers = [...players]
+      newPlayers[selectedSlot] = {
+        ...newPlayers[selectedSlot],
+        coin: coin
+      }
+      setPlayers(newPlayers)
+      
+      showToast(`Coin changed to ${coin.name}`, 'success')
+    }
+    setShowCoinSelector(false)
+    setSelectedSlot(null)
   }
 
   const formatAddress = (addr) => {
@@ -214,9 +372,33 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             <div className="slot-number">{index + 1}</div>
             {player ? (
               <>
+                {/* Coin Display */}
+                <div 
+                  className="coin-display"
+                  style={{
+                    backgroundImage: player.coin?.headsImage ? `url(${player.coin.headsImage})` : 'none',
+                    backgroundColor: player.coin?.headsImage ? 'transparent' : 'rgba(255, 215, 0, 0.3)'
+                  }}
+                />
+                
                 <div className="player-address">
                   {formatAddress(player.address)}
                 </div>
+                
+                {/* Coin Change Button for current user */}
+                {player.address === address && (
+                  <button 
+                    className="coin-change-button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedSlot(index)
+                      setShowCoinSelector(true)
+                    }}
+                  >
+                    Change Coin
+                  </button>
+                )}
+                
                 <div className="status-indicator" />
               </>
             ) : (
@@ -253,6 +435,35 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         <div style={{ textAlign: 'center', color: '#00ff88' }}>
           <p>✅ You've joined the Battle Royale! Waiting for other players...</p>
         </div>
+      )}
+
+      {/* Coin Selection Modal */}
+      {showCoinSelector && (
+        <CoinSelectionModal>
+          <div className="modal-content">
+            <button 
+              className="close-button"
+              onClick={() => {
+                setShowCoinSelector(false)
+                setSelectedSlot(null)
+              }}
+            >
+              ×
+            </button>
+            <h2 style={{ 
+              color: '#FFD700', 
+              textAlign: 'center', 
+              marginBottom: '1rem' 
+            }}>
+              Choose Your Coin
+            </h2>
+            <CoinSelector 
+              onCoinSelect={handleCoinSelect}
+              selectedCoin={playerCoins[address] || { id: 'plain', type: 'default', name: 'Classic' }}
+              showCustomOption={true}
+            />
+          </div>
+        </CoinSelectionModal>
       )}
     </TabContainer>
   )
