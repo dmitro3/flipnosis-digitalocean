@@ -646,7 +646,8 @@ class DatabaseService {
         } else {
           console.log('✅ Battle Royale game created:', gameData.id)
           
-          // Automatically add creator as first player (slot 0) with free entry
+          // Temporarily disabled - Automatically add creator as first player (slot 0) with free entry
+          /*
           const addCreatorSql = `
             INSERT INTO battle_royale_participants (
               game_id, player_address, slot_number, entry_paid, entry_amount, 
@@ -685,6 +686,10 @@ class DatabaseService {
               }
             )
           })
+          */
+          
+          // Simple resolve for now
+          resolve({ id: gameData.id })
         }
       })
     })
