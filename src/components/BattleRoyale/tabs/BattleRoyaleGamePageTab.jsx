@@ -22,7 +22,7 @@ const PlayersGrid = styled.div`
   gap: 1rem;
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  border: 6px solid rgba(255, 20, 147, 0.3);
   border-radius: 1rem;
   padding: 2rem;
   
@@ -46,7 +46,7 @@ const PlayerSlot = styled.div`
     }
     return 'rgba(255, 255, 255, 0.05)'
   }};
-  border: 2px solid ${props => {
+  border: 4px solid ${props => {
     if (props.occupied) {
       return props.isCurrentUser ? '#00ff88' : '#00bfff'
     }
@@ -103,7 +103,7 @@ const GameStatus = styled.div`
   padding: 1rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 20, 147, 0.3);
+  border: 6px solid rgba(255, 20, 147, 0.3);
   backdrop-filter: blur(15px);
   
   .status-text {
@@ -193,7 +193,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     <TabContainer>
       <GameStatus>
         <div className="status-text">
-          {gameStatus === 'filling' ? 'Filling Lobby' : 
+          {gameStatus === 'filling' ? 'Waiting for game to begin' : 
            gameStatus === 'starting' ? 'Starting Soon!' : 
            'Game In Progress'}
         </div>
