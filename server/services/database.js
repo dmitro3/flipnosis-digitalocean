@@ -650,8 +650,8 @@ class DatabaseService {
           const addCreatorSql = `
             INSERT INTO battle_royale_participants (
               game_id, player_address, slot_number, entry_paid, entry_amount, 
-              status, joined_at
-            ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+              status
+            ) VALUES (?, ?, ?, ?, ?, ?)
           `
           
           const self = this
