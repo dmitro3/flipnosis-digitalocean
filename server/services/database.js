@@ -970,6 +970,34 @@ class DatabaseService {
     })
   }
 
+  // Get Battle Royale game by ID
+  async getBattleRoyaleGame(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.get('SELECT * FROM battle_royale_games WHERE id = ?', [gameId], (err, game) => {
+        if (err) {
+          console.error('❌ Error getting Battle Royale game:', err)
+          reject(err)
+        } else {
+          resolve(game)
+        }
+      })
+    })
+  }
+
+  // Get Battle Royale participants
+  async getBattleRoyaleParticipants(gameId) {
+    return new Promise((resolve, reject) => {
+      this.db.all('SELECT * FROM battle_royale_participants WHERE game_id = ? ORDER BY slot_number', [gameId], (err, participants) => {
+        if (err) {
+          console.error('❌ Error getting Battle Royale participants:', err)
+          reject(err)
+        } else {
+          resolve(participants || [])
+        }
+      })
+    })
+  }
+
   // Get Battle Royale chat history
   async getBattleRoyaleChatHistory(gameId, limit = 50) {
     return new Promise((resolve, reject) => {
