@@ -275,25 +275,47 @@ const CreateBattle = () => {
       showInfo('Creating Battle Royale game...')
       setStepStatus({ create: true, approve: false, deposit: false })
       
+      // Validate and sanitize data before sending
+      const requestData = {
+        creator: address,
+        nft_contract: selectedNFT.contractAddress,
+        nft_token_id: selectedNFT.tokenId,
+        nft_name: selectedNFT.name || '',
+        nft_image: selectedNFT.image || '',
+        nft_collection: selectedNFT.collection || '',
+        nft_chain: 'base', // Battle royale games are on Base
+        entry_fee: parseFloat(nftPrice) / 8, // Calculate per-player entry fee
+        service_fee: parseFloat(serviceFee)
+      }
+      
+      // Validate required fields
+      if (!requestData.creator || !requestData.nft_contract || !requestData.nft_token_id) {
+        throw new Error('Missing required NFT information')
+      }
+      
+      // Validate numeric values
+      if (isNaN(requestData.entry_fee) || isNaN(requestData.service_fee)) {
+        throw new Error('Invalid price values')
+      }
+      
+      console.log('Sending Battle Royale request:', requestData)
+      
       const battleRoyaleResponse = await fetch(getApiUrl('/battle-royale/create'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creator: address,
-          nft_contract: selectedNFT.contractAddress,
-          nft_token_id: selectedNFT.tokenId,
-          nft_name: selectedNFT.name,
-          nft_image: selectedNFT.image,
-          nft_collection: selectedNFT.collection,
-          nft_chain: 'base', // Battle royale games are on Base
-          entry_fee: parseFloat(nftPrice) / 8, // Calculate per-player entry fee
-          service_fee: parseFloat(serviceFee)
-        })
+        body: JSON.stringify(requestData)
       })
       
       if (!battleRoyaleResponse.ok) {
-        const error = await battleRoyaleResponse.json()
-        throw new Error(error.error || 'Failed to create Battle Royale game')
+        let errorMessage = 'Failed to create Battle Royale game'
+        try {
+          const error = await battleRoyaleResponse.json()
+          errorMessage = error.error || error.message || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorMessage = `Server error: ${battleRoyaleResponse.status} ${battleRoyaleResponse.statusText}`
+        }
+        throw new Error(errorMessage)
       }
       
       const battleRoyaleResult = await battleRoyaleResponse.json()
