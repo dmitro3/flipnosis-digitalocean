@@ -25,7 +25,7 @@ const PlayersGrid = styled.div`
   gap: 1rem;
   background: rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(15px);
-  border: 3px solid rgba(255, 215, 0, 0.6);
+  border: 3px solid #FF1493;
   border-radius: 1rem;
   padding: 2rem;
   
@@ -132,7 +132,7 @@ const GameStatus = styled.div`
   padding: 1rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 1rem;
-  border: 3px solid rgba(255, 215, 0, 0.6);
+  border: 3px solid #FF1493;
   backdrop-filter: blur(15px);
   
   .status-text {
