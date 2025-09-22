@@ -71,11 +71,112 @@ class DatabaseService {
               console.error('⚠️ Game rounds table not found - database may be corrupted')
             }
           })
+
+          // Check and create Battle Royale tables if they don't exist
+          database.get("SELECT name FROM sqlite_master WHERE type='table' AND name='battle_royale_games'", (err, result) => {
+            if (err) {
+              console.error('❌ Error checking battle_royale_games table:', err)
+            } else if (result) {
+              console.log('✅ Battle Royale games table exists')
+            } else {
+              console.log('⚠️ Battle Royale games table not found - creating it...')
+              this.createBattleRoyaleTables(database)
+            }
+          })
         })
         
         this.db = database
         resolve()
       })
+    })
+  }
+
+  createBattleRoyaleTables(database) {
+    console.log('🔧 Creating Battle Royale tables...')
+    
+    // Create battle_royale_games table
+    database.run(`
+      CREATE TABLE IF NOT EXISTS battle_royale_games (
+        id TEXT PRIMARY KEY,
+        creator TEXT NOT NULL,
+        nft_contract TEXT NOT NULL,
+        nft_token_id TEXT NOT NULL,
+        nft_name TEXT,
+        nft_image TEXT,
+        nft_collection TEXT,
+        nft_chain TEXT DEFAULT 'base',
+        entry_fee DECIMAL(20,8) NOT NULL,
+        service_fee DECIMAL(20,8) NOT NULL,
+        max_players INTEGER DEFAULT 8,
+        current_players INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'filling',
+        current_round INTEGER DEFAULT 1,
+        target_result TEXT,
+        round_deadline TIMESTAMP,
+        winner_address TEXT,
+        creator_payout DECIMAL(20,8) DEFAULT 0,
+        platform_fee DECIMAL(20,8) DEFAULT 0,
+        nft_deposited BOOLEAN DEFAULT 0,
+        nft_deposit_time TIMESTAMP,
+        nft_deposit_hash TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        started_at TIMESTAMP,
+        completed_at TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating battle_royale_games table:', err)
+      } else {
+        console.log('✅ Created battle_royale_games table')
+      }
+    })
+
+    // Create battle_royale_participants table
+    database.run(`
+      CREATE TABLE IF NOT EXISTS battle_royale_participants (
+        game_id TEXT NOT NULL,
+        player_address TEXT NOT NULL,
+        slot_number INTEGER NOT NULL,
+        entry_paid BOOLEAN DEFAULT 0,
+        entry_amount DECIMAL(20,8),
+        entry_payment_hash TEXT,
+        eliminated_round INTEGER,
+        final_choice TEXT,
+        coin_result TEXT,
+        coin_power INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'active',
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        eliminated_at TIMESTAMP,
+        PRIMARY KEY (game_id, player_address)
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating battle_royale_participants table:', err)
+      } else {
+        console.log('✅ Created battle_royale_participants table')
+      }
+    })
+
+    // Create battle_royale_rounds table
+    database.run(`
+      CREATE TABLE IF NOT EXISTS battle_royale_rounds (
+        id TEXT PRIMARY KEY,
+        game_id TEXT NOT NULL,
+        round_number INTEGER NOT NULL,
+        target_result TEXT NOT NULL,
+        players_before INTEGER NOT NULL,
+        players_eliminated INTEGER NOT NULL,
+        eliminated_players TEXT,
+        round_duration INTEGER DEFAULT 20,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Error creating battle_royale_rounds table:', err)
+      } else {
+        console.log('✅ Created battle_royale_rounds table')
+      }
     })
   }
 
