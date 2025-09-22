@@ -272,14 +272,16 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       })
       
       // Convert USD to ETH using the contract service
-      const totalAmountETH = await contractService.getETHAmount(totalAmountUSD)
+      const totalAmountETHWei = await contractService.getETHAmount(totalAmountUSD)
+      const totalAmountETH = ethers.formatEther(totalAmountETHWei)
       
       console.log('💰 Amount conversion:', {
         totalAmountUSD,
-        totalAmountETH: ethers.formatEther(totalAmountETH)
+        totalAmountETHWei: totalAmountETHWei.toString(),
+        totalAmountETH
       })
       
-      // Call the contract service to join the game with ETH amount
+      // Call the contract service to join the game with ETH amount (not wei)
       const result = await contractService.joinBattleRoyale(gameId, totalAmountETH)
       
       if (result.success) {
