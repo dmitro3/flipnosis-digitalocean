@@ -666,13 +666,6 @@ const getAllItems = () => {
 }
 
   const handleItemClick = async (item) => {
-    // Handle battle royale games differently
-    if (item.isBattleRoyale) {
-      // Navigate directly to battle royale game
-      navigate(`/battle-royale/${item.id}`)
-      return
-    }
-    
     // Check NFT deposit before allowing entry for actual games
     if (!item.isListing) {
       const canEnter = await checkNFTDeposit(item)
@@ -682,6 +675,7 @@ const getAllItems = () => {
     }
     
     // Set the selected flip to show details instead of going directly to game page
+    // This applies to both regular games and battle royale games
     handleSelectFlip(item)
   }
 
@@ -1352,7 +1346,10 @@ const getAllItems = () => {
                               return
                             }
                             
-                            if (selectedFlip.type === 'listing') {
+                            // Handle battle royale games
+                            if (selectedFlip.isBattleRoyale) {
+                              navigate(`/battle-royale/${selectedFlip.id}`)
+                            } else if (selectedFlip.type === 'listing') {
                               navigate(`/game/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'completed') {
                               // Handle completed game view
@@ -1373,7 +1370,9 @@ const getAllItems = () => {
                           }}
                           style={{
                             flex: 2,
-                            background: selectedFlip.type === 'listing' ? 
+                            background: selectedFlip.isBattleRoyale ? 
+                              'linear-gradient(45deg, #00BFFF, #0080FF)' :
+                              selectedFlip.type === 'listing' ? 
                               'linear-gradient(45deg, #FF1493, #FF69B4)' :
                               selectedFlip.status === 'completed' ? 
                               'linear-gradient(45deg, #FF4444, #CC0000)' :
@@ -1404,7 +1403,7 @@ const getAllItems = () => {
                             e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 20, 147, 0.3)';
                           }}
                         >
-                                                  Enter Flip
+                          {selectedFlip.isBattleRoyale ? 'Enter Battle Royale' : 'Enter Flip'}
                         </Button>
 
                       </div>

@@ -4,8 +4,10 @@ import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { getApiUrl } from '../../config/api'
+import BackgroundVideo from '../BackgroundVideo'
 import BattleRoyaleNFTDetailsTab from './tabs/BattleRoyaleNFTDetailsTab'
 import BattleRoyaleGamePageTab from './tabs/BattleRoyaleGamePageTab'
+import hazeVideo from '../../../Images/Video/haze.webm'
 
 // ===== BATTLE ROYALE TABBED INTERFACE =====
 // This component provides a tabbed interface for Battle Royale games
@@ -17,16 +19,20 @@ const TabbedContainer = styled.div`
   flex-direction: column;
   height: 100vh;
   min-height: 600px;
-  background: rgba(0, 0, 20, 0.95);
+  background: rgba(0, 0, 20, 0.85);
   border: 2px solid rgba(0, 191, 255, 0.3);
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
   
   @media (max-width: 768px) {
     min-height: 500px;
     border-radius: 0;
     border: none;
+    background: rgba(0, 0, 20, 0.9);
   }
 `
 
@@ -191,40 +197,51 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   // Show loading state for game data
   if (gameDataLoading) {
     return (
-      <TabbedContainer>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
-          <LoadingSpinner />
-          <div style={{ marginLeft: '1rem' }}>Loading Battle Royale...</div>
-        </div>
-      </TabbedContainer>
+      <>
+        <BackgroundVideo videoSrc={hazeVideo} />
+        <TabbedContainer>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
+            <LoadingSpinner />
+            <div style={{ marginLeft: '1rem' }}>Loading Battle Royale...</div>
+          </div>
+        </TabbedContainer>
+      </>
     )
   }
 
   // Show error state for game data
   if (gameDataError) {
     return (
-      <TabbedContainer>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
-          Error loading game: {gameDataError}
-        </div>
-      </TabbedContainer>
+      <>
+        <BackgroundVideo videoSrc={hazeVideo} />
+        <TabbedContainer>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
+            Error loading game: {gameDataError}
+          </div>
+        </TabbedContainer>
+      </>
     )
   }
 
   if (!gameData) {
     return (
-      <TabbedContainer>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
-          Game not found
-        </div>
-      </TabbedContainer>
+      <>
+        <BackgroundVideo videoSrc={hazeVideo} />
+        <TabbedContainer>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
+            Game not found
+          </div>
+        </TabbedContainer>
+      </>
     )
   }
 
   return (
-    <TabbedContainer>
-      {/* Tab Header */}
-      <TabsHeader>
+    <>
+      <BackgroundVideo videoSrc={hazeVideo} />
+      <TabbedContainer>
+        {/* Tab Header */}
+        <TabsHeader>
         <Tab 
           active={activeTab === 'details'} 
           onClick={() => handleTabChange('details')}
@@ -239,11 +256,12 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
         </Tab>
       </TabsHeader>
 
-      {/* Tab Content */}
-      <TabContent>
-        {renderTabContent()}
-      </TabContent>
-    </TabbedContainer>
+        {/* Tab Content */}
+        <TabContent>
+          {renderTabContent()}
+        </TabContent>
+      </TabbedContainer>
+    </>
   )
 }
 
