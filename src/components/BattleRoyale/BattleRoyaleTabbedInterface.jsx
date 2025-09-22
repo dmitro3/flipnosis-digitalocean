@@ -30,12 +30,12 @@ const TabbedContainer = styled.div`
   flex-direction: column;
   height: 100vh;
   min-height: 600px;
-  background: rgba(255, 0, 0, 0.5); /* RED FOR DEBUGGING */
+  background: transparent; /* TRANSPARENT TO SHOW VIDEO */
   border: 2px solid rgba(0, 191, 255, 0.3);
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(5px); /* Reduced blur since no background */
   position: relative;
   z-index: 1;
   
@@ -43,7 +43,7 @@ const TabbedContainer = styled.div`
     min-height: 500px;
     border-radius: 0;
     border: none;
-    background: rgba(255, 0, 0, 0.5); /* RED FOR DEBUGGING */
+    background: transparent; /* TRANSPARENT TO SHOW VIDEO */
   }
 `
 
