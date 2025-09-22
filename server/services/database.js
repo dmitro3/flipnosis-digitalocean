@@ -621,9 +621,9 @@ class DatabaseService {
     return new Promise((resolve, reject) => {
       const sql = `
         INSERT INTO battle_royale_games (
-          id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
+          id, creator, nft_contract, nft_token_id, nft_name, nft_image, nft_collection, nft_chain,
           entry_fee, service_fee, max_players, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `
       
       this.db.run(sql, [
@@ -634,6 +634,7 @@ class DatabaseService {
         gameData.nft_name,
         gameData.nft_image,
         gameData.nft_collection,
+        gameData.nft_chain || 'base',
         gameData.entry_fee,
         gameData.service_fee,
         gameData.max_players || 8,
