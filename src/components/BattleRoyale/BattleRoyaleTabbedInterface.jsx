@@ -1,0 +1,246 @@
+import React, { useState, useEffect, useCallback } from 'react'
+import styled from '@emotion/styled'
+import { useParams } from 'react-router-dom'
+import { useWallet } from '../../contexts/WalletContext'
+import { useToast } from '../../contexts/ToastContext'
+import { getApiUrl } from '../../config/api'
+import BattleRoyaleNFTDetailsTab from './tabs/BattleRoyaleNFTDetailsTab'
+import BattleRoyaleGamePageTab from './tabs/BattleRoyaleGamePageTab'
+
+// ===== BATTLE ROYALE TABBED INTERFACE =====
+// This component provides a tabbed interface for Battle Royale games
+// Tabs: NFT Details (with chat) → Game Page (8 player slots)
+
+// === TABBED INTERFACE STYLED COMPONENTS ===
+const TabbedContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 600px;
+  background: rgba(0, 0, 20, 0.95);
+  border: 2px solid rgba(0, 191, 255, 0.3);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 191, 255, 0.2);
+  
+  @media (max-width: 768px) {
+    min-height: 500px;
+    border-radius: 0;
+    border: none;
+  }
+`
+
+const TabsHeader = styled.div`
+  display: flex;
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid rgba(0, 191, 255, 0.3);
+  
+  @media (max-width: 768px) {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+`
+
+const Tab = styled.button`
+  flex: 1;
+  padding: 1.5rem 2rem;
+  background: ${props => props.active ? 
+    'linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(0, 255, 65, 0.1))' : 
+    'transparent'
+  };
+  color: ${props => props.active ? '#00BFFF' : '#FFFFFF'};
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  position: relative;
+  
+  &:hover {
+    background: ${props => props.active ? 
+      'linear-gradient(135deg, rgba(0, 191, 255, 0.3), rgba(0, 255, 65, 0.2))' : 
+      'rgba(255, 255, 255, 0.05)'
+    };
+  }
+  
+  &:last-child {
+    border-right: none;
+  }
+  
+  /* Tab-specific colors */
+  &:nth-child(1) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(255, 20, 147, 0.3), rgba(255, 105, 180, 0.2));
+      color: #FF1493;
+      text-shadow: 0 0 10px #FF1493;
+    `}
+  }
+  
+  &:nth-child(2) {
+    ${props => props.active && `
+      background: linear-gradient(135deg, rgba(0, 255, 65, 0.3), rgba(57, 255, 20, 0.2));
+      color: #00FF41;
+      text-shadow: 0 0 10px #00FF41;
+    `}
+  }
+  
+  @media (max-width: 768px) {
+    flex: 1;
+    padding: 1rem 0.5rem;
+    font-size: 0.9rem;
+    min-width: 120px;
+  }
+`
+
+const TabContent = styled.div`
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+`
+
+const LoadingSpinner = styled.div`
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #00ff88;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`
+
+const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameData }) => {
+  const { gameId: paramGameId } = useParams()
+  const { address } = useWallet()
+  const { showToast } = useToast()
+  
+  // Use gameId from props or URL params
+  const gameId = propGameId || paramGameId
+  
+  // ===== TAB STATE =====
+  const [activeTab, setActiveTab] = useState('details') // 'details', 'game'
+  
+  // ===== GAME DATA LOADING =====
+  const [gameData, setGameData] = useState(propGameData || null)
+  const [gameDataLoading, setGameDataLoading] = useState(!propGameData)
+  const [gameDataError, setGameDataError] = useState(null)
+  
+  const loadGameData = useCallback(async () => {
+    if (!gameId) return
+    
+    try {
+      setGameDataLoading(true)
+      const response = await fetch(getApiUrl(`/battle-royale/${gameId}`))
+      if (response.ok) {
+        const data = await response.json()
+        setGameData(data)
+        setGameDataError(null)
+      } else {
+        setGameDataError('Failed to load game data')
+      }
+    } catch (error) {
+      console.error('❌ Failed to load game data:', error)
+      setGameDataError(error.message)
+    } finally {
+      setGameDataLoading(false)
+    }
+  }, [gameId])
+  
+  // Load game data on mount
+  useEffect(() => {
+    loadGameData()
+  }, [loadGameData])
+  
+  // ===== TAB SWITCHING LOGIC =====
+  const handleTabChange = useCallback((tabId) => {
+    console.log(`📑 Switching to tab: ${tabId}`)
+    setActiveTab(tabId)
+  }, [])
+  
+  // ===== TAB RENDERING =====
+  const renderTabContent = () => {
+    const commonProps = {
+      gameData,
+      gameId,
+      address,
+      isCreator: gameData?.creator?.toLowerCase() === address?.toLowerCase()
+    }
+
+    switch (activeTab) {
+      case 'details':
+        return <BattleRoyaleNFTDetailsTab {...commonProps} />
+      case 'game':
+        return <BattleRoyaleGamePageTab {...commonProps} />
+      default:
+        return <BattleRoyaleNFTDetailsTab {...commonProps} />
+    }
+  }
+
+  // ===== RENDER =====
+  // Show loading state for game data
+  if (gameDataLoading) {
+    return (
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
+          <LoadingSpinner />
+          <div style={{ marginLeft: '1rem' }}>Loading Battle Royale...</div>
+        </div>
+      </TabbedContainer>
+    )
+  }
+
+  // Show error state for game data
+  if (gameDataError) {
+    return (
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
+          Error loading game: {gameDataError}
+        </div>
+      </TabbedContainer>
+    )
+  }
+
+  if (!gameData) {
+    return (
+      <TabbedContainer>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'red' }}>
+          Game not found
+        </div>
+      </TabbedContainer>
+    )
+  }
+
+  return (
+    <TabbedContainer>
+      {/* Tab Header */}
+      <TabsHeader>
+        <Tab 
+          active={activeTab === 'details'} 
+          onClick={() => handleTabChange('details')}
+        >
+          🎨 NFT Details
+        </Tab>
+        <Tab 
+          active={activeTab === 'game'} 
+          onClick={() => handleTabChange('game')}
+        >
+          🎮 Game Page
+        </Tab>
+      </TabsHeader>
+
+      {/* Tab Content */}
+      <TabContent>
+        {renderTabContent()}
+      </TabContent>
+    </TabbedContainer>
+  )
+}
+
+export default BattleRoyaleTabbedInterface
