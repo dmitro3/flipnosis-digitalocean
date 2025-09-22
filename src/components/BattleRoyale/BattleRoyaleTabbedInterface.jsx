@@ -148,22 +148,28 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   const [gameData, setGameData] = useState(propGameData || null)
   const [gameDataLoading, setGameDataLoading] = useState(!propGameData)
   const [gameDataError, setGameDataError] = useState(null)
+  const [hasLoadedGameData, setHasLoadedGameData] = useState(!!propGameData)
   
   const loadGameData = useCallback(async () => {
-    if (!gameId) return
+    if (!gameId || hasLoadedGameData) return
     
     try {
+      console.log('🔄 Loading game data for:', gameId)
       setGameDataLoading(true)
       const response = await fetch(getApiUrl(`/battle-royale/${gameId}`))
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.game) {
+          console.log('✅ Game data loaded successfully')
           setGameData(data.game)
           setGameDataError(null)
+          setHasLoadedGameData(true)
         } else {
+          console.log('❌ Invalid game data received')
           setGameDataError('Invalid game data received')
         }
       } else {
+        console.log('❌ Failed to load game data - response not ok')
         setGameDataError('Failed to load game data')
       }
     } catch (error) {
@@ -172,7 +178,7 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
     } finally {
       setGameDataLoading(false)
     }
-  }, [gameId])
+  }, [gameId, hasLoadedGameData])
   
   // Load game data on mount
   useEffect(() => {

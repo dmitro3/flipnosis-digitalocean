@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
+import { ethers } from 'ethers'
 import { useWallet } from '../../../contexts/WalletContext'
 import { useToast } from '../../../contexts/ToastContext'
 import { useContractService } from '../../../utils/useContractService'
@@ -258,24 +259,28 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     try {
       showToast('Opening MetaMask to join game...', 'info')
       
-      // Calculate total amount (entry fee + service fee)
-      const entryFee = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
-      const serviceFee = parseFloat(gameData.serviceFee || gameData.service_fee || 0)
-      const totalAmount = entryFee + serviceFee
+      // Calculate total amount in USD (entry fee + service fee)
+      const entryFeeUSD = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
+      const serviceFeeUSD = parseFloat(gameData.serviceFee || gameData.service_fee || 0)
+      const totalAmountUSD = entryFeeUSD + serviceFeeUSD
       
       console.log('🎮 Joining Battle Royale:', {
         gameId,
-        entryFee,
-        serviceFee,
-        totalAmount
+        entryFeeUSD,
+        serviceFeeUSD,
+        totalAmountUSD
       })
       
-      // Debug: Check what methods are available on contractService
-      console.log('🔍 Contract service methods:', Object.getOwnPropertyNames(contractService))
-      console.log('🔍 Contract service prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(contractService)))
+      // Convert USD to ETH using the contract service
+      const totalAmountETH = await contractService.getETHAmount(totalAmountUSD)
       
-      // Call the contract service to join the game
-      const result = await contractService.joinBattleRoyale(gameId, totalAmount)
+      console.log('💰 Amount conversion:', {
+        totalAmountUSD,
+        totalAmountETH: ethers.formatEther(totalAmountETH)
+      })
+      
+      // Call the contract service to join the game with ETH amount
+      const result = await contractService.joinBattleRoyale(gameId, totalAmountETH)
       
       if (result.success) {
         showToast('Successfully joined the game!', 'success')
