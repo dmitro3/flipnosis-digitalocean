@@ -30,7 +30,7 @@ const TabbedContainer = styled.div`
   flex-direction: column;
   height: 100vh;
   min-height: 600px;
-  background: rgba(0, 0, 20, 0.85);
+  background: rgba(255, 0, 0, 0.5); /* RED FOR DEBUGGING */
   border: 2px solid rgba(0, 191, 255, 0.3);
   border-radius: 1rem;
   overflow: hidden;
@@ -43,7 +43,7 @@ const TabbedContainer = styled.div`
     min-height: 500px;
     border-radius: 0;
     border: none;
-    background: rgba(0, 0, 20, 0.9);
+    background: rgba(255, 0, 0, 0.5); /* RED FOR DEBUGGING */
   }
 `
 
