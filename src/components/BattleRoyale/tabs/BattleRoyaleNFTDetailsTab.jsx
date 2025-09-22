@@ -31,11 +31,11 @@ const TabContainer = styled.div`
 `
 
 const NFTSection = styled.div`
-  background: rgba(0, 0, 40, 0.95);
+  background: rgba(0, 0, 40, 0.6);
   padding: 1rem;
   border-radius: 1rem;
   border: 2px solid #FF1493;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(15px);
   box-shadow: 0 0 30px rgba(255, 20, 147, 0.3), inset 0 0 20px rgba(255, 20, 147, 0.1);
   position: relative;
   overflow: hidden;
@@ -257,11 +257,11 @@ const ActionButton = styled.button`
 
 // Chat Section Styles (same as FlipSuiteFinal)
 const ChatSection = styled.div`
-  background: rgba(0, 0, 40, 0.95);
+  background: rgba(0, 0, 40, 0.6);
   padding: 1.25rem;
   border-radius: 1rem;
   border: 2px solid #00BFFF;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(15px);
   box-shadow: 0 0 30px rgba(0, 191, 255, 0.3), inset 0 0 20px rgba(0, 191, 255, 0.1);
   position: relative;
   overflow: hidden;

@@ -20,8 +20,8 @@ const PlayersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 20, 147, 0.3);
   border-radius: 1rem;
   padding: 2rem;
@@ -101,9 +101,10 @@ const PlayerSlot = styled.div`
 const GameStatus = styled.div`
   text-align: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 1rem;
   border: 1px solid rgba(255, 20, 147, 0.3);
+  backdrop-filter: blur(15px);
   
   .status-text {
     color: ${props => props.theme?.colors?.neonPink || '#FF1493'};
