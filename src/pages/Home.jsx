@@ -619,11 +619,12 @@ const getAllItems = () => {
   })
   
   // Process battle royale games
-  battleRoyaleGames.filter(br => 
-    br.status !== 'cancelled' && 
-    br.status !== 'complete' &&
-    br.nft_deposited === 1  // Only show games with NFTs actually deposited
-  ).forEach(br => {
+  console.log('🔍 Processing battle royale games:', battleRoyaleGames.length, 'total')
+  battleRoyaleGames.filter(br => {
+    const shouldInclude = br.status !== 'cancelled' && br.status !== 'complete'
+    console.log('🔍 Battle royale game:', br.id, 'status:', br.status, 'include:', shouldInclude)
+    return shouldInclude
+  }).forEach(br => {
     uniqueItems.set(br.id, {
       ...br,
       isListing: false,
