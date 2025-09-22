@@ -5,7 +5,7 @@ param(
     [string]$CommitMessage = "Auto backup $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 )
 
-$DROPLET_IP = "143.198.166.196"
+$DROPLET_IP = "159.69.134.159"
 
 Write-Host "Starting simple deployment..." -ForegroundColor Green
 
