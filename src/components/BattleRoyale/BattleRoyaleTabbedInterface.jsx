@@ -140,8 +140,12 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
       const response = await fetch(getApiUrl(`/battle-royale/${gameId}`))
       if (response.ok) {
         const data = await response.json()
-        setGameData(data)
-        setGameDataError(null)
+        if (data.success && data.game) {
+          setGameData(data.game)
+          setGameDataError(null)
+        } else {
+          setGameDataError('Invalid game data received')
+        }
       } else {
         setGameDataError('Failed to load game data')
       }

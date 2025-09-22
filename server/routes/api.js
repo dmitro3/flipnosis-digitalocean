@@ -2010,6 +2010,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         nft_name,
         nft_image,
         nft_collection,
+        nft_chain,
         entry_fee,
         service_fee
       } = req.body
@@ -2033,6 +2034,7 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         nft_name,
         nft_image,
         nft_collection,
+        nft_chain: nft_chain || 'base',
         entry_fee: parseFloat(entry_fee),
         service_fee: parseFloat(service_fee || 0.50),
         max_players: 8

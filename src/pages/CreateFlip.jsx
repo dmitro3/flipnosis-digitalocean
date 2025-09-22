@@ -386,6 +386,7 @@ const CreateFlip = () => {
             nft_name: selectedNFT.name,
             nft_image: selectedNFT.image,
             nft_collection: selectedNFT.collection,
+            nft_chain: 'base', // Battle royale games are on Base
             entry_fee: parseFloat(entryFee),
             service_fee: parseFloat(serviceFee)
           })

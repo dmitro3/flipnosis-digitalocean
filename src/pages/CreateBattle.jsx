@@ -285,6 +285,7 @@ const CreateBattle = () => {
           nft_name: selectedNFT.name,
           nft_image: selectedNFT.image,
           nft_collection: selectedNFT.collection,
+          nft_chain: 'base', // Battle royale games are on Base
           entry_fee: parseFloat(nftPrice) / 8, // Calculate per-player entry fee
           service_fee: parseFloat(serviceFee)
         })

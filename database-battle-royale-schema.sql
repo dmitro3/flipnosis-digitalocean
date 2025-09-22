@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS battle_royale_games (
   nft_name TEXT,
   nft_image TEXT,
   nft_collection TEXT,
+  nft_chain TEXT DEFAULT 'base',
   entry_fee DECIMAL(20,8) NOT NULL, -- $5.00
   service_fee DECIMAL(20,8) NOT NULL, -- $0.50
   max_players INTEGER DEFAULT 8,

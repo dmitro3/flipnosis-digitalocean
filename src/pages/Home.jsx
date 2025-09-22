@@ -397,6 +397,7 @@ const Home = () => {
   
   const [games, setGames] = useState([])
   const [listings, setListings] = useState([])
+  const [battleRoyaleGames, setBattleRoyaleGames] = useState([])
   const [loading, setLoading] = useState(false)
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -452,8 +453,31 @@ const Home = () => {
         throw new Error('Games API did not return valid JSON')
       }
       
+      console.log('🔍 Fetching data from:', getApiUrl('/battle-royale'))
+      
+      // Fetch battle royale games
+      const battleRoyaleResponse = await fetch(getApiUrl('/battle-royale'))
+      console.log('📊 Battle Royale response status:', battleRoyaleResponse.status, battleRoyaleResponse.statusText)
+      
+      let battleRoyaleGames
+      if (!battleRoyaleResponse.ok) {
+        const errorText = await battleRoyaleResponse.text()
+        console.error('❌ Battle Royale API error response:', errorText)
+        throw new Error(`Battle Royale API error: ${battleRoyaleResponse.status} ${battleRoyaleResponse.statusText}`)
+      }
+      
+      try {
+        const battleRoyaleData = await battleRoyaleResponse.json()
+        battleRoyaleGames = battleRoyaleData.games || []
+        console.log('✅ Battle Royale games loaded:', battleRoyaleGames?.length || 0, 'items')
+      } catch (e) {
+        console.error('❌ Battle Royale response not JSON:', e)
+        throw new Error('Battle Royale API did not return valid JSON')
+      }
+      
       setListings(listings || [])
       setGames(games || [])
+      setBattleRoyaleGames(battleRoyaleGames || [])
     } catch (error) {
       console.error('❌ Error fetching data:', error)
       setError('Failed to load games and listings: ' + error.message)
@@ -494,7 +518,7 @@ const Home = () => {
       console.log('🔄 No flips available, clearing selected flip')
       setSelectedFlip(null)
     }
-  }, [listings, games, selectedFlip, activeFilter, searchQuery])
+  }, [listings, games, battleRoyaleGames, selectedFlip, activeFilter, searchQuery])
 
   // Listen for global WebSocket messages for real-time updates
   useEffect(() => {
@@ -594,6 +618,36 @@ const getAllItems = () => {
     })
   })
   
+  // Process battle royale games
+  battleRoyaleGames.filter(br => 
+    br.status !== 'cancelled' && 
+    br.status !== 'complete' &&
+    br.nft_deposited === 1  // Only show games with NFTs actually deposited
+  ).forEach(br => {
+    uniqueItems.set(br.id, {
+      ...br,
+      isListing: false,
+      isBattleRoyale: true,
+      displayId: br.id,
+      nft: {
+        name: br.nft_name || 'Unknown NFT',
+        image: br.nft_image || '/placeholder-nft.svg',
+        collection: br.nft_collection || 'Unknown Collection',
+        chain: 'base', // Battle royale games are on base
+        contractAddress: br.nft_contract,
+        tokenId: br.nft_token_id
+      },
+      gameType: 'battle-royale',
+      priceUSD: br.entry_fee || 0,
+      // Include battle royale specific fields
+      entry_fee: br.entry_fee,
+      service_fee: br.service_fee,
+      max_players: br.max_players,
+      current_players: br.current_players,
+      participants: br.participants || []
+    })
+  })
+  
   // Convert map to array and filter
   return Array.from(uniqueItems.values()).filter(item => {
     const matchesFilter = activeFilter === 'all' || 
@@ -611,6 +665,13 @@ const getAllItems = () => {
 }
 
   const handleItemClick = async (item) => {
+    // Handle battle royale games differently
+    if (item.isBattleRoyale) {
+      // Navigate directly to battle royale game
+      navigate(`/battle-royale/${item.id}`)
+      return
+    }
+    
     // Check NFT deposit before allowing entry for actual games
     if (!item.isListing) {
       const canEnter = await checkNFTDeposit(item)
@@ -981,7 +1042,11 @@ const getAllItems = () => {
                     background: 'rgba(0, 0, 0, 0.8)',
                     borderRadius: '1rem',
                     padding: window.innerWidth <= 768 ? '1.25rem' : '1.5rem',
-                    border: `2px solid ${selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : theme.colors.neonPink}`,
+                    border: `2px solid ${
+                      selectedFlip.gameType === 'nft-vs-nft' ? theme.colors.neonGreen : 
+                      selectedFlip.gameType === 'battle-royale' ? theme.colors.neonBlue : 
+                      theme.colors.neonPink
+                    }`,
                     maxWidth: window.innerWidth <= 768 ? '100%' : 
                               window.innerWidth <= 1200 ? '300px' : 
                               window.innerWidth <= 1600 ? '350px' : '400px'
@@ -1024,6 +1089,8 @@ const getAllItems = () => {
                           right: '0.5rem',
                           background: selectedFlip.gameType === 'nft-vs-nft' ? 
                             'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                            selectedFlip.gameType === 'battle-royale' ?
+                            'linear-gradient(45deg, #00BFFF, #0080FF)' :
                             'linear-gradient(45deg, #FF1493, #FF69B4)',
                           color: selectedFlip.gameType === 'nft-vs-nft' ? '#000' : '#fff',
                           padding: '0.25rem 0.5rem',
@@ -1031,7 +1098,9 @@ const getAllItems = () => {
                           fontSize: '0.7rem',
                           fontWeight: 'bold'
                         }}>
-                          {selectedFlip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                          {selectedFlip.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : 
+                           selectedFlip.gameType === 'battle-royale' ? '🏆 BATTLE ROYALE' : 
+                           '💰 CRYPTO'}
                         </div>
                       </div>
 
@@ -1162,6 +1231,21 @@ const getAllItems = () => {
                                   </div>
                                 </GameStat>
                               )}
+                            </>
+                          ) : selectedFlip.gameType === 'battle-royale' ? (
+                            <>
+                              <GameStat>
+                                <span>Type</span>
+                                <div style={{ color: theme.colors.neonBlue }}>Battle Royale</div>
+                              </GameStat>
+                              <GameStat>
+                                <span>Players</span>
+                                <div>{selectedFlip.current_players || 0}/{selectedFlip.max_players || 8}</div>
+                              </GameStat>
+                              <GameStat>
+                                <span>Entry Fee</span>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: theme.colors.neonPink }}>${(selectedFlip.entry_fee || 0).toFixed(2)}</div>
+                              </GameStat>
                             </>
                           ) : (
                             <>
@@ -1470,6 +1554,8 @@ const getAllItems = () => {
                             right: '0.25rem',
                             background: item.gameType === 'nft-vs-nft' ? 
                               'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                              item.gameType === 'battle-royale' ?
+                              'linear-gradient(45deg, #00BFFF, #0080FF)' :
                               'linear-gradient(45deg, #FF1493, #FF69B4)',
                             color: item.gameType === 'nft-vs-nft' ? '#000' : '#fff',
                             padding: window.innerWidth <= 768 ? '0.1rem 0.25rem' : '0.15rem 0.35rem',
@@ -1477,7 +1563,9 @@ const getAllItems = () => {
                             fontSize: window.innerWidth <= 768 ? '0.5rem' : '0.6rem',
                             fontWeight: 'bold'
                           }}>
-                            {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                            {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : 
+                             item.gameType === 'battle-royale' ? '🏆 BATTLE ROYALE' : 
+                             '💰 CRYPTO'}
                           </div>
                           
                           {/* Status indicator */}
@@ -1643,6 +1731,8 @@ const getAllItems = () => {
                               right: '0.25rem',
                               background: item.gameType === 'nft-vs-nft' ? 
                                 'linear-gradient(45deg, #00FF41, #39FF14)' : 
+                                item.gameType === 'battle-royale' ?
+                                'linear-gradient(45deg, #00BFFF, #0080FF)' :
                                 'linear-gradient(45deg, #FF1493, #FF69B4)',
                               color: item.gameType === 'nft-vs-nft' ? '#000' : '#fff',
                               padding: '0.1rem 0.25rem',
@@ -1650,7 +1740,9 @@ const getAllItems = () => {
                               fontSize: '0.5rem',
                               fontWeight: 'bold'
                             }}>
-                              {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : '💰 CRYPTO'}
+                              {item.gameType === 'nft-vs-nft' ? '⚔️ NFT BATTLE' : 
+                             item.gameType === 'battle-royale' ? '🏆 BATTLE ROYALE' : 
+                             '💰 CRYPTO'}
                             </div>
                             {/* Status indicator */}
                             <div style={{
