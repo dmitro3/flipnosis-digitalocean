@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from '@emotion/styled'
-import LobbyCoin from '../../../legacy/components/Lobby/LobbyCoin'
+import OptimizedGoldCoin from '../OptimizedGoldCoin'
 
 const CoinContainerStyled = styled.div`
   background: transparent;
@@ -54,11 +54,15 @@ const CoinContainer = ({
   return (
     <CoinContainerStyled>
       <CoinWrapper>
-        <LobbyCoin
+        <OptimizedGoldCoin
           customHeadsImage={customHeadsImage}
           customTailsImage={customTailsImage}
           material={gameCoin?.material}
           size={isMobile ? 200 : 250}
+          isFlipping={false}
+          flipResult={null}
+          isPlayerTurn={false}
+          gamePhase="choosing"
         />
       </CoinWrapper>
     </CoinContainerStyled>

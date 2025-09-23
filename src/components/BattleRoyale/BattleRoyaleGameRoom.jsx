@@ -8,7 +8,6 @@ import { getApiUrl } from '../../config/api'
 import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
-import LobbyCoin from '../../../legacy/components/Lobby/LobbyCoin'
 
 const GameContainer = styled.div`
   display: flex;
@@ -708,12 +707,20 @@ const BattleRoyaleGameRoom = ({
               
               <div className="coin-display">
                 {playerCoinImages[playerAddress] ? (
-                  <LobbyCoin
-                    customHeadsImage={playerCoinImages[playerAddress].headsImage}
-                    customTailsImage={playerCoinImages[playerAddress].tailsImage}
-                    material="gold"
-                    size={60}
-                  />
+                  <div className="coin-images" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <img 
+                      src={playerCoinImages[playerAddress].headsImage} 
+                      alt="Heads" 
+                      className="coin-image"
+                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
+                    />
+                    <img 
+                      src={playerCoinImages[playerAddress].tailsImage} 
+                      alt="Tails" 
+                      className="coin-image"
+                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
+                    />
+                  </div>
                 ) : (
                   <div style={{
                     width: '60px',

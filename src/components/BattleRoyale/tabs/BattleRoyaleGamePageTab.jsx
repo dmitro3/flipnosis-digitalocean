@@ -7,7 +7,6 @@ import { useContractService } from '../../../utils/useContractService'
 import { useProfile } from '../../../contexts/ProfileContext'
 import { getApiUrl } from '../../../config/api'
 import CoinSelector from '../../CoinSelector'
-import LobbyCoin from '../../../../legacy/components/Lobby/LobbyCoin'
 import socketService from '../../../services/SocketService'
 
 const TabContainer = styled.div`
@@ -491,12 +490,20 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 {/* Coin Display */}
                 <div className="coin-display">
                   {playerCoinImages[player.address] ? (
-                    <LobbyCoin
-                      customHeadsImage={playerCoinImages[player.address].headsImage}
-                      customTailsImage={playerCoinImages[player.address].tailsImage}
-                      material="gold"
-                      size={50}
-                    />
+                    <div className="coin-images" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <img 
+                        src={playerCoinImages[player.address].headsImage} 
+                        alt="Heads" 
+                        className="coin-image"
+                        style={{ width: '40px', height: '40px', borderRadius: '50%' }}
+                      />
+                      <img 
+                        src={playerCoinImages[player.address].tailsImage} 
+                        alt="Tails" 
+                        className="coin-image"
+                        style={{ width: '40px', height: '40px', borderRadius: '50%' }}
+                      />
+                    </div>
                   ) : (
                     <div style={{
                       width: '50px',
