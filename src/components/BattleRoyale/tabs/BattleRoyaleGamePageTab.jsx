@@ -128,6 +128,16 @@ const PlayerSlot = styled.div`
       transform: scale(1.05);
     }
   }
+
+  .rotating {
+    animation: spin 2s linear infinite;
+    transform-style: preserve-3d;
+  }
+
+  @keyframes spin {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+  }
 `
 
 const GameStatus = styled.div`
@@ -262,6 +272,68 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     }
   }, [getCoinHeadsImage, getCoinTailsImage])
 
+  // Socket: connect and subscribe to server lobby state
+  useEffect(() => {
+    if (!gameId || !address) return
+
+    let connected = false
+
+    const onStateUpdate = (data) => {
+      try {
+        // data.players may be object keyed by address; normalize into 8-slot array if slots provided
+        if (data.playerSlots) {
+          const slots = new Array(8).fill(null)
+          data.playerSlots.forEach((playerAddress, idx) => {
+            if (playerAddress && data.players && data.players[playerAddress]) {
+              const p = data.players[playerAddress]
+              slots[idx] = {
+                address: playerAddress,
+                joinedAt: p.joinedAt || new Date().toISOString(),
+                coin: p.coin || { id: 'plain', type: 'default', name: 'Classic' }
+              }
+            }
+          })
+          setPlayers(slots)
+          const joinedCount = slots.filter(Boolean).length
+          setCurrentPlayers(joinedCount)
+          setGameStatus(data.status || (joinedCount >= 8 ? 'starting' : 'filling'))
+
+          // preload coin images
+          if (data.players) {
+            Object.entries(data.players).forEach(([addrKey, playerVal]) => {
+              if (playerVal?.coin) {
+                loadPlayerCoinImages(addrKey, playerVal.coin)
+              }
+            })
+          }
+        }
+      } catch (e) {
+        console.error('Failed to process battle royale state update', e)
+      }
+    }
+
+    const setup = async () => {
+      try {
+        await socketService.connect(gameId, address)
+        connected = true
+        socketService.on('battle_royale_state_update', onStateUpdate)
+        // Join room and request state
+        socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
+        socketService.emit('request_battle_royale_state', { gameId })
+      } catch (err) {
+        console.error('Socket setup failed in BattleRoyaleGamePageTab', err)
+      }
+    }
+
+    setup()
+
+    return () => {
+      if (connected) {
+        socketService.off('battle_royale_state_update', onStateUpdate)
+      }
+    }
+  }, [gameId, address, loadPlayerCoinImages])
+
   // Initialize creator in slot 0 when game loads
   useEffect(() => {
     if (gameData && gameData.creator) {
@@ -366,6 +438,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       
       if (result.success) {
         showToast('Successfully joined the game!', 'success')
+
+        // Notify server to add player to in-memory game and room
+        try {
+          socketService.emit('join_battle_royale', { gameId, address })
+          socketService.emit('request_battle_royale_state', { gameId })
+        } catch (e) {
+          console.error('Failed to notify server about join', e)
+        }
         
         // Update local state to show the player in the slot
         const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
@@ -472,6 +552,31 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         <div className="players-count">
           {currentPlayers} / 8 Players Joined (Creator + {currentPlayers - 1} Joiners)
         </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '0.75rem' }}>
+          {(userAlreadyJoined || isCreator) && (
+            <button 
+              className="coin-change-button"
+              onClick={() => {
+                const myIndex = players.findIndex(p => p?.address === address)
+                if (myIndex !== -1) {
+                  setSelectedSlot(myIndex)
+                  setShowCoinSelector(true)
+                }
+              }}
+            >
+              Change Coin
+            </button>
+          )}
+          {(userAlreadyJoined || isCreator) && (
+            <button 
+              className="coin-change-button"
+              onClick={() => showToast('Withdraw will be enabled after game ends.', 'info')}
+            >
+              Withdraw
+            </button>
+          )}
+        </div>
       </GameStatus>
 
       <PlayersGrid>
@@ -489,20 +594,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 {/* Coin Display */}
                 <div className="coin-display">
                   {playerCoinImages[player.address] ? (
-                    <div className="coin-images" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <img 
-                        src={playerCoinImages[player.address].headsImage} 
-                        alt="Heads" 
-                        className="coin-image"
-                        style={{ width: '40px', height: '40px', borderRadius: '50%' }}
-                      />
-                      <img 
-                        src={playerCoinImages[player.address].tailsImage} 
-                        alt="Tails" 
-                        className="coin-image"
-                        style={{ width: '40px', height: '40px', borderRadius: '50%' }}
-                      />
-                    </div>
+                    <img 
+                      src={playerCoinImages[player.address].headsImage}
+                      alt="Coin"
+                      className="rotating"
+                      style={{ width: '50px', height: '50px', borderRadius: '50%', border: '2px solid #ffa500', background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
+                    />
                   ) : (
                     <div style={{
                       width: '50px',
