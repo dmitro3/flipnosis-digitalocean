@@ -1,6 +1,7 @@
 const socketIO = require('socket.io')
 const GameStateManager = require('./GameStateManager')
 const BattleRoyaleGameManager = require('./BattleRoyaleGameManager')
+const BattleRoyaleSocketHandlers = require('./BattleRoyaleSocketHandlers')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
 // Single source of truth for all game state management
@@ -10,6 +11,7 @@ class GameServer {
   constructor() {
     this.gameStateManager = new GameStateManager()
     this.battleRoyaleManager = new BattleRoyaleGameManager()
+    this.battleRoyaleHandlers = new BattleRoyaleSocketHandlers()
     this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
     this.userSockets = new Map() // address -> socketId
     this.gameRooms = new Map() // gameId -> Set of socketIds
@@ -66,12 +68,15 @@ class GameServer {
     socket.on('request_next_round', (data) => this.handleRequestNextRound(socket, data))
       
       // ===== BATTLE ROYALE ACTIONS =====
-      socket.on('join_battle_royale', (data) => this.handleJoinBattleRoyale(socket, data))
-      socket.on('battle_royale_choice', (data) => this.handleBattleRoyaleChoice(socket, data))
-      socket.on('battle_royale_flip', (data) => this.handleBattleRoyaleFlip(socket, data))
-      socket.on('battle_royale_update_coin', (data) => this.handleBattleRoyaleUpdateCoin(socket, data))
-      socket.on('spectate_battle_royale', (data) => this.handleSpectateBattleRoyale(socket, data))
-      socket.on('request_battle_royale_state', (data) => this.handleRequestBattleRoyaleState(socket, data))
+      socket.on('join_battle_royale_room', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('join_battle_royale', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyale(socket, data, this.battleRoyaleManager, this.io, this.dbService))
+      socket.on('battle_royale_player_choice', (data) => this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('battle_royale_start_power_charge', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStartPowerCharge(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('battle_royale_stop_power_charge', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStopPowerCharge(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('battle_royale_execute_flip', (data) => this.battleRoyaleHandlers.handleBattleRoyaleExecuteFlip(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('battle_royale_update_coin', (data) => this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('spectate_battle_royale', (data) => this.battleRoyaleHandlers.handleSpectateBattleRoyale(socket, data, this.battleRoyaleManager))
+      socket.on('request_battle_royale_state', (data) => this.battleRoyaleHandlers.handleRequestBattleRoyaleState(socket, data, this.battleRoyaleManager))
       
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))

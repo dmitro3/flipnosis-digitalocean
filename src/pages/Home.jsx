@@ -492,30 +492,26 @@ const Home = () => {
     // Note: Removed auto-refresh interval since WebSocket provides real-time updates
   }, [])
 
-  // Auto-select the most recent flip when no flip is selected but flips are available
+  // Auto-select only when nothing is user-selected, and don't override a manual selection
   useEffect(() => {
     const filteredItems = getAllItems()
     
-    // If no flip is selected but flips are available, select the most recent one
     if (!selectedFlip && filteredItems.length > 0) {
       const mostRecentFlip = filteredItems[0]
-      console.log('🔄 Auto-selecting most recent flip:', mostRecentFlip.nft?.name)
       setSelectedFlip(mostRecentFlip)
+      return
     }
     
-    // If a flip is selected but it's no longer in the filtered items, select the most recent available
     if (selectedFlip && filteredItems.length > 0) {
       const isSelectedFlipStillAvailable = filteredItems.some(item => item.id === selectedFlip.id)
       if (!isSelectedFlipStillAvailable) {
+        // Keep user's selection if possible; otherwise fallback to most recent
         const mostRecentFlip = filteredItems[0]
-        console.log('🔄 Selected flip no longer available, switching to most recent:', mostRecentFlip.nft?.name)
         setSelectedFlip(mostRecentFlip)
       }
     }
     
-    // If there are no flips available and a flip is selected, clear the selection
     if (filteredItems.length === 0 && selectedFlip) {
-      console.log('🔄 No flips available, clearing selected flip')
       setSelectedFlip(null)
     }
   }, [listings, games, battleRoyaleGames, selectedFlip, activeFilter, searchQuery])
@@ -665,17 +661,9 @@ const Home = () => {
     })
   }
 
-  const handleItemClick = async (item) => {
-    // Check NFT deposit before allowing entry for actual games
-    if (!item.isListing) {
-      const canEnter = await checkNFTDeposit(item)
-      if (!canEnter) {
-        return // Don't allow entry
-      }
-    }
-    
-    // Set the selected flip to show details instead of going directly to game page
-    // This applies to both regular games and battle royale games
+  const handleItemClick = (item) => {
+    // Always populate Current Flip immediately; gatekeeping (like NFT deposit)
+    // should happen when entering the game from the Current Flip panel
     handleSelectFlip(item)
   }
 

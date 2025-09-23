@@ -1,11 +1,13 @@
-// BattleRoyaleGameManager.js - Battle Royale Game State Management
-// Extends the existing architecture to support 8-player elimination games
+// BattleRoyaleGameManager.js - Enhanced Server-Controlled Battle Royale
+// Manages 8 simultaneous server-side coin flips with Three.js physics
 
 class BattleRoyaleGameManager {
   constructor() {
     this.battleRoyaleGames = new Map() // gameId -> BattleRoyaleState
     this.roundTimers = new Map() // gameId -> timer
     this.gameTimers = new Map() // gameId -> various timers
+    this.powerTimers = new Map() // gameId -> Map(playerAddress -> powerTimer)
+    this.flipAnimations = new Map() // gameId -> Map(playerAddress -> animationState)
   }
 
   // ===== BATTLE ROYALE PHASES =====
@@ -20,11 +22,11 @@ class BattleRoyaleGameManager {
 
   // ===== ROUND SUB-PHASES =====
   ROUND_PHASES = {
-    WAITING_TARGET: 'waiting_target',     // Waiting for server to set target
-    SHOWING_TARGET: 'showing_target',     // 3-second target display
-    CHOOSING_FLIPPING: 'choosing_flipping', // 20-second choice + flip phase
-    PROCESSING: 'processing',             // Server processing results
-    SHOWING_RESULTS: 'showing_results'    // 5-second result display
+    REVEALING_TARGET: 'revealing_target',     // 3-second target reveal
+    WAITING_CHOICE: 'waiting_choice',         // 20-second choice phase
+    CHARGING_POWER: 'charging_power',         // Power charging phase
+    EXECUTING_FLIPS: 'executing_flips',       // All 8 coins flipping simultaneously
+    SHOWING_RESULT: 'showing_result'          // 5-second result display
   }
 
   // ===== GAME CREATION =====
@@ -35,6 +37,7 @@ class BattleRoyaleGameManager {
       // Core identifiers
       gameId,
       phase: this.PHASES.FILLING,
+      gamePhase: null,
       roundPhase: null,
       
       // Game settings
@@ -43,23 +46,28 @@ class BattleRoyaleGameManager {
       entryFee: gameData.entryFee || 5.00,
       serviceFee: gameData.serviceFee || 0.50,
       
-      // Players
+      // Players - enhanced with coin states
       creator: gameData.creator,
-      players: new Map(), // address -> PlayerState
+      players: new Map(), // address -> PlayerState with coinState
       playerSlots: new Array(8).fill(null), // slot positions for UI
       eliminatedPlayers: new Set(),
       activePlayers: new Set(),
       
       // Round management
       currentRound: 0,
-      maxRounds: 10, // Safety limit, game should end before this
+      maxRounds: 10, // Safety limit
       targetResult: null, // 'heads' or 'tails' for current round
+      roundCountdown: null, // Current countdown timer value
       roundDeadline: null,
       roundStartTime: null,
       
+      // Server-controlled coin states for all 8 players
+      coinStates: new Map(), // playerAddress -> coinState
+      
       // Results
       winner: null,
-      eliminationHistory: [], // Array of round elimination data
+      eliminationHistory: [],
+      roundResult: null,
       
       // NFT info
       nftContract: gameData.nftContract,
@@ -104,16 +112,28 @@ class BattleRoyaleGameManager {
     const creatorState = {
       address: creatorAddress,
       slotNumber: 0, // Creator always gets slot 0
-      entryPaid: true, // Creator pays nothing but is marked as "paid"
+      entryPaid: true, // Creator plays for free but marked as "paid"
       status: 'active',
       joinedAt: new Date().toISOString(),
       
       // Current round state
       choice: null, // 'heads' or 'tails'
-      power: 0, // 0-10
-      coinResult: null, // actual flip result
+      power: 1, // 1-10
       hasFlipped: false,
       flipTime: null,
+      
+      // Server-controlled coin state
+      coinState: {
+        rotation: { x: 0, y: 0, z: 0 },
+        velocity: { x: 0, y: 0, z: 0 },
+        isFlipping: false,
+        flipStartTime: null,
+        flipDuration: 2000,
+        flipResult: null,
+        totalRotations: 0,
+        finalRotation: 0,
+        powerUsed: 1
+      },
       
       // Coin customization
       coin: {
@@ -121,7 +141,8 @@ class BattleRoyaleGameManager {
         type: 'default',
         name: 'Classic',
         headsImage: '/coins/plainh.png',
-        tailsImage: '/coins/plaint.png'
+        tailsImage: '/coins/plaint.png',
+        material: null
       },
       
       // Game stats
@@ -136,8 +157,9 @@ class BattleRoyaleGameManager {
 
     // Add creator to game
     game.players.set(creatorAddress, creatorState)
-    game.playerSlots[0] = creatorAddress // Creator gets slot 0
+    game.playerSlots[0] = creatorAddress
     game.activePlayers.add(creatorAddress)
+    game.coinStates.set(creatorAddress, creatorState.coinState)
     game.currentPlayers++
     game.lastActivity = Date.now()
 
@@ -167,11 +189,6 @@ class BattleRoyaleGameManager {
       return false
     }
 
-    if (playerAddress.toLowerCase() === game.creator.toLowerCase()) {
-      console.error(`❌ Creator already in game as player: ${playerAddress}`)
-      return false
-    }
-
     // Find available slot (skip slot 0 as it's reserved for creator)
     let assignedSlot = slotNumber
     if (assignedSlot === null || game.playerSlots[assignedSlot] !== null || assignedSlot === 0) {
@@ -182,21 +199,33 @@ class BattleRoyaleGameManager {
       }
     }
 
-    // Create player state
+    // Create player state with server-controlled coin
     const playerState = {
       address: playerAddress,
       slotNumber: assignedSlot,
       entryPaid: false, // Will be set to true when blockchain payment confirmed
       status: 'active',
       joinedAt: new Date().toISOString(),
-      entryAmount: game.entryFee + game.serviceFee, // Regular players pay full amount
+      entryAmount: game.entryFee / 7, // Each of 7 players pays 1/7th
       
       // Current round state
-      choice: null, // 'heads' or 'tails'
-      power: 0, // 0-10
-      coinResult: null, // actual flip result
+      choice: null,
+      power: 1,
       hasFlipped: false,
       flipTime: null,
+      
+      // Server-controlled coin state - UNIQUE PER PLAYER
+      coinState: {
+        rotation: { x: 0, y: 0, z: 0 },
+        velocity: { x: 0, y: 0, z: 0 },
+        isFlipping: false,
+        flipStartTime: null,
+        flipDuration: 2000,
+        flipResult: null,
+        totalRotations: 0,
+        finalRotation: 0,
+        powerUsed: 1
+      },
       
       // Coin customization
       coin: {
@@ -204,7 +233,8 @@ class BattleRoyaleGameManager {
         type: 'default',
         name: 'Classic',
         headsImage: '/coins/plainh.png',
-        tailsImage: '/coins/plaint.png'
+        tailsImage: '/coins/plaint.png',
+        material: null
       },
       
       // Game stats
@@ -217,44 +247,17 @@ class BattleRoyaleGameManager {
     game.players.set(playerAddress, playerState)
     game.playerSlots[assignedSlot] = playerAddress
     game.activePlayers.add(playerAddress)
+    game.coinStates.set(playerAddress, playerState.coinState)
     game.currentPlayers++
     game.lastActivity = Date.now()
 
     console.log(`✅ Player ${playerAddress} added to slot ${assignedSlot} in game ${gameId}`)
 
-    // Check if game is ready to start (7 paying players + 1 creator = 8 total)
+    // Check if game is ready to start
     if (game.currentPlayers === game.maxPlayers) {
       this.prepareGameStart(gameId)
     }
 
-    return true
-  }
-
-  // ===== COIN MANAGEMENT =====
-  updatePlayerCoin(gameId, playerAddress, coinData) {
-    const game = this.battleRoyaleGames.get(gameId)
-    if (!game) {
-      console.error(`❌ Game not found: ${gameId}`)
-      return false
-    }
-
-    const player = game.players.get(playerAddress)
-    if (!player) {
-      console.error(`❌ Player not found in game: ${playerAddress}`)
-      return false
-    }
-
-    // Update player's coin data
-    player.coin = {
-      id: coinData.id || 'plain',
-      type: coinData.type || 'default',
-      name: coinData.name || 'Classic',
-      headsImage: coinData.headsImage || '/coins/plainh.png',
-      tailsImage: coinData.tailsImage || '/coins/plaint.png'
-    }
-
-    game.lastActivity = Date.now()
-    console.log(`✅ Updated coin for player ${playerAddress} in game ${gameId}: ${coinData.name}`)
     return true
   }
 
@@ -271,7 +274,7 @@ class BattleRoyaleGameManager {
 
     // 3-second countdown before first round
     if (broadcastFn) {
-      broadcastFn(gameId, 'battle_royale_starting', {
+      broadcastFn(`br_${gameId}`, 'battle_royale_starting', {
         gameId,
         countdown: 3,
         message: 'Battle Royale starting in 3 seconds!'
@@ -298,19 +301,33 @@ class BattleRoyaleGameManager {
 
     game.currentRound++
     game.phase = this.PHASES.ROUND_ACTIVE
-    game.roundPhase = this.ROUND_PHASES.WAITING_TARGET
+    game.gamePhase = this.ROUND_PHASES.REVEALING_TARGET
+    game.roundPhase = this.ROUND_PHASES.REVEALING_TARGET
     game.roundStartTime = Date.now()
     game.lastActivity = Date.now()
 
-    // Clear previous round data
+    // Clear previous round data for all players
     for (const [address, player] of game.players) {
       if (game.activePlayers.has(address)) {
         player.choice = null
-        player.power = 0
-        player.coinResult = null
+        player.power = 1
         player.hasFlipped = false
         player.flipTime = null
         player.roundsParticipated++
+        
+        // Reset coin state
+        player.coinState = {
+          rotation: { x: 0, y: 0, z: 0 },
+          velocity: { x: 0, y: 0, z: 0 },
+          isFlipping: false,
+          flipStartTime: null,
+          flipDuration: 2000,
+          flipResult: null,
+          totalRotations: 0,
+          finalRotation: 0,
+          powerUsed: 1
+        }
+        game.coinStates.set(address, player.coinState)
       }
     }
 
@@ -321,20 +338,17 @@ class BattleRoyaleGameManager {
     game.targetResult = Math.random() < 0.5 ? 'heads' : 'tails'
     
     // Show target for 3 seconds
-    game.roundPhase = this.ROUND_PHASES.SHOWING_TARGET
-    
     if (broadcastFn) {
-      broadcastFn(gameId, 'battle_royale_round_start', {
+      broadcastFn(`br_${gameId}`, 'battle_royale_target_reveal', {
         gameId,
         round: game.currentRound,
-        targetResult: game.targetResult,
+        target: game.targetResult,
         activePlayers: Array.from(game.activePlayers),
-        phase: 'showing_target',
         countdown: 3
       })
     }
 
-    // Start choice/flip phase after 3 seconds
+    // Start choice phase after 3 seconds
     setTimeout(() => {
       this.startChoicePhase(gameId, broadcastFn)
     }, 3000)
@@ -346,28 +360,37 @@ class BattleRoyaleGameManager {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return false
 
-    game.roundPhase = this.ROUND_PHASES.CHOOSING_FLIPPING
-    game.roundDeadline = Date.now() + 20000 // 20 seconds
+    game.gamePhase = this.ROUND_PHASES.WAITING_CHOICE
+    game.roundPhase = this.ROUND_PHASES.WAITING_CHOICE
+    game.roundCountdown = 20
+    game.roundDeadline = Date.now() + 20000
     game.lastActivity = Date.now()
 
     console.log(`⏰ Starting 20-second choice/flip phase for round ${game.currentRound}`)
 
-    if (broadcastFn) {
-      broadcastFn(gameId, 'battle_royale_choice_phase', {
-        gameId,
-        round: game.currentRound,
-        targetResult: game.targetResult,
-        timeLimit: 20,
-        deadline: game.roundDeadline
-      })
-    }
+    // Start countdown timer
+    const countdownInterval = setInterval(() => {
+      if (!this.battleRoyaleGames.has(gameId)) {
+        clearInterval(countdownInterval)
+        return
+      }
+      
+      const game = this.battleRoyaleGames.get(gameId)
+      game.roundCountdown--
+      
+      if (game.roundCountdown <= 0) {
+        clearInterval(countdownInterval)
+        this.processRoundResults(gameId, broadcastFn)
+      }
+      
+      // Broadcast state update with countdown
+      if (broadcastFn) {
+        const state = this.getFullGameState(gameId)
+        broadcastFn(`br_${gameId}`, 'battle_royale_state_update', state)
+      }
+    }, 1000)
 
-    // Set timer to auto-process round
-    const timer = setTimeout(() => {
-      this.processRoundResults(gameId, broadcastFn)
-    }, 20000)
-
-    this.roundTimers.set(gameId, timer)
+    this.roundTimers.set(gameId, countdownInterval)
     return true
   }
 
@@ -379,11 +402,6 @@ class BattleRoyaleGameManager {
     const player = game.players.get(playerAddress)
     if (!player) return false
 
-    if (game.roundPhase !== this.ROUND_PHASES.CHOOSING_FLIPPING) {
-      console.error(`❌ Cannot set choice in phase: ${game.roundPhase}`)
-      return false
-    }
-
     if (!game.activePlayers.has(playerAddress)) {
       console.error(`❌ Player not active: ${playerAddress}`)
       return false
@@ -392,21 +410,75 @@ class BattleRoyaleGameManager {
     player.choice = choice
     game.lastActivity = Date.now()
     
+    // Transition to power phase once choice is made
+    game.gamePhase = this.ROUND_PHASES.CHARGING_POWER
+    
     console.log(`🎯 ${playerAddress} chose ${choice} in round ${game.currentRound}`)
     return true
   }
 
-  executePlayerFlip(gameId, playerAddress, power) {
+  startPowerCharging(gameId, playerAddress) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    const player = game.players.get(playerAddress)
+    if (!player || !player.choice) return false
+
+    // Initialize power timer map for this game if not exists
+    if (!this.powerTimers.has(gameId)) {
+      this.powerTimers.set(gameId, new Map())
+    }
+
+    const startTime = Date.now()
+    const powerTimer = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / 2000, 1) // 2 seconds to max
+      player.power = 1 + (progress * 9) // 1 to 10
+      
+      // Update coin state power
+      player.coinState.powerUsed = player.power
+      
+      if (player.power >= 10) {
+        clearInterval(powerTimer)
+        this.powerTimers.get(gameId).delete(playerAddress)
+      }
+    }, 50)
+
+    this.powerTimers.get(gameId).set(playerAddress, powerTimer)
+    
+    console.log(`⚡ ${playerAddress} started charging power`)
+    return true
+  }
+
+  stopPowerCharging(gameId, playerAddress, finalPower) {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return false
 
     const player = game.players.get(playerAddress)
     if (!player) return false
 
-    if (game.roundPhase !== this.ROUND_PHASES.CHOOSING_FLIPPING) {
-      console.error(`❌ Cannot flip in phase: ${game.roundPhase}`)
-      return false
+    // Clear power timer
+    if (this.powerTimers.has(gameId)) {
+      const timer = this.powerTimers.get(gameId).get(playerAddress)
+      if (timer) {
+        clearInterval(timer)
+        this.powerTimers.get(gameId).delete(playerAddress)
+      }
     }
+
+    player.power = Math.max(1, Math.min(10, finalPower || player.power))
+    player.coinState.powerUsed = player.power
+    
+    console.log(`⚡ ${playerAddress} stopped charging at power ${player.power}`)
+    return true
+  }
+
+  executePlayerFlip(gameId, playerAddress, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    const player = game.players.get(playerAddress)
+    if (!player) return false
 
     if (!game.activePlayers.has(playerAddress)) {
       console.error(`❌ Player not active: ${playerAddress}`)
@@ -424,14 +496,34 @@ class BattleRoyaleGameManager {
       console.log(`🎲 Auto-assigned choice ${player.choice} for ${playerAddress}`)
     }
 
-    // Execute flip with power influence
-    player.power = Math.max(0, Math.min(10, power || 0))
-    player.coinResult = this.calculateFlipResult(player.choice, player.power)
+    // Calculate flip result - SERVER DETERMINES OUTCOME
+    const flipResult = this.calculateFlipResult(player.choice, player.power)
+    
+    // Calculate animation parameters based on power
+    const flipDuration = Math.max(1000, Math.min(10000, player.power * 1000))
+    const rotationsPerSecond = 2
+    const totalRotations = (flipDuration / 1000) * rotationsPerSecond * 2 * Math.PI
+    const finalRotation = flipResult === 'heads' ? 0 : Math.PI
+
+    // Update player's coin state for animation
+    player.coinState = {
+      rotation: { x: 0, y: 0, z: 0 },
+      velocity: { x: 0, y: totalRotations / (flipDuration / 1000), z: 0 },
+      isFlipping: true,
+      flipStartTime: Date.now(),
+      flipDuration: flipDuration,
+      flipResult: flipResult,
+      totalRotations: totalRotations,
+      finalRotation: finalRotation,
+      powerUsed: player.power
+    }
+    
     player.hasFlipped = true
     player.flipTime = Date.now()
+    game.coinStates.set(playerAddress, player.coinState)
     game.lastActivity = Date.now()
 
-    console.log(`🪙 ${playerAddress} flipped with power ${player.power}: ${player.coinResult}`)
+    console.log(`🪙 ${playerAddress} flipped with power ${player.power}: ${flipResult}`)
 
     // Check if all active players have flipped
     const allFlipped = Array.from(game.activePlayers).every(addr => {
@@ -440,17 +532,33 @@ class BattleRoyaleGameManager {
     })
 
     if (allFlipped) {
-      console.log(`✅ All players flipped in round ${game.currentRound}, processing results`)
-      // Clear the timer and process immediately
-      const timer = this.roundTimers.get(gameId)
-      if (timer) {
-        clearTimeout(timer)
-        this.roundTimers.delete(gameId)
+      console.log(`✅ All players flipped in round ${game.currentRound}`)
+      
+      // Broadcast all flips executing
+      if (broadcastFn) {
+        const playerFlipStates = {}
+        for (const addr of game.activePlayers) {
+          const p = game.players.get(addr)
+          playerFlipStates[addr] = p.coinState
+        }
+        
+        broadcastFn(`br_${gameId}`, 'battle_royale_flips_executing', {
+          gameId,
+          round: game.currentRound,
+          playerFlipStates
+        })
       }
-      // Process results after a short delay for dramatic effect
+      
+      // Process results after longest flip completes
+      const maxDuration = Math.max(
+        ...Array.from(game.activePlayers).map(addr => 
+          game.players.get(addr).coinState.flipDuration || 2000
+        )
+      )
+      
       setTimeout(() => {
-        this.processRoundResults(gameId)
-      }, 1000)
+        this.processRoundResults(gameId, broadcastFn)
+      }, maxDuration + 500)
     }
 
     return true
@@ -458,9 +566,9 @@ class BattleRoyaleGameManager {
 
   calculateFlipResult(choice, power) {
     // Power influences the probability of getting the chosen result
-    // Power 0 = 50% chance, Power 10 = 85% chance
+    // Power 1 = 50% chance, Power 10 = 85% chance
     const baseChance = 0.5
-    const powerBonus = (power / 10) * 0.35 // Max 35% bonus
+    const powerBonus = ((power - 1) / 9) * 0.35 // 0 to 35% bonus
     const successChance = baseChance + powerBonus
 
     const success = Math.random() < successChance
@@ -472,26 +580,48 @@ class BattleRoyaleGameManager {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return false
 
-    console.log(`🔄 Processing round ${game.currentRound} results for game ${gameId}`)
+    console.log(`📄 Processing round ${game.currentRound} results for game ${gameId}`)
 
-    game.roundPhase = this.ROUND_PHASES.PROCESSING
+    game.gamePhase = this.ROUND_PHASES.SHOWING_RESULT
+    game.roundPhase = this.ROUND_PHASES.SHOWING_RESULT
     game.lastActivity = Date.now()
+
+    // Clear countdown timer
+    if (this.roundTimers.has(gameId)) {
+      clearInterval(this.roundTimers.get(gameId))
+      this.roundTimers.delete(gameId)
+    }
 
     // Auto-flip any players who didn't flip
     for (const playerAddress of game.activePlayers) {
       const player = game.players.get(playerAddress)
       if (!player.hasFlipped) {
-        // Auto-flip with max power as penalty for not participating
+        // Auto-flip with random choice and minimal power
         player.choice = Math.random() < 0.5 ? 'heads' : 'tails'
-        player.power = 10
-        player.coinResult = this.calculateFlipResult(player.choice, player.power)
+        player.power = 1
+        const flipResult = this.calculateFlipResult(player.choice, 1)
+        
+        player.coinState = {
+          rotation: { x: 0, y: 0, z: 0 },
+          velocity: { x: 0, y: 0, z: 0 },
+          isFlipping: false,
+          flipStartTime: Date.now(),
+          flipDuration: 1000,
+          flipResult: flipResult,
+          totalRotations: 2 * Math.PI * 2,
+          finalRotation: flipResult === 'heads' ? 0 : Math.PI,
+          powerUsed: 1
+        }
+        
         player.hasFlipped = true
         player.flipTime = Date.now()
-        console.log(`⚠️ Auto-flipped ${playerAddress}: ${player.coinResult}`)
+        game.coinStates.set(playerAddress, player.coinState)
+        
+        console.log(`⚠️ Auto-flipped ${playerAddress}: ${flipResult}`)
       }
     }
 
-    // Determine eliminations
+    // Determine eliminations based on target
     const eliminatedThisRound = []
     const survivedThisRound = []
 
@@ -499,7 +629,7 @@ class BattleRoyaleGameManager {
       const player = game.players.get(playerAddress)
       
       // Player is eliminated if their coin result doesn't match the target
-      if (player.coinResult !== game.targetResult) {
+      if (player.coinState.flipResult !== game.targetResult) {
         eliminatedThisRound.push(playerAddress)
         player.status = 'eliminated'
         player.eliminatedInRound = game.currentRound
@@ -520,30 +650,30 @@ class BattleRoyaleGameManager {
       round: game.currentRound,
       targetResult: game.targetResult,
       playersAtStart: game.activePlayers.size + eliminatedThisRound.length,
-      eliminated: eliminatedThisRound,
-      survived: survivedThisRound,
+      eliminatedPlayers: eliminatedThisRound,
+      survivingPlayers: survivedThisRound,
       playersRemaining: game.activePlayers.size
     }
 
     game.eliminationHistory.push(roundData)
+    game.roundResult = roundData
 
     console.log(`📊 Round ${game.currentRound} results:`)
     console.log(`  Target: ${game.targetResult}`)
     console.log(`  Eliminated: ${eliminatedThisRound.length} players`)
     console.log(`  Remaining: ${game.activePlayers.size} players`)
 
-    // Show results
-    game.roundPhase = this.ROUND_PHASES.SHOWING_RESULTS
-
+    // Broadcast results
     if (broadcastFn) {
-      broadcastFn(gameId, 'battle_royale_round_results', {
+      broadcastFn(`br_${gameId}`, 'battle_royale_round_result', {
         gameId,
         round: game.currentRound,
         targetResult: game.targetResult,
-        eliminated: eliminatedThisRound,
-        survived: survivedThisRound,
+        eliminatedPlayers: eliminatedThisRound,
+        survivingPlayers: survivedThisRound,
         playersRemaining: game.activePlayers.size,
-        roundData
+        roundResult: roundData,
+        playerStates: this.getPlayerStates(gameId)
       })
     }
 
@@ -553,10 +683,10 @@ class BattleRoyaleGameManager {
         this.completeGame(gameId, broadcastFn)
       }, 3000) // 3-second delay to show final results
     } else {
-      // Start next round after 3 seconds
+      // Start next round after 5 seconds
       setTimeout(() => {
         this.startNextRound(gameId, broadcastFn)
-      }, 3000)
+      }, 5000)
     }
 
     return true
@@ -570,6 +700,7 @@ class BattleRoyaleGameManager {
     console.log(`🏆 Completing Battle Royale game: ${gameId}`)
 
     game.phase = this.PHASES.COMPLETED
+    game.gamePhase = 'game_complete'
     game.completedAt = new Date().toISOString()
     game.lastActivity = Date.now()
 
@@ -589,10 +720,11 @@ class BattleRoyaleGameManager {
     console.log(`🎉 Battle Royale winner: ${game.winner || 'None'}`)
 
     if (broadcastFn) {
-      broadcastFn(gameId, 'battle_royale_completed', {
+      broadcastFn(`br_${gameId}`, 'battle_royale_game_complete', {
         gameId,
         winner: game.winner,
         totalRounds: game.currentRound,
+        finalPrize: game.nftName,
         finalResults: {
           winner: game.winner,
           totalPlayers: game.currentPlayers,
@@ -608,7 +740,7 @@ class BattleRoyaleGameManager {
     return true
   }
 
-  // ===== UTILITY METHODS =====
+  // ===== STATE QUERIES =====
   getGame(gameId) {
     return this.battleRoyaleGames.get(gameId)
   }
@@ -617,15 +749,74 @@ class BattleRoyaleGameManager {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return null
 
+    // Convert Maps to objects for transmission
+    const players = {}
+    const coinStates = {}
+    
+    for (const [address, player] of game.players) {
+      players[address] = {
+        ...player,
+        coinState: player.coinState || game.coinStates.get(address)
+      }
+      coinStates[address] = player.coinState || game.coinStates.get(address)
+    }
+
     return {
-      ...game,
-      players: Object.fromEntries(game.players),
+      gameId: game.gameId,
+      phase: game.phase,
+      gamePhase: game.gamePhase || game.roundPhase,
+      roundPhase: game.roundPhase,
+      
+      maxPlayers: game.maxPlayers,
+      currentPlayers: game.currentPlayers,
+      
+      creator: game.creator,
+      players: players,
+      playerSlots: game.playerSlots,
       activePlayers: Array.from(game.activePlayers),
       eliminatedPlayers: Array.from(game.eliminatedPlayers),
-      spectators: Array.from(game.spectators)
+      
+      currentRound: game.currentRound,
+      targetResult: game.targetResult,
+      roundCountdown: game.roundCountdown,
+      roundResult: game.roundResult,
+      
+      coinStates: coinStates,
+      
+      winner: game.winner,
+      eliminationHistory: game.eliminationHistory,
+      
+      nftName: game.nftName,
+      nftImage: game.nftImage,
+      
+      spectators: Array.from(game.spectators),
+      
+      lastActivity: game.lastActivity
     }
   }
 
+  getPlayerStates(gameId) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return {}
+    
+    const states = {}
+    for (const [address, player] of game.players) {
+      states[address] = {
+        address: player.address,
+        slotNumber: player.slotNumber,
+        status: player.status,
+        choice: player.choice,
+        power: player.power,
+        hasFlipped: player.hasFlipped,
+        coinState: player.coinState,
+        eliminatedInRound: player.eliminatedInRound,
+        roundsSurvived: player.roundsSurvived
+      }
+    }
+    return states
+  }
+
+  // ===== SPECTATOR MANAGEMENT =====
   addSpectator(gameId, address) {
     const game = this.battleRoyaleGames.get(gameId)
     if (game) {
@@ -644,17 +835,29 @@ class BattleRoyaleGameManager {
     return false
   }
 
+  // ===== TIMER MANAGEMENT =====
   clearGameTimers(gameId) {
+    // Clear round timer
     const roundTimer = this.roundTimers.get(gameId)
     if (roundTimer) {
-      clearTimeout(roundTimer)
+      clearInterval(roundTimer)
       this.roundTimers.delete(gameId)
     }
 
+    // Clear game timers
     const gameTimer = this.gameTimers.get(gameId)
     if (gameTimer) {
       clearTimeout(gameTimer)
       this.gameTimers.delete(gameId)
+    }
+
+    // Clear power timers for all players
+    if (this.powerTimers.has(gameId)) {
+      const playerTimers = this.powerTimers.get(gameId)
+      for (const timer of playerTimers.values()) {
+        clearInterval(timer)
+      }
+      this.powerTimers.delete(gameId)
     }
   }
 
@@ -662,7 +865,42 @@ class BattleRoyaleGameManager {
   removeGame(gameId) {
     this.clearGameTimers(gameId)
     this.battleRoyaleGames.delete(gameId)
+    this.flipAnimations.delete(gameId)
     console.log(`🗑️ Removed Battle Royale game: ${gameId}`)
+  }
+
+  // ===== COIN UPDATE =====
+  updatePlayerCoin(gameId, playerAddress, coinData) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    const player = game.players.get(playerAddress)
+    if (!player) return false
+
+    // Update player's coin data
+    player.coin = {
+      id: coinData.id || 'plain',
+      type: coinData.type || 'default',
+      name: coinData.name || 'Classic',
+      headsImage: coinData.headsImage || '/coins/plainh.png',
+      tailsImage: coinData.tailsImage || '/coins/plaint.png',
+      material: coinData.material || null
+    }
+
+    game.lastActivity = Date.now()
+    console.log(`✅ Updated coin for player ${playerAddress} in game ${gameId}: ${coinData.name}`)
+    return true
+  }
+
+  // ===== POWER UPDATE BROADCASTING =====
+  broadcastPowerUpdate(gameId, playerAddress, power, broadcastFn) {
+    if (!broadcastFn) return
+    
+    broadcastFn(`br_${gameId}`, 'battle_royale_power_update', {
+      gameId,
+      playerAddress,
+      power
+    })
   }
 }
 

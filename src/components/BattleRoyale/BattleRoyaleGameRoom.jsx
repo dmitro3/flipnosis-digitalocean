@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import styled from '@emotion/styled'
 import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useProfile } from '../../contexts/ProfileContext'
-import { getApiUrl } from '../../config/api'
 import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
@@ -145,27 +144,6 @@ const PlayerCard = styled.div`
     }
   }
   
-  .coin-display {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-    border: 3px solid #ffa500;
-    animation: ${props => props.isFlipping ? 'coinFlip 2s ease-in-out' : 'none'};
-  }
-  
-  @keyframes coinFlip {
-    0% { transform: rotateY(0deg); }
-    50% { transform: rotateY(180deg); }
-    100% { transform: rotateY(360deg); }
-  }
-  
   .choice-display {
     color: ${props => props.theme.colors.neonBlue};
     font-size: 0.9rem;
@@ -196,9 +174,17 @@ const PlayerCard = styled.div`
       .power-fill {
         height: 100%;
         background: linear-gradient(90deg, #00ff88 0%, #ffed4e 50%, #ff1493 100%);
-        width: ${props => (props.power || 0) * 10}%;
+        width: ${props => (props.power || 1) * 10}%;
         transition: width 0.3s ease;
       }
+    }
+    
+    .power-value {
+      color: ${props => props.theme.colors.neonBlue};
+      font-size: 0.9rem;
+      font-weight: bold;
+      margin-top: 0.25rem;
+      text-align: center;
     }
   }
   
@@ -281,57 +267,23 @@ const ActionPanel = styled.div`
     }
   }
   
-  .power-control {
-    margin: 1rem 0;
-    
-    .power-label {
-      color: ${props => props.theme.colors.textSecondary};
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
-    }
-    
-    .power-slider {
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      outline: none;
-      cursor: pointer;
-      
-      &::-webkit-slider-thumb {
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: #00ff88;
-        cursor: pointer;
-        border: 2px solid #fff;
-        box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
-      }
-    }
-    
-    .power-value {
-      color: ${props => props.theme.colors.neonBlue};
-      font-size: 1.1rem;
-      font-weight: bold;
-      margin-top: 0.5rem;
-    }
-  }
-  
   .flip-button {
-    background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
-    color: white;
+    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    color: #000;
     border: none;
-    padding: 1rem 3rem;
+    padding: 1.5rem 3rem;
     border-radius: 2rem;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
+    text-transform: uppercase;
+    user-select: none;
+    border: 3px solid #00ff88;
     
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(255, 20, 147, 0.3);
+      box-shadow: 0 10px 20px rgba(0, 255, 136, 0.3);
     }
     
     &:disabled {
@@ -344,6 +296,7 @@ const ActionPanel = styled.div`
   .waiting-message {
     color: ${props => props.theme.colors.textSecondary};
     font-style: italic;
+    font-size: 1.1rem;
   }
 `
 
@@ -362,52 +315,26 @@ const BattleRoyaleGameRoom = ({
   // Use gameId from props or URL params
   const gameId = propGameId || paramGameId
   
-  // Server-controlled state
+  // Server-controlled state - ONLY from server
   const [serverState, setServerState] = useState(null)
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [gameData, setGameData] = useState(null)
-  
-  // Local UI state
-  const [roundCountdown, setRoundCountdown] = useState(null)
+  const [playerCoinImages, setPlayerCoinImages] = useState({})
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
-  const [playerCoinImages, setPlayerCoinImages] = useState({}) // Store actual coin images for each player
+  const [isChargingPower, setIsChargingPower] = useState(false)
+  const [currentPower, setCurrentPower] = useState(1)
+  const powerIntervalRef = useRef(null)
 
-  // Load game data
-  const loadGameData = useCallback(async () => {
-    if (!gameId) return
-    
-    try {
-      const response = await fetch(`/api/battle-royale/${gameId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setGameData(data)
-      } else {
-        throw new Error('Failed to load game data')
-      }
-    } catch (error) {
-      console.error('❌ Failed to load game data:', error)
-      showToast('Failed to load game data', 'error')
-    }
-  }, [gameId, showToast])
-  
-  // Load game data on mount
-  useEffect(() => {
-    loadGameData()
-  }, [loadGameData])
-
-  // Load coin images for a player
+  // Load coin images for players
   const loadPlayerCoinImages = useCallback(async (playerAddress, coinData) => {
     try {
       let headsImage, tailsImage
       
       if (coinData?.type === 'custom') {
-        // Load custom coin images from profile
         headsImage = await getCoinHeadsImage(playerAddress)
         tailsImage = await getCoinTailsImage(playerAddress)
       } else {
-        // Use default coin images
         headsImage = coinData?.headsImage || '/coins/plainh.png'
         tailsImage = coinData?.tailsImage || '/coins/plaint.png'
       }
@@ -418,7 +345,6 @@ const BattleRoyaleGameRoom = ({
       }))
     } catch (error) {
       console.error('Error loading coin images for player:', playerAddress, error)
-      // Fallback to default coin
       setPlayerCoinImages(prev => ({
         ...prev,
         [playerAddress]: { 
@@ -431,41 +357,43 @@ const BattleRoyaleGameRoom = ({
 
   // ===== HELPER FUNCTIONS =====
   const isMyTurn = useCallback(() => {
-    return serverState && address && 
-           serverState.currentTurn?.toLowerCase() === address.toLowerCase()
+    if (!serverState || !address) return false
+    
+    // In battle royale, all alive players can act simultaneously during choice/power phases
+    const myPlayer = serverState.players?.[address.toLowerCase()]
+    return myPlayer && myPlayer.status !== 'eliminated'
   }, [serverState, address])
 
   const canMakeChoice = useCallback(() => {
-    if (!serverState || !isMyTurn()) return false
+    if (!serverState || !address) return false
     
-    const myPlayer = serverState.players?.get?.(address.toLowerCase()) || 
-                     serverState.players?.[address.toLowerCase()]
-    return serverState.gamePhase === 'waiting_choice' && !myPlayer?.choice
-  }, [serverState, isMyTurn, address])
+    const myPlayer = serverState.players?.[address.toLowerCase()]
+    return serverState.gamePhase === 'waiting_choice' && 
+           myPlayer && 
+           myPlayer.status !== 'eliminated' &&
+           !myPlayer.choice
+  }, [serverState, address])
 
   const canChargePower = useCallback(() => {
-    if (!serverState || !isMyTurn()) return false
+    if (!serverState || !address) return false
     
-    const myPlayer = serverState.players?.get?.(address.toLowerCase()) || 
-                     serverState.players?.[address.toLowerCase()]
-    return serverState.gamePhase === 'charging_power' && myPlayer?.choice && !myPlayer?.hasFlipped
-  }, [serverState, isMyTurn, address])
+    const myPlayer = serverState.players?.[address.toLowerCase()]
+    return serverState.gamePhase === 'charging_power' && 
+           myPlayer && 
+           myPlayer.status !== 'eliminated' &&
+           myPlayer.choice && 
+           !myPlayer.hasFlipped
+  }, [serverState, address])
 
   // ===== SOCKET EVENT HANDLERS =====
   const handleGameStateUpdate = useCallback((data) => {
-    console.log('🔍 Battle Royale game state received:', data)
+    console.log('🎮 Battle Royale state update:', data)
     setServerState(data)
     setLoading(false)
     
-    // Update countdown from server
-    if (data.roundCountdown !== undefined) {
-      setRoundCountdown(data.roundCountdown)
-    }
-
     // Load coin images for all players
     if (data.players) {
-      const playersMap = data.players instanceof Map ? data.players : new Map(Object.entries(data.players))
-      playersMap.forEach((player, playerAddress) => {
+      Object.entries(data.players).forEach(([playerAddress, player]) => {
         if (player.coin && !playerCoinImages[playerAddress]) {
           loadPlayerCoinImages(playerAddress, player.coin)
         }
@@ -477,20 +405,44 @@ const BattleRoyaleGameRoom = ({
     console.log('🏠 Battle Royale room joined:', data)
   }, [])
 
-  const handleFlipExecuting = useCallback((data) => {
-    console.log('🎲 Battle Royale flip executing:', data)
-    showToast('Coin is flipping...', 'info')
+  const handleTargetReveal = useCallback((data) => {
+    console.log('🎯 Target revealed for round:', data)
+    showToast(`Target for this round: ${data.target.toUpperCase()}!`, 'info')
+  }, [showToast])
+
+  const handleFlipsExecuting = useCallback((data) => {
+    console.log('🎲 All players flipping simultaneously:', data)
+    showToast('All coins are flipping...', 'info')
+    
+    // Update server state with flip data
+    setServerState(prev => ({
+      ...prev,
+      gamePhase: 'executing_flips',
+      flipsInProgress: true,
+      playerFlipStates: data.playerFlipStates
+    }))
   }, [showToast])
 
   const handleRoundResult = useCallback((data) => {
     console.log('🎲 Battle Royale round result:', data)
+    
+    // Update server state with results
+    setServerState(prev => ({
+      ...prev,
+      gamePhase: 'showing_result',
+      roundResult: data.roundResult,
+      eliminatedPlayers: data.eliminatedPlayers,
+      survivingPlayers: data.survivingPlayers,
+      currentRound: data.currentRound
+    }))
     
     // Show result popup for eliminated players
     if (data.eliminatedPlayers?.includes(address)) {
       setResultData({
         isEliminated: true,
         round: data.currentRound,
-        eliminatedCount: data.eliminatedPlayers.length
+        eliminatedCount: data.eliminatedPlayers.length,
+        survivorsCount: data.survivingPlayers.length
       })
       setShowResultPopup(true)
     }
@@ -511,8 +463,26 @@ const BattleRoyaleGameRoom = ({
 
   const handleNewRound = useCallback((data) => {
     console.log('🔄 Battle Royale new round:', data)
-    setRoundCountdown(20) // 20 seconds per round
-  }, [])
+    showToast(`Round ${data.currentRound} starting!`, 'info')
+  }, [showToast])
+
+  const handlePowerUpdate = useCallback((data) => {
+    // Update power levels from server
+    if (data.playerAddress?.toLowerCase() === address?.toLowerCase()) {
+      setCurrentPower(data.power)
+    }
+    
+    setServerState(prev => ({
+      ...prev,
+      players: {
+        ...prev.players,
+        [data.playerAddress]: {
+          ...prev.players[data.playerAddress],
+          power: data.power
+        }
+      }
+    }))
+  }, [address])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
@@ -522,21 +492,18 @@ const BattleRoyaleGameRoom = ({
 
     const connectToGame = async () => {
       try {
-        // Connect to socket
         await socketService.connect(gameId, address)
         setConnected(true)
         
         // Register event listeners
-        console.log('📌 Registering Battle Royale Socket.io event listeners...')
-        
         socketService.on('room_joined', handleRoomJoined)
-        socketService.on('battle_royale_game_state_update', handleGameStateUpdate)
-        socketService.on('battle_royale_flip_executing', handleFlipExecuting)
+        socketService.on('battle_royale_state_update', handleGameStateUpdate)
+        socketService.on('battle_royale_target_reveal', handleTargetReveal)
+        socketService.on('battle_royale_flips_executing', handleFlipsExecuting)
         socketService.on('battle_royale_round_result', handleRoundResult)
         socketService.on('battle_royale_game_complete', handleGameComplete)
         socketService.on('battle_royale_new_round', handleNewRound)
-        
-        console.log('✅ All Battle Royale Socket.io event listeners registered')
+        socketService.on('battle_royale_power_update', handlePowerUpdate)
         
         // Join room
         socketService.emit('join_battle_royale_room', { 
@@ -560,13 +527,15 @@ const BattleRoyaleGameRoom = ({
     return () => {
       // Cleanup listeners
       socketService.off('room_joined', handleRoomJoined)
-      socketService.off('battle_royale_game_state_update', handleGameStateUpdate)
-      socketService.off('battle_royale_flip_executing', handleFlipExecuting)
+      socketService.off('battle_royale_state_update', handleGameStateUpdate)
+      socketService.off('battle_royale_target_reveal', handleTargetReveal)
+      socketService.off('battle_royale_flips_executing', handleFlipsExecuting)
       socketService.off('battle_royale_round_result', handleRoundResult)
       socketService.off('battle_royale_game_complete', handleGameComplete)
       socketService.off('battle_royale_new_round', handleNewRound)
+      socketService.off('battle_royale_power_update', handlePowerUpdate)
     }
-  }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleFlipExecuting, handleRoundResult, handleGameComplete, handleNewRound])
+  }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
 
   // ===== USER ACTIONS =====
   const handleChoice = useCallback((choice) => {
@@ -586,22 +555,64 @@ const BattleRoyaleGameRoom = ({
     if (!canChargePower()) return
     
     console.log('⚡ Starting power charge')
+    setIsChargingPower(true)
+    setCurrentPower(1)
+    
+    // Send start charge event to server
     socketService.emit('battle_royale_start_power_charge', {
       gameId,
       address
     })
+    
+    // Start local power accumulation for UI feedback
+    const startTime = Date.now()
+    powerIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const newPower = Math.min(10, 1 + (elapsed / 200)) // 2 seconds to reach max
+      setCurrentPower(newPower)
+      
+      // Send power updates to server
+      socketService.emit('battle_royale_power_update', {
+        gameId,
+        address,
+        power: newPower
+      })
+      
+      if (newPower >= 10) {
+        handlePowerChargeStop()
+      }
+    }, 50)
   }, [canChargePower, gameId, address])
 
   const handlePowerChargeStop = useCallback(() => {
-    console.log('⚡ Stopping power charge')
+    if (!isChargingPower) return
+    
+    console.log('⚡ Stopping power charge at:', currentPower)
+    setIsChargingPower(false)
+    
+    if (powerIntervalRef.current) {
+      clearInterval(powerIntervalRef.current)
+      powerIntervalRef.current = null
+    }
+    
+    // Send final power to server
     socketService.emit('battle_royale_stop_power_charge', {
       gameId,
-      address
+      address,
+      finalPower: currentPower
     })
-  }, [gameId, address])
+    
+    // Auto-execute flip after stopping charge
+    setTimeout(() => {
+      socketService.emit('battle_royale_execute_flip', {
+        gameId,
+        address
+      })
+    }, 100)
+  }, [isChargingPower, currentPower, gameId, address])
 
   // Show loading state
-  if (loading || !gameData) {
+  if (loading) {
     return (
       <GameContainer>
         <div style={{ 
@@ -610,20 +621,32 @@ const BattleRoyaleGameRoom = ({
           fontSize: '1.2rem',
           padding: '2rem'
         }}>
-          {loading ? 'Loading Battle Royale Game...' : 'Game not found'}
+          Loading Battle Royale Game...
         </div>
       </GameContainer>
     )
   }
 
-  // Get current user's player data from server state
-  const currentPlayer = serverState?.players?.get?.(address.toLowerCase()) || 
-                       serverState?.players?.[address.toLowerCase()]
+  if (!serverState) {
+    return (
+      <GameContainer>
+        <div style={{ 
+          textAlign: 'center', 
+          color: 'white', 
+          fontSize: '1.2rem',
+          padding: '2rem'
+        }}>
+          Waiting for game state...
+        </div>
+      </GameContainer>
+    )
+  }
+
+  // Get current user's player data
+  const currentPlayer = serverState?.players?.[address.toLowerCase()]
   const isParticipant = !!currentPlayer
   const isEliminated = currentPlayer?.status === 'eliminated'
-  const canAct = isParticipant && !isEliminated && 
-    serverState?.gamePhase === 'waiting_choice' && 
-    isMyTurn()
+  const isAlive = isParticipant && !isEliminated
 
   const formatAddress = (addr) => {
     if (!addr) return ''
@@ -634,12 +657,16 @@ const BattleRoyaleGameRoom = ({
     if (!serverState) return 'Loading...'
     
     switch (serverState.gamePhase) {
+      case 'waiting_players':
+        return 'Waiting for all players to join...'
+      case 'revealing_target':
+        return 'Revealing target for this round...'
       case 'waiting_choice':
-        return isMyTurn() ? 'Choose heads or tails!' : 'Waiting for other players...'
+        return isAlive ? 'Choose heads or tails!' : 'Players are choosing...'
       case 'charging_power':
-        return isMyTurn() ? 'Hold to charge power!' : 'Player is charging power...'
-      case 'executing_flip':
-        return 'Coin is flipping...'
+        return isAlive ? 'Hold to charge power!' : 'Players are charging power...'
+      case 'executing_flips':
+        return 'All coins are flipping...'
       case 'showing_result':
         return 'Round complete!'
       case 'game_complete':
@@ -653,7 +680,7 @@ const BattleRoyaleGameRoom = ({
     <GameContainer>
       <RoundHeader 
         showingTarget={serverState?.gamePhase === 'showing_result'}
-        timeLeft={roundCountdown || 0}
+        timeLeft={serverState?.roundCountdown || 0}
       >
         <div className="round-title">
           Round {serverState?.currentRound || 1}
@@ -667,7 +694,10 @@ const BattleRoyaleGameRoom = ({
         )}
         
         <div className="timer">
-          {roundCountdown > 0 ? `${roundCountdown}s remaining` : getPhaseMessage()}
+          {serverState?.roundCountdown > 0 ? 
+            `${serverState.roundCountdown}s remaining` : 
+            getPhaseMessage()
+          }
         </div>
       </RoundHeader>
 
@@ -675,8 +705,7 @@ const BattleRoyaleGameRoom = ({
         {serverState?.playerSlots?.map((playerAddress, index) => {
           if (!playerAddress) return null
           
-          const player = serverState.players?.get?.(playerAddress.toLowerCase()) || 
-                        serverState.players?.[playerAddress.toLowerCase()]
+          const player = serverState.players?.[playerAddress.toLowerCase()]
           const isCurrentUser = playerAddress.toLowerCase() === address?.toLowerCase()
           const isEliminated = player?.status === 'eliminated'
           
@@ -687,8 +716,7 @@ const BattleRoyaleGameRoom = ({
               isEliminated={isEliminated}
               hasChoice={!!player?.choice}
               hasFlipped={player?.hasFlipped}
-              power={player?.power}
-              isFlipping={serverState?.gamePhase === 'executing_flip' && isCurrentUser}
+              power={player?.power || 1}
             >
               {isEliminated && (
                 <div className="elimination-overlay">❌</div>
@@ -701,115 +729,111 @@ const BattleRoyaleGameRoom = ({
                   {formatAddress(playerAddress)}
                 </div>
                 <div className="player-slot">
-                  {index === 0 ? 'Creator' : `Slot ${index + 1}`}
+                  {index === 0 ? 'Creator' : `Player ${index + 1}`}
                 </div>
               </div>
               
-              <div className="coin-display">
-                {playerCoinImages[playerAddress] ? (
-                  <div className="coin-images" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <img 
-                      src={playerCoinImages[playerAddress].headsImage} 
-                      alt="Heads" 
-                      className="coin-image"
-                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-                    />
-                    <img 
-                      src={playerCoinImages[playerAddress].tailsImage} 
-                      alt="Tails" 
-                      className="coin-image"
-                      style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-                    />
-                  </div>
-                ) : (
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.5rem',
-                    color: '#333',
-                    border: '3px solid #ffa500'
-                  }}>
-                    🪙
-                  </div>
-                )}
-              </div>
+              {/* Server-controlled coin display */}
+              <OptimizedGoldCoin
+                isFlipping={player?.coinState?.isFlipping || false}
+                flipResult={player?.coinState?.flipResult}
+                flipDuration={player?.coinState?.duration || 2000}
+                onFlipComplete={() => console.log(`Player ${index} flip complete`)}
+                size={180}
+                isPlayerTurn={false}
+                gamePhase={serverState.gamePhase}
+                isInteractive={false}
+                serverControlled={true}
+                customHeadsImage={playerCoinImages[playerAddress]?.headsImage}
+                customTailsImage={playerCoinImages[playerAddress]?.tailsImage}
+                material={player?.coin?.material}
+                creatorPower={player?.power || 1}
+                totalRotations={player?.coinState?.totalRotations}
+                finalRotation={player?.coinState?.finalRotation}
+              />
               
-              {player?.choice && (
+              {player?.choice && !player?.coinState?.isFlipping && (
                 <div className="choice-display">
-                  {player.choice}
+                  Choice: {player.choice}
                 </div>
               )}
               
               <div className="power-display">
-                <div className="power-label">Power</div>
+                <div className="power-label">Power Level</div>
                 <div className="power-bar">
                   <div className="power-fill" />
                 </div>
+                <div className="power-value">{(player?.power || 1).toFixed(1)}/10</div>
               </div>
             </PlayerCard>
           )
         })}
       </PlayersGrid>
 
-      {canAct && (
+      {/* Action Panel */}
+      {isAlive && (
         <ActionPanel>
-          <div className="action-title">Your Turn</div>
+          <div className="action-title">Your Actions</div>
           
-          {!currentPlayer?.choice && serverState?.gamePhase === 'waiting_choice' && (
+          {/* Choice Phase */}
+          {canMakeChoice() && (
             <div className="choice-buttons">
               <button
                 className="heads"
                 onClick={() => handleChoice('heads')}
-                disabled={!!currentPlayer?.choice}
               >
                 👑 Heads
               </button>
               <button
                 className="tails"
                 onClick={() => handleChoice('tails')}
-                disabled={!!currentPlayer?.choice}
               >
-                🗲 Tails
+                🗿 Tails
               </button>
             </div>
           )}
           
-          {currentPlayer?.choice && serverState?.gamePhase === 'charging_power' && (
-            <button
-              className="flip-button"
-              onMouseDown={handlePowerChargeStart}
-              onMouseUp={handlePowerChargeStop}
-              onMouseLeave={handlePowerChargeStop}
-              onTouchStart={handlePowerChargeStart}
-              onTouchEnd={handlePowerChargeStop}
-              style={{ 
-                background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
-                color: '#000',
-                padding: '1.5rem 3rem',
-                fontSize: '1.3rem',
-                userSelect: 'none',
-                cursor: 'pointer',
-                border: '3px solid #00ff88',
-                animation: 'pulse 2s infinite'
-              }}
-            >
-              ⚡ HOLD TO CHARGE ⚡
-            </button>
+          {/* Power Charging Phase */}
+          {canChargePower() && (
+            <>
+              <div style={{ marginBottom: '1rem', color: '#FFD700' }}>
+                Your choice: {currentPlayer?.choice?.toUpperCase()}
+              </div>
+              <button
+                className="flip-button"
+                onMouseDown={handlePowerChargeStart}
+                onMouseUp={handlePowerChargeStop}
+                onMouseLeave={handlePowerChargeStop}
+                onTouchStart={handlePowerChargeStart}
+                onTouchEnd={handlePowerChargeStop}
+                style={{
+                  animation: isChargingPower ? 'pulse 0.5s infinite' : 'none'
+                }}
+              >
+                {isChargingPower ? `⚡ CHARGING: ${currentPower.toFixed(1)} ⚡` : '⚡ HOLD TO CHARGE ⚡'}
+              </button>
+              <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#888' }}>
+                Power affects flip duration and drama!
+              </div>
+            </>
           )}
           
-          {currentPlayer?.hasFlipped && (
+          {/* Waiting States */}
+          {currentPlayer?.hasFlipped && serverState?.gamePhase === 'charging_power' && (
             <div className="waiting-message">
               Waiting for other players to flip...
+            </div>
+          )}
+          
+          {currentPlayer?.choice && serverState?.gamePhase === 'waiting_choice' && (
+            <div className="waiting-message">
+              You chose {currentPlayer.choice}. Waiting for others...
             </div>
           )}
         </ActionPanel>
       )}
       
+      {/* Spectator/Eliminated Panel */}
       {!isParticipant && (
         <ActionPanel>
           <div className="action-title">Spectating</div>
@@ -829,33 +853,6 @@ const BattleRoyaleGameRoom = ({
         </ActionPanel>
       )}
 
-      {/* Central Coin Display */}
-      {serverState?.gamePhase === 'executing_flip' && (
-        <div style={{ 
-          position: 'fixed', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)',
-          zIndex: 1000,
-          background: 'rgba(0, 0, 0, 0.8)',
-          borderRadius: '1rem',
-          padding: '2rem',
-          border: '2px solid #00BFFF'
-        }}>
-          <OptimizedGoldCoin
-            isFlipping={true}
-            flipResult={serverState.flipResult}
-            flipDuration={3000}
-            onFlipComplete={() => console.log('Battle Royale flip complete')}
-            size={200}
-            isPlayerTurn={false}
-            gamePhase="executing_flip"
-            isInteractive={false}
-            serverControlled={true}
-          />
-        </div>
-      )}
-
       {/* Result Popup */}
       {showResultPopup && resultData && (
         <div style={{
@@ -864,14 +861,14 @@ const BattleRoyaleGameRoom = ({
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
+          background: 'rgba(0, 0, 0, 0.9)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 2000
         }}>
           <div style={{
-            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.9))',
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.95))',
             border: '3px solid #FF1493',
             borderRadius: '1rem',
             padding: '3rem',
@@ -886,8 +883,9 @@ const BattleRoyaleGameRoom = ({
                   ❌ Eliminated!
                 </h2>
                 <p style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>
-                  You were eliminated in round {resultData.round}. 
-                  {resultData.eliminatedCount} players eliminated this round.
+                  You were eliminated in round {resultData.round}.
+                  <br />
+                  {resultData.eliminatedCount} players eliminated, {resultData.survivorsCount} remaining.
                 </p>
               </>
             ) : resultData.isWinner ? (
@@ -896,10 +894,12 @@ const BattleRoyaleGameRoom = ({
                   🏆 You Won!
                 </h2>
                 <p style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>
-                  Congratulations! You won the Battle Royale and earned the NFT plus all entry fees!
+                  Congratulations! You won the Battle Royale!
+                  <br />
+                  You've earned the NFT prize!
                 </p>
                 <p style={{ color: '#FFD700', fontSize: '1.1rem' }}>
-                  Prize: {resultData.finalPrize} ETH + NFT
+                  NFT Prize: {resultData.finalPrize}
                 </p>
               </>
             ) : (
@@ -908,7 +908,9 @@ const BattleRoyaleGameRoom = ({
                   💔 Game Over
                 </h2>
                 <p style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>
-                  The winner is {formatAddress(resultData.winner)}. Better luck next time!
+                  The winner is {formatAddress(resultData.winner)}. 
+                  <br />
+                  Better luck next time!
                 </p>
               </>
             )}
@@ -917,7 +919,9 @@ const BattleRoyaleGameRoom = ({
               onClick={() => {
                 setShowResultPopup(false)
                 setResultData(null)
-                window.location.href = '/'
+                if (resultData.isGameComplete) {
+                  window.location.href = '/'
+                }
               }}
               style={{
                 background: 'linear-gradient(135deg, #00BFFF, #0080FF)',
@@ -931,7 +935,7 @@ const BattleRoyaleGameRoom = ({
                 marginTop: '1rem'
               }}
             >
-              Return to Home
+              {resultData.isGameComplete ? 'Return to Home' : 'Continue Watching'}
             </button>
           </div>
         </div>
