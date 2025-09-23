@@ -105,8 +105,8 @@ const PlayerSlot = styled.div`
   }
   
   .coin-display {
-    width: 80px;
-    height: 80px;
+    width: 240px;
+    height: 240px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -585,7 +585,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 {/* Coin Display */}
                 <div className="coin-display">
                   <OptimizedGoldCoin
-                    size={80}
+                    size={240}
                     isFlipping={false}
                     flipResult={null}
                     isPlayerTurn={false}
