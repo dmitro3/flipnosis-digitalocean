@@ -3,8 +3,9 @@ import styled from '@emotion/styled'
 import { ethers } from 'ethers'
 import { useWallet } from '../../../contexts/WalletContext'
 import { useToast } from '../../../contexts/ToastContext'
-import { useContractService } from '../../../utils/useContractService'
+// import { useContractService } from '../../../utils/useContractService'
 import { useProfile } from '../../../contexts/ProfileContext'
+import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import CoinSelector from '../../CoinSelector'
 import socketService from '../../../services/SocketService'
@@ -217,7 +218,6 @@ const CoinSelectionModal = styled.div`
 
 const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const { showToast } = useToast()
-  const { contractService } = useContractService()
   const { isContractInitialized } = useWallet()
   const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
   
