@@ -8,7 +8,7 @@ import { getApiUrl } from '../../config/api'
 import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
-import LobbyCoin from '../../legacy/components/Lobby/LobbyCoin'
+import LobbyCoin from '../../../legacy/components/Lobby/LobbyCoin'
 
 const GameContainer = styled.div`
   display: flex;

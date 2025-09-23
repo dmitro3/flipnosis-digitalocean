@@ -7,7 +7,7 @@ import { useContractService } from '../../../utils/useContractService'
 import { useProfile } from '../../../contexts/ProfileContext'
 import { getApiUrl } from '../../../config/api'
 import CoinSelector from '../../CoinSelector'
-import LobbyCoin from '../../../legacy/components/Lobby/LobbyCoin'
+import LobbyCoin from '../../../../legacy/components/Lobby/LobbyCoin'
 import socketService from '../../../services/SocketService'
 
 const TabContainer = styled.div`
