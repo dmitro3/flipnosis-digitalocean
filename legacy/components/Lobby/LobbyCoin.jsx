@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import styled from '@emotion/styled'
-import FinalCoin from '../FinalCoin'
+import FinalCoin from '../../../src/components/FinalCoin'
 
 const CoinContainer = styled.div`
   display: flex;

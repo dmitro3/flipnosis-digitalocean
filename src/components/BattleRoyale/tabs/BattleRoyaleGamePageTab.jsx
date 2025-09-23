@@ -253,23 +253,26 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         loadPlayerCoinImages(gameData.creator, defaultCoin)
       }
     }
-  }, [gameData])
+  }, [gameData, loadPlayerCoinImages])
+
+  // Load coin images for all existing players
+  useEffect(() => {
+    players.forEach((player, index) => {
+      if (player && player.address && !playerCoinImages[player.address]) {
+        const coinChoice = playerCoins[player.address] || player.coin || { id: 'plain', type: 'default', name: 'Classic' }
+        loadPlayerCoinImages(player.address, coinChoice)
+      }
+    })
+  }, [players, playerCoins, playerCoinImages, loadPlayerCoinImages])
+
   const [isJoining, setIsJoining] = useState(false)
   const [showCoinSelector, setShowCoinSelector] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [playerCoins, setPlayerCoins] = useState({}) // Store each player's coin choice
   const [playerCoinImages, setPlayerCoinImages] = useState({}) // Store actual coin images for each player
 
-  // Check if current user can join
-  const userAlreadyJoined = players.some(player => player?.address === address)
-  const canJoin = !userAlreadyJoined && !isCreator && currentPlayers < 8 && gameStatus === 'filling'
-  
-  // Calculate the entry fee for joining players (1/7th of total prize)
-  const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
-  const entryFeePerPlayer = totalPrize / 7 // Each of the 7 joining players pays 1/7th
-
   // Load coin images for a player
-  const loadPlayerCoinImages = async (playerAddress, coinChoice) => {
+  const loadPlayerCoinImages = React.useCallback(async (playerAddress, coinChoice) => {
     try {
       let headsImage, tailsImage
       
@@ -298,7 +301,15 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         }
       }))
     }
-  }
+  }, [getCoinHeadsImage, getCoinTailsImage])
+
+  // Check if current user can join
+  const userAlreadyJoined = players.some(player => player?.address === address)
+  const canJoin = !userAlreadyJoined && !isCreator && currentPlayers < 8 && gameStatus === 'filling'
+  
+  // Calculate the entry fee for joining players (1/7th of total prize)
+  const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
+  const entryFeePerPlayer = totalPrize / 7 // Each of the 7 joining players pays 1/7th
 
   const handleSlotClick = async (slotIndex) => {
     if (!canJoin || players[slotIndex] !== null) return

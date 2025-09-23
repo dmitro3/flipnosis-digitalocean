@@ -281,7 +281,7 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
           active={activeTab === 'game'} 
           onClick={() => handleTabChange('game')}
         >
-          🎮 Game Page
+          🎮 Join Game
         </Tab>
       </TabsHeader>
 
