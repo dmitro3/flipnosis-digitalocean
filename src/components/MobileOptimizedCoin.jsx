@@ -15,20 +15,6 @@ const powerConfigs = [
   { minFlips: 20, duration: 15000, speed: 3.5 }  // Level 10
 ];
 
-// Function to apply material physics to power configurations
-const applyMaterialPhysics = (config, material) => {
-  if (!material || !material.physics) return config
-  
-  const { speedMultiplier = 1.0, durationMultiplier = 1.0, wobbleIntensity = 1.0 } = material.physics
-  
-  return {
-    ...config,
-    duration: Math.round(config.duration * durationMultiplier),
-    speed: config.speed * speedMultiplier,
-    wobbleIntensity: wobbleIntensity
-  }
-}
-
 const MobileOptimizedCoin = ({ 
   isFlipping, 
   flipResult, 
@@ -66,6 +52,20 @@ const MobileOptimizedCoin = ({
   
   // Test mode
   const [testMode, setTestMode] = useState(false)
+
+  // Function to apply material physics to power configurations
+  const applyMaterialPhysics = (config, material) => {
+    if (!material || !material.physics) return config
+    
+    const { speedMultiplier = 1.0, durationMultiplier = 1.0, wobbleIntensity = 1.0 } = material.physics
+    
+    return {
+      ...config,
+      duration: Math.round(config.duration * durationMultiplier),
+      speed: config.speed * speedMultiplier,
+      wobbleIntensity: wobbleIntensity
+    }
+  }
 
   // Create optimized textures
   const createMobileTexture = (type, customImage = null) => {

@@ -37,20 +37,6 @@ const powerConfigs = [
   { minFlips: 20, duration: 15000, speed: 3.5 }  // Level 10
 ];
 
-// Function to apply material physics to power configurations
-const applyMaterialPhysics = (config, material) => {
-  if (!material || !material.physics) return config
-  
-  const { speedMultiplier = 1.0, durationMultiplier = 1.0, wobbleIntensity = 1.0 } = material.physics
-  
-  return {
-    ...config,
-    duration: Math.round(config.duration * durationMultiplier),
-    speed: config.speed * speedMultiplier,
-    wobbleIntensity: wobbleIntensity
-  }
-}
-
 const OptimizedGoldCoin = React.memo(({
   isFlipping = false,
   flipResult = null,
@@ -96,6 +82,20 @@ const OptimizedGoldCoin = React.memo(({
   const performanceRef = useRef({ level: 'high', fps: 60 })
   const frameCountRef = useRef(0)
   const lastTimeRef = useRef(performance.now())
+
+  // Function to apply material physics to power configurations
+  const applyMaterialPhysics = (config, material) => {
+    if (!material || !material.physics) return config
+    
+    const { speedMultiplier = 1.0, durationMultiplier = 1.0, wobbleIntensity = 1.0 } = material.physics
+    
+    return {
+      ...config,
+      duration: Math.round(config.duration * durationMultiplier),
+      speed: config.speed * speedMultiplier,
+      wobbleIntensity: wobbleIntensity
+    }
+  }
 
   // Performance detection
   const detectPerformanceLevel = () => {

@@ -296,21 +296,20 @@ const LastWeekContent = styled.div`
   }
 `;
 
-const formatAddress = (address) => {
-  if (!address) return '';
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-};
-
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
-};
-
 const Leaderboard = () => {
+  const formatAddress = (address) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
   const [activeTab, setActiveTab] = useState('all-time');
   const [allTimeLeaderboard, setAllTimeLeaderboard] = useState([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState([]);
