@@ -7,7 +7,7 @@ import { useToast } from '../../../contexts/ToastContext'
 import { useProfile } from '../../../contexts/ProfileContext'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
-import CoinSelector from '../../CoinSelector'
+// import CoinSelector from '../../CoinSelector'
 import socketService from '../../../services/SocketService'
 
 const TabContainer = styled.div`
@@ -598,11 +598,25 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             }}>
               Choose Your Coin
             </h2>
-            <CoinSelector 
-              onCoinSelect={handleCoinSelect}
-              selectedCoin={playerCoins[address] || { id: 'plain', type: 'default', name: 'Classic' }}
-              showCustomOption={true}
-            />
+            <div style={{ padding: '1rem', textAlign: 'center', color: 'white' }}>
+              <p>Coin selection temporarily disabled</p>
+              <button 
+                onClick={() => {
+                  setShowCoinSelector(false)
+                  setSelectedSlot(null)
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #00BFFF 0%, #0080FF 100%)',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  color: 'white',
+                  padding: '0.75rem 1.5rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </CoinSelectionModal>
       )}
