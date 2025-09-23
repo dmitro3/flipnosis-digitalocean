@@ -9,6 +9,7 @@ import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import CoinSelector from '../../CoinSelector'
 import socketService from '../../../services/SocketService'
+import OptimizedGoldCoin from '../../OptimizedGoldCoin'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -104,8 +105,8 @@ const PlayerSlot = styled.div`
   }
   
   .coin-display {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -127,16 +128,6 @@ const PlayerSlot = styled.div`
       background: rgba(255, 215, 0, 0.3);
       transform: scale(1.05);
     }
-  }
-
-  .rotating {
-    animation: spin 2s linear infinite;
-    transform-style: preserve-3d;
-  }
-
-  @keyframes spin {
-    0% { transform: rotateY(0deg); }
-    100% { transform: rotateY(360deg); }
   }
 `
 
@@ -593,29 +584,18 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
               <>
                 {/* Coin Display */}
                 <div className="coin-display">
-                  {playerCoinImages[player.address] ? (
-                    <img 
-                      src={playerCoinImages[player.address].headsImage}
-                      alt="Coin"
-                      className="rotating"
-                      style={{ width: '50px', height: '50px', borderRadius: '50%', border: '2px solid #ffa500', background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)' }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: '50px',
-                      height: '50px',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.2rem',
-                      color: '#333',
-                      border: '2px solid #ffa500'
-                    }}>
-                      🪙
-                    </div>
-                  )}
+                  <OptimizedGoldCoin
+                    size={80}
+                    isFlipping={false}
+                    flipResult={null}
+                    isPlayerTurn={false}
+                    gamePhase="idle"
+                    isInteractive={false}
+                    serverControlled={true}
+                    customHeadsImage={playerCoinImages[player.address]?.headsImage}
+                    customTailsImage={playerCoinImages[player.address]?.tailsImage}
+                    material={player.coin?.material}
+                  />
                 </div>
                 
                 <div className="player-address">
