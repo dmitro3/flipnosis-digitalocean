@@ -115,6 +115,15 @@ class BattleRoyaleGameManager {
       hasFlipped: false,
       flipTime: null,
       
+      // Coin customization
+      coin: {
+        id: 'plain',
+        type: 'default',
+        name: 'Classic',
+        headsImage: '/coins/plainh.png',
+        tailsImage: '/coins/plaint.png'
+      },
+      
       // Game stats
       roundsParticipated: 0,
       roundsSurvived: 0,
@@ -189,6 +198,15 @@ class BattleRoyaleGameManager {
       hasFlipped: false,
       flipTime: null,
       
+      // Coin customization
+      coin: {
+        id: 'plain',
+        type: 'default',
+        name: 'Classic',
+        headsImage: '/coins/plainh.png',
+        tailsImage: '/coins/plaint.png'
+      },
+      
       // Game stats
       roundsParticipated: 0,
       roundsSurvived: 0,
@@ -209,6 +227,34 @@ class BattleRoyaleGameManager {
       this.prepareGameStart(gameId)
     }
 
+    return true
+  }
+
+  // ===== COIN MANAGEMENT =====
+  updatePlayerCoin(gameId, playerAddress, coinData) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) {
+      console.error(`❌ Game not found: ${gameId}`)
+      return false
+    }
+
+    const player = game.players.get(playerAddress)
+    if (!player) {
+      console.error(`❌ Player not found in game: ${playerAddress}`)
+      return false
+    }
+
+    // Update player's coin data
+    player.coin = {
+      id: coinData.id || 'plain',
+      type: coinData.type || 'default',
+      name: coinData.name || 'Classic',
+      headsImage: coinData.headsImage || '/coins/plainh.png',
+      tailsImage: coinData.tailsImage || '/coins/plaint.png'
+    }
+
+    game.lastActivity = Date.now()
+    console.log(`✅ Updated coin for player ${playerAddress} in game ${gameId}: ${coinData.name}`)
     return true
   }
 

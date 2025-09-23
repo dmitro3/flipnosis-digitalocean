@@ -39,7 +39,7 @@ const NFTSection = styled.div`
   box-shadow: 0 0 30px rgba(255, 20, 147, 0.3), inset 0 0 20px rgba(255, 20, 147, 0.1);
   position: relative;
   overflow: hidden;
-  flex: 1.2;
+  flex: 0.8;
   height: fit-content;
   max-height: 100%;
   min-height: 0;
@@ -327,7 +327,7 @@ const ChatMessages = styled.div`
   flex-direction: column;
   gap: 0.75rem;
   min-height: 200px;
-  max-height: 400px;
+  max-height: 600px;
 `
 
 const Message = styled.div`

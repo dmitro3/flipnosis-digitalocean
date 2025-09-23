@@ -4,8 +4,11 @@ import { ethers } from 'ethers'
 import { useWallet } from '../../../contexts/WalletContext'
 import { useToast } from '../../../contexts/ToastContext'
 import { useContractService } from '../../../utils/useContractService'
+import { useProfile } from '../../../contexts/ProfileContext'
 import { getApiUrl } from '../../../config/api'
 import CoinSelector from '../../CoinSelector'
+import LobbyCoin from '../../../legacy/components/Lobby/LobbyCoin'
+import socketService from '../../../services/SocketService'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -101,13 +104,13 @@ const PlayerSlot = styled.div`
   }
   
   .coin-display {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-size: cover;
-    background-position: center;
-    border: 2px solid #FFD700;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 0.5rem;
+    position: relative;
   }
   
   .coin-change-button {
@@ -217,6 +220,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const { showToast } = useToast()
   const { contractService } = useContractService()
   const { isContractInitialized } = useWallet()
+  const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
   
   const [players, setPlayers] = useState(new Array(8).fill(null))
   const [gameStatus, setGameStatus] = useState('filling')
@@ -227,10 +231,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     if (gameData && gameData.creator) {
       const newPlayers = [...players]
       if (!newPlayers[0] || newPlayers[0].address !== gameData.creator) {
+        const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
         newPlayers[0] = {
           address: gameData.creator,
           joinedAt: new Date().toISOString(),
-          coin: { id: 'plain', type: 'default', name: 'Classic' },
+          coin: defaultCoin,
           isCreator: true,
           entryPaid: true
         }
@@ -241,8 +246,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         })
         setPlayerCoins(prev => ({
           ...prev,
-          [gameData.creator]: { id: 'plain', type: 'default', name: 'Classic' }
+          [gameData.creator]: defaultCoin
         }))
+        
+        // Load coin images for creator
+        loadPlayerCoinImages(gameData.creator, defaultCoin)
       }
     }
   }, [gameData])
@@ -250,6 +258,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const [showCoinSelector, setShowCoinSelector] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [playerCoins, setPlayerCoins] = useState({}) // Store each player's coin choice
+  const [playerCoinImages, setPlayerCoinImages] = useState({}) // Store actual coin images for each player
 
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address === address)
@@ -258,6 +267,38 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   // Calculate the entry fee for joining players (1/7th of total prize)
   const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
   const entryFeePerPlayer = totalPrize / 7 // Each of the 7 joining players pays 1/7th
+
+  // Load coin images for a player
+  const loadPlayerCoinImages = async (playerAddress, coinChoice) => {
+    try {
+      let headsImage, tailsImage
+      
+      if (coinChoice?.type === 'custom') {
+        // Load custom coin images from profile
+        headsImage = await getCoinHeadsImage(playerAddress)
+        tailsImage = await getCoinTailsImage(playerAddress)
+      } else {
+        // Use default coin images
+        headsImage = coinChoice?.headsImage || '/coins/plainh.png'
+        tailsImage = coinChoice?.tailsImage || '/coins/plaint.png'
+      }
+      
+      setPlayerCoinImages(prev => ({
+        ...prev,
+        [playerAddress]: { headsImage, tailsImage }
+      }))
+    } catch (error) {
+      console.error('Error loading coin images for player:', playerAddress, error)
+      // Fallback to default coin
+      setPlayerCoinImages(prev => ({
+        ...prev,
+        [playerAddress]: { 
+          headsImage: '/coins/plainh.png', 
+          tailsImage: '/coins/plaint.png' 
+        }
+      }))
+    }
+  }
 
   const handleSlotClick = async (slotIndex) => {
     if (!canJoin || players[slotIndex] !== null) return
@@ -318,11 +359,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         showToast('Successfully joined the game!', 'success')
         
         // Update local state to show the player in the slot
+        const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
         const newPlayers = [...players]
         newPlayers[slotIndex] = {
           address: address,
           joinedAt: new Date().toISOString(),
-          coin: { id: 'plain', type: 'default', name: 'Classic' } // Default coin
+          coin: defaultCoin
         }
         setPlayers(newPlayers)
         setCurrentPlayers(prev => prev + 1)
@@ -330,8 +372,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         // Set default coin for the player
         setPlayerCoins(prev => ({
           ...prev,
-          [address]: { id: 'plain', type: 'default', name: 'Classic' }
+          [address]: defaultCoin
         }))
+        
+        // Load coin images for the new player
+        loadPlayerCoinImages(address, defaultCoin)
         
         // Update game status if all slots are filled
         if (currentPlayers + 1 >= 8) {
@@ -365,6 +410,21 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         coin: coin
       }
       setPlayers(newPlayers)
+      
+      // Load coin images for the new coin choice
+      loadPlayerCoinImages(address, coin)
+      
+      // Send coin update to server
+      try {
+        socketService.emit('battle_royale_update_coin', {
+          gameId,
+          address,
+          coinData: coin
+        })
+        console.log('🪙 Sent coin update to server:', coin)
+      } catch (error) {
+        console.error('Error sending coin update to server:', error)
+      }
       
       showToast(`Coin changed to ${coin.name}`, 'success')
     }
@@ -418,13 +478,31 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             {player ? (
               <>
                 {/* Coin Display */}
-                <div 
-                  className="coin-display"
-                  style={{
-                    backgroundImage: player.coin?.headsImage ? `url(${player.coin.headsImage})` : 'none',
-                    backgroundColor: player.coin?.headsImage ? 'transparent' : 'rgba(255, 215, 0, 0.3)'
-                  }}
-                />
+                <div className="coin-display">
+                  {playerCoinImages[player.address] ? (
+                    <LobbyCoin
+                      customHeadsImage={playerCoinImages[player.address].headsImage}
+                      customTailsImage={playerCoinImages[player.address].tailsImage}
+                      material="gold"
+                      size={50}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.2rem',
+                      color: '#333',
+                      border: '2px solid #ffa500'
+                    }}>
+                      🪙
+                    </div>
+                  )}
+                </div>
                 
                 <div className="player-address">
                   {formatAddress(player.address)}

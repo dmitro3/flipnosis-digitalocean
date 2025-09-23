@@ -69,6 +69,7 @@ class GameServer {
       socket.on('join_battle_royale', (data) => this.handleJoinBattleRoyale(socket, data))
       socket.on('battle_royale_choice', (data) => this.handleBattleRoyaleChoice(socket, data))
       socket.on('battle_royale_flip', (data) => this.handleBattleRoyaleFlip(socket, data))
+      socket.on('battle_royale_update_coin', (data) => this.handleBattleRoyaleUpdateCoin(socket, data))
       socket.on('spectate_battle_royale', (data) => this.handleSpectateBattleRoyale(socket, data))
       socket.on('request_battle_royale_state', (data) => this.handleRequestBattleRoyaleState(socket, data))
       
@@ -806,6 +807,22 @@ class GameServer {
 
     if (!success) {
       socket.emit('battle_royale_error', { message: 'Cannot execute flip' })
+      return
+    }
+
+    // Broadcast updated state
+    const roomId = `br_${gameId}`
+    const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+    this.io.to(roomId).emit('battle_royale_state_update', fullState)
+  }
+
+  async handleBattleRoyaleUpdateCoin(socket, data) {
+    const { gameId, address, coinData } = data
+    console.log(`🪙 Battle Royale coin update: ${address} changing coin to ${coinData.name} in ${gameId}`)
+    
+    const success = this.battleRoyaleManager.updatePlayerCoin(gameId, address, coinData)
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot update coin' })
       return
     }
 

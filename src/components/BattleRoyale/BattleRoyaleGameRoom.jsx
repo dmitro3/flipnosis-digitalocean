@@ -3,10 +3,12 @@ import styled from '@emotion/styled'
 import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
+import { useProfile } from '../../contexts/ProfileContext'
 import { getApiUrl } from '../../config/api'
 import socketService from '../../services/SocketService'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
 import ProfilePicture from '../ProfilePicture'
+import LobbyCoin from '../../legacy/components/Lobby/LobbyCoin'
 
 const GameContainer = styled.div`
   display: flex;
@@ -356,6 +358,7 @@ const BattleRoyaleGameRoom = ({
   const { gameId: paramGameId } = useParams()
   const { address } = useWallet()
   const { showToast } = useToast()
+  const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
   
   // Use gameId from props or URL params
   const gameId = propGameId || paramGameId
@@ -370,6 +373,7 @@ const BattleRoyaleGameRoom = ({
   const [roundCountdown, setRoundCountdown] = useState(null)
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
+  const [playerCoinImages, setPlayerCoinImages] = useState({}) // Store actual coin images for each player
 
   // Load game data
   const loadGameData = useCallback(async () => {
@@ -393,6 +397,38 @@ const BattleRoyaleGameRoom = ({
   useEffect(() => {
     loadGameData()
   }, [loadGameData])
+
+  // Load coin images for a player
+  const loadPlayerCoinImages = useCallback(async (playerAddress, coinData) => {
+    try {
+      let headsImage, tailsImage
+      
+      if (coinData?.type === 'custom') {
+        // Load custom coin images from profile
+        headsImage = await getCoinHeadsImage(playerAddress)
+        tailsImage = await getCoinTailsImage(playerAddress)
+      } else {
+        // Use default coin images
+        headsImage = coinData?.headsImage || '/coins/plainh.png'
+        tailsImage = coinData?.tailsImage || '/coins/plaint.png'
+      }
+      
+      setPlayerCoinImages(prev => ({
+        ...prev,
+        [playerAddress]: { headsImage, tailsImage }
+      }))
+    } catch (error) {
+      console.error('Error loading coin images for player:', playerAddress, error)
+      // Fallback to default coin
+      setPlayerCoinImages(prev => ({
+        ...prev,
+        [playerAddress]: { 
+          headsImage: '/coins/plainh.png', 
+          tailsImage: '/coins/plaint.png' 
+        }
+      }))
+    }
+  }, [getCoinHeadsImage, getCoinTailsImage])
 
   // ===== HELPER FUNCTIONS =====
   const isMyTurn = useCallback(() => {
@@ -426,7 +462,17 @@ const BattleRoyaleGameRoom = ({
     if (data.roundCountdown !== undefined) {
       setRoundCountdown(data.roundCountdown)
     }
-  }, [])
+
+    // Load coin images for all players
+    if (data.players) {
+      const playersMap = data.players instanceof Map ? data.players : new Map(Object.entries(data.players))
+      playersMap.forEach((player, playerAddress) => {
+        if (player.coin && !playerCoinImages[playerAddress]) {
+          loadPlayerCoinImages(playerAddress, player.coin)
+        }
+      })
+    }
+  }, [loadPlayerCoinImages, playerCoinImages])
 
   const handleRoomJoined = useCallback((data) => {
     console.log('🏠 Battle Royale room joined:', data)
@@ -661,10 +707,29 @@ const BattleRoyaleGameRoom = ({
               </div>
               
               <div className="coin-display">
-                {player?.coinResult ? 
-                  (player.coinResult === 'heads' ? '👑' : '🗲') : 
-                  '🪙'
-                }
+                {playerCoinImages[playerAddress] ? (
+                  <LobbyCoin
+                    customHeadsImage={playerCoinImages[playerAddress].headsImage}
+                    customTailsImage={playerCoinImages[playerAddress].tailsImage}
+                    material="gold"
+                    size={60}
+                  />
+                ) : (
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem',
+                    color: '#333',
+                    border: '3px solid #ffa500'
+                  }}>
+                    🪙
+                  </div>
+                )}
               </div>
               
               {player?.choice && (
