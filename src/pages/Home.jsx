@@ -557,113 +557,113 @@ const Home = () => {
     }
   }, [])
 
-const getAllItems = () => {
-  // Create a map to track unique games by their core ID
-  const uniqueItems = new Map()
+  const getAllItems = () => {
+    // Create a map to track unique games by their core ID
+    const uniqueItems = new Map()
+    
+    // Process listings
+    listings.forEach(l => {
+      // Skip if this listing has been converted to a game
+      const hasActiveGame = games.some(g => g.listing_id === l.id && g.status !== 'cancelled')
+      if (!hasActiveGame) {
+        uniqueItems.set(l.id, {
+          ...l,
+          isListing: true,
+          displayId: l.id,
+          nft: {
+            name: l.nft_name || 'Unknown NFT',
+            image: l.nft_image || '/placeholder-nft.svg',
+            collection: l.nft_collection || 'Unknown Collection',
+            chain: l.nft_chain || 'base',
+            contractAddress: l.nft_contract,
+            tokenId: l.nft_token_id
+          },
+          gameType: 'nft-vs-crypto',
+          priceUSD: l.asking_price || 0
+        })
+      }
+    })
   
-  // Process listings
-  listings.forEach(l => {
-    // Skip if this listing has been converted to a game
-    const hasActiveGame = games.some(g => g.listing_id === l.id && g.status !== 'cancelled')
-    if (!hasActiveGame) {
-      uniqueItems.set(l.id, {
-        ...l,
-        isListing: true,
-        displayId: l.id,
+    // Process games - only show games with NFTs deposited
+    games.filter(g => 
+      g.status !== 'cancelled' && 
+      g.status !== 'waiting_deposits' && 
+      g.status !== 'waiting_challenger_deposit' &&
+      g.nft_deposited === 1  // Only show games with NFTs actually deposited
+      // Note: 'awaiting_challenger' games should be shown - they are open for challengers
+    ).forEach(g => {
+      // Use the game ID as the key, removing any listing entry
+      if (g.listing_id) {
+        uniqueItems.delete(g.listing_id)
+      }
+      uniqueItems.set(g.id, {
+        ...g,
+        isListing: false,
+        displayId: g.id,
         nft: {
-          name: l.nft_name || 'Unknown NFT',
-          image: l.nft_image || '/placeholder-nft.svg',
-          collection: l.nft_collection || 'Unknown Collection',
-          chain: l.nft_chain || 'base',
-          contractAddress: l.nft_contract,
-          tokenId: l.nft_token_id
+          name: g.nft_name || 'Unknown NFT',
+          image: g.nft_image || '/placeholder-nft.svg',
+          collection: g.nft_collection || 'Unknown Collection',
+          chain: g.nft_chain || 'base',
+          contractAddress: g.nft_contract,
+          tokenId: g.nft_token_id
         },
-        gameType: 'nft-vs-crypto',
-        priceUSD: l.asking_price || 0
+        gameType: 'nft-vs-nft',
+        priceUSD: g.price_usd || 0,
+        // Include NFT deposit tracking fields
+        nft_deposited: g.nft_deposited,
+        nft_deposit_verified: g.nft_deposit_verified,
+        nft_deposit_time: g.nft_deposit_time,
+        nft_deposit_hash: g.nft_deposit_hash
       })
-    }
-  })
-  
-  // Process games - only show games with NFTs deposited
-  games.filter(g => 
-    g.status !== 'cancelled' && 
-    g.status !== 'waiting_deposits' && 
-    g.status !== 'waiting_challenger_deposit' &&
-    g.nft_deposited === 1  // Only show games with NFTs actually deposited
-    // Note: 'awaiting_challenger' games should be shown - they are open for challengers
-  ).forEach(g => {
-    // Use the game ID as the key, removing any listing entry
-    if (g.listing_id) {
-      uniqueItems.delete(g.listing_id)
-    }
-    uniqueItems.set(g.id, {
-      ...g,
-      isListing: false,
-      displayId: g.id,
-      nft: {
-        name: g.nft_name || 'Unknown NFT',
-        image: g.nft_image || '/placeholder-nft.svg',
-        collection: g.nft_collection || 'Unknown Collection',
-        chain: g.nft_chain || 'base',
-        contractAddress: g.nft_contract,
-        tokenId: g.nft_token_id
-      },
-      gameType: 'nft-vs-nft',
-      priceUSD: g.price_usd || 0,
-      // Include NFT deposit tracking fields
-      nft_deposited: g.nft_deposited,
-      nft_deposit_verified: g.nft_deposit_verified,
-      nft_deposit_time: g.nft_deposit_time,
-      nft_deposit_hash: g.nft_deposit_hash
     })
-  })
   
-  // Process battle royale games
-  console.log('🔍 Processing battle royale games:', battleRoyaleGames.length, 'total')
-  battleRoyaleGames.filter(br => {
-    const shouldInclude = br.status !== 'cancelled' && br.status !== 'complete'
-    console.log('🔍 Battle royale game:', br.id, 'status:', br.status, 'include:', shouldInclude)
-    return shouldInclude
-  }).forEach(br => {
-    uniqueItems.set(br.id, {
-      ...br,
-      isListing: false,
-      isBattleRoyale: true,
-      displayId: br.id,
-      nft: {
-        name: br.nft_name || 'Unknown NFT',
-        image: br.nft_image || '/placeholder-nft.svg',
-        collection: br.nft_collection || 'Unknown Collection',
-        chain: 'base', // Battle royale games are on base
-        contractAddress: br.nft_contract,
-        tokenId: br.nft_token_id
-      },
-      gameType: 'battle-royale',
-      priceUSD: br.entry_fee || 0,
-      // Include battle royale specific fields
-      entry_fee: br.entry_fee,
-      service_fee: br.service_fee,
-      max_players: br.max_players,
-      current_players: br.current_players,
-      participants: br.participants || []
+    // Process battle royale games
+    console.log('🔍 Processing battle royale games:', battleRoyaleGames.length, 'total')
+    battleRoyaleGames.filter(br => {
+      const shouldInclude = br.status !== 'cancelled' && br.status !== 'complete'
+      console.log('🔍 Battle royale game:', br.id, 'status:', br.status, 'include:', shouldInclude)
+      return shouldInclude
+    }).forEach(br => {
+      uniqueItems.set(br.id, {
+        ...br,
+        isListing: false,
+        isBattleRoyale: true,
+        displayId: br.id,
+        nft: {
+          name: br.nft_name || 'Unknown NFT',
+          image: br.nft_image || '/placeholder-nft.svg',
+          collection: br.nft_collection || 'Unknown Collection',
+          chain: 'base', // Battle royale games are on base
+          contractAddress: br.nft_contract,
+          tokenId: br.nft_token_id
+        },
+        gameType: 'battle-royale',
+        priceUSD: br.entry_fee || 0,
+        // Include battle royale specific fields
+        entry_fee: br.entry_fee,
+        service_fee: br.service_fee,
+        max_players: br.max_players,
+        current_players: br.current_players,
+        participants: br.participants || []
+      })
     })
-  })
   
-  // Convert map to array and filter
-  return Array.from(uniqueItems.values()).filter(item => {
-    const matchesFilter = activeFilter === 'all' || 
-      (activeFilter === item.nft?.chain)
-    const matchesSearch = !searchQuery || 
-      (item.nft?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.nft?.collection?.toLowerCase().includes(searchQuery.toLowerCase()))
-    return matchesFilter && matchesSearch
-  }).sort((a, b) => {
-    // Sort by created_at timestamp, most recent first
-    const aTime = new Date(a.created_at || a.createdAt || 0).getTime()
-    const bTime = new Date(b.created_at || b.createdAt || 0).getTime()
-    return bTime - aTime
-  })
-}
+    // Convert map to array and filter
+    return Array.from(uniqueItems.values()).filter(item => {
+      const matchesFilter = activeFilter === 'all' || 
+        (activeFilter === item.nft?.chain)
+      const matchesSearch = !searchQuery || 
+        (item.nft?.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.nft?.collection?.toLowerCase().includes(searchQuery.toLowerCase()))
+      return matchesFilter && matchesSearch
+    }).sort((a, b) => {
+      // Sort by created_at timestamp, most recent first
+      const aTime = new Date(a.created_at || a.createdAt || 0).getTime()
+      const bTime = new Date(b.created_at || b.createdAt || 0).getTime()
+      return bTime - aTime
+    })
+  }
 
   const handleItemClick = async (item) => {
     // Check NFT deposit before allowing entry for actual games
