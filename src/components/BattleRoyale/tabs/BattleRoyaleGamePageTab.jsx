@@ -434,14 +434,6 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       
       if (result.success) {
         showToast('Successfully joined the game!', 'success')
-
-        // Notify server to add player to in-memory game and room
-        try {
-          socketService.emit('join_battle_royale', { gameId, address })
-          socketService.emit('request_battle_royale_state', { gameId })
-        } catch (e) {
-          console.error('Failed to notify server about join', e)
-        }
         
         // Update local state to show the player in the slot
         const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
@@ -467,6 +459,17 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         if (currentPlayers + 1 >= 8) {
           setGameStatus('starting')
         }
+        
+        // Notify server to add player to in-memory game and room
+        // Wait a bit for the transaction to be processed
+        setTimeout(() => {
+          try {
+            console.log('🎮 Notifying server about successful join')
+            socketService.emit('join_battle_royale', { gameId: `br_${gameId}`, address })
+          } catch (e) {
+            console.error('Failed to notify server about join', e)
+          }
+        }, 2000) // Wait 2 seconds for transaction confirmation
         
         console.log('✅ Successfully joined Battle Royale game')
       } else {

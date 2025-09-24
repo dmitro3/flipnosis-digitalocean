@@ -261,8 +261,24 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   }, [gameId, address, showToast])
   
   // ===== TAB SWITCHING LOGIC =====
-  const handleTabChange = useCallback((tabId) => {
+  const handleTabChange = useCallback(async (tabId) => {
     console.log(`📑 Switching to tab: ${tabId} (current tab: ${activeTab})`)
+    
+    // Handle room switching based on tab
+    if (socketService.isConnected()) {
+      try {
+        if (tabId === 'details') {
+          // Switch to regular game room for chat
+          await socketService.switchRoom(`game_${gameId}`)
+        } else if (tabId === 'game') {
+          // Switch to Battle Royale room for game
+          await socketService.switchRoom(`br_${gameId}`)
+        }
+      } catch (error) {
+        console.error('❌ Error switching rooms:', error)
+      }
+    }
+    
     setActiveTab(tabId)
     // Save tab state to localStorage to preserve during reloads
     if (gameId) {

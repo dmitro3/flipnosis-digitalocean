@@ -20,18 +20,27 @@ class SocketService {
       return Promise.reject(new Error('gameId is required'))
     }
     
-    // If already connected to this room, just return
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
+    // Determine room type based on gameId format
+    let roomId
+    if (gameId.startsWith('br_')) {
+      roomId = gameId // Battle Royale room
+    } else if (gameId.startsWith('game_')) {
+      roomId = gameId // Regular game room
+    } else {
+      roomId = `game_${gameId}` // Default to regular game room
+    }
     
+    // If already connected to this room, just return
     if (this.connected && this.currentRoom === roomId && this.socket) {
       console.log('✅ Already connected to room:', roomId)
       return Promise.resolve()
     }
 
-    // Disconnect from previous room if different
-    if (this.socket && this.currentRoom !== roomId) {
+    // For room switching, try to leave the old room first instead of disconnecting
+    if (this.socket && this.currentRoom && this.currentRoom !== roomId) {
       console.log(`🔄 Switching rooms from ${this.currentRoom} to ${roomId}`)
-      this.disconnect()
+      // Leave the old room but keep the socket connection
+      this.socket.emit('leave_room', { roomId: this.currentRoom })
     }
 
     // If already connecting, wait for it to complete
@@ -169,6 +178,46 @@ class SocketService {
   // Get current room
   getCurrentRoom() {
     return this.currentRoom
+  }
+
+  // Switch rooms without disconnecting
+  switchRoom(newGameId) {
+    if (!this.socket || !this.connected) {
+      console.log('❌ Cannot switch room - not connected')
+      return Promise.reject(new Error('Not connected'))
+    }
+
+    // Determine new room type
+    let newRoomId
+    if (newGameId.startsWith('br_')) {
+      newRoomId = newGameId
+    } else if (newGameId.startsWith('game_')) {
+      newRoomId = newGameId
+    } else {
+      newRoomId = `game_${newGameId}`
+    }
+
+    // If already in the target room, do nothing
+    if (this.currentRoom === newRoomId) {
+      console.log('✅ Already in target room:', newRoomId)
+      return Promise.resolve()
+    }
+
+    console.log(`🔄 Switching from ${this.currentRoom} to ${newRoomId}`)
+    
+    // Leave old room
+    if (this.currentRoom) {
+      this.socket.emit('leave_room', { roomId: this.currentRoom })
+    }
+
+    // Update current room
+    this.currentRoom = newRoomId
+    this.gameId = newGameId.replace(/^(game_|br_)/, '')
+
+    // Join new room
+    this.socket.emit('join_room', { roomId: newRoomId, address: this.address })
+
+    return Promise.resolve()
   }
 }
 

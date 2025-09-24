@@ -626,7 +626,7 @@ const BattleRoyaleGameRoom = ({
         
         // Join room
         socketService.emit('join_battle_royale_room', { 
-          roomId: gameId.startsWith('br_') ? gameId : `br_${gameId}`, 
+          roomId: `br_${gameId}`, 
           address 
         })
         
