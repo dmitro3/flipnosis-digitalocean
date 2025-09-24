@@ -150,89 +150,55 @@ export const WalletProvider = ({ children }) => {
         pageKey = nftsForOwner.pageKey
       } while (pageKey)
 
-      console.log('🎨 Total NFTs found (Alchemy):', allNFTs.length)
+      console.log('🎨 Total NFTs found:', allNFTs.length)
 
-      // Verify ownership on-chain to filter out stale data
-      const verifiedNFTs = []
-      
-      for (const nft of allNFTs) {
-        try {
-          console.log(`🔍 Verifying ownership of ${nft.contract.address}:${nft.tokenId}...`)
-          
-          // Check actual ownership on blockchain
-          const actualOwner = await publicClient.readContract({
-            address: nft.contract.address,
-            abi: [
-              {
-                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
-                "name": "ownerOf",
-                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "stateMutability": "view",
-                "type": "function"
-              }
-            ],
-            functionName: 'ownerOf',
-            args: [BigInt(nft.tokenId)]
-          })
-          
-          console.log(`🔍 Actual owner: ${actualOwner}, Wallet: ${address}`)
-          
-          if (actualOwner.toLowerCase() === address.toLowerCase()) {
-            console.log(`✅ Wallet actually owns ${nft.contract.address}:${nft.tokenId}`)
-            
-            // Enhanced image URL handling
-            let imageUrl = ''
-            
-            // Try media first (most reliable)
-            if (nft.media && nft.media.length > 0) {
-              imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
-            }
-            
-            // Try image object if media not available
-            if (!imageUrl && nft.image) {
-              if (typeof nft.image === 'string') {
-                imageUrl = nft.image
-              } else if (typeof nft.image === 'object') {
-                imageUrl = nft.image.originalUrl || nft.image.cachedUrl || nft.image.gateway || ''
-              }
-            }
-            
-            // Fallback to metadata image if available
-            if (!imageUrl && nft.metadata && nft.metadata.image) {
-              imageUrl = nft.metadata.image
-            }
-
-            // Fix IPFS URLs to use gateway
-            if (imageUrl && imageUrl.startsWith('ipfs://')) {
-              imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
-            }
-
-            // Ensure HTTPS for security
-            if (imageUrl && imageUrl.startsWith('http://')) {
-              imageUrl = imageUrl.replace('http://', 'https://')
-            }
-
-            verifiedNFTs.push({
-              contractAddress: nft.contract.address,
-              tokenId: nft.tokenId,
-              name: nft.title || nft.name || `#${nft.tokenId}`,
-              collection: nft.contract.name || 'Unknown Collection',
-              image: imageUrl,
-              chain: currentChain.name,
-              description: nft.description || '',
-              animationUrl: nft.media?.[0]?.format === 'mp4' ? nft.media[0].gateway : nft.animation_url || ''
-            })
-          } else {
-            console.log(`❌ Wallet does NOT own ${nft.contract.address}:${nft.tokenId} (stale Alchemy data)`)
-          }
-        } catch (verifyError) {
-          console.warn(`⚠️ Could not verify ownership of ${nft.contract.address}:${nft.tokenId}:`, verifyError.message)
-          // Skip this NFT if we can't verify ownership
+      const formattedNFTs = allNFTs.map((nft) => {
+        // Enhanced image URL handling
+        let imageUrl = ''
+        
+        // Try media first (most reliable)
+        if (nft.media && nft.media.length > 0) {
+          imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
         }
-      }
+        
+        // Try image object if media not available
+        if (!imageUrl && nft.image) {
+          if (typeof nft.image === 'string') {
+            imageUrl = nft.image
+          } else if (typeof nft.image === 'object') {
+            imageUrl = nft.image.originalUrl || nft.image.cachedUrl || nft.image.gateway || ''
+          }
+        }
+        
+        // Fallback to metadata image if available
+        if (!imageUrl && nft.metadata && nft.metadata.image) {
+          imageUrl = nft.metadata.image
+        }
 
-      console.log('✅ Verified NFTs actually owned by wallet:', verifiedNFTs.length)
-      setNfts(verifiedNFTs)
+        // Fix IPFS URLs to use gateway
+        if (imageUrl && imageUrl.startsWith('ipfs://')) {
+          imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
+        }
+
+        // Ensure HTTPS for security
+        if (imageUrl && imageUrl.startsWith('http://')) {
+          imageUrl = imageUrl.replace('http://', 'https://')
+        }
+
+        return {
+          contractAddress: nft.contract.address,
+          tokenId: nft.tokenId,
+          name: nft.title || nft.name || `#${nft.tokenId}`,
+          collection: nft.contract.name || 'Unknown Collection',
+          image: imageUrl,
+          chain: currentChain.name,
+          description: nft.description || '',
+          animationUrl: nft.media?.[0]?.format === 'mp4' ? nft.media[0].gateway : nft.animation_url || ''
+        }
+      })
+
+      console.log('✅ Loaded NFTs:', formattedNFTs.length)
+      setNfts(formattedNFTs)
     } catch (error) {
       console.error('❌ Error loading NFTs:', error)
       showError('Failed to load NFTs')
