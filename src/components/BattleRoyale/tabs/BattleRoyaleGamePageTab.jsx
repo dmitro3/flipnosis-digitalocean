@@ -313,6 +313,10 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         }
         connected = true
         socketService.on('battle_royale_state_update', onStateUpdate)
+        socketService.on('battle_royale_error', (data) => {
+          console.error('❌ Battle Royale error:', data.message)
+          showToast(data.message || 'Battle Royale error occurred', 'error')
+        })
         // Join room and request state
         socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
         socketService.emit('request_battle_royale_state', { gameId })

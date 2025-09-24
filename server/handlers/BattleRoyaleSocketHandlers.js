@@ -9,16 +9,19 @@ class BattleRoyaleSocketHandlers {
     const gameId = roomId.startsWith('br_') ? roomId.substring(3) : roomId
     
     console.log(`🎮 ${address} joining Battle Royale room: ${gameId}`)
+    console.log(`🔍 Room ID: ${roomId}, Game ID: ${gameId}`)
     
     // Join socket room
     socket.join(`br_${gameId}`)
     
     // Get or create game
     let game = battleRoyaleManager.getGame(gameId)
+    console.log(`🔍 Game found in memory: ${!!game}`)
+    
     if (!game) {
       // This would normally load from database
       console.log(`❌ Battle Royale game not found: ${gameId}`)
-      socket.emit('battle_royale_error', { message: 'Game not found' })
+      socket.emit('battle_royale_error', { message: `Game not found: ${gameId}` })
       return
     }
     
@@ -154,12 +157,19 @@ class BattleRoyaleSocketHandlers {
     
     // Get or create game
     let game = battleRoyaleManager.getGame(gameId)
+    console.log(`🔍 Game found in memory: ${!!game}`)
+    
     if (!game && dbService) {
       // Try to load from database
+      console.log(`🔍 Attempting to load game ${gameId} from database...`)
       try {
         const gameData = await dbService.getBattleRoyaleGame(gameId)
+        console.log(`🔍 Database game data:`, gameData ? 'found' : 'not found')
         if (gameData && gameData.status === 'filling') {
+          console.log(`🔍 Creating game from database data`)
           game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
+        } else if (gameData) {
+          console.log(`🔍 Game found but status is ${gameData.status}, not 'filling'`)
         }
       } catch (error) {
         console.error('❌ Error loading Battle Royale game:', error)
@@ -167,14 +177,18 @@ class BattleRoyaleSocketHandlers {
     }
 
     if (!game) {
-      socket.emit('battle_royale_error', { message: 'Game not found' })
+      console.log(`❌ Game not found after all attempts: ${gameId}`)
+      socket.emit('battle_royale_error', { message: `Game not found: ${gameId}` })
       return
     }
+
+    console.log(`🔍 Game phase: ${game.phase}, current players: ${game.currentPlayers}/${game.maxPlayers}`)
 
     // Add player to game
     const success = battleRoyaleManager.addPlayer(gameId, address)
     if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot join game' })
+      console.log(`❌ Failed to add player ${address} to game ${gameId}`)
+      socket.emit('battle_royale_error', { message: 'Cannot join game - game may be full or in wrong phase' })
       return
     }
 

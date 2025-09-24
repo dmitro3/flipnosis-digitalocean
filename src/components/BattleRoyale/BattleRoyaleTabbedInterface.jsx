@@ -246,14 +246,21 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
       console.log('🔌 Socket disconnected')
       setConnected(false)
     }
+
+    const handleBattleRoyaleError = (data) => {
+      console.error('❌ Battle Royale error:', data.message)
+      showToast(data.message || 'Battle Royale error occurred', 'error')
+    }
     
     socketService.on('connect', handleConnect)
     socketService.on('disconnect', handleDisconnect)
+    socketService.on('battle_royale_error', handleBattleRoyaleError)
 
     return () => {
       // Cleanup - disconnect when component unmounts
       socketService.off('connect', handleConnect)
       socketService.off('disconnect', handleDisconnect)
+      socketService.off('battle_royale_error', handleBattleRoyaleError)
       if (socketService.socket) {
         socketService.socket.disconnect()
       }

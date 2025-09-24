@@ -505,6 +505,11 @@ const BattleRoyaleGameRoom = ({
     }))
   }, [address])
 
+  const handleBattleRoyaleError = useCallback((data) => {
+    console.error('❌ Battle Royale error:', data.message)
+    showToast(data.message || 'Battle Royale error occurred', 'error')
+  }, [showToast])
+
   // Handle coin change
   const handleCoinChange = useCallback((playerAddress) => {
     setSelectedPlayerForCoinChange(playerAddress)
@@ -610,6 +615,7 @@ const BattleRoyaleGameRoom = ({
         socketService.on('battle_royale_game_complete', handleGameComplete)
         socketService.on('battle_royale_new_round', handleNewRound)
         socketService.on('battle_royale_power_update', handlePowerUpdate)
+        socketService.on('battle_royale_error', handleBattleRoyaleError)
         
         // Join room
         socketService.emit('join_battle_royale_room', { 
@@ -641,8 +647,9 @@ const BattleRoyaleGameRoom = ({
       socketService.off('battle_royale_game_complete', handleGameComplete)
       socketService.off('battle_royale_new_round', handleNewRound)
       socketService.off('battle_royale_power_update', handlePowerUpdate)
+      socketService.off('battle_royale_error', handleBattleRoyaleError)
     }
-  }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
+  }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate, handleBattleRoyaleError])
 
   // ===== USER ACTIONS =====
 
