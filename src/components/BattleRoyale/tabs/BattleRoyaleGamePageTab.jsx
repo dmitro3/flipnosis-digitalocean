@@ -307,7 +307,10 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
     const setup = async () => {
       try {
-        await socketService.connect(gameId, address)
+        // Only connect if not already connected to the same game
+        if (!socketService.isConnected() || socketService.getCurrentRoom() !== `br_${gameId}`) {
+          await socketService.connect(gameId, address)
+        }
         connected = true
         socketService.on('battle_royale_state_update', onStateUpdate)
         // Join room and request state

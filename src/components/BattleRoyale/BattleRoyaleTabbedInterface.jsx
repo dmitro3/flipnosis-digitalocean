@@ -142,7 +142,21 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   const gameId = propGameId || paramGameId
   
   // ===== TAB STATE =====
-  const [activeTab, setActiveTab] = useState('details') // 'details', 'game'
+  // Preserve tab state in localStorage to survive reloads
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem(`battleRoyaleTab_${gameId}`)
+    return savedTab || 'details'
+  }) // 'details', 'game'
+  
+  // Update tab state when gameId changes
+  useEffect(() => {
+    if (gameId) {
+      const savedTab = localStorage.getItem(`battleRoyaleTab_${gameId}`)
+      if (savedTab && savedTab !== activeTab) {
+        setActiveTab(savedTab)
+      }
+    }
+  }, [gameId, activeTab])
   
   // ===== GAME DATA LOADING =====
   const [gameData, setGameData] = useState(propGameData || null)
@@ -151,6 +165,12 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   
   const loadGameData = useCallback(async () => {
     if (!gameId) return
+    
+    // Don't reload if we already have game data for this gameId
+    if (gameData && gameData.id === gameId) {
+      console.log('🔄 Game data already loaded for:', gameId)
+      return
+    }
     
     try {
       console.log('🔄 Loading game data for:', gameId)
@@ -176,7 +196,7 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
     } finally {
       setGameDataLoading(false)
     }
-  }, [gameId])
+  }, [gameId, gameData])
   
   // Load game data on mount
   useEffect(() => {
@@ -188,7 +208,11 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   const handleTabChange = useCallback((tabId) => {
     console.log(`📑 Switching to tab: ${tabId} (current tab: ${activeTab})`)
     setActiveTab(tabId)
-  }, [activeTab])
+    // Save tab state to localStorage to preserve during reloads
+    if (gameId) {
+      localStorage.setItem(`battleRoyaleTab_${gameId}`, tabId)
+    }
+  }, [activeTab, gameId])
   
   // Debug: Track activeTab changes
   useEffect(() => {
