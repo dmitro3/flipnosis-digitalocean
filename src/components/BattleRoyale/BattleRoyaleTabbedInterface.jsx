@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { getApiUrl } from '../../config/api'
+import socketService from '../../services/SocketService'
 import BattleRoyaleNFTDetailsTab from './tabs/BattleRoyaleNFTDetailsTab'
 import BattleRoyaleGamePageTab from './tabs/BattleRoyaleGamePageTab'
 import hazeVideo from '../../../Images/Video/haze.webm'
@@ -162,6 +163,7 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   const [gameData, setGameData] = useState(propGameData || null)
   const [gameDataLoading, setGameDataLoading] = useState(!propGameData)
   const [gameDataError, setGameDataError] = useState(null)
+  const [connected, setConnected] = useState(false)
   
   const loadGameData = useCallback(async () => {
     if (!gameId) return
@@ -203,6 +205,60 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
     console.log('🔄 BattleRoyaleTabbedInterface: Loading game data for gameId:', gameId)
     loadGameData()
   }, [loadGameData])
+
+  // ===== SOCKET CONNECTION =====
+  useEffect(() => {
+    if (!gameId || !address) return
+
+    console.log('🔌 Connecting to Battle Royale game server...')
+
+    const connectToGame = async () => {
+      try {
+        // Connect to socket using the same format as FlipSuiteFinal
+        const roomId = gameId.startsWith('br_') ? `game_${gameId.replace('br_', '')}` : `game_${gameId}`
+        await socketService.connect(roomId, address)
+        
+        console.log('✅ Connected to Battle Royale game server')
+        setConnected(true)
+        
+        // Join room for chat functionality
+        socketService.emit('join_room', { 
+          roomId: roomId, 
+          address 
+        })
+        
+      } catch (error) {
+        console.error('❌ Failed to connect to Battle Royale game server:', error)
+        setConnected(false)
+        showToast('Failed to connect to game server', 'error')
+      }
+    }
+
+    connectToGame()
+
+    // Add connection status event handlers
+    const handleConnect = () => {
+      console.log('🔌 Socket connected')
+      setConnected(true)
+    }
+    
+    const handleDisconnect = () => {
+      console.log('🔌 Socket disconnected')
+      setConnected(false)
+    }
+    
+    socketService.on('connect', handleConnect)
+    socketService.on('disconnect', handleDisconnect)
+
+    return () => {
+      // Cleanup - disconnect when component unmounts
+      socketService.off('connect', handleConnect)
+      socketService.off('disconnect', handleDisconnect)
+      if (socketService.socket) {
+        socketService.socket.disconnect()
+      }
+    }
+  }, [gameId, address, showToast])
   
   // ===== TAB SWITCHING LOGIC =====
   const handleTabChange = useCallback((tabId) => {
@@ -225,7 +281,9 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
       gameData,
       gameId,
       address,
-      isCreator: gameData?.creator?.toLowerCase() === address?.toLowerCase()
+      isCreator: gameData?.creator?.toLowerCase() === address?.toLowerCase(),
+      socket: socketService,
+      connected
     }
 
     switch (activeTab) {
