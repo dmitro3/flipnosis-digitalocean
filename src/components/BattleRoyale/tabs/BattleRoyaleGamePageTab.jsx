@@ -9,7 +9,8 @@ import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import CoinSelector from '../../CoinSelector'
 import socketService from '../../../services/SocketService'
-import OptimizedGoldCoin from '../../OptimizedGoldCoin'
+import OptimizedBattleRoyaleCoins from '../OptimizedBattleRoyaleCoins'
+import '../BattleRoyaleCoins.css'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -570,6 +571,25 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         </div>
       </GameStatus>
 
+      {/* Optimized Single Renderer for All Coins */}
+      <OptimizedBattleRoyaleCoins
+        players={players.map((player, index) => {
+          if (!player) return null
+          return {
+            address: player.address,
+            coin: player.coin,
+            index
+          }
+        }).filter(Boolean)}
+        gamePhase="filling"
+        flipStates={{}}
+        onFlipComplete={(playerAddress, result) => {
+          console.log(`Player ${playerAddress} flip complete: ${result}`)
+        }}
+        playerCoinImages={playerCoinImages}
+        size={240}
+      />
+
       <PlayersGrid>
         {players.map((player, index) => (
           <PlayerSlot
@@ -582,20 +602,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             <div className="slot-number">{index + 1}</div>
             {player ? (
               <>
-                {/* Coin Display */}
+                {/* Coin Display - handled by optimized renderer */}
                 <div className="coin-display">
-                  <OptimizedGoldCoin
-                    size={240}
-                    isFlipping={false}
-                    flipResult={null}
-                    isPlayerTurn={false}
-                    gamePhase="idle"
-                    isInteractive={false}
-                    serverControlled={true}
-                    customHeadsImage={playerCoinImages[player.address]?.headsImage}
-                    customTailsImage={playerCoinImages[player.address]?.tailsImage}
-                    material={player.coin?.material}
-                  />
+                  <div className="coin-placeholder">
+                    <div className="coin-slot-number">{index + 1}</div>
+                  </div>
                 </div>
                 
                 <div className="player-address">

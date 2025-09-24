@@ -5,8 +5,9 @@ import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import socketService from '../../services/SocketService'
-import OptimizedGoldCoin from '../OptimizedGoldCoin'
+import OptimizedBattleRoyaleCoins from './OptimizedBattleRoyaleCoins'
 import ProfilePicture from '../ProfilePicture'
+import './BattleRoyaleCoins.css'
 
 const GameContainer = styled.div`
   display: flex;
@@ -701,6 +702,31 @@ const BattleRoyaleGameRoom = ({
         </div>
       </RoundHeader>
 
+      {/* Optimized Single Renderer for All Coins */}
+      <OptimizedBattleRoyaleCoins
+        players={serverState?.playerSlots?.map((playerAddress, index) => {
+          if (!playerAddress) return null
+          const player = serverState.players?.[playerAddress.toLowerCase()]
+          return {
+            address: playerAddress,
+            coin: player?.coin,
+            index
+          }
+        }).filter(Boolean) || []}
+        gamePhase={serverState?.gamePhase}
+        flipStates={Object.fromEntries(
+          Object.entries(serverState?.players || {}).map(([address, player]) => [
+            address,
+            player.coinState
+          ])
+        )}
+        onFlipComplete={(playerAddress, result) => {
+          console.log(`Player ${playerAddress} flip complete: ${result}`)
+        }}
+        playerCoinImages={playerCoinImages}
+        size={180}
+      />
+
       <PlayersGrid>
         {serverState?.playerSlots?.map((playerAddress, index) => {
           if (!playerAddress) return null
@@ -733,24 +759,10 @@ const BattleRoyaleGameRoom = ({
                 </div>
               </div>
               
-              {/* Server-controlled coin display */}
-              <OptimizedGoldCoin
-                isFlipping={player?.coinState?.isFlipping || false}
-                flipResult={player?.coinState?.flipResult}
-                flipDuration={player?.coinState?.duration || 2000}
-                onFlipComplete={() => console.log(`Player ${index} flip complete`)}
-                size={180}
-                isPlayerTurn={false}
-                gamePhase={serverState.gamePhase}
-                isInteractive={false}
-                serverControlled={true}
-                customHeadsImage={playerCoinImages[playerAddress]?.headsImage}
-                customTailsImage={playerCoinImages[playerAddress]?.tailsImage}
-                material={player?.coin?.material}
-                creatorPower={player?.power || 1}
-                totalRotations={player?.coinState?.totalRotations}
-                finalRotation={player?.coinState?.finalRotation}
-              />
+              {/* Optimized coin display - handled by single renderer */}
+              <div className="coin-placeholder">
+                <div className="coin-slot-number">{index + 1}</div>
+              </div>
               
               {player?.choice && !player?.coinState?.isFlipping && (
                 <div className="choice-display">
