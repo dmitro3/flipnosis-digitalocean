@@ -1296,10 +1296,11 @@ class ContractService {
       
       // First approve NFT transfer
       console.log('🔐 Approving NFT transfer...')
-      const approvalHash = await this.approveNFT(nftContract, tokenId)
-      if (!approvalHash) {
-        throw new Error('NFT approval failed')
+      const approvalResult = await this.approveNFT(nftContract, tokenId)
+      if (!approvalResult.success) {
+        throw new Error('NFT approval failed: ' + approvalResult.error)
       }
+      console.log('✅ NFT approval successful:', approvalResult.transactionHash)
       
       // Create Battle Royale on contract
       const hash = await this.walletClient.writeContract({
