@@ -227,7 +227,7 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
         
       } catch (error) {
         console.error('❌ Failed to connect to Battle Royale game server:', error)
-        showError('Failed to connect to game server')
+        showToast('Failed to connect to game server', 'error')
       }
     }
 
@@ -239,7 +239,7 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
         socketService.socket.disconnect()
       }
     }
-  }, [gameId, address, showError])
+  }, [gameId, address, showToast])
   
   // ===== TAB SWITCHING LOGIC =====
   const handleTabChange = useCallback((tabId) => {
