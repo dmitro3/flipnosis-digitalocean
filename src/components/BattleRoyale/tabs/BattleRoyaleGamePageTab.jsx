@@ -554,30 +554,59 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           {currentPlayers} / 8 Players Joined (Creator + {currentPlayers - 1} Joiners)
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '0.75rem' }}>
-          {(userAlreadyJoined || isCreator) && (
-            <button 
-              className="coin-change-button"
+        {/* Start Game Button - Only for Creator */}
+        {isCreator && gameStatus === 'filling' && (
+          <div style={{ 
+            textAlign: 'center', 
+            marginTop: '1rem'
+          }}>
+            <button
               onClick={() => {
-                const myIndex = players.findIndex(p => p?.address === address)
-                if (myIndex !== -1) {
-                  setSelectedSlot(myIndex)
-                  setShowCoinSelector(true)
+                // Start the game with current players
+                try {
+                  socketService.emit('battle_royale_start_early', {
+                    gameId,
+                    address
+                  })
+                  console.log('🚀 Sent start game request to server')
+                  showToast('Starting game now!', 'success')
+                } catch (error) {
+                  console.error('Error starting game:', error)
+                  showToast('Failed to start game', 'error')
                 }
               }}
+              style={{
+                background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
+                color: '#000',
+                border: 'none',
+                borderRadius: '0.5rem',
+                padding: '1rem 2rem',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(0, 255, 136, 0.3)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)'
+                e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 136, 0.5)'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)'
+                e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 136, 0.3)'
+              }}
             >
-              Change Coin
+              🚀 Start Game
             </button>
-          )}
-          {(userAlreadyJoined || isCreator) && (
-            <button 
-              className="coin-change-button"
-              onClick={() => showToast('Withdraw will be enabled after game ends.', 'info')}
-            >
-              Withdraw
-            </button>
-          )}
-        </div>
+            <div style={{ 
+              fontSize: '0.9rem', 
+              color: '#888', 
+              marginTop: '0.5rem' 
+            }}>
+              Start with {currentPlayers} players
+            </div>
+          </div>
+        )}
       </GameStatus>
 
       {/* Optimized Single Renderer for All Coins */}
