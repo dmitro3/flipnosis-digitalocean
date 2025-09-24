@@ -273,8 +273,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
     const onStateUpdate = (data) => {
       try {
+        console.log('🔄 Received battle royale state update:', data)
+        
         // data.players may be object keyed by address; normalize into 8-slot array if slots provided
         if (data.playerSlots) {
+          console.log('🔄 Processing player slots:', data.playerSlots)
           const slots = new Array(8).fill(null)
           data.playerSlots.forEach((playerAddress, idx) => {
             if (playerAddress && data.players && data.players[playerAddress]) {
@@ -286,10 +289,15 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
               }
             }
           })
+          console.log('🔄 Updated slots:', slots)
           setPlayers(slots)
           const joinedCount = slots.filter(Boolean).length
           setCurrentPlayers(joinedCount)
           setGameStatus(data.status || (joinedCount >= 8 ? 'starting' : 'filling'))
+          
+          // Check if current user is now in the game
+          const userInGame = slots.some(slot => slot?.address?.toLowerCase() === address?.toLowerCase())
+          console.log('🔄 User in game after state update:', userInGame, 'User address:', address)
 
           // preload coin images
           if (data.players) {
@@ -316,6 +324,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         socketService.on('battle_royale_error', (data) => {
           console.error('❌ Battle Royale error:', data.message)
           showToast(data.message || 'Battle Royale error occurred', 'error')
+        })
+        
+        // Add listener for successful join confirmation
+        socketService.on('battle_royale_join_success', (data) => {
+          console.log('✅ Join confirmed by server:', data)
+          showToast('Successfully joined the game!', 'success')
         })
         // Join room and request state
         socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
@@ -437,39 +451,22 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       const result = await contractService.joinBattleRoyale(gameId, totalAmountETH)
       
       if (result.success) {
-        showToast('Successfully joined the game!', 'success')
+        console.log('✅ Blockchain transaction successful, notifying server...')
+        showToast('Payment successful! Joining game...', 'success')
 
         // Notify server to add player to in-memory game and room
         try {
+          console.log('📤 Emitting join_battle_royale to server:', { gameId, address })
           socketService.emit('join_battle_royale', { gameId, address })
-          socketService.emit('request_battle_royale_state', { gameId })
+          
+          // Wait a moment for server to process, then request updated state
+          setTimeout(() => {
+            console.log('📤 Requesting updated battle royale state')
+            socketService.emit('request_battle_royale_state', { gameId })
+          }, 500)
         } catch (e) {
           console.error('Failed to notify server about join', e)
-        }
-        
-        // Update local state to show the player in the slot
-        const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
-        const newPlayers = [...players]
-        newPlayers[slotIndex] = {
-          address: address,
-          joinedAt: new Date().toISOString(),
-          coin: defaultCoin
-        }
-        setPlayers(newPlayers)
-        setCurrentPlayers(prev => prev + 1)
-        
-        // Set default coin for the player
-        setPlayerCoins(prev => ({
-          ...prev,
-          [address]: defaultCoin
-        }))
-        
-        // Load coin images for the new player
-        loadPlayerCoinImages(address, defaultCoin)
-        
-        // Update game status if all slots are filled
-        if (currentPlayers + 1 >= 8) {
-          setGameStatus('starting')
+          showToast('Failed to join game server', 'error')
         }
         
         console.log('✅ Successfully joined Battle Royale game')

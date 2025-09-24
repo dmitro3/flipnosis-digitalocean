@@ -182,9 +182,18 @@ class BattleRoyaleSocketHandlers {
       try {
         const gameData = await dbService.getBattleRoyaleGame(gameId)
         console.log(`🔍 Database game data:`, gameData ? 'found' : 'not found')
+        if (gameData) {
+          console.log(`🔍 Game data details:`, {
+            id: gameData.id,
+            status: gameData.status,
+            creator: gameData.creator,
+            entry_fee: gameData.entry_fee
+          })
+        }
         if (gameData && gameData.status === 'filling') {
           console.log(`🔍 Creating game from database data`)
           game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
+          console.log(`🔍 Game created in memory:`, !!game)
         } else if (gameData) {
           console.log(`🔍 Game found but status is ${gameData.status}, not 'filling'`)
         }
@@ -224,6 +233,13 @@ class BattleRoyaleSocketHandlers {
         io.to(roomId).emit(eventType, eventData)
       })
     }
+
+    // Send join success confirmation to the joining player
+    socket.emit('battle_royale_join_success', { 
+      message: 'Successfully joined the game!',
+      gameId,
+      slotNumber: game.players.get(address)?.slotNumber
+    })
 
     console.log(`✅ ${address} joined Battle Royale ${gameId}`)
   }
