@@ -487,10 +487,9 @@ const SendButton = styled.button`
   }
 `
 
-const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
+const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address, socket: socketService, connected }) => {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
-  const [connected, setConnected] = useState(false)
   
   const messagesEndRef = useRef(null)
   
@@ -532,18 +531,6 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
   useEffect(() => {
     if (!socketService) return
     
-    // Check if socket is connected
-    const checkConnection = () => {
-      if (socketService.socket && socketService.socket.connected) {
-        setConnected(true)
-      } else {
-        setConnected(false)
-      }
-    }
-    
-    // Initial connection check
-    checkConnection()
-    
     // Chat message handler - use regular chat events like FlipSuiteFinal
     const handleChatMessage = (data) => {
       console.log('💬 Chat message received:', data)
@@ -582,30 +569,15 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
       }
     }
     
-    // Connection status handlers
-    const handleConnect = () => {
-      console.log('🔌 Socket connected for chat')
-      setConnected(true)
-    }
-    
-    const handleDisconnect = () => {
-      console.log('🔌 Socket disconnected for chat')
-      setConnected(false)
-    }
-    
     // Use regular chat events like FlipSuiteFinal
     socketService.on('chat_message', handleChatMessage)
     socketService.on('chat_history', handleChatHistory)
-    socketService.on('connect', handleConnect)
-    socketService.on('disconnect', handleDisconnect)
     
     return () => {
       socketService.off('chat_message', handleChatMessage)
       socketService.off('chat_history', handleChatHistory)
-      socketService.off('connect', handleConnect)
-      socketService.off('disconnect', handleDisconnect)
     }
-  }, [gameId, address])
+  }, [socketService, address])
   
   // Load initial data
   useEffect(() => {
