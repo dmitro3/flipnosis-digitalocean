@@ -1669,20 +1669,6 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
-  // Battle Royale chat history endpoint
-  router.get('/battle-royale/chat/:gameId', async (req, res) => {
-    const { gameId } = req.params
-    const limit = parseInt(req.query.limit) || 50
-    
-    try {
-      const messages = await dbService.getBattleRoyaleChatHistory(gameId, limit)
-      console.log(`📚 API: Returning ${messages.length} Battle Royale chat messages for game ${gameId}`)
-      res.json({ messages })
-    } catch (error) {
-      console.error('❌ Error fetching Battle Royale chat history:', error)
-      res.status(500).json({ error: 'Failed to fetch Battle Royale chat history' })
-    }
-  })
 
   // Handle preflight requests for deposit-confirmed endpoint
   router.options('/games/:gameId/deposit-confirmed', (req, res) => {
