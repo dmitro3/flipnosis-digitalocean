@@ -64,6 +64,15 @@ class SocketService {
     this.connecting = true
 
     return new Promise((resolve, reject) => {
+      // Set a timeout to prevent hanging
+      const connectionTimeout = setTimeout(() => {
+        if (this.connecting) {
+          console.error('❌ Connection timeout')
+          this.connecting = false
+          this.connected = false
+          reject(new Error('Connection timeout'))
+        }
+      }, 15000) // 15 second timeout
       try {
         // Connect to Socket.io server
         const wsUrl = getWsUrl()
@@ -85,6 +94,7 @@ class SocketService {
         // Connection established
         this.socket.on('connect', () => {
           console.log('✅ Socket.io connected')
+          clearTimeout(connectionTimeout)
           this.connected = true
           this.connecting = false
           
@@ -100,7 +110,9 @@ class SocketService {
         // Handle disconnection
         this.socket.on('disconnect', (reason) => {
           console.log('🔌 Socket.io disconnected:', reason)
+          clearTimeout(connectionTimeout)
           this.connected = false
+          this.connecting = false
         })
 
         // Handle reconnection
@@ -118,14 +130,16 @@ class SocketService {
         // Handle errors
         this.socket.on('connect_error', (error) => {
           console.error('❌ Socket.io connection error:', error.message)
+          clearTimeout(connectionTimeout)
+          this.connected = false
           this.connecting = false
-          if (!this.connected) {
-            reject(error)
-          }
+          reject(error)
         })
 
       } catch (error) {
         console.error('❌ Failed to create Socket.io connection:', error)
+        clearTimeout(connectionTimeout)
+        this.connecting = false
         reject(error)
       }
     })
@@ -183,8 +197,9 @@ class SocketService {
   // Switch rooms without disconnecting
   switchRoom(newGameId) {
     if (!this.socket || !this.connected) {
-      console.log('❌ Cannot switch room - not connected')
-      return Promise.reject(new Error('Not connected'))
+      console.log('❌ Cannot switch room - not connected, attempting to connect first')
+      // If not connected, try to connect first
+      return this.connect(newGameId, this.address)
     }
 
     // Determine new room type
