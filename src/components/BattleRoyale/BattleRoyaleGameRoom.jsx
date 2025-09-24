@@ -371,24 +371,23 @@ const BattleRoyaleGameRoom = ({
     return myPlayer && myPlayer.status !== 'eliminated'
   }, [serverState, address])
 
-  const canMakeChoice = useCallback(() => {
+  const canFlip = useCallback(() => {
     if (!serverState || !address) return false
     
     const myPlayer = serverState.players?.[address.toLowerCase()]
-    return serverState.gamePhase === 'waiting_choice' && 
+    return serverState.gamePhase === 'flipping_phase' && 
            myPlayer && 
            myPlayer.status !== 'eliminated' &&
-           !myPlayer.choice
+           !myPlayer.hasFlipped
   }, [serverState, address])
 
   const canChargePower = useCallback(() => {
     if (!serverState || !address) return false
     
     const myPlayer = serverState.players?.[address.toLowerCase()]
-    return serverState.gamePhase === 'charging_power' && 
+    return serverState.gamePhase === 'flipping_phase' && 
            myPlayer && 
            myPlayer.status !== 'eliminated' &&
-           myPlayer.choice && 
            !myPlayer.hasFlipped
   }, [serverState, address])
 
@@ -412,9 +411,24 @@ const BattleRoyaleGameRoom = ({
     console.log('🏠 Battle Royale room joined:', data)
   }, [])
 
+  const handleTargetAnimation = useCallback((data) => {
+    console.log('🎲 Target animation step:', data)
+    // Update UI to show alternating heads/tails
+    setServerState(prev => ({
+      ...prev,
+      targetAnimation: data.currentDisplay,
+      isTargetAnimating: data.isAnimating
+    }))
+  }, [])
+
   const handleTargetReveal = useCallback((data) => {
     console.log('🎯 Target revealed for round:', data)
     showToast(`Target for this round: ${data.target.toUpperCase()}!`, 'info')
+    setServerState(prev => ({
+      ...prev,
+      targetResult: data.target,
+      isTargetAnimating: false
+    }))
   }, [showToast])
 
   const handleFlipsExecuting = useCallback((data) => {
@@ -589,6 +603,7 @@ const BattleRoyaleGameRoom = ({
         // Register event listeners
         socketService.on('room_joined', handleRoomJoined)
         socketService.on('battle_royale_state_update', handleGameStateUpdate)
+        socketService.on('battle_royale_target_animation', handleTargetAnimation)
         socketService.on('battle_royale_target_reveal', handleTargetReveal)
         socketService.on('battle_royale_flips_executing', handleFlipsExecuting)
         socketService.on('battle_royale_round_result', handleRoundResult)
@@ -619,6 +634,7 @@ const BattleRoyaleGameRoom = ({
       // Cleanup listeners
       socketService.off('room_joined', handleRoomJoined)
       socketService.off('battle_royale_state_update', handleGameStateUpdate)
+      socketService.off('battle_royale_target_animation', handleTargetAnimation)
       socketService.off('battle_royale_target_reveal', handleTargetReveal)
       socketService.off('battle_royale_flips_executing', handleFlipsExecuting)
       socketService.off('battle_royale_round_result', handleRoundResult)
@@ -629,18 +645,6 @@ const BattleRoyaleGameRoom = ({
   }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
 
   // ===== USER ACTIONS =====
-  const handleChoice = useCallback((choice) => {
-    if (!canMakeChoice()) return
-    
-    console.log('🎯 Sending choice to server:', choice)
-    socketService.emit('battle_royale_player_choice', {
-      gameId,
-      address,
-      choice
-    })
-    
-    showToast(`You chose ${choice}!`, 'success')
-  }, [canMakeChoice, gameId, address, showToast])
 
   const handlePowerChargeStart = useCallback(() => {
     if (!canChargePower()) return
@@ -751,11 +755,11 @@ const BattleRoyaleGameRoom = ({
       case 'waiting_players':
         return 'Waiting for all players to join...'
       case 'revealing_target':
-        return 'Revealing target for this round...'
-      case 'waiting_choice':
-        return isAlive ? 'Choose heads or tails!' : 'Players are choosing...'
-      case 'charging_power':
-        return isAlive ? 'Hold to charge power!' : 'Players are charging power...'
+        return serverState.isTargetAnimating ? 
+          `🎲 ${serverState.targetAnimation?.toUpperCase() || 'HEADS'} 🎲` : 
+          'Revealing target for this round...'
+      case 'flipping_phase':
+        return isAlive ? 'Hold to charge power and flip!' : 'Players are flipping...'
       case 'executing_flips':
         return 'All coins are flipping...'
       case 'showing_result':
@@ -777,10 +781,15 @@ const BattleRoyaleGameRoom = ({
           Round {serverState?.currentRound || 1}
         </div>
         
-        {serverState?.targetResult && (
+        {(serverState?.targetResult || serverState?.isTargetAnimating) && (
           <div className="target-display">
             <span className="target-label">Target:</span>
-            <span className="target-result">{serverState.targetResult}</span>
+            <span className="target-result">
+              {serverState.isTargetAnimating ? 
+                serverState.targetAnimation?.toUpperCase() : 
+                serverState.targetResult?.toUpperCase()
+              }
+            </span>
           </div>
         )}
         
@@ -928,11 +937,6 @@ const BattleRoyaleGameRoom = ({
                 )}
               </div>
               
-              {player?.choice && !player?.coinState?.isFlipping && (
-                <div className="choice-display">
-                  Choice: {player.choice}
-                </div>
-              )}
               
               <div className="power-display">
                 <div className="power-label">Power Level</div>
@@ -951,30 +955,9 @@ const BattleRoyaleGameRoom = ({
         <ActionPanel>
           <div className="action-title">Your Actions</div>
           
-          {/* Choice Phase */}
-          {canMakeChoice() && (
-            <div className="choice-buttons">
-              <button
-                className="heads"
-                onClick={() => handleChoice('heads')}
-              >
-                👑 Heads
-              </button>
-              <button
-                className="tails"
-                onClick={() => handleChoice('tails')}
-              >
-                🗿 Tails
-              </button>
-            </div>
-          )}
-          
           {/* Power Charging Phase */}
           {canChargePower() && (
             <>
-              <div style={{ marginBottom: '1rem', color: '#FFD700' }}>
-                Your choice: {currentPlayer?.choice?.toUpperCase()}
-              </div>
               <button
                 className="flip-button"
                 onMouseDown={handlePowerChargeStart}
@@ -986,24 +969,18 @@ const BattleRoyaleGameRoom = ({
                   animation: isChargingPower ? 'pulse 0.5s infinite' : 'none'
                 }}
               >
-                {isChargingPower ? `⚡ CHARGING: ${currentPower.toFixed(1)} ⚡` : '⚡ HOLD TO CHARGE ⚡'}
+                {isChargingPower ? `⚡ CHARGING: ${currentPower.toFixed(1)} ⚡` : '⚡ HOLD TO FLIP ⚡'}
               </button>
               <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#888' }}>
-                Power affects flip duration and drama!
+                Power affects flip duration and speed only!
               </div>
             </>
           )}
           
           {/* Waiting States */}
-          {currentPlayer?.hasFlipped && serverState?.gamePhase === 'charging_power' && (
+          {currentPlayer?.hasFlipped && serverState?.gamePhase === 'flipping_phase' && (
             <div className="waiting-message">
-              Waiting for other players to flip...
-            </div>
-          )}
-          
-          {currentPlayer?.choice && serverState?.gamePhase === 'waiting_choice' && (
-            <div className="waiting-message">
-              You chose {currentPlayer.choice}. Waiting for others...
+              You've flipped! Waiting for other players...
             </div>
           )}
         </ActionPanel>

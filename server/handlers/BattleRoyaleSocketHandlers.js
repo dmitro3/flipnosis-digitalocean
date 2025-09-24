@@ -29,22 +29,6 @@ class BattleRoyaleSocketHandlers {
     console.log(`✅ ${address} joined Battle Royale room ${gameId}`)
   }
 
-  // Player Choice Handler
-  async handleBattleRoyalePlayerChoice(socket, data, battleRoyaleManager, io) {
-    const { gameId, address, choice } = data
-    console.log(`🎯 Battle Royale choice: ${address} chose ${choice} in ${gameId}`)
-    
-    const success = battleRoyaleManager.setPlayerChoice(gameId, address, choice)
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot set choice' })
-      return
-    }
-
-    // Broadcast updated state to all players
-    const roomId = `br_${gameId}`
-    const fullState = battleRoyaleManager.getFullGameState(gameId)
-    io.to(roomId).emit('battle_royale_state_update', fullState)
-  }
 
   // Start Power Charging
   async handleBattleRoyaleStartPowerCharge(socket, data, battleRoyaleManager, io) {
@@ -234,6 +218,35 @@ class BattleRoyaleSocketHandlers {
     // Send current state
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     socket.emit('battle_royale_state_update', fullState)
+  }
+
+  // Start Battle Royale Early
+  async handleBattleRoyaleStartEarly(socket, data, battleRoyaleManager, io) {
+    const { gameId, address } = data
+    console.log(`🚀 ${address} requesting early start for Battle Royale: ${gameId}`)
+    
+    const game = battleRoyaleManager.getGame(gameId)
+    if (!game) {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+      return
+    }
+
+    // Check if requester is the creator
+    if (game.creator.toLowerCase() !== address.toLowerCase()) {
+      socket.emit('battle_royale_error', { message: 'Only the creator can start the game early' })
+      return
+    }
+
+    // Start the game early
+    const success = battleRoyaleManager.startGameEarly(gameId, (roomId, eventType, eventData) => {
+      io.to(roomId).emit(eventType, eventData)
+    })
+
+    if (success) {
+      console.log(`✅ Battle Royale ${gameId} started early by ${address}`)
+    } else {
+      socket.emit('battle_royale_error', { message: 'Failed to start game early' })
+    }
   }
 }
 

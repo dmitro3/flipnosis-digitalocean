@@ -22,9 +22,8 @@ class BattleRoyaleGameManager {
 
   // ===== ROUND SUB-PHASES =====
   ROUND_PHASES = {
-    REVEALING_TARGET: 'revealing_target',     // 3-second target reveal
-    WAITING_CHOICE: 'waiting_choice',         // 20-second choice phase
-    CHARGING_POWER: 'charging_power',         // Power charging phase
+    REVEALING_TARGET: 'revealing_target',     // 3-second target reveal with animation
+    FLIPPING_PHASE: 'flipping_phase',         // 20-second flip phase (no choice needed)
     EXECUTING_FLIPS: 'executing_flips',       // All 8 coins flipping simultaneously
     SHOWING_RESULT: 'showing_result'          // 5-second result display
   }
@@ -289,6 +288,45 @@ class BattleRoyaleGameManager {
     return true
   }
 
+  startGameEarly(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    if (game.phase !== this.PHASES.FILLING) {
+      console.error(`❌ Cannot start game early in phase: ${game.phase}`)
+      return false
+    }
+
+    if (game.currentPlayers < 2) {
+      console.error(`❌ Need at least 2 players to start early`)
+      return false
+    }
+
+    console.log(`🚀 Starting Battle Royale early with ${game.currentPlayers} players: ${gameId}`)
+    
+    game.phase = this.PHASES.STARTING
+    game.startedAt = new Date().toISOString()
+    game.lastActivity = Date.now()
+
+    // 3-second countdown before first round
+    if (broadcastFn) {
+      broadcastFn(`br_${gameId}`, 'battle_royale_starting', {
+        gameId,
+        countdown: 3,
+        message: `Battle Royale starting early with ${game.currentPlayers} players!`,
+        isEarlyStart: true,
+        playerCount: game.currentPlayers
+      })
+    }
+
+    // Start first round after countdown
+    setTimeout(() => {
+      this.startNextRound(gameId, broadcastFn)
+    }, 3000)
+
+    return true
+  }
+
   // ===== ROUND MANAGEMENT =====
   startNextRound(gameId, broadcastFn) {
     const game = this.battleRoyaleGames.get(gameId)
@@ -309,7 +347,6 @@ class BattleRoyaleGameManager {
     // Clear previous round data for all players
     for (const [address, player] of game.players) {
       if (game.activePlayers.has(address)) {
-        player.choice = null
         player.power = 1
         player.hasFlipped = false
         player.flipTime = null
@@ -337,36 +374,75 @@ class BattleRoyaleGameManager {
     // Randomly select target result
     game.targetResult = Math.random() < 0.5 ? 'heads' : 'tails'
     
-    // Show target for 3 seconds
-    if (broadcastFn) {
-      broadcastFn(`br_${gameId}`, 'battle_royale_target_reveal', {
-        gameId,
-        round: game.currentRound,
-        target: game.targetResult,
-        activePlayers: Array.from(game.activePlayers),
-        countdown: 3
-      })
-    }
-
-    // Start choice phase after 3 seconds
-    setTimeout(() => {
-      this.startChoicePhase(gameId, broadcastFn)
-    }, 3000)
+    // Start alternating animation for 2.5 seconds, then reveal final target
+    this.startTargetRevealAnimation(gameId, broadcastFn)
 
     return true
   }
 
-  startChoicePhase(gameId, broadcastFn) {
+  startTargetRevealAnimation(gameId, broadcastFn) {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return false
 
-    game.gamePhase = this.ROUND_PHASES.WAITING_CHOICE
-    game.roundPhase = this.ROUND_PHASES.WAITING_CHOICE
+    console.log(`🎲 Starting target reveal animation for round ${game.currentRound}`)
+    
+    let animationStep = 0
+    const animationInterval = setInterval(() => {
+      if (!this.battleRoyaleGames.has(gameId)) {
+        clearInterval(animationInterval)
+        return
+      }
+      
+      // Alternate between heads and tails every 200ms
+      const currentDisplay = animationStep % 2 === 0 ? 'heads' : 'tails'
+      
+      if (broadcastFn) {
+        broadcastFn(`br_${gameId}`, 'battle_royale_target_animation', {
+          gameId,
+          round: game.currentRound,
+          currentDisplay,
+          isAnimating: true
+        })
+      }
+      
+      animationStep++
+      
+      // After 2.5 seconds (12.5 steps), reveal final target
+      if (animationStep >= 12) {
+        clearInterval(animationInterval)
+        
+        // Show final target for 0.5 seconds
+        if (broadcastFn) {
+          broadcastFn(`br_${gameId}`, 'battle_royale_target_reveal', {
+            gameId,
+            round: game.currentRound,
+            target: game.targetResult,
+            activePlayers: Array.from(game.activePlayers),
+            isAnimating: false
+          })
+        }
+        
+        // Start flipping phase after 0.5 seconds
+        setTimeout(() => {
+          this.startFlippingPhase(gameId, broadcastFn)
+        }, 500)
+      }
+    }, 200)
+
+    return true
+  }
+
+  startFlippingPhase(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    game.gamePhase = this.ROUND_PHASES.FLIPPING_PHASE
+    game.roundPhase = this.ROUND_PHASES.FLIPPING_PHASE
     game.roundCountdown = 20
     game.roundDeadline = Date.now() + 20000
     game.lastActivity = Date.now()
 
-    console.log(`⏰ Starting 20-second choice/flip phase for round ${game.currentRound}`)
+    console.log(`⏰ Starting 20-second flipping phase for round ${game.currentRound}`)
 
     // Start countdown timer
     const countdownInterval = setInterval(() => {
@@ -395,27 +471,6 @@ class BattleRoyaleGameManager {
   }
 
   // ===== PLAYER ACTIONS =====
-  setPlayerChoice(gameId, playerAddress, choice) {
-    const game = this.battleRoyaleGames.get(gameId)
-    if (!game) return false
-
-    const player = game.players.get(playerAddress)
-    if (!player) return false
-
-    if (!game.activePlayers.has(playerAddress)) {
-      console.error(`❌ Player not active: ${playerAddress}`)
-      return false
-    }
-
-    player.choice = choice
-    game.lastActivity = Date.now()
-    
-    // Transition to power phase once choice is made
-    game.gamePhase = this.ROUND_PHASES.CHARGING_POWER
-    
-    console.log(`🎯 ${playerAddress} chose ${choice} in round ${game.currentRound}`)
-    return true
-  }
 
   startPowerCharging(gameId, playerAddress) {
     const game = this.battleRoyaleGames.get(gameId)
@@ -490,18 +545,15 @@ class BattleRoyaleGameManager {
       return false
     }
 
-    // Auto-assign choice if not set
-    if (!player.choice) {
-      player.choice = Math.random() < 0.5 ? 'heads' : 'tails'
-      console.log(`🎲 Auto-assigned choice ${player.choice} for ${playerAddress}`)
-    }
-
-    // Calculate flip result - SERVER DETERMINES OUTCOME
-    const flipResult = this.calculateFlipResult(player.choice, player.power)
+    // Random flip result (50/50 chance, power doesn't affect outcome)
+    const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
     
-    // Calculate animation parameters based on power
-    const flipDuration = Math.max(1000, Math.min(10000, player.power * 1000))
-    const rotationsPerSecond = 2
+    // Calculate animation parameters based on power (affects duration and speed only)
+    const baseDuration = 2000 // 2 seconds base
+    const powerMultiplier = 0.5 + (player.power * 0.5) // 0.5x to 1.5x multiplier
+    const flipDuration = Math.max(1000, Math.min(5000, baseDuration * powerMultiplier))
+    
+    const rotationsPerSecond = 2 + (player.power * 0.5) // 2-7 rotations per second
     const totalRotations = (flipDuration / 1000) * rotationsPerSecond * 2 * Math.PI
     const finalRotation = flipResult === 'heads' ? 0 : Math.PI
 
@@ -564,16 +616,6 @@ class BattleRoyaleGameManager {
     return true
   }
 
-  calculateFlipResult(choice, power) {
-    // Power influences the probability of getting the chosen result
-    // Power 1 = 50% chance, Power 10 = 85% chance
-    const baseChance = 0.5
-    const powerBonus = ((power - 1) / 9) * 0.35 // 0 to 35% bonus
-    const successChance = baseChance + powerBonus
-
-    const success = Math.random() < successChance
-    return success ? choice : (choice === 'heads' ? 'tails' : 'heads')
-  }
 
   // ===== ROUND PROCESSING =====
   processRoundResults(gameId, broadcastFn) {
@@ -596,10 +638,9 @@ class BattleRoyaleGameManager {
     for (const playerAddress of game.activePlayers) {
       const player = game.players.get(playerAddress)
       if (!player.hasFlipped) {
-        // Auto-flip with random choice and minimal power
-        player.choice = Math.random() < 0.5 ? 'heads' : 'tails'
+        // Auto-flip with random result and minimal power
         player.power = 1
-        const flipResult = this.calculateFlipResult(player.choice, 1)
+        const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
         
         player.coinState = {
           rotation: { x: 0, y: 0, z: 0 },
