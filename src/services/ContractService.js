@@ -712,39 +712,66 @@ class ContractService {
         pageKey = nftsForOwner.pageKey
       } while (pageKey)
 
-      console.log('📦 Found NFTs owned by contract:', allNFTs.length)
+      console.log('📦 Found NFTs owned by contract (Alchemy):', allNFTs.length)
 
-      const formattedNFTs = allNFTs.map((nft) => {
-        let imageUrl = ''
-        if (nft.media && nft.media.length > 0) {
-          imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
-        } else if (nft.image) {
-          imageUrl = nft.image.originalUrl || nft.image.cachedUrl || ''
+      // Verify ownership on-chain to filter out stale data
+      const verifiedNFTs = []
+      
+      for (const nft of allNFTs) {
+        try {
+          console.log(`🔍 Verifying ownership of ${nft.contract.address}:${nft.tokenId}...`)
+          
+          // Check actual ownership on blockchain
+          const actualOwner = await this.publicClient.readContract({
+            address: nft.contract.address,
+            abi: NFT_ABI,
+            functionName: 'ownerOf',
+            args: [BigInt(nft.tokenId)]
+          })
+          
+          console.log(`🔍 Actual owner: ${actualOwner}, Contract: ${this.contractAddress}`)
+          
+          if (actualOwner.toLowerCase() === this.contractAddress.toLowerCase()) {
+            console.log(`✅ Contract actually owns ${nft.contract.address}:${nft.tokenId}`)
+            
+            let imageUrl = ''
+            if (nft.media && nft.media.length > 0) {
+              imageUrl = nft.media[0].gateway || nft.media[0].raw || ''
+            } else if (nft.image) {
+              imageUrl = nft.image.originalUrl || nft.image.cachedUrl || ''
+            }
+            if (!imageUrl && nft.metadata && nft.metadata.image) {
+              imageUrl = nft.metadata.image
+            }
+            if (imageUrl && imageUrl.startsWith('ipfs://')) {
+              imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
+            }
+            if (imageUrl && imageUrl.startsWith('http://')) {
+              imageUrl = imageUrl.replace('http://', 'https://')
+            }
+            
+            verifiedNFTs.push({
+              nftContract: nft.contract.address,
+              tokenId: nft.tokenId,
+              name: nft.title || nft.name || `NFT #${nft.tokenId}`,
+              metadata: {
+                ...nft.metadata,
+                image: imageUrl
+              },
+              uniqueKey: `${nft.contract.address}-${nft.tokenId}`,
+              source: 'alchemy_verified',
+            })
+          } else {
+            console.log(`❌ Contract does NOT own ${nft.contract.address}:${nft.tokenId} (stale Alchemy data)`)
+          }
+        } catch (verifyError) {
+          console.warn(`⚠️ Could not verify ownership of ${nft.contract.address}:${nft.tokenId}:`, verifyError.message)
+          // Skip this NFT if we can't verify ownership
         }
-        if (!imageUrl && nft.metadata && nft.metadata.image) {
-          imageUrl = nft.metadata.image
-        }
-        if (imageUrl && imageUrl.startsWith('ipfs://')) {
-          imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/')
-        }
-        if (imageUrl && imageUrl.startsWith('http://')) {
-          imageUrl = imageUrl.replace('http://', 'https://')
-        }
-        
-        return {
-          nftContract: nft.contract.address,
-          tokenId: nft.tokenId,
-          name: nft.title || nft.name || `NFT #${nft.tokenId}`,
-          metadata: {
-            ...nft.metadata,
-            image: imageUrl
-          },
-          uniqueKey: `${nft.contract.address}-${nft.tokenId}`,
-          source: 'alchemy',
-        }
-      })
+      }
 
-      return { success: true, nfts: formattedNFTs }
+      console.log('📦 Verified NFTs actually owned by contract:', verifiedNFTs.length)
+      return { success: true, nfts: verifiedNFTs }
     } catch (error) {
       console.error('❌ Error loading contract NFTs:', error)
       return { success: false, error: error.message }
@@ -842,41 +869,82 @@ class ContractService {
       if (nftContracts.length === 1) {
         // Single NFT - use directTransferNFT
         console.log('📦 Transferring single NFT directly...')
-        
-        const hash = await this.walletClient.writeContract({
-          address: this.contractAddress,
-          abi: CONTRACT_ABI,
-          functionName: 'directTransferNFT',
-          args: [nftContracts[0], BigInt(tokenIds[0]), recipients[0]],
-          chain: BASE_CHAIN,
-          account: this.walletClient.account,
-          gas: 150000n
+        console.log('📦 Transfer details:', {
+          nftContract: nftContracts[0],
+          tokenId: tokenIds[0],
+          recipient: recipients[0],
+          contractAddress: this.contractAddress
         })
         
-        // Wait for confirmation even if we got an RPC error
+        let hash
+        try {
+          hash = await this.walletClient.writeContract({
+            address: this.contractAddress,
+            abi: CONTRACT_ABI,
+            functionName: 'directTransferNFT',
+            args: [nftContracts[0], BigInt(tokenIds[0]), recipients[0]],
+            chain: BASE_CHAIN,
+            account: this.walletClient.account,
+            gas: 200000n // Increased gas limit
+          })
+          console.log('📦 Transaction hash received:', hash)
+        } catch (writeError) {
+          console.error('❌ Error writing contract transaction:', writeError)
+          return { success: false, error: `Transaction failed: ${writeError.message}` }
+        }
+        
+        // Wait for confirmation
         let receipt
         try {
+          console.log('⏳ Waiting for transaction confirmation...')
           receipt = await this.publicClient.waitForTransactionReceipt({ 
             hash,
             confirmations: 1,
-            timeout: 60_000
+            timeout: 120_000 // Increased timeout
           })
-        } catch (receiptError) {
-          console.warn('⚠️ RPC error waiting for receipt, but transaction may have succeeded:', receiptError)
-          // Try to get the receipt anyway
-          try {
-            receipt = await this.publicClient.getTransactionReceipt({ hash })
-          } catch (finalError) {
-            console.error('❌ Could not get transaction receipt:', finalError)
-            return { success: false, error: 'Transaction sent but could not confirm receipt' }
+          console.log('✅ Transaction confirmed:', receipt.status)
+          
+          if (receipt.status === 'reverted') {
+            console.error('❌ Transaction was reverted!')
+            return { success: false, error: 'Transaction was reverted by the contract' }
           }
+          
+        } catch (receiptError) {
+          console.error('❌ Error waiting for receipt:', receiptError)
+          return { success: false, error: `Transaction confirmation failed: ${receiptError.message}` }
         }
         
         console.log('✅ Direct NFT transfer successful:', hash)
+        
+        // Verify the transfer by checking the new owner
+        try {
+          console.log('🔍 Verifying NFT transfer...')
+          await new Promise(resolve => setTimeout(resolve, 3000)) // Wait for state to update
+          
+          const newOwner = await this.publicClient.readContract({
+            address: nftContracts[0],
+            abi: NFT_ABI,
+            functionName: 'ownerOf',
+            args: [BigInt(tokenIds[0])]
+          })
+          
+          console.log('🔍 NFT owner after transfer:', newOwner)
+          console.log('🔍 Expected recipient:', recipients[0])
+          
+          if (newOwner.toLowerCase() === recipients[0].toLowerCase()) {
+            console.log('✅ NFT transfer verified successfully!')
+          } else {
+            console.warn('⚠️ NFT transfer verification failed - owner mismatch')
+          }
+        } catch (verifyError) {
+          console.warn('⚠️ Could not verify NFT transfer:', verifyError.message)
+        }
+        
         return { 
           success: true, 
           transactionHash: hash,
-          message: `Successfully transferred NFT ${nftContracts[0]}:${tokenIds[0]} with low gas fees`
+          receipt,
+          message: `Successfully transferred NFT ${nftContracts[0]}:${tokenIds[0]}`
         }
         
       } else {
@@ -885,6 +953,13 @@ class ContractService {
         
         let hash
         try {
+          console.log('📦 Batch transfer details:', {
+            nftContracts,
+            tokenIds: tokenIds.map(id => BigInt(id)),
+            recipients,
+            contractAddress: this.contractAddress
+          })
+          
           hash = await this.walletClient.writeContract({
             address: this.contractAddress,
             abi: CONTRACT_ABI,
@@ -892,40 +967,42 @@ class ContractService {
             args: [nftContracts, tokenIds.map(id => BigInt(id)), recipients],
             chain: BASE_CHAIN,
             account: this.walletClient.account,
-            gas: 300000n // Increased gas limit for batch transfer
+            gas: 500000n // Increased gas limit for batch transfer
           })
+          console.log('📦 Batch transaction hash received:', hash)
         } catch (writeError) {
-          console.error('❌ Error writing contract:', writeError)
+          console.error('❌ Batch transfer failed:', writeError.message)
           
-          // Check if the error message contains a transaction hash (sometimes RPC errors still return hash)
-          const errorMessage = writeError.message || writeError.toString()
-          
-          // Improved hash extraction - look for a proper 64-character hex hash
-          const hashMatch = errorMessage.match(/0x[a-fA-F0-9]{64}/)
-          
-          if (hashMatch) {
-            const extractedHash = hashMatch[0]
-            // Validate that this looks like a real transaction hash
-            if (extractedHash.length === 66 && extractedHash.startsWith('0x')) {
-              hash = extractedHash
-              console.log('🔍 Found valid transaction hash in error message:', hash)
-            } else {
-              console.log('⚠️ Found hash-like string but it appears invalid:', extractedHash)
-              hash = null
-            }
-          } else {
-            console.log('❌ No valid transaction hash found in error message')
-            hash = null
-          }
-          
-          if (!hash) {
-            // If no valid hash found, try individual transfers
-            console.log('🔄 Trying individual NFT transfers...')
+          // Check if this is an "internal error" - usually means the contract doesn't own the NFTs
+          if (writeError.message.includes('internal error') || writeError.message.includes('InternalRpcError')) {
+            console.log('🔄 Internal error detected - trying individual transfers as fallback...')
+            
             const results = []
             
             for (let i = 0; i < nftContracts.length; i++) {
               try {
                 console.log(`📦 Transferring NFT ${i + 1}/${nftContracts.length}: ${nftContracts[i]}:${tokenIds[i]}`)
+                
+                // First check if the contract actually owns this NFT
+                const owner = await this.publicClient.readContract({
+                  address: nftContracts[i],
+                  abi: NFT_ABI,
+                  functionName: 'ownerOf',
+                  args: [BigInt(tokenIds[i])]
+                })
+                
+                console.log(`🔍 NFT ${nftContracts[i]}:${tokenIds[i]} owner:`, owner)
+                console.log(`🔍 Contract address:`, this.contractAddress)
+                
+                if (owner.toLowerCase() !== this.contractAddress.toLowerCase()) {
+                  console.warn(`⚠️ Contract doesn't own NFT ${nftContracts[i]}:${tokenIds[i]} - skipping`)
+                  results.push({
+                    success: false,
+                    error: 'Contract does not own this NFT',
+                    nft: `${nftContracts[i]}:${tokenIds[i]}`
+                  })
+                  continue
+                }
                 
                 const individualHash = await this.walletClient.writeContract({
                   address: this.contractAddress,
@@ -934,22 +1011,37 @@ class ContractService {
                   args: [nftContracts[i], BigInt(tokenIds[i]), recipients[i]],
                   chain: BASE_CHAIN,
                   account: this.walletClient.account,
-                  gas: 150000n
+                  gas: 200000n
                 })
                 
-                results.push({
-                  success: true,
+                // Wait for confirmation
+                const receipt = await this.publicClient.waitForTransactionReceipt({ 
                   hash: individualHash,
-                  nft: `${nftContracts[i]}:${tokenIds[i]}`
+                  confirmations: 1,
+                  timeout: 60_000
                 })
                 
-                console.log(`✅ Individual transfer successful: ${individualHash}`)
+                if (receipt.status === 'reverted') {
+                  console.error(`❌ Individual transfer reverted for ${nftContracts[i]}:${tokenIds[i]}`)
+                  results.push({
+                    success: false,
+                    error: 'Transaction reverted',
+                    nft: `${nftContracts[i]}:${tokenIds[i]}`
+                  })
+                } else {
+                  results.push({
+                    success: true,
+                    hash: individualHash,
+                    nft: `${nftContracts[i]}:${tokenIds[i]}`
+                  })
+                  console.log(`✅ Individual transfer successful: ${individualHash}`)
+                }
                 
                 // Wait a bit between transfers
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                await new Promise(resolve => setTimeout(resolve, 2000))
                 
               } catch (individualError) {
-                console.error(`❌ Individual transfer failed for ${nftContracts[i]}:${tokenIds[i]}:`, individualError)
+                console.error(`❌ Individual transfer failed for ${nftContracts[i]}:${tokenIds[i]}:`, individualError.message)
                 results.push({
                   success: false,
                   error: individualError.message,
@@ -967,40 +1059,39 @@ class ContractService {
               results: results
             }
           }
+          
+          // For other types of errors, return the error
+          return { success: false, error: `Batch transfer failed: ${writeError.message}` }
         }
         
         // If we have a valid hash, wait for confirmation
         if (hash) {
           let receipt
           try {
+            console.log('⏳ Waiting for batch transaction confirmation...')
             receipt = await this.publicClient.waitForTransactionReceipt({ 
               hash,
               confirmations: 1,
-              timeout: 60_000
+              timeout: 120_000 // Increased timeout
             })
-            console.log('✅ Got transaction receipt:', receipt)
-          } catch (receiptError) {
-            console.warn('⚠️ RPC error waiting for receipt, but transaction may have succeeded:', receiptError)
-            // Try to get the receipt anyway
-            try {
-              receipt = await this.publicClient.getTransactionReceipt({ hash })
-              console.log('✅ Got transaction receipt despite RPC error:', receipt)
-            } catch (finalError) {
-              console.error('❌ Could not get transaction receipt:', finalError)
-              // Even if we can't get the receipt, if we have a hash, the transaction was likely sent
-              return { 
-                success: true, 
-                transactionHash: hash,
-                message: `Transaction sent (hash: ${hash}) but could not confirm receipt. Check blockchain explorer.`
-              }
+            console.log('✅ Batch transaction confirmed:', receipt.status)
+            
+            if (receipt.status === 'reverted') {
+              console.error('❌ Batch transaction was reverted!')
+              return { success: false, error: 'Batch transaction was reverted by the contract' }
             }
+            
+          } catch (receiptError) {
+            console.error('❌ Error waiting for batch receipt:', receiptError)
+            return { success: false, error: `Batch transaction confirmation failed: ${receiptError.message}` }
           }
           
           console.log('✅ Direct batch NFT transfer successful:', hash)
           return { 
             success: true, 
             transactionHash: hash,
-            message: `Successfully transferred ${nftContracts.length} NFTs with low gas fees`
+            receipt,
+            message: `Successfully transferred ${nftContracts.length} NFTs`
           }
         }
       }
