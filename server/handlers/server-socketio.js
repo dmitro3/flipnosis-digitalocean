@@ -78,6 +78,10 @@ class GameServer {
       socket.on('spectate_battle_royale', (data) => this.battleRoyaleHandlers.handleSpectateBattleRoyale(socket, data, this.battleRoyaleManager))
       socket.on('request_battle_royale_state', (data) => this.battleRoyaleHandlers.handleRequestBattleRoyaleState(socket, data, this.battleRoyaleManager))
       
+      // ===== BATTLE ROYALE CHAT =====
+      socket.on('battle_royale_chat_message', (data) => this.battleRoyaleHandlers.handleBattleRoyaleChatMessage(socket, data, this.battleRoyaleManager, this.io, this.dbService))
+      socket.on('request_battle_royale_chat_history', (data) => this.battleRoyaleHandlers.handleBattleRoyaleChatHistory(socket, data, this.battleRoyaleManager, this.dbService))
+      
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))
     })

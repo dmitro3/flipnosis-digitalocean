@@ -224,28 +224,80 @@ class BattleRoyaleSocketHandlers {
   async handleBattleRoyaleStartEarly(socket, data, battleRoyaleManager, io) {
     const { gameId, address } = data
     console.log(`🚀 ${address} requesting early start for Battle Royale: ${gameId}`)
+    console.log(`🚀 Data received:`, data)
     
     const game = battleRoyaleManager.getGame(gameId)
     if (!game) {
+      console.log(`❌ Game not found: ${gameId}`)
       socket.emit('battle_royale_error', { message: 'Game not found' })
       return
     }
 
+    console.log(`🎮 Game found - Creator: ${game.creator}, Requester: ${address}, Phase: ${game.phase}`)
+
     // Check if requester is the creator
     if (game.creator.toLowerCase() !== address.toLowerCase()) {
+      console.log(`❌ Not creator - Creator: ${game.creator}, Requester: ${address}`)
       socket.emit('battle_royale_error', { message: 'Only the creator can start the game early' })
       return
     }
 
     // Start the game early
     const success = battleRoyaleManager.startGameEarly(gameId, (roomId, eventType, eventData) => {
+      console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
       io.to(roomId).emit(eventType, eventData)
     })
 
     if (success) {
       console.log(`✅ Battle Royale ${gameId} started early by ${address}`)
     } else {
+      console.log(`❌ Failed to start game early`)
       socket.emit('battle_royale_error', { message: 'Failed to start game early' })
+    }
+  }
+
+  // Handle Battle Royale Chat Message
+  async handleBattleRoyaleChatMessage(socket, data, battleRoyaleManager, io, dbService) {
+    const { gameId, message, address } = data
+    console.log(`💬 Battle Royale chat from ${address} in ${gameId}: ${message}`)
+    
+    // Save to database
+    if (dbService && typeof dbService.saveBattleRoyaleChatMessage === 'function') {
+      try {
+        await dbService.saveBattleRoyaleChatMessage(gameId, address, message)
+      } catch (error) {
+        console.error('❌ Error saving Battle Royale chat message:', error)
+      }
+    }
+    
+    // Broadcast to all players in the room
+    const roomId = `br_${gameId}`
+    const chatData = {
+      address,
+      message,
+      timestamp: new Date().toISOString()
+    }
+    
+    io.to(roomId).emit('battle_royale_chat_message', chatData)
+    console.log(`📢 Broadcasted Battle Royale chat message to room ${roomId}`)
+  }
+
+  // Handle Battle Royale Chat History Request
+  async handleBattleRoyaleChatHistory(socket, data, battleRoyaleManager, dbService) {
+    const { gameId } = data
+    console.log(`📜 Battle Royale chat history requested for ${gameId}`)
+    
+    if (dbService && typeof dbService.getBattleRoyaleChatHistory === 'function') {
+      try {
+        const messages = await dbService.getBattleRoyaleChatHistory(gameId, 100)
+        socket.emit('battle_royale_chat_history', { messages })
+        console.log(`📜 Sent ${messages.length} Battle Royale chat messages to ${socket.id}`)
+      } catch (error) {
+        console.error('❌ Error getting Battle Royale chat history:', error)
+        socket.emit('battle_royale_chat_history', { messages: [] })
+      }
+    } else {
+      socket.emit('battle_royale_chat_history', { messages: [] })
     }
   }
 }

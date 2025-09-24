@@ -505,6 +505,16 @@ const BattleRoyaleGameRoom = ({
     }))
   }, [address])
 
+  const handleBattleRoyaleError = useCallback((data) => {
+    console.error('❌ Battle Royale error:', data)
+    showToast(data.message || 'Battle Royale error occurred', 'error')
+  }, [showToast])
+
+  const handleBattleRoyaleStarting = useCallback((data) => {
+    console.log('🚀 Battle Royale starting:', data)
+    showToast(data.message || 'Battle Royale is starting!', 'info')
+  }, [showToast])
+
   // Handle coin change
   const handleCoinChange = useCallback((playerAddress) => {
     setSelectedPlayerForCoinChange(playerAddress)
@@ -576,6 +586,7 @@ const BattleRoyaleGameRoom = ({
   // Handle proceed with early start
   const handleProceedStart = useCallback(() => {
     try {
+      console.log('🚀 Attempting early start with:', { gameId, address, isCreator, gamePhase: serverState?.gamePhase })
       socketService.emit('battle_royale_start_early', {
         gameId,
         address
@@ -587,7 +598,7 @@ const BattleRoyaleGameRoom = ({
       showToast('Failed to start game', 'error')
     }
     setShowStartNowWarning(false)
-  }, [gameId, address, showToast])
+  }, [gameId, address, showToast, isCreator, serverState?.gamePhase])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
@@ -610,6 +621,8 @@ const BattleRoyaleGameRoom = ({
         socketService.on('battle_royale_game_complete', handleGameComplete)
         socketService.on('battle_royale_new_round', handleNewRound)
         socketService.on('battle_royale_power_update', handlePowerUpdate)
+        socketService.on('battle_royale_error', handleBattleRoyaleError)
+        socketService.on('battle_royale_starting', handleBattleRoyaleStarting)
         
         // Join room
         socketService.emit('join_battle_royale_room', { 
@@ -641,6 +654,8 @@ const BattleRoyaleGameRoom = ({
       socketService.off('battle_royale_game_complete', handleGameComplete)
       socketService.off('battle_royale_new_round', handleNewRound)
       socketService.off('battle_royale_power_update', handlePowerUpdate)
+      socketService.off('battle_royale_error', handleBattleRoyaleError)
+      socketService.off('battle_royale_starting', handleBattleRoyaleStarting)
     }
   }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
 
@@ -742,6 +757,7 @@ const BattleRoyaleGameRoom = ({
   const isParticipant = !!currentPlayer
   const isEliminated = currentPlayer?.status === 'eliminated'
   const isAlive = isParticipant && !isEliminated
+  const isCreator = serverState?.creator?.toLowerCase() === address?.toLowerCase()
 
   const formatAddress = (addr) => {
     if (!addr) return ''
@@ -801,6 +817,9 @@ const BattleRoyaleGameRoom = ({
         </div>
       </RoundHeader>
 
+      {/* Debug Info */}
+      {console.log('🎮 Debug - isCreator:', isCreator, 'gamePhase:', serverState?.gamePhase, 'currentPlayers:', serverState?.currentPlayers)}
+      
       {/* Start Now Button - Only for Creator in Lobby */}
       {isCreator && serverState?.gamePhase === 'filling' && (
         <div style={{ 

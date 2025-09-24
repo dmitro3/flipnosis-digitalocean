@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import styled from '@emotion/styled'
 import ProfilePicture from '../../ProfilePicture'
+import socketService from '../../../services/SocketService'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -489,7 +490,7 @@ const SendButton = styled.button`
 const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
-  const [connected, setConnected] = useState(true) // For now, assume connected
+  const [connected, setConnected] = useState(false)
   
   const messagesEndRef = useRef(null)
   
@@ -503,8 +504,9 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
   // Load chat history
   const loadChatHistory = useCallback(async () => {
     try {
-      const cleanGameId = gameId.startsWith('game_') ? gameId.replace('game_', '') : gameId
-      const response = await fetch(`/api/chat/${cleanGameId}?limit=100`)
+      // Use Battle Royale specific API endpoint
+      const cleanGameId = gameId.startsWith('br_') ? gameId.replace('br_', '') : gameId
+      const response = await fetch(`/api/battle-royale/chat/${cleanGameId}?limit=100`)
       if (response.ok) {
         const data = await response.json()
         if (data.messages && Array.isArray(data.messages)) {
@@ -512,15 +514,103 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
             id: msg.id || Date.now() + Math.random(),
             sender: msg.sender_address || msg.sender,
             message: msg.message,
-            timestamp: new Date(msg.timestamp).toLocaleTimeString(),
+            timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
             isCurrentUser: (msg.sender_address || msg.sender)?.toLowerCase() === address?.toLowerCase()
           }))
           setMessages(formattedMessages)
-          console.log(`📜 Loaded ${formattedMessages.length} chat messages for game ${cleanGameId}`)
+          console.log(`📜 Loaded ${formattedMessages.length} Battle Royale chat messages for game ${cleanGameId}`)
         }
+      } else {
+        console.log(`📜 Loaded 0 chat messages for game br_${cleanGameId}`)
       }
     } catch (error) {
-      console.error('❌ Failed to load chat history:', error)
+      console.error('❌ Failed to load Battle Royale chat history:', error)
+    }
+  }, [gameId, address])
+  
+  // Socket event handlers
+  useEffect(() => {
+    if (!socketService || !gameId || !address) return
+    
+    // Check if socket is connected
+    const checkConnection = () => {
+      if (socketService.socket && socketService.socket.connected) {
+        setConnected(true)
+        // Request chat history when connected
+        socketService.emit('request_battle_royale_chat_history', {
+          gameId: gameId.startsWith('br_') ? gameId.replace('br_', '') : gameId
+        })
+      } else {
+        setConnected(false)
+      }
+    }
+    
+    // Initial connection check
+    checkConnection()
+    
+    // Chat message handler
+    const handleChatMessage = (data) => {
+      console.log('💬 Battle Royale chat message received:', data)
+      
+      // Check if this message is from the current user (to avoid duplicates from optimistic updates)
+      const isFromCurrentUser = (data.address || data.from || data.sender)?.toLowerCase() === address?.toLowerCase()
+      
+      if (isFromCurrentUser) {
+        console.log('💬 Skipping message from current user (already added optimistically)')
+        return
+      }
+      
+      const newMsg = {
+        id: Date.now() + Math.random(),
+        sender: data.address || data.from || data.sender,
+        message: data.message,
+        timestamp: new Date(data.timestamp || Date.now()).toLocaleTimeString(),
+        isCurrentUser: false
+      }
+      setMessages(prev => [...prev, newMsg])
+    }
+    
+    // Chat history handler
+    const handleChatHistory = (data) => {
+      console.log('📜 Battle Royale chat history received:', data.messages?.length || 0, 'messages')
+      if (data.messages && Array.isArray(data.messages)) {
+        const formattedMessages = data.messages.map(msg => ({
+          id: msg.id || Date.now() + Math.random(),
+          sender: msg.sender_address || msg.sender,
+          message: msg.message,
+          timestamp: new Date(msg.created_at || msg.timestamp).toLocaleTimeString(),
+          isCurrentUser: (msg.sender_address || msg.sender)?.toLowerCase() === address?.toLowerCase()
+        }))
+        setMessages(formattedMessages)
+        console.log('📜 Updated messages from Battle Royale chat history:', formattedMessages.length)
+      }
+    }
+    
+    // Connection status handlers
+    const handleConnect = () => {
+      console.log('🔌 Socket connected for Battle Royale chat')
+      setConnected(true)
+      // Request chat history when connected
+      socketService.emit('request_battle_royale_chat_history', {
+        gameId: gameId.startsWith('br_') ? gameId.replace('br_', '') : gameId
+      })
+    }
+    
+    const handleDisconnect = () => {
+      console.log('🔌 Socket disconnected for Battle Royale chat')
+      setConnected(false)
+    }
+    
+    socketService.on('battle_royale_chat_message', handleChatMessage)
+    socketService.on('battle_royale_chat_history', handleChatHistory)
+    socketService.on('connect', handleConnect)
+    socketService.on('disconnect', handleDisconnect)
+    
+    return () => {
+      socketService.off('battle_royale_chat_message', handleChatMessage)
+      socketService.off('battle_royale_chat_history', handleChatHistory)
+      socketService.off('connect', handleConnect)
+      socketService.off('disconnect', handleDisconnect)
     }
   }, [gameId, address])
   
@@ -540,17 +630,28 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
     
     console.log('💬 Sending chat message:', { message: newMessage.trim(), from: address })
     
-    // Add optimistic message
-    const optimisticMessage = {
-      id: Date.now() + Math.random(),
-      sender: address,
-      message: newMessage.trim(),
-      timestamp: new Date().toLocaleTimeString(),
-      isCurrentUser: true
+    // Send to server using Battle Royale chat
+    if (socketService && connected) {
+      socketService.emit('battle_royale_chat_message', {
+        gameId: gameId.startsWith('br_') ? gameId.replace('br_', '') : gameId,
+        message: newMessage.trim(),
+        address: address
+      })
+      
+      // Add optimistic message
+      const optimisticMessage = {
+        id: Date.now() + Math.random(),
+        sender: address,
+        message: newMessage.trim(),
+        timestamp: new Date().toLocaleTimeString(),
+        isCurrentUser: true
+      }
+      setMessages(prev => [...prev, optimisticMessage])
+      
+      setNewMessage('')
+    } else {
+      console.error('❌ Socket not connected for Battle Royale chat')
     }
-    setMessages(prev => [...prev, optimisticMessage])
-    
-    setNewMessage('')
   }
 
   // Helper functions for NFT data
