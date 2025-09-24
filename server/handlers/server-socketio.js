@@ -68,7 +68,7 @@ class GameServer {
     socket.on('request_next_round', (data) => this.handleRequestNextRound(socket, data))
       
       // ===== BATTLE ROYALE ACTIONS =====
-      socket.on('join_battle_royale_room', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('join_battle_royale_room', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io, this.dbService))
       socket.on('join_battle_royale', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyale(socket, data, this.battleRoyaleManager, this.io, this.dbService))
       socket.on('battle_royale_start_early', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(socket, data, this.battleRoyaleManager, this.io))
       socket.on('battle_royale_start_power_charge', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStartPowerCharge(socket, data, this.battleRoyaleManager, this.io))
@@ -760,7 +760,7 @@ class GameServer {
     }
 
     // Join room
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     socket.join(roomId)
     
     // Track socket
@@ -796,7 +796,7 @@ class GameServer {
     }
 
     // Broadcast updated state
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     const fullState = this.battleRoyaleManager.getFullGameState(gameId)
     this.io.to(roomId).emit('battle_royale_state_update', fullState)
   }
@@ -806,7 +806,7 @@ class GameServer {
     console.log(`🪙 Battle Royale flip: ${address} flipping with power ${power} in ${gameId}`)
     
     const success = this.battleRoyaleManager.executePlayerFlip(gameId, address, power, (gameId, eventType, eventData) => {
-      const roomId = `br_${gameId}`
+      const roomId = gameId
       this.io.to(roomId).emit(eventType, eventData)
     })
 
@@ -816,7 +816,7 @@ class GameServer {
     }
 
     // Broadcast updated state
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     const fullState = this.battleRoyaleManager.getFullGameState(gameId)
     this.io.to(roomId).emit('battle_royale_state_update', fullState)
   }
@@ -832,7 +832,7 @@ class GameServer {
     }
 
     // Broadcast updated state
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     const fullState = this.battleRoyaleManager.getFullGameState(gameId)
     this.io.to(roomId).emit('battle_royale_state_update', fullState)
   }
@@ -851,7 +851,7 @@ class GameServer {
     this.battleRoyaleManager.addSpectator(gameId, address)
     
     // Join room
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     socket.join(roomId)
     
     // Track socket

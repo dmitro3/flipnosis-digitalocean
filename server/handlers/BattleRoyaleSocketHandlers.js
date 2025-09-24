@@ -4,22 +4,39 @@
 class BattleRoyaleSocketHandlers {
   
   // Join Battle Royale Room
-  async handleJoinBattleRoyaleRoom(socket, data, battleRoyaleManager, io) {
+  async handleJoinBattleRoyaleRoom(socket, data, battleRoyaleManager, io, dbService) {
     const { roomId, address } = data
-    const gameId = roomId.startsWith('br_') ? roomId.substring(3) : roomId
+    // Keep the full game ID including br_ prefix since that's how it's stored in database
+    const gameId = roomId.startsWith('br_') ? roomId : `br_${roomId}`
     
     console.log(`🎮 ${address} joining Battle Royale room: ${gameId}`)
     console.log(`🔍 Room ID: ${roomId}, Game ID: ${gameId}`)
     
     // Join socket room
-    socket.join(`br_${gameId}`)
+    socket.join(gameId)
     
     // Get or create game
     let game = battleRoyaleManager.getGame(gameId)
     console.log(`🔍 Game found in memory: ${!!game}`)
     
     if (!game) {
-      // This would normally load from database
+      // Try to load from database
+      console.log(`🔍 Attempting to load game ${gameId} from database...`)
+      try {
+        const gameData = await dbService.getBattleRoyaleGame(gameId)
+        console.log(`🔍 Database game data:`, gameData ? 'found' : 'not found')
+        if (gameData && gameData.status === 'filling') {
+          console.log(`🔍 Creating game from database data`)
+          game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
+        } else if (gameData) {
+          console.log(`🔍 Game found but status is ${gameData.status}, not 'filling'`)
+        }
+      } catch (error) {
+        console.error('❌ Error loading Battle Royale game:', error)
+      }
+    }
+    
+    if (!game) {
       console.log(`❌ Battle Royale game not found: ${gameId}`)
       socket.emit('battle_royale_error', { message: `Game not found: ${gameId}` })
       return
@@ -91,7 +108,7 @@ class BattleRoyaleSocketHandlers {
     }
 
     // Broadcast final power state
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     io.to(roomId).emit('battle_royale_state_update', fullState)
   }
@@ -115,7 +132,7 @@ class BattleRoyaleSocketHandlers {
     }
 
     // Broadcast updated state with coin animation data
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     io.to(roomId).emit('battle_royale_state_update', fullState)
   }
@@ -132,7 +149,7 @@ class BattleRoyaleSocketHandlers {
     }
 
     // Broadcast updated state
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     io.to(roomId).emit('battle_royale_state_update', fullState)
   }
@@ -193,7 +210,7 @@ class BattleRoyaleSocketHandlers {
     }
 
     // Join room
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     socket.join(roomId)
     
     // Broadcast updated game state to all players
@@ -226,7 +243,7 @@ class BattleRoyaleSocketHandlers {
     battleRoyaleManager.addSpectator(gameId, address)
     
     // Join room
-    const roomId = `br_${gameId}`
+    const roomId = gameId
     socket.join(roomId)
 
     // Send current state
