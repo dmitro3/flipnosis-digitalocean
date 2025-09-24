@@ -151,22 +151,15 @@ class BattleRoyaleSocketHandlers {
   async handleJoinBattleRoyale(socket, data, battleRoyaleManager, io, dbService) {
     const { gameId, address } = data
     console.log(`🎮 ${address} joining Battle Royale game: ${gameId}`)
-    console.log(`🎮 Join data:`, data)
     
     // Get or create game
     let game = battleRoyaleManager.getGame(gameId)
-    console.log(`🎮 Game in memory:`, !!game)
-    
     if (!game && dbService) {
       // Try to load from database
       try {
-        console.log(`🎮 Loading game from database: ${gameId}`)
         const gameData = await dbService.getBattleRoyaleGame(gameId)
-        console.log(`🎮 Database game data:`, gameData)
-        
         if (gameData && gameData.status === 'filling') {
           game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
-          console.log(`🎮 Created game from database: ${gameId}`)
         }
       } catch (error) {
         console.error('❌ Error loading Battle Royale game:', error)
@@ -174,17 +167,13 @@ class BattleRoyaleSocketHandlers {
     }
 
     if (!game) {
-      console.log(`❌ Game not found: ${gameId}`)
       socket.emit('battle_royale_error', { message: 'Game not found' })
       return
     }
 
-    console.log(`🎮 Game found - Current players: ${game.currentPlayers}, Max players: ${game.maxPlayers}`)
-
     // Add player to game
     const success = battleRoyaleManager.addPlayer(gameId, address)
     if (!success) {
-      console.log(`❌ Failed to add player to game: ${address}`)
       socket.emit('battle_royale_error', { message: 'Cannot join game' })
       return
     }
@@ -192,12 +181,10 @@ class BattleRoyaleSocketHandlers {
     // Join room
     const roomId = `br_${gameId}`
     socket.join(roomId)
-    console.log(`🎮 Player joined room: ${roomId}`)
     
     // Broadcast updated game state to all players
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     io.to(roomId).emit('battle_royale_state_update', fullState)
-    console.log(`🎮 Broadcasted state update to room: ${roomId}`)
 
     // Check if game should start (all 8 players joined)
     if (game.currentPlayers === game.maxPlayers) {
@@ -268,7 +255,6 @@ class BattleRoyaleSocketHandlers {
       socket.emit('battle_royale_error', { message: 'Failed to start game early' })
     }
   }
-
 }
 
 module.exports = BattleRoyaleSocketHandlers

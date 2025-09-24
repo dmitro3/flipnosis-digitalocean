@@ -1669,7 +1669,6 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
-
   // Handle preflight requests for deposit-confirmed endpoint
   router.options('/games/:gameId/deposit-confirmed', (req, res) => {
     res.header('Access-Control-Allow-Origin', req.headers.origin || '*')
