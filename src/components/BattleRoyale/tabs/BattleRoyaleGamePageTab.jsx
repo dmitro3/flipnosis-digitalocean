@@ -7,9 +7,9 @@ import { useToast } from '../../../contexts/ToastContext'
 import { useProfile } from '../../../contexts/ProfileContext'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
-import CoinSelector from '../../CoinSelector'
 import socketService from '../../../services/SocketService'
 import OptimizedBattleRoyaleCoins from '../OptimizedBattleRoyaleCoins'
+import CoinSelector from '../../CoinSelector'
 import '../BattleRoyaleCoins.css'
 
 const TabContainer = styled.div`
@@ -602,10 +602,29 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             <div className="slot-number">{index + 1}</div>
             {player ? (
               <>
-                {/* Coin Display - handled by optimized renderer */}
+                {/* Coin Display with actual coin image */}
                 <div className="coin-display">
                   <div className="coin-placeholder">
+                    <img 
+                      src={playerCoinImages[player.address]?.headsImage || '/coins/plainh.png'} 
+                      alt={`Player ${index + 1} coin`}
+                      className="coin-image"
+                    />
                     <div className="coin-slot-number">{index + 1}</div>
+                    
+                    {/* Change Coin Button for current user */}
+                    {player.address === address && (
+                      <button 
+                        className="coin-change-button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedSlot(index)
+                          setShowCoinSelector(true)
+                        }}
+                      >
+                        Change Coin
+                      </button>
+                    )}
                   </div>
                 </div>
                 

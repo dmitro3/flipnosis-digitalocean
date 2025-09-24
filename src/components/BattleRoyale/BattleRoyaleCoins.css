@@ -12,12 +12,71 @@
   overflow: hidden;
 }
 
+.coin-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFD700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  z-index: 2;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.coin-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+}
+
+/* Add a subtle rotation animation for active coins */
+.coin-image.active {
+  animation: gentleRotate 4s linear infinite;
+}
+
+@keyframes gentleRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Coin Change Button */
+.coin-change-button {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 4;
+  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+
+.coin-change-button:hover {
+  background: linear-gradient(135deg, #FFA500, #FF8C00);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+}
+
 .coin-slot-number {
-  font-size: 2rem;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.2rem;
   font-weight: bold;
   color: #FFD700;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-  z-index: 1;
+  z-index: 3;
 }
 
 .coin-placeholder::before {

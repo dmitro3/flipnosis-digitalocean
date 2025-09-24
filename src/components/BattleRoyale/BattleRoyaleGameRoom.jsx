@@ -7,6 +7,7 @@ import { useProfile } from '../../contexts/ProfileContext'
 import socketService from '../../services/SocketService'
 import OptimizedBattleRoyaleCoins from './OptimizedBattleRoyaleCoins'
 import ProfilePicture from '../ProfilePicture'
+import CoinSelector from '../CoinSelector'
 import './BattleRoyaleCoins.css'
 
 const GameContainer = styled.div`
@@ -326,6 +327,8 @@ const BattleRoyaleGameRoom = ({
   const [isChargingPower, setIsChargingPower] = useState(false)
   const [currentPower, setCurrentPower] = useState(1)
   const powerIntervalRef = useRef(null)
+  const [showCoinSelector, setShowCoinSelector] = useState(false)
+  const [selectedPlayerForCoinChange, setSelectedPlayerForCoinChange] = useState(null)
 
   // Load coin images for players
   const loadPlayerCoinImages = useCallback(async (playerAddress, coinData) => {
@@ -484,6 +487,39 @@ const BattleRoyaleGameRoom = ({
       }
     }))
   }, [address])
+
+  // Handle coin change
+  const handleCoinChange = useCallback((playerAddress) => {
+    setSelectedPlayerForCoinChange(playerAddress)
+    setShowCoinSelector(true)
+  }, [])
+
+  const handleCoinSelect = useCallback((coin) => {
+    if (!selectedPlayerForCoinChange) return
+
+    // Update player's coin choice
+    const playerAddress = selectedPlayerForCoinChange
+    
+    // Load coin images for the new coin choice
+    loadPlayerCoinImages(playerAddress, coin)
+    
+    // Send coin update to server
+    try {
+      socketService.emit('battle_royale_update_coin', {
+        gameId,
+        address: playerAddress,
+        coinData: coin
+      })
+      console.log('🪙 Sent coin update to server:', coin)
+      showToast(`Coin changed to ${coin.name}`, 'success')
+    } catch (error) {
+      console.error('Error sending coin update to server:', error)
+      showToast('Failed to update coin', 'error')
+    }
+    
+    setShowCoinSelector(false)
+    setSelectedPlayerForCoinChange(null)
+  }, [selectedPlayerForCoinChange, gameId, loadPlayerCoinImages, showToast])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
@@ -759,9 +795,27 @@ const BattleRoyaleGameRoom = ({
                 </div>
               </div>
               
-              {/* Optimized coin display - handled by single renderer */}
+              {/* Coin display with actual coin image */}
               <div className="coin-placeholder">
+                <img 
+                  src={playerCoinImages[playerAddress]?.headsImage || '/coins/plainh.png'} 
+                  alt={`Player ${index + 1} coin`}
+                  className="coin-image"
+                />
                 <div className="coin-slot-number">{index + 1}</div>
+                
+                {/* Change Coin Button for current user */}
+                {isCurrentUser && (
+                  <button 
+                    className="coin-change-button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCoinChange(playerAddress)
+                    }}
+                  >
+                    Change Coin
+                  </button>
+                )}
               </div>
               
               {player?.choice && !player?.coinState?.isFlipping && (
@@ -951,6 +1005,19 @@ const BattleRoyaleGameRoom = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Coin Selector Modal */}
+      {showCoinSelector && (
+        <CoinSelector
+          isOpen={showCoinSelector}
+          onClose={() => {
+            setShowCoinSelector(false)
+            setSelectedPlayerForCoinChange(null)
+          }}
+          onSelect={handleCoinSelect}
+          currentCoin={null}
+        />
       )}
     </GameContainer>
   )
