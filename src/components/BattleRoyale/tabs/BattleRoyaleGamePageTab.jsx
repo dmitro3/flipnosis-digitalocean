@@ -231,6 +231,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [playerCoins, setPlayerCoins] = useState({}) // Store each player's coin choice
   const [playerCoinImages, setPlayerCoinImages] = useState({}) // Store actual coin images for each player
+  const [coinSides, setCoinSides] = useState({}) // Track which side (heads/tails) is showing for each player
 
   // Load coin images for a player
   const loadPlayerCoinImages = React.useCallback(async (playerAddress, coinChoice) => {
@@ -513,6 +514,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     setSelectedSlot(null)
   }
 
+  // Toggle coin side (heads/tails) for lobby viewing
+  const toggleCoinSide = React.useCallback((playerAddress) => {
+    setCoinSides(prev => ({
+      ...prev,
+      [playerAddress]: prev[playerAddress] === 'tails' ? 'heads' : 'tails'
+    }))
+  }, [])
+
   const formatAddress = (addr) => {
     if (!addr) return ''
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
@@ -606,14 +615,24 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 <div className="coin-display">
                   <div className="coin-placeholder">
                     <img 
-                      src={playerCoinImages[player.address]?.headsImage || '/coins/plainh.png'} 
+                      src={
+                        coinSides[player.address] === 'tails' 
+                          ? (playerCoinImages[player.address]?.tailsImage || '/coins/plaint.png')
+                          : (playerCoinImages[player.address]?.headsImage || '/coins/plainh.png')
+                      }
                       alt={`Player ${index + 1} coin`}
-                      className="coin-image"
+                      className="coin-image clickable"
+                      onClick={() => toggleCoinSide(player.address)}
                     />
                     <div className="coin-slot-number">{index + 1}</div>
+                    {gameStatus === 'filling' && (
+                      <div className="coin-side-indicator">
+                        {coinSides[player.address] === 'tails' ? 'Tails' : 'Heads'}
+                      </div>
+                    )}
                     
-                    {/* Change Coin Button for current user */}
-                    {player.address === address && (
+                    {/* Change Coin Button for current user - only show in lobby */}
+                    {player.address === address && gameStatus === 'filling' && (
                       <button 
                         className="coin-change-button"
                         onClick={(e) => {
@@ -631,20 +650,6 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 <div className="player-address">
                   {formatAddress(player.address)}
                 </div>
-                
-                {/* Coin Change Button for current user */}
-                {player.address === address && (
-                  <button 
-                    className="coin-change-button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedSlot(index)
-                      setShowCoinSelector(true)
-                    }}
-                  >
-                    Change Coin
-                  </button>
-                )}
                 
                 <div className="status-indicator" />
               </>

@@ -329,6 +329,9 @@ const BattleRoyaleGameRoom = ({
   const powerIntervalRef = useRef(null)
   const [showCoinSelector, setShowCoinSelector] = useState(false)
   const [selectedPlayerForCoinChange, setSelectedPlayerForCoinChange] = useState(null)
+  const [coinSides, setCoinSides] = useState({}) // Track which side (heads/tails) is showing for each player
+  const [showStartNowWarning, setShowStartNowWarning] = useState(false)
+  const [calculatedPayout, setCalculatedPayout] = useState(0)
 
   // Load coin images for players
   const loadPlayerCoinImages = useCallback(async (playerAddress, coinData) => {
@@ -520,6 +523,57 @@ const BattleRoyaleGameRoom = ({
     setShowCoinSelector(false)
     setSelectedPlayerForCoinChange(null)
   }, [selectedPlayerForCoinChange, gameId, loadPlayerCoinImages, showToast])
+
+  // Toggle coin side (heads/tails) for lobby viewing
+  const toggleCoinSide = useCallback((playerAddress) => {
+    setCoinSides(prev => ({
+      ...prev,
+      [playerAddress]: prev[playerAddress] === 'tails' ? 'heads' : 'tails'
+    }))
+  }, [])
+
+  // Calculate payout for starting game early
+  const calculateEarlyStartPayout = useCallback(() => {
+    const currentPlayers = serverState?.playerSlots?.filter(Boolean).length || 0
+    const maxPlayers = 8
+    const basePayout = serverState?.entryFee || 0 // Assuming entry fee is the base payout
+    
+    // Calculate reduced payout based on player count
+    // Formula: (currentPlayers / maxPlayers) * basePayout
+    const payoutRatio = currentPlayers / maxPlayers
+    const reducedPayout = Math.floor(basePayout * payoutRatio)
+    
+    return {
+      currentPlayers,
+      maxPlayers,
+      basePayout,
+      reducedPayout,
+      payoutRatio: Math.round(payoutRatio * 100) // Percentage
+    }
+  }, [serverState?.playerSlots, serverState?.entryFee])
+
+  // Handle start now button click
+  const handleStartNowClick = useCallback(() => {
+    const payoutInfo = calculateEarlyStartPayout()
+    setCalculatedPayout(payoutInfo.reducedPayout)
+    setShowStartNowWarning(true)
+  }, [calculateEarlyStartPayout])
+
+  // Handle proceed with early start
+  const handleProceedStart = useCallback(() => {
+    try {
+      socketService.emit('battle_royale_start_early', {
+        gameId,
+        address
+      })
+      console.log('🚀 Sent early start request to server')
+      showToast('Game starting now!', 'success')
+    } catch (error) {
+      console.error('Error starting game early:', error)
+      showToast('Failed to start game', 'error')
+    }
+    setShowStartNowWarning(false)
+  }, [gameId, address, showToast])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
@@ -738,6 +792,48 @@ const BattleRoyaleGameRoom = ({
         </div>
       </RoundHeader>
 
+      {/* Start Now Button - Only for Creator in Lobby */}
+      {isCreator && serverState?.gamePhase === 'filling' && (
+        <div style={{ 
+          textAlign: 'center', 
+          margin: '1rem 0',
+          padding: '1rem'
+        }}>
+          <button
+            onClick={handleStartNowClick}
+            style={{
+              background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              padding: '1rem 2rem',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)'
+              e.target.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.5)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)'
+              e.target.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.3)'
+            }}
+          >
+            🚀 Start Now
+          </button>
+          <div style={{ 
+            fontSize: '0.9rem', 
+            color: '#888', 
+            marginTop: '0.5rem' 
+          }}>
+            Start with current players (reduced payout)
+          </div>
+        </div>
+      )}
+
       {/* Optimized Single Renderer for All Coins */}
       <OptimizedBattleRoyaleCoins
         players={serverState?.playerSlots?.map((playerAddress, index) => {
@@ -798,14 +894,28 @@ const BattleRoyaleGameRoom = ({
               {/* Coin display with actual coin image */}
               <div className="coin-placeholder">
                 <img 
-                  src={playerCoinImages[playerAddress]?.headsImage || '/coins/plainh.png'} 
+                  src={
+                    coinSides[playerAddress] === 'tails' 
+                      ? (playerCoinImages[playerAddress]?.tailsImage || '/coins/plaint.png')
+                      : (playerCoinImages[playerAddress]?.headsImage || '/coins/plainh.png')
+                  }
                   alt={`Player ${index + 1} coin`}
-                  className="coin-image"
+                  className={`coin-image ${serverState?.gamePhase === 'filling' ? 'clickable' : ''}`}
+                  onClick={() => {
+                    if (serverState?.gamePhase === 'filling') {
+                      toggleCoinSide(playerAddress)
+                    }
+                  }}
                 />
                 <div className="coin-slot-number">{index + 1}</div>
+                {serverState?.gamePhase === 'filling' && (
+                  <div className="coin-side-indicator">
+                    {coinSides[playerAddress] === 'tails' ? 'Tails' : 'Heads'}
+                  </div>
+                )}
                 
-                {/* Change Coin Button for current user */}
-                {isCurrentUser && (
+                {/* Change Coin Button for current user - only show in lobby */}
+                {isCurrentUser && serverState?.gamePhase === 'filling' && (
                   <button 
                     className="coin-change-button"
                     onClick={(e) => {
@@ -1018,6 +1128,120 @@ const BattleRoyaleGameRoom = ({
           onSelect={handleCoinSelect}
           currentCoin={null}
         />
+      )}
+
+      {/* Start Now Warning Modal */}
+      {showStartNowWarning && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1a1a1a, #2d2d2d)',
+            border: '2px solid #ff6b6b',
+            borderRadius: '1rem',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            textAlign: 'center',
+            color: 'white'
+          }}>
+            <h2 style={{ 
+              color: '#ff6b6b', 
+              marginBottom: '1rem',
+              fontSize: '1.5rem'
+            }}>
+              ⚠️ Start Game Early?
+            </h2>
+            
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+                If you start now with {calculateEarlyStartPayout().currentPlayers} players, 
+                you will only receive:
+              </p>
+              
+              <div style={{
+                background: 'rgba(255, 107, 107, 0.2)',
+                border: '1px solid #ff6b6b',
+                borderRadius: '0.5rem',
+                padding: '1rem',
+                margin: '1rem 0'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ff6b6b' }}>
+                  {calculatedPayout} ETH
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#888' }}>
+                  Instead of {calculateEarlyStartPayout().basePayout} ETH (full game)
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#ff6b6b', marginTop: '0.5rem' }}>
+                  {calculateEarlyStartPayout().payoutRatio}% of full payout
+                </div>
+              </div>
+              
+              <p style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                This is because you're starting with fewer players than the maximum of 8.
+              </p>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              gap: '1rem', 
+              justifyContent: 'center' 
+            }}>
+              <button
+                onClick={() => setShowStartNowWarning(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #666, #444)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  padding: '0.8rem 1.5rem',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #777, #555)'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #666, #444)'
+                }}
+              >
+                Return
+              </button>
+              
+              <button
+                onClick={handleProceedStart}
+                style={{
+                  background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  padding: '0.8rem 1.5rem',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #ff5252, #d63031)'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a24)'
+                }}
+              >
+                Proceed
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </GameContainer>
   )

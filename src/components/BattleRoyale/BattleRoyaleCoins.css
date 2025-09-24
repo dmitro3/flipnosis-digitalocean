@@ -30,6 +30,22 @@
   box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
 }
 
+/* Clickable coin in lobby mode */
+.coin-image.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.coin-image.clickable:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 1);
+  border-color: #FFA500;
+}
+
+.coin-image.clickable:active {
+  transform: scale(0.95);
+}
+
 /* Add a subtle rotation animation for active coins */
 .coin-image.active {
   animation: gentleRotate 4s linear infinite;
@@ -63,6 +79,21 @@
   background: linear-gradient(135deg, #FFA500, #FF8C00);
   transform: translateX(-50%) translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+}
+
+/* Coin side indicator */
+.coin-side-indicator {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #FFD700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 3;
+  text-transform: uppercase;
 }
 
 .coin-slot-number {
