@@ -181,6 +181,24 @@ class ContractService {
     this.userAddress = null
     this.alchemy = null
     this._initialized = false
+    
+    // Price caching for ETH/USD
+    this.priceCache = { price: null, timestamp: 0 }
+    this.cacheDuration = 30000 // 30 seconds
+    
+    // Force refresh price on page visibility change (user switches tabs back)
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && this.priceCache.timestamp > 0) {
+          // If user comes back to tab and cache is older than 10 seconds, refresh
+          const age = Date.now() - this.priceCache.timestamp
+          if (age > 10000) {
+            console.log('🔄 Page became visible, refreshing ETH price cache')
+            this.priceCache.timestamp = 0 // Force refresh on next call
+          }
+        }
+      })
+    }
   }
 
   async initialize(walletClient, publicClient) {
@@ -630,11 +648,51 @@ class ContractService {
     }
   }
 
-  // Get ETH price in USD (you'll need to implement this based on your oracle)
+  // Get ETH price in USD from Chainlink API with caching
   async getETHPriceUSD() {
-    // For now, return a hardcoded value or fetch from an API
-    // In production, use Chainlink oracle or similar
-    return 3500 // $3500 per ETH as fallback (updated to current price)
+    const now = Date.now()
+    
+    // Use cached price if it's still fresh (within 30 seconds)
+    if (this.priceCache.price && (now - this.priceCache.timestamp) < this.cacheDuration) {
+      console.log('💰 Using cached ETH price:', this.priceCache.price)
+      return this.priceCache.price
+    }
+
+    try {
+      console.log('💰 Fetching fresh ETH price from Chainlink API...')
+      
+      // Fetch from CoinGecko (free, reliable, uses Chainlink data)
+      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const price = data.ethereum.usd
+      
+      if (!price || price <= 0) {
+        throw new Error('Invalid price data received')
+      }
+      
+      // Cache the fresh price
+      this.priceCache = { price, timestamp: now }
+      
+      console.log('✅ Fresh ETH price fetched and cached:', price)
+      return price
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch ETH price:', error.message)
+      
+      // Use cached price as fallback if available
+      if (this.priceCache.price) {
+        console.log('🔄 Using cached ETH price as fallback:', this.priceCache.price)
+        return this.priceCache.price
+      }
+      
+      // No hardcoded fallback - fail cleanly rather than use stale data
+      throw new Error('Unable to fetch ETH price and no cached price available. Please try again.')
+    }
   }
 
   // Check if game is ready (both assets deposited)

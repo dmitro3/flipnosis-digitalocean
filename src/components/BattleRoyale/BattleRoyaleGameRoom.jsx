@@ -834,30 +834,35 @@ const BattleRoyaleGameRoom = ({
         </div>
       )}
 
-      {/* Optimized Single Renderer for All Coins */}
-      <OptimizedBattleRoyaleCoins
-        players={serverState?.playerSlots?.map((playerAddress, index) => {
-          if (!playerAddress) return null
-          const player = serverState.players?.[playerAddress.toLowerCase()]
-          return {
-            address: playerAddress,
-            coin: player?.coin,
-            index
-          }
-        }).filter(Boolean) || []}
-        gamePhase={serverState?.gamePhase}
-        flipStates={Object.fromEntries(
-          Object.entries(serverState?.players || {}).map(([address, player]) => [
-            address,
-            player.coinState
-          ])
-        )}
-        onFlipComplete={(playerAddress, result) => {
-          console.log(`Player ${playerAddress} flip complete: ${result}`)
-        }}
-        playerCoinImages={playerCoinImages}
-        size={180}
-      />
+      {/* Optimized Single Renderer for All Coins - Only show when game is active and has players */}
+      {serverState?.gamePhase && 
+       serverState.gamePhase !== 'filling' && 
+       serverState.gamePhase !== 'waiting_players' &&
+       serverState?.playerSlots?.filter(Boolean).length > 0 && (
+        <OptimizedBattleRoyaleCoins
+          players={serverState?.playerSlots?.map((playerAddress, index) => {
+            if (!playerAddress) return null
+            const player = serverState.players?.[playerAddress.toLowerCase()]
+            return {
+              address: playerAddress,
+              coin: player?.coin,
+              index
+            }
+          }).filter(Boolean) || []}
+          gamePhase={serverState?.gamePhase}
+          flipStates={Object.fromEntries(
+            Object.entries(serverState?.players || {}).map(([address, player]) => [
+              address,
+              player.coinState
+            ])
+          )}
+          onFlipComplete={(playerAddress, result) => {
+            console.log(`Player ${playerAddress} flip complete: ${result}`)
+          }}
+          playerCoinImages={playerCoinImages}
+          size={180}
+        />
+      )}
 
       <PlayersGrid>
         {serverState?.playerSlots?.map((playerAddress, index) => {

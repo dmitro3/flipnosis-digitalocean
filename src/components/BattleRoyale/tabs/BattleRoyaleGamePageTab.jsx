@@ -612,24 +612,29 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         )}
       </GameStatus>
 
-      {/* Optimized Single Renderer for All Coins */}
-      <OptimizedBattleRoyaleCoins
-        players={players.map((player, index) => {
-          if (!player) return null
-          return {
-            address: player.address,
-            coin: player.coin,
-            index
-          }
-        }).filter(Boolean)}
-        gamePhase="filling"
-        flipStates={{}}
-        onFlipComplete={(playerAddress, result) => {
-          console.log(`Player ${playerAddress} flip complete: ${result}`)
-        }}
-        playerCoinImages={playerCoinImages}
-        size={240}
-      />
+      {/* Optimized Single Renderer for All Coins - Only show when game is active and has players */}
+      {gameStatus && 
+       gameStatus !== 'filling' && 
+       gameStatus !== 'waiting' &&
+       players.filter(Boolean).length > 0 && (
+        <OptimizedBattleRoyaleCoins
+          players={players.map((player, index) => {
+            if (!player) return null
+            return {
+              address: player.address,
+              coin: player.coin,
+              index
+            }
+          }).filter(Boolean)}
+          gamePhase={gameStatus}
+          flipStates={{}}
+          onFlipComplete={(playerAddress, result) => {
+            console.log(`Player ${playerAddress} flip complete: ${result}`)
+          }}
+          playerCoinImages={playerCoinImages}
+          size={240}
+        />
+      )}
 
       <PlayersGrid>
         {players.map((player, index) => (
