@@ -504,7 +504,8 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
   // Load chat history
   const loadChatHistory = useCallback(async () => {
     try {
-      const cleanGameId = gameId.startsWith('br_') ? gameId : `br_${gameId}`
+      // Use the same room ID format as the server expects
+      const cleanGameId = gameId.startsWith('br_') ? gameId.replace('br_', '') : gameId
       const response = await fetch(`/api/chat/${cleanGameId}?limit=100`)
       if (response.ok) {
         const data = await response.json()
@@ -543,9 +544,10 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
           await socketService.connect(gameId, address)
         }
 
-        // Join the battle royale room
+        // Join the battle royale room - use same format as server expects
+        const roomId = gameId.startsWith('br_') ? `game_${gameId.replace('br_', '')}` : `game_${gameId}`
         socketService.emit('join_battle_royale_room', {
-          roomId: `br_${gameId}`,
+          roomId: roomId,
           address
         })
 
@@ -593,26 +595,23 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
   const sendMessage = () => {
     if (!newMessage.trim()) return
     
-    console.log('💬 Sending chat message:', { message: newMessage.trim(), from: address })
+    const messageText = newMessage.trim()
+    console.log('💬 Sending chat message:', { message: messageText, from: address })
+    
+    // Use same room ID format as server expects
+    const roomId = gameId.startsWith('br_') ? `game_${gameId.replace('br_', '')}` : `game_${gameId}`
     
     // Send to server via socket
     socketService.emit('chat_message', {
-      roomId: `br_${gameId}`,
-      message: newMessage.trim(),
+      roomId: roomId,
+      message: messageText,
       address
     })
     
-    // Add optimistic message
-    const optimisticMessage = {
-      id: Date.now() + Math.random(),
-      sender: address,
-      message: newMessage.trim(),
-      timestamp: new Date().toLocaleTimeString(),
-      isCurrentUser: true
-    }
-    setMessages(prev => [...prev, optimisticMessage])
-    
+    // Clear input immediately to prevent double sending
     setNewMessage('')
+    
+    // Don't add optimistic message - let server handle it to prevent duplicates
   }
 
   // Helper functions for NFT data
@@ -878,7 +877,12 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
             placeholder="Type your message..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                sendMessage()
+              }
+            }}
             disabled={!connected}
           />
           <SendButton onClick={sendMessage} disabled={!connected || !newMessage.trim()}>

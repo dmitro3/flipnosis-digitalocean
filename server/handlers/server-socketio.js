@@ -2,7 +2,7 @@ const socketIO = require('socket.io')
 const GameStateManager = require('./GameStateManager')
 const BattleRoyaleGameManager = require('./BattleRoyaleGameManager')
 const BattleRoyaleSocketHandlers = require('./BattleRoyaleSocketHandlers')
-const BattleRoyaleDBService = require('./services/BattleRoyaleDBService')
+const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
 // Single source of truth for all game state management
