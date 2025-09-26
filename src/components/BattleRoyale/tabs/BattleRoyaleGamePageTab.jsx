@@ -8,7 +8,7 @@ import { useProfile } from '../../../contexts/ProfileContext'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import socketService from '../../../services/SocketService'
-import BattleRoyale3DCoins from '../BattleRoyale3DCoins'
+import GridOverlay3DCoins from '../GridOverlay3DCoins'
 import CoinSelector from '../../CoinSelector'
 import '../BattleRoyaleCoins.css'
 
@@ -641,9 +641,9 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         )}
       </GameStatus>
 
-      {/* 3D coins component - shows when game is active */}
+      {/* 3D coins overlay - single Three.js scene with 8 coin meshes */}
       {gameStatus !== 'filling' && gameStatus !== 'waiting' && players.filter(Boolean).length > 0 && (
-        <BattleRoyale3DCoins
+        <GridOverlay3DCoins
           players={players.map((player, index) => {
             if (!player) return null
             return {
@@ -664,7 +664,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         />
       )}
 
-      <PlayersGrid>
+      <PlayersGrid style={{ position: 'relative' }}>
         {players.map((player, index) => (
           <PlayerSlot
             key={index}
@@ -709,6 +709,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                       </button>
                       )}
                     </div>
+                  </div>
+                )}
+                
+                {/* Show slot number during game phases */}
+                {gameStatus !== 'filling' && (
+                  <div className="coin-slot-number" style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', zIndex: 20 }}>
+                    {index + 1}
                   </div>
                 )}
                 

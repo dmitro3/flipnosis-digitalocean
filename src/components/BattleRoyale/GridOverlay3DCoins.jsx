@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
 
-// Single Three.js scene with 8 coin meshes for Battle Royale
-const BattleRoyale3DCoins = ({
+// Single Three.js scene that overlays the entire player grid with 8 coin meshes
+const GridOverlay3DCoins = ({
   players = [],
   gamePhase = 'filling',
   flipStates = {},
@@ -81,7 +81,8 @@ const BattleRoyale3DCoins = ({
       edgeMaterial  // Side 4
     ])
     
-    // Position coins in a 4x2 grid
+    // Position coins to match the CSS grid layout
+    // The grid is 4 columns, 2 rows with 1rem gap
     const cols = 4
     const rows = 2
     const spacing = 2.5 * coinScale // Scale spacing with coin size
@@ -269,13 +270,17 @@ const BattleRoyale3DCoins = ({
     <div 
       ref={mountRef} 
       style={{ 
+        position: 'absolute',
+        top: 0,
+        left: 0,
         width: '100%', 
-        height: '400px',
+        height: '100%',
         background: 'transparent',
-        cursor: gamePhase === 'round_active' ? 'pointer' : 'default'
+        pointerEvents: gamePhase === 'round_active' ? 'auto' : 'none',
+        zIndex: 10
       }} 
     />
   )
 }
 
-export default BattleRoyale3DCoins
+export default GridOverlay3DCoins
