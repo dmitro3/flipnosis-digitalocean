@@ -263,15 +263,18 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         }
       }))
     }
-  }, [getCoinHeadsImage, getCoinTailsImage])
+  }, [getCoinHeadsImage, getCoinTailsImage]) // Ensure proper dependencies
 
   // Socket: connect and subscribe to server lobby state
   useEffect(() => {
     if (!gameId || !address) return
 
     let connected = false
+    let mounted = true // Add mounted flag
 
     const onStateUpdate = (data) => {
+      if (!mounted) return // Check if still mounted
+      
       try {
         console.log('📊 Battle Royale state update received:', {
           phase: data.phase,
@@ -301,10 +304,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           // Use the server's phase/gamePhase if available, otherwise fallback to status
           const newGameStatus = data.phase || data.gamePhase || data.status || (joinedCount >= 8 ? 'starting' : 'filling')
           console.log('📊 Setting game status to:', newGameStatus)
-          setGameStatus(newGameStatus)
+          
+          // Check if component is still mounted before setting state
+          if (mounted) {
+            setGameStatus(newGameStatus)
+          }
 
           // preload coin images
-          if (data.players) {
+          if (data.players && mounted) {
             Object.entries(data.players).forEach(([addrKey, playerVal]) => {
               if (playerVal?.coin) {
                 loadPlayerCoinImages(addrKey, playerVal.coin)
@@ -318,10 +325,16 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     }
 
     const onGameStarting = (data) => {
+      if (!mounted) return // Check if still mounted
+      
       console.log('🚀 Battle Royale game starting:', data)
-      console.log('📊 Current game status before update:', gameStatus)
+      // Don't reference gameStatus directly in the closure
+      console.log('📊 Game starting event received')
       showToast(`Game starting in ${data.countdown} seconds!`, 'success')
-      setGameStatus('starting')
+      
+      if (mounted) {
+        setGameStatus('starting')
+      }
       console.log('📊 Game status updated to: starting')
     }
 
@@ -345,12 +358,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     setup()
 
     return () => {
+      mounted = false // Mark as unmounted
       if (connected) {
         socketService.off('battle_royale_state_update', onStateUpdate)
         socketService.off('battle_royale_starting', onGameStarting)
       }
     }
-  }, [gameId, address, loadPlayerCoinImages])
+  }, [gameId, address, loadPlayerCoinImages, showToast]) // Add showToast to dependencies
 
   // Initialize creator in slot 0 when game loads
   useEffect(() => {
