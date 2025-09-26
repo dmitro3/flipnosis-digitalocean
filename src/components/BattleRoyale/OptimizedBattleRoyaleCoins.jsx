@@ -59,7 +59,9 @@ const OptimizedBattleRoyaleCoins = ({
 
   // Create coin geometry and materials
   const createCoin = useCallback((playerAddress, coinData, index) => {
-    const geometry = new THREE.CylinderGeometry(1, 1, 0.1, 32)
+    // Scale coin size based on the size prop (default 180, passed as 240)
+    const coinScale = size / 180 // Normalize to default size
+    const geometry = new THREE.CylinderGeometry(1 * coinScale, 1 * coinScale, 0.1 * coinScale, 32)
     
     // Create materials with custom textures
     const headsTexture = new THREE.TextureLoader().load(
@@ -117,7 +119,9 @@ const OptimizedBattleRoyaleCoins = ({
       0.1,
       1000
     )
-    camera.position.set(0, 5, 8)
+    // Adjust camera position based on coin size
+    const cameraScale = size / 180
+    camera.position.set(0, 5 * cameraScale, 8 * cameraScale)
     camera.lookAt(0, 0, 0)
 
     // Create renderer
