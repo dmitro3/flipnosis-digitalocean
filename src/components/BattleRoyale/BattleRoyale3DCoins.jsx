@@ -64,10 +64,10 @@ const BattleRoyale3DCoins = ({
     const tailsTexture = textureLoaderRef.current.load(tailsImage)
     
     // Optimize texture settings
-    [headsTexture, tailsTexture].forEach(texture => {
-      texture.minFilter = THREE.LinearFilter
-      texture.magFilter = THREE.LinearFilter
-      texture.format = THREE.RGBFormat
+    [headsTexture, tailsTexture].forEach(tex => {
+      tex.minFilter = THREE.LinearFilter
+      tex.magFilter = THREE.LinearFilter
+      tex.format = THREE.RGBAFormat
     })
     
     // Create materials
@@ -138,9 +138,9 @@ const BattleRoyale3DCoins = ({
       transparent: true,
       opacity: 0.5
     })
-    const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial)
-    bgMesh.position.z = -15
-    scene.add(bgMesh)
+    const backgroundMesh = new THREE.Mesh(bgGeometry, bgMaterial)
+    backgroundMesh.position.z = -15
+    scene.add(backgroundMesh)
     
     // Add fog for depth
     scene.fog = new THREE.Fog(0x000000, 10, 30)
@@ -246,7 +246,7 @@ const BattleRoyale3DCoins = ({
       const elapsedTime = clock.getElapsedTime()
       
       // Update coin animations
-      coins.forEach((coin, index) => {
+      coinsRef.current.forEach((coin, index) => {
         if (!coin.userData.isEmpty) {
           const playerAddress = coin.userData.playerAddress
           const flipState = flipStates[playerAddress]
@@ -280,7 +280,7 @@ const BattleRoyale3DCoins = ({
       })
       
       // Rotate background slowly
-      bgMesh.rotation.z += deltaTime * 0.05
+      backgroundMesh.rotation.z += deltaTime * 0.05
       
       renderer.render(scene, camera)
     }
@@ -310,7 +310,7 @@ const BattleRoyale3DCoins = ({
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
       
       raycaster.setFromCamera(mouse, camera)
-      const intersects = raycaster.intersectObjects(coins)
+      const intersects = raycaster.intersectObjects(coinsRef.current)
       
       if (intersects.length > 0) {
         const slot = intersects[0].object.userData.slotIndex
@@ -332,7 +332,7 @@ const BattleRoyale3DCoins = ({
       mountRef.current?.removeEventListener('mousemove', handleMouseMove)
       
       // Dispose of Three.js resources
-      coins.forEach(coin => {
+      coinsRef.current.forEach(coin => {
         coin.geometry.dispose()
         if (Array.isArray(coin.material)) {
           coin.material.forEach(mat => {
