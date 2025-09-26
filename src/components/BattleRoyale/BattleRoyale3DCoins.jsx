@@ -33,7 +33,7 @@ const BattleRoyale3DCoins = ({
   
   // Determine if we should use 3D or 2D display
   const use3D = useMemo(() => {
-    return gamePhase !== 'filling' && gamePhase !== 'waiting_players'
+    return gamePhase !== 'filling' && gamePhase !== 'waiting_players' && gamePhase !== null
   }, [gamePhase])
   
   // Create gradient background texture
@@ -127,12 +127,12 @@ const BattleRoyale3DCoins = ({
     }
     
     return mesh
-  }, [playerCoinImages, quality])
+  }, [playerCoinImages, quality, size])
   
   // Initialize Three.js scene
   useEffect(() => {
-    if (!use3D || !mountRef.current) return
-    
+    if (!use3D || !mountRef.current || !gamePhase) return
+
     // Create scene with gradient background
     const scene = new THREE.Scene()
     
@@ -153,7 +153,7 @@ const BattleRoyale3DCoins = ({
     scene.fog = new THREE.Fog(0x000000, 10, 30)
     
     sceneRef.current = scene
-    
+
     // Create camera
     const camera = new THREE.PerspectiveCamera(
       60,
@@ -164,9 +164,9 @@ const BattleRoyale3DCoins = ({
     camera.position.set(0, 6, 12)
     camera.lookAt(0, 0, 0)
     cameraRef.current = camera
-    
+
     // Create renderer with optimizations
-    const renderer = new THREE.WebGLRenderer({
+    const renderer = new THREE.WebGLRenderer({ 
       antialias: quality === 'high',
       alpha: true,
       powerPreference: 'high-performance'
@@ -242,7 +242,7 @@ const BattleRoyale3DCoins = ({
     }
     
     coinsRef.current = coins
-    
+
     // Animation loop
     const clock = new THREE.Clock()
     
@@ -293,7 +293,7 @@ const BattleRoyale3DCoins = ({
     }
     
     animate()
-    
+
     // Handle resize
     const handleResize = () => {
       if (!mountRef.current) return
@@ -302,9 +302,9 @@ const BattleRoyale3DCoins = ({
       camera.updateProjectionMatrix()
       renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
     }
-    
+
     window.addEventListener('resize', handleResize)
-    
+
     // Mouse interaction
     const raycaster = new THREE.Raycaster()
     const mouse = new THREE.Vector2()
@@ -359,10 +359,10 @@ const BattleRoyale3DCoins = ({
         mountRef.current.removeChild(renderer.domElement)
       }
     }
-  }, [use3D, players, gamePhase, flipStates, hoveredSlot, createBackgroundGradient, createCoinMesh, onFlipComplete])
+  }, [use3D, players, gamePhase, flipStates, hoveredSlot, createBackgroundGradient, createCoinMesh, onFlipComplete, quality])
   
   // 2D Lobby Display
-  if (!use3D) {
+  if (!use3D && gamePhase) {
     return (
       <div style={{
         display: 'grid',
@@ -533,12 +533,33 @@ const BattleRoyale3DCoins = ({
     )
   }
   
+  // Fallback for invalid game phase
+  if (!gamePhase) {
+    return (
+      <div style={{
+        width: '100%',
+        height: '500px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(138, 43, 226, 0.3))',
+        borderRadius: '1rem',
+        border: '2px solid rgba(255, 20, 147, 0.3)',
+        color: '#FFD700',
+        fontSize: '1.2rem',
+        fontWeight: 'bold'
+      }}>
+        Loading game...
+      </div>
+    )
+  }
+
   // 3D Game Display
   return (
-    <div
-      ref={mountRef}
-      style={{
-        width: '100%',
+    <div 
+      ref={mountRef} 
+      style={{ 
+        width: '100%', 
         height: '500px',
         borderRadius: '1rem',
         overflow: 'hidden',
