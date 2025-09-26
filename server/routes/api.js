@@ -1658,8 +1658,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     const limit = parseInt(req.query.limit) || 50
     
     try {
-      // Fix: Use the correct room ID format that matches how messages are saved
-      const roomId = `game_${gameId}`
+      // Use the room ID as provided (could be br_gameId or game_gameId)
+      const roomId = gameId
       const messages = await dbService.getChatHistory(roomId, limit)
       console.log(`📚 API: Returning ${messages.length} chat messages for game ${gameId} (room: ${roomId})`)
       res.json({ messages })
