@@ -10,7 +10,14 @@ const BattleRoyale3DCoins = ({
   playerCoinImages = {},
   isCreator = false,
   currentUserAddress = null,
-  size = 240
+  size = 240,
+  // New props for slot interaction
+  onSlotClick = () => {},
+  canJoin = false,
+  isJoining = false,
+  coinSides = {},
+  onCoinSideToggle = () => {},
+  onCoinChange = () => {}
 }) => {
   const mountRef = useRef(null)
   const sceneRef = useRef(null)
@@ -422,10 +429,17 @@ const BattleRoyale3DCoins = ({
                     overflow: 'hidden',
                     border: '3px solid #FFD700',
                     boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
-                    background: 'radial-gradient(circle, #FFD700, #FFA500)'
-                  }}>
+                    background: 'radial-gradient(circle, #FFD700, #FFA500)',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => onCoinSideToggle(player.address)}
+                  >
                     <img
-                      src={playerCoinImages[player.address]?.headsImage || '/coins/plainh.png'}
+                      src={
+                        coinSides[player.address] === 'tails' 
+                          ? (playerCoinImages[player.address]?.tailsImage || '/coins/plaint.png')
+                          : (playerCoinImages[player.address]?.headsImage || '/coins/plainh.png')
+                      }
                       alt="Player coin"
                       style={{
                         width: '100%',
@@ -433,6 +447,21 @@ const BattleRoyale3DCoins = ({
                         objectFit: 'cover'
                       }}
                     />
+                  </div>
+                  
+                  {/* Coin side indicator */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '0.5rem',
+                    right: '0.5rem',
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    color: '#FFD700',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold'
+                  }}>
+                    {coinSides[player.address] === 'tails' ? 'Tails' : 'Heads'}
                   </div>
                   
                   {/* Player address */}
@@ -453,15 +482,48 @@ const BattleRoyale3DCoins = ({
                     background: '#00ff88',
                     boxShadow: '0 0 10px rgba(0, 255, 136, 0.5)'
                   }} />
+                  
+                  {/* Change Coin Button for current user */}
+                  {player.address === currentUserAddress && (
+                    <button 
+                      style={{
+                        position: 'absolute',
+                        bottom: '0.5rem',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        zIndex: 4,
+                        boxShadow: '0 2px 10px rgba(255, 215, 0, 0.3)'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onCoinChange(player.address)
+                      }}
+                    >
+                      Change Coin
+                    </button>
+                  )}
                 </>
               ) : (
-                <div style={{
-                  color: '#FF1493',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center'
-                }}>
-                  Click to Join
+                <div 
+                  style={{
+                    color: '#FF1493',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    cursor: canJoin ? 'pointer' : 'default'
+                  }}
+                  onClick={() => canJoin && onSlotClick(index)}
+                >
+                  {isJoining ? 'Joining...' : 'Click to Join'}
                 </div>
               )}
             </div>

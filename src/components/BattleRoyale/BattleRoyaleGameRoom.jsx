@@ -843,6 +843,13 @@ const BattleRoyaleGameRoom = ({
         isCreator={isCreator}
         currentUserAddress={address}
         size={240}
+        // Slot interaction props
+        onSlotClick={() => {}} // No slot clicking in game room
+        canJoin={false} // No joining in game room
+        isJoining={false}
+        coinSides={coinSides}
+        onCoinSideToggle={toggleCoinSide}
+        onCoinChange={handleCoinChange}
       />
 
 

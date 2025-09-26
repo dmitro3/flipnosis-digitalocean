@@ -659,6 +659,17 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         isCreator={isCreator}
         currentUserAddress={address}
         size={240}
+        // Slot interaction props
+        onSlotClick={handleSlotClick}
+        canJoin={canJoin}
+        isJoining={isJoining}
+        coinSides={coinSides}
+        onCoinSideToggle={toggleCoinSide}
+        onCoinChange={(playerAddress) => {
+          const slotIndex = players.findIndex(p => p?.address === playerAddress)
+          setSelectedSlot(slotIndex)
+          setShowCoinSelector(true)
+        }}
       />
 
       {isCreator && (
