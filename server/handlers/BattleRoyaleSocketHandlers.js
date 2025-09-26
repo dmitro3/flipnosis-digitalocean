@@ -202,12 +202,22 @@ class BattleRoyaleSocketHandlers {
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     io.to(roomId).emit('battle_royale_state_update', fullState)
 
-    // Check if game should start (all 8 players joined)
-    if (game.currentPlayers === game.maxPlayers) {
-      console.log(`🚀 Battle Royale game ${gameId} is full - starting!`)
-      battleRoyaleManager.prepareGameStart(gameId, (roomId, eventType, eventData) => {
-        io.to(roomId).emit(eventType, eventData)
-      })
+    // Check if game should auto-start (8 players joined)
+    if (success) {
+      // ... existing broadcast code ...
+      
+      // Check if game should auto-start (8 players joined)
+      const game = battleRoyaleManager.getGame(gameId)
+      if (game && game.currentPlayers === game.maxPlayers && game.phase === battleRoyaleManager.PHASES.FILLING) {
+        console.log(`🚀 Battle Royale game ${gameId} is full - auto-starting!`)
+        
+        // Auto-start the game
+        setTimeout(() => {
+          battleRoyaleManager.prepareGameStart(gameId, (roomId, eventType, eventData) => {
+            io.to(roomId).emit(eventType, eventData)
+          })
+        }, 1000) // Small delay to ensure all clients are ready
+      }
     }
 
     console.log(`✅ ${address} joined Battle Royale ${gameId}`)
@@ -234,6 +244,52 @@ class BattleRoyaleSocketHandlers {
     // Send current state
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     socket.emit('battle_royale_state_update', fullState)
+  }
+
+  // Start Battle Royale Early
+  async handleBattleRoyaleStartEarly(socket, data, battleRoyaleManager, io, dbService) {
+    const { gameId, address } = data
+    console.log(`🚀 Early start requested by ${address} for game ${gameId}`)
+    
+    const game = battleRoyaleManager.getGame(gameId)
+    if (!game) {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
+      return
+    }
+    
+    // Verify the requester is the creator
+    if (game.creator?.toLowerCase() !== address?.toLowerCase()) {
+      socket.emit('battle_royale_error', { message: 'Only creator can start game early' })
+      return
+    }
+    
+    // Check if game is in filling phase
+    if (game.phase !== battleRoyaleManager.PHASES.FILLING) {
+      socket.emit('battle_royale_error', { message: 'Game already started or completed' })
+      return
+    }
+    
+    // Check minimum players (at least 2 including creator)
+    if (game.currentPlayers < 2) {
+      socket.emit('battle_royale_error', { message: 'Need at least 2 players to start' })
+      return
+    }
+    
+    console.log(`🎮 Starting Battle Royale early with ${game.currentPlayers} players`)
+    
+    // Start the game
+    battleRoyaleManager.prepareGameStart(gameId, (roomId, eventType, eventData) => {
+      io.to(roomId).emit(eventType, eventData)
+    })
+    
+    // Update database if needed
+    if (dbService) {
+      try {
+        await dbService.updateBattleRoyaleStatus(gameId, 'active', game.currentPlayers)
+      } catch (error) {
+        console.error('Failed to update database:', error)
+      }
+    }
   }
 }
 

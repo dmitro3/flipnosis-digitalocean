@@ -332,6 +332,9 @@ const BattleRoyaleGameRoom = ({
   const [coinSides, setCoinSides] = useState({}) // Track which side (heads/tails) is showing for each player
   const [showStartNowWarning, setShowStartNowWarning] = useState(false)
   const [calculatedPayout, setCalculatedPayout] = useState(0)
+  
+  // Fix the isCreator check - add this near the top of the component:
+  const isCreator = serverState?.creator?.toLowerCase() === address?.toLowerCase()
 
   // Load coin images for players
   const loadPlayerCoinImages = useCallback(async (playerAddress, coinData) => {
@@ -792,47 +795,6 @@ const BattleRoyaleGameRoom = ({
         </div>
       </RoundHeader>
 
-      {/* Start Now Button - Only for Creator in Lobby */}
-      {isCreator && serverState?.gamePhase === 'filling' && (
-        <div style={{ 
-          textAlign: 'center', 
-          margin: '1rem 0',
-          padding: '1rem'
-        }}>
-          <button
-            onClick={handleStartNowClick}
-            style={{
-              background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.5rem',
-              padding: '1rem 2rem',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)'
-              e.target.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.5)'
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)'
-              e.target.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.3)'
-            }}
-          >
-            🚀 Start Now
-          </button>
-          <div style={{ 
-            fontSize: '0.9rem', 
-            color: '#888', 
-            marginTop: '0.5rem' 
-          }}>
-            Start with current players (reduced payout)
-          </div>
-        </div>
-      )}
 
       {/* Optimized Single Renderer for All Coins - Only show when game is active and has players */}
       {serverState?.gamePhase && 

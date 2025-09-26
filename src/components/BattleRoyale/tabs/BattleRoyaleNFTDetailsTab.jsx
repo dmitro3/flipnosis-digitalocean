@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import styled from '@emotion/styled'
 import ProfilePicture from '../../ProfilePicture'
+import socketService from '../../../services/SocketService'
 
 const TabContainer = styled.div`
   height: 100%;
@@ -503,7 +504,7 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
   // Load chat history
   const loadChatHistory = useCallback(async () => {
     try {
-      const cleanGameId = gameId.startsWith('game_') ? gameId.replace('game_', '') : gameId
+      const cleanGameId = gameId.startsWith('br_') ? gameId : `br_${gameId}`
       const response = await fetch(`/api/chat/${cleanGameId}?limit=100`)
       if (response.ok) {
         const data = await response.json()
@@ -512,7 +513,7 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
             id: msg.id || Date.now() + Math.random(),
             sender: msg.sender_address || msg.sender,
             message: msg.message,
-            timestamp: new Date(msg.timestamp).toLocaleTimeString(),
+            timestamp: new Date(msg.timestamp || msg.created_at).toLocaleTimeString(),
             isCurrentUser: (msg.sender_address || msg.sender)?.toLowerCase() === address?.toLowerCase()
           }))
           setMessages(formattedMessages)
@@ -529,6 +530,60 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
     loadChatHistory()
   }, [loadChatHistory])
   
+  // Socket connection and chat functionality
+  useEffect(() => {
+    if (!gameId || !address) return
+
+    let mounted = true
+
+    const setupChatSocket = async () => {
+      try {
+        // Connect to socket if not already connected
+        if (!socketService.isConnected()) {
+          await socketService.connect(gameId, address)
+        }
+
+        // Join the battle royale room
+        socketService.emit('join_battle_royale_room', {
+          roomId: `br_${gameId}`,
+          address
+        })
+
+        // Listen for incoming chat messages
+        const handleChatMessage = (data) => {
+          if (!mounted) return
+          
+          const newMessage = {
+            id: Date.now() + Math.random(),
+            sender: data.from || data.address,
+            message: data.message,
+            timestamp: new Date(data.timestamp).toLocaleTimeString(),
+            isCurrentUser: (data.from || data.address)?.toLowerCase() === address?.toLowerCase()
+          }
+          
+          setMessages(prev => [...prev, newMessage])
+        }
+
+        socketService.on('chat_message', handleChatMessage)
+
+        // Clean up on unmount
+        return () => {
+          mounted = false
+          socketService.off('chat_message', handleChatMessage)
+        }
+      } catch (error) {
+        console.error('Failed to setup chat socket:', error)
+      }
+    }
+
+    const cleanup = setupChatSocket()
+
+    return () => {
+      mounted = false
+      cleanup?.then(fn => fn?.())
+    }
+  }, [gameId, address])
+  
   // Auto-scroll chat
   useEffect(() => {
     scrollToBottom()
@@ -539,6 +594,13 @@ const BattleRoyaleNFTDetailsTab = ({ gameData, gameId, address }) => {
     if (!newMessage.trim()) return
     
     console.log('💬 Sending chat message:', { message: newMessage.trim(), from: address })
+    
+    // Send to server via socket
+    socketService.emit('chat_message', {
+      roomId: `br_${gameId}`,
+      message: newMessage.trim(),
+      address
+    })
     
     // Add optimistic message
     const optimisticMessage = {

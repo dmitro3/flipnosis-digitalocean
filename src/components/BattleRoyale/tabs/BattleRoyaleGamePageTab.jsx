@@ -558,7 +558,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         </div>
 
         {/* Start Game Button - Only for Creator */}
-        {isCreator && gameStatus === 'filling' && (
+        {isCreator && gameStatus === 'filling' && currentPlayers >= 2 && (
           <div style={{ 
             textAlign: 'center', 
             marginTop: '1rem'
@@ -599,14 +599,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 136, 0.3)'
               }}
             >
-              🚀 Start Game
+              🚀 Start Game ({currentPlayers}/8 players)
             </button>
             <div style={{ 
               fontSize: '0.9rem', 
               color: '#888', 
               marginTop: '0.5rem' 
             }}>
-              Start with {currentPlayers} players
+              Start with {currentPlayers} players (reduced payout)
             </div>
           </div>
         )}

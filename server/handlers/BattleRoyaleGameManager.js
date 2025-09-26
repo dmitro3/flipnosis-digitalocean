@@ -252,10 +252,15 @@ class BattleRoyaleGameManager {
     game.lastActivity = Date.now()
 
     console.log(`✅ Player ${playerAddress} added to slot ${assignedSlot} in game ${gameId}`)
+    console.log(`📊 Current players: ${game.currentPlayers}/${game.maxPlayers}`)
 
-    // Check if game is ready to start
+    // Check if game is ready to start (all 8 slots filled)
     if (game.currentPlayers === game.maxPlayers) {
-      this.prepareGameStart(gameId)
+      console.log(`🎮 Game ${gameId} is full with ${game.maxPlayers} players - auto-starting!`)
+      
+      // Need to get the broadcast function - this should be passed from the socket handler
+      // For now, we'll set a flag that the socket handler can check
+      game.readyToStart = true
     }
 
     return true

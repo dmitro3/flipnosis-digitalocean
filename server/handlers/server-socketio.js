@@ -2,6 +2,7 @@ const socketIO = require('socket.io')
 const GameStateManager = require('./GameStateManager')
 const BattleRoyaleGameManager = require('./BattleRoyaleGameManager')
 const BattleRoyaleSocketHandlers = require('./BattleRoyaleSocketHandlers')
+const BattleRoyaleDBService = require('./services/BattleRoyaleDBService')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
 // Single source of truth for all game state management
@@ -25,6 +26,11 @@ class GameServer {
     console.log('🚀 Initializing Clean Game Server...')
     
     this.dbService = dbService
+    
+    // Add Battle Royale DB service
+    if (dbService && dbService.db) {
+      this.battleRoyaleDBService = new BattleRoyaleDBService(dbService.db)
+    }
     this.io = socketIO(server, {
       cors: { 
         origin: ['https://flipnosis.fun', 'https://www.flipnosis.fun', 'http://localhost:3000', 'http://localhost:5173'],
@@ -77,6 +83,7 @@ class GameServer {
       socket.on('battle_royale_update_coin', (data) => this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(socket, data, this.battleRoyaleManager, this.io))
       socket.on('spectate_battle_royale', (data) => this.battleRoyaleHandlers.handleSpectateBattleRoyale(socket, data, this.battleRoyaleManager))
       socket.on('request_battle_royale_state', (data) => this.battleRoyaleHandlers.handleRequestBattleRoyaleState(socket, data, this.battleRoyaleManager))
+      socket.on('battle_royale_start_early', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(socket, data, this.battleRoyaleManager, this.io, this.dbService))
       
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))
