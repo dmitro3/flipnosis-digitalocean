@@ -601,12 +601,15 @@ const BattleRoyaleGameRoom = ({
   useEffect(() => {
     if (!gameId || !address) return
 
+    let mounted = true
     console.log('🔌 Connecting to Battle Royale game server...')
 
     const connectToGame = async () => {
       try {
         await socketService.connect(gameId, address)
-        setConnected(true)
+        if (mounted) {
+          setConnected(true)
+        }
         
         // Register event listeners
         socketService.on('room_joined', handleRoomJoined)
@@ -632,16 +635,20 @@ const BattleRoyaleGameRoom = ({
         
       } catch (error) {
         console.error('❌ Failed to connect to Battle Royale game server:', error)
-        showToast('Failed to connect to game server', 'error')
+        if (mounted) {
+          showToast('Failed to connect to game server', 'error')
+        }
       }
     }
 
     connectToGame()
 
     return () => {
+      mounted = false
       // Cleanup listeners
       socketService.off('room_joined', handleRoomJoined)
       socketService.off('battle_royale_state_update', handleGameStateUpdate)
+      socketService.off('battle_royale_starting', handleGameStarting)
       socketService.off('battle_royale_target_reveal', handleTargetReveal)
       socketService.off('battle_royale_flips_executing', handleFlipsExecuting)
       socketService.off('battle_royale_round_result', handleRoundResult)
@@ -649,7 +656,7 @@ const BattleRoyaleGameRoom = ({
       socketService.off('battle_royale_new_round', handleNewRound)
       socketService.off('battle_royale_power_update', handlePowerUpdate)
     }
-  }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
+  }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleGameStarting, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
 
   // ===== USER ACTIONS =====
   const handleChoice = useCallback((choice) => {

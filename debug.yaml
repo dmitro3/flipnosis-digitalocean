@@ -1,715 +1,517 @@
-SES Removing unpermitted intrinsics lockdown-install.js:1:203117
-  Removing intrinsics.%DatePrototype%.toTemporalInstant lockdown-install.js:1:202962
-✅ Rainbow Kit configuration created successfully index-eab65743.js:381:397489
-🧪 Testing WebSocket service... index-eab65743.js:381:403447
-Test 1 - Service import: 
-Object { socket: null, connected: false, connecting: false, gameId: null, address: null, currentRoom: null, reconnectAttempts: 0, maxReconnectAttempts: 10, reconnectDelay: 2000, messageHandlers: Map(0), … }
-index-eab65743.js:381:403494
-Test 1 - Service type: object index-eab65743.js:381:403537
-Test 1 - Service methods: 
-Array(12) [ "constructor", "connect", "scheduleReconnect", "setupPingInterval", "send", "processMessageQueue", "on", "off", "notifyHandlers", "disconnect", … ]
-index-eab65743.js:381:403585
-Test 2 - isConnected method exists: true index-eab65743.js:381:403697
-Test 2 - isInitialized method exists: false index-eab65743.js:381:403782
-Test 3 - isConnected result: false index-eab65743.js:381:403900
-Test 4 - isInitialized method not available index-eab65743.js:381:404199
-🧪 WebSocket service test complete index-eab65743.js:381:404330
-Rainbow Kit Config: 
-Object { chains: (7) […], projectId: undefined }
-index-eab65743.js:381:404473
-🚀 Application starting... 
-Object { timestamp: "2025-09-26T14:04:47.521Z", userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:143.0) Gecko/20100101 Firefox/143.0", url: "https://www.flipnosis.fun/" }
-index-eab65743.js:381:408421
-🔍 App.jsx - Starting render: 
-Object { config: {…}, hasChains: true, chainsLength: 7, timestamp: "2025-09-26T14:04:47.524Z" }
-index-eab65743.js:381:404582
-🔍 Processing battle royale games: 0 total index-eab65743.js:259:820184
-🔍 Fetching data from: https://flipnosis.fun/api/listings index-eab65743.js:259:816587
-🔍 Processing battle royale games: 0 total index-eab65743.js:259:820184
-⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. index-eab65743.js:79:6620
-🔍 Processing battle royale games: 0 total index-eab65743.js:259:820184
-🔍 Processing battle royale games: 0 total 3 index-eab65743.js:259:820184
-🔧 Initializing contract service from WalletContext... index-eab65743.js:58:103357
-✅ Contract service initialized with address: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-eab65743.js:58:76419
-✅ Contract service initialized successfully index-eab65743.js:58:103471
-🔍 Processing battle royale games: 0 total index-eab65743.js:259:820184
-📊 Listings response status: 200 <empty string> index-eab65743.js:259:816678
-✅ Listings loaded: 0 items index-eab65743.js:259:816923
-🔍 Fetching data from: https://flipnosis.fun/api/games index-eab65743.js:259:817096
-Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information. core-74c503c9.js:20:418
-📊 Games response status: 200 <empty string> index-eab65743.js:259:817181
-✅ Games loaded: 0 items index-eab65743.js:259:817417
-🔍 Fetching data from: https://flipnosis.fun/api/battle-royale index-eab65743.js:259:817581
-📊 Battle Royale response status: 200 <empty string> index-eab65743.js:259:817682
-✅ Battle Royale games loaded: 50 items index-eab65743.js:259:817954
-🔍 Processing battle royale games: 50 total index-eab65743.js:259:820184
-🔍 Battle royale game: br_1758895458848_0dc60e76cdb433e1 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true index-eab65743.js:259:820325
-🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true index-eab65743.js:259:820325
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-📑 Active tab changed to: game index-eab65743.js:381:50558
-The connection to wss://www.flipnosis.fun:3000/socket.io/?EIO=4&transport=websocket was interrupted while the page was loading. socketio-d9998155.js:1:13256
-🎮 Join game called with: 
-Object { slotIndex: 1, contractService: true, isContractInitialized: true, gameData: true }
-index-eab65743.js:373:152261
-🎮 Joining Battle Royale: 
-Object { gameId: "br_1758895458848_0dc60e76cdb433e1", entryFeeUSD: 0.017857142857142856, serviceFeeUSD: 0.1, totalAmountUSD: 0.11785714285714285 }
-index-eab65743.js:373:152752
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-💰 Amount conversion: 
-Object { totalAmountUSD: 0.11785714285714285, totalAmountETHWei: "34000000000000", totalAmountETH: "0.000034" }
-index-eab65743.js:373:152897
-🎮 Joining Battle Royale game: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:58:99441
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Loading game data for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48944
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-📑 Active tab changed to: game index-eab65743.js:381:50558
-✅ Game data loaded successfully index-eab65743.js:381:49091
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Game data already loaded for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48883
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Loading game data for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48944
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-📑 Active tab changed to: game index-eab65743.js:381:50558
-✅ Game data loaded successfully index-eab65743.js:381:49091
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Game data already loaded for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48883
-🎮 Battle Royale join tx: 0xc5ec0af4d3667f578a45abe9bac7e59179a43f5bc174bb1994e159eadd56aa94 index-eab65743.js:58:99712
-✅ Joined Battle Royale successfully index-eab65743.js:58:99830
-✅ Blockchain transaction successful, notifying server... index-eab65743.js:373:153060
-📤 Emitting join_battle_royale to server: 
-Object { gameId: "br_1758895458848_0dc60e76cdb433e1", address: "0xf51D1e69b6857De81432d0D628c45B27dbcE97B6" }
-index-eab65743.js:373:153187
-⚠️ Not connected, cannot emit: join_battle_royale index-eab65743.js:297:911153
-✅ Successfully joined Battle Royale game index-eab65743.js:373:153550
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Loading game data for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48944
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-📑 Active tab changed to: game index-eab65743.js:381:50558
-✅ Game data loaded successfully index-eab65743.js:381:49091
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Game data already loaded for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48883
-📤 Requesting updated battle royale state index-eab65743.js:373:153332
-⚠️ Not connected, cannot emit: request_battle_royale_state index-eab65743.js:297:911153
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Loading game data for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48944
-🔌 Connecting to Battle Royale game server... index-eab65743.js:381:49563
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-📑 Active tab changed to: game index-eab65743.js:381:50558
-✅ Game data loaded successfully index-eab65743.js:381:49091
-⏳ Already connecting, waiting... index-eab65743.js:297:909888
-🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:49440
-🔄 Game data already loaded for: br_1758895458848_0dc60e76cdb433e1 index-eab65743.js:381:48883
+🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
+index-ee30707b.js:168 🔍 Processing battle royale games: 50 total
+index-ee30707b.js:168 🔍 Battle royale game: br_1758906936952_a8ababed4d706885 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758906074289_d523fa5975bf60f7 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758905733102_444351fedfc66209 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758905262235_209e266d04355bd5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758904426895_3f0fc90acaac79ae status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758896702091_0003b2b5592237f0 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758896439559_e11eb6d3d566bc02 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758895458848_0dc60e76cdb433e1 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
+index-ee30707b.js:168 🔍 Processing battle royale games: 50 total
+index-ee30707b.js:168 🔍 Battle royale game: br_1758906936952_a8ababed4d706885 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758906074289_d523fa5975bf60f7 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758905733102_444351fedfc66209 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758905262235_209e266d04355bd5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758904426895_3f0fc90acaac79ae status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758896702091_0003b2b5592237f0 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758896439559_e11eb6d3d566bc02 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758895458848_0dc60e76cdb433e1 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
+index-ee30707b.js:168 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
+index-ee30707b.js:199 🏆 Battle Royale creation page loaded
+index-ee30707b.js:199 🔍 Wallet status: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isConnected: true, chainId: 8453}
+index-ee30707b.js:31 📞 Manually loading NFTs for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🚀 loadNFTs called with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🔍 Current chain info: {chainId: 8453, currentChain: {…}, availableChains: Array(7)}
+index-ee30707b.js:31 🔍 Loading NFTs for: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', chain: 'Base', network: 'base-mainnet'}
+index-ee30707b.js:31 🎨 Total NFTs found: 23
+index-ee30707b.js:31 ✅ Loaded NFTs: 23
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2262
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifaaeqknktdsrfb3l5kghisanm5aiovw43dxrs4xjgaujvkvrs57y/3570
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafkreib2amqj2zcewaw2sdtzjq27tyq6hcdiyv7ofp6ymiytqlf7t4gb7y
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1307
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1308
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1312
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibzsjsiwiy73paonxcno5wvcyhkaud3zfyix327etkldpta7vg3li/image.webp
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiddueexahniaic5xxvj4krsbqtwvfvja3ctnjbgt3zhmr77x3z25y/image.webp
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8443
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieq4pxcymnusz7jjae7vn4ucpekhbzixfcs5tksda6wcmsx3xuud4/3919
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiaa3l7kbebplqnnb7oqxpdkibcg3rgx24lq4rv55d75bwwcvmtzdm/9
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmXk1y42pJ3owtaqBK1XYGuq17mpYQGTjb14wt8HHi7bZi
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic3by4zpmw4pfgisa2gqaoke4c5teisby623n3g3mqouufxf4zbpm/image.jpeg
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiggm7mpviuho43jlvrnqbzlls35k72ypqgzpyjqzdpoj3gwxrg5hi
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiajxidbvrf4pzugxelsuioy2quxlldziceuuwrrlfdlgz67yz4i4u/3531
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiava3asjrljldv4t54hz46x7xbky6g7ap6v7vddifohl2szjv5p3e/4281.png
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid7syd6tj5iez5lzeg2efnqejcxh6rex6ln2saqbeuymijzdfuabm/2561
+index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicokheinuxbqhgrnzhpnplksgkyf4sm5it2mxz7plhp5vpvhumjrq/image.png
+2index-ee30707b.js:168 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmbhsSeehQgBiQB7BVgbBmoPUzWuwsiAm9Y9AXmZ4cyymr
+index-ee30707b.js:199 🎨 NFT selected for Battle Royale: {contractAddress: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '3623', name: 'CABC #3623', collection: 'Based CABC 2026', image: 'https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623', …}
+index-ee30707b.js:199 Sending Battle Royale request: {creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', nft_contract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', nft_token_id: '3623', nft_name: 'CABC #3623', nft_image: 'https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623', …}
+index-ee30707b.js:199 ✅ Battle Royale game created: {success: true, gameId: 'br_1758909318418_10edf1827c0908d8', message: 'Battle Royale game created successfully'}
+index-ee30707b.js:31 🏆 Creating Battle Royale game: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:31 🔐 Approving NFT transfer...
+index-ee30707b.js:31 🔓 Approving NFT for transfer: {nftContract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '3623'}
+index-ee30707b.js:31 🔓 NFT approval tx: 0x0050d28111be456455e8e2dd566cd6a66cf442f6e6b8258808e9386e0648c715
+index-ee30707b.js:31 ✅ NFT approval confirmed
+index-ee30707b.js:31 ✅ NFT approval successful: 0x0050d28111be456455e8e2dd566cd6a66cf442f6e6b8258808e9386e0648c715
+index-ee30707b.js:31 🏆 Battle Royale creation tx: 0x2910e94a427735027a1e2e54e8553979bd950ab1d2dc5ab67f200c4e1f24822d
+index-ee30707b.js:31 ✅ Battle Royale created successfully
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 ✅ Listener registered for: chat_message
+index-ee30707b.js:286 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 Loading game data for: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 📑 Active tab changed to: details
+index-ee30707b.js:206 ✅ Listener removed for: chat_message
+index-ee30707b.js:286 ✅ Game data loaded successfully
+index-ee30707b.js:270 📜 Loaded 0 chat messages for game br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 ✅ Listener registered for: chat_message
+index-ee30707b.js:286 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 Game data already loaded for: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:270 📜 Loaded 0 chat messages for game br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 📑 Switching to tab: game (current tab: details)
+index-ee30707b.js:206 🔄 Switching rooms from game_br_1758906936952_a8ababed4d706885 to game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 🔌 Disconnecting Socket.io...
+index-ee30707b.js:206 🔌 Socket.io disconnected: io client disconnect
+index-ee30707b.js:206 🔌 Connecting to Socket.io: wss://www.flipnosis.fun
+index-ee30707b.js:286 📑 Active tab changed to: game
+index-ee30707b.js:206 ✅ Listener removed for: chat_message
+index-ee30707b.js:206 ✅ Socket.io connected
+index-ee30707b.js:206 📤 Emitted: join_room
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 Loading game data for: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 📑 Active tab changed to: game
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:286 ✅ Game data loaded successfully
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 Game data already loaded for: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:168 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-ee30707b.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
+index-ee30707b.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: true, headsLength: 154182}
+index-ee30707b.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-ee30707b.js:31 🌐 Profile data received: {address: '0xdd6377919ef1ad4babbead667efe3f6607558628', hasName: true, hasAvatar: true, hasHeadsImage: true, hasTailsImage: true}
+index-ee30707b.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: true, tailsLength: 103006}
+index-ee30707b.js:168 🪙 Custom coin loaded: {hasHeads: true, hasTails: true, headsLength: 154182, tailsLength: 103006}
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:168 🪙 Coin selected: {id: 'skull', type: 'default', name: 'Skull', headsImage: '/coins/skullh.png', tailsImage: '/coins/skullt.png'}
+index-ee30707b.js:168 🪙 Sending optimized coin to parent: {id: 'skull', type: 'default', name: 'Skull', headsImage: '/coins/skullh.png', tailsImage: '/coins/skullt.png'}
+index-ee30707b.js:168 🪙 Loading custom coin for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🪙 Getting coin heads image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🪙 Profile loaded for heads: {hasProfile: true, hasHeadsImage: true, headsLength: 154182}
+index-ee30707b.js:31 🪙 Getting coin tails image for: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
+index-ee30707b.js:31 🪙 Profile loaded for tails: {hasProfile: true, hasTailsImage: true, tailsLength: 103006}
+index-ee30707b.js:168 🪙 Custom coin loaded: {hasHeads: true, hasTails: true, headsLength: 154182, tailsLength: 103006}
+index-ee30707b.js:168 🪙 Coin selected: {id: 'manga', type: 'default', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png'}
+index-ee30707b.js:168 🪙 Sending optimized coin to parent: {id: 'manga', type: 'default', name: 'Heroine', headsImage: '/coins/mangah.png', tailsImage: '/coins/mangat.png'}
+index-ee30707b.js:286 📑 Switching to tab: details (current tab: game)
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 ✅ Listener registered for: chat_message
+index-ee30707b.js:286 📑 Active tab changed to: details
+index-ee30707b.js:270 📜 Loaded 1 chat messages for game br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:31 🌐 Fetching profile from: https://flipnosis.fun/api/profile/0xf51D1e69b6857De81432d0D628c45B27dbcE97B6
+index-ee30707b.js:31 🌐 Profile API response: {status: 200, ok: true, statusText: ''}
+index-ee30707b.js:31 🌐 Profile data received: {address: '0xf51d1e69b6857de81432d0d628c45b27dbce97b6', hasName: true, hasAvatar: true, hasHeadsImage: false, hasTailsImage: false}
+index-ee30707b.js:270 💬 Sending chat message: {message: 'bvnbvn', from: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628'}
+index-ee30707b.js:206 📤 Emitted: chat_message
+index-ee30707b.js:286 📑 Switching to tab: game (current tab: details)
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 📑 Active tab changed to: game
+index-ee30707b.js:206 ✅ Listener removed for: chat_message
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:278 📊 Battle Royale state update received: {phase: 'filling', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
+index-ee30707b.js:278 📊 Setting game status to: filling
+index-ee30707b.js:278 📊 Battle Royale state update received: {phase: 'filling', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
+index-ee30707b.js:278 📊 Setting game status to: filling
+index-ee30707b.js:278 🚀 Start game button clicked! {gameId: 'br_1758909318418_10edf1827c0908d8', address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', currentPlayers: 2, gameStatus: 'filling', isCreator: true}
+index-ee30707b.js:206 📤 Emitted: battle_royale_start_early
+index-ee30707b.js:278 🚀 Sent start game request to server
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 Loading game data for: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 📑 Active tab changed to: game
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:286 ✅ Game data loaded successfully
+index-ee30707b.js:206 ✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:286 🔄 Game data already loaded for: br_1758909318418_10edf1827c0908d8
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener registered for: battle_royale_starting
+index-ee30707b.js:206 📤 Emitted: join_battle_royale_room
+index-ee30707b.js:206 📤 Emitted: request_battle_royale_state
+index-ee30707b.js:278 📊 Battle Royale state update received: {phase: 'starting', gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8}
+index-ee30707b.js:278 📊 Setting game status to: starting
+index-ee30707b.js:286 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-09-26T17:56:34.080Z'}
+vendor-7e712de7.js:32 ReferenceError: Cannot access 'ne' before initialization
+    at index-ee30707b.js:278:4589
+    at index-ee30707b.js:278:6122
+    at ol (vendor-7e712de7.js:32:24164)
+    at Gn (vendor-7e712de7.js:32:42045)
+    at vendor-7e712de7.js:32:40400
+    at E (vendor-7e712de7.js:17:1562)
+    at MessagePort.ot (vendor-7e712de7.js:17:1930)
+ku @ vendor-7e712de7.js:32
+u.componentDidCatch.t.callback @ vendor-7e712de7.js:32
+hi @ vendor-7e712de7.js:30
+Oi @ vendor-7e712de7.js:32
+Ua @ vendor-7e712de7.js:32
+rd @ vendor-7e712de7.js:32
+sd @ vendor-7e712de7.js:32
+gn @ vendor-7e712de7.js:32
+Ii @ vendor-7e712de7.js:32
+mn @ vendor-7e712de7.js:30
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-ee30707b.js:50 React Router caught the following error during render ReferenceError: Cannot access 'ne' before initialization
+    at index-ee30707b.js:278:4589
+    at index-ee30707b.js:278:6122
+    at ol (vendor-7e712de7.js:32:24164)
+    at Gn (vendor-7e712de7.js:32:42045)
+    at vendor-7e712de7.js:32:40400
+    at E (vendor-7e712de7.js:17:1562)
+    at MessagePort.ot (vendor-7e712de7.js:17:1930) {componentStack: '\n    at gg (https://www.flipnosis.fun/assets/index…flipnosis.fun/assets/index-ee30707b.js:286:30899)'}
+componentDidCatch @ index-ee30707b.js:50
+u.componentDidCatch.t.callback @ vendor-7e712de7.js:32
+hi @ vendor-7e712de7.js:30
+Oi @ vendor-7e712de7.js:32
+Ua @ vendor-7e712de7.js:32
+rd @ vendor-7e712de7.js:32
+sd @ vendor-7e712de7.js:32
+gn @ vendor-7e712de7.js:32
+Ii @ vendor-7e712de7.js:32
+mn @ vendor-7e712de7.js:30
+Gn @ vendor-7e712de7.js:32
+(anonymous) @ vendor-7e712de7.js:32
+E @ vendor-7e712de7.js:17
+ot @ vendor-7e712de7.js:17Understand this error
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_state_update
+index-ee30707b.js:206 ✅ Listener removed for: battle_royale_starting
 
-Player 1
-Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-index-eab65743.js:381 ✅ Rainbow Kit configuration created successfully
-index-eab65743.js:381 🧪 Testing WebSocket service...
-index-eab65743.js:381 Test 1 - Service import: z1 {socket: null, connected: false, connecting: false, gameId: null, address: null, …}
-index-eab65743.js:381 Test 1 - Service type: object
-index-eab65743.js:381 Test 1 - Service methods: (12) ['constructor', 'connect', 'scheduleReconnect', 'setupPingInterval', 'send', 'processMessageQueue', 'on', 'off', 'notifyHandlers', 'disconnect', 'isConnected', 'getConnectionStatus']
-index-eab65743.js:381 Test 2 - isConnected method exists: true
-index-eab65743.js:381 Test 2 - isInitialized method exists: false
-index-eab65743.js:381 Test 3 - isConnected result: false
-index-eab65743.js:381 Test 4 - isInitialized method not available
-index-eab65743.js:381 🧪 WebSocket service test complete
-index-eab65743.js:381 Rainbow Kit Config: {chains: Array(7), projectId: undefined}
-index-eab65743.js:381 🚀 Application starting... {timestamp: '2025-09-26T14:03:45.252Z', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb…KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36', url: 'https://www.flipnosis.fun/'}
-index-eab65743.js:381 🔍 App.jsx - Starting render: {config: {…}, hasChains: true, chainsLength: 7, timestamp: '2025-09-26T14:03:45.260Z'}
-index-eab65743.js:259 🔍 Processing battle royale games: 0 total
-index-eab65743.js:259 🔍 Fetching data from: https://flipnosis.fun/api/listings
-index-eab65743.js:259 🔍 Processing battle royale games: 0 total
-index-eab65743.js:79 ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
-U0 @ index-eab65743.js:79
-_A @ index-eab65743.js:79
-M0 @ index-eab65743.js:79
-(anonymous) @ index-eab65743.js:88
-_r @ vendor-953f4813.js:138
-Y_ @ vendor-953f4813.js:151
-B_ @ vendor-953f4813.js:151
-V_ @ vendor-953f4813.js:151
-j_ @ vendor-953f4813.js:151
-TO @ vendor-953f4813.js:151
-Qa @ vendor-953f4813.js:151
-(anonymous) @ vendor-953f4813.js:151
-kn @ vendor-953f4813.js:39
-An @ vendor-953f4813.js:39
-Za @ vendor-953f4813.js:39Understand this warning
-index-eab65743.js:259 🔍 Processing battle royale games: 0 total
-index-eab65743.js:259 📊 Listings response status: 200 
-index-eab65743.js:259 ✅ Listings loaded: 0 items
-index-eab65743.js:259 🔍 Fetching data from: https://flipnosis.fun/api/games
-index-eab65743.js:259 📊 Games response status: 200 
-index-eab65743.js:259 🔍 Processing battle royale games: 0 total
-index-eab65743.js:259 🔍 Processing battle royale games: 0 total
-index-eab65743.js:259 ✅ Games loaded: 0 items
-index-eab65743.js:259 🔍 Fetching data from: https://flipnosis.fun/api/battle-royale
-index-eab65743.js:259 🔍 Processing battle royale games: 0 total
-index-eab65743.js:58 🔧 Initializing contract service from WalletContext...
-index-eab65743.js:58 ✅ Contract service initialized with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-eab65743.js:58 ✅ Contract service initialized successfully
-index-eab65743.js:259 🔍 Processing battle royale games: 0 total
-index-eab65743.js:259 📊 Battle Royale response status: 200 
-core-74c503c9.js:20 Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.
-qt @ core-74c503c9.js:20
-(anonymous) @ core-74c503c9.js:20Understand this warning
-index-eab65743.js:259 ✅ Battle Royale games loaded: 50 items
-index-eab65743.js:259 🔍 Processing battle royale games: 50 total
-index-eab65743.js:259 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758622722803_0f1f3e4f8f1fe81e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758621915625_2b94ca298bfcc9a3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554363718_56c87070f53eb0b2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554283737_58b602dace0f1eb2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554097900_adac154d8f6df0bb status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553939473_a669884c95502903 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553611068_897e6fc94e9a4133 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553558024_ac64ec42dfa8c51b status: filling include: true
-index-eab65743.js:259 🔍 Processing battle royale games: 50 total
-index-eab65743.js:259 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758622722803_0f1f3e4f8f1fe81e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758621915625_2b94ca298bfcc9a3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554363718_56c87070f53eb0b2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554283737_58b602dace0f1eb2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554097900_adac154d8f6df0bb status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553939473_a669884c95502903 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553611068_897e6fc94e9a4133 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553558024_ac64ec42dfa8c51b status: filling include: true
-index-eab65743.js:259 🔍 Processing battle royale games: 50 total
-index-eab65743.js:259 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758622722803_0f1f3e4f8f1fe81e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758621915625_2b94ca298bfcc9a3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554363718_56c87070f53eb0b2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554283737_58b602dace0f1eb2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554097900_adac154d8f6df0bb status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553939473_a669884c95502903 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553611068_897e6fc94e9a4133 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553558024_ac64ec42dfa8c51b status: filling include: true
-index-eab65743.js:259 🔍 Processing battle royale games: 50 total
-index-eab65743.js:259 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758622722803_0f1f3e4f8f1fe81e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758621915625_2b94ca298bfcc9a3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554363718_56c87070f53eb0b2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554283737_58b602dace0f1eb2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554097900_adac154d8f6df0bb status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553939473_a669884c95502903 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553611068_897e6fc94e9a4133 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553558024_ac64ec42dfa8c51b status: filling include: true
-index-eab65743.js:259 🔍 Processing battle royale games: 50 total
-index-eab65743.js:259 🔍 Battle royale game: br_1758894010685_5710ffc850b315dd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758893987535_9b2698d07463380f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758892535753_692e77afc8e694c8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758891641522_c0626006e1b88980 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758890494914_981a1fe231714907 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758886771433_eb1ab4b2a5c2678b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758884294766_f51bc54b0a0157fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758882161045_3a742eb9437a3bf3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840870850_e3197e6a914b44a5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758840155712_31d944b9c00a901b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839697168_936c5da0e19ce20c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758839448272_e7131a0899cb0b92 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758838894902_e16e943c63fe4756 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758837669600_1fab8cbb0f786c3e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758834986866_24c2361278f6203e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758829409355_ac7cc5439134681b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758823607790_dec0136a93b1c1ec status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822432819_a6054a0ce52098e4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822409094_1e076d45d3d4a7af status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758822384877_3459eb39769d46fd status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818775345_ad6c4fcdf60ac4de status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758818177101_a9192de65a7758f4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758796598475_7d1a5c701438b31c status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795985970_68bbf2b432b3ffe0 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758795445480_e141d6f71a7e58d4 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758752801628_5fa0dacc5aaf875e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758741817137_71a727258b81266e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758737278347_8b05da79273d3cc5 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758736924738_9710995bda25e2ff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735597787_91a10a02058bd0fe status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758735074871_dc56117e36f93614 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758734497646_eb6408a3a7004fe8 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758732811821_2857977a1364ff15 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758726035200_baeed2389e12d12a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758724747000_ba0280c04b5f80ae status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758718739309_be327f6c70280c3b status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717750256_ebe3a6ee7031bc0f status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717470111_12fa731d9eabcbff status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717435405_cb163b717a412bb1 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717414339_9bb5c29449822d21 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758717385935_7e47f3b412b4eb7a status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758626119977_3de8f7d9352ca653 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758622722803_0f1f3e4f8f1fe81e status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758621915625_2b94ca298bfcc9a3 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554363718_56c87070f53eb0b2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554283737_58b602dace0f1eb2 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758554097900_adac154d8f6df0bb status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553939473_a669884c95502903 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553611068_897e6fc94e9a4133 status: filling include: true
-index-eab65743.js:259 🔍 Battle royale game: br_1758553558024_ac64ec42dfa8c51b status: filling include: true
-4index-eab65743.js:25 The pseudo class ":nth-child" is potentially unsafe when doing server-side rendering. Try changing it to ":nth-of-type".
-(anonymous) @ index-eab65743.js:25
-(anonymous) @ index-eab65743.js:25
-(anonymous) @ index-eab65743.js:25
-Hc @ index-eab65743.js:25
-p @ index-eab65743.js:26
-y @ index-eab65743.js:26
-vW @ index-eab65743.js:26
-(anonymous) @ index-eab65743.js:91
-_r @ vendor-953f4813.js:138
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-Xn @ vendor-953f4813.js:151
-Ig @ vendor-953f4813.js:151
-N_ @ vendor-953f4813.js:151
-EO @ vendor-953f4813.js:151
-yi @ vendor-953f4813.js:151
-fO @ vendor-953f4813.js:151
-cb @ vendor-953f4813.js:151
-kn @ vendor-953f4813.js:39
-An @ vendor-953f4813.js:39
-Za @ vendor-953f4813.js:39Understand this error
-index-eab65743.js:297 🔌 Connecting to Socket.io: wss://www.flipnosis.fun:3000
-index-eab65743.js:381 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758894010685_5710ffc850b315dd
-index-eab65743.js:381 🔄 Loading game data for: br_1758894010685_5710ffc850b315dd
-index-eab65743.js:381 🔌 Connecting to Battle Royale game server...
-index-eab65743.js:297 🔄 Switching rooms from game_br_1758894010685_5710ffc850b315dd to game_1758894010685_5710ffc850b315dd
-index-eab65743.js:297 🔌 Disconnecting Socket.io...
-socketio-d9998155.js:1 WebSocket connection to 'wss://www.flipnosis.fun:3000/socket.io/?EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established.
-doClose @ socketio-d9998155.js:1
-close @ socketio-d9998155.js:1
-_onClose @ socketio-d9998155.js:1
-e @ socketio-d9998155.js:1
-close @ socketio-d9998155.js:1
-onclose @ socketio-d9998155.js:1
-_close @ socketio-d9998155.js:1
-_destroy @ socketio-d9998155.js:1
-destroy @ socketio-d9998155.js:1
-disconnect @ socketio-d9998155.js:1
-disconnect @ index-eab65743.js:297
-connect @ index-eab65743.js:297
-(anonymous) @ index-eab65743.js:381
-(anonymous) @ index-eab65743.js:381
-_r @ vendor-953f4813.js:138
-Y_ @ vendor-953f4813.js:151
-B_ @ vendor-953f4813.js:151
-V_ @ vendor-953f4813.js:151
-j_ @ vendor-953f4813.js:151
-TO @ vendor-953f4813.js:151
-Qa @ vendor-953f4813.js:151
-(anonymous) @ vendor-953f4813.js:151
-kn @ vendor-953f4813.js:39
-An @ vendor-953f4813.js:39
-Za @ vendor-953f4813.js:39Understand this warning
-index-eab65743.js:297 ⏳ Already connecting, waiting...
-index-eab65743.js:381 📑 Active tab changed to: game
-index-eab65743.js:381 ✅ Game data loaded successfully
-index-eab65743.js:297 ⏳ Already connecting, waiting...
-index-eab65743.js:381 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758894010685_5710ffc850b315dd
-index-eab65743.js:381 🔄 Game data already loaded for: br_1758894010685_5710ffc850b315dd
-index-eab65743.js:290 🏆 Battle Royale creation page loaded
-index-eab65743.js:290 🔍 Wallet status: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', isConnected: true, chainId: 8453}
-index-eab65743.js:58 📞 Manually loading NFTs for address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-eab65743.js:58 🚀 loadNFTs called with address: 0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628
-index-eab65743.js:58 🔍 Current chain info: {chainId: 8453, currentChain: {…}, availableChains: Array(7)}
-index-eab65743.js:58 🔍 Loading NFTs for: {address: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', chain: 'Base', network: 'base-mainnet'}
-index-eab65743.js:58 🎨 Total NFTs found: 31
-index-eab65743.js:58 ✅ Loaded NFTs: 31
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafkreib2amqj2zcewaw2sdtzjq27tyq6hcdiyv7ofp6ymiytqlf7t4gb7y
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieq4pxcymnusz7jjae7vn4ucpekhbzixfcs5tksda6wcmsx3xuud4/3919
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1308
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1312
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeieey7kzulo5qdn6plyucguykssfdunxipnp3cqeufclsvkxeqt2gm/1307
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiaa3l7kbebplqnnb7oqxpdkibcg3rgx24lq4rv55d75bwwcvmtzdm/9
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeic3by4zpmw4pfgisa2gqaoke4c5teisby623n3g3mqouufxf4zbpm/image.jpeg
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmXk1y42pJ3owtaqBK1XYGuq17mpYQGTjb14wt8HHi7bZi
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmX96SimuRFFwfyCA11iiFSjyY7KXcFSU6kpAkvExanBL2
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3623
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihf6jea44em5pp52dqhqu3z33axaafi32mgacwd64qanhzwk52vhm/2063
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiava3asjrljldv4t54hz46x7xbky6g7ap6v7vddifohl2szjv5p3e/4281.png
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiajxidbvrf4pzugxelsuioy2quxlldziceuuwrrlfdlgz67yz4i4u/3531
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeih4gcctkzfrt2ymz6lwrl6b2iggwymisijjzjhq4qdu2koxphgaxi/2624
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeida63muma6emqyawnphjkq67xhw2y35ho4ejtsanterkvqysh4lbe/3753
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeichq4v4giemifbqicv4k5czcdas6jqriuaw6wtdj3c2yeiurzfxoq/2262
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifaaeqknktdsrfb3l5kghisanm5aiovw43dxrs4xjgaujvkvrs57y/3570
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8443
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiggm7mpviuho43jlvrnqbzlls35k72ypqgzpyjqzdpoj3gwxrg5hi
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeifcvfrzuhaph6jn7gnhqmqwpocut3udxxrj6equywf6f2bn62jqfq/8571
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibzsjsiwiy73paonxcno5wvcyhkaud3zfyix327etkldpta7vg3li/image.webp
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeiddueexahniaic5xxvj4krsbqtwvfvja3ctnjbgt3zhmr77x3z25y/image.webp
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeib6j7dynf46tz3bjjlf55kyf7ubrkdqnil3ov6nj4juqjth2mhf5u/1022
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeihnycrbh2sgkpver6ttnzx3dxwc7tekzfi2qvc32zxalqchrtzmx4/59
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid7syd6tj5iez5lzeg2efnqejcxh6rex6ln2saqbeuymijzdfuabm/2561
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeid4lrubj72y3xnz7sggkoamtua4douc5pscqd3sqm2guzsysqtvqi/1444
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeibdzsebbeahueqn5fr5vhmgj77femfnzqzpjkkhzvor2l7n6anhm4/3023
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicst6aup3a2kcbve45sw3od3cltpsewbf723hk43budowfq35tad4/2384
-index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/bafybeicokheinuxbqhgrnzhpnplksgkyf4sm5it2mxz7plhp5vpvhumjrq/image.png
-2index-eab65743.js:259 ✅ Image loaded successfully: https://ipfs.io/ipfs/QmbhsSeehQgBiQB7BVgbBmoPUzWuwsiAm9Y9AXmZ4cyymr
-index-eab65743.js:290 🎨 NFT selected for Battle Royale: {contractAddress: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '59', name: 'CABC #59', collection: 'Based CABC 2026', image: 'https://ipfs.io/ipfs/bafybeihnycrbh2sgkpver6ttnzx3dxwc7tekzfi2qvc32zxalqchrtzmx4/59', …}
-index-eab65743.js:290 Sending Battle Royale request: {creator: '0xDd6377919ef1Ad4baBBEAd667eFE3F6607558628', nft_contract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', nft_token_id: '59', nft_name: 'CABC #59', nft_image: 'https://ipfs.io/ipfs/bafybeihnycrbh2sgkpver6ttnzx3dxwc7tekzfi2qvc32zxalqchrtzmx4/59', …}
-index-eab65743.js:290 ✅ Battle Royale game created: {success: true, gameId: 'br_1758895458848_0dc60e76cdb433e1', message: 'Battle Royale game created successfully'}
-index-eab65743.js:58 🏆 Creating Battle Royale game: br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:58 🔐 Approving NFT transfer...
-index-eab65743.js:58 🔓 Approving NFT for transfer: {nftContract: '0x4B8B400DDD95285733b111E2C249556bf76b552f', tokenId: '59'}
-index-eab65743.js:58 🔓 NFT approval tx: 0x71029a04552beb2a94209c920db93b42b2a1dfff94b4feafca6467b80badb6d5
-index-eab65743.js:58 ✅ NFT approval confirmed
-index-eab65743.js:58 ✅ NFT approval successful: 0x71029a04552beb2a94209c920db93b42b2a1dfff94b4feafca6467b80badb6d5
-index-eab65743.js:58 🏆 Battle Royale creation tx: 0x431d5def477a16c1e39fff022fdb06cdbb0274809de1071e8ec927e978be59e3
-index-eab65743.js:58 ✅ Battle Royale created successfully
-index-eab65743.js:381 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:381 🔄 Loading game data for: br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:381 🔌 Connecting to Battle Royale game server...
-index-eab65743.js:297 ⏳ Already connecting, waiting...
-index-eab65743.js:381 📑 Active tab changed to: details
-index-eab65743.js:381 ✅ Game data loaded successfully
-index-eab65743.js:381 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:381 🔄 Game data already loaded for: br_1758895458848_0dc60e76cdb433e1
-2index-eab65743.js:361 📜 Loaded 0 chat messages for game br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:381 🔌 Connecting to Battle Royale game server...
-index-eab65743.js:297 ⏳ Already connecting, waiting...
-index-eab65743.js:381 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:381 🔄 Loading game data for: br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:381 🔌 Connecting to Battle Royale game server...
-index-eab65743.js:297 ⏳ Already connecting, waiting...
-index-eab65743.js:381 📑 Active tab changed to: details
-index-eab65743.js:381 ✅ Game data loaded successfully
-index-eab65743.js:381 🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758895458848_0dc60e76cdb433e1
-index-eab65743.js:381 🔄 Game data already loaded for: br_1758895458848_0dc60e76cdb433e1
-2index-eab65743.js:361 📜 Loaded 0 chat messages for game br_1758895458848_0dc60e76cdb433e1
+player 2
+
+🔌 Socket.io disconnected: transport close index-d95f1eb9.js:206:47224
+📊 Battle Royale state update received: 
+Object { phase: "filling", gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8 }
+index-ee30707b.js:278:13354
+📊 Setting game status to: filling index-ee30707b.js:278:13922
+📊 Battle Royale state update received: 
+Object { phase: "filling", gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8 }
+index-ee30707b.js:278:13354
+📊 Setting game status to: filling index-ee30707b.js:278:13922
+🪙 Loading custom coin for address: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-ee30707b.js:168:31937
+🪙 Getting coin heads image for: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-ee30707b.js:31:108753
+🪙 Profile loaded for heads: 
+Object { hasProfile: true, hasHeadsImage: false, headsLength: 0 }
+index-ee30707b.js:31:108829
+🪙 Getting coin tails image for: 0xf51D1e69b6857De81432d0D628c45B27dbcE97B6 index-ee30707b.js:31:109248
+🪙 Profile loaded for tails: 
+Object { hasProfile: true, hasTailsImage: false, tailsLength: 0 }
+index-ee30707b.js:31:109324
+🪙 Custom coin loaded: 
+Object { hasHeads: false, hasTails: false, headsLength: 0, tailsLength: 0 }
+index-ee30707b.js:168:32022
+🪙 Coin selected: 
+Object { id: "pharaoh", type: "default", name: "Pharaoh", headsImage: "/coins/pharaohh.png", tailsImage: "/coins/pharaoht.png" }
+index-ee30707b.js:168:32229
+🪙 Sending optimized coin to parent: 
+Object { id: "pharaoh", type: "default", name: "Pharaoh", headsImage: "/coins/pharaohh.png", tailsImage: "/coins/pharaoht.png" }
+index-ee30707b.js:168:32382
+📤 Emitted: battle_royale_update_coin index-ee30707b.js:206:47749
+🪙 Sent coin update to server: 
+Object { id: "pharaoh", type: "default", name: "Pharaoh", headsImage: "/coins/pharaohh.png", tailsImage: "/coins/pharaoht.png" }
+index-ee30707b.js:278:17158
+✅ Listener removed for: battle_royale_state_update index-ee30707b.js:206:47967
+✅ Listener removed for: battle_royale_starting index-ee30707b.js:206:47967
+✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8 index-ee30707b.js:206:46313
+✅ Listener registered for: battle_royale_state_update index-ee30707b.js:206:47878
+✅ Listener registered for: battle_royale_starting index-ee30707b.js:206:47878
+📤 Emitted: join_battle_royale_room index-ee30707b.js:206:47749
+📤 Emitted: request_battle_royale_state index-ee30707b.js:206:47749
+✅ Listener removed for: battle_royale_state_update index-ee30707b.js:206:47967
+✅ Listener removed for: battle_royale_starting index-ee30707b.js:206:47967
+✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8 index-ee30707b.js:206:46313
+🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:1432
+🔄 Loading game data for: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:936
+📑 Active tab changed to: game index-ee30707b.js:286:1688
+✅ Listener registered for: battle_royale_state_update index-ee30707b.js:206:47878
+✅ Listener registered for: battle_royale_starting index-ee30707b.js:206:47878
+📤 Emitted: join_battle_royale_room index-ee30707b.js:206:47749
+📤 Emitted: request_battle_royale_state index-ee30707b.js:206:47749
+✅ Game data loaded successfully index-ee30707b.js:286:1083
+✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8 index-ee30707b.js:206:46313
+🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:1432
+🔄 Game data already loaded for: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:875
+✅ Listener registered for: battle_royale_state_update index-ee30707b.js:206:47878
+✅ Listener registered for: battle_royale_starting index-ee30707b.js:206:47878
+📤 Emitted: join_battle_royale_room index-ee30707b.js:206:47749
+📤 Emitted: request_battle_royale_state index-ee30707b.js:206:47749
+📊 Battle Royale state update received: 
+Object { phase: "filling", gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8 }
+index-ee30707b.js:278:13354
+📊 Setting game status to: filling index-ee30707b.js:278:13922
+📊 Battle Royale state update received: 
+Object { phase: "filling", gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8 }
+index-ee30707b.js:278:13354
+📊 Setting game status to: filling index-ee30707b.js:278:13922
+✅ Listener removed for: battle_royale_state_update index-ee30707b.js:206:47967
+✅ Listener removed for: battle_royale_starting index-ee30707b.js:206:47967
+✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8 index-ee30707b.js:206:46313
+✅ Listener registered for: battle_royale_state_update index-ee30707b.js:206:47878
+✅ Listener registered for: battle_royale_starting index-ee30707b.js:206:47878
+📤 Emitted: join_battle_royale_room index-ee30707b.js:206:47749
+📤 Emitted: request_battle_royale_state index-ee30707b.js:206:47749
+✅ Listener removed for: battle_royale_state_update index-ee30707b.js:206:47967
+✅ Listener removed for: battle_royale_starting index-ee30707b.js:206:47967
+✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8 index-ee30707b.js:206:46313
+🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:1432
+🔄 Loading game data for: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:936
+📑 Active tab changed to: game index-ee30707b.js:286:1688
+✅ Listener registered for: battle_royale_state_update index-ee30707b.js:206:47878
+✅ Listener registered for: battle_royale_starting index-ee30707b.js:206:47878
+📤 Emitted: join_battle_royale_room index-ee30707b.js:206:47749
+📤 Emitted: request_battle_royale_state index-ee30707b.js:206:47749
+✅ Game data loaded successfully index-ee30707b.js:286:1083
+✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8 index-ee30707b.js:206:46313
+🔄 BattleRoyaleTabbedInterface: Loading game data for gameId: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:1432
+🔄 Game data already loaded for: br_1758909318418_10edf1827c0908d8 index-ee30707b.js:286:875
+✅ Listener registered for: battle_royale_state_update index-ee30707b.js:206:47878
+✅ Listener registered for: battle_royale_starting index-ee30707b.js:206:47878
+📤 Emitted: join_battle_royale_room index-ee30707b.js:206:47749
+📤 Emitted: request_battle_royale_state index-ee30707b.js:206:47749
+📊 Battle Royale state update received: 
+Object { phase: "filling", gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8 }
+index-ee30707b.js:278:13354
+📊 Setting game status to: filling index-ee30707b.js:278:13922
+📊 Battle Royale state update received: 
+Object { phase: "filling", gamePhase: null, status: undefined, currentPlayers: 2, playerSlots: 8 }
+index-ee30707b.js:278:13354
+📊 Setting game status to: filling index-ee30707b.js:278:13922
+🚀 Battle Royale game starting: 
+Object { gameId: "br_1758909318418_10edf1827c0908d8", countdown: 3, message: "Battle Royale starting in 3 seconds!" }
+index-ee30707b.js:278:14153
+📊 Game starting event received index-ee30707b.js:278:14203
+📊 Game status updated to: starting index-ee30707b.js:278:14324
+✅ Listener removed for: battle_royale_state_update index-ee30707b.js:206:47967
+✅ Listener removed for: battle_royale_starting index-ee30707b.js:206:47967
+🔍 App.jsx - Starting render: 
+Object { config: {…}, hasChains: true, chainsLength: 7, timestamp: "2025-09-26T17:56:33.900Z" }
+index-ee30707b.js:286:27966
+✅ Already connected to room: game_br_1758909318418_10edf1827c0908d8 index-ee30707b.js:206:46313
+ReferenceError: can't access lexical declaration 'ne' before initialization
+    l https://www.flipnosis.fun/assets/index-ee30707b.js:278
+    gg https://www.flipnosis.fun/assets/index-ee30707b.js:278
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+vendor-7e712de7.js:32:161
+React Router caught the following error during render ReferenceError: can't access lexical declaration 'ne' before initialization
+    l https://www.flipnosis.fun/assets/index-ee30707b.js:278
+    gg https://www.flipnosis.fun/assets/index-ee30707b.js:278
+    ol https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    Gn https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    sd https://www.flipnosis.fun/assets/vendor-7e712de7.js:32
+    E https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    ot https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    EventHandlerNonNull* https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+    <anonymous> https://www.flipnosis.fun/assets/vendor-7e712de7.js:17
+ 
+Object { componentStack: "\ngg@https://www.flipnosis.fun/assets/index-ee30707b.js:278:3390\ndiv\nlh/<@https://www.flipnosis.fun/assets/index-ee30707b.js:8:6461\npS@https://www.flipnosis.fun/assets/index-ee30707b.js:278:12533\ndiv\nlh/<@https://www.flipnosis.fun/assets/index-ee30707b.js:8:6461\ndiv\nlh/<@https://www.flipnosis.fun/assets/index-ee30707b.js:8:6461\nvS@https://www.flipnosis.fun/assets/index-ee30707b.js:286:484\nFS@https://www.flipnosis.fun/assets/index-ee30707b.js:286:3316\nt5@https://www.flipnosis.fun/assets/index-ee30707b.js:50:4036\nd5@https://www.flipnosis.fun/assets/index-ee30707b.js:50:7146\nmain\ndiv\nFx\nt5@https://www.flipnosis.fun/assets/index-ee30707b.js:50:4036\ne5@https://www.flipnosis.fun/assets/index-ee30707b.js:50:3254\n_5@https://www.flipnosis.fun/assets/index-ee30707b.js:59:4778\nu5@https://www.flipnosis.fun/assets/index-ee30707b.js:50:7276\nk5@https://www.flipnosis.fun/assets/index-ee30707b.js:59:1994\nbr@https://www.flipnosis.fun/assets/index-ee30707b.js:8:6681\nJb@https://www.flipnosis.fun/assets/index-ee30707b.js:31:108094\nYb@https://www.flipnosis.fun/assets/index-ee30707b.js:31:103685\nDm@https://www.flipnosis.fun/assets/index-ee30707b.js:8:8755\ndiv\nL7@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1633:77579\nAA@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1632:77192\n$A@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1633:1139\nGA@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1633:3058\nuA@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1632:69748\nVA@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1633:2841\nCA@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1632:76770\nB8@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:1633:14666\nw8@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:70:35464\ns3@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:54:33592\nb8@https://www.flipnosis.fun/assets/wagmi-cc62b309.js:54:33856\nAS@https://www.flipnosis.fun/assets/index-ee30707b.js:286:21533\nRS@https://www.flipnosis.fun/assets/index-ee30707b.js:286:28177\nNS@https://www.flipnosis.fun/assets/index-ee30707b.js:286:30899" }
+index-ee30707b.js:50:3707
+✅ Listener registered for: battle_royale_state_update index-ee30707b.js:206:47878
+✅ Listener registered for: battle_royale_starting index-ee30707b.js:206:47878
+📤 Emitted: join_battle_royale_room index-ee30707b.js:206:47749
+📤 Emitted: request_battle_royale_state index-ee30707b.js:206:47749
+🔄 Page became visible, refreshing ETH price cache
