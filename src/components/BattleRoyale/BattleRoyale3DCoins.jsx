@@ -31,6 +31,13 @@ const BattleRoyale3DCoins = ({
   // Performance optimization: adaptive quality
   const [quality, setQuality] = useState('high')
   
+  // Memoize the flip complete callback to prevent unnecessary re-renders
+  const memoizedOnFlipComplete = useCallback((playerAddress, result) => {
+    if (typeof onFlipComplete === 'function') {
+      onFlipComplete(playerAddress, result)
+    }
+  }, [onFlipComplete])
+  
   // Determine if we should use 3D or 2D display
   const use3D = useMemo(() => {
     return gamePhase !== 'filling' && gamePhase !== 'waiting_players' && gamePhase !== null
@@ -267,7 +274,7 @@ const BattleRoyale3DCoins = ({
             } else {
               coin.rotation.x = flipState.finalRotation
               coin.position.y = coin.userData.originalY
-              onFlipComplete(playerAddress, flipState.flipResult)
+              memoizedOnFlipComplete(playerAddress, flipState.flipResult)
             }
           } else {
             // Idle animation based on game phase
@@ -359,7 +366,7 @@ const BattleRoyale3DCoins = ({
         mountRef.current.removeChild(renderer.domElement)
       }
     }
-  }, [use3D, players, gamePhase, flipStates, hoveredSlot, createBackgroundGradient, createCoinMesh, onFlipComplete, quality])
+  }, [use3D, players, gamePhase, flipStates, hoveredSlot, createBackgroundGradient, createCoinMesh, memoizedOnFlipComplete, quality])
   
   // 2D Lobby Display
   if (!use3D && gamePhase) {
