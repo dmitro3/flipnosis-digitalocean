@@ -8,7 +8,7 @@ import { useProfile } from '../../../contexts/ProfileContext'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import socketService from '../../../services/SocketService'
-import SinglePlayer3DCoin from '../SinglePlayer3DCoin'
+import BattleRoyale3DCoins from '../BattleRoyale3DCoins'
 import CoinSelector from '../../CoinSelector'
 import '../BattleRoyaleCoins.css'
 
@@ -641,96 +641,25 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         )}
       </GameStatus>
 
-      {/* 3D coins will be rendered within each PlayerSlot */}
-
-      <PlayersGrid>
-        {players.map((player, index) => (
-          <PlayerSlot
-            key={index}
-            occupied={player !== null}
-            isCurrentUser={player?.address === address}
-            canJoin={canJoin}
-            onClick={() => handleSlotClick(index)}
-          >
-            <div className="slot-number">{index + 1}</div>
-            {player ? (
-              <>
-                {/* Coin Display - 2D in lobby, 3D in game */}
-                <div className="coin-display">
-                  <div className="coin-placeholder">
-                    {gameStatus === 'filling' ? (
-                      // 2D coin image for lobby phase
-                      <>
-                        <img 
-                          src={
-                            coinSides[player.address] === 'tails' 
-                              ? (playerCoinImages[player.address]?.tailsImage || '/coins/plaint.png')
-                              : (playerCoinImages[player.address]?.headsImage || '/coins/plainh.png')
-                          }
-                          alt={`Player ${index + 1} coin`}
-                          className="coin-image clickable"
-                          onClick={() => toggleCoinSide(player.address)}
-                        />
-                        <div className="coin-slot-number">{index + 1}</div>
-                        <div className="coin-side-indicator">
-                          {coinSides[player.address] === 'tails' ? 'Tails' : 'Heads'}
-                        </div>
-                        
-                        {/* Change Coin Button for current user - only show in lobby */}
-                        {player.address === address && (
-                        <button 
-                          className="coin-change-button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedSlot(index)
-                            setShowCoinSelector(true)
-                          }}
-                        >
-                          Change Coin
-                        </button>
-                        )}
-                      </>
-                    ) : (
-                      // 3D coin for active game phases
-                      <>
-                        <SinglePlayer3DCoin
-                          playerAddress={player.address}
-                          coinData={player.coin}
-                          playerIndex={index}
-                          gamePhase={gameStatus}
-                          isFlippable={true}
-                          onFlip={(playerAddress, result) => {
-                            console.log(`Player ${playerAddress} flipped: ${result}`)
-                            // TODO: Send flip choice to server
-                          }}
-                          playerCoinImages={playerCoinImages}
-                          coinSides={coinSides}
-                          size={200}
-                        />
-                        <div className="coin-slot-number">{index + 1}</div>
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="player-address">
-                  {formatAddress(player.address)}
-                </div>
-                
-                <div className="status-indicator" />
-              </>
-            ) : (
-              canJoin ? (
-                <div className="join-text">
-                  {isJoining ? 'Joining...' : 'Click to Join'}
-                </div>
-              ) : (
-                <div className="player-address">Empty</div>
-              )
-            )}
-          </PlayerSlot>
-        ))}
-      </PlayersGrid>
+      {/* Unified Battle Royale Coins Display */}
+      <BattleRoyale3DCoins
+        players={players.map((player, index) => ({
+          address: player?.address,
+          coin: player?.coin || playerCoins[player?.address],
+          isEliminated: false,
+          slotIndex: index
+        }))}
+        gamePhase={gameStatus}
+        serverState={null} // Pass server state when available
+        flipStates={{}} // Pass flip states when game is active
+        onFlipComplete={(playerAddress, result) => {
+          console.log(`Player ${playerAddress} flipped: ${result}`)
+        }}
+        playerCoinImages={playerCoinImages}
+        isCreator={isCreator}
+        currentUserAddress={address}
+        size={240}
+      />
 
       {isCreator && (
         <div style={{ textAlign: 'center', color: '#ff1493' }}>

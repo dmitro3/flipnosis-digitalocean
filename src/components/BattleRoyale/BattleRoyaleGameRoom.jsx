@@ -816,120 +816,35 @@ const BattleRoyaleGameRoom = ({
       </RoundHeader>
 
 
-      {/* 3D coins component - shows when game is active */}
-      {serverState?.gamePhase && 
-       serverState.gamePhase !== 'filling' && 
-       serverState.gamePhase !== 'waiting_players' &&
-       serverState?.playerSlots?.filter(Boolean).length > 0 && (
-        <BattleRoyale3DCoins
-          players={serverState?.playerSlots?.map((playerAddress, index) => {
-            if (!playerAddress) return null
-            const player = serverState.players?.[playerAddress.toLowerCase()]
-            return {
-              address: playerAddress,
-              coin: player?.coin,
-              index
-            }
-          }).filter(Boolean) || []}
-          gamePhase={serverState?.gamePhase}
-          flipStates={Object.fromEntries(
-            Object.entries(serverState?.players || {}).map(([address, player]) => [
-              address,
-              player.coinState
-            ])
-          )}
-          onFlipComplete={(playerAddress, result) => {
-            console.log(`Player ${playerAddress} flip complete: ${result}`)
-            // TODO: Send flip choice to server
-          }}
-          playerCoinImages={playerCoinImages}
-          coinSides={coinSides} // Pass the user's chosen coin sides
-          size={240}
-        />
-      )}
-
-      <PlayersGrid>
-        {serverState?.playerSlots?.map((playerAddress, index) => {
-          if (!playerAddress) return null
-          
+      {/* Unified Battle Royale Coins Display */}
+      <BattleRoyale3DCoins
+        players={serverState?.playerSlots?.map((playerAddress, index) => {
+          if (!playerAddress) return { address: null, coin: null, isEliminated: false }
           const player = serverState.players?.[playerAddress.toLowerCase()]
-          const isCurrentUser = playerAddress.toLowerCase() === address?.toLowerCase()
-          const isEliminated = player?.status === 'eliminated'
-          
-          return (
-            <PlayerCard
-              key={index}
-              isCurrentUser={isCurrentUser}
-              isEliminated={isEliminated}
-              hasChoice={!!player?.choice}
-              hasFlipped={player?.hasFlipped}
-              power={player?.power || 1}
-            >
-              {isEliminated && (
-                <div className="elimination-overlay">❌</div>
-              )}
-              
-              <div className="status-indicator" />
-              
-              <div className="player-info">
-                <div className="player-address">
-                  {formatAddress(playerAddress)}
-                </div>
-                <div className="player-slot">
-                  {index === 0 ? 'Creator' : `Player ${index + 1}`}
-                </div>
-              </div>
-              
-              {/* Coin display - Only show 2D images in lobby phase */}
-              {serverState?.gamePhase === 'filling' && (
-                <div className="coin-placeholder">
-                  <img 
-                    src={
-                      coinSides[playerAddress] === 'tails' 
-                        ? (playerCoinImages[playerAddress]?.tailsImage || '/coins/plaint.png')
-                        : (playerCoinImages[playerAddress]?.headsImage || '/coins/plainh.png')
-                    }
-                    alt={`Player ${index + 1} coin`}
-                    className="coin-image clickable"
-                    onClick={() => toggleCoinSide(playerAddress)}
-                  />
-                  <div className="coin-slot-number">{index + 1}</div>
-                  <div className="coin-side-indicator">
-                    {coinSides[playerAddress] === 'tails' ? 'Tails' : 'Heads'}
-                  </div>
-                  
-                  {/* Change Coin Button for current user - only show in lobby */}
-                  {isCurrentUser && (
-                  <button 
-                    className="coin-change-button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleCoinChange(playerAddress)
-                    }}
-                  >
-                    Change Coin
-                  </button>
-                  )}
-                </div>
-              )}
-              
-              {player?.choice && !player?.coinState?.isFlipping && (
-                <div className="choice-display">
-                  Choice: {player.choice}
-                </div>
-              )}
-              
-              <div className="power-display">
-                <div className="power-label">Power Level</div>
-                <div className="power-bar">
-                  <div className="power-fill" />
-                </div>
-                <div className="power-value">{(player?.power || 1).toFixed(1)}/10</div>
-              </div>
-            </PlayerCard>
-          )
-        })}
-      </PlayersGrid>
+          return {
+            address: playerAddress,
+            coin: player?.coin,
+            isEliminated: player?.status === 'eliminated',
+            slotIndex: index
+          }
+        }) || []}
+        gamePhase={serverState?.gamePhase || serverState?.phase}
+        serverState={serverState}
+        flipStates={Object.fromEntries(
+          Object.entries(serverState?.players || {}).map(([address, player]) => [
+            address,
+            player.coinState
+          ])
+        )}
+        onFlipComplete={(playerAddress, result) => {
+          console.log(`Player ${playerAddress} flip complete: ${result}`)
+        }}
+        playerCoinImages={playerCoinImages}
+        isCreator={isCreator}
+        currentUserAddress={address}
+        size={240}
+      />
+
 
       {/* Action Panel */}
       {isAlive && (
