@@ -40,7 +40,9 @@ const BattleRoyale3DCoins = ({
   
   // Determine if we should use 3D or 2D display
   const use3D = useMemo(() => {
-    return gamePhase !== 'filling' && gamePhase !== 'waiting_players' && gamePhase !== null
+    // Safety check to prevent crashes during transitions
+    if (!gamePhase || gamePhase === null) return false
+    return gamePhase !== 'filling' && gamePhase !== 'waiting_players'
   }, [gamePhase])
   
   // Create gradient background texture
@@ -64,6 +66,7 @@ const BattleRoyale3DCoins = ({
   
   // Create optimized coin mesh
   const createCoinMesh = useCallback((playerData, index) => {
+    if (!playerData) return null
     const { address, coin, isEliminated } = playerData
     
     // Coin geometry - optimized with less segments for performance
@@ -138,7 +141,7 @@ const BattleRoyale3DCoins = ({
   
   // Initialize Three.js scene
   useEffect(() => {
-    if (!use3D || !mountRef.current || !gamePhase) return
+    if (!use3D || !mountRef.current || !gamePhase || gamePhase === null) return
 
     // Create scene with gradient background
     const scene = new THREE.Scene()
@@ -217,8 +220,10 @@ const BattleRoyale3DCoins = ({
       
       if (playerData.address) {
         const coin = createCoinMesh(playerData, i)
-        scene.add(coin)
-        coins.push(coin)
+        if (coin) {
+          scene.add(coin)
+          coins.push(coin)
+        }
       } else {
         // Create placeholder for empty slot
         const geometry = new THREE.RingGeometry(0.7, 0.9, 32)
@@ -368,6 +373,27 @@ const BattleRoyale3DCoins = ({
     }
   }, [use3D, players, gamePhase, flipStates, hoveredSlot, createBackgroundGradient, createCoinMesh, memoizedOnFlipComplete, quality])
   
+  // Safety check - don't render during null/undefined gamePhase
+  if (!gamePhase || gamePhase === null) {
+    return (
+      <div style={{
+        width: '100%',
+        height: '500px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(138, 43, 226, 0.3))',
+        borderRadius: '1rem',
+        border: '2px solid rgba(255, 20, 147, 0.3)',
+        color: '#00ff88',
+        fontSize: '1.2rem',
+        fontWeight: 'bold'
+      }}>
+        Loading game...
+      </div>
+    )
+  }
+
   // 2D Lobby Display
   if (!use3D && gamePhase) {
     return (
