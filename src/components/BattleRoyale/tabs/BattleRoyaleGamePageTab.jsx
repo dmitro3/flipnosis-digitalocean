@@ -8,7 +8,7 @@ import { useProfile } from '../../../contexts/ProfileContext'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import socketService from '../../../services/SocketService'
-import GridOverlay3DCoins from '../GridOverlay3DCoins'
+import SinglePlayer3DCoin from '../SinglePlayer3DCoin'
 import CoinSelector from '../../CoinSelector'
 import '../BattleRoyaleCoins.css'
 
@@ -641,30 +641,9 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         )}
       </GameStatus>
 
-      {/* 3D coins overlay - single Three.js scene with 8 coin meshes */}
-      {gameStatus !== 'filling' && gameStatus !== 'waiting' && players.filter(Boolean).length > 0 && (
-        <GridOverlay3DCoins
-          players={players.map((player, index) => {
-            if (!player) return null
-            return {
-              address: player.address,
-              coin: player.coin,
-              index
-            }
-          }).filter(Boolean)}
-          gamePhase={gameStatus}
-          flipStates={{}}
-          onFlipComplete={(playerAddress, result) => {
-            console.log(`Player ${playerAddress} flipped: ${result}`)
-            // TODO: Send flip choice to server
-          }}
-          playerCoinImages={playerCoinImages}
-          coinSides={coinSides} // Pass the user's chosen coin sides
-          size={240}
-        />
-      )}
+      {/* 3D coins will be rendered within each PlayerSlot */}
 
-      <PlayersGrid style={{ position: 'relative' }}>
+      <PlayersGrid>
         {players.map((player, index) => (
           <PlayerSlot
             key={index}
@@ -676,48 +655,63 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             <div className="slot-number">{index + 1}</div>
             {player ? (
               <>
-                {/* Coin Display - Only show 2D images in lobby phase */}
-                {gameStatus === 'filling' && (
-                  <div className="coin-display">
-                    <div className="coin-placeholder">
-                      <img 
-                        src={
-                          coinSides[player.address] === 'tails' 
-                            ? (playerCoinImages[player.address]?.tailsImage || '/coins/plaint.png')
-                            : (playerCoinImages[player.address]?.headsImage || '/coins/plainh.png')
-                        }
-                        alt={`Player ${index + 1} coin`}
-                        className="coin-image clickable"
-                        onClick={() => toggleCoinSide(player.address)}
-                      />
-                      <div className="coin-slot-number">{index + 1}</div>
-                      <div className="coin-side-indicator">
-                        {coinSides[player.address] === 'tails' ? 'Tails' : 'Heads'}
-                      </div>
-                      
-                      {/* Change Coin Button for current user - only show in lobby */}
-                      {player.address === address && (
-                      <button 
-                        className="coin-change-button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedSlot(index)
-                          setShowCoinSelector(true)
-                        }}
-                      >
-                        Change Coin
-                      </button>
-                      )}
-                    </div>
+                {/* Coin Display - 2D in lobby, 3D in game */}
+                <div className="coin-display">
+                  <div className="coin-placeholder">
+                    {gameStatus === 'filling' ? (
+                      // 2D coin image for lobby phase
+                      <>
+                        <img 
+                          src={
+                            coinSides[player.address] === 'tails' 
+                              ? (playerCoinImages[player.address]?.tailsImage || '/coins/plaint.png')
+                              : (playerCoinImages[player.address]?.headsImage || '/coins/plainh.png')
+                          }
+                          alt={`Player ${index + 1} coin`}
+                          className="coin-image clickable"
+                          onClick={() => toggleCoinSide(player.address)}
+                        />
+                        <div className="coin-slot-number">{index + 1}</div>
+                        <div className="coin-side-indicator">
+                          {coinSides[player.address] === 'tails' ? 'Tails' : 'Heads'}
+                        </div>
+                        
+                        {/* Change Coin Button for current user - only show in lobby */}
+                        {player.address === address && (
+                        <button 
+                          className="coin-change-button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedSlot(index)
+                            setShowCoinSelector(true)
+                          }}
+                        >
+                          Change Coin
+                        </button>
+                        )}
+                      </>
+                    ) : (
+                      // 3D coin for active game phases
+                      <>
+                        <SinglePlayer3DCoin
+                          playerAddress={player.address}
+                          coinData={player.coin}
+                          playerIndex={index}
+                          gamePhase={gameStatus}
+                          isFlippable={true}
+                          onFlip={(playerAddress, result) => {
+                            console.log(`Player ${playerAddress} flipped: ${result}`)
+                            // TODO: Send flip choice to server
+                          }}
+                          playerCoinImages={playerCoinImages}
+                          coinSides={coinSides}
+                          size={200}
+                        />
+                        <div className="coin-slot-number">{index + 1}</div>
+                      </>
+                    )}
                   </div>
-                )}
-                
-                {/* Show slot number during game phases */}
-                {gameStatus !== 'filling' && (
-                  <div className="coin-slot-number" style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', zIndex: 20 }}>
-                    {index + 1}
-                  </div>
-                )}
+                </div>
                 
                 <div className="player-address">
                   {formatAddress(player.address)}
