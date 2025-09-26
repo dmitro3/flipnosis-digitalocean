@@ -13,23 +13,24 @@ import './BattleRoyaleCoins.css'
 const GameContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 1400px;
+  gap: 2rem;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 2rem;
   min-height: 100vh;
+  overflow-y: auto;
 `
 
 const RoundHeader = styled.div`
   text-align: center;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 20, 147, 0.5);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(15px);
+  border: 3px solid #FF1493;
   border-radius: 1rem;
   padding: 1.5rem;
   
   .round-title {
-    color: ${props => props.theme.colors.neonPink};
+    color: ${props => props.theme?.colors?.neonPink || '#FF1493'};
     font-size: 2rem;
     font-weight: bold;
     margin: 0 0 1rem 0;

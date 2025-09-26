@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import styled from '@emotion/styled'
 import { ethers } from 'ethers'
+import { useNavigate } from 'react-router-dom'
 import { useWallet } from '../../../contexts/WalletContext'
 import { useToast } from '../../../contexts/ToastContext'
 // import { useContractService } from '../../../utils/useContractService'
@@ -222,6 +223,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const { showToast } = useToast()
   const { isContractInitialized } = useWallet()
   const { getCoinHeadsImage, getCoinTailsImage } = useProfile()
+  const navigate = useNavigate()
   
   const [players, setPlayers] = useState(new Array(8).fill(null))
   const [gameStatus, setGameStatus] = useState('filling')
@@ -308,6 +310,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           // Check if component is still mounted before setting state
           if (mounted) {
             setGameStatus(newGameStatus)
+            
+            // Redirect to 3D game room if game is starting, in progress, or completed
+            if (newGameStatus === 'starting' || newGameStatus === 'in_progress' || newGameStatus === 'completed') {
+              setTimeout(() => {
+                navigate(`/battle-royale/${gameId}/play`)
+              }, 500) // Small delay for smooth transition
+            }
           }
 
           // preload coin images
@@ -334,6 +343,10 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       
       if (mounted) {
         setGameStatus('starting')
+        // Redirect to the 3D game room for smooth transition
+        setTimeout(() => {
+          navigate(`/battle-royale/${gameId}/play`)
+        }, 1000) // Small delay to show the toast
       }
       console.log('📊 Game status updated to: starting')
     }
@@ -364,7 +377,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         socketService.off('battle_royale_starting', onGameStarting)
       }
     }
-  }, [gameId, address, loadPlayerCoinImages, showToast]) // Add showToast to dependencies
+  }, [gameId, address, loadPlayerCoinImages, showToast, navigate]) // Add showToast and navigate to dependencies
 
   // Initialize creator in slot 0 when game loads
   useEffect(() => {
