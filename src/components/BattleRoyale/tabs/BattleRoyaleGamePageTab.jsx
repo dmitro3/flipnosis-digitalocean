@@ -273,6 +273,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
     const onStateUpdate = (data) => {
       try {
+        console.log('📊 Battle Royale state update received:', {
+          phase: data.phase,
+          gamePhase: data.gamePhase,
+          status: data.status,
+          currentPlayers: data.currentPlayers,
+          playerSlots: data.playerSlots?.length
+        })
+        
         // data.players may be object keyed by address; normalize into 8-slot array if slots provided
         if (data.playerSlots) {
           const slots = new Array(8).fill(null)
@@ -289,7 +297,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           setPlayers(slots)
           const joinedCount = slots.filter(Boolean).length
           setCurrentPlayers(joinedCount)
-          setGameStatus(data.status || (joinedCount >= 8 ? 'starting' : 'filling'))
+          
+          // Use the server's phase/gamePhase if available, otherwise fallback to status
+          const newGameStatus = data.phase || data.gamePhase || data.status || (joinedCount >= 8 ? 'starting' : 'filling')
+          console.log('📊 Setting game status to:', newGameStatus)
+          setGameStatus(newGameStatus)
 
           // preload coin images
           if (data.players) {
@@ -305,6 +317,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       }
     }
 
+    const onGameStarting = (data) => {
+      console.log('🚀 Battle Royale game starting:', data)
+      console.log('📊 Current game status before update:', gameStatus)
+      showToast(`Game starting in ${data.countdown} seconds!`, 'success')
+      setGameStatus('starting')
+      console.log('📊 Game status updated to: starting')
+    }
+
     const setup = async () => {
       try {
         // Only connect if not already connected to the same game
@@ -313,6 +333,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         }
         connected = true
         socketService.on('battle_royale_state_update', onStateUpdate)
+        socketService.on('battle_royale_starting', onGameStarting)
         // Join room and request state
         socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
         socketService.emit('request_battle_royale_state', { gameId })
@@ -326,6 +347,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     return () => {
       if (connected) {
         socketService.off('battle_royale_state_update', onStateUpdate)
+        socketService.off('battle_royale_starting', onGameStarting)
       }
     }
   }, [gameId, address, loadPlayerCoinImages])
@@ -566,6 +588,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             <button
               onClick={() => {
                 // Start the game with current players
+                console.log('🚀 Start game button clicked!', {
+                  gameId,
+                  address,
+                  currentPlayers,
+                  gameStatus,
+                  isCreator
+                })
                 try {
                   socketService.emit('battle_royale_start_early', {
                     gameId,
@@ -612,11 +641,20 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         )}
       </GameStatus>
 
-      {/* Optimized Single Renderer for All Coins - Only show when game is active and has players */}
-      {gameStatus && 
-       gameStatus !== 'filling' && 
-       gameStatus !== 'waiting' &&
-       players.filter(Boolean).length > 0 && (
+      {/* Optimized Single Renderer for All Coins - Show when game is starting or active */}
+      {(() => {
+        const shouldShowCoins = gameStatus && 
+         gameStatus !== 'filling' && 
+         gameStatus !== 'waiting' &&
+         players.filter(Boolean).length > 0
+        console.log('🎮 Coin rendering check:', {
+          gameStatus,
+          shouldShowCoins,
+          playerCount: players.filter(Boolean).length,
+          condition: `${gameStatus} !== 'filling' && ${gameStatus} !== 'waiting' && ${players.filter(Boolean).length} > 0`
+        })
+        return shouldShowCoins
+      })() && (
         <OptimizedBattleRoyaleCoins
           players={players.map((player, index) => {
             if (!player) return null

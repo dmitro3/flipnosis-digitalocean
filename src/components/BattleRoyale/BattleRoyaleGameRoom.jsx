@@ -494,6 +494,19 @@ const BattleRoyaleGameRoom = ({
     }))
   }, [address])
 
+  const handleGameStarting = useCallback((data) => {
+    console.log('🚀 Battle Royale game starting:', data)
+    showToast(`Game starting in ${data.countdown} seconds!`, 'success')
+    
+    // Update server state to show starting phase
+    setServerState(prev => ({
+      ...prev,
+      phase: 'starting',
+      gamePhase: 'starting',
+      countdown: data.countdown
+    }))
+  }, [showToast])
+
   // Handle coin change
   const handleCoinChange = useCallback((playerAddress) => {
     setSelectedPlayerForCoinChange(playerAddress)
@@ -564,6 +577,12 @@ const BattleRoyaleGameRoom = ({
 
   // Handle proceed with early start
   const handleProceedStart = useCallback(() => {
+    console.log('🚀 Proceeding with early start!', {
+      gameId,
+      address,
+      serverState: serverState?.phase,
+      currentPlayers: serverState?.currentPlayers
+    })
     try {
       socketService.emit('battle_royale_start_early', {
         gameId,
@@ -576,7 +595,7 @@ const BattleRoyaleGameRoom = ({
       showToast('Failed to start game', 'error')
     }
     setShowStartNowWarning(false)
-  }, [gameId, address, showToast])
+  }, [gameId, address, showToast, serverState])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
@@ -592,6 +611,7 @@ const BattleRoyaleGameRoom = ({
         // Register event listeners
         socketService.on('room_joined', handleRoomJoined)
         socketService.on('battle_royale_state_update', handleGameStateUpdate)
+        socketService.on('battle_royale_starting', handleGameStarting)
         socketService.on('battle_royale_target_reveal', handleTargetReveal)
         socketService.on('battle_royale_flips_executing', handleFlipsExecuting)
         socketService.on('battle_royale_round_result', handleRoundResult)

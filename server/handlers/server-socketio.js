@@ -19,6 +19,12 @@ class GameServer {
     this.battleRoyaleRooms = new Map() // gameId -> Set of socketIds
     this.io = null
     this.dbService = null
+    
+    console.log(`🏗️ GameServer initialized:`, {
+      gameStateManager: !!this.gameStateManager,
+      battleRoyaleManager: !!this.battleRoyaleManager,
+      battleRoyaleHandlers: !!this.battleRoyaleHandlers
+    })
   }
 
   // ===== INITIALIZATION =====
@@ -83,7 +89,11 @@ class GameServer {
       socket.on('battle_royale_update_coin', (data) => this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(socket, data, this.battleRoyaleManager, this.io))
       socket.on('spectate_battle_royale', (data) => this.battleRoyaleHandlers.handleSpectateBattleRoyale(socket, data, this.battleRoyaleManager))
       socket.on('request_battle_royale_state', (data) => this.battleRoyaleHandlers.handleRequestBattleRoyaleState(socket, data, this.battleRoyaleManager))
-      socket.on('battle_royale_start_early', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(socket, data, this.battleRoyaleManager, this.io, this.dbService))
+      socket.on('battle_royale_start_early', (data) => {
+        console.log(`🎯 Socket.IO received battle_royale_start_early event from socket ${socket.id}`)
+        console.log(`📥 Event data:`, data)
+        this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(socket, data, this.battleRoyaleManager, this.io, this.dbService)
+      })
       
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))

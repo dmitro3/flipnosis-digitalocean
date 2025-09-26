@@ -30,8 +30,9 @@ class BattleRoyaleGameManager {
   }
 
   // ===== GAME CREATION =====
-  createBattleRoyale(gameId, gameData) {
+  createBattleRoyale(gameId, gameData, dbService = null) {
     console.log(`🎮 Creating Battle Royale game: ${gameId}`)
+    console.log(`📊 Game data received:`, gameData)
     
     const battleRoyaleState = {
       // Core identifiers
@@ -87,12 +88,45 @@ class BattleRoyaleGameManager {
     }
 
     this.battleRoyaleGames.set(gameId, battleRoyaleState)
-    console.log(`✅ Battle Royale game created: ${gameId}`)
+    console.log(`✅ Battle Royale game created in memory: ${gameId}`)
+    
+    // Save to database if dbService is provided
+    if (dbService) {
+      this.saveGameToDatabase(gameId, gameData, dbService)
+    } else {
+      console.warn(`⚠️ No database service provided - game ${gameId} will not persist across server restarts`)
+    }
     
     // Automatically add the creator as the first player (slot 0) for free
     this.addCreatorAsPlayer(gameId, gameData.creator)
     
     return battleRoyaleState
+  }
+
+  // ===== DATABASE PERSISTENCE =====
+  async saveGameToDatabase(gameId, gameData, dbService) {
+    try {
+      console.log(`💾 Saving Battle Royale game to database: ${gameId}`)
+      
+      const dbGameData = {
+        id: gameId,
+        creator: gameData.creator,
+        nft_contract: gameData.nftContract,
+        nft_token_id: gameData.nftTokenId,
+        nft_name: gameData.nftName,
+        nft_image: gameData.nftImage,
+        nft_collection: gameData.nftCollection,
+        nft_chain: gameData.nftChain || 'base',
+        entry_fee: gameData.entryFee,
+        service_fee: gameData.serviceFee,
+        max_players: 8
+      }
+      
+      await dbService.createBattleRoyaleGame(dbGameData)
+      console.log(`✅ Battle Royale game saved to database: ${gameId}`)
+    } catch (error) {
+      console.error(`❌ Failed to save Battle Royale game to database: ${gameId}`, error)
+    }
   }
 
   // ===== PLAYER MANAGEMENT =====
@@ -269,9 +303,19 @@ class BattleRoyaleGameManager {
   // ===== GAME START =====
   prepareGameStart(gameId, broadcastFn) {
     const game = this.battleRoyaleGames.get(gameId)
-    if (!game) return false
+    if (!game) {
+      console.error(`❌ Game not found in prepareGameStart: ${gameId}`)
+      return false
+    }
 
     console.log(`🎮 Preparing to start Battle Royale: ${gameId}`)
+    console.log(`📊 Game state before start:`, {
+      phase: game.phase,
+      currentPlayers: game.currentPlayers,
+      maxPlayers: game.maxPlayers,
+      activePlayers: game.activePlayers.size,
+      creator: game.creator
+    })
     
     game.phase = this.PHASES.STARTING
     game.startedAt = new Date().toISOString()
@@ -279,18 +323,24 @@ class BattleRoyaleGameManager {
 
     // 3-second countdown before first round
     if (broadcastFn) {
-      broadcastFn(`br_${gameId}`, 'battle_royale_starting', {
+      const startEvent = {
         gameId,
         countdown: 3,
         message: 'Battle Royale starting in 3 seconds!'
-      })
+      }
+      console.log(`📡 Broadcasting battle_royale_starting event:`, startEvent)
+      broadcastFn(`br_${gameId}`, 'battle_royale_starting', startEvent)
+    } else {
+      console.warn(`⚠️ No broadcast function provided for game start: ${gameId}`)
     }
 
     // Start first round after countdown
     setTimeout(() => {
+      console.log(`⏰ Starting first round for game: ${gameId}`)
       this.startNextRound(gameId, broadcastFn)
     }, 3000)
 
+    console.log(`✅ Game start preparation completed for: ${gameId}`)
     return true
   }
 
