@@ -5,7 +5,7 @@ import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import socketService from '../../services/SocketService'
-import Single3DCoin from './Single3DCoin'
+import BattleRoyale3DCoins from './BattleRoyale3DCoins'
 import ProfilePicture from '../ProfilePicture'
 import CoinSelector from '../CoinSelector'
 import './BattleRoyaleCoins.css'
@@ -816,7 +816,37 @@ const BattleRoyaleGameRoom = ({
       </RoundHeader>
 
 
-      {/* 3D coins will be rendered within each PlayerCard instead of as a separate component */}
+      {/* 3D coins component - shows when game is active */}
+      {serverState?.gamePhase && 
+       serverState.gamePhase !== 'filling' && 
+       serverState.gamePhase !== 'waiting_players' &&
+       serverState?.playerSlots?.filter(Boolean).length > 0 && (
+        <BattleRoyale3DCoins
+          players={serverState?.playerSlots?.map((playerAddress, index) => {
+            if (!playerAddress) return null
+            const player = serverState.players?.[playerAddress.toLowerCase()]
+            return {
+              address: playerAddress,
+              coin: player?.coin,
+              index
+            }
+          }).filter(Boolean) || []}
+          gamePhase={serverState?.gamePhase}
+          flipStates={Object.fromEntries(
+            Object.entries(serverState?.players || {}).map(([address, player]) => [
+              address,
+              player.coinState
+            ])
+          )}
+          onFlipComplete={(playerAddress, result) => {
+            console.log(`Player ${playerAddress} flip complete: ${result}`)
+            // TODO: Send flip choice to server
+          }}
+          playerCoinImages={playerCoinImages}
+          coinSides={coinSides} // Pass the user's chosen coin sides
+          size={240}
+        />
+      )}
 
       <PlayersGrid>
         {serverState?.playerSlots?.map((playerAddress, index) => {
@@ -850,48 +880,26 @@ const BattleRoyaleGameRoom = ({
                 </div>
               </div>
               
-              {/* Coin display - 2D image in lobby, 3D coin in game */}
-              <div className="coin-placeholder">
-                {serverState?.gamePhase === 'filling' ? (
-                  // 2D coin image for lobby phase
-                  <>
-                    <img 
-                      src={
-                        coinSides[playerAddress] === 'tails' 
-                          ? (playerCoinImages[playerAddress]?.tailsImage || '/coins/plaint.png')
-                          : (playerCoinImages[playerAddress]?.headsImage || '/coins/plainh.png')
-                      }
-                      alt={`Player ${index + 1} coin`}
-                      className="coin-image clickable"
-                      onClick={() => toggleCoinSide(playerAddress)}
-                    />
-                    <div className="coin-slot-number">{index + 1}</div>
-                    <div className="coin-side-indicator">
-                      {coinSides[playerAddress] === 'tails' ? 'Tails' : 'Heads'}
-                    </div>
-                  </>
-                ) : (
-                  // 3D coin for active game phases
-                  <>
-                    <Single3DCoin
-                      playerAddress={playerAddress}
-                      coinData={player?.coin}
-                      playerIndex={index}
-                      gamePhase={serverState?.gamePhase}
-                      isFlippable={true}
-                      onFlip={(playerAddress, result) => {
-                        console.log(`Player ${playerAddress} flipped: ${result}`)
-                        // TODO: Send flip choice to server
-                      }}
-                      playerCoinImages={playerCoinImages}
-                      size={200}
-                    />
-                    <div className="coin-slot-number">{index + 1}</div>
-                  </>
-                )}
-                
-                {/* Change Coin Button for current user - only show in lobby */}
-                {isCurrentUser && serverState?.gamePhase === 'filling' && (
+              {/* Coin display - Only show 2D images in lobby phase */}
+              {serverState?.gamePhase === 'filling' && (
+                <div className="coin-placeholder">
+                  <img 
+                    src={
+                      coinSides[playerAddress] === 'tails' 
+                        ? (playerCoinImages[playerAddress]?.tailsImage || '/coins/plaint.png')
+                        : (playerCoinImages[playerAddress]?.headsImage || '/coins/plainh.png')
+                    }
+                    alt={`Player ${index + 1} coin`}
+                    className="coin-image clickable"
+                    onClick={() => toggleCoinSide(playerAddress)}
+                  />
+                  <div className="coin-slot-number">{index + 1}</div>
+                  <div className="coin-side-indicator">
+                    {coinSides[playerAddress] === 'tails' ? 'Tails' : 'Heads'}
+                  </div>
+                  
+                  {/* Change Coin Button for current user - only show in lobby */}
+                  {isCurrentUser && (
                   <button 
                     className="coin-change-button"
                     onClick={(e) => {
@@ -901,8 +909,9 @@ const BattleRoyaleGameRoom = ({
                   >
                     Change Coin
                   </button>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
               
               {player?.choice && !player?.coinState?.isFlipping && (
                 <div className="choice-display">
