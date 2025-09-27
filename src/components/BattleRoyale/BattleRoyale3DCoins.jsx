@@ -456,6 +456,53 @@ const BattleRoyale3DCoins = ({
                 <span>{isCurrentUser ? 'You' : 'Player'}</span>
               </div>
 
+              {/* Flip Button for current user */}
+              {isCurrentUser && safeGamePhase === 'charging_power' && (
+                <button
+                  style={{
+                    background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    padding: '0.75rem 1rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    marginTop: '0.5rem',
+                    boxShadow: '0 2px 10px rgba(0, 255, 136, 0.3)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseDown={() => {
+                    console.log('🔋 Flip button pressed - starting power charge')
+                    if (onPowerChargeStart) {
+                      onPowerChargeStart()
+                    }
+                  }}
+                  onMouseUp={() => {
+                    console.log('🔋 Flip button released - executing flip')
+                    if (onPowerChargeStop) {
+                      onPowerChargeStop(5) // Default power
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault()
+                    console.log('🔋 Flip button touch start - starting power charge')
+                    if (onPowerChargeStart) {
+                      onPowerChargeStart()
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault()
+                    console.log('🔋 Flip button touch end - executing flip')
+                    if (onPowerChargeStop) {
+                      onPowerChargeStop(5) // Default power
+                    }
+                  }}
+                >
+                  🪙 Hold to Flip
+                </button>
+              )}
+
               {/* Win/Loss indicator */}
               {flipState.flipResult && (
                 <div style={{

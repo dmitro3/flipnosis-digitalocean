@@ -358,10 +358,8 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   }, [serverState, address])
 
   const canMakeChoice = useCallback(() => {
-    if (!serverState || !isMyTurn()) return false
-    
-    const myChoice = isCreator() ? serverState.creatorChoice : serverState.challengerChoice
-    return serverState.gamePhase === 'waiting_choice' && !myChoice
+    // Battle Royale doesn't use choices - power charging only
+    return false
   }, [serverState, isMyTurn, isCreator])
 
   const canChargePower = useCallback(() => {
@@ -552,12 +550,11 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
   const handleNewRound = useCallback((data) => {
     console.log('🔄 New round event received in FlipSuiteFinal:', data)
     
-    // Update server state with new round information
+    // Update server state with new round information - Battle Royale
     setServerState(prev => ({
       ...prev,
       currentRound: data.currentRound,
-      currentTurn: data.currentTurn,
-      gamePhase: 'waiting_choice',
+      gamePhase: data.gamePhase || 'revealing_target', // Use server phase
       // Reset choices for new round
       creatorChoice: null,
       challengerChoice: null,

@@ -943,12 +943,11 @@ const GameRoomTab = ({
       // Restart the countdown for the new round
       setRoundCountdown(20)
       
-      // Update game state with new round info
+      // Update game state with new round info - Battle Royale
       setGameState(prev => ({
         ...prev,
         currentRound: data.currentRound,
-        currentTurn: data.currentTurn,
-        gamePhase: 'waiting_choice',
+        gamePhase: data.gamePhase || 'revealing_target', // Use server phase
         // Reset choices for new round
         creatorChoice: null,
         challengerChoice: null,
@@ -1290,35 +1289,21 @@ const GameRoomTab = ({
             </>
           )}
 
-          {/* Choice Buttons */}
-          {gameState.gamePhase === 'waiting_choice' && 
-           gameState.currentTurn?.toLowerCase() === address?.toLowerCase() && (
-            <ChoiceButtons>
-              <ChoiceButton 
-                choice="heads" 
-                onClick={() => socket.emit('player_choice', { gameId, address, choice: 'heads' })}
-              >
-                👑 Heads
-              </ChoiceButton>
-              <ChoiceButton 
-                choice="tails" 
-                onClick={() => socket.emit('player_choice', { gameId, address, choice: 'tails' })}
-              >
-                💎 Tails
-              </ChoiceButton>
-            </ChoiceButtons>
+          {/* Battle Royale doesn't use choice buttons */}
+          {gameState.gamePhase === 'charging_power' && (
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <div style={{ color: '#00ff88', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                🔋 Power Charging Phase - Hold coin to charge!
+              </div>
+            </div>
           )}
 
-          {/* Waiting for other player */}
-          {gameState.gamePhase === 'waiting_choice' && 
-           gameState.currentTurn?.toLowerCase() !== address?.toLowerCase() && (
+          {/* Waiting for target reveal */}
+          {gameState.gamePhase === 'revealing_target' && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-              <OpponentChoosingMessage>
-                🤔 {gameState.currentTurn?.toLowerCase() === gameState.creator?.toLowerCase() ? 'Creator' : 'Challenger'} is choosing...
-              </OpponentChoosingMessage>
-              <TurnIndicator isMyTurn={false}>
-                {gameState.currentTurn?.slice(0, 6)}...{gameState.currentTurn?.slice(-4)} is making their choice
-              </TurnIndicator>
+              <div style={{ color: '#ff6b35', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                🎯 Target Revealing...
+              </div>
             </div>
           )}
 
