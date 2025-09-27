@@ -32,22 +32,8 @@ class BattleRoyaleSocketHandlers {
     console.log(`✅ ${address} joined Battle Royale room ${gameId}`)
   }
 
-  // Player Choice Handler
-  async handleBattleRoyalePlayerChoice(socket, data, battleRoyaleManager, io) {
-    const { gameId, address, choice } = data
-    console.log(`🎯 Battle Royale choice: ${address} chose ${choice} in ${gameId}`)
-    
-    const success = battleRoyaleManager.setPlayerChoice(gameId, address, choice)
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot set choice' })
-      return
-    }
-
-    // Broadcast updated state to all players
-    const roomId = `br_${gameId}`
-    const fullState = battleRoyaleManager.getFullGameState(gameId)
-    io.to(roomId).emit('battle_royale_state_update', fullState)
-  }
+  // Player Choice Handler (REMOVED - Battle Royale doesn't use player choices)
+  // Players don't choose heads/tails - server randomly selects target
 
   // Start Power Charging
   async handleBattleRoyaleStartPowerCharge(socket, data, battleRoyaleManager, io) {

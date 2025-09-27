@@ -281,14 +281,32 @@ const BattleRoyale3DCoins = ({
         boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)'
       }}>
         {safeGamePhase === 'starting' && 'Game Starting...'}
-        {safeGamePhase === 'revealing_target' && 'Revealing Target...'}
-        {safeGamePhase === 'waiting_choice' && 'Make Your Choice!'}
-        {safeGamePhase === 'charging_power' && 'Charge Your Power!'}
+        {safeGamePhase === 'revealing_target' && 'Target Revealed!'}
+        {safeGamePhase === 'charging_power' && `Charge Your Power! ${serverState?.roundCountdown ? `(${serverState.roundCountdown}s)` : ''}`}
         {safeGamePhase === 'executing_flips' && 'Flipping...'}
         {safeGamePhase === 'showing_result' && 'Round Complete!'}
         {safeGamePhase === 'completed' && 'Game Over!'}
         {safeGamePhase === 'game_complete' && 'Game Complete!'}
       </div>
+      
+      {/* Prominent countdown timer */}
+      {safeGamePhase === 'charging_power' && serverState?.roundCountdown > 0 && (
+        <div style={{
+          background: serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.2)' : 'rgba(0, 191, 255, 0.2)',
+          color: serverState.roundCountdown <= 5 ? '#ff1493' : '#00bfff',
+          padding: '1rem 2rem',
+          borderRadius: '1rem',
+          border: `3px solid ${serverState.roundCountdown <= 5 ? '#ff1493' : '#00bfff'}`,
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          textShadow: `0 0 20px ${serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.8)' : 'rgba(0, 191, 255, 0.8)'}`,
+          animation: serverState.roundCountdown <= 5 ? 'pulse 0.5s ease-in-out infinite' : 'none',
+          boxShadow: `0 0 30px ${serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.5)' : 'rgba(0, 191, 255, 0.5)'}`
+        }}>
+          ⏰ {serverState.roundCountdown}s
+        </div>
+      )}
 
       {/* Player coins grid */}
       <div style={{

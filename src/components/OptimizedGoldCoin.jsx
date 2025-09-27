@@ -567,10 +567,10 @@ const OptimizedGoldCoin = React.memo(({
       chargingPlayer,
       isCharging,
       hasMadeChoice,
-      canInteract: (isPlayerTurn || hasMadeChoice) && (gamePhase === 'charging' || gamePhase === 'active' || hasMadeChoice)
+      canInteract: (isPlayerTurn || hasMadeChoice) && (gamePhase === 'charging' || gamePhase === 'active' || gamePhase === 'charging_power' || hasMadeChoice)
     })
     
-    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && !hasMadeChoice)) {
+    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power' && !hasMadeChoice)) {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }
@@ -660,7 +660,7 @@ const OptimizedGoldCoin = React.memo(({
       hasMadeChoice
     })
     
-    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && !hasMadeChoice)) {
+    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power' && !hasMadeChoice)) {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }

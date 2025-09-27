@@ -63,9 +63,15 @@ const RoundHeader = styled.div`
   }
   
   .timer {
-    color: ${props => props.timeLeft <= 5 ? '#ff1493' : props.theme.colors.neonBlue};
-    font-size: 1.2rem;
+    color: ${props => props.timeLeft <= 5 ? '#ff1493' : '#00bfff'};
+    font-size: 1.4rem;
     font-weight: bold;
+    text-shadow: 0 0 10px ${props => props.timeLeft <= 5 ? 'rgba(255, 20, 147, 0.8)' : 'rgba(0, 191, 255, 0.8)'};
+    background: ${props => props.timeLeft <= 5 ? 'rgba(255, 20, 147, 0.1)' : 'rgba(0, 191, 255, 0.1)'};
+    border: 1px solid ${props => props.timeLeft <= 5 ? 'rgba(255, 20, 147, 0.3)' : 'rgba(0, 191, 255, 0.3)'};
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin-top: 0.5rem;
     animation: ${props => props.timeLeft <= 5 ? 'pulse 0.5s ease-in-out infinite' : 'none'};
   }
   
@@ -385,15 +391,7 @@ const BattleRoyaleGameRoom = ({
     return myPlayer && myPlayer.status !== 'eliminated'
   }, [serverState, address])
 
-  const canMakeChoice = useCallback(() => {
-    if (!serverState || !address) return false
-    
-    const myPlayer = serverState.players?.[address.toLowerCase()]
-    return serverState.gamePhase === 'waiting_choice' && 
-           myPlayer && 
-           myPlayer.status !== 'eliminated' &&
-           !myPlayer.choice
-  }, [serverState, address])
+  // REMOVED: canMakeChoice - Battle Royale doesn't use player choices
 
   const canChargePower = useCallback(() => {
     if (!serverState || !address) return false
@@ -402,7 +400,6 @@ const BattleRoyaleGameRoom = ({
     return serverState.gamePhase === 'charging_power' && 
            myPlayer && 
            myPlayer.status !== 'eliminated' &&
-           myPlayer.choice && 
            !myPlayer.hasFlipped
   }, [serverState, address])
 
@@ -670,18 +667,7 @@ const BattleRoyaleGameRoom = ({
   }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleGameStarting, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
 
   // ===== USER ACTIONS =====
-  const handleChoice = useCallback((choice) => {
-    if (!canMakeChoice()) return
-    
-    console.log('🎯 Sending choice to server:', choice)
-    socketService.emit('battle_royale_player_choice', {
-      gameId,
-      address,
-      choice
-    })
-    
-    showToast(`You chose ${choice}!`, 'success')
-  }, [canMakeChoice, gameId, address, showToast])
+  // REMOVED: handleChoice - Battle Royale doesn't use player choices
 
   const handlePowerChargeStart = useCallback(() => {
     if (!canChargePower()) return
@@ -795,7 +781,7 @@ const BattleRoyaleGameRoom = ({
       case 'revealing_target':
         return 'Revealing target for this round...'
       case 'waiting_choice':
-        return isAlive ? 'Choose heads or tails!' : 'Players are choosing...'
+        return 'Waiting for game to start...'
       case 'charging_power':
         return isAlive ? 'Hold to charge power!' : 'Players are charging power...'
       case 'executing_flips':
@@ -879,23 +865,7 @@ const BattleRoyaleGameRoom = ({
         <ActionPanel>
           <div className="action-title">Your Actions</div>
           
-          {/* Choice Phase */}
-          {canMakeChoice() && (
-            <div className="choice-buttons">
-              <button
-                className="heads"
-                onClick={() => handleChoice('heads')}
-              >
-                👑 Heads
-              </button>
-              <button
-                className="tails"
-                onClick={() => handleChoice('tails')}
-              >
-                🗿 Tails
-              </button>
-            </div>
-          )}
+          {/* REMOVED: Choice Phase - Battle Royale doesn't use player choices */}
           
           {/* Power Charging Phase */}
           {canChargePower() && (

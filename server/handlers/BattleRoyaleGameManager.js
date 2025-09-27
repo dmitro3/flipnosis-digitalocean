@@ -415,13 +415,40 @@ class BattleRoyaleGameManager {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return false
 
-    game.gamePhase = this.ROUND_PHASES.WAITING_CHOICE
-    game.roundPhase = this.ROUND_PHASES.WAITING_CHOICE
+    // First, reveal the target (server randomly chooses heads or tails)
+    game.gamePhase = this.ROUND_PHASES.REVEALING_TARGET
+    game.roundPhase = this.ROUND_PHASES.REVEALING_TARGET
+    
+    // Server randomly selects the target
+    game.targetResult = Math.random() < 0.5 ? 'heads' : 'tails'
+    game.lastActivity = Date.now()
+
+    console.log(`🎯 Server selected target: ${game.targetResult} for round ${game.currentRound}`)
+
+    // Show target for 3 seconds, then transition to power charging
+    if (broadcastFn) {
+      const state = this.getFullGameState(gameId)
+      broadcastFn(`br_${gameId}`, 'battle_royale_state_update', state)
+    }
+
+    setTimeout(() => {
+      this.startPowerChargingPhase(gameId, broadcastFn)
+    }, 3000)
+
+    return true
+  }
+
+  startPowerChargingPhase(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    game.gamePhase = this.ROUND_PHASES.CHARGING_POWER
+    game.roundPhase = this.ROUND_PHASES.CHARGING_POWER
     game.roundCountdown = 20
     game.roundDeadline = Date.now() + 20000
     game.lastActivity = Date.now()
 
-    console.log(`⏰ Starting 20-second choice/flip phase for round ${game.currentRound}`)
+    console.log(`⏰ Starting 20-second power charging phase for round ${game.currentRound}`)
 
     // Start countdown timer
     const countdownInterval = setInterval(() => {
@@ -435,7 +462,7 @@ class BattleRoyaleGameManager {
       
       if (game.roundCountdown <= 0) {
         clearInterval(countdownInterval)
-        this.processRoundResults(gameId, broadcastFn)
+        this.executeAllFlips(gameId, broadcastFn)
       }
       
       // Broadcast state update with countdown
@@ -450,25 +477,40 @@ class BattleRoyaleGameManager {
   }
 
   // ===== PLAYER ACTIONS =====
-  setPlayerChoice(gameId, playerAddress, choice) {
+  executeAllFlips(gameId, broadcastFn) {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return false
 
-    const player = game.players.get(playerAddress)
-    if (!player) return false
+    console.log(`🎲 Executing all flips for round ${game.currentRound}`)
+    
+    game.gamePhase = this.ROUND_PHASES.EXECUTING_FLIPS
+    game.lastActivity = Date.now()
 
-    if (!game.activePlayers.has(playerAddress)) {
-      console.error(`❌ Player not active: ${playerAddress}`)
-      return false
+    // Execute flips for all active players
+    const flipResults = new Map()
+    for (const [playerAddress, player] of game.players) {
+      if (game.activePlayers.has(playerAddress)) {
+        // Random flip result
+        const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
+        flipResults.set(playerAddress, flipResult)
+        player.flipResult = flipResult
+        
+        console.log(`🎲 ${playerAddress} flipped: ${flipResult}`)
+      }
     }
 
-    player.choice = choice
-    game.lastActivity = Date.now()
-    
-    // Transition to power phase once choice is made
-    game.gamePhase = this.ROUND_PHASES.CHARGING_POWER
-    
-    console.log(`🎯 ${playerAddress} chose ${choice} in round ${game.currentRound}`)
+    // Broadcast flip execution
+    if (broadcastFn) {
+      const state = this.getFullGameState(gameId)
+      state.playerFlipResults = Object.fromEntries(flipResults)
+      broadcastFn(`br_${gameId}`, 'battle_royale_state_update', state)
+    }
+
+    // After 3 seconds, process results
+    setTimeout(() => {
+      this.processRoundResults(gameId, broadcastFn)
+    }, 3000)
+
     return true
   }
 
@@ -477,7 +519,7 @@ class BattleRoyaleGameManager {
     if (!game) return false
 
     const player = game.players.get(playerAddress)
-    if (!player || !player.choice) return false
+    if (!player) return false
 
     // Initialize power timer map for this game if not exists
     if (!this.powerTimers.has(gameId)) {
