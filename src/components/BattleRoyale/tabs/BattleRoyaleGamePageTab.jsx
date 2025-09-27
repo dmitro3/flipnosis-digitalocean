@@ -10,6 +10,7 @@ import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import socketService from '../../../services/SocketService'
 import BattleRoyale3DCoins from '../BattleRoyale3DCoins'
+import HeadsTailsDisplay from '../HeadsTailsDisplay'
 import CoinSelector from '../../CoinSelector'
 import '../BattleRoyaleCoins.css'
 
@@ -234,6 +235,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const [playerCoins, setPlayerCoins] = useState({}) // Store each player's coin choice
   const [playerCoinImages, setPlayerCoinImages] = useState({}) // Store actual coin images for each player
   const [coinSides, setCoinSides] = useState({}) // Track which side (heads/tails) is showing for each player
+  
+  // Game state for when game is active
+  const [gamePhase, setGamePhase] = useState('filling') // 'filling', 'starting', 'revealing_target', 'charging_power', 'executing_flips', 'showing_result', 'completed'
+  const [targetResult, setTargetResult] = useState(null) // 'heads' or 'tails'
+  const [timeLeft, setTimeLeft] = useState(20) // Time left for power charging
+  const [isRevealing, setIsRevealing] = useState(false) // Whether target is being revealed
+  const [flipStates, setFlipStates] = useState({}) // Track flip states for each player
 
   // Load coin images for a player
   const loadPlayerCoinImages = React.useCallback(async (playerAddress, coinChoice) => {
@@ -320,20 +328,71 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           if (mounted) {
             setGameStatus(newGameStatus)
             
+            // Update game phase based on server data
+            if (data.gamePhase) {
+              setGamePhase(data.gamePhase)
+              
+              // Handle target revealing
+              if (data.gamePhase === 'revealing_target') {
+                setIsRevealing(true)
+                // Simulate target selection (this should come from server)
+                setTimeout(() => {
+                  const result = Math.random() < 0.5 ? 'heads' : 'tails'
+                  setTargetResult(result)
+                  setIsRevealing(false)
+                  setGamePhase('charging_power')
+                  showToast(`Target side: ${result.toUpperCase()}!`, 'info')
+                }, 2000)
+              }
+              
+              // Handle power charging phase
+              if (data.gamePhase === 'charging_power') {
+                setTimeLeft(20) // Reset timer
+                // Start countdown
+                const timer = setInterval(() => {
+                  setTimeLeft(prev => {
+                    if (prev <= 1) {
+                      clearInterval(timer)
+                      setGamePhase('executing_flips')
+                      return 0
+                    }
+                    return prev - 1
+                  })
+                }, 1000)
+              }
+              
+              // Handle flip execution
+              if (data.gamePhase === 'executing_flips') {
+                // Trigger flips for all players
+                players.forEach((player, index) => {
+                  if (player?.address) {
+                    setFlipStates(prev => ({
+                      ...prev,
+                      [player.address]: {
+                        isFlipping: true,
+                        flipStartTime: Date.now(),
+                        flipDuration: 3000,
+                        flipResult: Math.random() < 0.5 ? 'heads' : 'tails'
+                      }
+                    }))
+                  }
+                })
+                
+                // Complete flips after duration
+                setTimeout(() => {
+                  setGamePhase('showing_result')
+                  setFlipStates({})
+                }, 3000)
+              }
+            }
+            
             // Don't redirect if game is completed
             if (newGameStatus === 'completed') {
               console.log('Game is completed, not redirecting')
               return
             }
             
-            // Only redirect if game is actually starting or in progress
-            if (newGameStatus === 'starting' || newGameStatus === 'in_progress') {
-              setTimeout(() => {
-                if (mounted) {
-                  navigate(`/battle-royale/${gameId}/play`)
-                }
-              }, 500)
-            }
+            // Game will now stay in the same tab instead of redirecting
           }
 
           // preload coin images
@@ -626,6 +685,71 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         }}>
           Loading Battle Royale Game Page...
         </div>
+      </TabContainer>
+    )
+  }
+
+  // Show game interface when game is active
+  if (gameStatus === 'starting' || gameStatus === 'in_progress') {
+    return (
+      <TabContainer>
+        {/* Heads/Tails Display */}
+        <HeadsTailsDisplay
+          gamePhase={gamePhase}
+          targetResult={targetResult}
+          timeLeft={timeLeft}
+          isRevealing={isRevealing}
+        />
+        
+        {/* Game Status */}
+        <GameStatus>
+          <div className="status-text">
+            {gamePhase === 'starting' && 'Game Starting...'}
+            {gamePhase === 'revealing_target' && 'Revealing Target...'}
+            {gamePhase === 'charging_power' && 'Charge Your Power!'}
+            {gamePhase === 'executing_flips' && 'Flipping...'}
+            {gamePhase === 'showing_result' && 'Round Complete!'}
+            {gamePhase === 'completed' && 'Game Over!'}
+          </div>
+          <div className="players-count">
+            {currentPlayers} / 8 Players
+          </div>
+        </GameStatus>
+
+        {/* Game Coins */}
+        <BattleRoyale3DCoins
+          players={players.map((player, index) => ({
+            address: player?.address,
+            coin: player?.coin || playerCoins[player?.address],
+            isEliminated: false,
+            slotIndex: index
+          }))}
+          gamePhase={gamePhase}
+          serverState={null}
+          flipStates={flipStates}
+          onFlipComplete={(playerAddress, result) => {
+            console.log(`Player ${playerAddress} flipped: ${result}`)
+          }}
+          playerCoinImages={playerCoinImages}
+          isCreator={isCreator}
+          currentUserAddress={address}
+          size={120}
+          onSlotClick={() => {}}
+          canJoin={false}
+          isJoining={false}
+          coinSides={coinSides}
+          onCoinSideToggle={() => {}}
+          onCoinChange={() => {}}
+          onPowerRelease={(playerAddress, power) => {
+            console.log(`Player ${playerAddress} released power: ${power}`)
+            // Emit power to server
+            socketService.emit('battle_royale_power_release', {
+              gameId,
+              playerAddress,
+              power
+            })
+          }}
+        />
       </TabContainer>
     )
   }

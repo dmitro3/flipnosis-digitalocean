@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as THREE from 'three'
+import OptimizedGoldCoin from '../OptimizedGoldCoin'
 
 // Separate 2D Lobby Component
 const Lobby2DDisplay = ({ 
@@ -197,7 +198,8 @@ const BattleRoyale3DCoins = ({
   isJoining = false,
   coinSides = {},
   onCoinSideToggle = () => {},
-  onCoinChange = () => {}
+  onCoinChange = () => {},
+  onPowerRelease = () => {}
 }) => {
   // Refs
   const mountRef = useRef(null)
@@ -212,6 +214,7 @@ const BattleRoyale3DCoins = ({
   const [hoveredSlot, setHoveredSlot] = useState(null)
   const [quality] = useState('high')
   const [isSceneReady, setIsSceneReady] = useState(false)
+  const [localFlipStates, setLocalFlipStates] = useState(flipStates)
   
   // Safe game phase check
   const safeGamePhase = gamePhase || 'filling'
@@ -230,302 +233,10 @@ const BattleRoyale3DCoins = ({
     }
   }, [onFlipComplete])
   
-  // Initialize 3D scene
+  // Set scene ready since we're using individual OptimizedGoldCoin components
   useEffect(() => {
-    if (!shouldUse3D || !mountRef.current) {
-      setIsSceneReady(false)
-      return
-    }
-    
-    let mounted = true
-    const textureLoader = new THREE.TextureLoader()
-    
-    // Create scene
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x0a0a0a)
-    sceneRef.current = scene
-    
-    // Camera setup - adjusted for better view
-    const camera = new THREE.PerspectiveCamera(
-      45, // Reduced FOV for less distortion
-      mountRef.current.clientWidth / mountRef.current.clientHeight,
-      0.1,
-      100
-    )
-    camera.position.set(0, 8, 15) // Moved camera back and up
-    camera.lookAt(0, 0, 0)
-    cameraRef.current = camera
-    
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true,
-      alpha: true
-    })
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.shadowMap.enabled = quality === 'high'
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    rendererRef.current = renderer
-    
-    if (mounted && mountRef.current) {
-      mountRef.current.appendChild(renderer.domElement)
-    }
-    
-    // Lighting setup - improved
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-    scene.add(ambientLight)
-    
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1)
-    keyLight.position.set(5, 10, 5)
-    keyLight.castShadow = quality === 'high'
-    if (quality === 'high') {
-      keyLight.shadow.camera.near = 0.5
-      keyLight.shadow.camera.far = 50
-      keyLight.shadow.camera.left = -10
-      keyLight.shadow.camera.right = 10
-      keyLight.shadow.camera.top = 10
-      keyLight.shadow.camera.bottom = -10
-    }
-    scene.add(keyLight)
-    
-    const fillLight = new THREE.DirectionalLight(0x4488ff, 0.5)
-    fillLight.position.set(-5, 5, 0)
-    scene.add(fillLight)
-    
-    const rimLight = new THREE.PointLight(0xff1493, 0.8, 20)
-    rimLight.position.set(0, 5, -8)
-    scene.add(rimLight)
-    
-    // Add a ground plane for reference
-    const groundGeometry = new THREE.PlaneGeometry(20, 20)
-    const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1a1a1a,
-      roughness: 0.8,
-      metalness: 0.2
-    })
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial)
-    ground.rotation.x = -Math.PI / 2
-    ground.position.y = -1
-    ground.receiveShadow = true
-    scene.add(ground)
-    
-    // Create coins with proper materials
-    const coins = []
-    for (let i = 0; i < 8; i++) {
-      const playerData = players[i]
-      
-      if (playerData?.address) {
-        try {
-          const { address, isEliminated = false } = playerData
-          
-          // Create coin geometry
-          const geometry = new THREE.CylinderGeometry(0.8, 0.8, 0.15, 32, 1)
-          
-          // Create materials array for multi-material mesh
-          const materials = []
-          
-          // Edge material (sides of the coin)
-          materials.push(new THREE.MeshStandardMaterial({
-            color: isEliminated ? 0x666666 : 0xFFD700,
-            metalness: 0.7,
-            roughness: 0.3
-          }))
-          
-          // Top material (heads)
-          const headsImage = playerCoinImages[address]?.headsImage || '/coins/plainh.png'
-          materials.push(new THREE.MeshStandardMaterial({
-            map: textureLoader.load(headsImage),
-            color: isEliminated ? 0x666666 : 0xffffff
-          }))
-          
-          // Bottom material (tails)
-          const tailsImage = playerCoinImages[address]?.tailsImage || '/coins/plaint.png'
-          materials.push(new THREE.MeshStandardMaterial({
-            map: textureLoader.load(tailsImage),
-            color: isEliminated ? 0x666666 : 0xffffff
-          }))
-          
-          const mesh = new THREE.Mesh(geometry, materials)
-          
-          // Position coins in a 4x2 grid
-          const cols = 4
-          const col = i % cols
-          const row = Math.floor(i / cols)
-          const spacing = 3
-          const x = (col - 1.5) * spacing
-          const z = (row - 0.5) * spacing
-          
-          mesh.position.set(x, 0, z)
-          mesh.castShadow = true
-          mesh.receiveShadow = true
-          
-          // Store metadata
-          mesh.userData = {
-            playerAddress: address,
-            slotIndex: i,
-            isEliminated,
-            originalY: 0
-          }
-          
-          scene.add(mesh)
-          coins.push(mesh)
-        } catch (error) {
-          console.error('Error creating coin for player:', i, error)
-          coins.push(null)
-        }
-      } else {
-        // Create placeholder ring for empty slot
-        const ringGeometry = new THREE.TorusGeometry(0.8, 0.1, 8, 32)
-        const ringMaterial = new THREE.MeshStandardMaterial({
-          color: 0x333333,
-          transparent: true,
-          opacity: 0.3
-        })
-        const ring = new THREE.Mesh(ringGeometry, ringMaterial)
-        
-        // Position
-        const cols = 4
-        const col = i % cols
-        const row = Math.floor(i / cols)
-        const spacing = 3
-        const x = (col - 1.5) * spacing
-        const z = (row - 0.5) * spacing
-        
-        ring.position.set(x, 0, z)
-        ring.rotation.x = -Math.PI / 2
-        ring.userData = { slotIndex: i, isEmpty: true }
-        
-        scene.add(ring)
-        coins.push(ring)
-      }
-    }
-    
-    coinsRef.current = coins
-    
-    if (mounted) {
-      setIsSceneReady(true)
-    }
-    
-    // Animation loop
-    const clock = new THREE.Clock()
-    
-    const animate = () => {
-      if (!mounted) return
-      
-      animationIdRef.current = requestAnimationFrame(animate)
-      
-      const deltaTime = clock.getDelta()
-      const elapsedTime = clock.getElapsedTime()
-      
-      // Animate coins
-      coinsRef.current.forEach((coin, index) => {
-        if (!coin || !coin.userData) return
-        
-        const { playerAddress, originalY = 0 } = coin.userData
-        const flipState = flipStates[playerAddress]
-        
-        if (flipState?.isFlipping) {
-          // Flip animation
-          const progress = Math.min((Date.now() - flipState.flipStartTime) / flipState.flipDuration, 1)
-          coin.rotation.x = (flipState.totalRotations || (Math.PI * 4)) * progress
-          coin.position.y = originalY + Math.sin(progress * Math.PI) * 2
-          
-          if (progress >= 1) {
-            coin.rotation.x = flipState.flipResult === 'heads' ? 0 : Math.PI
-            coin.position.y = originalY
-            safeOnFlipComplete(playerAddress, flipState.flipResult)
-          }
-        } else {
-          // Idle animation
-          if (safeGamePhase === 'waiting_choice' || safeGamePhase === 'charging_power') {
-            coin.rotation.y += deltaTime * 0.3
-            coin.position.y = originalY + Math.sin(elapsedTime * 2 + index) * 0.05
-          } else {
-            coin.rotation.y = 0
-            coin.position.y = originalY
-          }
-          
-          // Hover effect
-          if (hoveredSlot === index && !coin.userData.isEmpty) {
-            coin.scale.setScalar(1.1)
-          } else {
-            coin.scale.setScalar(1)
-          }
-        }
-      })
-      
-      // Subtle camera movement
-      if (cameraRef.current) {
-        cameraRef.current.position.x = Math.sin(elapsedTime * 0.1) * 0.5
-        cameraRef.current.lookAt(0, 0, 0)
-      }
-      
-      // Render
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current)
-      }
-    }
-    
-    animate()
-    
-    // Handle window resize
-    const handleResize = () => {
-      if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
-      
-      cameraRef.current.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight
-      cameraRef.current.updateProjectionMatrix()
-      rendererRef.current.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
-    }
-    
-    window.addEventListener('resize', handleResize)
-    
-    // Cleanup
-    return () => {
-      mounted = false
-      
-      window.removeEventListener('resize', handleResize)
-      
-      if (animationIdRef.current) {
-        cancelAnimationFrame(animationIdRef.current)
-      }
-      
-      if (rendererRef.current && mountRef.current) {
-        try {
-          mountRef.current.removeChild(rendererRef.current.domElement)
-        } catch (e) {
-          // Already removed
-        }
-      }
-      
-      // Dispose of Three.js resources
-      coins.forEach(coin => {
-        if (coin) {
-          if (coin.geometry) coin.geometry.dispose()
-          if (coin.material) {
-            if (Array.isArray(coin.material)) {
-              coin.material.forEach(mat => {
-                if (mat.map) mat.map.dispose()
-                mat.dispose()
-              })
-            } else {
-              if (coin.material.map) coin.material.map.dispose()
-              coin.material.dispose()
-            }
-          }
-        }
-      })
-      
-      if (scene) {
-        scene.clear()
-      }
-      
-      if (renderer) {
-        renderer.dispose()
-      }
-      
-      setIsSceneReady(false)
-    }
-  }, [shouldUse3D, players, safeGamePhase, flipStates, hoveredSlot, safeOnFlipComplete, quality, playerCoinImages])
+    setIsSceneReady(true)
+  }, [])
   
   // 2D Lobby Display
   if (!shouldUse3D) {
@@ -544,39 +255,205 @@ const BattleRoyale3DCoins = ({
     )
   }
   
-  // 3D Game Display
+  // 3D Game Display - Using OptimizedGoldCoin components in a grid
   return (
-    <div style={{ position: 'relative', width: '100%', height: '500px', background: '#0a0a0a' }}>
-      <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
-      
+    <div style={{ 
+      position: 'relative', 
+      width: '100%', 
+      minHeight: '600px',
+      background: 'transparent', // Transparent background
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '2rem',
+      padding: '2rem'
+    }}>
       {/* Game phase indicator */}
-      {isSceneReady && (
-        <div style={{
-          position: 'absolute',
-          top: '1rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(138, 43, 226, 0.8))',
-          color: '#00ff88',
-          padding: '0.5rem 1rem',
-          borderRadius: '0.5rem',
-          border: '2px solid rgba(255, 20, 147, 0.5)',
-          fontSize: '1.2rem',
-          fontWeight: 'bold',
-          textAlign: 'center',
-          boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)',
-          zIndex: 10
-        }}>
-          {safeGamePhase === 'starting' && 'Game Starting...'}
-          {safeGamePhase === 'revealing_target' && 'Revealing Target...'}
-          {safeGamePhase === 'waiting_choice' && 'Make Your Choice!'}
-          {safeGamePhase === 'charging_power' && 'Charge Your Power!'}
-          {safeGamePhase === 'executing_flips' && 'Flipping...'}
-          {safeGamePhase === 'showing_result' && 'Round Complete!'}
-          {safeGamePhase === 'completed' && 'Game Over!'}
-          {safeGamePhase === 'game_complete' && 'Game Complete!'}
-        </div>
-      )}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(138, 43, 226, 0.8))',
+        color: '#00ff88',
+        padding: '0.5rem 1rem',
+        borderRadius: '0.5rem',
+        border: '2px solid rgba(255, 20, 147, 0.5)',
+        fontSize: '1.2rem',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)'
+      }}>
+        {safeGamePhase === 'starting' && 'Game Starting...'}
+        {safeGamePhase === 'revealing_target' && 'Revealing Target...'}
+        {safeGamePhase === 'waiting_choice' && 'Make Your Choice!'}
+        {safeGamePhase === 'charging_power' && 'Charge Your Power!'}
+        {safeGamePhase === 'executing_flips' && 'Flipping...'}
+        {safeGamePhase === 'showing_result' && 'Round Complete!'}
+        {safeGamePhase === 'completed' && 'Game Over!'}
+        {safeGamePhase === 'game_complete' && 'Game Complete!'}
+      </div>
+
+      {/* Player coins grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '2rem',
+        maxWidth: '800px',
+        width: '100%'
+      }}>
+        {Array.from({ length: 8 }, (_, index) => {
+          const player = players[index]
+          const isOccupied = player?.address
+          const isCurrentUser = player?.address === currentUserAddress
+          const flipState = localFlipStates[player?.address] || {}
+          
+          if (!isOccupied) {
+            // Empty slot - show placeholder
+            return (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '200px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '2px dashed rgba(255, 255, 255, 0.2)',
+                  borderRadius: '1rem',
+                  color: '#aaa',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <div style={{ marginBottom: '0.5rem' }}>Slot {index + 1}</div>
+                <div>Empty</div>
+              </div>
+            )
+          }
+
+          return (
+            <div
+              key={index}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1rem',
+                padding: '1rem',
+                background: isCurrentUser 
+                  ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 204, 106, 0.1))'
+                  : 'linear-gradient(135deg, rgba(0, 191, 255, 0.1), rgba(138, 43, 226, 0.1))',
+                border: `2px solid ${isCurrentUser ? '#00ff88' : '#00bfff'}`,
+                borderRadius: '1rem',
+                position: 'relative'
+              }}
+            >
+              {/* Slot number */}
+              <div style={{
+                position: 'absolute',
+                top: '0.5rem',
+                right: '0.5rem',
+                background: 'rgba(0, 0, 0, 0.7)',
+                color: '#fff',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.8rem',
+                fontWeight: 'bold'
+              }}>
+                {index + 1}
+              </div>
+
+              {/* Player coin */}
+              <OptimizedGoldCoin
+                isFlipping={flipState.isFlipping || false}
+                flipResult={flipState.flipResult || null}
+                flipDuration={flipState.flipDuration || 2000}
+                isPlayerTurn={isCurrentUser && safeGamePhase === 'charging_power'}
+                chargingPlayer={flipState.chargingPlayer || null}
+                creatorPower={flipState.creatorPower || 0}
+                joinerPower={flipState.joinerPower || 0}
+                size={120}
+                customHeadsImage={playerCoinImages[player.address]?.headsImage}
+                customTailsImage={playerCoinImages[player.address]?.tailsImage}
+                gamePhase={safeGamePhase}
+                isCreator={false}
+                creatorChoice={null}
+                joinerChoice={null}
+                onFlipComplete={(result) => safeOnFlipComplete(player.address, result)}
+                isInteractive={isCurrentUser && safeGamePhase === 'charging_power'}
+                onCoinClick={() => {
+                  if (isCurrentUser && safeGamePhase === 'charging_power') {
+                    // Handle coin interaction for power charging
+                    console.log('Player coin clicked for power charging')
+                  }
+                }}
+                onPowerCharge={() => {
+                  if (isCurrentUser && safeGamePhase === 'charging_power') {
+                    console.log('Starting power charge for player:', player.address)
+                    // Update flip state to show charging
+                    setLocalFlipStates(prev => ({
+                      ...prev,
+                      [player.address]: {
+                        ...prev[player.address],
+                        chargingPlayer: player.address,
+                        isCharging: true
+                      }
+                    }))
+                  }
+                }}
+                onPowerRelease={(power) => {
+                  if (isCurrentUser && safeGamePhase === 'charging_power') {
+                    console.log('Releasing power for player:', player.address, 'Power:', power)
+                    // Update flip state with power level
+                    setLocalFlipStates(prev => ({
+                      ...prev,
+                      [player.address]: {
+                        ...prev[player.address],
+                        chargingPlayer: null,
+                        isCharging: false,
+                        power: power
+                      }
+                    }))
+                    // Emit power to server
+                    if (typeof onPowerRelease === 'function') {
+                      onPowerRelease(player.address, power)
+                    }
+                  }
+                }}
+              />
+
+              {/* Player info */}
+              <div style={{
+                color: isCurrentUser ? '#00ff88' : '#00bfff',
+                fontSize: '0.8rem',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                wordBreak: 'break-all'
+              }}>
+                {player.address?.slice(0, 6)}...{player.address?.slice(-4)}
+              </div>
+
+              {/* Status indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.7rem',
+                color: '#aaa'
+              }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: isCurrentUser ? '#00ff88' : '#00bfff'
+                }} />
+                <span>{isCurrentUser ? 'You' : 'Player'}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
