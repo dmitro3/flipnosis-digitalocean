@@ -693,28 +693,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   if (gameStatus === 'starting' || gameStatus === 'in_progress') {
     return (
       <TabContainer>
-        {/* Heads/Tails Display */}
+        {/* Heads/Tails Display with Status */}
         <HeadsTailsDisplay
           gamePhase={gamePhase}
           targetResult={targetResult}
           timeLeft={timeLeft}
           isRevealing={isRevealing}
+          currentPlayers={currentPlayers}
         />
-        
-        {/* Game Status */}
-        <GameStatus>
-          <div className="status-text">
-            {gamePhase === 'starting' && 'Game Starting...'}
-            {gamePhase === 'revealing_target' && 'Revealing Target...'}
-            {gamePhase === 'charging_power' && 'Charge Your Power!'}
-            {gamePhase === 'executing_flips' && 'Flipping...'}
-            {gamePhase === 'showing_result' && 'Round Complete!'}
-            {gamePhase === 'completed' && 'Game Over!'}
-          </div>
-          <div className="players-count">
-            {currentPlayers} / 8 Players
-          </div>
-        </GameStatus>
 
         {/* Game Coins */}
         <BattleRoyale3DCoins
