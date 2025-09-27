@@ -567,11 +567,11 @@ const OptimizedGoldCoin = React.memo(({
       chargingPlayer,
       isCharging,
       hasMadeChoice,
-      canInteract: isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active' || gamePhase === 'charging_power')
+      canInteract: isPlayerTurn && gamePhase === 'charging_power'
     })
     
-    // Simplified logic for battle royale - just check if it's player's turn and correct phase
-    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power')) {
+    // Battle Royale logic - check if it's player's turn and correct phase
+    if (!isPlayerTurn || gamePhase !== 'charging_power') {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }
@@ -661,8 +661,8 @@ const OptimizedGoldCoin = React.memo(({
       hasMadeChoice
     })
     
-    // Simplified logic for battle royale - just check if it's player's turn and correct phase
-    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power')) {
+    // Battle Royale logic - check if it's player's turn and correct phase
+    if (!isPlayerTurn || gamePhase !== 'charging_power') {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }
@@ -739,7 +739,7 @@ const OptimizedGoldCoin = React.memo(({
 
   const getBorderColor = () => {
     if (isCharging) return '#FFD700'
-    if (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) return '#FFA500'
+    if (isPlayerTurn && gamePhase === 'charging_power') return '#FFA500'
     return '#666'
   }
 
@@ -747,7 +747,7 @@ const OptimizedGoldCoin = React.memo(({
     if (isCharging) {
       return '0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 165, 0, 0.4)'
     }
-    if (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active')) {
+    if (isPlayerTurn && gamePhase === 'charging_power') {
       return '0 0 10px rgba(255, 165, 0, 0.5)'
     }
     return 'none'
@@ -783,7 +783,7 @@ const OptimizedGoldCoin = React.memo(({
           width: `${size}px`,
           height: `${size}px`,
           position: 'relative',
-          cursor: (isInteractive || (isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active'))) ? 'pointer' : 'default',
+          cursor: (isInteractive || (isPlayerTurn && gamePhase === 'charging_power')) ? 'pointer' : 'default',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           touchAction: 'none'

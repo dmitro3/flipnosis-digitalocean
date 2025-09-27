@@ -109,41 +109,29 @@ class GameServer {
     // Join new room
     socket.join(roomId)
     
-    // Determine role (creator, challenger, or spectator)
-    const gameId = roomId // Keep the full game ID including 'game_' prefix
-    let gameState = this.gameStateManager.getGame(gameId)
+    // Determine role (creator, challenger, or spectator) - Battle Royale only
+    const gameId = roomId // Keep the full game ID including 'br_' prefix
     let role = 'spectator'
     
-    // If no game state, try to load from database first
-    if (!gameState && this.dbService) {
+    // For Battle Royale games, check database for role
+    if (this.dbService) {
       try {
-        const gameData = await this.dbService.getGame(gameId)
+        const gameData = await this.dbService.getBattleRoyaleGame(gameId)
         if (gameData) {
-          console.log(`🔍 Loaded game from DB for role detection:`, {
+          console.log(`🔍 Loaded Battle Royale game from DB for role detection:`, {
             creator: gameData.creator,
-            challenger: gameData.challenger,
             joiningAddress: address
           })
           
           // Check roles against database data
           if (address.toLowerCase() === gameData.creator?.toLowerCase()) {
             role = 'creator'
-          } else if (address.toLowerCase() === gameData.challenger?.toLowerCase()) {
-            role = 'challenger'
+          } else {
+            role = 'player'
           }
         }
       } catch (error) {
-        console.error('❌ Error loading game for role detection:', error)
-      }
-    } else if (gameState) {
-      // Use existing game state
-      if (address.toLowerCase() === gameState.creator?.toLowerCase()) {
-        role = 'creator'
-      } else if (address.toLowerCase() === gameState.challenger?.toLowerCase()) {
-        role = 'challenger'
-      } else {
-        // Add as spectator
-        this.gameStateManager.addSpectator(gameId, address)
+        console.error('❌ Error loading Battle Royale game for role detection:', error)
       }
     }
     
@@ -152,11 +140,11 @@ class GameServer {
     this.socketData.set(socket.id, { address, roomId, gameId, role })
     this.userSockets.set(address.toLowerCase(), socket.id)
     
-    // Add to game room tracking
-    if (!this.gameRooms.has(gameId)) {
-      this.gameRooms.set(gameId, new Set())
+    // Add to Battle Royale room tracking
+    if (!this.battleRoyaleRooms.has(gameId)) {
+      this.battleRoyaleRooms.set(gameId, new Set())
     }
-    this.gameRooms.get(gameId).add(socket.id)
+    this.battleRoyaleRooms.get(gameId).add(socket.id)
     
     socket.emit('room_joined', { 
       roomId, 
@@ -164,17 +152,11 @@ class GameServer {
       members: this.io.sockets.adapter.rooms.get(roomId)?.size || 0 
     })
     
-    // Send current game state if it exists
-    if (gameState) {
-      const fullState = this.gameStateManager.getFullGameState(gameId)
-      socket.emit('game_state_update', fullState)
-      
-      // Start state broadcasting if game is active
-      if (gameState.phase === 'game_active' && !this.gameStateManager.stateUpdateIntervals.has(gameId)) {
-        this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
-          this.io.to(room).emit(message.type, message)
-        })
-      }
+    // Send current Battle Royale game state if it exists
+    const battleRoyaleGame = this.battleRoyaleManager.getGame(gameId)
+    if (battleRoyaleGame) {
+      const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+      socket.emit('battle_royale_state_update', fullState)
     }
     
     // Send chat history if exists (preserved)
@@ -436,12 +418,8 @@ class GameServer {
         })
         console.log(`🔍 Verification - Challenger in DB: ${updatedGame?.challenger}`)
         
-        // Update the cached game state with the new challenger
-        const existingGameState = this.gameStateManager.getGame(gameId)
-        if (existingGameState) {
-          existingGameState.challenger = challengerAddress
-          console.log(`🔄 Updated cached game state challenger: ${challengerAddress}`)
-        }
+        // Battle Royale games don't use challenger system
+        console.log(`🔄 Battle Royale game - no challenger update needed: ${challengerAddress}`)
       }
     } catch (error) {
       console.error('❌ Error updating challenger:', error)
