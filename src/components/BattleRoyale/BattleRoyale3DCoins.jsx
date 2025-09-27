@@ -450,6 +450,24 @@ const BattleRoyale3DCoins = ({
                 }} />
                 <span>{isCurrentUser ? 'You' : 'Player'}</span>
               </div>
+
+              {/* Win/Loss indicator */}
+              {flipState.flipResult && (
+                <div style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '0.25rem',
+                  background: flipState.isWinner 
+                    ? 'rgba(0, 255, 136, 0.2)' 
+                    : 'rgba(255, 0, 0, 0.2)',
+                  color: flipState.isWinner ? '#00ff88' : '#ff4444',
+                  border: `1px solid ${flipState.isWinner ? '#00ff88' : '#ff4444'}`
+                }}>
+                  {flipState.isWinner ? '✅ WIN' : '❌ LOSE'}
+                </div>
+              )}
             </div>
           )
         })}

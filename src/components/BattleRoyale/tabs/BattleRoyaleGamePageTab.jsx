@@ -341,7 +341,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                   setTargetResult(result)
                   setIsRevealing(false)
                   setGamePhase('charging_power')
-                  showToast(`Target side: ${result.toUpperCase()}!`, 'info')
+                  showToast(`Target side: ${result.toUpperCase()}! Flip to match!`, 'info')
                 }, 2000)
               }
               
@@ -366,13 +366,17 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 // Trigger flips for all players
                 players.forEach((player, index) => {
                   if (player?.address) {
+                    const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
+                    const isWinner = flipResult === targetResult
+                    
                     setFlipStates(prev => ({
                       ...prev,
                       [player.address]: {
                         isFlipping: true,
                         flipStartTime: Date.now(),
                         flipDuration: 3000,
-                        flipResult: Math.random() < 0.5 ? 'heads' : 'tails'
+                        flipResult: flipResult,
+                        isWinner: isWinner
                       }
                     }))
                   }
@@ -381,7 +385,26 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 // Complete flips after duration
                 setTimeout(() => {
                   setGamePhase('showing_result')
-                  setFlipStates({})
+                  // Show results for a few seconds, then start next round or end game
+                  setTimeout(() => {
+                    // Check if game should continue or end
+                    const remainingPlayers = players.filter(player => {
+                      if (!player?.address) return false
+                      const flipState = flipStates[player.address]
+                      return flipState?.isWinner
+                    })
+                    
+                    if (remainingPlayers.length <= 1) {
+                      setGamePhase('completed')
+                      showToast('Game Complete!', 'success')
+                    } else {
+                      // Start next round
+                      setGamePhase('revealing_target')
+                      setTargetResult(null)
+                      setIsRevealing(true)
+                      setFlipStates({})
+                    }
+                  }, 3000)
                 }, 3000)
               }
             }
