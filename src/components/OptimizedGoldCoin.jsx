@@ -558,7 +558,7 @@ const OptimizedGoldCoin = React.memo(({
       return
     }
     
-    // Allow interaction if player has made their choice, even if still in choosing phase
+    // For battle royale, allow interaction if it's player's turn and correct phase
     const hasMadeChoice = (isCreator && creatorChoice) || (!isCreator && joinerChoice)
     
     console.log('🖱️ Mouse down - checking conditions:', {
@@ -567,10 +567,11 @@ const OptimizedGoldCoin = React.memo(({
       chargingPlayer,
       isCharging,
       hasMadeChoice,
-      canInteract: (isPlayerTurn || hasMadeChoice) && (gamePhase === 'charging' || gamePhase === 'active' || gamePhase === 'charging_power' || hasMadeChoice)
+      canInteract: isPlayerTurn && (gamePhase === 'charging' || gamePhase === 'active' || gamePhase === 'charging_power')
     })
     
-    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power' && !hasMadeChoice)) {
+    // Simplified logic for battle royale - just check if it's player's turn and correct phase
+    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power')) {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }
@@ -649,7 +650,7 @@ const OptimizedGoldCoin = React.memo(({
       return
     }
     
-    // Allow interaction if player has made their choice, even if still in choosing phase
+    // For battle royale, allow interaction if it's player's turn and correct phase
     const hasMadeChoice = (isCreator && creatorChoice) || (!isCreator && joinerChoice)
     
     console.log('📱 Touch start - checking conditions:', {
@@ -660,7 +661,8 @@ const OptimizedGoldCoin = React.memo(({
       hasMadeChoice
     })
     
-    if ((!isPlayerTurn && !hasMadeChoice) || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power' && !hasMadeChoice)) {
+    // Simplified logic for battle royale - just check if it's player's turn and correct phase
+    if (!isPlayerTurn || (gamePhase !== 'charging' && gamePhase !== 'active' && gamePhase !== 'charging_power')) {
       console.log('❌ Cannot interact with coin - not player turn or wrong phase')
       return
     }

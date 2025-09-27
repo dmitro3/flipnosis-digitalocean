@@ -845,6 +845,8 @@ const BattleRoyaleGameRoom = ({
             onFlipComplete={(playerAddress, result) => {
               console.log(`Player ${playerAddress} flip complete: ${result}`)
             }}
+            onPowerChargeStart={handlePowerChargeStart}
+            onPowerChargeStop={handlePowerChargeStop}
             playerCoinImages={playerCoinImages}
             isCreator={isCreator}
             currentUserAddress={address}

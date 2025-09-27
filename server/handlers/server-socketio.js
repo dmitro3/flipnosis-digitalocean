@@ -307,7 +307,22 @@ class GameServer {
        } else {
          console.log(`🎮 Game ${gameId} not in memory, loading from database and activating`)
          
-         // Load from database
+         // Check if this is a battle royale game
+         if (gameId.startsWith('br_')) {
+           console.log(`🎮 Battle Royale game detected: ${gameId}`)
+           
+           // Load battle royale game from database
+           const battleRoyaleData = await this.dbService.getBattleRoyaleGame(gameId)
+           
+           if (battleRoyaleData) {
+             console.log(`🎮 Battle Royale game found in database: ${gameId}`)
+             // Battle royale games are handled by BattleRoyaleGameManager
+             // No need to activate here - they're handled by their own flow
+             return
+           }
+         }
+         
+         // Load from database (1v1 games)
          const gameData = await this.dbService.getGame(gameId)
          
          if (gameData && (gameData.creator_deposited && gameData.challenger_deposited)) {

@@ -389,24 +389,8 @@ class BattleRoyaleGameManager {
     console.log(`🎯 Starting round ${game.currentRound} for game ${gameId}`)
     console.log(`👥 Active players: ${game.activePlayers.size}`)
 
-    // Randomly select target result
-    game.targetResult = Math.random() < 0.5 ? 'heads' : 'tails'
-    
-    // Show target for 3 seconds
-    if (broadcastFn) {
-      broadcastFn(`br_${gameId}`, 'battle_royale_target_reveal', {
-        gameId,
-        round: game.currentRound,
-        target: game.targetResult,
-        activePlayers: Array.from(game.activePlayers),
-        countdown: 3
-      })
-    }
-
-    // Start choice phase after 3 seconds
-    setTimeout(() => {
-      this.startChoicePhase(gameId, broadcastFn)
-    }, 3000)
+    // Start the new battle royale flow (reveal target -> power charging -> flips)
+    this.startChoicePhase(gameId, broadcastFn)
 
     return true
   }

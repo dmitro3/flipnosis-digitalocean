@@ -199,7 +199,9 @@ const BattleRoyale3DCoins = ({
   coinSides = {},
   onCoinSideToggle = () => {},
   onCoinChange = () => {},
-  onPowerRelease = () => {}
+  onPowerRelease = () => {},
+  onPowerChargeStart = null,
+  onPowerChargeStop = null
 }) => {
   // Refs
   const mountRef = useRef(null)
@@ -387,7 +389,7 @@ const BattleRoyale3DCoins = ({
                 isFlipping={flipState.isFlipping || false}
                 flipResult={flipState.flipResult || null}
                 flipDuration={flipState.flipDuration || 2000}
-                isPlayerTurn={isCurrentUser && safeGamePhase === 'charging_power'}
+                isPlayerTurn={isCurrentUser}
                 chargingPlayer={flipState.chargingPlayer || null}
                 creatorPower={flipState.creatorPower || 0}
                 joinerPower={flipState.joinerPower || 0}
@@ -409,33 +411,18 @@ const BattleRoyale3DCoins = ({
                 onPowerCharge={() => {
                   if (isCurrentUser && safeGamePhase === 'charging_power') {
                     console.log('Starting power charge for player:', player.address)
-                    // Update flip state to show charging
-                    setLocalFlipStates(prev => ({
-                      ...prev,
-                      [player.address]: {
-                        ...prev[player.address],
-                        chargingPlayer: player.address,
-                        isCharging: true
-                      }
-                    }))
+                    // Call parent component's power charge handler
+                    if (onPowerChargeStart) {
+                      onPowerChargeStart()
+                    }
                   }
                 }}
                 onPowerRelease={(power) => {
                   if (isCurrentUser && safeGamePhase === 'charging_power') {
                     console.log('Releasing power for player:', player.address, 'Power:', power)
-                    // Update flip state with power level
-                    setLocalFlipStates(prev => ({
-                      ...prev,
-                      [player.address]: {
-                        ...prev[player.address],
-                        chargingPlayer: null,
-                        isCharging: false,
-                        power: power
-                      }
-                    }))
-                    // Emit power to server
-                    if (typeof onPowerRelease === 'function') {
-                      onPowerRelease(player.address, power)
+                    // Call parent component's power release handler
+                    if (onPowerChargeStop) {
+                      onPowerChargeStop(power)
                     }
                   }
                 }}
