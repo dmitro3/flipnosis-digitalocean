@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import socketService from '../../services/SocketService'
 import BattleRoyale3DCoins from './BattleRoyale3DCoins'
+import ErrorBoundary from './ErrorBoundary'
 import ProfilePicture from '../ProfilePicture'
 import CoinSelector from '../CoinSelector'
 import './BattleRoyaleCoins.css'
@@ -758,7 +759,8 @@ const BattleRoyaleGameRoom = ({
     )
   }
 
-  if (!serverState) {
+  // Add this safety check before rendering
+  if (!serverState || !serverState.playerSlots) {
     return (
       <GameContainer>
         <div style={{ 
@@ -834,41 +836,41 @@ const BattleRoyaleGameRoom = ({
 
 
       {/* Unified Battle Royale Coins Display */}
-      {serverState && serverState.players && (
-        <BattleRoyale3DCoins
-          players={serverState?.playerSlots?.map((playerAddress, index) => {
-            if (!playerAddress) return { address: null, coin: null, isEliminated: false }
-            const player = serverState.players?.[playerAddress.toLowerCase()]
-            return {
-              address: playerAddress,
-              coin: player?.coin,
-              isEliminated: player?.status === 'eliminated',
-              slotIndex: index
-            }
-          }) || []}
-          gamePhase={serverState?.gamePhase || serverState?.phase}
-          serverState={serverState}
-          flipStates={Object.fromEntries(
-            Object.entries(serverState?.players || {}).map(([address, player]) => [
-              address,
-              player.coinState
-            ])
-          )}
-          onFlipComplete={(playerAddress, result) => {
-            console.log(`Player ${playerAddress} flip complete: ${result}`)
-          }}
-          playerCoinImages={playerCoinImages}
-          isCreator={isCreator}
-          currentUserAddress={address}
-          size={240}
-          // Slot interaction props
-          onSlotClick={() => {}} // No slot clicking in game room
-          canJoin={false} // No joining in game room
-          isJoining={false}
-          coinSides={coinSides}
-          onCoinSideToggle={toggleCoinSide}
-          onCoinChange={handleCoinChange}
-        />
+      {serverState && serverState.playerSlots && (
+        <ErrorBoundary>
+          <BattleRoyale3DCoins
+            players={serverState.playerSlots.map((playerAddress, index) => {
+              if (!playerAddress) return { address: null, coin: null, isEliminated: false }
+              const player = serverState.players?.[playerAddress.toLowerCase()]
+              return {
+                address: playerAddress,
+                coin: player?.coin,
+                isEliminated: player?.status === 'eliminated',
+                slotIndex: index
+              }
+            })}
+            gamePhase={serverState?.gamePhase || serverState?.phase}
+            serverState={serverState}
+            flipStates={Object.fromEntries(
+              Object.entries(serverState?.players || {})
+                .filter(([_, player]) => player?.coinState)
+                .map(([address, player]) => [address, player.coinState])
+            )}
+            onFlipComplete={(playerAddress, result) => {
+              console.log(`Player ${playerAddress} flip complete: ${result}`)
+            }}
+            playerCoinImages={playerCoinImages}
+            isCreator={isCreator}
+            currentUserAddress={address}
+            size={240}
+            onSlotClick={() => {}}
+            canJoin={false}
+            isJoining={false}
+            coinSides={coinSides}
+            onCoinSideToggle={toggleCoinSide}
+            onCoinChange={handleCoinChange}
+          />
+        </ErrorBoundary>
       )}
 
 

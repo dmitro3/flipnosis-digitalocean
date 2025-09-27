@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext'
 import { getApiUrl } from '../../config/api'
 import BattleRoyaleNFTDetailsTab from './tabs/BattleRoyaleNFTDetailsTab'
 import BattleRoyaleGamePageTab from './tabs/BattleRoyaleGamePageTab'
+import ErrorBoundary from './ErrorBoundary'
 import hazeVideo from '../../../Images/Video/haze.webm'
 
 // ===== BATTLE ROYALE TABBED INTERFACE =====
@@ -311,7 +312,9 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
 
         {/* Tab Content */}
         <TabContent>
-          {renderTabContent()}
+          <ErrorBoundary>
+            {renderTabContent()}
+          </ErrorBoundary>
         </TabContent>
       </TabbedContainer>
     </>

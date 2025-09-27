@@ -275,7 +275,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     let mounted = true // Add mounted flag
 
     const onStateUpdate = (data) => {
-      if (!mounted) return // Check if still mounted
+      if (!mounted) return
       
       try {
         console.log('📊 Battle Royale state update received:', {
@@ -303,20 +303,37 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           const joinedCount = slots.filter(Boolean).length
           setCurrentPlayers(joinedCount)
           
-          // Use the server's phase/gamePhase if available, otherwise fallback to status
-          const newGameStatus = data.phase || data.gamePhase || data.status || (joinedCount >= 8 ? 'starting' : 'filling')
+          // Simplified game status handling - don't map completed state
+          let newGameStatus = 'filling'
+          if (data.phase === 'starting' || data.gamePhase === 'starting') {
+            newGameStatus = 'starting'
+          } else if (data.phase === 'completed' || data.gamePhase === 'game_complete') {
+            newGameStatus = 'completed'
+          } else if (data.phase === 'round_active' || data.gamePhase) {
+            newGameStatus = 'in_progress'
+          } else if (joinedCount >= 8) {
+            newGameStatus = 'starting'
+          }
+          
           console.log('📊 Setting game status to:', newGameStatus)
           
-          // Check if component is still mounted before setting state
           if (mounted) {
             setGameStatus(newGameStatus)
             
-            // Remove automatic navigation - let parent handle it
-            // if (newGameStatus === 'starting' || newGameStatus === 'in_progress' || newGameStatus === 'completed') {
-            //   setTimeout(() => {
-            //     navigate(`/battle-royale/${gameId}/play`)
-            //   }, 500) // Small delay for smooth transition
-            // }
+            // Don't redirect if game is completed
+            if (newGameStatus === 'completed') {
+              console.log('Game is completed, not redirecting')
+              return
+            }
+            
+            // Only redirect if game is actually starting or in progress
+            if (newGameStatus === 'starting' || newGameStatus === 'in_progress') {
+              setTimeout(() => {
+                if (mounted) {
+                  navigate(`/battle-royale/${gameId}/play`)
+                }
+              }, 500)
+            }
           }
 
           // preload coin images
@@ -377,6 +394,26 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       }
     }
   }, [gameId, address, loadPlayerCoinImages, showToast]) // Remove navigate from dependencies
+
+  // Add cleanup mechanism
+  useEffect(() => {
+    // Return cleanup function that properly handles unmounting
+    return () => {
+      console.log('🧹 Cleaning up BattleRoyaleGamePageTab')
+      
+      // Clear any pending timeouts
+      const timeoutId = setTimeout(() => {}, 0)
+      for (let i = 0; i < timeoutId; i++) {
+        clearTimeout(i)
+      }
+      
+      // Clear any pending intervals
+      const intervalId = setInterval(() => {}, 1000)
+      for (let i = 0; i < intervalId; i++) {
+        clearInterval(i)
+      }
+    }
+  }, [])
 
   // Initialize creator in slot 0 when game loads
   useEffect(() => {

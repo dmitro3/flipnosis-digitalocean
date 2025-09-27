@@ -12,6 +12,7 @@ import Leaderboard from "./pages/Leaderboard";
 import BattleRoyaleLobby from "./components/BattleRoyale/BattleRoyaleLobby";
 import BattleRoyaleGameRoom from "./components/BattleRoyale/BattleRoyaleGameRoom";
 import BattleRoyaleContainer from "./components/BattleRoyale/BattleRoyaleContainer";
+import ErrorBoundary from "./components/BattleRoyale/ErrorBoundary";
 
 export const router = createBrowserRouter([
   {
@@ -60,11 +61,19 @@ export const router = createBrowserRouter([
       },
       {
         path: "battle-royale/:gameId",
-        element: <BattleRoyaleContainer />,
+        element: (
+          <ErrorBoundary>
+            <BattleRoyaleContainer />
+          </ErrorBoundary>
+        ),
       },
       {
         path: "battle-royale/:gameId/play",
-        element: <BattleRoyaleGameRoom />,
+        element: (
+          <ErrorBoundary>
+            <BattleRoyaleGameRoom />
+          </ErrorBoundary>
+        ),
       },
     ],
   },

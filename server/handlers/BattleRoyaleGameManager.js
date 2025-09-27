@@ -800,53 +800,109 @@ class BattleRoyaleGameManager {
     return this.battleRoyaleGames.get(gameId)
   }
 
+  // Add this method to the BattleRoyaleGameManager class
+  resetGameState(gameId) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+    
+    console.log(`🔄 Resetting game state for ${gameId}`)
+    
+    // If game is completed but still being accessed, clean it up
+    if (game.phase === 'completed' || game.phase === this.PHASES.COMPLETED) {
+      console.log(`🧹 Cleaning up completed game ${gameId}`)
+      this.removeGame(gameId)
+      return false
+    }
+    
+    // Reset stuck games
+    if (!game.playerSlots) {
+      game.playerSlots = new Array(8).fill(null)
+    }
+    
+    if (!game.players) {
+      game.players = new Map()
+    }
+    
+    if (!game.activePlayers) {
+      game.activePlayers = new Set()
+    }
+    
+    if (!game.eliminatedPlayers) {
+      game.eliminatedPlayers = new Set()
+    }
+    
+    if (!game.coinStates) {
+      game.coinStates = new Map()
+    }
+    
+    if (!game.spectators) {
+      game.spectators = new Set()
+    }
+    
+    game.lastActivity = Date.now()
+    
+    console.log(`✅ Game state reset for ${gameId}`)
+    return true
+  }
+
   getFullGameState(gameId) {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) return null
+
+    // Validate game state before sending
+    if (!game.players || !game.playerSlots) {
+      console.warn(`Game ${gameId} has invalid state, reinitializing...`)
+      return null
+    }
 
     // Convert Maps to objects for transmission
     const players = {}
     const coinStates = {}
     
-    for (const [address, player] of game.players) {
-      players[address] = {
-        ...player,
-        coinState: player.coinState || game.coinStates.get(address)
+    try {
+      for (const [address, player] of game.players) {
+        players[address] = {
+          ...player,
+          coinState: player.coinState || game.coinStates.get(address) || {}
+        }
+        coinStates[address] = player.coinState || game.coinStates.get(address) || {}
       }
-      coinStates[address] = player.coinState || game.coinStates.get(address)
+    } catch (error) {
+      console.error('Error processing player states:', error)
+      return null
     }
 
     return {
       gameId: game.gameId,
-      phase: game.phase,
-      gamePhase: game.gamePhase || game.roundPhase,
-      roundPhase: game.roundPhase,
+      phase: game.phase || 'filling',
+      gamePhase: game.gamePhase || game.roundPhase || null,
+      roundPhase: game.roundPhase || null,
       
-      maxPlayers: game.maxPlayers,
-      currentPlayers: game.currentPlayers,
+      maxPlayers: game.maxPlayers || 8,
+      currentPlayers: game.currentPlayers || 0,
       
       creator: game.creator,
       players: players,
-      playerSlots: game.playerSlots,
-      activePlayers: Array.from(game.activePlayers),
-      eliminatedPlayers: Array.from(game.eliminatedPlayers),
+      playerSlots: game.playerSlots || new Array(8).fill(null),
+      activePlayers: Array.from(game.activePlayers || []),
+      eliminatedPlayers: Array.from(game.eliminatedPlayers || []),
       
-      currentRound: game.currentRound,
-      targetResult: game.targetResult,
-      roundCountdown: game.roundCountdown,
-      roundResult: game.roundResult,
+      currentRound: game.currentRound || 0,
+      targetResult: game.targetResult || null,
+      roundCountdown: game.roundCountdown || null,
+      roundResult: game.roundResult || null,
       
       coinStates: coinStates,
       
-      winner: game.winner,
-      eliminationHistory: game.eliminationHistory,
+      winner: game.winner || null,
+      eliminationHistory: game.eliminationHistory || [],
       
-      nftName: game.nftName,
-      nftImage: game.nftImage,
+      nftName: game.nftName || '',
+      nftImage: game.nftImage || '',
       
-      spectators: Array.from(game.spectators),
+      spectators: Array.from(game.spectators || []),
       
-      lastActivity: game.lastActivity
+      lastActivity: game.lastActivity || Date.now()
     }
   }
 
