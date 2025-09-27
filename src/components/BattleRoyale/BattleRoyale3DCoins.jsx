@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as THREE from 'three'
 
-// Separate 2D Lobby Component - MUST be defined outside
+// Separate 2D Lobby Component
 const Lobby2DDisplay = ({ 
   players, 
   currentUserAddress, 
@@ -206,11 +206,11 @@ const BattleRoyale3DCoins = ({
   const cameraRef = useRef(null)
   const coinsRef = useRef([])
   const animationIdRef = useRef(null)
-  const textureLoaderRef = useRef(new THREE.TextureLoader())
+  const texturesRef = useRef({})
   
   // State
   const [hoveredSlot, setHoveredSlot] = useState(null)
-  const [quality, setQuality] = useState('high')
+  const [quality] = useState('high')
   const [isSceneReady, setIsSceneReady] = useState(false)
   
   // Safe game phase check
@@ -230,103 +230,6 @@ const BattleRoyale3DCoins = ({
     }
   }, [onFlipComplete])
   
-  // Create background gradient
-  const createBackgroundGradient = useCallback(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 512
-    canvas.height = 512
-    const ctx = canvas.getContext('2d')
-    
-    const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 512)
-    gradient.addColorStop(0, 'rgba(138, 43, 226, 0.3)')
-    gradient.addColorStop(0.5, 'rgba(0, 191, 255, 0.2)')
-    gradient.addColorStop(1, 'rgba(255, 20, 147, 0.1)')
-    
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, 512, 512)
-    
-    return new THREE.CanvasTexture(canvas)
-  }, [])
-  
-  // Create coin mesh - with error handling
-  const createCoinMesh = useCallback((playerData, index) => {
-    try {
-      if (!playerData || !playerData.address) return null
-      
-      const { address, isEliminated = false } = playerData
-      
-      // Geometry
-      const segments = quality === 'high' ? 64 : 32
-      const geometry = new THREE.CylinderGeometry(0.8, 0.8, 0.15, segments)
-      
-      // Textures
-      const headsImage = playerCoinImages[address]?.headsImage || '/coins/plainh.png'
-      const tailsImage = playerCoinImages[address]?.tailsImage || '/coins/plaint.png'
-      
-      const headsTexture = textureLoaderRef.current.load(headsImage)
-      const tailsTexture = textureLoaderRef.current.load(tailsImage)
-      
-      // Optimize textures
-      [headsTexture, tailsTexture].forEach(tex => {
-        tex.minFilter = THREE.LinearFilter
-        tex.magFilter = THREE.LinearFilter
-        tex.format = THREE.RGBAFormat
-      })
-      
-      // Materials
-      const edgeMaterial = new THREE.MeshPhongMaterial({
-        color: isEliminated ? 0x666666 : 0xFFD700,
-        metalness: 0.7,
-        roughness: 0.3,
-        emissive: isEliminated ? 0x000000 : 0xFFD700,
-        emissiveIntensity: 0.1
-      })
-      
-      const headsMaterial = new THREE.MeshPhongMaterial({
-        map: headsTexture,
-        transparent: true,
-        opacity: isEliminated ? 0.5 : 1
-      })
-      
-      const tailsMaterial = new THREE.MeshPhongMaterial({
-        map: tailsTexture,
-        transparent: true,
-        opacity: isEliminated ? 0.5 : 1
-      })
-      
-      // Create mesh
-      const materials = [edgeMaterial, headsMaterial, tailsMaterial]
-      const mesh = new THREE.Mesh(geometry, materials)
-      
-      // Position
-      const cols = 4
-      const rows = 2
-      const spacing = 2.2
-      const col = index % cols
-      const row = Math.floor(index / cols)
-      const angleOffset = (col - 1.5) * 0.15
-      const x = (col - 1.5) * spacing
-      const z = (row - 0.5) * spacing + Math.abs(angleOffset) * 2
-      const y = 0
-      
-      mesh.position.set(x, y, z)
-      mesh.rotation.y = Math.PI / 2
-      
-      // Store metadata
-      mesh.userData = {
-        playerAddress: address,
-        slotIndex: index,
-        isEliminated,
-        originalY: y
-      }
-      
-      return mesh
-    } catch (error) {
-      console.error('Error creating coin mesh:', error)
-      return null
-    }
-  }, [playerCoinImages, quality])
-  
   // Initialize 3D scene
   useEffect(() => {
     if (!shouldUse3D || !mountRef.current) {
@@ -335,215 +238,294 @@ const BattleRoyale3DCoins = ({
     }
     
     let mounted = true
+    const textureLoader = new THREE.TextureLoader()
     
-    try {
-      // Create scene
-      const scene = new THREE.Scene()
-      sceneRef.current = scene
+    // Create scene
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x0a0a0a)
+    sceneRef.current = scene
+    
+    // Camera setup - adjusted for better view
+    const camera = new THREE.PerspectiveCamera(
+      45, // Reduced FOV for less distortion
+      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      0.1,
+      100
+    )
+    camera.position.set(0, 8, 15) // Moved camera back and up
+    camera.lookAt(0, 0, 0)
+    cameraRef.current = camera
+    
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: true
+    })
+    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.shadowMap.enabled = quality === 'high'
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    rendererRef.current = renderer
+    
+    if (mounted && mountRef.current) {
+      mountRef.current.appendChild(renderer.domElement)
+    }
+    
+    // Lighting setup - improved
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+    scene.add(ambientLight)
+    
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1)
+    keyLight.position.set(5, 10, 5)
+    keyLight.castShadow = quality === 'high'
+    if (quality === 'high') {
+      keyLight.shadow.camera.near = 0.5
+      keyLight.shadow.camera.far = 50
+      keyLight.shadow.camera.left = -10
+      keyLight.shadow.camera.right = 10
+      keyLight.shadow.camera.top = 10
+      keyLight.shadow.camera.bottom = -10
+    }
+    scene.add(keyLight)
+    
+    const fillLight = new THREE.DirectionalLight(0x4488ff, 0.5)
+    fillLight.position.set(-5, 5, 0)
+    scene.add(fillLight)
+    
+    const rimLight = new THREE.PointLight(0xff1493, 0.8, 20)
+    rimLight.position.set(0, 5, -8)
+    scene.add(rimLight)
+    
+    // Add a ground plane for reference
+    const groundGeometry = new THREE.PlaneGeometry(20, 20)
+    const groundMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1a1a1a,
+      roughness: 0.8,
+      metalness: 0.2
+    })
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial)
+    ground.rotation.x = -Math.PI / 2
+    ground.position.y = -1
+    ground.receiveShadow = true
+    scene.add(ground)
+    
+    // Create coins with proper materials
+    const coins = []
+    for (let i = 0; i < 8; i++) {
+      const playerData = players[i]
       
-      // Background
-      const bgGeometry = new THREE.PlaneGeometry(50, 50)
-      const bgTexture = createBackgroundGradient()
-      const bgMaterial = new THREE.MeshBasicMaterial({
-        map: bgTexture,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.5
-      })
-      const backgroundMesh = new THREE.Mesh(bgGeometry, bgMaterial)
-      backgroundMesh.position.z = -15
-      scene.add(backgroundMesh)
-      
-      // Fog
-      scene.fog = new THREE.Fog(0x000000, 10, 30)
-      
-      // Camera
-      const camera = new THREE.PerspectiveCamera(
-        60,
-        mountRef.current.clientWidth / mountRef.current.clientHeight,
-        0.1,
-        1000
-      )
-      camera.position.set(0, 6, 12)
-      camera.lookAt(0, 0, 0)
-      cameraRef.current = camera
-      
-      // Renderer
-      const renderer = new THREE.WebGLRenderer({ 
-        antialias: quality === 'high',
-        alpha: true,
-        powerPreference: 'high-performance'
-      })
-      
-      renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-      renderer.shadowMap.enabled = quality === 'high'
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap
-      rendererRef.current = renderer
-      
-      if (mountRef.current && mounted) {
-        mountRef.current.appendChild(renderer.domElement)
-      }
-      
-      // Lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
-      scene.add(ambientLight)
-      
-      const keyLight = new THREE.DirectionalLight(0xffffff, 0.8)
-      keyLight.position.set(5, 10, 5)
-      keyLight.castShadow = quality === 'high'
-      scene.add(keyLight)
-      
-      const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3)
-      fillLight.position.set(-5, 5, 0)
-      scene.add(fillLight)
-      
-      const rimLight = new THREE.PointLight(0xff1493, 0.5, 20)
-      rimLight.position.set(0, 8, -5)
-      scene.add(rimLight)
-      
-      // Create coins
-      const coins = []
-      for (let i = 0; i < 8; i++) {
-        const playerData = players[i] || { address: null, coin: null, isEliminated: false }
-        
-        if (playerData.address) {
-          const coin = createCoinMesh(playerData, i)
-          if (coin) {
-            scene.add(coin)
-            coins.push(coin)
-          }
-        } else {
-          // Placeholder
-          const geometry = new THREE.RingGeometry(0.7, 0.9, 32)
-          const material = new THREE.MeshBasicMaterial({
-            color: 0x333333,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.DoubleSide
-          })
-          const placeholder = new THREE.Mesh(geometry, material)
+      if (playerData?.address) {
+        try {
+          const { address, isEliminated = false } = playerData
           
+          // Create coin geometry
+          const geometry = new THREE.CylinderGeometry(0.8, 0.8, 0.15, 32, 1)
+          
+          // Create materials array for multi-material mesh
+          const materials = []
+          
+          // Edge material (sides of the coin)
+          materials.push(new THREE.MeshStandardMaterial({
+            color: isEliminated ? 0x666666 : 0xFFD700,
+            metalness: 0.7,
+            roughness: 0.3
+          }))
+          
+          // Top material (heads)
+          const headsImage = playerCoinImages[address]?.headsImage || '/coins/plainh.png'
+          materials.push(new THREE.MeshStandardMaterial({
+            map: textureLoader.load(headsImage),
+            color: isEliminated ? 0x666666 : 0xffffff
+          }))
+          
+          // Bottom material (tails)
+          const tailsImage = playerCoinImages[address]?.tailsImage || '/coins/plaint.png'
+          materials.push(new THREE.MeshStandardMaterial({
+            map: textureLoader.load(tailsImage),
+            color: isEliminated ? 0x666666 : 0xffffff
+          }))
+          
+          const mesh = new THREE.Mesh(geometry, materials)
+          
+          // Position coins in a 4x2 grid
           const cols = 4
-          const rows = 2
-          const spacing = 2.2
           const col = i % cols
           const row = Math.floor(i / cols)
-          const angleOffset = (col - 1.5) * 0.15
+          const spacing = 3
           const x = (col - 1.5) * spacing
-          const z = (row - 0.5) * spacing + Math.abs(angleOffset) * 2
+          const z = (row - 0.5) * spacing
           
-          placeholder.position.set(x, 0, z)
-          placeholder.rotation.x = -Math.PI / 2
-          placeholder.userData = { slotIndex: i, isEmpty: true }
+          mesh.position.set(x, 0, z)
+          mesh.castShadow = true
+          mesh.receiveShadow = true
           
-          scene.add(placeholder)
-          coins.push(placeholder)
-        }
-      }
-      
-      coinsRef.current = coins
-      
-      if (mounted) {
-        setIsSceneReady(true)
-      }
-      
-      // Animation loop
-      const clock = new THREE.Clock()
-      
-      const animate = () => {
-        if (!mounted) return
-        
-        animationIdRef.current = requestAnimationFrame(animate)
-        
-        const deltaTime = clock.getDelta()
-        const elapsedTime = clock.getElapsedTime()
-        
-        // Animate coins
-        coinsRef.current.forEach((coin, index) => {
-          if (!coin || !coin.userData) return
-          
-          const { playerAddress, originalY = 0 } = coin.userData
-          const flipState = flipStates[playerAddress]
-          
-          if (flipState?.isFlipping) {
-            // Flip animation
-            const progress = (Date.now() - flipState.flipStartTime) / flipState.flipDuration
-            if (progress < 1) {
-              coin.rotation.x = flipState.totalRotations * progress
-              coin.position.y = originalY + Math.sin(progress * Math.PI) * 2
-            } else {
-              coin.rotation.x = flipState.finalRotation
-              coin.position.y = originalY
-              safeOnFlipComplete(playerAddress, flipState.flipResult)
-            }
-          } else {
-            // Idle animation
-            if (safeGamePhase === 'waiting_choice' || safeGamePhase === 'charging_power') {
-              coin.rotation.y += deltaTime * 0.5
-              coin.position.y = originalY + Math.sin(elapsedTime * 2 + index) * 0.05
-            }
-            
-            // Hover effect
-            if (hoveredSlot === index) {
-              coin.position.y = originalY + 0.2
-              coin.scale.setScalar(1.1)
-            } else {
-              coin.position.y = originalY
-              coin.scale.setScalar(1)
-            }
+          // Store metadata
+          mesh.userData = {
+            playerAddress: address,
+            slotIndex: i,
+            isEliminated,
+            originalY: 0
           }
-        })
-        
-        // Camera animation
-        if (cameraRef.current) {
-          cameraRef.current.position.x = Math.sin(elapsedTime * 0.1) * 2
-          cameraRef.current.lookAt(0, 0, 0)
+          
+          scene.add(mesh)
+          coins.push(mesh)
+        } catch (error) {
+          console.error('Error creating coin for player:', i, error)
+          coins.push(null)
         }
+      } else {
+        // Create placeholder ring for empty slot
+        const ringGeometry = new THREE.TorusGeometry(0.8, 0.1, 8, 32)
+        const ringMaterial = new THREE.MeshStandardMaterial({
+          color: 0x333333,
+          transparent: true,
+          opacity: 0.3
+        })
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial)
         
-        // Render
-        if (rendererRef.current && sceneRef.current && cameraRef.current) {
-          rendererRef.current.render(sceneRef.current, cameraRef.current)
+        // Position
+        const cols = 4
+        const col = i % cols
+        const row = Math.floor(i / cols)
+        const spacing = 3
+        const x = (col - 1.5) * spacing
+        const z = (row - 0.5) * spacing
+        
+        ring.position.set(x, 0, z)
+        ring.rotation.x = -Math.PI / 2
+        ring.userData = { slotIndex: i, isEmpty: true }
+        
+        scene.add(ring)
+        coins.push(ring)
+      }
+    }
+    
+    coinsRef.current = coins
+    
+    if (mounted) {
+      setIsSceneReady(true)
+    }
+    
+    // Animation loop
+    const clock = new THREE.Clock()
+    
+    const animate = () => {
+      if (!mounted) return
+      
+      animationIdRef.current = requestAnimationFrame(animate)
+      
+      const deltaTime = clock.getDelta()
+      const elapsedTime = clock.getElapsedTime()
+      
+      // Animate coins
+      coinsRef.current.forEach((coin, index) => {
+        if (!coin || !coin.userData) return
+        
+        const { playerAddress, originalY = 0 } = coin.userData
+        const flipState = flipStates[playerAddress]
+        
+        if (flipState?.isFlipping) {
+          // Flip animation
+          const progress = Math.min((Date.now() - flipState.flipStartTime) / flipState.flipDuration, 1)
+          coin.rotation.x = (flipState.totalRotations || (Math.PI * 4)) * progress
+          coin.position.y = originalY + Math.sin(progress * Math.PI) * 2
+          
+          if (progress >= 1) {
+            coin.rotation.x = flipState.flipResult === 'heads' ? 0 : Math.PI
+            coin.position.y = originalY
+            safeOnFlipComplete(playerAddress, flipState.flipResult)
+          }
+        } else {
+          // Idle animation
+          if (safeGamePhase === 'waiting_choice' || safeGamePhase === 'charging_power') {
+            coin.rotation.y += deltaTime * 0.3
+            coin.position.y = originalY + Math.sin(elapsedTime * 2 + index) * 0.05
+          } else {
+            coin.rotation.y = 0
+            coin.position.y = originalY
+          }
+          
+          // Hover effect
+          if (hoveredSlot === index && !coin.userData.isEmpty) {
+            coin.scale.setScalar(1.1)
+          } else {
+            coin.scale.setScalar(1)
+          }
+        }
+      })
+      
+      // Subtle camera movement
+      if (cameraRef.current) {
+        cameraRef.current.position.x = Math.sin(elapsedTime * 0.1) * 0.5
+        cameraRef.current.lookAt(0, 0, 0)
+      }
+      
+      // Render
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current)
+      }
+    }
+    
+    animate()
+    
+    // Handle window resize
+    const handleResize = () => {
+      if (!mountRef.current || !cameraRef.current || !rendererRef.current) return
+      
+      cameraRef.current.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight
+      cameraRef.current.updateProjectionMatrix()
+      rendererRef.current.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+    }
+    
+    window.addEventListener('resize', handleResize)
+    
+    // Cleanup
+    return () => {
+      mounted = false
+      
+      window.removeEventListener('resize', handleResize)
+      
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current)
+      }
+      
+      if (rendererRef.current && mountRef.current) {
+        try {
+          mountRef.current.removeChild(rendererRef.current.domElement)
+        } catch (e) {
+          // Already removed
         }
       }
       
-      animate()
-      
-      // Cleanup
-      return () => {
-        mounted = false
-        
-        if (animationIdRef.current) {
-          cancelAnimationFrame(animationIdRef.current)
-        }
-        
-        if (rendererRef.current && mountRef.current && rendererRef.current.domElement) {
-          mountRef.current.removeChild(rendererRef.current.domElement)
-        }
-        
-        // Dispose of resources
-        coinsRef.current.forEach(coin => {
-          if (coin && coin.geometry) coin.geometry.dispose()
-          if (coin && coin.material) {
+      // Dispose of Three.js resources
+      coins.forEach(coin => {
+        if (coin) {
+          if (coin.geometry) coin.geometry.dispose()
+          if (coin.material) {
             if (Array.isArray(coin.material)) {
-              coin.material.forEach(mat => mat.dispose())
+              coin.material.forEach(mat => {
+                if (mat.map) mat.map.dispose()
+                mat.dispose()
+              })
             } else {
+              if (coin.material.map) coin.material.map.dispose()
               coin.material.dispose()
             }
           }
-        })
-        
-        if (sceneRef.current) {
-          sceneRef.current.clear()
         }
-        
-        setIsSceneReady(false)
+      })
+      
+      if (scene) {
+        scene.clear()
       }
-    } catch (error) {
-      console.error('Error setting up 3D scene:', error)
+      
+      if (renderer) {
+        renderer.dispose()
+      }
+      
       setIsSceneReady(false)
     }
-  }, [shouldUse3D, players, safeGamePhase, flipStates, hoveredSlot, createBackgroundGradient, createCoinMesh, safeOnFlipComplete, quality])
+  }, [shouldUse3D, players, safeGamePhase, flipStates, hoveredSlot, safeOnFlipComplete, quality, playerCoinImages])
   
   // 2D Lobby Display
   if (!shouldUse3D) {
@@ -564,7 +546,7 @@ const BattleRoyale3DCoins = ({
   
   // 3D Game Display
   return (
-    <div style={{ position: 'relative', width: '100%', height: '500px' }}>
+    <div style={{ position: 'relative', width: '100%', height: '500px', background: '#0a0a0a' }}>
       <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
       
       {/* Game phase indicator */}
@@ -585,6 +567,8 @@ const BattleRoyale3DCoins = ({
           boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)',
           zIndex: 10
         }}>
+          {safeGamePhase === 'starting' && 'Game Starting...'}
+          {safeGamePhase === 'revealing_target' && 'Revealing Target...'}
           {safeGamePhase === 'waiting_choice' && 'Make Your Choice!'}
           {safeGamePhase === 'charging_power' && 'Charge Your Power!'}
           {safeGamePhase === 'executing_flips' && 'Flipping...'}
