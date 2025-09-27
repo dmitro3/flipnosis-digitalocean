@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import BattleRoyaleLobby from "./components/BattleRoyale/BattleRoyaleLobby";
 import BattleRoyaleGameRoom from "./components/BattleRoyale/BattleRoyaleGameRoom";
+import BattleRoyaleContainer from "./components/BattleRoyale/BattleRoyaleContainer";
 
 export const router = createBrowserRouter([
   {
@@ -59,7 +60,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "battle-royale/:gameId",
-        element: <BattleRoyaleLobby />,
+        element: <BattleRoyaleContainer />,
       },
       {
         path: "battle-royale/:gameId/play",

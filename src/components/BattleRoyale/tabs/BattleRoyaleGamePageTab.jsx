@@ -311,12 +311,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           if (mounted) {
             setGameStatus(newGameStatus)
             
-            // Redirect to 3D game room if game is starting, in progress, or completed
-            if (newGameStatus === 'starting' || newGameStatus === 'in_progress' || newGameStatus === 'completed') {
-              setTimeout(() => {
-                navigate(`/battle-royale/${gameId}/play`)
-              }, 500) // Small delay for smooth transition
-            }
+            // Remove automatic navigation - let parent handle it
+            // if (newGameStatus === 'starting' || newGameStatus === 'in_progress' || newGameStatus === 'completed') {
+            //   setTimeout(() => {
+            //     navigate(`/battle-royale/${gameId}/play`)
+            //   }, 500) // Small delay for smooth transition
+            // }
           }
 
           // preload coin images
@@ -337,16 +337,15 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       if (!mounted) return // Check if still mounted
       
       console.log('🚀 Battle Royale game starting:', data)
-      // Don't reference gameStatus directly in the closure
       console.log('📊 Game starting event received')
       showToast(`Game starting in ${data.countdown} seconds!`, 'success')
       
       if (mounted) {
         setGameStatus('starting')
-        // Redirect to the 3D game room for smooth transition
-        setTimeout(() => {
-          navigate(`/battle-royale/${gameId}/play`)
-        }, 1000) // Small delay to show the toast
+        // Remove this navigation - let parent handle it
+        // setTimeout(() => {
+        //   navigate(`/battle-royale/${gameId}/play`)
+        // }, 1000)
       }
       console.log('📊 Game status updated to: starting')
     }
@@ -377,7 +376,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         socketService.off('battle_royale_starting', onGameStarting)
       }
     }
-  }, [gameId, address, loadPlayerCoinImages, showToast, navigate]) // Add showToast and navigate to dependencies
+  }, [gameId, address, loadPlayerCoinImages, showToast]) // Remove navigate from dependencies
 
   // Initialize creator in slot 0 when game loads
   useEffect(() => {

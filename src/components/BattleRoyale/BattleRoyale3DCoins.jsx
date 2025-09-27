@@ -1,6 +1,191 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as THREE from 'three'
 
+// At the top of the file, separate the 2D lobby into its own component
+const Lobby2DDisplay = ({ 
+  players, 
+  currentUserAddress, 
+  playerCoinImages, 
+  coinSides, 
+  onSlotClick, 
+  canJoin, 
+  isJoining, 
+  onCoinSideToggle, 
+  onCoinChange 
+}) => {
+  const [hoveredSlot, setHoveredSlot] = useState(null)
+  
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '1rem',
+      padding: '1rem',
+      background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(138, 43, 226, 0.3))',
+      borderRadius: '1rem',
+      border: '2px solid rgba(255, 20, 147, 0.3)',
+      minHeight: '500px'
+    }}>
+      {Array.from({ length: 8 }, (_, index) => {
+        const player = players[index]
+        const isOccupied = player?.address
+        const isCurrentUser = player?.address === currentUserAddress
+        const coinSide = coinSides[player?.address] || 'heads'
+        
+        return (
+          <div
+            key={index}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '1rem',
+              background: isOccupied 
+                ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 191, 255, 0.2))'
+                : 'linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(138, 43, 226, 0.2))',
+              borderRadius: '0.5rem',
+              border: `2px solid ${isOccupied ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 20, 147, 0.5)'}`,
+              cursor: canJoin && !isOccupied ? 'pointer' : 'default',
+              transition: 'all 0.3s ease',
+              position: 'relative'
+            }}
+            onMouseEnter={() => setHoveredSlot(index)}
+            onMouseLeave={() => setHoveredSlot(null)}
+            onClick={() => {
+              if (canJoin && !isOccupied) {
+                onSlotClick(index)
+              }
+            }}
+          >
+            {/* Slot number badge */}
+            <div style={{
+              position: 'absolute',
+              top: '0.5rem',
+              right: '0.5rem',
+              background: 'rgba(0, 0, 0, 0.7)',
+              color: '#fff',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8rem',
+              fontWeight: 'bold'
+            }}>
+              {index + 1}
+            </div>
+            
+            {isOccupied ? (
+              <>
+                {/* Coin image */}
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  marginBottom: '0.5rem',
+                  border: '3px solid #FFD700',
+                  boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)'
+                }}>
+                  <img
+                    src={playerCoinImages[player.address]?.[`${coinSide}Image`] || '/coins/plainh.png'}
+                    alt={`${coinSide} side`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      cursor: 'pointer'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCoinSideToggle(player.address)
+                    }}
+                  />
+                </div>
+                
+                {/* Player address */}
+                <div style={{
+                  color: '#00ff88',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginBottom: '0.5rem',
+                  wordBreak: 'break-all'
+                }}>
+                  {player.address?.slice(0, 6)}...{player.address?.slice(-4)}
+                </div>
+                
+                {/* Status indicator */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: isCurrentUser ? '#00ff88' : '#00bfff'
+                  }} />
+                  <span style={{
+                    color: isCurrentUser ? '#00ff88' : '#00bfff',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold'
+                  }}>
+                    {isCurrentUser ? 'You' : 'Player'}
+                  </span>
+                </div>
+                
+                {/* Change coin button */}
+                <button
+                  style={{
+                    background: 'linear-gradient(135deg, #ff1493, #8a2be2)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.25rem',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.7rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onCoinChange(player.address)
+                  }}
+                >
+                  Change Coin
+                </button>
+              </>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                color: '#FF1493',
+                fontSize: '0.9rem',
+                fontWeight: 'bold',
+                textAlign: 'center'
+              }}>
+                {canJoin ? (
+                  <div onClick={() => onSlotClick(index)}>
+                    {isJoining ? 'Joining...' : 'Click to Join'}
+                  </div>
+                ) : (
+                  'Empty Slot'
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 const BattleRoyale3DCoins = ({
   players = [],
   gamePhase = 'filling',
@@ -337,173 +522,17 @@ const BattleRoyale3DCoins = ({
   // 2D Lobby Display
   if (!shouldUse3D) {
     return (
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '1rem',
-        padding: '1rem',
-        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(138, 43, 226, 0.3))',
-        borderRadius: '1rem',
-        border: '2px solid rgba(255, 20, 147, 0.3)',
-        minHeight: '500px'
-      }}>
-        {Array.from({ length: 8 }, (_, index) => {
-          const player = players[index]
-          const isOccupied = player?.address
-          const isCurrentUser = player?.address === currentUserAddress
-          const coinSide = coinSides[player?.address] || 'heads'
-          
-          return (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '1rem',
-                background: isOccupied 
-                  ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 191, 255, 0.2))'
-                  : 'linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(138, 43, 226, 0.2))',
-                borderRadius: '0.5rem',
-                border: `2px solid ${isOccupied ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 20, 147, 0.5)'}`,
-                cursor: canJoin && !isOccupied ? 'pointer' : 'default',
-                transition: 'all 0.3s ease',
-                position: 'relative'
-              }}
-              onMouseEnter={() => setHoveredSlot(index)}
-              onMouseLeave={() => setHoveredSlot(null)}
-              onClick={() => {
-                if (canJoin && !isOccupied) {
-                  onSlotClick(index)
-                }
-              }}
-            >
-              {/* Slot number badge */}
-              <div style={{
-                position: 'absolute',
-                top: '0.5rem',
-                right: '0.5rem',
-                background: 'rgba(0, 0, 0, 0.7)',
-                color: '#fff',
-                borderRadius: '50%',
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.8rem',
-                fontWeight: 'bold'
-              }}>
-                {index + 1}
-              </div>
-              
-              {isOccupied ? (
-                <>
-                  {/* Coin image */}
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    marginBottom: '0.5rem',
-                    border: '3px solid #FFD700',
-                    boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)'
-                  }}>
-                    <img
-                      src={playerCoinImages[player.address]?.[`${coinSide}Image`] || '/coins/plainh.png'}
-                      alt={`${coinSide} side`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        cursor: 'pointer'
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onCoinSideToggle(player.address)
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Player address */}
-                  <div style={{
-                    color: '#00ff88',
-                    fontSize: '0.8rem',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    marginBottom: '0.5rem',
-                    wordBreak: 'break-all'
-                  }}>
-                    {player.address?.slice(0, 6)}...{player.address?.slice(-4)}
-                  </div>
-                  
-                  {/* Status indicator */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <div style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: isCurrentUser ? '#00ff88' : '#00bfff'
-                    }} />
-                    <span style={{
-                      color: isCurrentUser ? '#00ff88' : '#00bfff',
-                      fontSize: '0.7rem',
-                      fontWeight: 'bold'
-                    }}>
-                      {isCurrentUser ? 'You' : 'Player'}
-                    </span>
-                  </div>
-                  
-                  {/* Change coin button */}
-                  <button
-                    style={{
-                      background: 'linear-gradient(135deg, #ff1493, #8a2be2)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      padding: '0.25rem 0.5rem',
-                      fontSize: '0.7rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onCoinChange(player.address)
-                    }}
-                  >
-                    Change Coin
-                  </button>
-                </>
-              ) : (
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  color: '#FF1493',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center'
-                }}>
-                  {canJoin ? (
-                    <div onClick={() => onSlotClick(index)}>
-                      {isJoining ? 'Joining...' : 'Click to Join'}
-                    </div>
-                  ) : (
-                    'Empty Slot'
-                  )}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+      <Lobby2DDisplay
+        players={players}
+        currentUserAddress={currentUserAddress}
+        playerCoinImages={playerCoinImages}
+        coinSides={coinSides}
+        onSlotClick={onSlotClick}
+        canJoin={canJoin}
+        isJoining={isJoining}
+        onCoinSideToggle={onCoinSideToggle}
+        onCoinChange={onCoinChange}
+      />
     )
   }
   
