@@ -961,25 +961,25 @@ const GameRoomTab = ({
       }))
     }
     
-    socket.on('game_state_update', handleGameStateUpdate)
+    socket.on('battle_royale_state_update', handleGameStateUpdate)
     socket.on('game_ready', handleGameReady)
-    socket.on('game_started', handleGameStarted)
-    socket.on('flip_executing', handleFlipExecuting)
-    socket.on('round_result', handleRoundResult)
-    socket.on('game_complete', handleGameComplete)
-    socket.on('new_round', handleNewRound)
+    socket.on('battle_royale_starting', handleGameStarted)
+    socket.on('battle_royale_flips_executing', handleFlipExecuting)
+    socket.on('battle_royale_round_result', handleRoundResult)
+    socket.on('battle_royale_game_complete', handleGameComplete)
+    socket.on('battle_royale_new_round', handleNewRound)
     
-    // Request current game state when mounting
-    socket.emit('request_game_state', { gameId })
+    // Request current Battle Royale game state when mounting
+    socket.emit('request_battle_royale_state', { gameId })
     
     return () => {
-      socket.off('game_state_update', handleGameStateUpdate)
+      socket.off('battle_royale_state_update', handleGameStateUpdate)
       socket.off('game_ready', handleGameReady)
-      socket.off('game_started', handleGameStarted)
-      socket.off('flip_executing', handleFlipExecuting)
-      socket.off('round_result', handleRoundResult)
-      socket.off('game_complete', handleGameComplete)
-      socket.off('new_round', handleNewRound)
+      socket.off('battle_royale_starting', handleGameStarted)
+      socket.off('battle_royale_flips_executing', handleFlipExecuting)
+      socket.off('battle_royale_round_result', handleRoundResult)
+      socket.off('battle_royale_game_complete', handleGameComplete)
+      socket.off('battle_royale_new_round', handleNewRound)
     }
   }, [socket, gameId])
   

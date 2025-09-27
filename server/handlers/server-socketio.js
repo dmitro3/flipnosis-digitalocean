@@ -1,5 +1,4 @@
 const socketIO = require('socket.io')
-const GameStateManager = require('./GameStateManager')
 const BattleRoyaleGameManager = require('./BattleRoyaleGameManager')
 const BattleRoyaleSocketHandlers = require('./BattleRoyaleSocketHandlers')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
@@ -10,18 +9,15 @@ const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 
 class GameServer {
   constructor() {
-    this.gameStateManager = new GameStateManager()
     this.battleRoyaleManager = new BattleRoyaleGameManager()
     this.battleRoyaleHandlers = new BattleRoyaleSocketHandlers()
     this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
     this.userSockets = new Map() // address -> socketId
-    this.gameRooms = new Map() // gameId -> Set of socketIds
     this.battleRoyaleRooms = new Map() // gameId -> Set of socketIds
     this.io = null
     this.dbService = null
     
     console.log(`🏗️ GameServer initialized:`, {
-      gameStateManager: !!this.gameStateManager,
       battleRoyaleManager: !!this.battleRoyaleManager,
       battleRoyaleHandlers: !!this.battleRoyaleHandlers
     })
@@ -69,15 +65,15 @@ class GameServer {
       
       // Deposit system removed - using polling instead
       
-      // ===== NEW GAME ACTIONS =====
-      socket.on('request_game_state', (data) => this.handleRequestGameState(socket, data))
-      socket.on('activate_game', (data) => this.handleActivateGame(socket, data))
-      socket.on('player_choice', (data) => this.handlePlayerChoice(socket, data))
-    socket.on('start_power_charge', (data) => this.handleStartPowerCharge(socket, data))
-    socket.on('stop_power_charge', (data) => this.handleStopPowerCharge(socket, data))
-    socket.on('execute_flip', (data) => this.handleExecuteFlip(socket, data))
-    socket.on('spectate_game', (data) => this.handleSpectateGame(socket, data))
-    socket.on('request_next_round', (data) => this.handleRequestNextRound(socket, data))
+      // ===== BATTLE ROYALE GAME ACTIONS (UNIFIED) =====
+      socket.on('request_game_state', (data) => this.handleRequestBattleRoyaleState(socket, data))
+      socket.on('activate_game', (data) => this.handleActivateBattleRoyaleGame(socket, data))
+      socket.on('player_choice', (data) => this.handleBattleRoyaleChoice(socket, data))
+      socket.on('start_power_charge', (data) => this.handleBattleRoyaleStartPowerCharge(socket, data))
+      socket.on('stop_power_charge', (data) => this.handleBattleRoyaleStopPowerCharge(socket, data))
+      socket.on('execute_flip', (data) => this.handleBattleRoyaleExecuteFlip(socket, data))
+      socket.on('spectate_game', (data) => this.handleBattleRoyaleSpectate(socket, data))
+      socket.on('request_next_round', (data) => this.handleBattleRoyaleNextRound(socket, data))
       
       // ===== BATTLE ROYALE ACTIONS =====
       socket.on('join_battle_royale_room', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io))
@@ -193,330 +189,154 @@ class GameServer {
     }
   }
 
-  // ===== GAME STATE MANAGEMENT =====
-  async handleRequestGameState(socket, data) {
-    console.log(`🔍 handleRequestGameState called with data:`, data)
+  // ===== BATTLE ROYALE GAME STATE MANAGEMENT (UNIFIED) =====
+  async handleRequestBattleRoyaleState(socket, data) {
+    console.log(`🔍 handleRequestBattleRoyaleState called with data:`, data)
     console.log(`🔍 Socket ID: ${socket.id}`)
     
     if (!data) {
-      console.error('❌ No data provided to handleRequestGameState')
-      socket.emit('game_not_found', { error: 'No data provided' })
+      console.error('❌ No data provided to handleRequestBattleRoyaleState')
+      socket.emit('battle_royale_error', { error: 'No data provided' })
       return
     }
     
     const { gameId } = data
-    console.log(`📊 Game state requested for ${gameId}`)
+    console.log(`📊 Battle Royale game state requested for ${gameId}`)
     
     if (!gameId) {
-      console.error('❌ No gameId provided to handleRequestGameState')
-      socket.emit('game_not_found', { error: 'No gameId provided' })
+      console.error('❌ No gameId provided to handleRequestBattleRoyaleState')
+      socket.emit('battle_royale_error', { error: 'No gameId provided' })
       return
     }
     
     try {
-      let gameState = this.gameStateManager.getGame(gameId)
-      console.log(`🔍 GameStateManager lookup result:`, gameState ? 'found' : 'not found')
+      // Always use Battle Royale system
+      let gameState = this.battleRoyaleManager.getGame(gameId)
+      console.log(`🔍 BattleRoyaleManager lookup result:`, gameState ? 'found' : 'not found')
       
       if (!gameState) {
         // Try to load from database and restore
-        console.log(`🔍 Attempting database lookup for game: ${gameId}`)
-        const gameData = await this.dbService.getGame(gameId)
+        console.log(`🔍 Attempting database lookup for Battle Royale game: ${gameId}`)
+        const gameData = await this.dbService.getBattleRoyaleGame(gameId)
         console.log(`🔍 Database lookup result:`, gameData ? 'found' : 'not found')
         if (gameData) {
-          console.log(`🔍 Game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
-        }
-         if (gameData && (gameData.status === 'active' || gameData.status === 'awaiting_deposit' || gameData.status === 'awaiting_challenger')) {
-          gameState = this.initializeGameState(gameId, gameData)
-          this.gameStateManager.createGame(gameId, gameState)
-          
-          // Start state broadcasting
-          this.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
-            this.io.to(room).emit(message.type, message)
-          })
+          console.log(`🔍 Battle Royale game data from DB:`, { id: gameData.id, status: gameData.status, creator: gameData.creator })
+          // Create battle royale game
+          gameState = this.battleRoyaleManager.createBattleRoyale(gameId, gameData, this.dbService)
         }
       }
       
       if (gameState) {
-        const fullState = this.gameStateManager.getFullGameState(gameId)
-        console.log(`📤 Sending game_state_update to socket ${socket.id}:`, fullState ? 'state found' : 'no state')
-        socket.emit('game_state_update', fullState)
+        const fullState = this.battleRoyaleManager.getFullGameState(gameId)
+        console.log(`📤 Sending battle_royale_state_update to socket ${socket.id}:`, fullState ? 'state found' : 'no state')
+        socket.emit('battle_royale_state_update', fullState)
       } else {
-        console.log(`📤 Sending game_not_found to socket ${socket.id} for gameId: ${gameId}`)
-        socket.emit('game_not_found', { gameId })
+        console.log(`📤 Sending battle_royale_error to socket ${socket.id} for gameId: ${gameId}`)
+        socket.emit('battle_royale_error', { gameId, error: 'Game not found' })
       }
     } catch (error) {
-       console.error('❌ Error in handleRequestGameState:', error)
-       socket.emit('game_not_found', { gameId, error: error.message })
+       console.error('❌ Error in handleRequestBattleRoyaleState:', error)
+       socket.emit('battle_royale_error', { gameId, error: error.message })
      }
    }
 
-   // ===== GAME ACTIVATION =====
-   async handleActivateGame(socket, data) {
-     console.log(`🎮 handleActivateGame called with data:`, data)
+   // ===== BATTLE ROYALE GAME ACTIVATION (UNIFIED) =====
+   async handleActivateBattleRoyaleGame(socket, data) {
+     console.log(`🎮 handleActivateBattleRoyaleGame called with data:`, data)
      
      if (!data) {
-       console.error('❌ No data provided to handleActivateGame')
+       console.error('❌ No data provided to handleActivateBattleRoyaleGame')
        return
      }
      
      const { gameId } = data
-     console.log(`🎮 Game activation requested for ${gameId}`)
+     console.log(`🎮 Battle Royale game activation requested for ${gameId}`)
      
      if (!gameId) {
-       console.error('❌ No gameId provided to handleActivateGame')
+       console.error('❌ No gameId provided to handleActivateBattleRoyaleGame')
        return
      }
      
      try {
-       // Check if game already exists in GameStateManager
-       let gameState = this.gameStateManager.getGame(gameId)
+       // Always use Battle Royale system
+       let gameState = this.battleRoyaleManager.getGame(gameId)
        
        if (gameState) {
-         console.log(`🎮 Game ${gameId} already exists in memory, checking if it needs activation`)
-         
-         // If it's still in deposit_stage, activate it
-         if (gameState.phase === 'deposit_stage') {
-           console.log(`🎮 Activating existing game ${gameId} from deposit_stage to game_active`)
-           
-           // Use the GameStateManager's activation method
-           const success = this.gameStateManager.activateGameAfterDeposits(gameId, (roomId, eventType, eventData) => {
-             this.io.to(roomId).emit(eventType, eventData)
-           })
-           
-           if (success) {
-             console.log(`✅ Game ${gameId} successfully activated`)
-             
-             // Broadcast game started event to all players in the room
-             this.io.to(`game_${gameId}`).emit('game_started', {
-               type: 'game_started',
-               gameId,
-               message: 'Both assets deposited - game starting!'
-             })
-             
-             // Send updated game state to all players
-             const fullState = this.gameStateManager.getFullGameState(gameId)
-             if (fullState) {
-               this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
-             }
-           } else {
-             console.error(`❌ Failed to activate game ${gameId}`)
-           }
-         } else {
-           console.log(`🎮 Game ${gameId} is already in phase ${gameState.phase}, no activation needed`)
-         }
+         console.log(`🎮 Battle Royale game ${gameId} already exists in memory`)
+         // Battle Royale games auto-activate when they have enough players
+         return
        } else {
-         console.log(`🎮 Game ${gameId} not in memory, loading from database and activating`)
+         console.log(`🎮 Battle Royale game ${gameId} not in memory, loading from database`)
          
-         // Check if this is a battle royale game
-         if (gameId.startsWith('br_')) {
-           console.log(`🎮 Battle Royale game detected: ${gameId}`)
-           
-           // Load battle royale game from database
-           const battleRoyaleData = await this.dbService.getBattleRoyaleGame(gameId)
-           
-           if (battleRoyaleData) {
-             console.log(`🎮 Battle Royale game found in database: ${gameId}`)
-             // Battle royale games are handled by BattleRoyaleGameManager
-             // No need to activate here - they're handled by their own flow
-             return
-           }
-         }
+         // Load battle royale game from database
+         const battleRoyaleData = await this.dbService.getBattleRoyaleGame(gameId)
          
-         // Load from database (1v1 games)
-         const gameData = await this.dbService.getGame(gameId)
-         
-         if (gameData && (gameData.creator_deposited && gameData.challenger_deposited)) {
-           console.log(`🎮 Both players deposited for ${gameId}, creating active game state`)
+         if (battleRoyaleData) {
+           console.log(`🎮 Battle Royale game found in database: ${gameId}`)
+           // Create battle royale game
+           gameState = this.battleRoyaleManager.createBattleRoyale(gameId, battleRoyaleData, this.dbService)
            
-           // Create game state directly as active (both deposits confirmed)
-           gameState = this.initializeGameState(gameId, gameData)
-           
-           // Force it to be active since we know both deposits are confirmed
-           gameState.phase = 'game_active'
-           gameState.gamePhase = 'waiting_choice'
-           gameState.creatorDeposited = true
-           gameState.challengerDeposited = true
-           gameState.currentTurn = gameState.creator
-           gameState.actionDeadline = Date.now() + 20000 // 20 seconds for choice
-           
-           // Create the game in GameStateManager
-           this.gameStateManager.createGame(gameId, gameState)
-           
-           // Start state broadcasting
-           this.gameStateManager.startStateBroadcasting(gameId, (roomId, eventType, eventData) => {
-             console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
-             this.io.to(roomId).emit(eventType, eventData)
-           })
-           
-           // Start round countdown with proper broadcast function
-           this.gameStateManager.startRoundCountdown(gameId, (roomId, eventType, eventData) => {
-             console.log(`📡 Broadcasting ${eventType} to ${roomId}`)
-             this.io.to(roomId).emit(eventType, eventData)
-           })
-           
-           console.log(`✅ Game ${gameId} created and activated`)
-           
-           // Broadcast game started event
-           this.io.to(`game_${gameId}`).emit('game_started', {
-             type: 'game_started',
-             gameId,
-             message: 'Both assets deposited - game starting!'
-           })
-           
-           // Send updated game state to all players
-           const fullState = this.gameStateManager.getFullGameState(gameId)
+           // Broadcast game state update
+           const fullState = this.battleRoyaleManager.getFullGameState(gameId)
            if (fullState) {
-             this.io.to(`game_${gameId}`).emit('game_state_update', fullState)
+             this.io.to(`br_${gameId}`).emit('battle_royale_state_update', fullState)
            }
          } else {
-           console.error(`❌ Game ${gameId} not found or deposits not confirmed`)
+           console.error(`❌ Battle Royale game ${gameId} not found in database`)
          }
        }
      } catch (error) {
-       console.error('❌ Error in handleActivateGame:', error)
+       console.error('❌ Error in handleActivateBattleRoyaleGame:', error)
      }
    }
 
-  // ===== PLAYER ACTIONS =====
-  async handlePlayerChoice(socket, data) {
+  // ===== BATTLE ROYALE PLAYER ACTIONS (UNIFIED) =====
+  async handleBattleRoyaleChoice(socket, data) {
     const { gameId, address, choice } = data
-    console.log(`🎯 Player choice: ${address} chose ${choice} in game ${gameId}`)
+    console.log(`🎯 Battle Royale player choice: ${address} chose ${choice} in game ${gameId}`)
     
-    const gameState = this.gameStateManager.getGame(gameId)
-    if (!gameState) {
-      socket.emit('error', { message: 'Game not found' })
-      return
-    }
-    
-    // Validate it's the player's turn
-    if (gameState.currentTurn?.toLowerCase() !== address.toLowerCase()) {
-      socket.emit('error', { message: 'Not your turn' })
-      return
-    }
-    
-    // Set the choice
-    this.gameStateManager.setPlayerChoice(gameId, address, choice)
-    
-    // Broadcast updated state
-    const fullState = this.gameStateManager.getFullGameState(gameId)
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    this.io.to(roomId).emit('game_state_update', fullState)
+    // Battle Royale doesn't use player choices - redirect to power charging
+    socket.emit('battle_royale_error', { message: 'Battle Royale uses power charging, not choices' })
   }
 
-  async handleStartPowerCharge(socket, data) {
+  async handleBattleRoyaleStartPowerCharge(socket, data) {
     const { gameId, address } = data
-    console.log(`⚡ Starting power charge: ${address} in game ${gameId}`)
+    console.log(`⚡ Battle Royale starting power charge: ${address} in game ${gameId}`)
     
-    const gameState = this.gameStateManager.getGame(gameId)
-    if (!gameState) {
-      socket.emit('error', { message: 'Game not found' })
-      return
-    }
-    
-    // Validate player has made a choice
-    const isCreator = address.toLowerCase() === gameState.creator?.toLowerCase()
-    const hasChoice = isCreator ? gameState.creatorChoice : gameState.challengerChoice
-    if (!hasChoice) {
-      socket.emit('error', { message: 'Must choose heads or tails first' })
-      return
-    }
-    
-    // Start power charging
-    this.gameStateManager.startPowerCharging(gameId, address)
-    
-    // State will be broadcast automatically via the update interval
+    // Use Battle Royale handlers
+    this.battleRoyaleHandlers.handleBattleRoyaleStartPowerCharge(socket, data, this.battleRoyaleManager, this.io)
   }
 
-  async handleStopPowerCharge(socket, data) {
+  async handleBattleRoyaleStopPowerCharge(socket, data) {
     const { gameId, address } = data
-    console.log(`⚡ Stopping power charge: ${address} in game ${gameId}`)
+    console.log(`⚡ Battle Royale stopping power charge: ${address} in game ${gameId}`)
     
-    const gameState = this.gameStateManager.getGame(gameId)
-    if (!gameState) {
-      socket.emit('error', { message: 'Game not found' })
-      return
-    }
-    
-    // Stop power charging
-    this.gameStateManager.stopPowerCharging(gameId, address)
-    
-    // Just broadcast the updated state
-    const fullState = this.gameStateManager.getFullGameState(gameId)
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    this.io.to(roomId).emit('game_state_update', fullState)
+    // Use Battle Royale handlers
+    this.battleRoyaleHandlers.handleBattleRoyaleStopPowerCharge(socket, data, this.battleRoyaleManager, this.io)
   }
 
-  async handleExecuteFlip(socket, data) {
+  async handleBattleRoyaleExecuteFlip(socket, data) {
+    const { gameId, address } = data
+    console.log(`🎲 Battle Royale execute flip: ${address} in game ${gameId}`)
+    
+    // Use Battle Royale handlers
+    this.battleRoyaleHandlers.handleBattleRoyaleExecuteFlip(socket, data, this.battleRoyaleManager, this.io)
+  }
+
+  async handleBattleRoyaleSpectate(socket, data) {
+    const { gameId, address } = data
+    console.log(`👁️ Battle Royale spectate: ${address} in game ${gameId}`)
+    
+    // Use Battle Royale handlers
+    this.battleRoyaleHandlers.handleBattleRoyaleSpectate(socket, data, this.battleRoyaleManager, this.io)
+  }
+
+  async handleBattleRoyaleNextRound(socket, data) {
     const { gameId } = data
-    console.log(`🎲 SERVER: handleExecuteFlip called for game ${gameId}`)
+    console.log(`🔄 Battle Royale next round requested for game ${gameId}`)
     
-    try {
-      // Pass broadcast function to executeFlip so it can handle round progression
-      console.log(`🎲 SERVER: About to call gameStateManager.executeFlip`)
-      const gameState = this.gameStateManager.executeFlip(gameId, (roomId, eventType, data) => {
-        console.log(`🎲 SERVER: Broadcasting ${eventType} to room ${roomId}`)
-        this.io.to(roomId).emit(eventType, data)
-      })
-      console.log(`🎲 SERVER: executeFlip returned:`, gameState ? 'success' : 'null')
-    
-      if (!gameState) {
-        console.log(`🎲 SERVER: executeFlip returned null - game not found`)
-        socket.emit('error', { message: 'Game not found' })
-        return
-      }
-      
-      // Broadcast flip execution with all details
-      console.log(`🎲 SERVER: Broadcasting flip_executing event`)
-      const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-      this.io.to(roomId).emit('flip_executing', {
-        gameId,
-        coinState: gameState.coinState,
-        creatorChoice: gameState.creatorChoice,
-        challengerChoice: gameState.challengerChoice,
-        creatorPower: gameState.creatorFinalPower,
-        challengerPower: gameState.challengerFinalPower
-      })
-      
-      console.log(`🎲 SERVER: handleExecuteFlip completed successfully`)
-      // State updates will continue via broadcast interval
-    } catch (error) {
-      console.error(`🎲 SERVER: Error in handleExecuteFlip:`, error)
-      socket.emit('error', { message: 'Failed to execute flip' })
-    }
-  }
-
-  async handleSpectateGame(socket, data) {
-    const { gameId, address } = data
-    console.log(`👁️ ${address} spectating game ${gameId}`)
-    
-    const gameState = this.gameStateManager.getGame(gameId)
-    if (!gameState) {
-      socket.emit('error', { message: 'Game not found' })
-      return
-    }
-    
-    // Add as spectator
-    this.gameStateManager.addSpectator(gameId, address)
-    
-    // Send current state
-    const fullState = this.gameStateManager.getFullGameState(gameId)
-    socket.emit('game_state_update', fullState)
-  }
-
-  async handleRequestNextRound(socket, data) {
-    const { gameId } = data
-    console.log(`🔄 Next round requested for game ${gameId}`)
-    
-    // Start next round
-    const gameState = this.gameStateManager.startNextRound(gameId, (roomId, eventType, data) => {
-      this.io.to(roomId).emit(eventType, data)
-    })
-    
-    if (gameState) {
-      console.log(`✅ Next round started for game ${gameId}`)
-    } else {
-      console.log(`❌ Could not start next round for game ${gameId}`)
-    }
+    // Battle Royale rounds are handled automatically by the system
+    socket.emit('battle_royale_error', { message: 'Battle Royale rounds are automatic' })
   }
 
   // ===== PRESERVED METHODS (Chat, Offers, Deposits) =====
@@ -669,96 +489,11 @@ class GameServer {
     this.depositCountdowns[gameId] = countdownInterval
   }
 
-  clearDepositCountdown(gameId) {
-    if (this.depositCountdowns && this.depositCountdowns[gameId]) {
-      clearInterval(this.depositCountdowns[gameId])
-      delete this.depositCountdowns[gameId]
-      console.log(`⏰ Cleared deposit countdown for game ${gameId}`)
-    }
-  }
+  // Removed clearDepositCountdown - no longer needed for 1v1 games
 
 
   // ===== HELPER METHODS =====
-  initializeGameState(gameId, gameData) {
-    // Parse coin data if needed
-    let coinData = null
-    try {
-      coinData = gameData.coin_data ? 
-        (typeof gameData.coin_data === 'string' ? JSON.parse(gameData.coin_data) : gameData.coin_data)
-        : null
-    } catch (e) {
-      console.warn('Failed to parse coin_data:', e)
-    }
-    
-    console.log(`🔍 Initializing game state for ${gameId}:`)
-    console.log(`  - Creator: ${gameData.creator}`)
-    console.log(`  - Challenger: ${gameData.challenger}`)
-    console.log(`  - Status: ${gameData.status}`)
-    
-    // Check if both players are deposited to determine initial game phase
-    const bothDeposited = Boolean(gameData.creator_deposited && gameData.challenger_deposited)
-    const initialPhase = bothDeposited ? 'game_active' : 'deposit_stage'
-    const initialGamePhase = bothDeposited ? 'waiting_choice' : null
-    
-    console.log(`🎮 Game initialization: bothDeposited=${bothDeposited}, phase=${initialPhase}, gamePhase=${initialGamePhase}`)
-    
-    return {
-      gameId,
-      phase: initialPhase,
-      gamePhase: initialGamePhase,
-      status: 'active',
-      currentRound: 1,
-      totalRounds: 5,
-      creatorScore: 0,
-      challengerScore: 0,
-      creator: gameData.creator,
-      challenger: gameData.challenger,
-      currentTurn: gameData.creator, // Creator always goes first
-      
-      // Player choices and power (reset for new game)
-      creatorChoice: null,
-      challengerChoice: null,
-      creatorPowerProgress: 0,
-      challengerPowerProgress: 0,
-      creatorFinalPower: 0,
-      challengerFinalPower: 0,
-      creatorCharging: false,
-      challengerCharging: false,
-      
-      // Coin state for synchronized animation
-      coinState: {
-        rotation: { x: 0, y: 0, z: 0 },
-        velocity: { x: 0, y: 0, z: 0 },
-        isFlipping: false,
-        flipStartTime: null,
-        flipDuration: 3000,
-        flipResult: null,
-        totalRotations: 0,
-        finalRotation: 0
-      },
-      
-      // Timing
-      actionDeadline: bothDeposited ? Date.now() + 20000 : null, // 20 second timer for first choice
-      roundStartTime: bothDeposited ? Date.now() : null,
-      turnStartTime: bothDeposited ? Date.now() : null,
-      
-      // Results
-      flipResult: null,
-      roundWinner: null,
-      gameWinner: null,
-      
-      // Spectators
-      spectators: [],
-      
-      coinData: coinData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      
-      // Add deposit status fields for game readiness check
-      creatorDeposited: gameData.creator_deposited || false,
-      challengerDeposited: gameData.challenger_deposited || false
-    }
-  }
+  // Removed initializeGameState - no longer needed for 1v1 games
 
   // ===== BATTLE ROYALE HANDLERS =====
   async handleJoinBattleRoyale(socket, data) {
@@ -918,11 +653,6 @@ class GameServer {
     
     const data = this.socketData.get(socket.id)
     if (data) {
-      // Handle regular game disconnection
-      if (data.gameType !== 'battle_royale' && data.gameId && data.role === 'spectator') {
-        this.gameStateManager.removeSpectator(data.gameId, data.address)
-      }
-      
       // Handle Battle Royale disconnection
       if (data.gameType === 'battle_royale' && data.gameId && data.role === 'spectator') {
         this.battleRoyaleManager.removeSpectator(data.gameId, data.address)
@@ -930,18 +660,6 @@ class GameServer {
       
       this.userSockets.delete(data.address.toLowerCase())
       this.socketData.delete(socket.id)
-      
-      // Remove from regular game room tracking
-      if (data.gameType !== 'battle_royale' && data.gameId) {
-        const gameRoom = this.gameRooms.get(data.gameId)
-        if (gameRoom) {
-          gameRoom.delete(socket.id)
-          if (gameRoom.size === 0) {
-            this.gameStateManager.stopStateBroadcasting(data.gameId)
-            this.gameRooms.delete(data.gameId)
-          }
-        }
-      }
       
       // Remove from Battle Royale room tracking
       if (data.gameType === 'battle_royale' && data.gameId) {
@@ -966,8 +684,7 @@ function initializeSocketIO(server, dbService) {
   const io = gameServer.initialize(server, dbService)
   return {
     io,
-    gameServer, // Export the gameServer instance
-    clearDepositCountdown: (gameId) => gameServer.clearDepositCountdown(gameId)
+    gameServer // Export the gameServer instance
   }
 }
 

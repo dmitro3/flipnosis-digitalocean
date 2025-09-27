@@ -536,10 +536,10 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
       setIsGameReady(true)
       setActiveTab('game')
       
-      // Request fresh game state to get updated phase
+      // Request fresh Battle Royale game state to get updated phase
       if (socketService && socketService.emit) {
         setTimeout(() => {
-          socketService.emit('request_game_state', { gameId })
+          socketService.emit('request_battle_royale_state', { gameId })
         }, 500) // Small delay to ensure server state is updated
       }
       
@@ -652,14 +652,14 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         await socketService.connect(gameId, address)
         setConnected(true)
         
-        // Register event listeners (remove deposit-related ones)
-        console.log('📌 Registering Socket.io event listeners...')
+        // Register Battle Royale event listeners
+        console.log('📌 Registering Battle Royale Socket.io event listeners...')
         
         socketService.on('room_joined', handleRoomJoined)
-        socketService.on('game_state_update', handleGameStateUpdate)
-        socketService.on('flip_executing', handleFlipExecuting)
-        socketService.on('round_result', handleRoundResult)
-        socketService.on('game_not_found', handleGameNotFound)
+        socketService.on('battle_royale_state_update', handleGameStateUpdate)
+        socketService.on('battle_royale_flips_executing', handleFlipExecuting)
+        socketService.on('battle_royale_round_result', handleRoundResult)
+        socketService.on('battle_royale_error', handleGameNotFound)
         
         // Keep countdown for UI display only
         socketService.on('deposit_countdown', handleDepositCountdown)
@@ -669,22 +669,22 @@ const FlipSuiteFinal = ({ gameData: propGameData, coinConfig: propCoinConfig }) 
         socketService.on('offer_accepted', handleOfferAccepted)
         
         // Game started event (when both deposits complete)
-        socketService.on('game_started', handleGameStarted)
+        socketService.on('battle_royale_starting', handleGameStarted)
         
         // New round event (for round progression)
-        socketService.on('new_round', handleNewRound)
+        socketService.on('battle_royale_new_round', handleNewRound)
         
         console.log('✅ All Socket.io event listeners registered')
         
-        // Join room
-        socketService.emit('join_room', { 
-          roomId: gameId.startsWith('game_') ? gameId : `game_${gameId}`, 
+        // Join Battle Royale room
+        socketService.emit('join_battle_royale_room', { 
+          roomId: gameId.startsWith('br_') ? gameId : `br_${gameId}`, 
           address 
         })
         
-        // Request current game state
+        // Request current Battle Royale game state
         setTimeout(() => {
-          socketService.emit('request_game_state', { gameId })
+          socketService.emit('request_battle_royale_state', { gameId })
         }, 100)
         
       } catch (error) {

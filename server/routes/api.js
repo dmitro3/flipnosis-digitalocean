@@ -1136,17 +1136,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
           console.log('🎮 Both assets deposited - game is now active!')
           console.log(`✅ Updated game ${gameId}: challenger_deposited = true, status = active`)
           
-          // Update the cached game state status
-          const existingGameState = gameServer.gameStateManager.getGame(gameId)
-          if (existingGameState) {
-            existingGameState.status = 'active'
-            existingGameState.challengerDeposited = true
-            console.log(`🔄 Updated cached game state status to active and challengerDeposited to true`)
-          }
-          
-          // Stop the deposit countdown since both players have deposited
-          gameServer.clearDepositCountdown(gameId)
-          console.log(`⏰ Stopped deposit countdown for game ${gameId}`)
+          // Battle Royale games are handled by BattleRoyaleGameManager
+          // No need to update 1v1 game state anymore
           
           // Notify all players
           gameServer.io.to(gameId).emit('offer_accepted', {
@@ -1691,78 +1682,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
       
       const bothDeposited = Boolean(game.creator_deposited && game.challenger_deposited)
       
-      // If both players are deposited and game hasn't been initialized yet, initialize it
-      if (bothDeposited && gameServer && gameServer.gameStateManager) {
-        const existingGameState = gameServer.gameStateManager.getGame(gameId)
-        
-        if (!existingGameState) {
-          console.log(`🎮 Both players deposited - initializing game state for ${gameId}`)
-          
-          // Initialize game state with both players ready
-          const initialGameState = {
-            gameId,
-            phase: 'game_active',
-            gamePhase: 'waiting_choice',
-            status: 'active',
-            creator: game.creator,
-            challenger: game.challenger,
-            currentTurn: game.creator,
-            creatorDeposited: true,
-            challengerDeposited: true,
-            coin_data: game.coin_data
-          }
-          
-          // Create the game state in GameStateManager
-          gameServer.gameStateManager.createGame(gameId, initialGameState)
-          
-          // Start countdown for first round
-          gameServer.gameStateManager.startRoundCountdown(gameId, (roomId, eventType, data) => {
-            gameServer.io.to(roomId).emit(eventType, data)
-          })
-          
-          // Start state broadcasting
-          gameServer.gameStateManager.startStateBroadcasting(gameId, (room, message) => {
-            gameServer.io.to(room).emit(message.type, message)
-          })
-          
-          // Update database status to active
-          try {
-            await new Promise((resolve, reject) => {
-              dbService.db.run(`
-                UPDATE games 
-                SET status = 'active', phase = 'game_active'
-                WHERE id = ?
-              `, [gameId], function(err) {
-                if (err) reject(err)
-                else resolve()
-              })
-            })
-            console.log(`✅ Updated game ${gameId} status to active in database`)
-          } catch (dbError) {
-            console.error('Error updating game status in database:', dbError)
-          }
-          
-          // Broadcast game ready event to all connected clients
-          const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-          gameServer.io.to(roomId).emit('game_state_update', {
-            gameId,
-            phase: 'game_active',
-            gamePhase: 'waiting_choice',
-            status: 'active',
-            creator: game.creator,
-            challenger: game.challenger,
-            currentTurn: game.creator,
-            creatorDeposited: true,
-            challengerDeposited: true,
-            currentRound: 1,
-            totalRounds: 5,
-            creatorScore: 0,
-            challengerScore: 0
-          })
-          
-          console.log(`🎮 Game ${gameId} initialized and ready to play!`)
-        }
-      }
+      // Battle Royale games are handled by BattleRoyaleGameManager
+      // No need to initialize 1v1 games anymore
       
       // Return minimal status info for polling
       res.json({
@@ -1829,30 +1750,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         })
         console.log('✅ Challenger deposit saved to database')
         
-        // CRITICAL: Activate the game now that both players have deposited
-        if (gameServer && gameServer.gameStateManager) {
-          const activated = gameServer.gameStateManager.activateGameAfterDeposits(gameId, (roomId, message) => {
-            gameServer.io.to(roomId).emit(message.type, message)
-          })
-          
-          if (activated) {
-            console.log('🎮 Game activated after challenger deposit!')
-            
-            // Get the updated game state after activation
-            const fullGameState = gameServer.gameStateManager.getFullGameState(gameId)
-            
-            // Broadcast game started event with full state
-            gameServer.io.to(`game_${gameId}`).emit('game_started', {
-              type: 'game_started',
-              gameId,
-              message: 'Both players deposited - game starting!',
-              ...fullGameState // Include all game state data
-            })
-            
-            // Also broadcast updated game state immediately
-            gameServer.io.to(`game_${gameId}`).emit('game_state_update', fullGameState)
-          }
-        }
+        // Battle Royale games are handled by BattleRoyaleGameManager
+        // No need to activate 1v1 games anymore
       }
       
       // That's it! Polling will detect the change
