@@ -303,9 +303,9 @@ const MyFlipsDropdown = () => {
               ) : (
                 <EmptyState>
                   <h3>No active flips</h3>
-                  <p>Create your first flip to get started!</p>
+                  <p>Create your first battle royale to get started!</p>
                   <CreateButton to="/create" onClick={handleClose}>
-                    Create Flip
+                    Create Battle Royale
                   </CreateButton>
                 </EmptyState>
               )}
