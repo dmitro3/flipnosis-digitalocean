@@ -242,6 +242,87 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const [timeLeft, setTimeLeft] = useState(20) // Time left for power charging
   const [isRevealing, setIsRevealing] = useState(false) // Whether target is being revealed
   const [flipStates, setFlipStates] = useState({}) // Track flip states for each player
+  const [gameStarted, setGameStarted] = useState(false) // Track if game has started
+
+  // Handle game start and target revealing
+  useEffect(() => {
+    if (gameStatus === 'starting' && !gameStarted) {
+      setGameStarted(true)
+      setGamePhase('revealing_target')
+      setIsRevealing(true)
+      
+      // Simulate target selection after 2 seconds
+      setTimeout(() => {
+        const result = Math.random() < 0.5 ? 'heads' : 'tails'
+        setTargetResult(result)
+        setIsRevealing(false)
+        setGamePhase('charging_power')
+        setTimeLeft(20)
+        showToast(`Target side: ${result.toUpperCase()}! Flip to match!`, 'info')
+        
+        // Start countdown timer
+        const timer = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(timer)
+              setGamePhase('executing_flips')
+              return 0
+            }
+            return prev - 1
+          })
+        }, 1000)
+      }, 2000)
+    }
+  }, [gameStatus, gameStarted, showToast])
+
+  // Handle flip execution when game phase changes
+  useEffect(() => {
+    if (gamePhase === 'executing_flips' && targetResult) {
+      // Trigger flips for all players
+      players.forEach((player, index) => {
+        if (player?.address) {
+          const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
+          const isWinner = flipResult === targetResult
+          
+          setFlipStates(prev => ({
+            ...prev,
+            [player.address]: {
+              isFlipping: true,
+              flipStartTime: Date.now(),
+              flipDuration: 3000,
+              flipResult: flipResult,
+              isWinner: isWinner
+            }
+          }))
+        }
+      })
+      
+      // Complete flips after duration
+      setTimeout(() => {
+        setGamePhase('showing_result')
+        // Show results for a few seconds, then start next round or end game
+        setTimeout(() => {
+          // Check if game should continue or end
+          const remainingPlayers = players.filter(player => {
+            if (!player?.address) return false
+            const flipState = flipStates[player.address]
+            return flipState?.isWinner
+          })
+          
+          if (remainingPlayers.length <= 1) {
+            setGamePhase('completed')
+            showToast('Game Complete!', 'success')
+          } else {
+            // Start next round
+            setGamePhase('revealing_target')
+            setTargetResult(null)
+            setIsRevealing(true)
+            setFlipStates({})
+          }
+        }, 3000)
+      }, 3000)
+    }
+  }, [gamePhase, targetResult, players, flipStates, showToast])
 
   // Load coin images for a player
   const loadPlayerCoinImages = React.useCallback(async (playerAddress, coinChoice) => {
@@ -315,12 +396,22 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           let newGameStatus = 'filling'
           if (data.phase === 'starting' || data.gamePhase === 'starting') {
             newGameStatus = 'starting'
+            // Initialize game phase when game starts
+            if (!gamePhase || gamePhase === 'filling') {
+              setGamePhase('revealing_target')
+              setIsRevealing(true)
+            }
           } else if (data.phase === 'completed' || data.gamePhase === 'game_complete') {
             newGameStatus = 'completed'
           } else if (data.phase === 'round_active' || data.gamePhase) {
             newGameStatus = 'in_progress'
           } else if (joinedCount >= 8) {
             newGameStatus = 'starting'
+            // Initialize game phase when game starts
+            if (!gamePhase || gamePhase === 'filling') {
+              setGamePhase('revealing_target')
+              setIsRevealing(true)
+            }
           }
           
           console.log('📊 Setting game status to:', newGameStatus)
@@ -328,86 +419,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           if (mounted) {
             setGameStatus(newGameStatus)
             
-            // Update game phase based on server data
-            if (data.gamePhase) {
-              setGamePhase(data.gamePhase)
-              
-              // Handle target revealing
-              if (data.gamePhase === 'revealing_target') {
-                setIsRevealing(true)
-                // Simulate target selection (this should come from server)
-                setTimeout(() => {
-                  const result = Math.random() < 0.5 ? 'heads' : 'tails'
-                  setTargetResult(result)
-                  setIsRevealing(false)
-                  setGamePhase('charging_power')
-                  showToast(`Target side: ${result.toUpperCase()}! Flip to match!`, 'info')
-                }, 2000)
-              }
-              
-              // Handle power charging phase
-              if (data.gamePhase === 'charging_power') {
-                setTimeLeft(20) // Reset timer
-                // Start countdown
-                const timer = setInterval(() => {
-                  setTimeLeft(prev => {
-                    if (prev <= 1) {
-                      clearInterval(timer)
-                      setGamePhase('executing_flips')
-                      return 0
-                    }
-                    return prev - 1
-                  })
-                }, 1000)
-              }
-              
-              // Handle flip execution
-              if (data.gamePhase === 'executing_flips') {
-                // Trigger flips for all players
-                players.forEach((player, index) => {
-                  if (player?.address) {
-                    const flipResult = Math.random() < 0.5 ? 'heads' : 'tails'
-                    const isWinner = flipResult === targetResult
-                    
-                    setFlipStates(prev => ({
-                      ...prev,
-                      [player.address]: {
-                        isFlipping: true,
-                        flipStartTime: Date.now(),
-                        flipDuration: 3000,
-                        flipResult: flipResult,
-                        isWinner: isWinner
-                      }
-                    }))
-                  }
-                })
-                
-                // Complete flips after duration
-                setTimeout(() => {
-                  setGamePhase('showing_result')
-                  // Show results for a few seconds, then start next round or end game
-                  setTimeout(() => {
-                    // Check if game should continue or end
-                    const remainingPlayers = players.filter(player => {
-                      if (!player?.address) return false
-                      const flipState = flipStates[player.address]
-                      return flipState?.isWinner
-                    })
-                    
-                    if (remainingPlayers.length <= 1) {
-                      setGamePhase('completed')
-                      showToast('Game Complete!', 'success')
-                    } else {
-                      // Start next round
-                      setGamePhase('revealing_target')
-                      setTargetResult(null)
-                      setIsRevealing(true)
-                      setFlipStates({})
-                    }
-                  }, 3000)
-                }, 3000)
-              }
-            }
+            // Game phase is now handled by the useEffect above
             
             // Don't redirect if game is completed
             if (newGameStatus === 'completed') {
