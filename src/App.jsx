@@ -13,7 +13,6 @@ import { RouterProvider } from 'react-router-dom'
 import { config } from './config/rainbowkit'
 import React, { useEffect } from 'react'
 import ErrorBoundary from './components/ErrorBoundary'
-import './utils/testWebSocket.js'
 
 // Create a client
 const queryClient = new QueryClient({
