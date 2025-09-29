@@ -341,9 +341,11 @@ const BattleRoyaleGameRoom = ({
   const [playerCoinImages, setPlayerCoinImages] = useState({})
   const [showResultPopup, setShowResultPopup] = useState(false)
   const [resultData, setResultData] = useState(null)
-  const [isChargingPower, setIsChargingPower] = useState(false)
-  const [currentPower, setCurrentPower] = useState(1)
-  const powerIntervalRef = useRef(null)
+  const [playerChoice, setPlayerChoice] = useState(null)
+  const [hasChosen, setHasChosen] = useState(false)
+  const [chargingPower, setChargingPower] = useState(0)
+  const [isCharging, setIsCharging] = useState(false)
+  const chargeIntervalRef = useRef(null)
   const [showCoinSelector, setShowCoinSelector] = useState(false)
   const [selectedPlayerForCoinChange, setSelectedPlayerForCoinChange] = useState(null)
   const [coinSides, setCoinSides] = useState({}) // Track which side (heads/tails) is showing for each player
@@ -390,6 +392,22 @@ const BattleRoyaleGameRoom = ({
     const myPlayer = serverState.players?.[address.toLowerCase()]
     return myPlayer && myPlayer.status !== 'eliminated'
   }, [serverState, address])
+
+  // Add choice handler:
+  const handleChoice = useCallback((choice) => {
+    if (serverState?.gamePhase !== 'waiting_choice' || hasChosen) return
+    
+    setPlayerChoice(choice)
+    setHasChosen(true)
+    
+    socketService.emit('battle_royale_player_choice', {
+      gameId,
+      address,
+      choice
+    })
+    
+    showToast(`You chose ${choice.toUpperCase()}!`, 'success')
+  }, [serverState, hasChosen, gameId, address, showToast])
 
   // REMOVED: canMakeChoice - Battle Royale doesn't use player choices
 
@@ -669,65 +687,45 @@ const BattleRoyaleGameRoom = ({
   // ===== USER ACTIONS =====
   // REMOVED: handleChoice - Battle Royale doesn't use player choices
 
-  const handlePowerChargeStart = useCallback(() => {
-    if (!canChargePower()) return
+  // Replace the power charging handlers with simpler ones:
+  const handleStartCharge = useCallback(() => {
+    if (!canChargePower() || isCharging) return
     
-    console.log('⚡ Starting power charge')
-    setIsChargingPower(true)
-    setCurrentPower(1)
+    setIsCharging(true)
+    setChargingPower(1)
     
-    // Send start charge event to server
-    socketService.emit('battle_royale_start_power_charge', {
-      gameId,
-      address
-    })
-    
-    // Start local power accumulation for UI feedback
     const startTime = Date.now()
-    powerIntervalRef.current = setInterval(() => {
+    chargeIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime
-      const newPower = Math.min(10, 1 + (elapsed / 200)) // 2 seconds to reach max
-      setCurrentPower(newPower)
+      const power = Math.min(10, 1 + (elapsed / 200)) // 2 seconds to reach max
+      setChargingPower(power)
       
-      // Send power updates to server
-      socketService.emit('battle_royale_power_update', {
-        gameId,
-        address,
-        power: newPower
-      })
-      
-      if (newPower >= 10) {
-        handlePowerChargeStop()
+      if (power >= 10) {
+        handleStopCharge()
       }
     }, 50)
-  }, [canChargePower, gameId, address])
+  }, [canChargePower, isCharging])
 
-  const handlePowerChargeStop = useCallback(() => {
-    if (!isChargingPower) return
+  const handleStopCharge = useCallback(() => {
+    if (!isCharging) return
     
-    console.log('⚡ Stopping power charge at:', currentPower)
-    setIsChargingPower(false)
-    
-    if (powerIntervalRef.current) {
-      clearInterval(powerIntervalRef.current)
-      powerIntervalRef.current = null
+    if (chargeIntervalRef.current) {
+      clearInterval(chargeIntervalRef.current)
+      chargeIntervalRef.current = null
     }
     
-    // Send final power to server
-    socketService.emit('battle_royale_stop_power_charge', {
+    const finalPower = chargingPower
+    setIsCharging(false)
+    
+    // Execute flip with power
+    socketService.emit('battle_royale_execute_flip', {
       gameId,
       address,
-      finalPower: currentPower
+      power: finalPower
     })
     
-    // Auto-execute flip after stopping charge
-    setTimeout(() => {
-      socketService.emit('battle_royale_execute_flip', {
-        gameId,
-        address
-      })
-    }, 100)
-  }, [isChargingPower, currentPower, gameId, address])
+    showToast(`Flipping with power ${finalPower.toFixed(1)}!`, 'info')
+  }, [isCharging, chargingPower, gameId, address, showToast])
 
   // Show loading state
   if (loading) {
@@ -867,29 +865,90 @@ const BattleRoyaleGameRoom = ({
         <ActionPanel>
           <div className="action-title">Your Actions</div>
           
-          {/* REMOVED: Choice Phase - Battle Royale doesn't use player choices */}
+          {/* Choice Phase */}
+          {serverState?.gamePhase === 'waiting_choice' && isAlive && !hasChosen && (
+            <>
+              <div className="action-title">Choose Your Side!</div>
+              <div className="choice-buttons">
+                <button
+                  className="heads"
+                  onClick={() => handleChoice('heads')}
+                  disabled={hasChosen}
+                >
+                  🟡 HEADS
+                </button>
+                <button
+                  className="tails"
+                  onClick={() => handleChoice('tails')}
+                  disabled={hasChosen}
+                >
+                  🔴 TAILS
+                </button>
+              </div>
+              <div style={{ marginTop: '1rem', color: '#aaa' }}>
+                Time left: {serverState?.roundCountdown || 0}s
+              </div>
+            </>
+          )}
+
+          {serverState?.gamePhase === 'waiting_choice' && hasChosen && (
+            <>
+              <div className="action-title">You chose: {playerChoice?.toUpperCase()}</div>
+              <div className="waiting-message">
+                Waiting for charging phase...
+              </div>
+            </>
+          )}
           
           {/* Power Charging Phase */}
-          {canChargePower() && (
+          {serverState?.gamePhase === 'charging_power' && isAlive && (
             <>
+              <div className="action-title">Charge Your Flip!</div>
               <div style={{ marginBottom: '1rem', color: '#FFD700' }}>
-                Your choice: {currentPlayer?.choice?.toUpperCase()}
+                Your choice: {playerChoice?.toUpperCase()}
               </div>
+              
               <button
                 className="flip-button"
-                onMouseDown={handlePowerChargeStart}
-                onMouseUp={handlePowerChargeStop}
-                onMouseLeave={handlePowerChargeStop}
-                onTouchStart={handlePowerChargeStart}
-                onTouchEnd={handlePowerChargeStop}
+                onMouseDown={handleStartCharge}
+                onMouseUp={handleStopCharge}
+                onMouseLeave={handleStopCharge}
+                onTouchStart={(e) => {
+                  e.preventDefault()
+                  handleStartCharge()
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault()
+                  handleStopCharge()
+                }}
                 style={{
-                  animation: isChargingPower ? 'pulse 0.5s infinite' : 'none'
+                  background: isCharging 
+                    ? `linear-gradient(135deg, #FFD700 ${chargingPower * 10}%, #00ff88 100%)`
+                    : 'linear-gradient(135deg, #00ff88, #00cc6a)',
+                  transform: isCharging ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                {isChargingPower ? `⚡ CHARGING: ${currentPower.toFixed(1)} ⚡` : '⚡ HOLD TO CHARGE ⚡'}
+                {isCharging ? `⚡ POWER: ${chargingPower.toFixed(1)} ⚡` : '⚡ HOLD TO CHARGE ⚡'}
               </button>
-              <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#888' }}>
-                Power affects flip duration and drama!
+              
+              {/* Power bar visualization */}
+              <div style={{
+                width: '100%',
+                height: '20px',
+                background: 'rgba(0, 0, 0, 0.5)',
+                border: '2px solid #FFD700',
+                borderRadius: '10px',
+                marginTop: '1rem',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${chargingPower * 10}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #00ff88, #FFD700, #ff1493)',
+                  transition: 'width 0.1s ease',
+                  boxShadow: isCharging ? '0 0 10px #FFD700' : 'none'
+                }} />
               </div>
             </>
           )}
@@ -898,12 +957,6 @@ const BattleRoyaleGameRoom = ({
           {currentPlayer?.hasFlipped && serverState?.gamePhase === 'charging_power' && (
             <div className="waiting-message">
               Waiting for other players to flip...
-            </div>
-          )}
-          
-          {currentPlayer?.choice && serverState?.gamePhase === 'waiting_choice' && (
-            <div className="waiting-message">
-              You chose {currentPlayer.choice}. Waiting for others...
             </div>
           )}
         </ActionPanel>

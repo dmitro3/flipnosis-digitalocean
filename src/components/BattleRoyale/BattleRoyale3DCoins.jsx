@@ -19,7 +19,7 @@ const Lobby2DDisplay = ({
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
+      gridTemplateColumns: 'repeat(3, 1fr)', // 3x2 grid for 6 players
       gap: '1rem',
       padding: '1rem',
       background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(138, 43, 226, 0.3))',
@@ -27,7 +27,7 @@ const Lobby2DDisplay = ({
       border: '2px solid rgba(255, 20, 147, 0.3)',
       minHeight: '500px'
     }}>
-      {Array.from({ length: 8 }, (_, index) => {
+      {Array.from({ length: 6 }, (_, index) => { // Changed from 8 to 6
         const player = players[index]
         const isOccupied = player?.address
         const isCurrentUser = player?.address === currentUserAddress
@@ -313,12 +313,12 @@ const BattleRoyale3DCoins = ({
       {/* Player coins grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(3, 1fr)', // 3x2 grid for 6 players
         gap: '2rem',
         maxWidth: '800px',
         width: '100%'
       }}>
-        {Array.from({ length: 8 }, (_, index) => {
+        {Array.from({ length: 6 }, (_, index) => { // Changed from 8 to 6
           const player = players[index]
           const isOccupied = player?.address
           const isCurrentUser = player?.address === currentUserAddress
@@ -438,6 +438,40 @@ const BattleRoyale3DCoins = ({
               }}>
                 {player.address?.slice(0, 6)}...{player.address?.slice(-4)}
               </div>
+
+              {/* Show player's choice */}
+              {serverState?.players?.[player?.address]?.choice && serverState?.gamePhase === 'waiting_choice' && (
+                <div style={{
+                  background: serverState.players[player.address].choice === 'heads' 
+                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
+                    : 'linear-gradient(135deg, #C0C0C0, #808080)',
+                  color: '#000',
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginTop: '0.5rem'
+                }}>
+                  Choice: {serverState.players[player.address].choice.toUpperCase()}
+                </div>
+              )}
+              
+              {/* Show flip result */}
+              {flipState.flipResult && serverState?.gamePhase === 'showing_result' && (
+                <div style={{
+                  background: flipState.flipResult === serverState?.players?.[player?.address]?.choice
+                    ? 'linear-gradient(135deg, #00ff88, #00cc6a)'
+                    : 'linear-gradient(135deg, #ff4444, #cc0000)',
+                  color: '#fff',
+                  padding: '0.5rem',
+                  borderRadius: '0.5rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginTop: '0.5rem'
+                }}>
+                  {flipState.flipResult === serverState?.players?.[player?.address]?.choice ? '✅ MATCHED!' : '❌ ELIMINATED'}
+                </div>
+              )}
 
               {/* Status indicator */}
               <div style={{

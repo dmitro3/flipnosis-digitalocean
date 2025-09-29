@@ -32,8 +32,22 @@ class BattleRoyaleSocketHandlers {
     console.log(`✅ ${address} joined Battle Royale room ${gameId}`)
   }
 
-  // Player Choice Handler (REMOVED - Battle Royale doesn't use player choices)
-  // Players don't choose heads/tails - server randomly selects target
+  // Player Choice Handler
+  async handleBattleRoyalePlayerChoice(socket, data, battleRoyaleManager, io) {
+    const { gameId, address, choice } = data
+    console.log(`🎯 Battle Royale choice: ${address} chose ${choice} in ${gameId}`)
+    
+    const success = battleRoyaleManager.setPlayerChoice(gameId, address, choice)
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot make choice now' })
+      return
+    }
+
+    // Broadcast updated state
+    const roomId = `br_${gameId}`
+    const fullState = battleRoyaleManager.getFullGameState(gameId)
+    io.to(roomId).emit('battle_royale_state_update', fullState)
+  }
 
   // Start Power Charging
   async handleBattleRoyaleStartPowerCharge(socket, data, battleRoyaleManager, io) {
@@ -100,26 +114,45 @@ class BattleRoyaleSocketHandlers {
 
   // Execute Flip
   async handleBattleRoyaleExecuteFlip(socket, data, battleRoyaleManager, io) {
-    const { gameId, address } = data
-    console.log(`🪙 Battle Royale flip execute: ${address} in ${gameId}`)
+    const { gameId, address, power } = data
+    console.log(`🪙 Battle Royale flip execute: ${address} with power ${power} in ${gameId}`)
     
-    const success = battleRoyaleManager.executePlayerFlip(
-      gameId, 
-      address,
-      (roomId, eventType, eventData) => {
-        io.to(roomId).emit(eventType, eventData)
-      }
-    )
-    
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot execute flip' })
+    const game = battleRoyaleManager.getGame(gameId)
+    if (!game) {
+      socket.emit('battle_royale_error', { message: 'Game not found' })
       return
     }
 
-    // Broadcast updated state with coin animation data
-    const roomId = `br_${gameId}`
-    const fullState = battleRoyaleManager.getFullGameState(gameId)
-    io.to(roomId).emit('battle_royale_state_update', fullState)
+    const player = game.players.get(address)
+    if (!player) {
+      socket.emit('battle_royale_error', { message: 'Player not found' })
+      return
+    }
+
+    // Store the power and mark as flipped
+    player.power = power || 1
+    player.hasFlipped = true
+    
+    // Check if all players have flipped
+    let allFlipped = true
+    for (const addr of game.activePlayers) {
+      const p = game.players.get(addr)
+      if (!p.hasFlipped) {
+        allFlipped = false
+        break
+      }
+    }
+
+    // If all flipped, execute all flips
+    if (allFlipped) {
+      battleRoyaleManager.executeAllFlips(gameId, (roomId, eventType, eventData) => {
+        io.to(roomId).emit(eventType, eventData)
+      })
+    } else {
+      // Just update state to show this player has flipped
+      const fullState = battleRoyaleManager.getFullGameState(gameId)
+      io.to(`br_${gameId}`).emit('battle_royale_state_update', fullState)
+    }
   }
 
   // Update Player Coin
