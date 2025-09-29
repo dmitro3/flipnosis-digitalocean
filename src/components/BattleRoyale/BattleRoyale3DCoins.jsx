@@ -237,6 +237,9 @@ const BattleRoyale3DCoins = ({
   const [quality] = useState('high')
   const [isSceneReady, setIsSceneReady] = useState(false)
   const [localFlipStates, setLocalFlipStates] = useState(flipStates)
+  const [selectedChoice, setSelectedChoice] = useState(null)
+  const [powerLevel, setPowerLevel] = useState(0)
+  const [isCharging, setIsCharging] = useState(false)
   
   // Safe game phase check
   const safeGamePhase = gamePhase || 'filling'
@@ -259,6 +262,39 @@ const BattleRoyale3DCoins = ({
   useEffect(() => {
     setIsSceneReady(true)
   }, [])
+
+  // Power charging logic
+  useEffect(() => {
+    let powerInterval = null
+    
+    if (isCharging) {
+      powerInterval = setInterval(() => {
+        setPowerLevel(prev => {
+          const newLevel = Math.min(prev + 2, 100)
+          return newLevel
+        })
+      }, 50)
+    } else {
+      if (powerInterval) {
+        clearInterval(powerInterval)
+      }
+    }
+    
+    return () => {
+      if (powerInterval) {
+        clearInterval(powerInterval)
+      }
+    }
+  }, [isCharging])
+
+  // Reset power level when game phase changes
+  useEffect(() => {
+    if (safeGamePhase !== 'charging_power') {
+      setPowerLevel(0)
+      setIsCharging(false)
+      setSelectedChoice(null)
+    }
+  }, [safeGamePhase])
   
   // 2D Lobby Display
   if (!shouldUse3D) {
@@ -278,67 +314,75 @@ const BattleRoyale3DCoins = ({
     )
   }
   
-  // 3D Game Display - Using OptimizedGoldCoin components in a grid
+  // 3D Game Display - Two column layout with coins on left, interactive panel on right
   return (
     <div style={{ 
       position: 'relative', 
       width: '100%', 
       minHeight: '600px',
-      background: 'transparent', // Transparent background
+      background: 'transparent',
       display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
+      flexDirection: 'row',
       gap: '2rem',
-      padding: '2rem'
+      padding: '2rem',
+      '@media (max-width: 1200px)': {
+        flexDirection: 'column'
+      }
     }}>
-      {/* Game phase indicator */}
+      {/* Left side: 6 player coins grid */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(138, 43, 226, 0.8))',
-        color: '#00ff88',
-        padding: '0.5rem 1rem',
-        borderRadius: '0.5rem',
-        border: '2px solid rgba(255, 20, 147, 0.5)',
-        fontSize: '1.2rem',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)'
+        flex: '2',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem'
       }}>
-        {safeGamePhase === 'starting' && 'Game Starting...'}
-        {safeGamePhase === 'revealing_target' && 'Target Revealed!'}
-        {safeGamePhase === 'charging_power' && `Charge Your Power! ${serverState?.roundCountdown ? `(${serverState.roundCountdown}s)` : ''}`}
-        {safeGamePhase === 'executing_flips' && 'Flipping...'}
-        {safeGamePhase === 'showing_result' && 'Round Complete!'}
-        {safeGamePhase === 'completed' && 'Game Over!'}
-        {safeGamePhase === 'game_complete' && 'Game Complete!'}
-      </div>
-      
-      {/* Prominent countdown timer */}
-      {safeGamePhase === 'charging_power' && serverState?.roundCountdown > 0 && (
+        {/* Game phase indicator */}
         <div style={{
-          background: serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.2)' : 'rgba(0, 191, 255, 0.2)',
-          color: serverState.roundCountdown <= 5 ? '#ff1493' : '#00bfff',
-          padding: '1rem 2rem',
-          borderRadius: '1rem',
-          border: `3px solid ${serverState.roundCountdown <= 5 ? '#ff1493' : '#00bfff'}`,
-          fontSize: '2rem',
+          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(138, 43, 226, 0.8))',
+          color: '#00ff88',
+          padding: '0.5rem 1rem',
+          borderRadius: '0.5rem',
+          border: '2px solid rgba(255, 20, 147, 0.5)',
+          fontSize: '1.2rem',
           fontWeight: 'bold',
           textAlign: 'center',
-          textShadow: `0 0 20px ${serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.8)' : 'rgba(0, 191, 255, 0.8)'}`,
-          animation: serverState.roundCountdown <= 5 ? 'pulse 0.5s ease-in-out infinite' : 'none',
-          boxShadow: `0 0 30px ${serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.5)' : 'rgba(0, 191, 255, 0.5)'}`
+          boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)'
         }}>
-          ⏰ {serverState.roundCountdown}s
+          {safeGamePhase === 'starting' && 'Game Starting...'}
+          {safeGamePhase === 'revealing_target' && 'Target Revealed!'}
+          {safeGamePhase === 'charging_power' && `Charge Your Power! ${serverState?.roundCountdown ? `(${serverState.roundCountdown}s)` : ''}`}
+          {safeGamePhase === 'executing_flips' && 'Flipping...'}
+          {safeGamePhase === 'showing_result' && 'Round Complete!'}
+          {safeGamePhase === 'completed' && 'Game Over!'}
+          {safeGamePhase === 'game_complete' && 'Game Complete!'}
         </div>
-      )}
+        
+        {/* Prominent countdown timer */}
+        {safeGamePhase === 'charging_power' && serverState?.roundCountdown > 0 && (
+          <div style={{
+            background: serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.2)' : 'rgba(0, 191, 255, 0.2)',
+            color: serverState.roundCountdown <= 5 ? '#ff1493' : '#00bfff',
+            padding: '1rem 2rem',
+            borderRadius: '1rem',
+            border: `3px solid ${serverState.roundCountdown <= 5 ? '#ff1493' : '#00bfff'}`,
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            textShadow: `0 0 20px ${serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.8)' : 'rgba(0, 191, 255, 0.8)'}`,
+            animation: serverState.roundCountdown <= 5 ? 'pulse 0.5s ease-in-out infinite' : 'none',
+            boxShadow: `0 0 30px ${serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.5)' : 'rgba(0, 191, 255, 0.5)'}`
+          }}>
+            ⏰ {serverState.roundCountdown}s
+          </div>
+        )}
 
-      {/* Player coins grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)', // 3x2 grid for 6 players
-        gap: '2rem',
-        maxWidth: '800px',
-        width: '100%'
-      }}>
+        {/* Player coins grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)', // 3x2 grid for 6 players
+          gap: '1.5rem',
+          width: '100%'
+        }}>
         {Array.from({ length: 6 }, (_, index) => { // Changed from 8 to 6
           const player = players[index]
           const isOccupied = player?.address
@@ -514,52 +558,6 @@ const BattleRoyale3DCoins = ({
                 <span>{isCurrentUser ? 'You' : 'Player'}</span>
               </div>
 
-              {/* Flip Button for current user */}
-              {isCurrentUser && safeGamePhase === 'charging_power' && (
-                <button
-                  style={{
-                    background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    padding: '0.75rem 1rem',
-                    fontSize: '0.9rem',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    marginTop: '0.5rem',
-                    boxShadow: '0 2px 10px rgba(0, 255, 136, 0.3)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseDown={() => {
-                    console.log('🔋 Flip button pressed - starting power charge')
-                    if (onPowerChargeStart) {
-                      onPowerChargeStart()
-                    }
-                  }}
-                  onMouseUp={() => {
-                    console.log('🔋 Flip button released - executing flip')
-                    if (onPowerChargeStop) {
-                      onPowerChargeStop(5) // Default power
-                    }
-                  }}
-                  onTouchStart={(e) => {
-                    e.preventDefault()
-                    console.log('🔋 Flip button touch start - starting power charge')
-                    if (onPowerChargeStart) {
-                      onPowerChargeStart()
-                    }
-                  }}
-                  onTouchEnd={(e) => {
-                    e.preventDefault()
-                    console.log('🔋 Flip button touch end - executing flip')
-                    if (onPowerChargeStop) {
-                      onPowerChargeStop(5) // Default power
-                    }
-                  }}
-                >
-                  🪙 Hold to Flip
-                </button>
-              )}
 
               {/* Win/Loss indicator */}
               {flipState.flipResult && (
@@ -581,6 +579,284 @@ const BattleRoyale3DCoins = ({
             </div>
           )
         })}
+        </div>
+      </div>
+
+      {/* Right side: Interactive Player Panel */}
+      <div style={{
+        flex: '1',
+        minWidth: '350px',
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(10px)',
+        border: '2px solid rgba(0, 191, 255, 0.3)',
+        borderRadius: '1rem',
+        padding: '2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '1.5rem'
+      }}>
+        {/* Round Timer */}
+        <div style={{
+          color: '#00bfff',
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          textShadow: '0 0 10px rgba(0, 191, 255, 0.8)'
+        }}>
+          {serverState?.roundCountdown || 20}s
+        </div>
+        
+        {/* Large Player Coin */}
+        <div style={{
+          width: '200px',
+          height: '200px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '4px solid #FFD700',
+          boxShadow: '0 0 30px rgba(255, 215, 0, 0.5)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {currentUserAddress && playerCoinImages[currentUserAddress] ? (
+            <img 
+              src={playerCoinImages[currentUserAddress].headsImage} 
+              alt="Your coin"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '50%'
+              }}
+            />
+          ) : (
+            <div style={{
+              fontSize: '4rem',
+              color: '#333'
+            }}>
+              🪙
+            </div>
+          )}
+        </div>
+
+        {/* Player Address */}
+        <div style={{
+          color: '#00ff88',
+          fontSize: '1rem',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          fontFamily: 'monospace',
+          wordBreak: 'break-all'
+        }}>
+          {currentUserAddress ? `${currentUserAddress.slice(0, 6)}...${currentUserAddress.slice(-4)}` : 'Not Connected'}
+        </div>
+
+        {/* Choice Buttons */}
+        {safeGamePhase === 'charging_power' && (
+          <div style={{
+            display: 'flex',
+            gap: '1rem',
+            justifyContent: 'center',
+            width: '100%'
+          }}>
+            <button
+              style={{
+                background: selectedChoice === 'heads' 
+                  ? 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)'
+                  : 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+                color: selectedChoice === 'heads' ? '#000' : '#333',
+                border: selectedChoice === 'heads' ? '3px solid #00ff88' : 'none',
+                borderRadius: '0.5rem',
+                padding: '1rem 2rem',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: selectedChoice === 'heads' 
+                  ? '0 0 20px rgba(0, 255, 136, 0.5)'
+                  : '0 4px 15px rgba(255, 215, 0, 0.3)'
+              }}
+              onClick={() => setSelectedChoice('heads')}
+              onMouseEnter={(e) => {
+                if (selectedChoice !== 'heads') {
+                  e.target.style.transform = 'translateY(-2px)'
+                  e.target.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.5)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedChoice !== 'heads') {
+                  e.target.style.transform = 'translateY(0)'
+                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.3)'
+                }
+              }}
+            >
+              HEADS
+            </button>
+            <button
+              style={{
+                background: selectedChoice === 'tails' 
+                  ? 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)'
+                  : 'linear-gradient(135deg, #c0c0c0 0%, #e5e5e5 100%)',
+                color: selectedChoice === 'tails' ? '#000' : '#333',
+                border: selectedChoice === 'tails' ? '3px solid #00ff88' : 'none',
+                borderRadius: '0.5rem',
+                padding: '1rem 2rem',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: selectedChoice === 'tails' 
+                  ? '0 0 20px rgba(0, 255, 136, 0.5)'
+                  : '0 4px 15px rgba(192, 192, 192, 0.3)'
+              }}
+              onClick={() => setSelectedChoice('tails')}
+              onMouseEnter={(e) => {
+                if (selectedChoice !== 'tails') {
+                  e.target.style.transform = 'translateY(-2px)'
+                  e.target.style.boxShadow = '0 6px 20px rgba(192, 192, 192, 0.5)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedChoice !== 'tails') {
+                  e.target.style.transform = 'translateY(0)'
+                  e.target.style.boxShadow = '0 4px 15px rgba(192, 192, 192, 0.3)'
+                }
+              }}
+            >
+              TAILS
+            </button>
+          </div>
+        )}
+
+        {/* Power Bar */}
+        {safeGamePhase === 'charging_power' && (
+          <div style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <div style={{
+              width: '200px',
+              height: '30px',
+              border: '2px solid #fff',
+              background: '#222',
+              borderRadius: '15px',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              <div style={{
+                height: '100%',
+                background: 'linear-gradient(90deg, #00ff00, #ffff00, #ff0000)',
+                width: `${powerLevel}%`,
+                transition: 'width 0.1s linear',
+                borderRadius: '13px'
+              }} />
+            </div>
+            <div style={{
+              color: '#00bfff',
+              fontSize: '0.9rem',
+              fontWeight: 'bold'
+            }}>
+              POWER: <span>{powerLevel}%</span>
+            </div>
+          </div>
+        )}
+
+        {/* Flip Button */}
+        {safeGamePhase === 'charging_power' && (
+          <button
+            disabled={!selectedChoice}
+            style={{
+              background: selectedChoice 
+                ? 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)'
+                : 'linear-gradient(135deg, #666 0%, #444 100%)',
+              color: selectedChoice ? '#000' : '#999',
+              border: 'none',
+              padding: '1.5rem 3rem',
+              borderRadius: '2rem',
+              fontSize: '1.3rem',
+              fontWeight: 'bold',
+              cursor: selectedChoice ? 'pointer' : 'not-allowed',
+              transition: 'all 0.3s ease',
+              textTransform: 'uppercase',
+              userSelect: 'none',
+              border: selectedChoice ? '3px solid #00ff88' : '3px solid #666',
+              boxShadow: selectedChoice 
+                ? '0 4px 15px rgba(0, 255, 136, 0.3)'
+                : '0 4px 15px rgba(102, 102, 102, 0.3)',
+              opacity: selectedChoice ? 1 : 0.6
+            }}
+            onMouseDown={() => {
+              if (!selectedChoice) return
+              console.log('🔋 Flip button pressed - starting power charge')
+              setIsCharging(true)
+              if (onPowerChargeStart) {
+                onPowerChargeStart()
+              }
+            }}
+            onMouseUp={() => {
+              if (!selectedChoice) return
+              console.log('🔋 Flip button released - executing flip')
+              setIsCharging(false)
+              if (onPowerChargeStop) {
+                onPowerChargeStop(powerLevel)
+              }
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault()
+              if (!selectedChoice) return
+              console.log('🔋 Flip button touch start - starting power charge')
+              setIsCharging(true)
+              if (onPowerChargeStart) {
+                onPowerChargeStart()
+              }
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault()
+              if (!selectedChoice) return
+              console.log('🔋 Flip button touch end - executing flip')
+              setIsCharging(false)
+              if (onPowerChargeStop) {
+                onPowerChargeStop(powerLevel)
+              }
+            }}
+            onMouseEnter={(e) => {
+              if (selectedChoice) {
+                e.target.style.transform = 'translateY(-2px)'
+                e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 136, 0.5)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (selectedChoice) {
+                e.target.style.transform = 'translateY(0)'
+                e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 136, 0.3)'
+              }
+            }}
+          >
+            {!selectedChoice ? '🎯 CHOOSE FIRST' : '🪙 HOLD TO FLIP'}
+          </button>
+        )}
+
+        {/* Game Status */}
+        <div style={{
+          color: '#aaa',
+          fontSize: '0.9rem',
+          textAlign: 'center',
+          lineHeight: '1.4'
+        }}>
+          {safeGamePhase === 'filling' && 'Waiting for players to join...'}
+          {safeGamePhase === 'starting' && 'Game is starting...'}
+          {safeGamePhase === 'revealing_target' && 'Target is being revealed...'}
+          {safeGamePhase === 'charging_power' && 'Choose your side and charge your power!'}
+          {safeGamePhase === 'executing_flips' && 'Coins are flipping...'}
+          {safeGamePhase === 'showing_result' && 'Results are being shown...'}
+          {safeGamePhase === 'completed' && 'Game completed!'}
+        </div>
       </div>
     </div>
   )
