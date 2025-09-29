@@ -131,7 +131,7 @@ console.log('3. Ensure server has Docker and Docker Compose installed');
 console.log('4. Run a test deployment');
 
 console.log('\n🔗 Useful Commands:');
-console.log('- Test SSH: ssh root@143.198.166.196');
+console.log('- Test SSH: ssh root@159.69.134.159');
 console.log('- Check server: docker ps');
 console.log('- View logs: docker-compose logs');
 console.log('- Manual deploy: ./deploy-simple.ps1');

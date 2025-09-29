@@ -90,6 +90,11 @@ class GameServer {
         this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(socket, data, this.battleRoyaleManager, this.io, this.dbService)
       })
       
+      // ===== NEW EVENT HANDLERS =====
+      socket.on('startGame', (data) => this.battleRoyaleHandlers.handleStartGame(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('makeChoice', (data) => this.battleRoyaleHandlers.handleMakeChoice(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('flipCoin', (data) => this.battleRoyaleHandlers.handleFlipCoin(socket, data, this.battleRoyaleManager, this.io))
+      
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))
     })

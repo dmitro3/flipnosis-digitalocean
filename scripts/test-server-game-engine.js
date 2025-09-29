@@ -1,7 +1,7 @@
 const WebSocket = require('ws')
 
 // Test configuration
-const SERVER_URL = 'ws://143.198.166.196:3001'
+const SERVER_URL = 'ws://159.69.134.159:3001'
 const TEST_GAME_ID = 'test-game-' + Date.now()
 const PLAYER1_ADDRESS = '0x1234567890123456789012345678901234567890'
 const PLAYER2_ADDRESS = '0x0987654321098765432109876543210987654321'

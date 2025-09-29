@@ -12,7 +12,7 @@ class BattleRoyaleGameManager {
 
   // ===== BATTLE ROYALE PHASES =====
   PHASES = {
-    FILLING: 'filling',           // Waiting for 8 players to join
+    FILLING: 'filling',           // Waiting for 6 players to join
     STARTING: 'starting',         // 3-second countdown before first round
     ROUND_ACTIVE: 'round_active', // Players making choices and flipping
     ROUND_RESULT: 'round_result', // Showing elimination results
@@ -25,7 +25,7 @@ class BattleRoyaleGameManager {
     REVEALING_TARGET: 'revealing_target',     // 3-second target reveal
     WAITING_CHOICE: 'waiting_choice',         // 20-second choice phase
     CHARGING_POWER: 'charging_power',         // Power charging phase
-    EXECUTING_FLIPS: 'executing_flips',       // All 8 coins flipping simultaneously
+    EXECUTING_FLIPS: 'executing_flips',       // All 6 coins flipping simultaneously
     SHOWING_RESULT: 'showing_result'          // 5-second result display
   }
 
@@ -42,7 +42,7 @@ class BattleRoyaleGameManager {
       roundPhase: null,
       
       // Game settings
-      maxPlayers: 6, // Changed from 8 to 6
+      maxPlayers: 6,
       currentPlayers: 0,
       entryFee: gameData.entryFee || 5.00,
       serviceFee: gameData.serviceFee || 0.50,
@@ -50,19 +50,17 @@ class BattleRoyaleGameManager {
       // Players - enhanced with coin states
       creator: gameData.creator,
       players: new Map(), // address -> PlayerState with coinState
-      playerSlots: new Array(6).fill(null), // Changed from 8 to 6
+      playerSlots: new Array(6).fill(null),
       eliminatedPlayers: new Set(),
       activePlayers: new Set(),
       
-      // Round management
+      // Round management - NEW STRUCTURE
       currentRound: 0,
       maxRounds: 10, // Safety limit
-      targetResult: null, // 'heads' or 'tails' for current round
-      roundCountdown: null, // Current countdown timer value
-      roundDeadline: null,
       roundStartTime: null,
+      roundDuration: 20000, // 20 seconds
       
-      // Server-controlled coin states for all 8 players
+      // Server-controlled coin states for all 6 players
       coinStates: new Map(), // playerAddress -> coinState
       
       // Results
@@ -1157,6 +1155,198 @@ class BattleRoyaleGameManager {
       playerAddress,
       power
     })
+  }
+
+  // ===== NEW EVENT HANDLERS =====
+  
+  // When game starts
+  startGame(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    // Initialize all players as alive
+    game.activePlayers.clear()
+    game.eliminatedPlayers.clear()
+    
+    for (const [address, player] of game.players) {
+      player.status = 'alive'
+      player.currentChoice = null
+      player.hasFlipped = false
+      player.flipResult = null
+      player.powerLevel = 0
+      game.activePlayers.add(address)
+    }
+
+    // Start first round
+    this.startNewRound(gameId, broadcastFn)
+    return true
+  }
+
+  // Player makes choice
+  makeChoice(gameId, playerAddress, choice, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    const player = game.players.get(playerAddress)
+    if (!player || !game.activePlayers.has(playerAddress)) return false
+
+    // Update player's choice
+    player.currentChoice = choice
+
+    // Broadcast choice made (not the choice itself)
+    const playerIndex = game.playerSlots.indexOf(playerAddress)
+    broadcastFn(`br_${gameId}`, 'playerChose', {
+      playerId: playerAddress,
+      playerIndex: playerIndex
+    })
+
+    return true
+  }
+
+  // Player flips coin
+  flipCoin(gameId, playerAddress, powerLevel, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    const player = game.players.get(playerAddress)
+    if (!player || !game.activePlayers.has(playerAddress)) return false
+
+    // Validate player can flip
+    if (player.hasFlipped || !player.currentChoice) return false
+
+    // Calculate result (can be weighted by power)
+    const result = this.calculateFlipResult(player.currentChoice, powerLevel)
+
+    // Update state
+    player.flipResult = result
+    player.hasFlipped = true
+    player.powerLevel = powerLevel
+
+    // Broadcast flip animation to all
+    const playerIndex = game.playerSlots.indexOf(playerAddress)
+    broadcastFn(`br_${gameId}`, 'coinFlipping', {
+      playerIndex: playerIndex,
+      playerId: playerAddress
+    })
+
+    // After animation time, send result
+    setTimeout(() => {
+      broadcastFn(`br_${gameId}`, 'flipResult', {
+        playerIndex: playerIndex,
+        result: result,
+        survived: result === player.currentChoice
+      })
+
+      this.checkRoundComplete(gameId, broadcastFn)
+    }, 2000) // 2 second flip animation
+
+    return true
+  }
+
+  // Check if round is complete
+  checkRoundComplete(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return
+
+    const alivePlayers = Array.from(game.activePlayers).map(addr => game.players.get(addr))
+    const allFlipped = alivePlayers.every(p => p.hasFlipped)
+    const timeExpired = Date.now() > (game.roundStartTime + game.roundDuration)
+
+    if (allFlipped || timeExpired) {
+      this.endRound(gameId, broadcastFn)
+    }
+  }
+
+  // End round and eliminate players
+  endRound(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return
+
+    game.phase = 'eliminating'
+
+    // Determine who survives
+    const eliminations = []
+    const survivors = []
+
+    for (const [address, player] of game.players) {
+      if (game.activePlayers.has(address)) {
+        if (!player.hasFlipped || player.flipResult !== player.currentChoice) {
+          player.status = 'eliminated'
+          game.activePlayers.delete(address)
+          game.eliminatedPlayers.add(address)
+          eliminations.push(game.playerSlots.indexOf(address))
+        } else {
+          survivors.push(address)
+        }
+      }
+    }
+
+    broadcastFn(`br_${gameId}`, 'roundEnd', {
+      eliminations: eliminations,
+      survivors: survivors
+    })
+
+    // Check for winner
+    if (game.activePlayers.size === 1) {
+      // Game over, we have a winner
+      const winnerAddress = Array.from(game.activePlayers)[0]
+      const winner = game.players.get(winnerAddress)
+      
+      broadcastFn(`br_${gameId}`, 'gameWon', {
+        winner: {
+          id: winnerAddress,
+          name: winner.name || winnerAddress.slice(0, 6) + '...'
+        }
+      })
+    } else if (game.activePlayers.size === 0) {
+      // Everyone eliminated - restart round
+      broadcastFn(`br_${gameId}`, 'allEliminated')
+    } else {
+      // Start next round after delay
+      setTimeout(() => this.startNewRound(gameId, broadcastFn), 3000)
+    }
+  }
+
+  // Start new round
+  startNewRound(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return
+
+    game.currentRound += 1
+    game.roundStartTime = Date.now()
+
+    // Reset player states for new round
+    for (const address of game.activePlayers) {
+      const player = game.players.get(address)
+      if (player) {
+        player.currentChoice = null
+        player.hasFlipped = false
+        player.flipResult = null
+        player.powerLevel = 0
+      }
+    }
+
+    const deadline = game.roundStartTime + game.roundDuration
+
+    broadcastFn(`br_${gameId}`, 'roundStart', {
+      round: game.currentRound,
+      alivePlayers: Array.from(game.activePlayers),
+      deadline: deadline
+    })
+  }
+
+  // Calculate flip result with power weighting
+  calculateFlipResult(choice, powerLevel) {
+    // Base probability is 50/50, but power can influence it slightly
+    const baseProbability = 0.5
+    const powerInfluence = (powerLevel / 100) * 0.1 // Max 10% influence
+    
+    // If choice is heads, increase probability of heads with power
+    const headsProbability = choice === 'heads' ? 
+      baseProbability + powerInfluence : 
+      baseProbability - powerInfluence
+    
+    return Math.random() < headsProbability ? 'heads' : 'tails'
   }
 }
 

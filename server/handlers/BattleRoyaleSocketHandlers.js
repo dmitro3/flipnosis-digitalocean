@@ -217,6 +217,55 @@ class BattleRoyaleSocketHandlers {
     }
   }
 
+  // ===== NEW EVENT HANDLERS =====
+
+  // Start Game
+  async handleStartGame(socket, data, battleRoyaleManager, io) {
+    const { gameId, address } = data
+    console.log(`🚀 Starting Battle Royale game: ${gameId}`)
+    
+    const broadcastFn = (roomId, eventType, eventData) => {
+      io.to(roomId).emit(eventType, eventData)
+    }
+    
+    const success = battleRoyaleManager.startGame(gameId, broadcastFn)
+    if (success) {
+      console.log(`✅ Game started successfully: ${gameId}`)
+    } else {
+      socket.emit('battle_royale_error', { message: 'Failed to start game' })
+    }
+  }
+
+  // Make Choice
+  async handleMakeChoice(socket, data, battleRoyaleManager, io) {
+    const { gameId, address, choice } = data
+    console.log(`🎯 Player choice: ${address} chose ${choice} in ${gameId}`)
+    
+    const broadcastFn = (roomId, eventType, eventData) => {
+      io.to(roomId).emit(eventType, eventData)
+    }
+    
+    const success = battleRoyaleManager.makeChoice(gameId, address, choice, broadcastFn)
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot make choice now' })
+    }
+  }
+
+  // Flip Coin
+  async handleFlipCoin(socket, data, battleRoyaleManager, io) {
+    const { gameId, address, powerLevel } = data
+    console.log(`🪙 Player flip: ${address} flipping with power ${powerLevel} in ${gameId}`)
+    
+    const broadcastFn = (roomId, eventType, eventData) => {
+      io.to(roomId).emit(eventType, eventData)
+    }
+    
+    const success = battleRoyaleManager.flipCoin(gameId, address, powerLevel, broadcastFn)
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot flip coin now' })
+    }
+  }
+
   // Join Battle Royale Game (Payment confirmed)
   async handleJoinBattleRoyale(socket, data, battleRoyaleManager, io, dbService) {
     const { gameId, address } = data
