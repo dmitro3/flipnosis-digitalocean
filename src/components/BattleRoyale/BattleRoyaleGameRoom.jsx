@@ -682,7 +682,7 @@ const BattleRoyaleGameRoom = ({
       socketService.off('battle_royale_new_round', handleNewRound)
       socketService.off('battle_royale_power_update', handlePowerUpdate)
     }
-  }, [gameId, address, showToast, handleRoomJoined, handleGameStateUpdate, handleGameStarting, handleTargetReveal, handleFlipsExecuting, handleRoundResult, handleGameComplete, handleNewRound, handlePowerUpdate])
+  }, [gameId, address])
 
   // ===== USER ACTIONS =====
   // REMOVED: handleChoice - Battle Royale doesn't use player choices
