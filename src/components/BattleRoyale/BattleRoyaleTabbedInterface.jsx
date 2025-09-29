@@ -4,8 +4,10 @@ import { useParams } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { getApiUrl } from '../../config/api'
+import socketService from '../../services/SocketService'
 import BattleRoyaleNFTDetailsTab from './tabs/BattleRoyaleNFTDetailsTab'
 import BattleRoyaleGamePageTab from './tabs/BattleRoyaleGamePageTab'
+import BattleRoyaleGameRoom from './BattleRoyaleGameRoom'
 import ErrorBoundary from './ErrorBoundary'
 import hazeVideo from '../../../Images/Video/haze.webm'
 
@@ -164,6 +166,9 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   const [gameDataLoading, setGameDataLoading] = useState(!propGameData)
   const [gameDataError, setGameDataError] = useState(null)
   
+  // ===== GAME STATUS TRACKING =====
+  const [gameStatus, setGameStatus] = useState('filling') // 'filling', 'starting', 'in_progress', 'completed'
+  
   const loadGameData = useCallback(async () => {
     if (!gameId) return
     
@@ -205,6 +210,40 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
     loadGameData()
   }, [loadGameData])
   
+  // ===== GAME STATUS LISTENERS =====
+  useEffect(() => {
+    if (!gameId || !address) return
+    
+    const handleGameStateUpdate = (data) => {
+      console.log('📊 Tab Interface received game state:', data)
+      
+      // Update game status based on server state
+      if (data.phase === 'starting' || data.gamePhase === 'starting') {
+        setGameStatus('starting')
+      } else if (data.phase === 'round_active' || data.gamePhase) {
+        setGameStatus('in_progress')
+      } else if (data.phase === 'completed' || data.gamePhase === 'game_complete') {
+        setGameStatus('completed')
+      } else {
+        setGameStatus('filling')
+      }
+    }
+    
+    const handleGameStarting = (data) => {
+      console.log('🚀 Tab Interface: Game starting')
+      setGameStatus('starting')
+    }
+    
+    // Listen for game events
+    socketService.on('battle_royale_state_update', handleGameStateUpdate)
+    socketService.on('battle_royale_starting', handleGameStarting)
+    
+    return () => {
+      socketService.off('battle_royale_state_update', handleGameStateUpdate)
+      socketService.off('battle_royale_starting', handleGameStarting)
+    }
+  }, [gameId, address])
+  
   // ===== TAB SWITCHING LOGIC =====
   const handleTabChange = useCallback((tabId) => {
     console.log(`📑 Switching to tab: ${tabId} (current tab: ${activeTab})`)
@@ -233,7 +272,12 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
       case 'details':
         return <BattleRoyaleNFTDetailsTab {...commonProps} />
       case 'game':
-        return <BattleRoyaleGamePageTab {...commonProps} />
+        // Show new game room when game is in progress, otherwise show lobby
+        if (gameStatus === 'starting' || gameStatus === 'in_progress') {
+          return <BattleRoyaleGameRoom {...commonProps} />
+        } else {
+          return <BattleRoyaleGamePageTab {...commonProps} />
+        }
       default:
         return <BattleRoyaleNFTDetailsTab {...commonProps} />
     }

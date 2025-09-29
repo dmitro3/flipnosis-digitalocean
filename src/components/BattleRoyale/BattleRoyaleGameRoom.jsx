@@ -571,7 +571,7 @@ const BattleRoyaleGameRoom = ({
   }
 
   // Add this safety check before rendering
-  if (!serverState || !serverState.playerSlots) {
+  if (!serverState) {
     return (
       <GameContainer>
         <div style={{ 
@@ -604,7 +604,7 @@ const BattleRoyaleGameRoom = ({
         <GameLayout>
           {/* Left side: 6 player coins grid */}
           <PlayersGrid>
-            {serverState.playerSlots.map((playerAddress, index) => {
+            {(serverState.playerSlots || new Array(6).fill(null)).map((playerAddress, index) => {
               if (!playerAddress) {
                 return (
                   <PlayerSlot key={index} data-player-index={index}>
