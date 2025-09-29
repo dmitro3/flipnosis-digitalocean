@@ -59,9 +59,7 @@ class GameServer {
       // Chat system (preserved)
       socket.on('chat_message', (data) => this.handleChatMessage(socket, data))
       
-      // Offer system (preserved)
-      socket.on('crypto_offer', (data) => this.handleCryptoOffer(socket, data))
-      socket.on('accept_offer', (data) => this.handleAcceptOffer(socket, data))
+      // Offer system (preserved - only for notifications)
       
       // Deposit system removed - using polling instead
       
@@ -344,101 +342,7 @@ class GameServer {
     })
   }
 
-  async handleCryptoOffer(socket, data) {
-    const { gameId, address, cryptoAmount, message } = data
-    console.log(`💰 Crypto offer from ${address} for game ${gameId}: $${cryptoAmount}`)
-    
-    // Save to database
-    if (this.dbService && typeof this.dbService.createOffer === 'function') {
-      try {
-        // Get the game's listing_id from the database
-        const game = await this.dbService.getGameById(gameId)
-        if (!game) {
-          console.error('❌ Game not found:', gameId)
-          return
-        }
-        
-        const offerId = `${gameId}_${address}_${Date.now()}`
-        const offerData = {
-          id: offerId,
-          listing_id: game.listing_id, // Use the actual listing_id from the game
-          offerer_address: address,
-          offer_price: cryptoAmount,
-          message: message || 'Crypto offer'
-        }
-        await this.dbService.createOffer(offerData)
-        console.log(`💾 Saved offer to database: ${offerId} for listing: ${game.listing_id}`)
-      } catch (error) {
-        console.error('❌ Error saving offer to database:', error)
-      }
-    }
-    
-    // Broadcast to room
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    this.io.to(roomId).emit('crypto_offer', {
-      type: 'crypto_offer',
-      id: `${Date.now()}_${Math.random()}`,
-      address,
-      cryptoAmount,
-      message,
-      timestamp: new Date().toISOString()
-    })
-  }
 
-  async handleAcceptOffer(socket, data) {
-    const { gameId, address, offerId, cryptoAmount, challengerAddress } = data
-    console.log(`✅ Offer accepted by ${address} for game ${gameId}`)
-    console.log(`🎯 Challenger address received: ${challengerAddress}`)
-    
-    // Update database with challenger
-    try {
-      if (this.dbService && this.dbService.db) {
-        await new Promise((resolve, reject) => {
-          this.dbService.db.run(`
-            UPDATE games 
-            SET challenger = ?, status = 'awaiting_deposits'
-            WHERE id = ?
-          `, [challengerAddress, gameId], function(err) {
-            if (err) {
-              console.error('❌ Database error updating challenger:', err)
-              reject(err)
-            } else {
-              console.log(`✅ Successfully updated challenger ${challengerAddress} for game ${gameId}`)
-              resolve()
-            }
-          })
-        })
-        
-        // Verify the update
-        const updatedGame = await new Promise((resolve, reject) => {
-          this.dbService.db.get('SELECT challenger FROM games WHERE id = ?', [gameId], (err, row) => {
-            if (err) reject(err)
-            else resolve(row)
-          })
-        })
-        console.log(`🔍 Verification - Challenger in DB: ${updatedGame?.challenger}`)
-        
-        // Battle Royale games don't use challenger system
-        console.log(`🔄 Battle Royale game - no challenger update needed: ${challengerAddress}`)
-      }
-    } catch (error) {
-      console.error('❌ Error updating challenger:', error)
-    }
-    
-    // Broadcast offer accepted
-    const roomId = gameId.startsWith('game_') ? gameId : `game_${gameId}`
-    this.io.to(roomId).emit('offer_accepted', {
-      type: 'offer_accepted',
-      gameId: gameId,
-      accepterAddress: address,
-      challengerAddress: challengerAddress,
-      cryptoAmount: cryptoAmount,
-      timestamp: new Date().toISOString()
-    })
-    
-    // Start countdown for UI display only
-    this.startDepositCountdown(gameId, roomId, 120)
-  }
 
   startDepositCountdown(gameId, roomId, initialTime) {
     console.log(`⏰ Starting UI countdown for game ${gameId}`)

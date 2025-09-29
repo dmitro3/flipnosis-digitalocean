@@ -1865,37 +1865,6 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     }
   })
 
-  // Route: Store challenger details when deposit button is clicked
-  // NOTE: This route is legacy and not used in the current flow
-  // The current flow uses socket.io accept_offer event instead
-  router.post('/games/:gameId/store-challenger', async (req, res) => {
-    const { gameId } = req.params
-    const { challengerAddress } = req.body
-    
-    try {
-      console.log(`🎯 LEGACY ROUTE: Storing challenger details for game ${gameId}: ${challengerAddress}`)
-      
-      // Update game with challenger information
-      await new Promise((resolve, reject) => {
-        db.run(`
-          UPDATE games 
-          SET challenger = ?, status = 'awaiting_deposits'
-          WHERE id = ?
-        `, [challengerAddress, gameId], (err) => {
-          if (err) reject(err)
-          else resolve()
-        })
-      })
-      
-      console.log(`✅ LEGACY ROUTE: Stored challenger ${challengerAddress} for game ${gameId}`)
-      
-      res.json({ success: true, message: 'Challenger details stored' })
-      
-    } catch (error) {
-      console.error('❌ Error storing challenger details:', error)
-      res.status(500).json({ error: 'Failed to store challenger details', details: error.message })
-    }
-  })
 
   // ===== BATTLE ROYALE ENDPOINTS =====
   
