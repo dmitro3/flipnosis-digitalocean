@@ -241,16 +241,6 @@ const ActivePlayerPanel = styled.div`
   }
 `
 
-@keyframes spin {
-  from { transform: rotateY(0deg); }
-  to { transform: rotateY(360deg); }
-}
-
-@keyframes spin-3d {
-  0% { transform: rotateY(0deg) scale(1); }
-  50% { transform: rotateY(900deg) scale(1.1); }
-  100% { transform: rotateY(1800deg) scale(1); }
-}
 
 // Game Phase Manager Class
 class GamePhaseManager {
