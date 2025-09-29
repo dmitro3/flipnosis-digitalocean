@@ -1,7 +1,7 @@
 # Check Deployment Status Script
 # This script checks if your deployment is working correctly
 
-$DROPLET_IP = "143.198.166.196"
+$DROPLET_IP = "159.69.134.159"
 
 Write-Host "Checking Deployment Status" -ForegroundColor Green
 Write-Host "============================" -ForegroundColor Green
