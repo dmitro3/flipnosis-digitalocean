@@ -242,152 +242,6 @@ const ActivePlayerPanel = styled.div`
 `
 
 
-// Game Phase Manager Class
-class GamePhaseManager {
-  constructor(socket, playerId) {
-    this.socket = socket
-    this.playerId = playerId
-    this.currentChoice = null
-    this.hasFlipped = false
-    this.powerInterval = null
-    this.powerLevel = 0
-    
-    this.setupEventListeners()
-  }
-  
-  setupEventListeners() {
-    // Remove ALL old listeners first
-    this.socket.off('roundStart')
-    this.socket.off('playerChose')
-    this.socket.off('coinFlipping')
-    this.socket.off('flipResult')
-    this.socket.off('roundEnd')
-    
-    // Round starts
-    this.socket.on('roundStart', (data) => {
-      this.resetRound()
-      this.startTimer(data.deadline)
-      this.enableChoiceButtons()
-    })
-    
-    // Choice buttons
-    document.querySelectorAll('.choice-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        if (this.currentChoice) return
-        
-        this.currentChoice = e.target.dataset.choice
-        this.socket.emit('makeChoice', this.currentChoice)
-        
-        // Visual feedback
-        e.target.classList.add('selected')
-        document.querySelector('.flip-btn').disabled = false
-        
-        // Start power bar
-        this.startPowerBar()
-      })
-    })
-    
-    // Flip button
-    document.querySelector('.flip-btn').addEventListener('click', () => {
-      if (this.hasFlipped) return
-      
-      this.hasFlipped = true
-      this.socket.emit('flipCoin', this.powerLevel)
-      this.stopPowerBar()
-      
-      // Disable button
-      document.querySelector('.flip-btn').disabled = true
-    })
-    
-    // Coin animations
-    this.socket.on('coinFlipping', (data) => {
-      // Animate the coin in the 6-player grid
-      const slot = document.querySelector(`[data-player-index="${data.playerIndex}"]`)
-      if (slot) {
-        slot.querySelector('.player-coin').classList.add('spinning')
-      }
-      
-      // If it's current player, also spin the large coin
-      if (data.playerId === this.playerId) {
-        const largeCoin = document.querySelector('.coin-image')
-        if (largeCoin) {
-          largeCoin.classList.add('spinning-large')
-        }
-      }
-    })
-    
-    // Flip results
-    this.socket.on('flipResult', (data) => {
-      // Stop spinning
-      const slot = document.querySelector(`[data-player-index="${data.playerIndex}"]`)
-      if (slot) {
-        slot.querySelector('.player-coin').classList.remove('spinning')
-        
-        // Show result
-        slot.querySelector('.player-coin').dataset.result = data.result
-        
-        if (!data.survived) {
-          slot.classList.add('eliminated')
-        }
-      }
-    })
-  }
-  
-  startPowerBar() {
-    this.powerLevel = 0
-    this.powerInterval = setInterval(() => {
-      this.powerLevel = (this.powerLevel + 2) % 100
-      const powerFill = document.querySelector('.power-fill')
-      const powerValue = document.querySelector('.power-value')
-      if (powerFill) powerFill.style.width = `${this.powerLevel}%`
-      if (powerValue) powerValue.textContent = `${this.powerLevel}%`
-    }, 50)
-  }
-  
-  stopPowerBar() {
-    if (this.powerInterval) {
-      clearInterval(this.powerInterval)
-      this.powerInterval = null
-    }
-  }
-  
-  resetRound() {
-    this.currentChoice = null
-    this.hasFlipped = false
-    this.powerLevel = 0
-    
-    // Reset UI
-    document.querySelectorAll('.choice-btn').forEach(btn => {
-      btn.classList.remove('selected')
-      btn.disabled = false
-    })
-    const flipBtn = document.querySelector('.flip-btn')
-    if (flipBtn) flipBtn.disabled = true
-    const powerFill = document.querySelector('.power-fill')
-    if (powerFill) powerFill.style.width = '0%'
-  }
-  
-  startTimer(deadline) {
-    const timerElement = document.querySelector('.round-timer')
-    if (!timerElement) return
-    
-    const interval = setInterval(() => {
-      const now = Date.now()
-      const timeLeft = Math.max(0, Math.ceil((deadline - now) / 1000))
-      timerElement.textContent = timeLeft
-      
-      if (timeLeft === 0) {
-        clearInterval(interval)
-      }
-    }, 1000)
-  }
-  
-  enableChoiceButtons() {
-    document.querySelectorAll('.choice-btn').forEach(btn => {
-      btn.disabled = false
-    })
-  }
-}
 
 const BattleRoyaleGameRoom = ({ 
   gameId: propGameId, 
@@ -408,7 +262,6 @@ const BattleRoyaleGameRoom = ({
   const [serverState, setServerState] = useState(null)
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [gameManager, setGameManager] = useState(null)
   const [playerCoinImages, setPlayerCoinImages] = useState({})
   
   // Fix the isCreator check - add this near the top of the component:
@@ -526,11 +379,6 @@ const BattleRoyaleGameRoom = ({
           socketService.emit('request_battle_royale_state', { gameId })
         }, 100)
         
-        // Initialize game manager when connected
-        if (mounted) {
-          const manager = new GamePhaseManager(socketService, address)
-          setGameManager(manager)
-        }
         
       } catch (error) {
         console.error('❌ Failed to connect to Battle Royale game server:', error)

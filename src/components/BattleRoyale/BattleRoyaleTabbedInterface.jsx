@@ -13,7 +13,7 @@ import hazeVideo from '../../../Images/Video/haze.webm'
 
 // ===== BATTLE ROYALE TABBED INTERFACE =====
 // This component provides a tabbed interface for Battle Royale games
-// Tabs: NFT Details (with chat) → Join Game (8 player slots)
+// Tabs: NFT Details (with chat) → Join Game (6 player slots)
 
 // === BACKGROUND VIDEO (same as homepage) ===
 const BackgroundVideo = styled.video`

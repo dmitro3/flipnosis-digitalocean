@@ -160,7 +160,7 @@ const HeadsTailsDisplay = ({
     <StatusContainer>
       <div>
         <StatusText>{getStatusText()}</StatusText>
-        <PlayersCount>{currentPlayers} / 8 Players</PlayersCount>
+        <PlayersCount>{currentPlayers} / 6 Players</PlayersCount>
       </div>
       
       <HeadsTailsContainer>
