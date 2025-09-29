@@ -382,7 +382,7 @@ const BattleRoyaleGameRoom = ({
         }
       }))
     }
-  }, [getCoinHeadsImage, getCoinTailsImage])
+  }, [])
 
   // ===== HELPER FUNCTIONS =====
   const isMyTurn = useCallback(() => {
@@ -391,7 +391,7 @@ const BattleRoyaleGameRoom = ({
     // In battle royale, all alive players can act simultaneously during choice/power phases
     const myPlayer = serverState.players?.[address.toLowerCase()]
     return myPlayer && myPlayer.status !== 'eliminated'
-  }, [serverState, address])
+  }, [])
 
   // Add choice handler:
   const handleChoice = useCallback((choice) => {
@@ -407,7 +407,7 @@ const BattleRoyaleGameRoom = ({
     })
     
     showToast(`You chose ${choice.toUpperCase()}!`, 'success')
-  }, [serverState, hasChosen, gameId, address, showToast])
+  }, [])
 
   // REMOVED: canMakeChoice - Battle Royale doesn't use player choices
 
@@ -419,7 +419,7 @@ const BattleRoyaleGameRoom = ({
            myPlayer && 
            myPlayer.status !== 'eliminated' &&
            !myPlayer.hasFlipped
-  }, [serverState, address])
+  }, [])
 
   // ===== SOCKET EVENT HANDLERS =====
   const handleGameStateUpdate = useCallback((data) => {
@@ -435,7 +435,7 @@ const BattleRoyaleGameRoom = ({
         }
       })
     }
-  }, [loadPlayerCoinImages, playerCoinImages])
+  }, [])
 
   const handleRoomJoined = useCallback((data) => {
     console.log('🏠 Battle Royale room joined:', data)
@@ -444,7 +444,7 @@ const BattleRoyaleGameRoom = ({
   const handleTargetReveal = useCallback((data) => {
     console.log('🎯 Target revealed for round:', data)
     showToast(`Target for this round: ${data.target.toUpperCase()}!`, 'info')
-  }, [showToast])
+  }, [])
 
   const handleFlipsExecuting = useCallback((data) => {
     console.log('🎲 All players flipping simultaneously:', data)
@@ -457,7 +457,7 @@ const BattleRoyaleGameRoom = ({
       flipsInProgress: true,
       playerFlipStates: data.playerFlipStates
     }))
-  }, [showToast])
+  }, [])
 
   const handleRoundResult = useCallback((data) => {
     console.log('🎲 Battle Royale round result:', data)
@@ -482,7 +482,7 @@ const BattleRoyaleGameRoom = ({
       })
       setShowResultPopup(true)
     }
-  }, [address])
+  }, [])
 
   const handleGameComplete = useCallback((data) => {
     console.log('🏆 Battle Royale game complete:', data)
@@ -495,12 +495,12 @@ const BattleRoyaleGameRoom = ({
       finalPrize: data.finalPrize
     })
     setShowResultPopup(true)
-  }, [address])
+  }, [])
 
   const handleNewRound = useCallback((data) => {
     console.log('🔄 Battle Royale new round:', data)
     showToast(`Round ${data.currentRound} starting!`, 'info')
-  }, [showToast])
+  }, [])
 
   const handlePowerUpdate = useCallback((data) => {
     // Update power levels from server
@@ -518,7 +518,7 @@ const BattleRoyaleGameRoom = ({
         }
       }
     }))
-  }, [address])
+  }, [])
 
   const handleGameStarting = useCallback((data) => {
     console.log('🚀 Battle Royale game starting:', data)
@@ -531,7 +531,7 @@ const BattleRoyaleGameRoom = ({
       gamePhase: 'starting',
       countdown: data.countdown
     }))
-  }, [showToast])
+  }, [])
 
   // Handle coin change
   const handleCoinChange = useCallback((playerAddress) => {
@@ -564,7 +564,7 @@ const BattleRoyaleGameRoom = ({
     
     setShowCoinSelector(false)
     setSelectedPlayerForCoinChange(null)
-  }, [selectedPlayerForCoinChange, gameId, loadPlayerCoinImages, showToast])
+  }, [])
 
   // Toggle coin side (heads/tails) for lobby viewing
   const toggleCoinSide = useCallback((playerAddress) => {
@@ -599,7 +599,7 @@ const BattleRoyaleGameRoom = ({
     const payoutInfo = calculateEarlyStartPayout()
     setCalculatedPayout(payoutInfo.reducedPayout)
     setShowStartNowWarning(true)
-  }, [calculateEarlyStartPayout])
+  }, [])
 
   // Handle proceed with early start
   const handleProceedStart = useCallback(() => {
@@ -621,7 +621,7 @@ const BattleRoyaleGameRoom = ({
       showToast('Failed to start game', 'error')
     }
     setShowStartNowWarning(false)
-  }, [gameId, address, showToast, serverState])
+  }, [])
 
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
@@ -704,7 +704,7 @@ const BattleRoyaleGameRoom = ({
         handleStopCharge()
       }
     }, 50)
-  }, [canChargePower, isCharging])
+  }, [])
 
   const handleStopCharge = useCallback(() => {
     if (!isCharging) return
@@ -725,7 +725,7 @@ const BattleRoyaleGameRoom = ({
     })
     
     showToast(`Flipping with power ${finalPower.toFixed(1)}!`, 'info')
-  }, [isCharging, chargingPower, gameId, address, showToast])
+  }, [])
 
   // Show loading state
   if (loading) {
@@ -843,8 +843,8 @@ const BattleRoyaleGameRoom = ({
             onFlipComplete={(playerAddress, result) => {
               console.log(`Player ${playerAddress} flip complete: ${result}`)
             }}
-            onPowerChargeStart={handlePowerChargeStart}
-            onPowerChargeStop={handlePowerChargeStop}
+            onPowerChargeStart={handleStartCharge}
+            onPowerChargeStop={handleStopCharge}
             playerCoinImages={playerCoinImages}
             isCreator={isCreator}
             currentUserAddress={address}
