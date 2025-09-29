@@ -49,6 +49,26 @@ class BattleRoyaleSocketHandlers {
     io.to(roomId).emit('battle_royale_state_update', fullState)
   }
 
+  // Manual Phase Advancement Handler (for debugging)
+  async handleBattleRoyaleAdvancePhase(socket, data, battleRoyaleManager, io) {
+    const { gameId, address } = data
+    console.log(`🔧 Manual phase advancement requested by ${address} for game ${gameId}`)
+    
+    const success = battleRoyaleManager.advancePhase(gameId, (roomId, event, data) => {
+      io.to(roomId).emit(event, data)
+    })
+    
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot advance phase' })
+      return
+    }
+
+    // Broadcast updated state
+    const roomId = `br_${gameId}`
+    const fullState = battleRoyaleManager.getFullGameState(gameId)
+    io.to(roomId).emit('battle_royale_state_update', fullState)
+  }
+
   // Start Power Charging
   async handleBattleRoyaleStartPowerCharge(socket, data, battleRoyaleManager, io) {
     const { gameId, address } = data

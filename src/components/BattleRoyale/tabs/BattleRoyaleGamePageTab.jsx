@@ -487,7 +487,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         socketService.off('battle_royale_starting', onGameStarting)
       }
     }
-  }, [gameId, address, loadPlayerCoinImages, showToast]) // Remove navigate from dependencies
+  }, [gameId, address]) // Remove dependencies causing infinite loop
 
   // Add cleanup mechanism
   useEffect(() => {

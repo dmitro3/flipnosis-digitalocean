@@ -522,10 +522,10 @@ class BattleRoyaleGameManager {
     const flipResults = new Map()
     for (const [playerAddress, player] of game.players) {
       if (game.activePlayers.has(playerAddress)) {
-        // If player didn't choose, auto-assign
+        // Player must choose - no auto-assignment
         if (!player.choice) {
-          player.choice = Math.random() < 0.5 ? 'heads' : 'tails'
-          console.log(`🎲 Auto-assigned ${player.choice} for ${playerAddress}`)
+          console.log(`❌ Player ${playerAddress} didn't choose - skipping flip`)
+          continue
         }
         
         // Calculate flip result based on choice and power
@@ -644,10 +644,10 @@ class BattleRoyaleGameManager {
       return false
     }
 
-    // Auto-assign choice if not set
+    // Player must choose - no auto-assignment
     if (!player.choice) {
-      player.choice = Math.random() < 0.5 ? 'heads' : 'tails'
-      console.log(`🎲 Auto-assigned choice ${player.choice} for ${playerAddress}`)
+      console.log(`❌ Player ${playerAddress} didn't choose - cannot execute flip`)
+      return false
     }
 
     // Calculate flip result - SERVER DETERMINES OUTCOME
@@ -750,8 +750,9 @@ class BattleRoyaleGameManager {
     for (const playerAddress of game.activePlayers) {
       const player = game.players.get(playerAddress)
       if (!player.hasFlipped) {
-        // Auto-flip with random choice and minimal power
-        player.choice = Math.random() < 0.5 ? 'heads' : 'tails'
+        // Player didn't choose - eliminate them
+        console.log(`❌ Player ${playerAddress} didn't choose - eliminating`)
+        player.choice = null
         player.power = 1
         const flipResult = this.calculateFlipResult(player.choice, 1)
         
@@ -781,6 +782,16 @@ class BattleRoyaleGameManager {
 
     for (const playerAddress of game.activePlayers) {
       const player = game.players.get(playerAddress)
+      
+      // If player didn't choose, eliminate them
+      if (!player.choice) {
+        eliminatedThisRound.push(playerAddress)
+        player.status = 'eliminated'
+        player.eliminatedInRound = game.currentRound
+        game.eliminatedPlayers.add(playerAddress)
+        console.log(`Player ${playerAddress}: didn't choose - ELIMINATED`)
+        continue
+      }
       
       // Player survives if their flip matches their choice
       const survived = (player.flipResult === player.choice)
@@ -904,6 +915,34 @@ class BattleRoyaleGameManager {
   // ===== STATE QUERIES =====
   getGame(gameId) {
     return this.battleRoyaleGames.get(gameId)
+  }
+
+  // Manual phase advancement for debugging
+  advancePhase(gameId, broadcastFn) {
+    const game = this.battleRoyaleGames.get(gameId)
+    if (!game) return false
+
+    console.log(`🔧 Manually advancing phase for game ${gameId} from ${game.gamePhase}`)
+
+    switch (game.gamePhase) {
+      case this.ROUND_PHASES.WAITING_CHOICE:
+        console.log(`⏭️ Advancing from WAITING_CHOICE to CHARGING_POWER`)
+        this.startPowerChargingPhase(gameId, broadcastFn)
+        break
+      case this.ROUND_PHASES.CHARGING_POWER:
+        console.log(`⏭️ Advancing from CHARGING_POWER to EXECUTING_FLIPS`)
+        this.executeAllFlips(gameId, broadcastFn)
+        break
+      case this.ROUND_PHASES.EXECUTING_FLIPS:
+        console.log(`⏭️ Advancing from EXECUTING_FLIPS to SHOWING_RESULT`)
+        this.processRoundResults(gameId, broadcastFn)
+        break
+      default:
+        console.log(`❌ Cannot advance from phase: ${game.gamePhase}`)
+        return false
+    }
+
+    return true
   }
 
   // Add this method to the BattleRoyaleGameManager class

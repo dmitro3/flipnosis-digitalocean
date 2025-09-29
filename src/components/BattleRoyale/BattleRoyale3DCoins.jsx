@@ -12,7 +12,8 @@ const Lobby2DDisplay = ({
   canJoin, 
   isJoining, 
   onCoinSideToggle, 
-  onCoinChange 
+  onCoinChange,
+  serverState
 }) => {
   const [hoveredSlot, setHoveredSlot] = useState(null)
   
@@ -113,6 +114,25 @@ const Lobby2DDisplay = ({
                 }}>
                   {player.address?.slice(0, 6)}...{player.address?.slice(-4)}
                 </div>
+                
+                {/* Show player's choice in lobby */}
+                {serverState?.players?.[player?.address]?.choice && (
+                  <div style={{
+                    background: serverState.players[player.address].choice === 'heads' 
+                      ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
+                      : 'linear-gradient(135deg, #C0C0C0, #808080)',
+                    color: '#000',
+                    padding: '0.3rem',
+                    borderRadius: '0.3rem',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.6rem',
+                    border: '1px solid rgba(255, 255, 255, 0.3)'
+                  }}>
+                    🎯 {serverState.players[player.address].choice.toUpperCase()}
+                  </div>
+                )}
                 
                 <div style={{
                   display: 'flex',
@@ -253,6 +273,7 @@ const BattleRoyale3DCoins = ({
         isJoining={isJoining}
         onCoinSideToggle={onCoinSideToggle}
         onCoinChange={onCoinChange}
+        serverState={serverState}
       />
     )
   }
@@ -440,7 +461,7 @@ const BattleRoyale3DCoins = ({
               </div>
 
               {/* Show player's choice */}
-              {serverState?.players?.[player?.address]?.choice && serverState?.gamePhase === 'waiting_choice' && (
+              {serverState?.players?.[player?.address]?.choice && (
                 <div style={{
                   background: serverState.players[player.address].choice === 'heads' 
                     ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
@@ -450,9 +471,12 @@ const BattleRoyale3DCoins = ({
                   borderRadius: '0.5rem',
                   fontWeight: 'bold',
                   textAlign: 'center',
-                  marginTop: '0.5rem'
+                  marginTop: '0.5rem',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                  fontSize: '0.8rem'
                 }}>
-                  Choice: {serverState.players[player.address].choice.toUpperCase()}
+                  🎯 {serverState.players[player.address].choice.toUpperCase()}
                 </div>
               )}
               

@@ -77,6 +77,7 @@ class GameServer {
       socket.on('join_battle_royale_room', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io))
       socket.on('join_battle_royale', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyale(socket, data, this.battleRoyaleManager, this.io, this.dbService))
       socket.on('battle_royale_player_choice', (data) => this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(socket, data, this.battleRoyaleManager, this.io))
+      socket.on('battle_royale_advance_phase', (data) => this.battleRoyaleHandlers.handleBattleRoyaleAdvancePhase(socket, data, this.battleRoyaleManager, this.io))
       socket.on('battle_royale_start_power_charge', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStartPowerCharge(socket, data, this.battleRoyaleManager, this.io))
       socket.on('battle_royale_stop_power_charge', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStopPowerCharge(socket, data, this.battleRoyaleManager, this.io))
       socket.on('battle_royale_execute_flip', (data) => this.battleRoyaleHandlers.handleBattleRoyaleExecuteFlip(socket, data, this.battleRoyaleManager, this.io))

@@ -623,6 +623,12 @@ const BattleRoyaleGameRoom = ({
     setShowStartNowWarning(false)
   }, [])
 
+  // Handle manual phase advancement (for debugging)
+  const handleAdvancePhase = useCallback(() => {
+    console.log('🔧 Manually advancing phase')
+    socketService.emit('battle_royale_advance_phase', { gameId, address })
+  }, [gameId, address])
+
   // ===== SOCKET CONNECTION =====
   useEffect(() => {
     if (!gameId || !address) return
@@ -818,6 +824,40 @@ const BattleRoyaleGameRoom = ({
         </div>
       </RoundHeader>
 
+      {/* Debug Phase Advancement Button */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ 
+          textAlign: 'center', 
+          margin: '1rem 0',
+          padding: '0.5rem',
+          background: 'rgba(255, 0, 0, 0.1)',
+          border: '1px solid rgba(255, 0, 0, 0.3)',
+          borderRadius: '0.5rem'
+        }}>
+          <button
+            onClick={handleAdvancePhase}
+            style={{
+              background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
+              color: 'white',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '0.9rem'
+            }}
+          >
+            🔧 Advance Phase (Debug)
+          </button>
+          <div style={{ 
+            fontSize: '0.8rem', 
+            color: '#ff6b6b', 
+            marginTop: '0.25rem' 
+          }}>
+            Current: {serverState?.gamePhase || 'unknown'}
+          </div>
+        </div>
+      )}
 
       {/* Unified Battle Royale Coins Display */}
       {serverState && serverState.playerSlots && (
