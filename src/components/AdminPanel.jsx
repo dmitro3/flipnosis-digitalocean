@@ -1895,7 +1895,7 @@ export default function AdminPanel() {
                             
                             <Button 
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/game/${listing.id}`)
+                                navigator.clipboard.writeText(`${window.location.origin}/battle-royale/${listing.id}`)
                                 addNotification('success', 'Listing URL copied!')
                               }}
                               style={{ background: '#FFD700', color: '#000' }}
@@ -2020,7 +2020,7 @@ export default function AdminPanel() {
                             
                             <Button 
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/game/${game.id}`)
+                                navigator.clipboard.writeText(`${window.location.origin}/battle-royale/${game.id}`)
                                 addNotification('success', 'Game URL copied!')
                               }}
                               style={{ background: '#0088ff' }}

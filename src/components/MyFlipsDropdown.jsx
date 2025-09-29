@@ -280,7 +280,7 @@ const MyFlipsDropdown = () => {
                     return (
                       <ListingItem 
                         key={listing.id} 
-                        to={`/game/${listing.id}`}
+                        to={`/battle-royale/${listing.id}`}
                         onClick={handleClose}
                       >
                         <ListingContent>

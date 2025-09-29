@@ -874,7 +874,7 @@ const Home = () => {
 
       const result = await response.json()
       showSuccess('Game created successfully!')
-      navigate(`/game/${result.gameId}`)
+      navigate(`/battle-royale/${result.gameId}`)
     } catch (error) {
       console.error('Error creating game:', error)
       showError(error.message || 'Failed to create game')
@@ -1338,22 +1338,22 @@ const Home = () => {
                             if (selectedFlip.isBattleRoyale) {
                               navigate(`/battle-royale/${selectedFlip.id}`)
                             } else if (selectedFlip.type === 'listing') {
-                              navigate(`/game/${selectedFlip.id}`)
+                              navigate(`/battle-royale/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'completed') {
                               // Handle completed game view
-                              navigate(`/game/${selectedFlip.id}`)
+                              navigate(`/battle-royale/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'active') {
                               // Handle active game view
-                              navigate(`/game/${selectedFlip.id}`)
+                              navigate(`/battle-royale/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'joined') {
                               // Handle joined game view
-                              navigate(`/game/${selectedFlip.id}`)
+                              navigate(`/battle-royale/${selectedFlip.id}`)
                             } else if (selectedFlip.status === 'waiting') {
                               // Handle waiting games - go to unified game page
-                              navigate(`/game/${selectedFlip.id}`)
+                              navigate(`/battle-royale/${selectedFlip.id}`)
                             } else {
                               // Handle other statuses
-                              navigate(`/game/${selectedFlip.id}`)
+                              navigate(`/battle-royale/${selectedFlip.id}`)
                             }
                           }}
                           style={{

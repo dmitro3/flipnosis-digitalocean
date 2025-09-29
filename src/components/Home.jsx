@@ -1,6 +1,6 @@
 <GameFlipButton
   as={Link}
-  to={`/game/${selectedFlip.id}`}
+  to={`/battle-royale/${selectedFlip.id}`}
   style={{ 
     background: selectedFlip.status === 'completed' ? theme.colors.neonBlue : theme.colors.neonPink 
   }}

@@ -434,7 +434,7 @@ const DatabaseAdmin = () => {
                           
                           <button 
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/game/${item.id}`)
+                              navigator.clipboard.writeText(`${window.location.origin}/battle-royale/${item.id}`)
                               showSuccess(`${item.type === 'listing' ? 'Listing' : 'Game'} URL copied!`)
                             }}
                             style={{ 
@@ -568,7 +568,7 @@ const DatabaseAdmin = () => {
                           
                           <button 
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/game/${listing.id}`)
+                              navigator.clipboard.writeText(`${window.location.origin}/battle-royale/${listing.id}`)
                               showSuccess('Listing URL copied!')
                             }}
                             style={{ 
@@ -700,7 +700,7 @@ const DatabaseAdmin = () => {
                       {game.joiner && (
                         <button 
                           onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/game/${game.id}`)
+                            navigator.clipboard.writeText(`${window.location.origin}/battle-royale/${game.id}`)
                             showSuccess('Game URL copied!')
                           }}
                           style={{ 

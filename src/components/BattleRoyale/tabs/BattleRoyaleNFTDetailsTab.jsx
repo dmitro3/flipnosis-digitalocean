@@ -256,7 +256,7 @@ const ActionButton = styled.button`
   }
 `
 
-// Chat Section Styles (same as FlipSuiteFinal)
+// Chat Section Styles
 const ChatSection = styled.div`
   background: rgba(0, 0, 40, 0.6);
   padding: 1.25rem;

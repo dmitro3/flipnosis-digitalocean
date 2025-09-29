@@ -709,7 +709,7 @@ const Profile = () => {
         const result = await response.json();
         showSuccess('Offer accepted!');
         if (result.gameId) {
-          navigate(`/game/${result.gameId}`);
+          navigate(`/battle-royale/${result.gameId}`);
         }
         loadProfileData();
       } else {
@@ -1090,7 +1090,7 @@ const Profile = () => {
                             Cancel
                           </ActionButton>
                         )}
-                        <ActionButton onClick={() => navigate(`/game/${game.id}`)}>
+                        <ActionButton onClick={() => navigate(`/battle-royale/${game.id}`)}>
                           View Game
                           <ExternalLink style={{ width: '1rem', height: '1rem' }} />
                         </ActionButton>
@@ -1153,7 +1153,7 @@ const Profile = () => {
                           </ActionButton>
                         )}
                         {offer.gameId && (
-                          <ActionButton onClick={() => navigate(`/game/${offer.gameId}`)}>
+                          <ActionButton onClick={() => navigate(`/battle-royale/${offer.gameId}`)}>
                             View Game
                             <ExternalLink style={{ width: '1rem', height: '1rem' }} />
                           </ActionButton>
@@ -1309,7 +1309,7 @@ const Profile = () => {
                           </ActionButton>
                         )}
                         
-                        <ActionButton onClick={() => navigate(`/game/${game.id}`)}>
+                        <ActionButton onClick={() => navigate(`/battle-royale/${game.id}`)}>
                           View Game
                           <ExternalLink style={{ width: '1rem', height: '1rem' }} />
                         </ActionButton>

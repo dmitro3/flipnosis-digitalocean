@@ -8,7 +8,7 @@ const ShareButton = ({ gameId, gameData }) => {
   const { address } = useWallet()
   const { showSuccess, showError } = useToast()
   
-  const gameUrl = `${window.location.origin}/game/${gameId}`
+  const gameUrl = `${window.location.origin}/battle-royale/${gameId}`
   const nftName = gameData?.nft?.name || 'NFT'
   const priceUSD = gameData?.priceUSD || '0'
   

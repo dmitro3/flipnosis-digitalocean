@@ -315,7 +315,7 @@ const Dashboard = () => {
           showSuccess('Your offer was accepted!')
           // Navigate directly to the game
           if (data.gameId) {
-            navigate(`/game/${data.gameId}`)
+            navigate(`/battle-royale/${data.gameId}`)
           }
           break
           
@@ -487,7 +487,7 @@ const Dashboard = () => {
           return (
             <ListingCard 
               key={listing.id}
-                              onClick={() => navigate(`/game/${listing.id}`)}
+                              onClick={() => navigate(`/battle-royale/${listing.id}`)}
             >
               {listing.creator_online && <OnlineIndicator online />}
               {offerCount > 0 && <OfferCount>{offerCount} offers</OfferCount>}

@@ -131,7 +131,7 @@ function App() {
           
           // Navigate to game
           setTimeout(() => {
-            window.location.href = `/game/${gameId}`
+            window.location.href = `/battle-royale/${gameId}`
           }, 100)
         }
       }

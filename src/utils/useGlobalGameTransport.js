@@ -20,7 +20,7 @@ export function useGlobalGameTransport() {
         const gameId = data.gameId || data.contract_game_id
         if (gameId) {
           // Force navigation
-          navigate(`/game/${gameId}`, { replace: true })
+          navigate(`/battle-royale/${gameId}`, { replace: true })
         }
       }
     }
