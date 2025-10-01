@@ -33,8 +33,8 @@ const BattleRoyaleUnified3DScene = ({
   const animationIdRef = useRef(null)
   const coinStatesRef = useRef([]) // Track animation state for each coin
 
-  // Optimized texture creation (from OptimizedGoldCoin)
-  const createOptimizedTexture = useCallback((type, customImage = null) => {
+  // Optimized texture creation (from OptimizedGoldCoin) - NOT in useCallback to avoid infinite loops
+  const createOptimizedTexture = (type, customImage = null) => {
     const cacheKey = `${type}-${customImage || 'default'}`
     if (textureCache.current[cacheKey]) {
       return textureCache.current[cacheKey]
@@ -73,7 +73,7 @@ const BattleRoyaleUnified3DScene = ({
     texture.colorSpace = THREE.SRGBColorSpace
     textureCache.current[cacheKey] = texture
     return texture
-  }, [])
+  }
 
   // Initialize single Three.js scene with 6 coins
   useEffect(() => {
@@ -120,20 +120,20 @@ const BattleRoyaleUnified3DScene = ({
     fillLight.position.set(0, -3, 5)
     scene.add(fillLight)
 
-    // Create 6 coin meshes in a grid layout
+    // Create 7 coin meshes: 6 small grid + 1 large interactive
     const coinPositions = [
-      { x: -8, y: 2, z: 0 },   // Top left
-      { x: 0, y: 2, z: 0 },    // Top center
-      { x: 8, y: 2, z: 0 },    // Top right
-      { x: -8, y: -2, z: 0 },  // Bottom left
-      { x: 0, y: -2, z: 0 },   // Bottom center
-      { x: 8, y: -2, z: 0 }    // Bottom right
+      // 6 small coins in grid (left side)
+      { x: -12, y: 3, z: 0, scale: 1 },    // Top left
+      { x: -6, y: 3, z: 0, scale: 1 },     // Top center
+      { x: 0, y: 3, z: 0, scale: 1 },      // Top right
+      { x: -12, y: -3, z: 0, scale: 1 },   // Bottom left
+      { x: -6, y: -3, z: 0, scale: 1 },    // Bottom center
+      { x: 0, y: -3, z: 0, scale: 1 },     // Bottom right
+      // 1 large coin (right side, interactive)
+      { x: 10, y: 0, z: 0, scale: 2 }      // Large interactive coin
     ]
 
-    // Store positions in ref for access in animation loop
-    const coinPositionsRef = useRef(coinPositions)
-
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
       // Create materials with same settings as OptimizedGoldCoin
       const materials = [
         new THREE.MeshStandardMaterial({
@@ -165,12 +165,19 @@ const BattleRoyaleUnified3DScene = ({
       const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
       const coin = new THREE.Mesh(geometry, materials)
       
-      // Position coin
-      coin.position.set(coinPositions[i].x, coinPositions[i].y, coinPositions[i].z)
-      coin.scale.y = 1.5
+      // Position and scale coin
+      const posData = coinPositions[i]
+      coin.position.set(posData.x, posData.y, posData.z)
+      coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
       coin.rotation.x = 0
       coin.rotation.y = Math.PI / 2
       coin.rotation.z = 0
+
+      // Make large coin (index 6) interactive
+      if (i === 6) {
+        coin.userData.isInteractive = true
+        coin.userData.isLargeCoin = true
+      }
 
       scene.add(coin)
       coinsRef.current[i] = coin
@@ -194,12 +201,14 @@ const BattleRoyaleUnified3DScene = ({
 
       const currentTime = Date.now()
 
-      // Update each coin
+      // Update each coin (including large coin at index 6)
       coinsRef.current.forEach((coin, index) => {
         if (!coin) return
 
         const state = coinStatesRef.current[index]
-        const player = players[index]
+        const isLargeCoin = index === 6
+        const player = isLargeCoin ? players.find(p => p?.address === currentUserAddress) : players[index]
+        const posData = coinPositions[index]
 
         if (state.isFlipping) {
           // Flip animation (from OptimizedGoldCoin logic)
@@ -211,8 +220,8 @@ const BattleRoyaleUnified3DScene = ({
 
           // Height animation
           const heightProgress = Math.sin(progress * Math.PI)
-          const launchHeight = 5 + (state.power * 0.25)
-          coin.position.y = coinPositionsRef.current[index].y + (heightProgress * launchHeight)
+          const launchHeight = (5 + (state.power * 0.25)) * (isLargeCoin ? 1.5 : 1)
+          coin.position.y = posData.y + (heightProgress * launchHeight)
 
           // Rotation animation
           const totalRotation = state.totalRotations || (10 * Math.PI * 2)
@@ -226,7 +235,7 @@ const BattleRoyaleUnified3DScene = ({
           // Complete flip
           if (progress >= 1) {
             state.isFlipping = false
-            coin.position.y = coinPositionsRef.current[index].y
+            coin.position.y = posData.y
             
             // Land on edge based on result
             const finalRotation = state.flipResult === 'heads' ? 0 : Math.PI
@@ -246,13 +255,15 @@ const BattleRoyaleUnified3DScene = ({
           const intensity = Math.min(1, state.power / 10)
           const time = currentTime * 0.001
           const pulseScale = 1 + Math.sin(time * 10) * 0.05 * intensity
-          coin.scale.set(pulseScale, pulseScale * 1.5, pulseScale)
-          coin.position.y = coinPositionsRef.current[index].y + Math.sin(time * 5) * 0.05 * intensity
+          const baseScale = posData.scale
+          coin.scale.set(pulseScale * baseScale, pulseScale * 1.5 * baseScale, pulseScale * baseScale)
+          coin.position.y = posData.y + Math.sin(time * 5) * 0.05 * intensity
           coin.rotation.x += 0.01 * (1 + intensity * 0.5)
         } else {
           // Idle animation
-          coin.scale.set(1, 1.5, 1)
-          coin.position.y = coinPositionsRef.current[index].y
+          const baseScale = posData.scale
+          coin.scale.set(baseScale, 1.5 * baseScale, baseScale)
+          coin.position.y = posData.y
           coin.rotation.x += 0.0000165
         }
       })
@@ -329,9 +340,27 @@ const BattleRoyaleUnified3DScene = ({
         }
       }
     })
-  }, [players, playerCoinImages, createOptimizedTexture])
 
-  // Handle flip states from server
+    // Also update large coin (index 6) with current player's images
+    const currentPlayerImages = playerCoinImages[currentUserAddress]
+    const largeCoin = coinsRef.current[6]
+    
+    if (largeCoin && currentPlayerImages) {
+      if (largeCoin.material[1]) {
+        if (largeCoin.material[1].map) largeCoin.material[1].map.dispose()
+        largeCoin.material[1].map = createOptimizedTexture('heads', currentPlayerImages.headsImage)
+        largeCoin.material[1].needsUpdate = true
+      }
+
+      if (largeCoin.material[2]) {
+        if (largeCoin.material[2].map) largeCoin.material[2].map.dispose()
+        largeCoin.material[2].map = createOptimizedTexture('tails', currentPlayerImages.tailsImage)
+        largeCoin.material[2].needsUpdate = true
+      }
+    }
+  }, [players, playerCoinImages, currentUserAddress])
+
+  // Handle flip states from server - sync large coin with player's small coin
   useEffect(() => {
     if (!flipStates || !coinsRef.current.length) return
 
@@ -343,7 +372,7 @@ const BattleRoyaleUnified3DScene = ({
       const coin = coinsRef.current[playerIndex]
 
       if (flipState.isFlipping && !state.isFlipping) {
-        // Start flip animation
+        // Start flip animation for small coin
         const power = flipState.creatorPower || flipState.joinerPower || 1
         const powerLevel = Math.max(1, Math.min(10, Math.ceil(power)))
         const config = powerConfigs[Math.max(0, powerLevel - 1)]
@@ -366,11 +395,32 @@ const BattleRoyaleUnified3DScene = ({
           power,
           duration: config.duration
         })
+
+        // If this is the current player, ALSO flip the large coin (index 6)
+        if (playerAddress === currentUserAddress) {
+          const largeCoinState = coinStatesRef.current[6]
+          const largeCoin = coinsRef.current[6]
+          
+          largeCoinState.isFlipping = true
+          largeCoinState.flipStartTime = Date.now()
+          largeCoinState.flipDuration = config.duration
+          largeCoinState.flipResult = flipState.flipResult
+          largeCoinState.startRotation = {
+            x: largeCoin.rotation.x,
+            y: largeCoin.rotation.y,
+            z: largeCoin.rotation.z
+          }
+          largeCoinState.totalRotations = config.minFlips * Math.PI * 2
+          largeCoinState.speed = config.speed
+          largeCoinState.power = power
+
+          console.log(`🎲 Also flipping large coin (index 6) for current player`)
+        }
       }
     })
-  }, [flipStates, players])
+  }, [flipStates, players, currentUserAddress])
 
-  // Handle power charging from server state
+  // Handle power charging from server state - apply to both small and large coin
   useEffect(() => {
     if (!serverState?.players || !coinsRef.current.length) return
 
@@ -383,12 +433,26 @@ const BattleRoyaleUnified3DScene = ({
       if (serverPlayer?.power && !state.isFlipping) {
         state.isCharging = true
         state.power = serverPlayer.power
+
+        // If this is current player, also charge large coin
+        if (player.address === currentUserAddress) {
+          const largeCoinState = coinStatesRef.current[6]
+          largeCoinState.isCharging = true
+          largeCoinState.power = serverPlayer.power
+        }
       } else if (!serverPlayer?.power) {
         state.isCharging = false
         state.power = 0
+
+        // If this is current player, also stop charging large coin
+        if (player.address === currentUserAddress) {
+          const largeCoinState = coinStatesRef.current[6]
+          largeCoinState.isCharging = false
+          largeCoinState.power = 0
+        }
       }
     })
-  }, [serverState, players])
+  }, [serverState, players, currentUserAddress])
 
   return (
     <div
