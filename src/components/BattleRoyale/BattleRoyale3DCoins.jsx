@@ -242,6 +242,11 @@ const BattleRoyale3DCoins = ({
   const [powerLevel, setPowerLevel] = useState(0)
   const [isCharging, setIsCharging] = useState(false)
   
+  // Sync localFlipStates with flipStates prop
+  useEffect(() => {
+    setLocalFlipStates(flipStates)
+  }, [flipStates])
+  
   // Safe game phase check
   const safeGamePhase = gamePhase || 'filling'
   
@@ -403,50 +408,18 @@ const BattleRoyale3DCoins = ({
         alignItems: 'center',
         gap: '1.5rem'
       }}>
-        {/* Round Timer */}
+        {/* Panel Header */}
         <div style={{
           color: '#00bfff',
-          fontSize: '2rem',
+          fontSize: '1.5rem',
           fontWeight: 'bold',
           textAlign: 'center',
-          textShadow: '0 0 10px rgba(0, 191, 255, 0.8)'
+          textShadow: '0 0 10px rgba(0, 191, 255, 0.8)',
+          borderBottom: '2px solid rgba(0, 191, 255, 0.3)',
+          paddingBottom: '0.5rem',
+          width: '100%'
         }}>
-          {serverState?.roundCountdown || 20}s
-        </div>
-        
-        {/* Large Player Coin */}
-        <div style={{
-          width: '200px',
-          height: '200px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '4px solid #FFD700',
-          boxShadow: '0 0 30px rgba(255, 215, 0, 0.5)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {currentUserAddress && playerCoinImages[currentUserAddress] ? (
-            <img 
-              src={playerCoinImages[currentUserAddress].headsImage} 
-              alt="Your coin"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%'
-              }}
-            />
-          ) : (
-            <div style={{
-              fontSize: '4rem',
-              color: '#333'
-            }}>
-              🪙
-            </div>
-          )}
+          🎮 YOUR CONTROLS
         </div>
 
         {/* Player Address */}

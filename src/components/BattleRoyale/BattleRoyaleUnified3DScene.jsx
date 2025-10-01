@@ -65,6 +65,36 @@ const BattleRoyaleUnified3DScene = ({
         ctx.lineTo(i, size)
         ctx.stroke()
       }
+    } else if (type === 'heads') {
+      // Default gold heads texture
+      const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
+      gradient.addColorStop(0, '#FFD700')
+      gradient.addColorStop(0.5, '#FFA500')
+      gradient.addColorStop(1, '#FF8C00')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, size, size)
+      
+      // Add "H" text
+      ctx.fillStyle = '#333'
+      ctx.font = 'bold 200px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('H', size/2, size/2)
+    } else if (type === 'tails') {
+      // Default silver tails texture
+      const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
+      gradient.addColorStop(0, '#E5E5E5')
+      gradient.addColorStop(0.5, '#C0C0C0')
+      gradient.addColorStop(1, '#A0A0A0')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, size, size)
+      
+      // Add "T" text
+      ctx.fillStyle = '#333'
+      ctx.font = 'bold 200px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('T', size/2, size/2)
     } else {
       ctx.clearRect(0, 0, size, size)
     }
@@ -316,13 +346,24 @@ const BattleRoyaleUnified3DScene = ({
 
   // Update coin textures when player images change
   useEffect(() => {
-    if (!coinsRef.current.length) return
+    if (!coinsRef.current.length) {
+      console.log('⚠️ No coins available yet')
+      return
+    }
+
+    console.log('🎨 Updating coin textures. Players:', players.length, 'Coins:', coinsRef.current.length)
+    console.log('📦 Player coin images:', Object.keys(playerCoinImages))
 
     players.forEach((player, index) => {
-      if (!player?.address) return
+      if (!player?.address) {
+        console.log(`⚠️ Coin ${index}: No player assigned`)
+        return
+      }
 
       const coin = coinsRef.current[index]
       const images = playerCoinImages[player.address]
+
+      console.log(`🎨 Coin ${index}: Player ${player.address.slice(0, 6)}, Has images:`, !!images)
 
       if (coin && images) {
         // Update heads texture
@@ -330,6 +371,7 @@ const BattleRoyaleUnified3DScene = ({
           if (coin.material[1].map) coin.material[1].map.dispose()
           coin.material[1].map = createOptimizedTexture('heads', images.headsImage)
           coin.material[1].needsUpdate = true
+          console.log(`✅ Coin ${index}: Updated heads texture`)
         }
 
         // Update tails texture
@@ -337,6 +379,7 @@ const BattleRoyaleUnified3DScene = ({
           if (coin.material[2].map) coin.material[2].map.dispose()
           coin.material[2].map = createOptimizedTexture('tails', images.tailsImage)
           coin.material[2].needsUpdate = true
+          console.log(`✅ Coin ${index}: Updated tails texture`)
         }
       }
     })
@@ -345,17 +388,21 @@ const BattleRoyaleUnified3DScene = ({
     const currentPlayerImages = playerCoinImages[currentUserAddress]
     const largeCoin = coinsRef.current[6]
     
+    console.log('🎨 Large coin: Current user', currentUserAddress?.slice(0, 6), 'Has images:', !!currentPlayerImages)
+    
     if (largeCoin && currentPlayerImages) {
       if (largeCoin.material[1]) {
         if (largeCoin.material[1].map) largeCoin.material[1].map.dispose()
         largeCoin.material[1].map = createOptimizedTexture('heads', currentPlayerImages.headsImage)
         largeCoin.material[1].needsUpdate = true
+        console.log('✅ Large coin: Updated heads texture')
       }
 
       if (largeCoin.material[2]) {
         if (largeCoin.material[2].map) largeCoin.material[2].map.dispose()
         largeCoin.material[2].map = createOptimizedTexture('tails', currentPlayerImages.tailsImage)
         largeCoin.material[2].needsUpdate = true
+        console.log('✅ Large coin: Updated tails texture')
       }
     }
   }, [players, playerCoinImages, currentUserAddress])
