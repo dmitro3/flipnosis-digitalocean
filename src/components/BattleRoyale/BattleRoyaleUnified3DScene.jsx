@@ -28,7 +28,7 @@ const BattleRoyaleUnified3DScene = ({
   const sceneRef = useRef(null)
   const rendererRef = useRef(null)
   const cameraRef = useRef(null)
-  const coinsRef = useRef([]) // Array of 6 coin meshes
+  const coinsRef = useRef([]) // Array of 6 coin meshes in 3x2 grid
   const textureCache = useRef({})
   const animationIdRef = useRef(null)
   const coinStatesRef = useRef([]) // Track animation state for each coin
@@ -65,6 +65,36 @@ const BattleRoyaleUnified3DScene = ({
         ctx.lineTo(i, size)
         ctx.stroke()
       }
+    } else if (type === 'heads') {
+      // Default gold heads texture
+      const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
+      gradient.addColorStop(0, '#FFD700')
+      gradient.addColorStop(0.5, '#FFA500')
+      gradient.addColorStop(1, '#FF8C00')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, size, size)
+      
+      // Add "H" text
+      ctx.fillStyle = '#333'
+      ctx.font = 'bold 200px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('H', size/2, size/2)
+    } else if (type === 'tails') {
+      // Default silver tails texture
+      const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
+      gradient.addColorStop(0, '#E5E5E5')
+      gradient.addColorStop(0.5, '#C0C0C0')
+      gradient.addColorStop(1, '#A0A0A0')
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, size, size)
+      
+      // Add "T" text
+      ctx.fillStyle = '#333'
+      ctx.font = 'bold 200px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('T', size/2, size/2)
     } else {
       ctx.clearRect(0, 0, size, size)
     }
@@ -75,15 +105,20 @@ const BattleRoyaleUnified3DScene = ({
     return texture
   }
 
-  // Initialize single Three.js scene with 6 coins
+  // Initialize Three.js scene with 6 coins in 3x2 grid
   useEffect(() => {
     if (!mountRef.current || sceneRef.current) return
 
     console.log('🎬 Creating unified Battle Royale 3D scene')
+    
+    // Clear any existing scene
+    if (sceneRef.current) {
+      sceneRef.current.clear()
+    }
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(50, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000)
-    camera.position.set(0, 5, 20)
+    camera.position.set(0, 0, 25)
     camera.lookAt(0, 0, 0)
 
     const renderer = new THREE.WebGLRenderer({
@@ -120,20 +155,25 @@ const BattleRoyaleUnified3DScene = ({
     fillLight.position.set(0, -3, 5)
     scene.add(fillLight)
 
-    // Create 7 coin meshes: 6 small grid + 1 large interactive
+    // Create coins only for actual players (not empty slots)
+    const activePlayers = players.filter(p => p?.address)
+    const numPlayers = activePlayers.length
+    
+    // Fixed 3x2 grid layout for all players
     const coinPositions = [
-      // 6 small coins in grid (left side)
-      { x: -12, y: 3, z: 0, scale: 1 },    // Top left
-      { x: -6, y: 3, z: 0, scale: 1 },     // Top center
-      { x: 0, y: 3, z: 0, scale: 1 },      // Top right
-      { x: -12, y: -3, z: 0, scale: 1 },   // Bottom left
-      { x: -6, y: -3, z: 0, scale: 1 },    // Bottom center
-      { x: 0, y: -3, z: 0, scale: 1 },     // Bottom right
-      // 1 large coin (right side, interactive)
-      { x: 10, y: 0, z: 0, scale: 2 }      // Large interactive coin
+      // Top row (3 coins)
+      { x: -8, y: 3, z: 0, scale: 1 },    // Top left
+      { x: 0, y: 3, z: 0, scale: 1 },     // Top center  
+      { x: 8, y: 3, z: 0, scale: 1 },     // Top right
+      // Bottom row (3 coins)
+      { x: -8, y: -3, z: 0, scale: 1 },   // Bottom left
+      { x: 0, y: -3, z: 0, scale: 1 },    // Bottom center
+      { x: 8, y: -3, z: 0, scale: 1 },    // Bottom right
     ]
 
-    for (let i = 0; i < 7; i++) {
+    console.log(`🎯 Creating ${numPlayers} coins for active players`)
+
+    for (let i = 0; i < 6; i++) {
       // Create materials with same settings as OptimizedGoldCoin
       const materials = [
         new THREE.MeshStandardMaterial({
@@ -173,12 +213,6 @@ const BattleRoyaleUnified3DScene = ({
       coin.rotation.y = Math.PI / 2
       coin.rotation.z = 0
 
-      // Make large coin (index 6) interactive
-      if (i === 6) {
-        coin.userData.isInteractive = true
-        coin.userData.isLargeCoin = true
-      }
-
       scene.add(coin)
       coinsRef.current[i] = coin
 
@@ -195,19 +229,39 @@ const BattleRoyaleUnified3DScene = ({
       }
     }
 
+    // Clear any leftover coins - keep only 6 coins
+    coinsRef.current = coinsRef.current.slice(0, 6)
+    coinStatesRef.current = coinStatesRef.current.slice(0, 6)
+
+    // Create visual frames for each coin slot
+    for (let i = 0; i < 6; i++) {
+      const pos = coinPositions[i]
+      const player = players[i]
+      
+      // Create a frame/box outline
+      const frameGeometry = new THREE.BoxGeometry(5, 5, 0.1)
+      const edges = new THREE.EdgesGeometry(frameGeometry)
+      const frameMaterial = new THREE.LineBasicMaterial({ 
+        color: player?.address ? 0x00ff88 : 0xff1493,
+        linewidth: 2
+      })
+      const frame = new THREE.LineSegments(edges, frameMaterial)
+      frame.position.set(pos.x, pos.y, pos.z - 2)
+      scene.add(frame)
+    }
+
     // Animation loop
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current) return
 
       const currentTime = Date.now()
 
-      // Update each coin (including large coin at index 6)
+      // Update each coin
       coinsRef.current.forEach((coin, index) => {
         if (!coin) return
 
         const state = coinStatesRef.current[index]
-        const isLargeCoin = index === 6
-        const player = isLargeCoin ? players.find(p => p?.address === currentUserAddress) : players[index]
+        const player = players[index]
         const posData = coinPositions[index]
 
         if (state.isFlipping) {
@@ -220,7 +274,7 @@ const BattleRoyaleUnified3DScene = ({
 
           // Height animation
           const heightProgress = Math.sin(progress * Math.PI)
-          const launchHeight = (5 + (state.power * 0.25)) * (isLargeCoin ? 1.5 : 1)
+          const launchHeight = 5 + (state.power * 0.25)
           coin.position.y = posData.y + (heightProgress * launchHeight)
 
           // Rotation animation
@@ -316,20 +370,35 @@ const BattleRoyaleUnified3DScene = ({
 
   // Update coin textures when player images change
   useEffect(() => {
-    if (!coinsRef.current.length) return
+    if (!coinsRef.current.length) {
+      console.log('⚠️ No coins available yet')
+      return
+    }
 
-    players.forEach((player, index) => {
-      if (!player?.address) return
+    console.log('🎨 Updating coin textures. Coins:', coinsRef.current.length)
+    console.log('📦 Player coin images:', Object.keys(playerCoinImages))
 
-      const coin = coinsRef.current[index]
+    // Only update the 6 grid coins
+    for (let i = 0; i < 6; i++) {
+      const player = players[i]
+      const coin = coinsRef.current[i]
+      
+      if (!player?.address || !coin) {
+        console.log(`⚠️ Coin ${i}: No player or coin assigned`)
+        continue
+      }
+      
       const images = playerCoinImages[player.address]
-
-      if (coin && images) {
+      
+      console.log(`🎨 Coin ${i}: Player ${player.address.slice(0, 6)}, Has images:`, !!images)
+      
+      if (images) {
         // Update heads texture
         if (coin.material[1]) {
           if (coin.material[1].map) coin.material[1].map.dispose()
           coin.material[1].map = createOptimizedTexture('heads', images.headsImage)
           coin.material[1].needsUpdate = true
+          console.log(`✅ Coin ${i}: Updated heads texture`)
         }
 
         // Update tails texture
@@ -337,36 +406,19 @@ const BattleRoyaleUnified3DScene = ({
           if (coin.material[2].map) coin.material[2].map.dispose()
           coin.material[2].map = createOptimizedTexture('tails', images.tailsImage)
           coin.material[2].needsUpdate = true
+          console.log(`✅ Coin ${i}: Updated tails texture`)
         }
       }
-    })
-
-    // Also update large coin (index 6) with current player's images
-    const currentPlayerImages = playerCoinImages[currentUserAddress]
-    const largeCoin = coinsRef.current[6]
-    
-    if (largeCoin && currentPlayerImages) {
-      if (largeCoin.material[1]) {
-        if (largeCoin.material[1].map) largeCoin.material[1].map.dispose()
-        largeCoin.material[1].map = createOptimizedTexture('heads', currentPlayerImages.headsImage)
-        largeCoin.material[1].needsUpdate = true
-      }
-
-      if (largeCoin.material[2]) {
-        if (largeCoin.material[2].map) largeCoin.material[2].map.dispose()
-        largeCoin.material[2].map = createOptimizedTexture('tails', currentPlayerImages.tailsImage)
-        largeCoin.material[2].needsUpdate = true
-      }
     }
-  }, [players, playerCoinImages, currentUserAddress])
+  }, [players, playerCoinImages])
 
-  // Handle flip states from server - sync large coin with player's small coin
+  // Handle flip states from server
   useEffect(() => {
     if (!flipStates || !coinsRef.current.length) return
 
     Object.entries(flipStates).forEach(([playerAddress, flipState]) => {
       const playerIndex = players.findIndex(p => p?.address === playerAddress)
-      if (playerIndex === -1) return
+      if (playerIndex === -1 || playerIndex >= 6) return
 
       const state = coinStatesRef.current[playerIndex]
       const coin = coinsRef.current[playerIndex]
@@ -395,64 +447,30 @@ const BattleRoyaleUnified3DScene = ({
           power,
           duration: config.duration
         })
-
-        // If this is the current player, ALSO flip the large coin (index 6)
-        if (playerAddress === currentUserAddress) {
-          const largeCoinState = coinStatesRef.current[6]
-          const largeCoin = coinsRef.current[6]
-          
-          largeCoinState.isFlipping = true
-          largeCoinState.flipStartTime = Date.now()
-          largeCoinState.flipDuration = config.duration
-          largeCoinState.flipResult = flipState.flipResult
-          largeCoinState.startRotation = {
-            x: largeCoin.rotation.x,
-            y: largeCoin.rotation.y,
-            z: largeCoin.rotation.z
-          }
-          largeCoinState.totalRotations = config.minFlips * Math.PI * 2
-          largeCoinState.speed = config.speed
-          largeCoinState.power = power
-
-          console.log(`🎲 Also flipping large coin (index 6) for current player`)
-        }
       }
     })
-  }, [flipStates, players, currentUserAddress])
+  }, [flipStates, players])
 
-  // Handle power charging from server state - apply to both small and large coin
+  // Handle power charging from server state
   useEffect(() => {
     if (!serverState?.players || !coinsRef.current.length) return
 
-    players.forEach((player, index) => {
-      if (!player?.address) return
+    for (let i = 0; i < 6; i++) {
+      const player = players[i]
+      if (!player?.address) continue
 
       const serverPlayer = serverState.players[player.address]
-      const state = coinStatesRef.current[index]
+      const state = coinStatesRef.current[i]
 
       if (serverPlayer?.power && !state.isFlipping) {
         state.isCharging = true
         state.power = serverPlayer.power
-
-        // If this is current player, also charge large coin
-        if (player.address === currentUserAddress) {
-          const largeCoinState = coinStatesRef.current[6]
-          largeCoinState.isCharging = true
-          largeCoinState.power = serverPlayer.power
-        }
       } else if (!serverPlayer?.power) {
         state.isCharging = false
         state.power = 0
-
-        // If this is current player, also stop charging large coin
-        if (player.address === currentUserAddress) {
-          const largeCoinState = coinStatesRef.current[6]
-          largeCoinState.isCharging = false
-          largeCoinState.power = 0
-        }
       }
-    })
-  }, [serverState, players, currentUserAddress])
+    }
+  }, [serverState, players])
 
   return (
     <div
@@ -464,7 +482,10 @@ const BattleRoyaleUnified3DScene = ({
         borderRadius: '1rem',
         border: '2px solid rgba(255, 20, 147, 0.3)',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}
     />
   )

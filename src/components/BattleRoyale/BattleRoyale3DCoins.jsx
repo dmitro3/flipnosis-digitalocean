@@ -331,9 +331,8 @@ const BattleRoyale3DCoins = ({
       flexDirection: 'row',
       gap: '2rem',
       padding: '2rem',
-      '@media (max-width: 1200px)': {
-        flexDirection: 'column'
-      }
+      alignItems: 'center',
+      justifyContent: 'center'
     }}>
       {/* Left side: Unified 3D Scene */}
       <div style={{
