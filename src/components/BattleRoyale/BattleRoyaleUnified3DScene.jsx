@@ -164,7 +164,7 @@ const BattleRoyaleUnified3DScene = ({
     if (numPlayers <= 3) {
       // Single row for 1-3 players
       for (let i = 0; i < numPlayers; i++) {
-        coinPositions.push({ x: (i - (numPlayers - 1) / 2) * 8, y: 0, z: 0, scale: 1 })
+        coinPositions.push({ x: (i - (numPlayers - 1) / 2) * 10, y: 0, z: 0, scale: 1 })
       }
     } else {
       // 3x2 grid for 4-6 players
@@ -172,8 +172,8 @@ const BattleRoyaleUnified3DScene = ({
         const row = Math.floor(i / 3)
         const col = i % 3
         coinPositions.push({ 
-          x: (col - 1) * 8, 
-          y: row === 0 ? 4 : -4, 
+          x: (col - 1) * 10, 
+          y: row === 0 ? 5 : -5, 
           z: 0, 
           scale: 1 
         })
@@ -358,7 +358,7 @@ const BattleRoyaleUnified3DScene = ({
       sceneRef.current = null
       rendererRef.current = null
     }
-  }, [createOptimizedTexture])
+  }, [players, createOptimizedTexture])
 
   // Update coin textures when player images change
   useEffect(() => {
@@ -382,11 +382,11 @@ const BattleRoyaleUnified3DScene = ({
 
       console.log(`🎨 Coin ${index}: Player ${player.address.slice(0, 6)}, Has images:`, !!images)
 
-      if (coin && images) {
+      if (coin) {
         // Update heads texture
         if (coin.material[1]) {
           if (coin.material[1].map) coin.material[1].map.dispose()
-          coin.material[1].map = createOptimizedTexture('heads', images.headsImage)
+          coin.material[1].map = createOptimizedTexture('heads', images?.headsImage)
           coin.material[1].needsUpdate = true
           console.log(`✅ Coin ${index}: Updated heads texture`)
         }
@@ -394,13 +394,13 @@ const BattleRoyaleUnified3DScene = ({
         // Update tails texture
         if (coin.material[2]) {
           if (coin.material[2].map) coin.material[2].map.dispose()
-          coin.material[2].map = createOptimizedTexture('tails', images.tailsImage)
+          coin.material[2].map = createOptimizedTexture('tails', images?.tailsImage)
           coin.material[2].needsUpdate = true
           console.log(`✅ Coin ${index}: Updated tails texture`)
         }
       }
     })
-  }, [players, playerCoinImages, currentUserAddress])
+  }, [playerCoinImages, createOptimizedTexture])
 
   // Handle flip states from server
   useEffect(() => {

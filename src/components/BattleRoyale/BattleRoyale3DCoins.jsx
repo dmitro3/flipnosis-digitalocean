@@ -337,8 +337,8 @@ const BattleRoyale3DCoins = ({
     }}>
       {/* Left side: Unified 3D Scene */}
       <div style={{
-        flex: '3',
-        minWidth: '600px',
+        flex: '4',
+        minWidth: '800px',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem'
@@ -397,8 +397,8 @@ const BattleRoyale3DCoins = ({
 
       {/* Right side: Interactive Player Panel */}
       <div style={{
-        flex: '2',
-        minWidth: '400px',
+        flex: '1',
+        minWidth: '350px',
         background: 'rgba(0, 0, 0, 0.5)',
         backdropFilter: 'blur(10px)',
         border: '2px solid rgba(0, 191, 255, 0.3)',
