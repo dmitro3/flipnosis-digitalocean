@@ -110,6 +110,11 @@ const BattleRoyaleUnified3DScene = ({
     if (!mountRef.current || sceneRef.current) return
 
     console.log('🎬 Creating unified Battle Royale 3D scene')
+    
+    // Clear any existing scene
+    if (sceneRef.current) {
+      sceneRef.current.clear()
+    }
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(50, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000)
@@ -150,17 +155,34 @@ const BattleRoyaleUnified3DScene = ({
     fillLight.position.set(0, -3, 5)
     scene.add(fillLight)
 
-    // Create 6 coin meshes in a neat 3x2 grid
-    const coinPositions = [
-      { x: -6, y: 3, z: 0, scale: 1 },     // Top left
-      { x: 0, y: 3, z: 0, scale: 1 },      // Top center
-      { x: 6, y: 3, z: 0, scale: 1 },      // Top right
-      { x: -6, y: -3, z: 0, scale: 1 },    // Bottom left
-      { x: 0, y: -3, z: 0, scale: 1 },     // Bottom center
-      { x: 6, y: -3, z: 0, scale: 1 }      // Bottom right
-    ]
+    // Create coins only for actual players (not empty slots)
+    const activePlayers = players.filter(p => p?.address)
+    const numPlayers = activePlayers.length
+    
+    // Calculate grid layout based on number of players
+    let coinPositions = []
+    if (numPlayers <= 3) {
+      // Single row for 1-3 players
+      for (let i = 0; i < numPlayers; i++) {
+        coinPositions.push({ x: (i - (numPlayers - 1) / 2) * 8, y: 0, z: 0, scale: 1 })
+      }
+    } else {
+      // 3x2 grid for 4-6 players
+      for (let i = 0; i < numPlayers; i++) {
+        const row = Math.floor(i / 3)
+        const col = i % 3
+        coinPositions.push({ 
+          x: (col - 1) * 8, 
+          y: row === 0 ? 4 : -4, 
+          z: 0, 
+          scale: 1 
+        })
+      }
+    }
 
-    for (let i = 0; i < 6; i++) {
+    console.log(`🎯 Creating ${numPlayers} coins for active players`)
+
+    for (let i = 0; i < numPlayers; i++) {
       // Create materials with same settings as OptimizedGoldCoin
       const materials = [
         new THREE.MeshStandardMaterial({
@@ -216,18 +238,22 @@ const BattleRoyaleUnified3DScene = ({
       }
     }
 
+    // Clear any leftover coins
+    coinsRef.current = coinsRef.current.slice(0, numPlayers)
+    coinStatesRef.current = coinStatesRef.current.slice(0, numPlayers)
+
     // Animation loop
     const animate = () => {
       if (!sceneRef.current || !rendererRef.current) return
 
       const currentTime = Date.now()
 
-      // Update each of the 6 coins
+      // Update each coin
       coinsRef.current.forEach((coin, index) => {
         if (!coin) return
 
         const state = coinStatesRef.current[index]
-        const player = players[index]
+        const player = activePlayers[index]
         const posData = coinPositions[index]
 
         if (state.isFlipping) {
@@ -341,10 +367,11 @@ const BattleRoyaleUnified3DScene = ({
       return
     }
 
-    console.log('🎨 Updating coin textures. Players:', players.length, 'Coins:', coinsRef.current.length)
+    const activePlayers = players.filter(p => p?.address)
+    console.log('🎨 Updating coin textures. Active players:', activePlayers.length, 'Coins:', coinsRef.current.length)
     console.log('📦 Player coin images:', Object.keys(playerCoinImages))
 
-    players.forEach((player, index) => {
+    activePlayers.forEach((player, index) => {
       if (!player?.address) {
         console.log(`⚠️ Coin ${index}: No player assigned`)
         return
@@ -379,8 +406,10 @@ const BattleRoyaleUnified3DScene = ({
   useEffect(() => {
     if (!flipStates || !coinsRef.current.length) return
 
+    const activePlayers = players.filter(p => p?.address)
+
     Object.entries(flipStates).forEach(([playerAddress, flipState]) => {
-      const playerIndex = players.findIndex(p => p?.address === playerAddress)
+      const playerIndex = activePlayers.findIndex(p => p?.address === playerAddress)
       if (playerIndex === -1) return
 
       const state = coinStatesRef.current[playerIndex]
@@ -418,7 +447,9 @@ const BattleRoyaleUnified3DScene = ({
   useEffect(() => {
     if (!serverState?.players || !coinsRef.current.length) return
 
-    players.forEach((player, index) => {
+    const activePlayers = players.filter(p => p?.address)
+
+    activePlayers.forEach((player, index) => {
       if (!player?.address) return
 
       const serverPlayer = serverState.players[player.address]

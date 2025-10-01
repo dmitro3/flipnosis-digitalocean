@@ -337,7 +337,8 @@ const BattleRoyale3DCoins = ({
     }}>
       {/* Left side: Unified 3D Scene */}
       <div style={{
-        flex: '2',
+        flex: '3',
+        minWidth: '600px',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem'
@@ -396,8 +397,8 @@ const BattleRoyale3DCoins = ({
 
       {/* Right side: Interactive Player Panel */}
       <div style={{
-        flex: '1',
-        minWidth: '350px',
+        flex: '2',
+        minWidth: '400px',
         background: 'rgba(0, 0, 0, 0.5)',
         backdropFilter: 'blur(10px)',
         border: '2px solid rgba(0, 191, 255, 0.3)',
@@ -433,8 +434,8 @@ const BattleRoyale3DCoins = ({
           }}>
             <OptimizedGoldCoin
               size={300}
-              headsImage={playerCoinImages[currentUserAddress]?.headsImage}
-              tailsImage={playerCoinImages[currentUserAddress]?.tailsImage}
+              headsImage={playerCoinImages[currentUserAddress]?.headsImage || null}
+              tailsImage={playerCoinImages[currentUserAddress]?.tailsImage || null}
               isFlipping={localFlipStates[currentUserAddress]?.isFlipping || false}
               flipResult={localFlipStates[currentUserAddress]?.flipResult}
               creatorPower={serverState?.players?.[currentUserAddress]?.power || 1}
