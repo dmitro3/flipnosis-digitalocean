@@ -422,6 +422,32 @@ const BattleRoyale3DCoins = ({
           🎮 YOUR CONTROLS
         </div>
 
+        {/* Large Interactive 3D Coin */}
+        {currentUserAddress && (
+          <div style={{
+            width: '300px',
+            height: '300px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <OptimizedGoldCoin
+              size={300}
+              headsImage={playerCoinImages[currentUserAddress]?.headsImage}
+              tailsImage={playerCoinImages[currentUserAddress]?.tailsImage}
+              isFlipping={localFlipStates[currentUserAddress]?.isFlipping || false}
+              flipResult={localFlipStates[currentUserAddress]?.flipResult}
+              creatorPower={serverState?.players?.[currentUserAddress]?.power || 1}
+              onFlipComplete={(result) => {
+                console.log('✅ Your coin flip complete:', result)
+                if (onFlipComplete) {
+                  onFlipComplete(currentUserAddress, result)
+                }
+              }}
+            />
+          </div>
+        )}
+
         {/* Player Address */}
         <div style={{
           color: '#00ff88',
