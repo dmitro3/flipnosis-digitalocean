@@ -383,51 +383,8 @@ const BattleRoyaleUnified3DScene = ({
       sceneRef.current = null
       rendererRef.current = null
     }
-  }, [createOptimizedTexture])
-
-  // Update coin textures when player images change
-  useEffect(() => {
-    if (!coinsRef.current.length) {
-      console.log('⚠️ No coins available yet')
-      return
-    }
-
-    console.log('🎨 Updating coin textures. Coins:', coinsRef.current.length)
-    console.log('📦 Player coin images:', Object.keys(playerCoinImages))
-
-    // Only update the 6 grid coins
-    for (let i = 0; i < 6; i++) {
-      const player = players[i]
-      const coin = coinsRef.current[i]
-      
-      if (!player?.address || !coin) {
-        console.log(`⚠️ Coin ${i}: No player or coin assigned`)
-        continue
-      }
-      
-      const images = playerCoinImages[player.address]
-      
-      console.log(`🎨 Coin ${i}: Player ${player.address.slice(0, 6)}, Has images:`, !!images)
-      
-      if (images) {
-        // Update heads texture
-        if (coin.material[1]) {
-          if (coin.material[1].map) coin.material[1].map.dispose()
-          coin.material[1].map = createOptimizedTexture('heads', images.headsImage)
-          coin.material[1].needsUpdate = true
-          console.log(`✅ Coin ${i}: Updated heads texture`)
-        }
-
-        // Update tails texture
-        if (coin.material[2]) {
-          if (coin.material[2].map) coin.material[2].map.dispose()
-          coin.material[2].map = createOptimizedTexture('tails', images.tailsImage)
-          coin.material[2].needsUpdate = true
-          console.log(`✅ Coin ${i}: Updated tails texture`)
-        }
-      }
-    }
   }, [players, playerCoinImages])
+
 
   // Handle flip states from server
   useEffect(() => {
@@ -489,84 +446,6 @@ const BattleRoyaleUnified3DScene = ({
     }
   }, [serverState, players])
 
-  // Add cleanup effect to handle dynamic player joins/leaves
-  useEffect(() => {
-    if (!sceneRef.current) return
-    
-    // Remove coins for players that left
-    coinsRef.current.forEach((coin, index) => {
-      if (coin && !players[index]?.address) {
-        // Player left, remove their coin
-        sceneRef.current.remove(coin)
-        coin.geometry.dispose()
-        if (Array.isArray(coin.material)) {
-          coin.material.forEach(mat => {
-            if (mat.map) mat.map.dispose()
-            mat.dispose()
-          })
-        }
-        coinsRef.current[index] = null
-        coinStatesRef.current[index] = null
-      } else if (!coin && players[index]?.address) {
-        // New player joined, create their coin
-        const player = players[index]
-        const posData = coinPositions[index]
-        
-        // Create materials with same settings as OptimizedGoldCoin
-        const materials = [
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('edge'),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          }),
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', playerCoinImages[player.address]?.headsImage || null),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          }),
-          new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', playerCoinImages[player.address]?.tailsImage || null),
-            metalness: 0.3,
-            roughness: 0.2,
-            color: 0xFFFFFF,
-            emissive: 0x222222,
-            emissiveIntensity: 0.1
-          })
-        ]
-
-        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
-        const newCoin = new THREE.Mesh(geometry, materials)
-        
-        // Position and scale coin
-        newCoin.position.set(posData.x, posData.y, posData.z)
-        newCoin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-        newCoin.rotation.x = 0
-        newCoin.rotation.y = Math.PI / 2
-        newCoin.rotation.z = 0
-
-        sceneRef.current.add(newCoin)
-        coinsRef.current[index] = newCoin
-
-        // Initialize coin state
-        coinStatesRef.current[index] = {
-          isFlipping: false,
-          flipStartTime: null,
-          flipDuration: 2000,
-          flipResult: null,
-          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
-          targetRotation: 0,
-          isCharging: false,
-          power: 0
-        }
-      }
-    })
-  }, [players, playerCoinImages])
 
   return (
     <div

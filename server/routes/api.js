@@ -1880,7 +1880,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         nft_collection,
         nft_chain,
         entry_fee,
-        service_fee
+        service_fee,
+        creator_participates
       } = req.body
 
       // Validate required fields
@@ -1905,7 +1906,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         nft_chain: nft_chain || 'base',
         entry_fee: parseFloat(entry_fee),
         service_fee: parseFloat(service_fee || 0.50),
-        max_players: 6
+        max_players: 6,
+        creator_participates: creator_participates || false
       }
 
       await dbService.createBattleRoyaleGame(gameData)

@@ -463,11 +463,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address === address)
-  const canJoin = !userAlreadyJoined && !isCreator && currentPlayers < 6 && gameStatus === 'filling'
+  const canJoin = !userAlreadyJoined && currentPlayers < 6 && gameStatus === 'filling'
   
-  // Calculate the entry fee for joining players (1/7th of total prize)
+  // Calculate the entry fee for joining players (1/6th of total prize)
   const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
-  const entryFeePerPlayer = totalPrize / 7 // Each of the 7 joining players pays 1/7th
+  const entryFeePerPlayer = totalPrize / 6 // Each of the 6 joining players pays 1/6th
 
   const handleSlotClick = async (slotIndex) => {
     if (!canJoin || players[slotIndex] !== null) return
@@ -712,7 +712,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       />
 
       {/* Join button and coin selector modal remain the same */}
-      {!isCreator && !userAlreadyJoined && gameStatus === 'filling' && (
+      {!userAlreadyJoined && gameStatus === 'filling' && (
         <div style={{ textAlign: 'center' }}>
           <JoinButton 
             onClick={() => handleSlotClick(players.findIndex(p => p === null))}

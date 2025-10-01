@@ -206,6 +206,76 @@ const BattleSubmitButton = styled(Button)`
   }
 `
 
+const ToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(255, 20, 147, 0.1);
+  border: 2px solid rgba(255, 20, 147, 0.3);
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+`
+
+const ToggleLabel = styled.div`
+  color: ${props => props.theme.colors.textPrimary};
+  font-weight: 600;
+  font-size: 1rem;
+`
+
+const ToggleDescription = styled.div`
+  color: ${props => props.theme.colors.textSecondary};
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+`
+
+const ToggleSwitch = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: .4s;
+    border-radius: 34px;
+    border: 2px solid rgba(255, 20, 147, 0.5);
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .slider {
+    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    border-color: #00ff88;
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(26px);
+  }
+`
+
 
 const CreateBattle = () => {
   const navigate = useNavigate()
@@ -217,6 +287,7 @@ const CreateBattle = () => {
   const [serviceFee, setServiceFee] = useState('0.10')
   const [loading, setLoading] = useState(false)
   const [isNFTSelectorOpen, setIsNFTSelectorOpen] = useState(false)
+  const [creatorParticipates, setCreatorParticipates] = useState(false)
 
   // Progress tracking
   const [currentStep, setCurrentStep] = useState(0)
@@ -275,6 +346,10 @@ const CreateBattle = () => {
       showInfo('Creating Battle Royale game...')
       setStepStatus({ create: true, approve: false, deposit: false })
       
+      // Calculate pricing based on creator participation
+      const totalPlayers = creatorParticipates ? 6 : 6 // 6 players total
+      const entryFeePerPlayer = parseFloat(nftPrice) / totalPlayers
+      
       // Validate and sanitize data before sending
       const requestData = {
         creator: address,
@@ -284,8 +359,9 @@ const CreateBattle = () => {
         nft_image: selectedNFT.image || '',
         nft_collection: selectedNFT.collection || '',
         nft_chain: 'base', // Battle royale games are on Base
-        entry_fee: parseFloat(nftPrice) / 8, // Calculate per-player entry fee
-        service_fee: parseFloat(serviceFee)
+        entry_fee: entryFeePerPlayer, // Calculate per-player entry fee
+        service_fee: parseFloat(serviceFee),
+        creator_participates: creatorParticipates // Add creator participation flag
       }
       
       // Validate required fields
@@ -330,7 +406,7 @@ const CreateBattle = () => {
         battleRoyaleResult.gameId,
         selectedNFT.contractAddress,
         selectedNFT.tokenId,
-        Math.round((parseFloat(nftPrice) / 8) * 1000000), // Convert to microdollars
+        Math.round(entryFeePerPlayer * 1000000), // Convert to microdollars
         Math.round(parseFloat(serviceFee) * 1000000) // Convert to microdollars
       )
       
@@ -342,7 +418,7 @@ const CreateBattle = () => {
       setCurrentStep(3)
       setStepStatus({ create: true, approve: true, deposit: true })
       
-      showSuccess('🏆 Battle Royale created successfully! Waiting for 8 players to join.')
+      showSuccess('🏆 Battle Royale created successfully! Waiting for 6 players to join.')
       navigate(`/battle-royale/${battleRoyaleResult.gameId}`)
       
     } catch (error) {
@@ -362,7 +438,7 @@ const CreateBattle = () => {
           <BattleContainer>
             <BattleHeader>
               <BattleTitle>🏆 Create Battle Royale</BattleTitle>
-              <BattleSubtitle>8-player elimination tournament</BattleSubtitle>
+              <BattleSubtitle>6-player elimination tournament</BattleSubtitle>
             </BattleHeader>
             
             {/* Network Check */}
@@ -453,6 +529,30 @@ const CreateBattle = () => {
                 </NFTPreview>
               </FormGroup>
 
+              {/* Creator Participation Toggle */}
+              <FormGroup>
+                <Label>Creator Participation</Label>
+                <ToggleContainer>
+                  <div>
+                    <ToggleLabel>Join the Battle Royale</ToggleLabel>
+                    <ToggleDescription>
+                      {creatorParticipates 
+                        ? "You will participate in the game and can win your NFT back"
+                        : "You will not participate - all 6 seats are open for other players"
+                      }
+                    </ToggleDescription>
+                  </div>
+                  <ToggleSwitch>
+                    <input
+                      type="checkbox"
+                      checked={creatorParticipates}
+                      onChange={(e) => setCreatorParticipates(e.target.checked)}
+                    />
+                    <span className="slider"></span>
+                  </ToggleSwitch>
+                </ToggleContainer>
+              </FormGroup>
+
               {/* Battle Royale Fees */}
               <FormGroup>
                 <Label>Battle Royale Fees</Label>
@@ -505,7 +605,7 @@ const CreateBattle = () => {
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Per Player Entry:</span>
-                      <span>${(parseFloat(nftPrice) / 8).toFixed(2)}</span>
+                      <span>${(parseFloat(nftPrice) / 6).toFixed(2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Total Entry Pool:</span>
@@ -514,6 +614,17 @@ const CreateBattle = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>Your Earnings (after 3.5% fee):</span>
                       <span>${(parseFloat(nftPrice) * 0.965).toFixed(2)}</span>
+                    </div>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      marginTop: '0.5rem',
+                      paddingTop: '0.5rem',
+                      borderTop: '1px solid rgba(255, 20, 147, 0.3)',
+                      color: creatorParticipates ? '#00ff88' : '#ff1493'
+                    }}>
+                      <span>Creator Status:</span>
+                      <span>{creatorParticipates ? 'Participating' : 'Not Participating'}</span>
                     </div>
                   </div>
                 )}
@@ -531,8 +642,9 @@ const CreateBattle = () => {
                 }}>
                   <ul style={{ margin: '0', paddingLeft: '1.5rem', color: theme.colors.textSecondary }}>
                     <li><strong>You receive NFT price minus platform fees and gas fees</strong></li>
-                    <li>8 players compete in elimination rounds</li>
+                    <li>6 players compete in elimination rounds</li>
                     <li>Last player standing wins your NFT</li>
+                    <li>{creatorParticipates ? 'You will participate and can win your NFT back' : 'You will not participate - all seats are open for other players'}</li>
                   </ul>
                 </div>
               </FormGroup>
