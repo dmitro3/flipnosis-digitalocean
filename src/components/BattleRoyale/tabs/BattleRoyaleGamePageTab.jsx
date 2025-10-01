@@ -276,14 +276,14 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       
       setPlayerCoinImages(prev => ({
         ...prev,
-        [playerAddress]: { headsImage, tailsImage }
+        [playerAddress.toLowerCase()]: { headsImage, tailsImage }
       }))
     } catch (error) {
       console.error('Error loading coin images for player:', playerAddress, error)
       // Fallback to default coin
       setPlayerCoinImages(prev => ({
         ...prev,
-        [playerAddress]: { 
+        [playerAddress.toLowerCase()]: { 
           headsImage: '/coins/plainh.png', 
           tailsImage: '/coins/plaint.png' 
         }

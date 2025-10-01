@@ -178,6 +178,14 @@ const BattleRoyaleUnified3DScene = ({
       
       // Only create coin if player exists at this position
       if (player?.address) {
+        const playerAddressLower = player.address.toLowerCase()
+        console.log(`🎯 Creating coin for player ${i}:`, {
+          address: player.address,
+          addressLower: playerAddressLower,
+          coinImages: playerCoinImages[playerAddressLower],
+          allCoinImages: Object.keys(playerCoinImages)
+        })
+        
         // Create materials with same settings as OptimizedGoldCoin
         const materials = [
           new THREE.MeshStandardMaterial({
@@ -189,7 +197,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', playerCoinImages[player.address]?.headsImage || null),
+            map: createOptimizedTexture('heads', playerCoinImages[playerAddressLower]?.headsImage || null),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -197,7 +205,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', playerCoinImages[player.address]?.tailsImage || null),
+            map: createOptimizedTexture('tails', playerCoinImages[playerAddressLower]?.tailsImage || null),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -408,7 +416,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', playerCoinImages[player.address]?.headsImage || null),
+            map: createOptimizedTexture('heads', playerCoinImages[player.address.toLowerCase()]?.headsImage || null),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -416,7 +424,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', playerCoinImages[player.address]?.tailsImage || null),
+            map: createOptimizedTexture('tails', playerCoinImages[player.address.toLowerCase()]?.tailsImage || null),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -459,9 +467,16 @@ const BattleRoyaleUnified3DScene = ({
         }
         coinsRef.current[i] = null
         coinStatesRef.current[i] = null
-      } else if (player?.address && existingCoin && playerCoinImages[player.address]) {
+      } else if (player?.address && existingCoin && playerCoinImages[player.address.toLowerCase()]) {
         // Update textures for existing player
-        const images = playerCoinImages[player.address]
+        const playerAddressLower = player.address.toLowerCase()
+        const images = playerCoinImages[playerAddressLower]
+        console.log(`🎯 Updating coin textures for player ${i}:`, {
+          address: player.address,
+          addressLower: playerAddressLower,
+          images: images,
+          allCoinImages: Object.keys(playerCoinImages)
+        })
         
         if (existingCoin.material[1] && images.headsImage) {
           if (existingCoin.material[1].map) existingCoin.material[1].map.dispose()
