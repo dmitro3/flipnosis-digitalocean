@@ -110,11 +110,6 @@ const BattleRoyaleUnified3DScene = ({
     if (!mountRef.current || sceneRef.current) return
 
     console.log('🎬 Creating unified Battle Royale 3D scene')
-    
-    // Clear any existing scene
-    if (sceneRef.current) {
-      sceneRef.current.clear()
-    }
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(50, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000)
@@ -358,7 +353,7 @@ const BattleRoyaleUnified3DScene = ({
       sceneRef.current = null
       rendererRef.current = null
     }
-  }, [players, createOptimizedTexture])
+  }, [createOptimizedTexture])
 
   // Update coin textures when player images change
   useEffect(() => {
