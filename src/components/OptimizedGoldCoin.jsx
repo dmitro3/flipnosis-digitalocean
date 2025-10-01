@@ -316,8 +316,8 @@ const OptimizedGoldCoin = React.memo(({
         coin.position.x = 0
         coin.position.y = 0
         coin.position.z = 0
-        // Very slow rotation - about 1 full rotation per 180 seconds (half speed)
-        coin.rotation.x += 0.0000165
+        // Even slower rotation - about 1 full rotation per 360 seconds
+        coin.rotation.x += 0.000017
       }
 
       renderer.render(scene, camera)

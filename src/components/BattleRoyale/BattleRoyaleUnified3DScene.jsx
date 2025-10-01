@@ -161,71 +161,80 @@ const BattleRoyaleUnified3DScene = ({
     
     // Fixed 3x2 grid layout for all players
     const coinPositions = [
-      // Top row (3 coins)
-      { x: -8, y: 3, z: 0, scale: 1 },    // Top left
-      { x: 0, y: 3, z: 0, scale: 1 },     // Top center  
-      { x: 8, y: 3, z: 0, scale: 1 },     // Top right
-      // Bottom row (3 coins)
-      { x: -8, y: -3, z: 0, scale: 1 },   // Bottom left
-      { x: 0, y: -3, z: 0, scale: 1 },    // Bottom center
-      { x: 8, y: -3, z: 0, scale: 1 },    // Bottom right
+      // Top row (3 coins) - increased y from 3 to 4
+      { x: -8, y: 4, z: 0, scale: 1 },    // Top left
+      { x: 0, y: 4, z: 0, scale: 1 },     // Top center  
+      { x: 8, y: 4, z: 0, scale: 1 },     // Top right
+      // Bottom row (3 coins) - decreased y from -3 to -4
+      { x: -8, y: -4, z: 0, scale: 1 },   // Bottom left
+      { x: 0, y: -4, z: 0, scale: 1 },    // Bottom center
+      { x: 8, y: -4, z: 0, scale: 1 },    // Bottom right
     ]
 
     console.log(`🎯 Creating ${numPlayers} coins for active players`)
 
     for (let i = 0; i < 6; i++) {
-      // Create materials with same settings as OptimizedGoldCoin
-      const materials = [
-        new THREE.MeshStandardMaterial({
-          map: createOptimizedTexture('edge'),
-          metalness: 0.3,
-          roughness: 0.2,
-          color: 0xFFFFFF,
-          emissive: 0x222222,
-          emissiveIntensity: 0.1
-        }),
-        new THREE.MeshStandardMaterial({
-          map: createOptimizedTexture('heads', null),
-          metalness: 0.3,
-          roughness: 0.2,
-          color: 0xFFFFFF,
-          emissive: 0x222222,
-          emissiveIntensity: 0.1
-        }),
-        new THREE.MeshStandardMaterial({
-          map: createOptimizedTexture('tails', null),
-          metalness: 0.3,
-          roughness: 0.2,
-          color: 0xFFFFFF,
-          emissive: 0x222222,
-          emissiveIntensity: 0.1
-        })
-      ]
-
-      const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
-      const coin = new THREE.Mesh(geometry, materials)
+      const player = players[i]
       
-      // Position and scale coin
-      const posData = coinPositions[i]
-      coin.position.set(posData.x, posData.y, posData.z)
-      coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-      coin.rotation.x = 0
-      coin.rotation.y = Math.PI / 2
-      coin.rotation.z = 0
+      // Only create coin if player exists at this position
+      if (player?.address) {
+        // Create materials with same settings as OptimizedGoldCoin
+        const materials = [
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('edge'),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          }),
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('heads', playerCoinImages[player.address]?.headsImage || null),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          }),
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('tails', playerCoinImages[player.address]?.tailsImage || null),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          })
+        ]
 
-      scene.add(coin)
-      coinsRef.current[i] = coin
+        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
+        const coin = new THREE.Mesh(geometry, materials)
+        
+        // Position and scale coin
+        const posData = coinPositions[i]
+        coin.position.set(posData.x, posData.y, posData.z)
+        coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
+        coin.rotation.x = 0
+        coin.rotation.y = Math.PI / 2
+        coin.rotation.z = 0
 
-      // Initialize coin state
-      coinStatesRef.current[i] = {
-        isFlipping: false,
-        flipStartTime: null,
-        flipDuration: 2000,
-        flipResult: null,
-        startRotation: { x: 0, y: Math.PI / 2, z: 0 },
-        targetRotation: 0,
-        isCharging: false,
-        power: 0
+        scene.add(coin)
+        coinsRef.current[i] = coin
+
+        // Initialize coin state
+        coinStatesRef.current[i] = {
+          isFlipping: false,
+          flipStartTime: null,
+          flipDuration: 2000,
+          flipResult: null,
+          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
+          targetRotation: 0,
+          isCharging: false,
+          power: 0
+        }
+      } else {
+        // Set null for empty slots
+        coinsRef.current[i] = null
+        coinStatesRef.current[i] = null
       }
     }
 
@@ -238,16 +247,20 @@ const BattleRoyaleUnified3DScene = ({
       const pos = coinPositions[i]
       const player = players[i]
       
-      // Create a frame/box outline
-      const frameGeometry = new THREE.BoxGeometry(5, 5, 0.1)
-      const edges = new THREE.EdgesGeometry(frameGeometry)
-      const frameMaterial = new THREE.LineBasicMaterial({ 
-        color: player?.address ? 0x00ff88 : 0xff1493,
-        linewidth: 2
-      })
-      const frame = new THREE.LineSegments(edges, frameMaterial)
-      frame.position.set(pos.x, pos.y, pos.z - 2)
-      scene.add(frame)
+      // Only create frame if player exists
+      if (player?.address) {
+        const frameGeometry = new THREE.BoxGeometry(5, 5, 0.1)
+        const edges = new THREE.EdgesGeometry(frameGeometry)
+        const frameMaterial = new THREE.LineBasicMaterial({ 
+          color: 0x00ff88,
+          linewidth: 1,
+          opacity: 0.3,
+          transparent: true
+        })
+        const frame = new THREE.LineSegments(edges, frameMaterial)
+        frame.position.set(pos.x, pos.y, pos.z - 2)
+        scene.add(frame)
+      }
     }
 
     // Animation loop
@@ -258,10 +271,14 @@ const BattleRoyaleUnified3DScene = ({
 
       // Update each coin
       coinsRef.current.forEach((coin, index) => {
-        if (!coin) return
-
+        if (!coin) return // Skip if no coin at this position
+        
         const state = coinStatesRef.current[index]
+        if (!state) return // Skip if no state
+        
         const player = players[index]
+        if (!player?.address) return // Skip if no player
+        
         const posData = coinPositions[index]
 
         if (state.isFlipping) {
@@ -471,6 +488,85 @@ const BattleRoyaleUnified3DScene = ({
       }
     }
   }, [serverState, players])
+
+  // Add cleanup effect to handle dynamic player joins/leaves
+  useEffect(() => {
+    if (!sceneRef.current) return
+    
+    // Remove coins for players that left
+    coinsRef.current.forEach((coin, index) => {
+      if (coin && !players[index]?.address) {
+        // Player left, remove their coin
+        sceneRef.current.remove(coin)
+        coin.geometry.dispose()
+        if (Array.isArray(coin.material)) {
+          coin.material.forEach(mat => {
+            if (mat.map) mat.map.dispose()
+            mat.dispose()
+          })
+        }
+        coinsRef.current[index] = null
+        coinStatesRef.current[index] = null
+      } else if (!coin && players[index]?.address) {
+        // New player joined, create their coin
+        const player = players[index]
+        const posData = coinPositions[index]
+        
+        // Create materials with same settings as OptimizedGoldCoin
+        const materials = [
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('edge'),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          }),
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('heads', playerCoinImages[player.address]?.headsImage || null),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          }),
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('tails', playerCoinImages[player.address]?.tailsImage || null),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          })
+        ]
+
+        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
+        const newCoin = new THREE.Mesh(geometry, materials)
+        
+        // Position and scale coin
+        newCoin.position.set(posData.x, posData.y, posData.z)
+        newCoin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
+        newCoin.rotation.x = 0
+        newCoin.rotation.y = Math.PI / 2
+        newCoin.rotation.z = 0
+
+        sceneRef.current.add(newCoin)
+        coinsRef.current[index] = newCoin
+
+        // Initialize coin state
+        coinStatesRef.current[index] = {
+          isFlipping: false,
+          flipStartTime: null,
+          flipDuration: 2000,
+          flipResult: null,
+          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
+          targetRotation: 0,
+          isCharging: false,
+          power: 0
+        }
+      }
+    })
+  }, [players, playerCoinImages])
 
   return (
     <div
