@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as THREE from 'three'
 import OptimizedGoldCoin from '../OptimizedGoldCoin'
+import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
 
 // Separate 2D Lobby Component
 const Lobby2DDisplay = ({ 
@@ -314,7 +315,7 @@ const BattleRoyale3DCoins = ({
     )
   }
   
-  // 3D Game Display - Two column layout with coins on left, interactive panel on right
+  // 3D Game Display - Two column layout with unified scene on left, interactive panel on right
   return (
     <div style={{ 
       position: 'relative', 
@@ -329,7 +330,7 @@ const BattleRoyale3DCoins = ({
         flexDirection: 'column'
       }
     }}>
-      {/* Left side: 6 player coins grid */}
+      {/* Left side: Unified 3D Scene */}
       <div style={{
         flex: '2',
         display: 'flex',
@@ -376,210 +377,16 @@ const BattleRoyale3DCoins = ({
           </div>
         )}
 
-        {/* Player coins grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)', // 3x2 grid for 6 players
-          gap: '1.5rem',
-          width: '100%'
-        }}>
-        {Array.from({ length: 6 }, (_, index) => { // Changed from 8 to 6
-          const player = players[index]
-          const isOccupied = player?.address
-          const isCurrentUser = player?.address === currentUserAddress
-          const flipState = localFlipStates[player?.address] || {}
-          
-          if (!isOccupied) {
-            // Empty slot - show placeholder
-            return (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '200px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '2px dashed rgba(255, 255, 255, 0.2)',
-                  borderRadius: '1rem',
-                  color: '#aaa',
-                  fontSize: '0.9rem'
-                }}
-              >
-                <div style={{ marginBottom: '0.5rem' }}>Slot {index + 1}</div>
-                <div>Empty</div>
-              </div>
-            )
-          }
-
-          return (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '1rem',
-                background: isCurrentUser 
-                  ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 204, 106, 0.1))'
-                  : 'linear-gradient(135deg, rgba(0, 191, 255, 0.1), rgba(138, 43, 226, 0.1))',
-                border: `2px solid ${isCurrentUser ? '#00ff88' : '#00bfff'}`,
-                borderRadius: '1rem',
-                position: 'relative'
-              }}
-            >
-              {/* Slot number */}
-              <div style={{
-                position: 'absolute',
-                top: '0.5rem',
-                right: '0.5rem',
-                background: 'rgba(0, 0, 0, 0.7)',
-                color: '#fff',
-                borderRadius: '50%',
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.8rem',
-                fontWeight: 'bold'
-              }}>
-                {index + 1}
-              </div>
-
-              {/* Player coin */}
-              <OptimizedGoldCoin
-                isFlipping={flipState.isFlipping || false}
-                flipResult={flipState.flipResult || null}
-                flipDuration={flipState.flipDuration || 2000}
-                isPlayerTurn={isCurrentUser}
-                chargingPlayer={flipState.chargingPlayer || null}
-                creatorPower={flipState.creatorPower || 0}
-                joinerPower={flipState.joinerPower || 0}
-                size={120}
-                customHeadsImage={playerCoinImages[player.address]?.headsImage}
-                customTailsImage={playerCoinImages[player.address]?.tailsImage}
-                gamePhase={safeGamePhase}
-                isCreator={false}
-                creatorChoice={null}
-                joinerChoice={null}
-                onFlipComplete={(result) => safeOnFlipComplete(player.address, result)}
-                isInteractive={isCurrentUser && safeGamePhase === 'charging_power'}
-                onCoinClick={() => {
-                  if (isCurrentUser && safeGamePhase === 'charging_power') {
-                    // Handle coin interaction for power charging
-                    console.log('Player coin clicked for power charging')
-                  }
-                }}
-                onPowerCharge={() => {
-                  if (isCurrentUser && safeGamePhase === 'charging_power') {
-                    console.log('Starting power charge for player:', player.address)
-                    // Call parent component's power charge handler
-                    if (onPowerChargeStart) {
-                      onPowerChargeStart()
-                    }
-                  }
-                }}
-                onPowerRelease={(power) => {
-                  if (isCurrentUser && safeGamePhase === 'charging_power') {
-                    console.log('Releasing power for player:', player.address, 'Power:', power)
-                    // Call parent component's power release handler
-                    if (onPowerChargeStop) {
-                      onPowerChargeStop(power)
-                    }
-                  }
-                }}
-              />
-
-              {/* Player info */}
-              <div style={{
-                color: isCurrentUser ? '#00ff88' : '#00bfff',
-                fontSize: '0.8rem',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                wordBreak: 'break-all'
-              }}>
-                {player.address?.slice(0, 6)}...{player.address?.slice(-4)}
-              </div>
-
-              {/* Show player's choice */}
-              {serverState?.players?.[player?.address]?.choice && (
-                <div style={{
-                  background: serverState.players[player.address].choice === 'heads' 
-                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
-                    : 'linear-gradient(135deg, #C0C0C0, #808080)',
-                  color: '#000',
-                  padding: '0.5rem',
-                  borderRadius: '0.5rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  marginTop: '0.5rem',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                  fontSize: '0.8rem'
-                }}>
-                  🎯 {serverState.players[player.address].choice.toUpperCase()}
-                </div>
-              )}
-              
-              {/* Show flip result */}
-              {flipState.flipResult && serverState?.gamePhase === 'showing_result' && (
-                <div style={{
-                  background: flipState.flipResult === serverState?.players?.[player?.address]?.choice
-                    ? 'linear-gradient(135deg, #00ff88, #00cc6a)'
-                    : 'linear-gradient(135deg, #ff4444, #cc0000)',
-                  color: '#fff',
-                  padding: '0.5rem',
-                  borderRadius: '0.5rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  marginTop: '0.5rem'
-                }}>
-                  {flipState.flipResult === serverState?.players?.[player?.address]?.choice ? '✅ MATCHED!' : '❌ ELIMINATED'}
-                </div>
-              )}
-
-              {/* Status indicator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.7rem',
-                color: '#aaa'
-              }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: isCurrentUser ? '#00ff88' : '#00bfff'
-                }} />
-                <span>{isCurrentUser ? 'You' : 'Player'}</span>
-              </div>
-
-
-              {/* Win/Loss indicator */}
-              {flipState.flipResult && (
-                <div style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '0.25rem',
-                  background: flipState.isWinner 
-                    ? 'rgba(0, 255, 136, 0.2)' 
-                    : 'rgba(255, 0, 0, 0.2)',
-                  color: flipState.isWinner ? '#00ff88' : '#ff4444',
-                  border: `1px solid ${flipState.isWinner ? '#00ff88' : '#ff4444'}`
-                }}>
-                  {flipState.isWinner ? '✅ WIN' : '❌ LOSE'}
-                </div>
-              )}
-            </div>
-          )
-        })}
-        </div>
+        {/* Unified 3D Scene */}
+        <BattleRoyaleUnified3DScene
+          players={players}
+          gamePhase={safeGamePhase}
+          serverState={serverState}
+          flipStates={localFlipStates}
+          playerCoinImages={playerCoinImages}
+          currentUserAddress={currentUserAddress}
+          onFlipComplete={safeOnFlipComplete}
+        />
       </div>
 
       {/* Right side: Interactive Player Panel */}
