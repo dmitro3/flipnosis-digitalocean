@@ -447,6 +447,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         
         // Load coin images for creator
         loadPlayerCoinImages(gameData.creator, defaultCoin)
+        
+        console.log('🪙 Creator initialized in slot 0:', {
+          address: gameData.creator,
+          coin: defaultCoin,
+          isCreator: true
+        })
       }
     }
   }, [gameData, loadPlayerCoinImages])
@@ -471,10 +477,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const entryFeePerPlayer = totalPrize / 6 // Each of the 6 joining players pays 1/6th
 
   const handleSlotClick = async (slotIndex) => {
-    if (!canJoin || players[slotIndex] !== null) return
+    console.log('🪙 Slot clicked:', slotIndex, 'Player at slot:', players[slotIndex], 'Can join:', canJoin, 'Address:', address)
     
     // If it's the current user's slot and they want to change coin
-    if (players[slotIndex]?.address === address) {
+    if (players[slotIndex]?.address === address || (players[slotIndex]?.isCreator && address === gameData?.creator)) {
+      console.log('🪙 Opening coin selector for current user slot')
       setSelectedSlot(slotIndex)
       setShowCoinSelector(true)
       return
@@ -482,6 +489,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     
     // If it's an empty slot and user can join
     if (players[slotIndex] === null && canJoin) {
+      console.log('🪙 Joining empty slot')
       await joinGame(slotIndex)
     }
   }
@@ -499,9 +507,9 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     try {
       showToast('Opening MetaMask to join game...', 'info')
       
-      // Calculate total amount in USD (1/7th of prize + service fee)
+      // Calculate total amount in USD (1/6th of prize + service fee)
       const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
-      const entryFeeUSD = totalPrize / 7 // Each joining player pays 1/7th of total prize
+      const entryFeeUSD = totalPrize / 6 // Each joining player pays 1/6th of total prize
       const serviceFeeUSD = parseFloat(gameData.serviceFee || gameData.service_fee || 0)
       const totalAmountUSD = entryFeeUSD + serviceFeeUSD
       
@@ -574,37 +582,54 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   }
 
   const handleCoinSelect = (coin) => {
-    if (selectedSlot !== null && players[selectedSlot]?.address === address) {
-      // Update the player's coin choice
-      setPlayerCoins(prev => ({
-        ...prev,
-        [address]: coin
-      }))
+    console.log('🪙 Coin selected:', coin, 'Selected slot:', selectedSlot, 'Current address:', address)
+    console.log('🪙 Players array:', players)
+    console.log('🪙 Player at selected slot:', players[selectedSlot])
+    
+    if (selectedSlot !== null) {
+      const playerAtSlot = players[selectedSlot]
+      const isCurrentUser = playerAtSlot?.address === address
+      const isCreatorAtSlot = playerAtSlot?.isCreator && address === gameData?.creator
       
-      // Update the player object in the slot
-      const newPlayers = [...players]
-      newPlayers[selectedSlot] = {
-        ...newPlayers[selectedSlot],
-        coin: coin
+      console.log('🪙 Is current user:', isCurrentUser, 'Is creator at slot:', isCreatorAtSlot)
+      
+      if (isCurrentUser || isCreatorAtSlot) {
+        // Update the player's coin choice
+        setPlayerCoins(prev => ({
+          ...prev,
+          [address]: coin
+        }))
+        
+        // Update the player object in the slot
+        const newPlayers = [...players]
+        if (newPlayers[selectedSlot]) {
+          newPlayers[selectedSlot] = {
+            ...newPlayers[selectedSlot],
+            coin: coin
+          }
+          setPlayers(newPlayers)
+        }
+        
+        // Load coin images for the new coin choice
+        loadPlayerCoinImages(address, coin)
+        
+        // Send coin update to server
+        try {
+          socketService.emit('battle_royale_update_coin', {
+            gameId,
+            address,
+            coinData: coin
+          })
+          console.log('🪙 Sent coin update to server:', coin)
+        } catch (error) {
+          console.error('Error sending coin update to server:', error)
+        }
+        
+        showToast(`Coin changed to ${coin.name}`, 'success')
+      } else {
+        console.log('🪙 Cannot change coin - not the player at this slot')
+        showToast('You can only change your own coin', 'error')
       }
-      setPlayers(newPlayers)
-      
-      // Load coin images for the new coin choice
-      loadPlayerCoinImages(address, coin)
-      
-      // Send coin update to server
-      try {
-        socketService.emit('battle_royale_update_coin', {
-          gameId,
-          address,
-          coinData: coin
-        })
-        console.log('🪙 Sent coin update to server:', coin)
-      } catch (error) {
-        console.error('Error sending coin update to server:', error)
-      }
-      
-      showToast(`Coin changed to ${coin.name}`, 'success')
     }
     setShowCoinSelector(false)
     setSelectedSlot(null)

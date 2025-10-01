@@ -387,7 +387,7 @@ const BattleRoyaleUnified3DScene = ({
 
   // Handle player changes without recreating the scene
   useEffect(() => {
-    if (!sceneRef.current || !coinsRef.current.length) return
+    if (!sceneRef.current) return
 
     // Update existing coins or create new ones for new players
     for (let i = 0; i < 6; i++) {
