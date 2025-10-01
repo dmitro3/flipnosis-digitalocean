@@ -424,6 +424,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
   // Initialize creator in slot 0 when game loads (only if creator participates)
   useEffect(() => {
+    console.log('🪙 Creator initialization check:', {
+      hasGameData: !!gameData,
+      creator: gameData?.creator,
+      creatorParticipates: gameData?.creator_participates,
+      currentPlayers: players
+    })
+    
     if (gameData && gameData.creator && gameData.creator_participates) {
       const newPlayers = [...players]
       if (!newPlayers[0] || newPlayers[0].address?.toLowerCase() !== gameData.creator?.toLowerCase()) {
@@ -453,9 +460,17 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           coin: defaultCoin,
           isCreator: true
         })
+      } else {
+        console.log('🪙 Creator already in slot 0 or not participating')
       }
+    } else {
+      console.log('🪙 Creator initialization skipped:', {
+        hasGameData: !!gameData,
+        hasCreator: !!gameData?.creator,
+        creatorParticipates: gameData?.creator_participates
+      })
     }
-  }, [gameData, loadPlayerCoinImages])
+  }, [gameData, loadPlayerCoinImages, players])
 
   // Load coin images for all existing players
   useEffect(() => {
@@ -594,10 +609,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       console.log('🪙 Is current user:', isCurrentUser, 'Is creator at slot:', isCreatorAtSlot)
       
       if (isCurrentUser || isCreatorAtSlot) {
+        const playerAddress = playerAtSlot.address
+        
         // Update the player's coin choice
         setPlayerCoins(prev => ({
           ...prev,
-          [address]: coin
+          [playerAddress]: coin
         }))
         
         // Update the player object in the slot
@@ -611,7 +628,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         }
         
         // Load coin images for the new coin choice
-        loadPlayerCoinImages(address, coin)
+        loadPlayerCoinImages(playerAddress, coin)
         
         // Send coin update to server
         try {

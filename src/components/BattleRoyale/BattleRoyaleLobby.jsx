@@ -303,6 +303,34 @@ const BattleRoyaleLobby = ({ gameId: propGameId, gameData: propGameData, onJoinG
     }
   }, [gameId, propGameData, showToast])
 
+  // Initialize creator in slot 0 when game loads (only if creator participates)
+  useEffect(() => {
+    if (gameData && gameData.creator && gameData.creator_participates) {
+      const newPlayers = [...players]
+      if (!newPlayers[0] || newPlayers[0].address?.toLowerCase() !== gameData.creator?.toLowerCase()) {
+        const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
+        newPlayers[0] = {
+          address: gameData.creator,
+          joinedAt: new Date().toISOString(),
+          coin: defaultCoin,
+          isCreator: true,
+          entryPaid: true
+        }
+        setPlayers(newPlayers)
+        setCurrentPlayers(prev => {
+          // Only increment if creator wasn't already counted
+          return prev === 0 ? 1 : prev
+        })
+        
+        console.log('🪙 Creator initialized in lobby slot 0:', {
+          address: gameData.creator,
+          coin: defaultCoin,
+          isCreator: true
+        })
+      }
+    }
+  }, [gameData])
+
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address?.toLowerCase() === address?.toLowerCase())
   const isCreator = gameData?.creator?.toLowerCase() === address?.toLowerCase()
