@@ -422,9 +422,9 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     }
   }, [])
 
-  // Initialize creator in slot 0 when game loads
+  // Initialize creator in slot 0 when game loads (only if creator participates)
   useEffect(() => {
-    if (gameData && gameData.creator) {
+    if (gameData && gameData.creator && gameData.creator_participates) {
       const newPlayers = [...players]
       if (!newPlayers[0] || newPlayers[0].address !== gameData.creator) {
         const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
@@ -463,7 +463,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address === address)
-  const canJoin = !userAlreadyJoined && currentPlayers < 6 && gameStatus === 'filling'
+  const isCreatorParticipating = gameData?.creator_participates && gameData?.creator === address
+  const canJoin = !userAlreadyJoined && currentPlayers < 6 && gameStatus === 'filling' && (!isCreator || isCreatorParticipating)
   
   // Calculate the entry fee for joining players (1/6th of total prize)
   const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
@@ -712,7 +713,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       />
 
       {/* Join button and coin selector modal remain the same */}
-      {!userAlreadyJoined && gameStatus === 'filling' && (
+      {!userAlreadyJoined && gameStatus === 'filling' && (!isCreator || isCreatorParticipating) && (
         <div style={{ textAlign: 'center' }}>
           <JoinButton 
             onClick={() => handleSlotClick(players.findIndex(p => p === null))}

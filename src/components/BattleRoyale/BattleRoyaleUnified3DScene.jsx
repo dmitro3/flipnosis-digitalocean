@@ -383,8 +383,100 @@ const BattleRoyaleUnified3DScene = ({
       sceneRef.current = null
       rendererRef.current = null
     }
-  }, [players, playerCoinImages])
+  }, [])
 
+  // Handle player changes without recreating the scene
+  useEffect(() => {
+    if (!sceneRef.current || !coinsRef.current.length) return
+
+    // Update existing coins or create new ones for new players
+    for (let i = 0; i < 6; i++) {
+      const player = players[i]
+      const existingCoin = coinsRef.current[i]
+      
+      if (player?.address && !existingCoin) {
+        // Create new coin for new player
+        const posData = coinPositions[i]
+        
+        const materials = [
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('edge'),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          }),
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('heads', playerCoinImages[player.address]?.headsImage || null),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          }),
+          new THREE.MeshStandardMaterial({
+            map: createOptimizedTexture('tails', playerCoinImages[player.address]?.tailsImage || null),
+            metalness: 0.3,
+            roughness: 0.2,
+            color: 0xFFFFFF,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+          })
+        ]
+
+        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
+        const newCoin = new THREE.Mesh(geometry, materials)
+        
+        newCoin.position.set(posData.x, posData.y, posData.z)
+        newCoin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
+        newCoin.rotation.x = 0
+        newCoin.rotation.y = Math.PI / 2
+        newCoin.rotation.z = 0
+
+        sceneRef.current.add(newCoin)
+        coinsRef.current[i] = newCoin
+
+        coinStatesRef.current[i] = {
+          isFlipping: false,
+          flipStartTime: null,
+          flipDuration: 2000,
+          flipResult: null,
+          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
+          targetRotation: 0,
+          isCharging: false,
+          power: 0
+        }
+      } else if (!player?.address && existingCoin) {
+        // Remove coin for player that left
+        sceneRef.current.remove(existingCoin)
+        existingCoin.geometry.dispose()
+        if (Array.isArray(existingCoin.material)) {
+          existingCoin.material.forEach(mat => {
+            if (mat.map) mat.map.dispose()
+            mat.dispose()
+          })
+        }
+        coinsRef.current[i] = null
+        coinStatesRef.current[i] = null
+      } else if (player?.address && existingCoin && playerCoinImages[player.address]) {
+        // Update textures for existing player
+        const images = playerCoinImages[player.address]
+        
+        if (existingCoin.material[1] && images.headsImage) {
+          if (existingCoin.material[1].map) existingCoin.material[1].map.dispose()
+          existingCoin.material[1].map = createOptimizedTexture('heads', images.headsImage)
+          existingCoin.material[1].needsUpdate = true
+        }
+
+        if (existingCoin.material[2] && images.tailsImage) {
+          if (existingCoin.material[2].map) existingCoin.material[2].map.dispose()
+          existingCoin.material[2].map = createOptimizedTexture('tails', images.tailsImage)
+          existingCoin.material[2].needsUpdate = true
+        }
+      }
+    }
+  }, [players, playerCoinImages])
 
   // Handle flip states from server
   useEffect(() => {
