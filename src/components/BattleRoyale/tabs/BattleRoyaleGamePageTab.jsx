@@ -426,7 +426,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   useEffect(() => {
     if (gameData && gameData.creator && gameData.creator_participates) {
       const newPlayers = [...players]
-      if (!newPlayers[0] || newPlayers[0].address !== gameData.creator) {
+      if (!newPlayers[0] || newPlayers[0].address?.toLowerCase() !== gameData.creator?.toLowerCase()) {
         const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
         newPlayers[0] = {
           address: gameData.creator,
@@ -468,8 +468,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   }, [players, playerCoins, playerCoinImages, loadPlayerCoinImages])
 
   // Check if current user can join
-  const userAlreadyJoined = players.some(player => player?.address === address)
-  const isCreatorParticipating = gameData?.creator_participates && gameData?.creator === address
+  const userAlreadyJoined = players.some(player => player?.address?.toLowerCase() === address?.toLowerCase())
+  const isCreatorParticipating = gameData?.creator_participates && gameData?.creator?.toLowerCase() === address?.toLowerCase()
   const canJoin = !userAlreadyJoined && currentPlayers < 6 && gameStatus === 'filling' && (!isCreator || isCreatorParticipating)
   
   // Calculate the entry fee for joining players (1/6th of total prize)
@@ -480,7 +480,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     console.log('🪙 Slot clicked:', slotIndex, 'Player at slot:', players[slotIndex], 'Can join:', canJoin, 'Address:', address)
     
     // If it's the current user's slot and they want to change coin
-    if (players[slotIndex]?.address === address || (players[slotIndex]?.isCreator && address === gameData?.creator)) {
+    if (players[slotIndex]?.address?.toLowerCase() === address?.toLowerCase() || (players[slotIndex]?.isCreator && address?.toLowerCase() === gameData?.creator?.toLowerCase())) {
       console.log('🪙 Opening coin selector for current user slot')
       setSelectedSlot(slotIndex)
       setShowCoinSelector(true)
@@ -588,8 +588,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     
     if (selectedSlot !== null) {
       const playerAtSlot = players[selectedSlot]
-      const isCurrentUser = playerAtSlot?.address === address
-      const isCreatorAtSlot = playerAtSlot?.isCreator && address === gameData?.creator
+      const isCurrentUser = playerAtSlot?.address?.toLowerCase() === address?.toLowerCase()
+      const isCreatorAtSlot = playerAtSlot?.isCreator && address?.toLowerCase() === gameData?.creator?.toLowerCase()
       
       console.log('🪙 Is current user:', isCurrentUser, 'Is creator at slot:', isCreatorAtSlot)
       

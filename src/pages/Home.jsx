@@ -766,7 +766,7 @@ const Home = () => {
       return
     }
 
-    if (flip.creator === address) {
+    if (flip.creator?.toLowerCase() === address?.toLowerCase()) {
       showError('You cannot make an offer on your own listing')
       return
     }

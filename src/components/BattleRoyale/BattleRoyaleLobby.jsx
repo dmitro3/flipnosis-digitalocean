@@ -304,8 +304,8 @@ const BattleRoyaleLobby = ({ gameId: propGameId, gameData: propGameData, onJoinG
   }, [gameId, propGameData, showToast])
 
   // Check if current user can join
-  const userAlreadyJoined = players.some(player => player?.address === address)
-  const isCreator = gameData?.creator === address
+  const userAlreadyJoined = players.some(player => player?.address?.toLowerCase() === address?.toLowerCase())
+  const isCreator = gameData?.creator?.toLowerCase() === address?.toLowerCase()
   const canJoin = !userAlreadyJoined && !isCreator && currentPlayers < 8 && gameStatus === 'filling'
 
   const handleSlotClick = async (slotIndex) => {
