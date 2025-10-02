@@ -84,8 +84,12 @@ class BattleRoyaleGameManager {
       console.warn(`⚠️ No database service provided - game ${gameId} will not persist across server restarts`)
     }
     
-    // Automatically add the creator as the first player (slot 0) for free
-    this.addCreatorAsPlayer(gameId, gameData.creator)
+    // Automatically add the creator as the first player if they want to participate
+    if (gameData.creator_participates === true || gameData.creator_participates === 1) {
+      this.addCreatorAsPlayer(gameId, gameData.creator)
+    } else {
+      console.log(`🪙 Creator ${gameData.creator} will NOT participate in game ${gameId}`)
+    }
     
     return battleRoyaleState
   }

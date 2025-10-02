@@ -55,8 +55,17 @@ const Lobby2DDisplay = ({
             onMouseEnter={() => setHoveredSlot(index)}
             onMouseLeave={() => setHoveredSlot(null)}
             onClick={() => {
+              console.log('🖱️ Slot clicked in Lobby2D:', {
+                index,
+                isOccupied,
+                canJoin,
+                player: players[index]
+              })
+              
               if (canJoin && !isOccupied) {
                 onSlotClick(index)
+              } else {
+                console.log('❌ Cannot click slot:', { canJoin, isOccupied })
               }
             }}
           >

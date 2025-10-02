@@ -421,55 +421,65 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     }
   }, [])
 
-  // Initialize creator in slot 0 when game loads (only if creator participates)
+  // Initialize creator when game loads (only if creator participates)
   useEffect(() => {
+    // Check creator participation - handle both boolean and integer (0/1) from database
+    const creatorParticipates = gameData?.creator_participates === true || 
+                                 gameData?.creator_participates === 1 ||
+                                 gameData?.creator_participates === '1'
+    
     console.log('🪙 Creator initialization check:', {
       hasGameData: !!gameData,
       creator: gameData?.creator,
-      creatorParticipates: gameData?.creator_participates,
-      currentPlayers: players
+      creator_participates_raw: gameData?.creator_participates,
+      creator_participates_type: typeof gameData?.creator_participates,
+      creatorParticipates,
+      currentPlayers: players,
+      isCreator: gameData?.creator?.toLowerCase() === address?.toLowerCase()
     })
     
-    if (gameData && gameData.creator && gameData.creator_participates) {
+    // Only initialize if creator participates AND we haven't already initialized
+    if (gameData && gameData.creator && creatorParticipates) {
       const newPlayers = [...players]
-      if (!newPlayers[0] || newPlayers[0].address?.toLowerCase() !== gameData.creator?.toLowerCase()) {
+      const creatorAlreadyAdded = newPlayers.some(p => p?.address?.toLowerCase() === gameData.creator?.toLowerCase())
+      
+      if (!creatorAlreadyAdded) {
         const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
-        newPlayers[0] = {
-          address: gameData.creator,
-          joinedAt: new Date().toISOString(),
-          coin: defaultCoin,
-          isCreator: true,
-          entryPaid: true
+        
+        // Find first empty slot
+        const emptySlotIndex = newPlayers.findIndex(p => p === null)
+        if (emptySlotIndex !== -1) {
+          newPlayers[emptySlotIndex] = {
+            address: gameData.creator,
+            joinedAt: new Date().toISOString(),
+            coin: defaultCoin,
+            isCreator: true,
+            entryPaid: true
+          }
+          
+          setPlayers(newPlayers)
+          setCurrentPlayers(prev => Math.max(prev, 1))
+          setPlayerCoins(prev => ({
+            ...prev,
+            [gameData.creator]: defaultCoin
+          }))
+          
+          // Load coin images for creator
+          loadPlayerCoinImages(gameData.creator, defaultCoin)
+          
+          console.log('🪙 Creator initialized in slot', emptySlotIndex, ':', {
+            address: gameData.creator,
+            coin: defaultCoin,
+            isCreator: true
+          })
         }
-        setPlayers(newPlayers)
-        setCurrentPlayers(prev => {
-          // Only increment if creator wasn't already counted
-          return prev === 0 ? 1 : prev
-        })
-        setPlayerCoins(prev => ({
-          ...prev,
-          [gameData.creator]: defaultCoin
-        }))
-        
-        // Load coin images for creator
-        loadPlayerCoinImages(gameData.creator, defaultCoin)
-        
-        console.log('🪙 Creator initialized in slot 0:', {
-          address: gameData.creator,
-          coin: defaultCoin,
-          isCreator: true
-        })
       } else {
-        console.log('🪙 Creator already in slot 0 or not participating')
+        console.log('🪙 Creator already added to players')
       }
     } else {
-      console.log('🪙 Creator initialization skipped:', {
-        hasGameData: !!gameData,
-        hasCreator: !!gameData?.creator,
-        creatorParticipates: gameData?.creator_participates
-      })
+      console.log('🪙 Creator will NOT participate in this game')
     }
-  }, [gameData, loadPlayerCoinImages, players])
+  }, [gameData?.creator, gameData?.creator_participates]) // Only re-run when these change
 
   // Load coin images for all existing players
   useEffect(() => {
@@ -483,8 +493,34 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
   // Check if current user can join
   const userAlreadyJoined = players.some(player => player?.address?.toLowerCase() === address?.toLowerCase())
-  const isCreatorParticipating = gameData?.creator_participates && gameData?.creator?.toLowerCase() === address?.toLowerCase()
-  const canJoin = !userAlreadyJoined && currentPlayers < 6 && gameStatus === 'filling' && (!isCreator || isCreatorParticipating)
+
+  // Creator participation check - handle both boolean and integer from database
+  const creatorParticipates = gameData?.creator_participates === true || 
+                              gameData?.creator_participates === 1 ||
+                              gameData?.creator_participates === '1'
+
+  const isCreatorAndParticipating = isCreator && creatorParticipates
+
+  // User can join if:
+  // 1. They haven't already joined
+  // 2. Game is filling
+  // 3. Less than 6 players
+  // 4. Either they're NOT the creator, OR they ARE the creator AND they want to participate
+  const canJoin = !userAlreadyJoined && 
+                  gameStatus === 'filling' && 
+                  currentPlayers < 6 && 
+                  (!isCreator || isCreatorAndParticipating)
+
+  console.log('🎮 Join eligibility:', {
+    userAlreadyJoined,
+    gameStatus,
+    currentPlayers,
+    isCreator,
+    creatorParticipates,
+    isCreatorAndParticipating,
+    canJoin,
+    address
+  })
   
   // Calculate the entry fee for joining players (1/6th of total prize)
   const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
