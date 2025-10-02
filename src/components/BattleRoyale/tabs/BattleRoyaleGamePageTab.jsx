@@ -492,7 +492,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   }, [players, playerCoins, playerCoinImages, loadPlayerCoinImages])
 
   // Check if current user can join
-  const userAlreadyJoined = players.some(player => player?.address?.toLowerCase() === address?.toLowerCase())
+  const userAlreadyJoined = address ? players.some(player => player?.address?.toLowerCase() === address?.toLowerCase()) : false
 
   // Creator participation check - handle both boolean and integer from database
   const creatorParticipates = gameData?.creator_participates === true || 
@@ -502,24 +502,27 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const isCreatorAndParticipating = isCreator && creatorParticipates
 
   // User can join if:
-  // 1. They haven't already joined
-  // 2. Game is filling
-  // 3. Less than 6 players
-  // 4. Either they're NOT the creator, OR they ARE the creator AND they want to participate
-  const canJoin = !userAlreadyJoined && 
+  // 1. They have a connected wallet (address exists)
+  // 2. They haven't already joined
+  // 3. Game is filling
+  // 4. Less than 6 players
+  // 5. Either they're NOT the creator, OR they ARE the creator AND they want to participate
+  const canJoin = !!address && 
+                  !userAlreadyJoined && 
                   gameStatus === 'filling' && 
                   currentPlayers < 6 && 
                   (!isCreator || isCreatorAndParticipating)
 
   console.log('🎮 Join eligibility:', {
+    address,
+    hasAddress: !!address,
     userAlreadyJoined,
     gameStatus,
     currentPlayers,
     isCreator,
     creatorParticipates,
     isCreatorAndParticipating,
-    canJoin,
-    address
+    canJoin
   })
   
   // Calculate the entry fee for joining players (1/6th of total prize)

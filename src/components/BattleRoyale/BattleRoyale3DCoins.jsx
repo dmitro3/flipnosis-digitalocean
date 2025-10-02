@@ -21,7 +21,7 @@ const Lobby2DDisplay = ({
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)', // 3x2 grid for 6 players
+      gridTemplateColumns: 'repeat(3, 1fr)',
       gap: '1rem',
       padding: '1rem',
       background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(138, 43, 226, 0.3))',
@@ -29,11 +29,14 @@ const Lobby2DDisplay = ({
       border: '2px solid rgba(255, 20, 147, 0.3)',
       minHeight: '500px'
     }}>
-      {Array.from({ length: 6 }, (_, index) => { // Changed from 8 to 6
+      {Array.from({ length: 6 }, (_, index) => {
         const player = players[index]
-        const isOccupied = player?.address
-        const isCurrentUser = player?.address === currentUserAddress
+        const isOccupied = !!player?.address  // ✅ FIX: Properly check if occupied
+        const isCurrentUser = player?.address?.toLowerCase() === currentUserAddress?.toLowerCase()
         const coinSide = coinSides[player?.address] || 'heads'
+        
+        // ✅ FIX: Better canJoin check for this specific slot
+        const canJoinThisSlot = canJoin && !isOccupied && !!currentUserAddress
         
         return (
           <div
@@ -48,7 +51,7 @@ const Lobby2DDisplay = ({
                 : 'linear-gradient(135deg, rgba(255, 20, 147, 0.2), rgba(138, 43, 226, 0.2))',
               borderRadius: '0.5rem',
               border: `2px solid ${isOccupied ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 20, 147, 0.5)'}`,
-              cursor: canJoin && !isOccupied ? 'pointer' : 'default',
+              cursor: canJoinThisSlot ? 'pointer' : 'default',
               transition: 'all 0.3s ease',
               position: 'relative'
             }}
@@ -59,16 +62,24 @@ const Lobby2DDisplay = ({
                 index,
                 isOccupied,
                 canJoin,
-                player: players[index]
+                canJoinThisSlot,
+                currentUserAddress,
+                player
               })
               
-              if (canJoin && !isOccupied) {
+              if (canJoinThisSlot) {
                 onSlotClick(index)
               } else {
-                console.log('❌ Cannot click slot:', { canJoin, isOccupied })
+                console.log('❌ Cannot click slot:', { 
+                  canJoin, 
+                  canJoinThisSlot,
+                  isOccupied,
+                  hasAddress: !!currentUserAddress
+                })
               }
             }}
           >
+            {/* Rest of the slot rendering code stays the same */}
             <div style={{
               position: 'absolute',
               top: '0.5rem',
@@ -125,7 +136,6 @@ const Lobby2DDisplay = ({
                   {player.address?.slice(0, 6)}...{player.address?.slice(-4)}
                 </div>
                 
-                {/* Show player's choice in lobby */}
                 {serverState?.players?.[player?.address]?.choice && (
                   <div style={{
                     background: serverState.players[player.address].choice === 'heads' 
@@ -196,12 +206,14 @@ const Lobby2DDisplay = ({
                 fontWeight: 'bold',
                 textAlign: 'center'
               }}>
-                {canJoin ? (
+                {canJoinThisSlot ? (
                   <div>
                     {isJoining ? 'Joining...' : 'Click to Join'}
                   </div>
                 ) : (
-                  'Empty Slot'
+                  <div>
+                    {!currentUserAddress ? 'Connect Wallet' : 'Empty Slot'}
+                  </div>
                 )}
               </div>
             )}
