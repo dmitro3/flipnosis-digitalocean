@@ -239,8 +239,6 @@ const BattleRoyale3DCoins = ({
   const [isSceneReady, setIsSceneReady] = useState(false)
   const [localFlipStates, setLocalFlipStates] = useState(flipStates)
   const [selectedChoice, setSelectedChoice] = useState(null)
-  const [powerLevel, setPowerLevel] = useState(0)
-  const [isCharging, setIsCharging] = useState(false)
   
   // Sync localFlipStates with flipStates prop
   useEffect(() => {
@@ -269,35 +267,9 @@ const BattleRoyale3DCoins = ({
     setIsSceneReady(true)
   }, [])
 
-  // Power charging logic
+  // Reset choice when game phase changes
   useEffect(() => {
-    let powerInterval = null
-    
-    if (isCharging) {
-      powerInterval = setInterval(() => {
-        setPowerLevel(prev => {
-          const newLevel = Math.min(prev + 2, 100)
-          return newLevel
-        })
-      }, 50)
-    } else {
-      if (powerInterval) {
-        clearInterval(powerInterval)
-      }
-    }
-    
-    return () => {
-      if (powerInterval) {
-        clearInterval(powerInterval)
-      }
-    }
-  }, [isCharging])
-
-  // Reset power level when game phase changes
-  useEffect(() => {
-    if (safeGamePhase !== 'charging_power') {
-      setPowerLevel(0)
-      setIsCharging(false)
+    if (safeGamePhase !== 'round_active') {
       setSelectedChoice(null)
     }
   }, [safeGamePhase])
@@ -355,16 +327,12 @@ const BattleRoyale3DCoins = ({
           boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)'
         }}>
           {safeGamePhase === 'starting' && 'Game Starting...'}
-          {safeGamePhase === 'revealing_target' && 'Target Revealed!'}
-          {safeGamePhase === 'charging_power' && `Charge Your Power! ${serverState?.roundCountdown ? `(${serverState.roundCountdown}s)` : ''}`}
-          {safeGamePhase === 'executing_flips' && 'Flipping...'}
-          {safeGamePhase === 'showing_result' && 'Round Complete!'}
+          {safeGamePhase === 'round_active' && `Round Active! ${serverState?.roundCountdown ? `(${serverState.roundCountdown}s)` : ''}`}
           {safeGamePhase === 'completed' && 'Game Over!'}
-          {safeGamePhase === 'game_complete' && 'Game Complete!'}
         </div>
         
         {/* Prominent countdown timer */}
-        {safeGamePhase === 'charging_power' && serverState?.roundCountdown > 0 && (
+        {safeGamePhase === 'round_active' && serverState?.roundCountdown > 0 && (
           <div style={{
             background: serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.2)' : 'rgba(0, 191, 255, 0.2)',
             color: serverState.roundCountdown <= 5 ? '#ff1493' : '#00bfff',
@@ -463,7 +431,7 @@ const BattleRoyale3DCoins = ({
         </div>
 
         {/* Choice Buttons */}
-        {safeGamePhase === 'charging_power' && (
+        {safeGamePhase === 'round_active' && (
           <div style={{
             display: 'flex',
             gap: '1rem',
@@ -488,18 +456,6 @@ const BattleRoyale3DCoins = ({
                   : '0 4px 15px rgba(255, 215, 0, 0.3)'
               }}
               onClick={() => setSelectedChoice('heads')}
-              onMouseEnter={(e) => {
-                if (selectedChoice !== 'heads') {
-                  e.target.style.transform = 'translateY(-2px)'
-                  e.target.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.5)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedChoice !== 'heads') {
-                  e.target.style.transform = 'translateY(0)'
-                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.3)'
-                }
-              }}
             >
               HEADS
             </button>
@@ -521,66 +477,19 @@ const BattleRoyale3DCoins = ({
                   : '0 4px 15px rgba(192, 192, 192, 0.3)'
               }}
               onClick={() => setSelectedChoice('tails')}
-              onMouseEnter={(e) => {
-                if (selectedChoice !== 'tails') {
-                  e.target.style.transform = 'translateY(-2px)'
-                  e.target.style.boxShadow = '0 6px 20px rgba(192, 192, 192, 0.5)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedChoice !== 'tails') {
-                  e.target.style.transform = 'translateY(0)'
-                  e.target.style.boxShadow = '0 4px 15px rgba(192, 192, 192, 0.3)'
-                }
-              }}
             >
               TAILS
             </button>
           </div>
         )}
 
-        {/* Power Bar */}
-        {safeGamePhase === 'charging_power' && (
-          <div style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <div style={{
-              width: '200px',
-              height: '30px',
-              border: '2px solid #fff',
-              background: '#222',
-              borderRadius: '15px',
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <div style={{
-                height: '100%',
-                background: 'linear-gradient(90deg, #00ff00, #ffff00, #ff0000)',
-                width: `${powerLevel}%`,
-                transition: 'width 0.1s linear',
-                borderRadius: '13px'
-              }} />
-            </div>
-            <div style={{
-              color: '#00bfff',
-              fontSize: '0.9rem',
-              fontWeight: 'bold'
-            }}>
-              POWER: <span>{powerLevel}%</span>
-            </div>
-          </div>
-        )}
 
         {/* Flip Button */}
-        {safeGamePhase === 'charging_power' && (
+        {safeGamePhase === 'round_active' && (
           <button
-            disabled={!selectedChoice}
+            disabled={!selectedChoice || serverState?.players?.[currentUserAddress]?.hasFlipped}
             style={{
-              background: selectedChoice 
+              background: selectedChoice && !serverState?.players?.[currentUserAddress]?.hasFlipped
                 ? 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)'
                 : 'linear-gradient(135deg, #666 0%, #444 100%)',
               color: selectedChoice ? '#000' : '#999',
@@ -589,7 +498,7 @@ const BattleRoyale3DCoins = ({
               borderRadius: '2rem',
               fontSize: '1.3rem',
               fontWeight: 'bold',
-              cursor: selectedChoice ? 'pointer' : 'not-allowed',
+              cursor: selectedChoice && !serverState?.players?.[currentUserAddress]?.hasFlipped ? 'pointer' : 'not-allowed',
               transition: 'all 0.3s ease',
               textTransform: 'uppercase',
               userSelect: 'none',
@@ -597,56 +506,36 @@ const BattleRoyale3DCoins = ({
               boxShadow: selectedChoice 
                 ? '0 4px 15px rgba(0, 255, 136, 0.3)'
                 : '0 4px 15px rgba(102, 102, 102, 0.3)',
-              opacity: selectedChoice ? 1 : 0.6
+              opacity: selectedChoice && !serverState?.players?.[currentUserAddress]?.hasFlipped ? 1 : 0.6
             }}
-            onMouseDown={() => {
-              if (!selectedChoice) return
-              console.log('🔋 Flip button pressed - starting power charge')
-              setIsCharging(true)
-              if (onPowerChargeStart) {
-                onPowerChargeStart()
+            onClick={() => {
+              if (!selectedChoice) {
+                console.log('❌ Must choose heads or tails first')
+                return
               }
-            }}
-            onMouseUp={() => {
-              if (!selectedChoice) return
-              console.log('🔋 Flip button released - executing flip')
-              setIsCharging(false)
-              if (onPowerChargeStop) {
-                onPowerChargeStop(powerLevel)
-              }
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault()
-              if (!selectedChoice) return
-              console.log('🔋 Flip button touch start - starting power charge')
-              setIsCharging(true)
-              if (onPowerChargeStart) {
-                onPowerChargeStart()
-              }
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault()
-              if (!selectedChoice) return
-              console.log('🔋 Flip button touch end - executing flip')
-              setIsCharging(false)
-              if (onPowerChargeStop) {
-                onPowerChargeStop(powerLevel)
-              }
-            }}
-            onMouseEnter={(e) => {
-              if (selectedChoice) {
-                e.target.style.transform = 'translateY(-2px)'
-                e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 136, 0.5)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (selectedChoice) {
-                e.target.style.transform = 'translateY(0)'
-                e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 136, 0.3)'
+              
+              console.log(`🎲 Flipping with choice: ${selectedChoice}`)
+              
+              // Send choice to server
+              if (typeof window !== 'undefined' && window.socketService) {
+                window.socketService.emit('battle_royale_player_choice', {
+                  gameId: serverState?.gameId,
+                  address: currentUserAddress,
+                  choice: selectedChoice
+                })
+                
+                // Immediately execute flip with default power
+                window.socketService.emit('battle_royale_execute_flip', {
+                  gameId: serverState?.gameId,
+                  address: currentUserAddress,
+                  power: 5 // Default power level
+                })
               }
             }}
           >
-            {!selectedChoice ? '🎯 CHOOSE FIRST' : '🪙 HOLD TO FLIP'}
+            {!selectedChoice ? '🎯 CHOOSE FIRST' : 
+             serverState?.players?.[currentUserAddress]?.hasFlipped ? '✅ FLIPPED' :
+             '🪙 FLIP COIN'}
           </button>
         )}
 
@@ -659,10 +548,7 @@ const BattleRoyale3DCoins = ({
         }}>
           {safeGamePhase === 'filling' && 'Waiting for players to join...'}
           {safeGamePhase === 'starting' && 'Game is starting...'}
-          {safeGamePhase === 'revealing_target' && 'Target is being revealed...'}
-          {safeGamePhase === 'charging_power' && 'Choose your side and charge your power!'}
-          {safeGamePhase === 'executing_flips' && 'Coins are flipping...'}
-          {safeGamePhase === 'showing_result' && 'Results are being shown...'}
+          {safeGamePhase === 'round_active' && 'Choose your side and flip your coin!'}
           {safeGamePhase === 'completed' && 'Game completed!'}
         </div>
       </div>

@@ -32,7 +32,7 @@ class BattleRoyaleSocketHandlers {
     console.log(`✅ ${address} joined Battle Royale room ${gameId}`)
   }
 
-  // Player Choice Handler
+  // Player Choice Handler - SIMPLIFIED
   async handleBattleRoyalePlayerChoice(socket, data, battleRoyaleManager, io) {
     const { gameId, address, choice } = data
     console.log(`🎯 Battle Royale choice: ${address} chose ${choice} in ${gameId}`)
@@ -43,99 +43,25 @@ class BattleRoyaleSocketHandlers {
       return
     }
 
-    // Broadcast updated state
+    // Broadcast updated state immediately
     const roomId = `br_${gameId}`
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     io.to(roomId).emit('battle_royale_state_update', fullState)
-  }
-
-  // Manual Phase Advancement Handler (for debugging)
-  async handleBattleRoyaleAdvancePhase(socket, data, battleRoyaleManager, io) {
-    const { gameId, address } = data
-    console.log(`🔧 Manual phase advancement requested by ${address} for game ${gameId}`)
     
-    const success = battleRoyaleManager.advancePhase(gameId, (roomId, event, data) => {
-      io.to(roomId).emit(event, data)
+    // Also broadcast that this player made a choice
+    io.to(roomId).emit('battle_royale_player_chose', {
+      gameId,
+      playerAddress: address,
+      hasChosen: true // Don't reveal the actual choice
     })
-    
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot advance phase' })
-      return
-    }
-
-    // Broadcast updated state
-    const roomId = `br_${gameId}`
-    const fullState = battleRoyaleManager.getFullGameState(gameId)
-    io.to(roomId).emit('battle_royale_state_update', fullState)
   }
 
-  // Start Power Charging
-  async handleBattleRoyaleStartPowerCharge(socket, data, battleRoyaleManager, io) {
-    const { gameId, address } = data
-    console.log(`⚡ Battle Royale power charge start: ${address} in ${gameId}`)
-    
-    const success = battleRoyaleManager.startPowerCharging(gameId, address)
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot start power charge' })
-      return
-    }
 
-    // Start broadcasting power updates
-    const powerBroadcastInterval = setInterval(() => {
-      const game = battleRoyaleManager.getGame(gameId)
-      if (!game) {
-        clearInterval(powerBroadcastInterval)
-        return
-      }
-      
-      const player = game.players.get(address)
-      if (!player || !player.coinState.powerUsed) {
-        clearInterval(powerBroadcastInterval)
-        return
-      }
-      
-      // Broadcast power update to all players
-      battleRoyaleManager.broadcastPowerUpdate(
-        gameId, 
-        address, 
-        player.power,
-        (roomId, eventType, eventData) => {
-          io.to(roomId).emit(eventType, eventData)
-        }
-      )
-    }, 50) // Update every 50ms for smooth animation
-    
-    // Store interval reference for cleanup
-    socket.data.powerInterval = powerBroadcastInterval
-  }
 
-  // Stop Power Charging
-  async handleBattleRoyaleStopPowerCharge(socket, data, battleRoyaleManager, io) {
-    const { gameId, address, finalPower } = data
-    console.log(`⚡ Battle Royale power charge stop: ${address} at ${finalPower} in ${gameId}`)
-    
-    // Clear power broadcast interval
-    if (socket.data.powerInterval) {
-      clearInterval(socket.data.powerInterval)
-      delete socket.data.powerInterval
-    }
-    
-    const success = battleRoyaleManager.stopPowerCharging(gameId, address, finalPower)
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot stop power charge' })
-      return
-    }
-
-    // Broadcast final power state
-    const roomId = `br_${gameId}`
-    const fullState = battleRoyaleManager.getFullGameState(gameId)
-    io.to(roomId).emit('battle_royale_state_update', fullState)
-  }
-
-  // Execute Flip
+  // Execute Flip - SIMPLIFIED (no power charging)
   async handleBattleRoyaleExecuteFlip(socket, data, battleRoyaleManager, io) {
     const { gameId, address, power } = data
-    console.log(`🪙 Battle Royale flip execute: ${address} with power ${power} in ${gameId}`)
+    console.log(`🪙 Battle Royale flip execute: ${address} with power ${power || 1} in ${gameId}`)
     
     const game = battleRoyaleManager.getGame(gameId)
     if (!game) {
@@ -149,29 +75,16 @@ class BattleRoyaleSocketHandlers {
       return
     }
 
-    // Store the power and mark as flipped
+    // Set the power level
     player.power = power || 1
-    player.hasFlipped = true
     
-    // Check if all players have flipped
-    let allFlipped = true
-    for (const addr of game.activePlayers) {
-      const p = game.players.get(addr)
-      if (!p.hasFlipped) {
-        allFlipped = false
-        break
-      }
-    }
+    // Execute the flip immediately
+    const success = battleRoyaleManager.executePlayerFlip(gameId, address, (roomId, eventType, eventData) => {
+      io.to(roomId).emit(eventType, eventData)
+    })
 
-    // If all flipped, execute all flips
-    if (allFlipped) {
-      battleRoyaleManager.executeAllFlips(gameId, (roomId, eventType, eventData) => {
-        io.to(roomId).emit(eventType, eventData)
-      })
-    } else {
-      // Just update state to show this player has flipped
-      const fullState = battleRoyaleManager.getFullGameState(gameId)
-      io.to(`br_${gameId}`).emit('battle_royale_state_update', fullState)
+    if (!success) {
+      socket.emit('battle_royale_error', { message: 'Cannot flip coin now' })
     }
   }
 

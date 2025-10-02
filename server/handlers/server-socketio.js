@@ -63,23 +63,10 @@ class GameServer {
       
       // Deposit system removed - using polling instead
       
-      // ===== BATTLE ROYALE GAME ACTIONS (UNIFIED) =====
-      socket.on('request_game_state', (data) => this.handleRequestBattleRoyaleState(socket, data))
-      socket.on('activate_game', (data) => this.handleActivateBattleRoyaleGame(socket, data))
-      socket.on('player_choice', (data) => this.handleBattleRoyaleChoice(socket, data))
-      socket.on('start_power_charge', (data) => this.handleBattleRoyaleStartPowerCharge(socket, data))
-      socket.on('stop_power_charge', (data) => this.handleBattleRoyaleStopPowerCharge(socket, data))
-      socket.on('execute_flip', (data) => this.handleBattleRoyaleExecuteFlip(socket, data))
-      socket.on('spectate_game', (data) => this.handleBattleRoyaleSpectate(socket, data))
-      socket.on('request_next_round', (data) => this.handleBattleRoyaleNextRound(socket, data))
-      
       // ===== BATTLE ROYALE ACTIONS =====
       socket.on('join_battle_royale_room', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io))
       socket.on('join_battle_royale', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyale(socket, data, this.battleRoyaleManager, this.io, this.dbService))
       socket.on('battle_royale_player_choice', (data) => this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('battle_royale_advance_phase', (data) => this.battleRoyaleHandlers.handleBattleRoyaleAdvancePhase(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('battle_royale_start_power_charge', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStartPowerCharge(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('battle_royale_stop_power_charge', (data) => this.battleRoyaleHandlers.handleBattleRoyaleStopPowerCharge(socket, data, this.battleRoyaleManager, this.io))
       socket.on('battle_royale_execute_flip', (data) => this.battleRoyaleHandlers.handleBattleRoyaleExecuteFlip(socket, data, this.battleRoyaleManager, this.io))
       socket.on('battle_royale_update_coin', (data) => this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(socket, data, this.battleRoyaleManager, this.io))
       socket.on('spectate_battle_royale', (data) => this.battleRoyaleHandlers.handleSpectateBattleRoyale(socket, data, this.battleRoyaleManager))
@@ -89,11 +76,6 @@ class GameServer {
         console.log(`📥 Event data:`, data)
         this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(socket, data, this.battleRoyaleManager, this.io, this.dbService)
       })
-      
-      // ===== NEW EVENT HANDLERS =====
-      socket.on('startGame', (data) => this.battleRoyaleHandlers.handleStartGame(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('makeChoice', (data) => this.battleRoyaleHandlers.handleMakeChoice(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('flipCoin', (data) => this.battleRoyaleHandlers.handleFlipCoin(socket, data, this.battleRoyaleManager, this.io))
       
       // Disconnection
       socket.on('disconnect', () => this.handleDisconnect(socket))

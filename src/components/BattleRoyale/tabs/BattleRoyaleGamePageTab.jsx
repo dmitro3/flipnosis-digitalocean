@@ -10,7 +10,6 @@ import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import socketService from '../../../services/SocketService'
 import BattleRoyale3DCoins from '../BattleRoyale3DCoins'
-import HeadsTailsDisplay from '../HeadsTailsDisplay'
 import CoinSelector from '../../CoinSelector'
 import '../BattleRoyaleCoins.css'
 
@@ -750,8 +749,6 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           setSelectedSlot(slotIndex)
           setShowCoinSelector(true)
         }}
-        onPowerChargeStart={handlePowerChargeStart}
-        onPowerChargeStop={handlePowerChargeStop}
       />
 
       {/* Join button and coin selector modal remain the same */}

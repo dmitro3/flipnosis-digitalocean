@@ -553,6 +553,47 @@ const BattleRoyaleUnified3DScene = ({
     }
   }, [serverState, players])
 
+  // Listen for individual player flip events
+  useEffect(() => {
+    if (!sceneRef.current) return
+
+    const handlePlayerFlipped = (data) => {
+      const { playerAddress, flipResult, coinState } = data
+      const playerIndex = players.findIndex(p => p?.address === playerAddress)
+      
+      if (playerIndex === -1 || playerIndex >= 6) return
+
+      const state = coinStatesRef.current[playerIndex]
+      const coin = coinsRef.current[playerIndex]
+
+      if (!state || !coin) return
+
+      // Update state with flip data
+      state.isFlipping = true
+      state.flipStartTime = Date.now()
+      state.flipDuration = coinState.flipDuration || 2000
+      state.flipResult = flipResult
+      state.totalRotations = coinState.totalRotations || (10 * Math.PI * 2)
+      state.speed = coinState.powerUsed || 1
+      state.power = coinState.powerUsed || 1
+      state.startRotation = {
+        x: coin.rotation.x,
+        y: coin.rotation.y,
+        z: coin.rotation.z
+      }
+
+      console.log(`🎲 Coin ${playerIndex} starting flip animation: ${flipResult}`)
+    }
+
+    // This would need to be connected via socket
+    if (typeof window !== 'undefined' && window.socketService) {
+      window.socketService.on('battle_royale_player_flipped', handlePlayerFlipped)
+
+      return () => {
+        window.socketService.off('battle_royale_player_flipped', handlePlayerFlipped)
+      }
+    }
+  }, [players])
 
   return (
     <div
