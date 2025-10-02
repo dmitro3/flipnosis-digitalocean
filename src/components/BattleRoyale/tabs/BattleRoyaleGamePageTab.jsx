@@ -791,7 +791,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       />
 
       {/* Join button and coin selector modal remain the same */}
-      {!userAlreadyJoined && gameStatus === 'filling' && (!isCreator || isCreatorParticipating) && (
+      {!userAlreadyJoined && gameStatus === 'filling' && (!isCreator || isCreatorAndParticipating) && (
         <div style={{ textAlign: 'center' }}>
           <JoinButton 
             onClick={() => handleSlotClick(players.findIndex(p => p === null))}
