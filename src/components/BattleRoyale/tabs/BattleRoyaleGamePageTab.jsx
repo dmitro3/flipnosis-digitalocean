@@ -762,7 +762,18 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         </div>
 
         {/* Start Game Button - Only for Creator */}
-        {isCreator && gameStatus === 'filling' && currentPlayers >= 2 && (
+        {(() => {
+          const showButton = isCreator && gameStatus === 'filling' && currentPlayers >= 2
+          console.log('🚀 Early start button debug:', {
+            isCreator,
+            gameStatus,
+            currentPlayers,
+            showButton,
+            address,
+            gameDataCreator: gameData?.creator
+          })
+          return showButton
+        })() && (
           <button
             onClick={() => {
               socketService.emit('battle_royale_start_early', {
