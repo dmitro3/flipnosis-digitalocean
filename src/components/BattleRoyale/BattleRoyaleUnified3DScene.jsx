@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
 
+const globalTextureCache = new Map()
+
 // Power configurations (from OptimizedGoldCoin)
 const powerConfigs = [
   { minFlips: 5, duration: 2000, speed: 1 },
@@ -33,30 +35,25 @@ const BattleRoyaleUnified3DScene = ({
   const animationIdRef = useRef(null)
   const coinStatesRef = useRef([]) // Track animation state for each coin
 
-  // Optimized texture creation (from OptimizedGoldCoin) - NOT in useCallback to avoid infinite loops
-  const createOptimizedTexture = (type, customImage = null) => {
+  // Optimized texture creation with global caching
+  const createOptimizedTexture = useCallback((type, customImage = null) => {
     const cacheKey = `${type}-${customImage || 'default'}`
-    if (textureCache.current[cacheKey]) {
-      return textureCache.current[cacheKey]
+    
+    // Check global cache first
+    if (globalTextureCache.has(cacheKey)) {
+      return globalTextureCache.get(cacheKey)
     }
 
     if (customImage && customImage !== '/coins/plainh.png' && customImage !== '/coins/plaint.png') {
       try {
         const loader = new THREE.TextureLoader()
-        const texture = loader.load(
-          customImage,
-          undefined, // onLoad
-          undefined, // onProgress
-          (error) => {
-            console.error(`❌ Failed to load texture: ${customImage}`, error)
-          }
-        )
+        const texture = loader.load(customImage)
         texture.colorSpace = THREE.SRGBColorSpace
-        textureCache.current[cacheKey] = texture
+        texture.flipY = false
+        globalTextureCache.set(cacheKey, texture)
         return texture
       } catch (error) {
         console.error(`❌ Error loading custom texture: ${customImage}`, error)
-        // Fall through to default texture
       }
     }
 
@@ -78,30 +75,24 @@ const BattleRoyaleUnified3DScene = ({
         ctx.stroke()
       }
     } else if (type === 'heads') {
-      // Default gold heads texture
       const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
       gradient.addColorStop(0, '#FFD700')
       gradient.addColorStop(0.5, '#FFA500')
       gradient.addColorStop(1, '#FF8C00')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, size, size)
-      
-      // Add "H" text
       ctx.fillStyle = '#333'
       ctx.font = 'bold 200px Arial'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('H', size/2, size/2)
     } else if (type === 'tails') {
-      // Default silver tails texture
       const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2)
       gradient.addColorStop(0, '#E5E5E5')
       gradient.addColorStop(0.5, '#C0C0C0')
       gradient.addColorStop(1, '#A0A0A0')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, size, size)
-      
-      // Add "T" text
       ctx.fillStyle = '#333'
       ctx.font = 'bold 200px Arial'
       ctx.textAlign = 'center'
@@ -113,9 +104,10 @@ const BattleRoyaleUnified3DScene = ({
 
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
-    textureCache.current[cacheKey] = texture
+    texture.flipY = false
+    globalTextureCache.set(cacheKey, texture)
     return texture
-  }
+  }, [])
 
   // Initialize Three.js scene with 6 coins in 3x2 grid
   useEffect(() => {
@@ -168,8 +160,7 @@ const BattleRoyaleUnified3DScene = ({
     scene.add(fillLight)
 
     // Create coins only for actual players (not empty slots)
-    const activePlayers = players.filter(p => p?.address)
-    const numPlayers = activePlayers.length
+    const numPlayers = players.filter(p => p?.address).length
     
     // Fixed 3x2 grid layout for all players
     const coinPositions = [
@@ -183,22 +174,16 @@ const BattleRoyaleUnified3DScene = ({
       { x: 8, y: -4, z: 0, scale: 1 },    // Bottom right
     ]
 
-    console.log(`🎯 Creating ${numPlayers} coins for active players`)
+    // Only create coins for players that actually exist
+    const activePlayers = players.filter(p => p?.address)
+    console.log(`🎯 Creating ${activePlayers.length} coins for active players`)
 
     for (let i = 0; i < 6; i++) {
       const player = players[i]
       
-      // Only create coin if player exists at this position
       if (player?.address) {
         const playerAddressLower = player.address.toLowerCase()
-        console.log(`🎯 Creating coin for player ${i}:`, {
-          address: player.address,
-          addressLower: playerAddressLower,
-          coinImages: playerCoinImages[playerAddressLower],
-          allCoinImages: Object.keys(playerCoinImages)
-        })
         
-        // Create materials with same settings as OptimizedGoldCoin
         const materials = [
           new THREE.MeshStandardMaterial({
             map: createOptimizedTexture('edge'),
@@ -226,10 +211,13 @@ const BattleRoyaleUnified3DScene = ({
           })
         ]
 
-        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, 48)
+        // Detect device performance
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        const segments = isMobile ? 32 : 48
+        
+        const geometry = new THREE.CylinderGeometry(3, 3, 0.4, segments)
         const coin = new THREE.Mesh(geometry, materials)
         
-        // Position and scale coin
         const posData = coinPositions[i]
         coin.position.set(posData.x, posData.y, posData.z)
         coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
@@ -252,7 +240,6 @@ const BattleRoyaleUnified3DScene = ({
           power: 0
         }
       } else {
-        // Set null for empty slots
         coinsRef.current[i] = null
         coinStatesRef.current[i] = null
       }
@@ -283,87 +270,92 @@ const BattleRoyaleUnified3DScene = ({
       }
     }
 
-    // Animation loop
-    const animate = () => {
+    // Animation loop with adaptive frame rate
+    let lastFrameTime = 0
+    const targetFrameTime = 1000 / 30 // 30 FPS default
+
+    const animate = (currentTime) => {
       if (!sceneRef.current || !rendererRef.current) return
 
-      const currentTime = Date.now()
-
-      // Update each coin
-      coinsRef.current.forEach((coin, index) => {
-        if (!coin) return // Skip if no coin at this position
+      // Adaptive frame rate
+      const deltaTime = currentTime - lastFrameTime
+      
+      // Determine target FPS based on activity
+      let targetFPS = 30 // Default: 30 FPS
+      
+      const hasFlippingCoins = coinStatesRef.current.some(state => state?.isFlipping)
+      if (hasFlippingCoins) {
+        targetFPS = 60 // During flips: 60 FPS
+      }
+      
+      const frameInterval = 1000 / targetFPS
+      
+      if (deltaTime >= frameInterval) {
+        lastFrameTime = currentTime - (deltaTime % frameInterval)
         
-        const state = coinStatesRef.current[index]
-        if (!state) return // Skip if no state
-        
-        const player = players[index]
-        if (!player?.address) return // Skip if no player
-        
-        const posData = coinPositions[index]
+        const time = currentTime * 0.001
 
-        if (state.isFlipping) {
-          // Flip animation (from OptimizedGoldCoin logic)
-          const elapsed = currentTime - state.flipStartTime
-          const progress = Math.min(elapsed / state.flipDuration, 1)
+        // Update each coin
+        coinsRef.current.forEach((coin, index) => {
+          if (!coin) return
+          
+          const state = coinStatesRef.current[index]
+          if (!state) return
+          
+          const player = players[index]
+          if (!player?.address) return
+          
+          const posData = coinPositions[index]
 
-          // Easing
-          const easeOut = 1 - Math.pow(1 - progress, 3)
-
-          // Height animation
-          const heightProgress = Math.sin(progress * Math.PI)
-          const launchHeight = 5 + (state.power * 0.25)
-          coin.position.y = posData.y + (heightProgress * launchHeight)
-
-          // Rotation animation
-          const totalRotation = state.totalRotations || (10 * Math.PI * 2)
-          coin.rotation.x = state.startRotation.x + (totalRotation * easeOut * state.speed)
-
-          // Wobble
-          const wobbleAmount = 0.1 * Math.sin(elapsed * 0.01) * (1 - progress)
-          coin.rotation.y = Math.PI / 2 + wobbleAmount
-          coin.rotation.z = wobbleAmount * 0.5
-
-          // Complete flip
-          if (progress >= 1) {
-            state.isFlipping = false
-            coin.position.y = posData.y
+          if (state.isFlipping) {
+            // Flip animation
+            const elapsed = currentTime - state.flipStartTime
+            const progress = Math.min(elapsed / state.flipDuration, 1)
+            const easeOut = 1 - Math.pow(1 - progress, 3)
             
-            // Land on edge based on result
-            const finalRotation = state.flipResult === 'heads' ? 0 : Math.PI
-            const currentRotations = Math.floor(coin.rotation.x / (Math.PI * 2))
-            coin.rotation.x = currentRotations * Math.PI * 2 + finalRotation
-            coin.rotation.y = Math.PI / 2
-            coin.rotation.z = 0
-
-            console.log(`✅ Coin ${index} flip complete: ${state.flipResult}`)
+            const heightProgress = Math.sin(progress * Math.PI)
+            const launchHeight = 2.5
+            coin.position.y = posData.y + (heightProgress * launchHeight)
             
-            if (player?.address && onFlipComplete) {
-              onFlipComplete(player.address, state.flipResult)
+            const totalRotation = 10 * Math.PI * 2
+            coin.rotation.x = state.startRotation.x + (totalRotation * easeOut)
+            
+            const wobbleAmount = 0.1 * Math.sin(elapsed * 0.01) * (1 - progress)
+            coin.rotation.y = Math.PI / 2 + wobbleAmount
+            coin.rotation.z = wobbleAmount * 0.5
+
+            if (progress >= 1) {
+              state.isFlipping = false
+              coin.position.y = posData.y
+              
+              const finalRotation = state.flipResult === 'heads' ? 0 : Math.PI
+              const currentRotations = Math.floor(coin.rotation.x / (Math.PI * 2))
+              coin.rotation.x = currentRotations * Math.PI * 2 + finalRotation
+              coin.rotation.y = Math.PI / 2
+              coin.rotation.z = 0
+
+              if (player?.address && onFlipComplete) {
+                onFlipComplete(player.address, state.flipResult)
+              }
             }
+          } else {
+            // Idle animation - very slow
+            const baseScale = posData.scale
+            coin.scale.set(baseScale, 1.5 * baseScale, baseScale)
+            coin.position.y = posData.y
+            coin.rotation.x += 0.000017 // Very slow idle rotation
           }
-        } else if (state.isCharging) {
-          // Charging animation (from OptimizedGoldCoin)
-          const intensity = Math.min(1, state.power / 10)
-          const time = currentTime * 0.001
-          const pulseScale = 1 + Math.sin(time * 10) * 0.05 * intensity
-          const baseScale = posData.scale
-          coin.scale.set(pulseScale * baseScale, pulseScale * 1.5 * baseScale, pulseScale * baseScale)
-          coin.position.y = posData.y + Math.sin(time * 5) * 0.05 * intensity
-          coin.rotation.x += 0.01 * (1 + intensity * 0.5)
-        } else {
-          // Idle animation
-          const baseScale = posData.scale
-          coin.scale.set(baseScale, 1.5 * baseScale, baseScale)
-          coin.position.y = posData.y
-          coin.rotation.x += 0.0000165
-        }
-      })
+        })
 
-      renderer.render(scene, camera)
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera)
+        }
+      }
+      
       animationIdRef.current = requestAnimationFrame(animate)
     }
 
-    animate()
+    animate(0)
 
     // Handle window resize
     const handleResize = () => {
@@ -380,24 +372,25 @@ const BattleRoyaleUnified3DScene = ({
         cancelAnimationFrame(animationIdRef.current)
       }
       
-      // Cleanup
+      // Cleanup coins
       coinsRef.current.forEach(coin => {
         if (coin) {
-          coin.geometry.dispose()
+          if (coin.geometry) coin.geometry.dispose()
           if (Array.isArray(coin.material)) {
             coin.material.forEach(mat => {
-              if (mat.map) mat.map.dispose()
+              if (mat.map && !globalTextureCache.has(mat.map)) {
+                mat.map.dispose()
+              }
               mat.dispose()
             })
           }
         }
       })
       
-      renderer.dispose()
+      if (renderer) renderer.dispose()
       
-      Object.values(textureCache.current).forEach(texture => {
-        texture.dispose()
-      })
+      // Don't clear global texture cache - it persists across games
+      // Only clear local references
       textureCache.current = {}
       
       sceneRef.current = null
@@ -479,27 +472,39 @@ const BattleRoyaleUnified3DScene = ({
         }
         coinsRef.current[i] = null
         coinStatesRef.current[i] = null
-      } else if (player?.address && existingCoin && playerCoinImages[player.address.toLowerCase()]) {
-        // Update textures for existing player
+      } else if (player?.address && existingCoin) {
+        // Update textures for existing player - check if we have new images
         const playerAddressLower = player.address.toLowerCase()
         const images = playerCoinImages[playerAddressLower]
-        console.log(`🎯 Updating coin textures for player ${i}:`, {
-          address: player.address,
-          addressLower: playerAddressLower,
-          images: images,
-          allCoinImages: Object.keys(playerCoinImages)
-        })
         
-        if (existingCoin.material[1] && images.headsImage) {
-          if (existingCoin.material[1].map) existingCoin.material[1].map.dispose()
-          existingCoin.material[1].map = createOptimizedTexture('heads', images.headsImage)
-          existingCoin.material[1].needsUpdate = true
-        }
+        // Only update if we have new images to avoid unnecessary updates
+        if (images) {
+          console.log(`🎯 Updating coin textures for player ${i}:`, {
+            address: player.address,
+            addressLower: playerAddressLower,
+            images: images,
+            allCoinImages: Object.keys(playerCoinImages)
+          })
+          
+          // Update heads texture
+          if (existingCoin.material[1] && images.headsImage) {
+            if (existingCoin.material[1].map) {
+              existingCoin.material[1].map.dispose()
+            }
+            const newHeadsTexture = createOptimizedTexture('heads', images.headsImage)
+            existingCoin.material[1].map = newHeadsTexture
+            existingCoin.material[1].needsUpdate = true
+          }
 
-        if (existingCoin.material[2] && images.tailsImage) {
-          if (existingCoin.material[2].map) existingCoin.material[2].map.dispose()
-          existingCoin.material[2].map = createOptimizedTexture('tails', images.tailsImage)
-          existingCoin.material[2].needsUpdate = true
+          // Update tails texture
+          if (existingCoin.material[2] && images.tailsImage) {
+            if (existingCoin.material[2].map) {
+              existingCoin.material[2].map.dispose()
+            }
+            const newTailsTexture = createOptimizedTexture('tails', images.tailsImage)
+            existingCoin.material[2].map = newTailsTexture
+            existingCoin.material[2].needsUpdate = true
+          }
         }
       }
     }

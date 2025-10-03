@@ -1,6 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
-import * as THREE from 'three'
-import OptimizedGoldCoin from '../OptimizedGoldCoin'
+import React, { useState, useEffect, useMemo } from 'react'
 import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
 
 // Separate 2D Lobby Component
@@ -31,11 +29,9 @@ const Lobby2DDisplay = ({
     }}>
       {Array.from({ length: 6 }, (_, index) => {
         const player = players[index]
-        const isOccupied = !!player?.address  // ✅ FIX: Properly check if occupied
+        const isOccupied = !!player?.address
         const isCurrentUser = player?.address?.toLowerCase() === currentUserAddress?.toLowerCase()
         const coinSide = coinSides[player?.address] || 'heads'
-        
-        // ✅ FIX: Better canJoin check for this specific slot
         const canJoinThisSlot = canJoin && !isOccupied && !!currentUserAddress
         
         return (
@@ -58,28 +54,11 @@ const Lobby2DDisplay = ({
             onMouseEnter={() => setHoveredSlot(index)}
             onMouseLeave={() => setHoveredSlot(null)}
             onClick={() => {
-              console.log('🖱️ Slot clicked in Lobby2D:', {
-                index,
-                isOccupied,
-                canJoin,
-                canJoinThisSlot,
-                currentUserAddress,
-                player
-              })
-              
               if (canJoinThisSlot) {
                 onSlotClick(index)
-              } else {
-                console.log('❌ Cannot click slot:', { 
-                  canJoin, 
-                  canJoinThisSlot,
-                  isOccupied,
-                  hasAddress: !!currentUserAddress
-                })
               }
             }}
           >
-            {/* Rest of the slot rendering code stays the same */}
             <div style={{
               position: 'absolute',
               top: '0.5rem',
@@ -240,53 +219,17 @@ const BattleRoyale3DCoins = ({
   isJoining = false,
   coinSides = {},
   onCoinSideToggle = () => {},
-  onCoinChange = () => {},
-  onPowerRelease = () => {},
-  onPowerChargeStart = null,
-  onPowerChargeStop = null
+  onCoinChange = () => {}
 }) => {
-  // Refs
-  const mountRef = useRef(null)
-  const sceneRef = useRef(null)
-  const rendererRef = useRef(null)
-  const cameraRef = useRef(null)
-  const coinsRef = useRef([])
-  const animationIdRef = useRef(null)
-  const texturesRef = useRef({})
-  
-  // State
-  const [hoveredSlot, setHoveredSlot] = useState(null)
-  const [quality] = useState('high')
-  const [isSceneReady, setIsSceneReady] = useState(false)
-  const [localFlipStates, setLocalFlipStates] = useState(flipStates)
   const [selectedChoice, setSelectedChoice] = useState(null)
-  
-  // Sync localFlipStates with flipStates prop
-  useEffect(() => {
-    setLocalFlipStates(flipStates)
-  }, [flipStates])
   
   // Safe game phase check
   const safeGamePhase = gamePhase || 'filling'
   
   // Determine if we should use 3D or 2D display
   const shouldUse3D = useMemo(() => {
-    const use3D = safeGamePhase !== 'filling' && safeGamePhase !== 'waiting_players'
-    console.log('Should use 3D:', use3D, 'Game phase:', safeGamePhase)
-    return use3D
+    return safeGamePhase !== 'filling' && safeGamePhase !== 'waiting_players'
   }, [safeGamePhase])
-  
-  // Memoized callback
-  const safeOnFlipComplete = useCallback((playerAddress, result) => {
-    if (typeof onFlipComplete === 'function') {
-      onFlipComplete(playerAddress, result)
-    }
-  }, [onFlipComplete])
-  
-  // Set scene ready since we're using individual OptimizedGoldCoin components
-  useEffect(() => {
-    setIsSceneReady(true)
-  }, [])
 
   // Reset choice when game phase changes
   useEffect(() => {
@@ -313,7 +256,7 @@ const BattleRoyale3DCoins = ({
     )
   }
   
-  // 3D Game Display - Two column layout with unified scene on left, interactive panel on right
+  // 3D Game Display
   return (
     <div style={{ 
       position: 'relative', 
@@ -352,7 +295,7 @@ const BattleRoyale3DCoins = ({
           {safeGamePhase === 'completed' && 'Game Over!'}
         </div>
         
-        {/* Prominent countdown timer */}
+        {/* Countdown timer */}
         {safeGamePhase === 'round_active' && serverState?.roundCountdown > 0 && (
           <div style={{
             background: serverState.roundCountdown <= 5 ? 'rgba(255, 20, 147, 0.2)' : 'rgba(0, 191, 255, 0.2)',
@@ -376,10 +319,10 @@ const BattleRoyale3DCoins = ({
           players={players}
           gamePhase={safeGamePhase}
           serverState={serverState}
-          flipStates={localFlipStates}
+          flipStates={flipStates}
           playerCoinImages={playerCoinImages}
           currentUserAddress={currentUserAddress}
-          onFlipComplete={safeOnFlipComplete}
+          onFlipComplete={onFlipComplete}
         />
       </div>
 
@@ -410,34 +353,6 @@ const BattleRoyale3DCoins = ({
         }}>
           🎮 YOUR CONTROLS
         </div>
-
-        {/* Large Interactive 3D Coin */}
-        {currentUserAddress && (
-          <div style={{
-            width: '300px',
-            height: '300px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <OptimizedGoldCoin
-              size={300}
-              headsImage={playerCoinImages[currentUserAddress]?.headsImage || null}
-              tailsImage={playerCoinImages[currentUserAddress]?.tailsImage || null}
-              customHeadsImage={playerCoinImages[currentUserAddress]?.headsImage || null}
-              customTailsImage={playerCoinImages[currentUserAddress]?.tailsImage || null}
-              isFlipping={localFlipStates[currentUserAddress]?.isFlipping || false}
-              flipResult={localFlipStates[currentUserAddress]?.flipResult}
-              creatorPower={serverState?.players?.[currentUserAddress]?.power || 1}
-              onFlipComplete={(result) => {
-                console.log('✅ Your coin flip complete:', result)
-                if (onFlipComplete) {
-                  onFlipComplete(currentUserAddress, result)
-                }
-              }}
-            />
-          </div>
-        )}
 
         {/* Player Address */}
         <div style={{
@@ -504,7 +419,6 @@ const BattleRoyale3DCoins = ({
           </div>
         )}
 
-
         {/* Flip Button */}
         {safeGamePhase === 'round_active' && (
           <button
@@ -545,11 +459,10 @@ const BattleRoyale3DCoins = ({
                   choice: selectedChoice
                 })
                 
-                // Immediately execute flip with default power
+                // Execute flip
                 window.socketService.emit('battle_royale_execute_flip', {
                   gameId: serverState?.gameId,
-                  address: currentUserAddress,
-                  power: 5 // Default power level
+                  address: currentUserAddress
                 })
               }
             }}

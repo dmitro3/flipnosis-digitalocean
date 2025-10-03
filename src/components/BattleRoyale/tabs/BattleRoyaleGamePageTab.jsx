@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import styled from '@emotion/styled'
 import { ethers } from 'ethers'
 import { useNavigate } from 'react-router-dom'
@@ -240,23 +240,6 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   const [serverGamePhase, setServerGamePhase] = useState('filling')
   const [serverFlipStates, setServerFlipStates] = useState({})
 
-  // Power charge handlers
-  const handlePowerChargeStart = useCallback(() => {
-    console.log('🔋 Power charge started')
-    socketService.emit('battle_royale_charge_start', {
-      gameId,
-      address
-    })
-  }, [gameId, address])
-
-  const handlePowerChargeStop = useCallback((power) => {
-    console.log('🔋 Power charge stopped with power:', power)
-    socketService.emit('battle_royale_charge_stop', {
-      gameId,
-      address,
-      power: power || 5
-    })
-  }, [gameId, address])
 
   // Load coin images for a player
   const loadPlayerCoinImages = React.useCallback(async (playerAddress, coinChoice) => {
@@ -450,8 +433,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       if (!creatorAlreadyAdded) {
         const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
         
-        // Find first empty slot
-        const emptySlotIndex = players.findIndex(p => p === null)
+        // Find first empty slot (prefer slot 0 for creator)
+        let emptySlotIndex = players.findIndex(p => p === null)
+        if (emptySlotIndex === -1 && players[0] === null) {
+          emptySlotIndex = 0
+        }
+        
         if (emptySlotIndex !== -1) {
           setPlayers(prev => {
             const newPlayers = [...prev]
@@ -489,14 +476,18 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   }, [gameData?.creator, gameData?.creator_participates]) // FIXED: Remove players dependency to prevent infinite loop
 
   // Load coin images for all existing players
+  const loadedAddresses = useRef(new Set())
+
   useEffect(() => {
-    players.forEach((player, index) => {
-      if (player && player.address && !playerCoinImages[player.address]) {
-        const coinChoice = playerCoins[player.address] || player.coin || { id: 'plain', type: 'default', name: 'Classic' }
-        loadPlayerCoinImages(player.address, coinChoice)
+    players.forEach((player) => {
+      const addr = player?.address?.toLowerCase()
+      if (addr && !loadedAddresses.current.has(addr)) {
+        loadedAddresses.current.add(addr)
+        const coinChoice = playerCoins[addr] || player.coin || { id: 'plain', type: 'default', name: 'Classic' }
+        loadPlayerCoinImages(addr, coinChoice)
       }
     })
-  }, [players, playerCoins, playerCoinImages, loadPlayerCoinImages])
+  }, [players, playerCoins, loadPlayerCoinImages])
 
   // Check if current user can join
   const userAlreadyJoined = address ? players.some(player => player?.address?.toLowerCase() === address?.toLowerCase()) : false
@@ -520,7 +511,9 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                   currentPlayers < 6 && 
                   (!isCreator || isCreatorAndParticipating)
 
-  console.log('🎮 Join eligibility:', {
+  // Remove infinite logging - only log when values change
+  const prevEligibilityRef = useRef()
+  const currentEligibility = {
     address,
     hasAddress: !!address,
     userAlreadyJoined,
@@ -530,7 +523,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     creatorParticipates,
     isCreatorAndParticipating,
     canJoin
-  })
+  }
+  
+  if (!prevEligibilityRef.current || JSON.stringify(prevEligibilityRef.current) !== JSON.stringify(currentEligibility)) {
+    console.log('🎮 Join eligibility:', currentEligibility)
+    prevEligibilityRef.current = currentEligibility
+  }
   
   // Calculate the entry fee for joining players (1/6th of total prize)
   const totalPrize = parseFloat(gameData.entryFee || gameData.entry_fee || 0)
@@ -656,38 +654,39 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       if (isCurrentUser || isCreatorAtSlot) {
         const playerAddress = playerAtSlot.address
         
-        // Update the player's coin choice
-        setPlayerCoins(prev => ({
-          ...prev,
-          [playerAddress]: coin
-        }))
-        
-        // Update the player object in the slot
-        const newPlayers = [...players]
-        if (newPlayers[selectedSlot]) {
-          newPlayers[selectedSlot] = {
-            ...newPlayers[selectedSlot],
-            coin: coin
-          }
-          setPlayers(newPlayers)
-        }
-        
-        // Load coin images for the new coin choice
-        loadPlayerCoinImages(playerAddress, coin)
-        
-        // Send coin update to server
+        // Send coin update to server FIRST to ensure consistency
         try {
           socketService.emit('battle_royale_update_coin', {
             gameId,
-            address,
+            address: playerAddress, // Use player address, not current user address
             coinData: coin
           })
           console.log('🪙 Sent coin update to server:', coin)
+          
+          // Update local state immediately for better UX
+          setPlayerCoins(prev => ({
+            ...prev,
+            [playerAddress]: coin
+          }))
+          
+          // Update the player object in the slot
+          const newPlayers = [...players]
+          if (newPlayers[selectedSlot]) {
+            newPlayers[selectedSlot] = {
+              ...newPlayers[selectedSlot],
+              coin: coin
+            }
+            setPlayers(newPlayers)
+          }
+          
+          // Load coin images for the new coin choice
+          loadPlayerCoinImages(playerAddress, coin)
+          
+          showToast(`Coin changed to ${coin.name}`, 'success')
         } catch (error) {
           console.error('Error sending coin update to server:', error)
+          showToast('Failed to update coin', 'error')
         }
-        
-        showToast(`Coin changed to ${coin.name}`, 'success')
       } else {
         console.log('🪙 Cannot change coin - not the player at this slot')
         showToast('You can only change your own coin', 'error')
