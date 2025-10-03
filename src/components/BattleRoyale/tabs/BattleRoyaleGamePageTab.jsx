@@ -345,11 +345,16 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         
         setGameStatus(newGameStatus)
         
-        // Load coin images
+        // Load coin images and update local playerCoins state
         if (data.players && mounted) {
           Object.entries(data.players).forEach(([addrKey, playerVal]) => {
             if (playerVal?.coin) {
               loadPlayerCoinImages(addrKey, playerVal.coin)
+              // Update local playerCoins state to sync with server
+              setPlayerCoins(prev => ({
+                ...prev,
+                [addrKey]: playerVal.coin
+              }))
             }
           })
         }
@@ -421,7 +426,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     }
   }, [])
 
-  // Initialize creator when game loads (only if creator participates)
+  // Initialize creator when game loads (only if creator participates) - FIXED: Remove infinite loop
   useEffect(() => {
     // Check creator participation - handle both boolean and integer (0/1) from database
     const creatorParticipates = gameData?.creator_participates === true || 
@@ -440,24 +445,26 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     
     // Only initialize if creator participates AND we haven't already initialized
     if (gameData && gameData.creator && creatorParticipates) {
-      const newPlayers = [...players]
-      const creatorAlreadyAdded = newPlayers.some(p => p?.address?.toLowerCase() === gameData.creator?.toLowerCase())
+      const creatorAlreadyAdded = players.some(p => p?.address?.toLowerCase() === gameData.creator?.toLowerCase())
       
       if (!creatorAlreadyAdded) {
         const defaultCoin = { id: 'plain', type: 'default', name: 'Classic' }
         
         // Find first empty slot
-        const emptySlotIndex = newPlayers.findIndex(p => p === null)
+        const emptySlotIndex = players.findIndex(p => p === null)
         if (emptySlotIndex !== -1) {
-          newPlayers[emptySlotIndex] = {
-            address: gameData.creator,
-            joinedAt: new Date().toISOString(),
-            coin: defaultCoin,
-            isCreator: true,
-            entryPaid: true
-          }
+          setPlayers(prev => {
+            const newPlayers = [...prev]
+            newPlayers[emptySlotIndex] = {
+              address: gameData.creator,
+              joinedAt: new Date().toISOString(),
+              coin: defaultCoin,
+              isCreator: true,
+              entryPaid: true
+            }
+            return newPlayers
+          })
           
-          setPlayers(newPlayers)
           setCurrentPlayers(prev => Math.max(prev, 1))
           setPlayerCoins(prev => ({
             ...prev,
@@ -479,7 +486,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     } else {
       console.log('🪙 Creator will NOT participate in this game')
     }
-  }, [gameData?.creator, gameData?.creator_participates]) // Only re-run when these change
+  }, [gameData?.creator, gameData?.creator_participates]) // FIXED: Remove players dependency to prevent infinite loop
 
   // Load coin images for all existing players
   useEffect(() => {

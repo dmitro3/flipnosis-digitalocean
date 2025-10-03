@@ -40,12 +40,24 @@ const BattleRoyaleUnified3DScene = ({
       return textureCache.current[cacheKey]
     }
 
-    if (customImage) {
-      const loader = new THREE.TextureLoader()
-      const texture = loader.load(customImage)
-      texture.colorSpace = THREE.SRGBColorSpace
-      textureCache.current[cacheKey] = texture
-      return texture
+    if (customImage && customImage !== '/coins/plainh.png' && customImage !== '/coins/plaint.png') {
+      try {
+        const loader = new THREE.TextureLoader()
+        const texture = loader.load(
+          customImage,
+          undefined, // onLoad
+          undefined, // onProgress
+          (error) => {
+            console.error(`❌ Failed to load texture: ${customImage}`, error)
+          }
+        )
+        texture.colorSpace = THREE.SRGBColorSpace
+        textureCache.current[cacheKey] = texture
+        return texture
+      } catch (error) {
+        console.error(`❌ Error loading custom texture: ${customImage}`, error)
+        // Fall through to default texture
+      }
     }
 
     const size = 512
