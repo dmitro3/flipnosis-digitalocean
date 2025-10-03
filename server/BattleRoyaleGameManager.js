@@ -146,6 +146,11 @@ class BattleRoyaleGameManager {
     game.lastActivity = Date.now()
 
     console.log(`✅ Creator ${creatorAddress} added as first player in game ${gameId}`)
+    
+    // ADD THIS: Force a state update to be broadcast
+    // Store a flag that tells socket handlers to broadcast this
+    game.needsStateBroadcast = true
+    
     return true
   }
 
@@ -218,17 +223,43 @@ class BattleRoyaleGameManager {
     game.startedAt = new Date().toISOString()
     game.lastActivity = Date.now()
 
+    console.log(`🎮 Starting countdown for Battle Royale: ${gameId}`)
+
     if (broadcastFn) {
+      // Send initial countdown event
       broadcastFn(`br_${gameId}`, 'battle_royale_starting', {
         gameId,
-        countdown: 3,
-        message: 'Battle Royale starting in 3 seconds!'
+        countdown: 10,
+        message: 'Battle Royale starting in 10 seconds!'
       })
+      
+      // Broadcast state update so UI switches to countdown view
+      const fullState = this.getFullGameState(gameId)
+      broadcastFn(`br_${gameId}`, 'battle_royale_state_update', fullState)
     }
 
-    setTimeout(() => {
-      this.startNextRound(gameId, broadcastFn)
-    }, 3000)
+    // CREATE A VISIBLE COUNTDOWN (10 seconds)
+    let countdown = 10
+    const countdownInterval = setInterval(() => {
+      countdown--
+      
+      if (broadcastFn) {
+        broadcastFn(`br_${gameId}`, 'battle_royale_countdown', {
+          gameId,
+          countdown,
+          message: `Game starting in ${countdown}...`
+        })
+      }
+      
+      if (countdown <= 0) {
+        clearInterval(countdownInterval)
+        console.log(`⏰ Countdown complete, starting first round for: ${gameId}`)
+        this.startNextRound(gameId, broadcastFn)
+      }
+    }, 1000)
+
+    // Store interval for cleanup
+    this.gameTimers.set(`${gameId}_countdown`, countdownInterval)
 
     return true
   }
@@ -517,6 +548,7 @@ class BattleRoyaleGameManager {
       
       currentRound: game.currentRound,
       roundCountdown: game.roundCountdown,
+      startCountdown: game.startCountdown || null,
       
       winner: game.winner,
       eliminationHistory: game.eliminationHistory,

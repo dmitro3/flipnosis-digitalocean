@@ -585,14 +585,13 @@ const BattleRoyaleUnified3DScene = ({
 
       if (!state || !coin) return
 
-      // Update state with flip data
       state.isFlipping = true
       state.flipStartTime = Date.now()
-      state.flipDuration = coinState.flipDuration || 2000
+      state.flipDuration = 2000
       state.flipResult = flipResult
-      state.totalRotations = coinState.totalRotations || (10 * Math.PI * 2)
-      state.speed = coinState.powerUsed || 1
-      state.power = coinState.powerUsed || 1
+      state.totalRotations = 10 * Math.PI * 2
+      state.speed = 1
+      state.power = 1
       state.startRotation = {
         x: coin.rotation.x,
         y: coin.rotation.y,
@@ -602,15 +601,16 @@ const BattleRoyaleUnified3DScene = ({
       console.log(`🎲 Coin ${playerIndex} starting flip animation: ${flipResult}`)
     }
 
-    // This would need to be connected via socket
     if (typeof window !== 'undefined' && window.socketService) {
+      console.log('✅ Registering flip listener (one time)')
       window.socketService.on('battle_royale_player_flipped', handlePlayerFlipped)
 
       return () => {
+        console.log('🧹 Cleaning up flip listener')
         window.socketService.off('battle_royale_player_flipped', handlePlayerFlipped)
       }
     }
-  }, [players])
+  }, []) // EMPTY DEPENDENCY ARRAY - only register once!
 
   return (
     <div

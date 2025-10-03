@@ -290,10 +290,30 @@ const BattleRoyale3DCoins = ({
           textAlign: 'center',
           boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)'
         }}>
-          {safeGamePhase === 'starting' && 'Game Starting...'}
-          {safeGamePhase === 'round_active' && `Round Active! ${serverState?.roundCountdown ? `(${serverState.roundCountdown}s)` : ''}`}
+          {safeGamePhase === 'filling' && 'Waiting for Players...'}
+          {safeGamePhase === 'starting' && `Game Starting! ${serverState?.startCountdown || ''}`}
+          {safeGamePhase === 'round_active' && `Round ${serverState?.currentRound || 1} Active!`}
           {safeGamePhase === 'completed' && 'Game Over!'}
         </div>
+
+        {/* Countdown timer for game start */}
+        {safeGamePhase === 'starting' && (
+          <div style={{
+            background: 'rgba(255, 20, 147, 0.2)',
+            color: '#ff1493',
+            padding: '2rem 3rem',
+            borderRadius: '1rem',
+            border: '3px solid #ff1493',
+            fontSize: '4rem',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            textShadow: '0 0 20px rgba(255, 20, 147, 0.8)',
+            animation: 'pulse 0.5s ease-in-out infinite',
+            boxShadow: '0 0 30px rgba(255, 20, 147, 0.5)'
+          }}>
+            {serverState?.startCountdown || 10}
+          </div>
+        )}
         
         {/* Countdown timer */}
         {safeGamePhase === 'round_active' && serverState?.roundCountdown > 0 && (

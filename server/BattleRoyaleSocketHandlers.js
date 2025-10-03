@@ -24,6 +24,13 @@ class BattleRoyaleSocketHandlers {
     const fullState = battleRoyaleManager.getFullGameState(gameId)
     socket.emit('battle_royale_state_update', fullState)
     
+    // CHECK: If game needs state broadcast (creator just joined)
+    if (game.needsStateBroadcast) {
+      console.log('📢 Broadcasting creator join to all in room')
+      io.to(`br_${gameId}`).emit('battle_royale_state_update', fullState)
+      game.needsStateBroadcast = false
+    }
+    
     console.log(`✅ ${address} joined Battle Royale room ${gameId}`)
   }
 

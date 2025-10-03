@@ -289,8 +289,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       setServerState(data)
       
       // Update game phase from server
-      if (data.gamePhase) {
-        setServerGamePhase(data.gamePhase)
+      if (data.phase) {
+        setServerGamePhase(data.phase)
       }
       
       // Update flip states from server
@@ -318,11 +318,11 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         
         // Update game status
         let newGameStatus = 'filling'
-        if (data.gamePhase === 'starting' || data.gamePhase === 'revealing_target') {
+        if (data.phase === 'starting') {
           newGameStatus = 'starting'
-        } else if (data.gamePhase && data.gamePhase !== 'filling' && data.gamePhase !== 'waiting_players') {
+        } else if (data.phase && data.phase !== 'filling' && data.phase !== 'waiting_players') {
           newGameStatus = 'in_progress'
-        } else if (data.gamePhase === 'game_complete') {
+        } else if (data.phase === 'completed') {
           newGameStatus = 'completed'
         }
         
@@ -361,6 +361,23 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       console.log('📊 Game status updated to: starting')
     }
 
+    // ADD THIS NEW HANDLER:
+    const onCountdown = (data) => {
+      if (!mounted) return
+      console.log(`⏰ Countdown: ${data.countdown}`)
+      
+      // Update server state with countdown
+      setServerState(prev => ({
+        ...prev,
+        startCountdown: data.countdown
+      }))
+      
+      // Show countdown in toast at 5, 3, 2, 1
+      if (data.countdown <= 5) {
+        showToast(data.message, 'info')
+      }
+    }
+
     const setup = async () => {
       try {
         // Only connect if not already connected to the same game
@@ -370,6 +387,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         connected = true
         socketService.on('battle_royale_state_update', onStateUpdate)
         socketService.on('battle_royale_starting', onGameStarting)
+        socketService.on('battle_royale_countdown', onCountdown) // ADD THIS
         // Join room and request state
         socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
         socketService.emit('request_battle_royale_state', { gameId })
@@ -385,6 +403,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       if (connected) {
         socketService.off('battle_royale_state_update', onStateUpdate)
         socketService.off('battle_royale_starting', onGameStarting)
+        socketService.off('battle_royale_countdown', onCountdown) // ADD THIS
       }
     }
   }, [gameId, address]) // Remove dependencies causing infinite loop
@@ -641,32 +660,37 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
   const handleCoinSelect = (coin) => {
     console.log('🪙 Coin selected:', coin, 'Selected slot:', selectedSlot, 'Current address:', address)
-    console.log('🪙 Players array:', players)
-    console.log('🪙 Player at selected slot:', players[selectedSlot])
     
     if (selectedSlot !== null) {
       const playerAtSlot = players[selectedSlot]
       const isCurrentUser = playerAtSlot?.address?.toLowerCase() === address?.toLowerCase()
       const isCreatorAtSlot = playerAtSlot?.isCreator && address?.toLowerCase() === gameData?.creator?.toLowerCase()
       
-      console.log('🪙 Is current user:', isCurrentUser, 'Is creator at slot:', isCreatorAtSlot)
-      
       if (isCurrentUser || isCreatorAtSlot) {
         const playerAddress = playerAtSlot.address
         
-        // Send coin update to server FIRST to ensure consistency
+        // Update server FIRST
         try {
           socketService.emit('battle_royale_update_coin', {
             gameId,
-            address: playerAddress, // Use player address, not current user address
+            address: playerAddress,
             coinData: coin
           })
           console.log('🪙 Sent coin update to server:', coin)
           
-          // Update local state immediately for better UX
+          // Update local state IMMEDIATELY for instant feedback
           setPlayerCoins(prev => ({
             ...prev,
-            [playerAddress]: coin
+            [playerAddress.toLowerCase()]: coin
+          }))
+          
+          // Force update player coin images IMMEDIATELY
+          setPlayerCoinImages(prev => ({
+            ...prev,
+            [playerAddress.toLowerCase()]: {
+              headsImage: coin.headsImage || '/coins/plainh.png',
+              tailsImage: coin.tailsImage || '/coins/plaint.png'
+            }
           }))
           
           // Update the player object in the slot
@@ -679,17 +703,16 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             setPlayers(newPlayers)
           }
           
-          // Load coin images for the new coin choice
-          loadPlayerCoinImages(playerAddress, coin)
+          // Load the actual images asynchronously (for custom coins)
+          if (coin.type === 'custom') {
+            loadPlayerCoinImages(playerAddress, coin)
+          }
           
           showToast(`Coin changed to ${coin.name}`, 'success')
         } catch (error) {
           console.error('Error sending coin update to server:', error)
           showToast('Failed to update coin', 'error')
         }
-      } else {
-        console.log('🪙 Cannot change coin - not the player at this slot')
-        showToast('You can only change your own coin', 'error')
       }
     }
     setShowCoinSelector(false)
