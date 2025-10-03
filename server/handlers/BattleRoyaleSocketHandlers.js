@@ -192,6 +192,12 @@ class BattleRoyaleSocketHandlers {
         const gameData = await dbService.getBattleRoyaleGame(gameId)
         if (gameData && gameData.status === 'filling') {
           game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
+          
+          // If creator wants to participate, add them to the game
+          if (gameData.creator_participates === true || gameData.creator_participates === 1) {
+            battleRoyaleManager.addCreatorAsPlayer(gameId, gameData.creator)
+            console.log(`✅ Creator ${gameData.creator} added to game ${gameId} on load`)
+          }
         }
       } catch (error) {
         console.error('❌ Error loading Battle Royale game:', error)
@@ -277,7 +283,26 @@ class BattleRoyaleSocketHandlers {
     console.log(`🚀 Early start requested by ${address} for game ${gameId}`)
     
     try {
-      const game = battleRoyaleManager.getGame(gameId)
+      let game = battleRoyaleManager.getGame(gameId)
+      
+      // If game not in memory, try to load from database
+      if (!game && dbService) {
+        try {
+          const gameData = await dbService.getBattleRoyaleGame(gameId)
+          if (gameData && gameData.status === 'filling') {
+            game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
+            
+            // If creator wants to participate, add them to the game
+            if (gameData.creator_participates === true || gameData.creator_participates === 1) {
+              battleRoyaleManager.addCreatorAsPlayer(gameId, gameData.creator)
+              console.log(`✅ Creator ${gameData.creator} added to game ${gameId} on early start load`)
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error loading Battle Royale game for early start:', error)
+        }
+      }
+      
       if (!game) {
         console.error(`❌ Game not found: ${gameId}`)
         socket.emit('battle_royale_error', { message: 'Game not found' })
