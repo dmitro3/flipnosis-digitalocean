@@ -747,13 +747,12 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     })
   })
 
-  // Create game with NFT deposit from listing
-  router.post('/listings/:listingId/create-game-with-nft', async (req, res) => {
+  // Create Battle Royale game from listing
+  router.post('/listings/:listingId/create-battle-royale', async (req, res) => {
     const { listingId } = req.params
-    const { creator } = req.body
+    const { creator, entryFee, serviceFee, maxPlayers = 6 } = req.body
     
     try {
-      // Get listing details
       const listing = await new Promise((resolve, reject) => {
         db.get('SELECT * FROM listings WHERE id = ?', [listingId], (err, result) => {
           if (err) reject(err)
@@ -765,41 +764,30 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
         return res.status(404).json({ error: 'Listing not found' })
       }
       
-      if (listing.creator !== creator) {
-        return res.status(403).json({ error: 'Only listing creator can create game' })
-      }
+      const gameId = `br_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
       
-      const gameId = `game_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
-      const blockchainGameId = ethers.id(gameId)
-      const depositDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours for challenger
-      
-      // Create game record with awaiting_challenger status (NFT will be deposited, waiting for challenger)
+      // Create Battle Royale game
       await new Promise((resolve, reject) => {
         db.run(`
-          INSERT INTO games (
-            id, listing_id, blockchain_game_id, creator,
-            nft_contract, nft_token_id, nft_name, nft_image, nft_collection,
-            final_price, price_usd, coin_data, status, deposit_deadline, creator_deposited, challenger_deposited,
-            game_type, chain, payment_token
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO battle_royale_games (
+            id, creator, nft_contract, nft_token_id, nft_name, nft_image, 
+            nft_collection, entry_fee, service_fee, max_players, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'filling')
         `, [
-          gameId, listingId, blockchainGameId, creator,
-          listing.nft_contract, listing.nft_token_id, listing.nft_name, listing.nft_image, listing.nft_collection,
-          listing.asking_price, // final_price (required field)
-          listing.asking_price, // price_usd (for compatibility)
-          listing.coin_data, 'awaiting_challenger', depositDeadline, false, false,
-          'nft-vs-crypto', 'base', 'ETH'
+          gameId, creator, listing.nft_contract, listing.nft_token_id,
+          listing.nft_name, listing.nft_image, listing.nft_collection,
+          entryFee, serviceFee, maxPlayers
         ], function(err) {
           if (err) reject(err)
           else resolve()
         })
       })
       
-      console.log(`✅ Game created with NFT deposit: ${gameId}`)
+      console.log(`✅ Battle Royale game created: ${gameId}`)
       res.json({ success: true, gameId })
     } catch (error) {
-      console.error('❌ Error creating game with NFT:', error)
-      res.status(500).json({ error: error.message || 'Database error' })
+      console.error('❌ Error creating Battle Royale game:', error)
+      res.status(500).json({ error: error.message })
     }
   })
 
@@ -964,204 +952,61 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     });
   });
 
-  // Get game
+  // Get game (Battle Royale only - 1v1 games removed)
   router.get('/games/:gameId', (req, res) => {
     const { gameId } = req.params
     
-    console.log(`🔍 API: Fetching game data for gameId: ${gameId}`)
+    console.log(`🔍 API: Fetching Battle Royale game data for gameId: ${gameId}`)
     
-    db.get('SELECT * FROM games WHERE id = ? OR blockchain_game_id = ?', [gameId, gameId], (err, game) => {
+    // Only handle Battle Royale games
+    if (!gameId.startsWith('br_')) {
+      return res.status(404).json({ error: 'Game not found - only Battle Royale games supported' })
+    }
+    
+    // Check if it's a Battle Royale game
+    db.get('SELECT * FROM battle_royale_games WHERE id = ?', [gameId], (err, game) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' })
       }
       if (!game) {
-        // Check if it's a listing
-        db.get('SELECT * FROM listings WHERE id = ?', [gameId], (err, listing) => {
-          if (err || !listing) {
-            return res.status(404).json({ error: 'Game/Listing not found' })
-          }
-          // Return listing as game-like structure
-          let coinData = null
-          try {
-            coinData = listing.coin_data ? JSON.parse(listing.coin_data) : null
-          } catch (e) {
-            console.warn('Failed to parse coin_data for listing:', listing.id, e)
-          }
-          
-          res.json({
-            id: listing.id,
-            type: 'listing',
-            game_type: 'nft-vs-crypto',
-            creator: listing.creator,
-            creator_address: listing.creator, // Ensure both fields exist
-            nft_contract: listing.nft_contract,
-            nft_token_id: listing.nft_token_id,
-            nft_name: listing.nft_name,
-            nft_image: listing.nft_image,
-            nft_collection: listing.nft_collection,
-            asking_price: listing.asking_price,
-            price_usd: listing.asking_price,
-            coin_data: listing.coin_data,
-            coinData: coinData,
-            status: listing.status === 'open' ? 'awaiting_challenger' : listing.status,
-            creator_deposited: true,
-            challenger_deposited: false,
-            listing_id: listing.id
-          })
-        })
-        return
+        return res.status(404).json({ error: 'Battle Royale game not found' })
       }
       
-      // Ensure both creator and creator_address fields exist
-      if (!game.creator_address && game.creator) {
-        game.creator_address = game.creator
-      }
-      if (!game.creator && game.creator_address) {
-        game.creator = game.creator_address
-      }
-      
-      // Parse coin_data if it's a string
-      let coinData = null
-      try {
-        coinData = game.coin_data ? JSON.parse(game.coin_data) : null
-      } catch (e) {
-        console.warn('Failed to parse coin_data for game:', gameId, e)
-      }
-      
-      // Add parsed coin data to response
-      game.coinData = coinData
-      
-      console.log(`🔍 API: Game data found - challenger: ${game.challenger}, status: ${game.status}`)
-      
-      // Get round information and accepted offer data
-      db.all('SELECT * FROM game_rounds WHERE game_id = ? ORDER BY round_number', [gameId], (err, rounds) => {
-        game.rounds = rounds || []
-        
-        // Calculate wins
-        game.creator_wins = rounds.filter(r => r.round_winner === game.creator).length
-        game.challenger_wins = rounds.filter(r => r.round_winner === game.challenger).length
-        
-        // If there's a challenger, get their details from the accepted offer
-        if (game.challenger) {
-          db.get(`
-            SELECT challenger_name, challenger_image 
-            FROM offers 
-            WHERE listing_id = ? AND offerer_address = ? AND status = 'accepted'
-            ORDER BY created_at DESC 
-            LIMIT 1
-          `, [game.listing_id, game.challenger], (err, offer) => {
-            if (!err && offer) {
-              game.challenger_name = offer.challenger_name
-              game.challenger_image = offer.challenger_image
-            }
-            res.json(game)
-          })
-        } else {
-          res.json(game)
-        }
+      // Return Battle Royale game data
+      res.json({
+        id: game.id,
+        type: 'battle_royale',
+        game_type: 'battle_royale',
+        creator: game.creator,
+        creator_address: game.creator,
+        nft_contract: game.nft_contract,
+        nft_token_id: game.nft_token_id,
+        nft_name: game.nft_name,
+        nft_image: game.nft_image,
+        nft_collection: game.nft_collection,
+        entry_fee: game.entry_fee,
+        service_fee: game.service_fee,
+        max_players: game.max_players,
+        current_players: game.current_players,
+        status: game.status,
+        created_at: game.created_at,
+        updated_at: game.updated_at
       })
     })
   })
 
-  // Get all games
+  // Get all games (Battle Royale only - 1v1 games removed)
   router.get('/games', (req, res) => {
-    db.all('SELECT * FROM games ORDER BY created_at DESC', (err, games) => {
+    db.all('SELECT * FROM battle_royale_games ORDER BY created_at DESC', (err, games) => {
       if (err) {
         return res.status(500).json({ error: 'Database error' })
       }
-      res.json(games)
+      res.json(games || [])
     })
   })
 
-  // Update the deposit-confirmed endpoint to handle the flow better
-  router.post('/games/:gameId/deposit-confirmed', (req, res) => {
-    const { gameId } = req.params
-    const { player, assetType, transactionHash } = req.body
-    
-    db.get('SELECT * FROM games WHERE id = ?', [gameId], async (err, game) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' })
-      }
-      
-      if (!game) {
-        return res.status(404).json({ error: 'Game not found' })
-      }
-      
-      const isCreator = player === game.creator
-      
-      if (assetType === 'nft' && isCreator) {
-        // Update game status to waiting for challenger and mark NFT as deposited
-        db.run(`
-          UPDATE games 
-          SET creator_deposited = true, 
-              nft_deposited = true,
-              nft_deposit_time = CURRENT_TIMESTAMP,
-              nft_deposit_hash = ?,
-              nft_deposit_verified = true,
-              last_nft_check_time = CURRENT_TIMESTAMP,
-              status = 'awaiting_challenger',
-              deposit_deadline = datetime('now', '+24 hours')
-          WHERE id = ?
-        `, [transactionHash, gameId], (err) => {
-          if (err) {
-            return res.status(500).json({ error: 'Database error' })
-          }
-          
-          console.log('✅ NFT deposited and verified, game now awaiting challenger')
-          
-          // Broadcast to room
-          gameServer.io.to(gameId).emit('offer_accepted', {
-            type: 'nft_deposited',
-            gameId,
-            message: 'NFT deposited! Game is now open for challengers.'
-          })
-          
-          res.json({ success: true })
-        })
-      } else if (assetType === 'eth' && !isCreator) {
-        // Challenger deposited crypto
-        console.log(`💰 Challenger ${player} deposited ETH for game ${gameId}`)
-        
-        db.run(`
-          UPDATE games 
-          SET challenger_deposited = true,
-              status = 'active'
-          WHERE id = ?
-        `, [gameId], (err) => {
-          if (err) {
-            console.error('❌ Database error updating challenger deposit:', err)
-            return res.status(500).json({ error: 'Database error' })
-          }
-          
-          console.log('🎮 Both assets deposited - game is now active!')
-          console.log(`✅ Updated game ${gameId}: challenger_deposited = true, status = active`)
-          
-          // Battle Royale games are handled by BattleRoyaleGameManager
-          // No need to update 1v1 game state anymore
-          
-          // Notify all players
-          gameServer.io.to(gameId).emit('offer_accepted', {
-            type: 'game_started',
-            gameId,
-            message: 'Both assets deposited - game starting!'
-          })
-          
-          // Also broadcast deposit received message
-          gameServer.io.to(gameId).emit('offer_accepted', {
-            type: 'deposit_received',
-            gameId,
-            player,
-            assetType: 'eth',
-            bothDeposited: true
-          })
-          
-          res.json({ success: true })
-        })
-      } else {
-        res.status(400).json({ error: 'Invalid deposit confirmation' })
-      }
-    })
-  })
+  // DEPRECATED - 1v1 deposit-confirmed endpoint removed
+  // Battle Royale games handle deposits through their own endpoints
 
   // Auto-confirm NFT deposit if already ready
   router.post('/games/:gameId/use-ready-nft', (req, res) => {
@@ -1669,36 +1514,34 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     res.status(200).end()
   })
 
-  // Simple status endpoint for polling
+  // Get Battle Royale game status
   router.get('/games/:gameId/status', async (req, res) => {
     const { gameId } = req.params
     
     try {
-      const game = await dbService.getGame(gameId)
-      
-      if (!game) {
-        return res.status(404).json({ error: 'Game not found' })
+      // Only handle Battle Royale games
+      if (!gameId.startsWith('br_')) {
+        return res.status(404).json({ error: 'Game not found - only Battle Royale games supported' })
       }
       
-      const bothDeposited = Boolean(game.creator_deposited && game.challenger_deposited)
+      const game = await dbService.getBattleRoyaleGame(gameId)
       
-      // Battle Royale games are handled by BattleRoyaleGameManager
-      // No need to initialize 1v1 games anymore
+      if (!game) {
+        return res.status(404).json({ error: 'Battle Royale game not found' })
+      }
       
-      // Return minimal status info for polling
+      // Return Battle Royale status info
       res.json({
         gameId: game.id,
         status: game.status,
-        creator_deposited: Boolean(game.creator_deposited),
-        challenger_deposited: Boolean(game.challenger_deposited),
-        both_deposited: bothDeposited,
-        phase: game.phase,
+        current_players: game.current_players,
+        max_players: game.max_players,
         creator: game.creator,
-        challenger: game.challenger,
-        game_ready: bothDeposited && (game.status === 'active' || game.phase === 'game_active')
+        game_ready: game.status === 'ready' || game.status === 'active',
+        game_type: 'battle_royale'
       })
     } catch (error) {
-      console.error('Error getting game status:', error)
+      console.error('Error getting Battle Royale game status:', error)
       res.status(500).json({ error: 'Failed to get game status' })
     }
   })
@@ -1709,59 +1552,8 @@ function createApiRoutes(dbService, blockchainService, gameServer) {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
-  // New route: Confirm deposit received (called by frontend after successful deposit)
-  router.post('/games/:gameId/deposit-confirmed', async (req, res) => {
-    const { gameId } = req.params
-    const { player, assetType, transactionHash } = req.body
-    
-    try {
-      console.log('💰 Deposit confirmation received:', { gameId, player, assetType })
-      
-      const game = await dbService.getGame(gameId)
-      if (!game) {
-        return res.status(404).json({ error: 'Game not found' })
-      }
-      
-      const isCreator = player.toLowerCase() === game.creator?.toLowerCase()
-      
-      // Update database only - no socket events needed
-      if (isCreator && assetType === 'nft') {
-        await new Promise((resolve, reject) => {
-          dbService.db.run(
-            'UPDATE games SET creator_deposited = true, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-            [gameId],
-            (err) => {
-              if (err) reject(err)
-              else resolve()
-            }
-          )
-        })
-        console.log('✅ Creator deposit saved to database')
-      } else if (!isCreator && assetType === 'eth') {
-        await new Promise((resolve, reject) => {
-          dbService.db.run(
-            'UPDATE games SET challenger_deposited = true, status = "active", updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-            [gameId],
-            (err) => {
-              if (err) reject(err)
-              else resolve()
-            }
-          )
-        })
-        console.log('✅ Challenger deposit saved to database')
-        
-        // Battle Royale games are handled by BattleRoyaleGameManager
-        // No need to activate 1v1 games anymore
-      }
-      
-      // That's it! Polling will detect the change
-      res.json({ success: true, message: 'Deposit recorded' })
-      
-    } catch (error) {
-      console.error('❌ Error recording deposit:', error)
-      res.status(500).json({ error: 'Failed to record deposit' })
-    }
-  })
+  // DEPRECATED - 1v1 deposit confirmation removed
+  // Battle Royale games handle deposits through /battle-royale/:gameId/join endpoint
 
   // Route: Complete game (called by game engine after flip result)
   router.post('/games/:gameId/complete', async (req, res) => {

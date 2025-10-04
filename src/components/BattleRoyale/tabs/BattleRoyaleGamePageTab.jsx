@@ -9,7 +9,7 @@ import { useProfile } from '../../../contexts/ProfileContext'
 import contractService from '../../../services/ContractService'
 import { getApiUrl } from '../../../config/api'
 import socketService from '../../../services/SocketService'
-import BattleRoyale3DCoins from '../BattleRoyale3DCoins'
+import BattleRoyaleUnified3DScene from '../BattleRoyaleUnified3DScene'
 import CoinSelector from '../../CoinSelector'
 import '../BattleRoyaleCoins.css'
 
@@ -747,7 +747,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     )
   }
 
-  // Always use BattleRoyale3DCoins for game display
+  // Always use BattleRoyaleUnified3DScene for game display
   return (
     <TabContainer>
       <GameStatus>
@@ -800,7 +800,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       </GameStatus>
 
       {/* Main Game Display */}
-      <BattleRoyale3DCoins
+      <BattleRoyaleUnified3DScene
         players={players.map((player, index) => ({
           address: player?.address,
           coin: player?.coin || playerCoins[player?.address],

@@ -102,6 +102,12 @@ class CleanupService {
    * Process a single game for cleanup or verification
    */
   async processGame(game) {
+    // Skip 1v1 games - we only clean up Battle Royale games now
+    if (!game.id || !game.id.startsWith('br_')) {
+      console.log(`⏭️ Skipping non-Battle-Royale game: ${game.id}`)
+      return { cleaned: false, verified: false }
+    }
+    
     const now = new Date()
     
     // Update last check time

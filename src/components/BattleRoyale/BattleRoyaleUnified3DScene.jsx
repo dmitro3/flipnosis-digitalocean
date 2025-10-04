@@ -3,7 +3,7 @@ import * as THREE from 'three'
 
 const globalTextureCache = new Map()
 
-// Power configurations (from OptimizedGoldCoin)
+// Power configurations for optimized rendering
 const powerConfigs = [
   { minFlips: 5, duration: 2000, speed: 1 },
   { minFlips: 6, duration: 3000, speed: 1.2 },
@@ -139,7 +139,7 @@ const BattleRoyaleUnified3DScene = ({
     rendererRef.current = renderer
     cameraRef.current = camera
 
-    // Enhanced lighting (from OptimizedGoldCoin)
+    // Enhanced lighting for optimal coin rendering
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.3)
     scene.add(ambientLight)
 
