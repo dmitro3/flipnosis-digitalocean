@@ -314,7 +314,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           }
         })
         setPlayers(slots)
-        setCurrentPlayers(slots.filter(Boolean).length)
+        const playerCount = slots.filter(Boolean).length
+        setCurrentPlayers(playerCount)
+        console.log('📊 Player count updated:', {
+          slots: slots.map(s => s ? s.address : null),
+          playerCount,
+          currentPlayers
+        })
         
         // Update game status
         let newGameStatus = 'filling'
@@ -828,36 +834,189 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         )}
       </GameStatus>
 
-      {/* Main Game Display */}
-      <BattleRoyaleUnified3DScene
-        players={players.map((player, index) => ({
-          address: player?.address,
-          coin: player?.coin || playerCoins[player?.address],
-          status: player?.status,
-          choice: player?.choice,
-          slotIndex: index
-        }))}
-        gamePhase={serverGamePhase}
-        serverState={serverState}
-        flipStates={serverFlipStates}
-        onFlipComplete={(playerAddress, result) => {
-          console.log(`Player ${playerAddress} flipped: ${result}`)
-        }}
-        playerCoinImages={playerCoinImages}
-        isCreator={isCreator}
-        currentUserAddress={address}
-        size={240}
-        onSlotClick={handleSlotClick}
-        canJoin={canJoin}
-        isJoining={isJoining}
-        coinSides={coinSides}
-        onCoinSideToggle={toggleCoinSide}
-        onCoinChange={(playerAddress) => {
-          const slotIndex = players.findIndex(p => p?.address === playerAddress)
-          setSelectedSlot(slotIndex)
-          setShowCoinSelector(true)
-        }}
-      />
+      {/* Lobby Display - 6 Player Slots */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateRows: 'repeat(2, 1fr)',
+        gap: '1rem',
+        padding: '2rem',
+        background: 'rgba(0, 0, 0, 0.3)',
+        borderRadius: '1rem',
+        border: '2px solid rgba(255, 20, 147, 0.3)',
+        backdropFilter: 'blur(10px)',
+        minHeight: '400px'
+      }}>
+        {players.map((player, index) => (
+          <div
+            key={index}
+            style={{
+              aspectRatio: '1',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              borderRadius: '1rem',
+              padding: '1rem',
+              position: 'relative',
+              transition: 'all 0.3s ease',
+              cursor: player ? 'pointer' : (canJoin ? 'pointer' : 'default'),
+              background: player 
+                ? (player.address?.toLowerCase() === address?.toLowerCase()
+                    ? 'linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 204, 106, 0.2))'
+                    : 'linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(138, 43, 226, 0.2))')
+                : 'rgba(255, 255, 255, 0.05)',
+              border: player 
+                ? (player.address?.toLowerCase() === address?.toLowerCase()
+                    ? '2px solid #00ff88'
+                    : '2px solid #00bfff')
+                : '2px solid rgba(255, 255, 255, 0.2)'
+            }}
+            onClick={() => handleSlotClick(index)}
+          >
+            {/* Slot Number */}
+            <div style={{
+              position: 'absolute',
+              top: '0.5rem',
+              left: '0.5rem',
+              color: '#aaa',
+              fontSize: '0.8rem',
+              fontWeight: 'bold'
+            }}>
+              {index + 1}
+            </div>
+
+            {/* Coin Display */}
+            <div style={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              border: '3px solid #FFD700',
+              boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
+              background: 'radial-gradient(circle, #FFD700, #FFA500)',
+              position: 'relative'
+            }}>
+              {player ? (
+                <>
+                  {playerCoinImages[player.address?.toLowerCase()] ? (
+                    <img 
+                      src={playerCoinImages[player.address.toLowerCase()][coinSides[player.address?.toLowerCase()] || 'headsImage']} 
+                      alt={`${player.address} coin`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '3rem'
+                    }}>
+                      🪙
+                    </div>
+                  )}
+                  
+                  {/* Coin Change Button */}
+                  {(player.address?.toLowerCase() === address?.toLowerCase() || 
+                    (player.isCreator && address?.toLowerCase() === gameData?.creator?.toLowerCase())) && (
+                    <button
+                      className="coin-change-button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const slotIndex = players.findIndex(p => p?.address === player.address)
+                        setSelectedSlot(slotIndex)
+                        setShowCoinSelector(true)
+                      }}
+                      style={{
+                        position: 'absolute',
+                        bottom: '10px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        zIndex: 4,
+                        boxShadow: '0 2px 10px rgba(255, 215, 0, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = 'linear-gradient(135deg, #FFA500, #FF8C00)'
+                        e.target.style.transform = 'translateX(-50%) translateY(-2px)'
+                        e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.5)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'linear-gradient(135deg, #FFD700, #FFA500)'
+                        e.target.style.transform = 'translateX(-50%)'
+                        e.target.style.boxShadow = '0 2px 10px rgba(255, 215, 0, 0.3)'
+                      }}
+                    >
+                      Change Coin
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '3rem',
+                  color: '#666'
+                }}>
+                  ?
+                </div>
+              )}
+            </div>
+
+            {/* Player Info */}
+            <div style={{
+              color: 'white',
+              fontSize: '0.7rem',
+              fontFamily: 'monospace',
+              textAlign: 'center',
+              padding: '0 0.5rem',
+              wordBreak: 'break-all'
+            }}>
+              {player ? (
+                <>
+                  <div>{player.address ? `${player.address.slice(0, 6)}...${player.address.slice(-4)}` : 'Unknown'}</div>
+                  {player.isCreator && (
+                    <div style={{ color: '#FFD700', fontWeight: 'bold' }}>👑 Creator</div>
+                  )}
+                </>
+              ) : (
+                <div style={{ color: '#FF1493', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                  {canJoin ? 'Click to Join' : 'Waiting...'}
+                </div>
+              )}
+            </div>
+
+            {/* Status Indicator */}
+            {player && (
+              <div style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: '#00ff88',
+                boxShadow: '0 0 10px rgba(0, 255, 136, 0.5)'
+              }} />
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* Join button and coin selector modal remain the same */}
       {!userAlreadyJoined && gameStatus === 'filling' && (!isCreator || isCreatorAndParticipating) && (
