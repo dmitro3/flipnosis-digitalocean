@@ -760,18 +760,47 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         <div className="players-count">
           {currentPlayers} / 6 Players Joined
         </div>
+        
+        {/* Debug info for creator status */}
+        {isCreator && (
+          <div style={{ 
+            fontSize: '0.8rem', 
+            color: '#FFD700', 
+            marginTop: '0.5rem',
+            textAlign: 'center'
+          }}>
+            👑 Creator Status: {isCreator ? 'YES' : 'NO'} | 
+            Game Status: {gameStatus} | 
+            Players: {currentPlayers}
+          </div>
+        )}
 
         {/* Start Game Button - Only for Creator */}
         {(() => {
+          // Creator should be able to start early if they're not participating OR if they are participating
           const showButton = isCreator && gameStatus === 'filling' && currentPlayers >= 2
+          
+          // Enhanced debugging to help identify the issue
           console.log('🚀 Early start button debug:', {
             isCreator,
             gameStatus,
             currentPlayers,
             showButton,
             address,
-            gameDataCreator: gameData?.creator
+            gameDataCreator: gameData?.creator,
+            creatorParticipates: gameData?.creator_participates,
+            addressMatches: gameData?.creator?.toLowerCase() === address?.toLowerCase(),
+            playersArray: players.map(p => ({ address: p?.address, isCreator: p?.isCreator }))
           })
+          
+          // Also log each condition separately
+          console.log('🚀 Early start conditions:', {
+            'isCreator': isCreator,
+            'gameStatus === filling': gameStatus === 'filling',
+            'currentPlayers >= 2': currentPlayers >= 2,
+            'final showButton': showButton
+          })
+          
           return showButton
         })() && (
           <button

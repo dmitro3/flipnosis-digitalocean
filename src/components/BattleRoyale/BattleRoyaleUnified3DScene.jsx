@@ -194,7 +194,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', playerCoinImages[playerAddressLower]?.headsImage || null),
+            map: createOptimizedTexture('heads', playerCoinImages[playerAddressLower]?.headsImage || '/coins/plainh.png'),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -202,7 +202,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', playerCoinImages[playerAddressLower]?.tailsImage || null),
+            map: createOptimizedTexture('tails', playerCoinImages[playerAddressLower]?.tailsImage || '/coins/plaint.png'),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -222,7 +222,7 @@ const BattleRoyaleUnified3DScene = ({
         coin.position.set(posData.x, posData.y, posData.z)
         coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
         coin.rotation.x = 0
-        coin.rotation.y = Math.PI / 2
+        coin.rotation.y = 0
         coin.rotation.z = 0
 
         scene.add(coin)
@@ -234,7 +234,7 @@ const BattleRoyaleUnified3DScene = ({
           flipStartTime: null,
           flipDuration: 2000,
           flipResult: null,
-          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
+          startRotation: { x: 0, y: 0, z: 0 },
           targetRotation: 0,
           isCharging: false,
           power: 0
@@ -421,7 +421,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', playerCoinImages[player.address.toLowerCase()]?.headsImage || null),
+            map: createOptimizedTexture('heads', playerCoinImages[player.address.toLowerCase()]?.headsImage || '/coins/plainh.png'),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -429,7 +429,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', playerCoinImages[player.address.toLowerCase()]?.tailsImage || null),
+            map: createOptimizedTexture('tails', playerCoinImages[player.address.toLowerCase()]?.tailsImage || '/coins/plaint.png'),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -444,7 +444,7 @@ const BattleRoyaleUnified3DScene = ({
         newCoin.position.set(posData.x, posData.y, posData.z)
         newCoin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
         newCoin.rotation.x = 0
-        newCoin.rotation.y = Math.PI / 2
+        newCoin.rotation.y = 0
         newCoin.rotation.z = 0
 
         sceneRef.current.add(newCoin)
@@ -455,7 +455,7 @@ const BattleRoyaleUnified3DScene = ({
           flipStartTime: null,
           flipDuration: 2000,
           flipResult: null,
-          startRotation: { x: 0, y: Math.PI / 2, z: 0 },
+          startRotation: { x: 0, y: 0, z: 0 },
           targetRotation: 0,
           isCharging: false,
           power: 0
