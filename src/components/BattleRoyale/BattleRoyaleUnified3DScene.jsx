@@ -35,6 +35,18 @@ const BattleRoyaleUnified3DScene = ({
   const animationIdRef = useRef(null)
   const coinStatesRef = useRef([]) // Track animation state for each coin
 
+  // Fixed 3x2 grid layout for all players - moved to component scope
+  const coinPositions = [
+    // Top row (3 coins) - increased y from 3 to 4
+    { x: -8, y: 4, z: 0, scale: 1 },    // Top left
+    { x: 0, y: 4, z: 0, scale: 1 },     // Top center  
+    { x: 8, y: 4, z: 0, scale: 1 },     // Top right
+    // Bottom row (3 coins) - decreased y from -3 to -4
+    { x: -8, y: -4, z: 0, scale: 1 },   // Bottom left
+    { x: 0, y: -4, z: 0, scale: 1 },    // Bottom center
+    { x: 8, y: -4, z: 0, scale: 1 },    // Bottom right
+  ]
+
   // Optimized texture creation with global caching
   const createOptimizedTexture = useCallback((type, customImage = null) => {
     const cacheKey = `${type}-${customImage || 'default'}`
@@ -162,18 +174,6 @@ const BattleRoyaleUnified3DScene = ({
     // Create coins only for actual players (not empty slots)
     const numPlayers = players.filter(p => p?.address).length
     
-    // Fixed 3x2 grid layout for all players
-    const coinPositions = [
-      // Top row (3 coins) - increased y from 3 to 4
-      { x: -8, y: 4, z: 0, scale: 1 },    // Top left
-      { x: 0, y: 4, z: 0, scale: 1 },     // Top center  
-      { x: 8, y: 4, z: 0, scale: 1 },     // Top right
-      // Bottom row (3 coins) - decreased y from -3 to -4
-      { x: -8, y: -4, z: 0, scale: 1 },   // Bottom left
-      { x: 0, y: -4, z: 0, scale: 1 },    // Bottom center
-      { x: 8, y: -4, z: 0, scale: 1 },    // Bottom right
-    ]
-
     // Only create coins for players that actually exist
     const activePlayers = players.filter(p => p?.address)
     console.log(`🎯 Creating ${activePlayers.length} coins for active players`)
