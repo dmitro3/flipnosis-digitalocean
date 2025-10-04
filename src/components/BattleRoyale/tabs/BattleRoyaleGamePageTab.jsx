@@ -398,7 +398,12 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         socketService.on('battle_royale_state_update', onStateUpdate)
         socketService.on('battle_royale_starting', onGameStarting)
         socketService.on('battle_royale_countdown', onCountdown)
-        console.log('📊 Player 1 - Socket listeners registered for state updates') // ADD THIS
+        console.log('📊 Player 1 - Socket listeners registered for state updates')
+        
+        // Add a test listener to see if ANY socket events are coming through
+        socketService.on('battle_royale_error', (error) => {
+          console.log('📊 Player 1 - Received battle_royale_error:', error)
+        }) // ADD THIS
         // Join room and request state
         socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
         socketService.emit('request_battle_royale_state', { gameId })
@@ -895,8 +900,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             {/* Coin Display */}
             <div 
               style={{
-                width: '120px',
-                height: '120px',
+                width: '140px',
+                height: '140px',
                 borderRadius: '50%',
                 overflow: 'hidden',
                 border: '3px solid #FFD700',
@@ -943,48 +948,6 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                     </div>
                   )}
                   
-                  {/* Coin Change Button */}
-                  {(player.address?.toLowerCase() === address?.toLowerCase() || 
-                    (player.isCreator && address?.toLowerCase() === gameData?.creator?.toLowerCase())) && (
-                    <button
-                      className="coin-change-button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const slotIndex = players.findIndex(p => p?.address === player.address)
-                        setSelectedSlot(slotIndex)
-                        setShowCoinSelector(true)
-                      }}
-                      style={{
-                        position: 'absolute',
-                        bottom: '-25px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                        color: '#000',
-                        border: 'none',
-                        borderRadius: '0.5rem',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        zIndex: 4,
-                        boxShadow: '0 2px 10px rgba(255, 215, 0, 0.3)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = 'linear-gradient(135deg, #FFA500, #FF8C00)'
-                        e.target.style.transform = 'translateX(-50%) translateY(-2px)'
-                        e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.5)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = 'linear-gradient(135deg, #FFD700, #FFA500)'
-                        e.target.style.transform = 'translateX(-50%)'
-                        e.target.style.boxShadow = '0 2px 10px rgba(255, 215, 0, 0.3)'
-                      }}
-                    >
-                      Change Coin
-                    </button>
-                  )}
                 </>
               ) : (
                 <div style={{
@@ -1023,6 +986,46 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                 </div>
               )}
             </div>
+
+            {/* Coin Change Button - Outside the coin container */}
+            {player && (player.address?.toLowerCase() === address?.toLowerCase() || 
+              (player.isCreator && address?.toLowerCase() === gameData?.creator?.toLowerCase())) && (
+              <button
+                className="coin-change-button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const slotIndex = players.findIndex(p => p?.address === player.address)
+                  setSelectedSlot(slotIndex)
+                  setShowCoinSelector(true)
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  zIndex: 4,
+                  boxShadow: '0 2px 10px rgba(255, 215, 0, 0.3)',
+                  marginTop: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #FFA500, #FF8C00)'
+                  e.target.style.transform = 'translateY(-2px)'
+                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.5)'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'linear-gradient(135deg, #FFD700, #FFA500)'
+                  e.target.style.transform = 'translateY(0)'
+                  e.target.style.boxShadow = '0 2px 10px rgba(255, 215, 0, 0.3)'
+                }}
+              >
+                Change Coin
+              </button>
+            )}
 
             {/* Status Indicator */}
             {player && (
