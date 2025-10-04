@@ -284,6 +284,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       if (!mounted) return
       
       console.log('📊 Battle Royale state update received:', data)
+      console.log('📊 Player 1 - Received state with playerSlots:', data.playerSlots)
+      console.log('📊 Player 1 - Current local players before update:', players)
       
       // Store the full server state
       setServerState(data)
@@ -319,7 +321,9 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         console.log('📊 Player count updated:', {
           slots: slots.map(s => s ? s.address : null),
           playerCount,
-          currentPlayers
+          currentPlayers,
+          receivedPlayerSlots: data.playerSlots,
+          receivedPlayers: data.players
         })
         
         // Update game status
@@ -393,7 +397,8 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
         connected = true
         socketService.on('battle_royale_state_update', onStateUpdate)
         socketService.on('battle_royale_starting', onGameStarting)
-        socketService.on('battle_royale_countdown', onCountdown) // ADD THIS
+        socketService.on('battle_royale_countdown', onCountdown)
+        console.log('📊 Player 1 - Socket listeners registered for state updates') // ADD THIS
         // Join room and request state
         socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
         socketService.emit('request_battle_royale_state', { gameId })
@@ -888,16 +893,31 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
             </div>
 
             {/* Coin Display */}
-            <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              border: '3px solid #FFD700',
-              boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
-              background: 'radial-gradient(circle, #FFD700, #FFA500)',
-              position: 'relative'
-            }}>
+            <div 
+              style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '3px solid #FFD700',
+                boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
+                background: 'radial-gradient(circle, #FFD700, #FFA500)',
+                position: 'relative',
+                cursor: player ? 'pointer' : 'default'
+              }}
+              onClick={(e) => {
+                if (player) {
+                  e.stopPropagation()
+                  const playerAddress = player.address?.toLowerCase()
+                  if (playerAddress) {
+                    setCoinSides(prev => ({
+                      ...prev,
+                      [playerAddress]: prev[playerAddress] === 'headsImage' ? 'tailsImage' : 'headsImage'
+                    }))
+                  }
+                }
+              }}
+            >
               {player ? (
                 <>
                   {playerCoinImages[player.address?.toLowerCase()] ? (
@@ -936,7 +956,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
                       }}
                       style={{
                         position: 'absolute',
-                        bottom: '10px',
+                        bottom: '-25px',
                         left: '50%',
                         transform: 'translateX(-50%)',
                         background: 'linear-gradient(135deg, #FFD700, #FFA500)',
