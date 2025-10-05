@@ -250,8 +250,8 @@ const BattleRoyaleUnified3DScene = ({
         coin.position.set(posData.x, posData.y, posData.z)
         // Make the coin edge thicker so it looks good standing up
         coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-        // Make coin stand on edge like a wheel
-        coin.rotation.x = 0 // Start flat
+        // Make coin stand on edge like a wheel - correct orientation
+        coin.rotation.x = Math.PI // Flip to show heads face up initially
         coin.rotation.y = Math.PI / 2 // Rotated 90 degrees for proper facing
         coin.rotation.z = 0 // No tilt
 
@@ -364,6 +364,7 @@ const BattleRoyaleUnified3DScene = ({
               coin.position.y = posData.y
               coin.position.z = posData.z // Reset to original position
               
+              // Correct final rotation - heads = 0 (heads up), tails = Math.PI (tails up)
               const finalRotation = state.flipResult === 'heads' ? 0 : Math.PI
               const currentRotations = Math.floor(coin.rotation.x / (Math.PI * 2))
               coin.rotation.x = currentRotations * Math.PI * 2 + finalRotation
@@ -484,8 +485,8 @@ const BattleRoyaleUnified3DScene = ({
         
         newCoin.position.set(posData.x, posData.y, posData.z)
         newCoin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-        // Make coin stand on edge like a wheel
-        newCoin.rotation.x = 0 // Start flat
+        // Make coin stand on edge like a wheel - correct orientation
+        newCoin.rotation.x = Math.PI // Flip to show heads face up initially
         newCoin.rotation.y = Math.PI / 2 // Rotated 90 degrees for proper facing
         newCoin.rotation.z = 0 // No tilt
 
@@ -634,20 +635,25 @@ const BattleRoyaleUnified3DScene = ({
         return
       }
 
+      // Use server-provided coin state or defaults
+      const flipDuration = coinState?.flipDuration || 2000
+      const totalRotations = coinState?.totalRotations || (10 * Math.PI * 2)
+      const powerUsed = coinState?.powerUsed || 1
+
       state.isFlipping = true
       state.flipStartTime = Date.now()
-      state.flipDuration = 2000
+      state.flipDuration = flipDuration
       state.flipResult = flipResult
-      state.totalRotations = 10 * Math.PI * 2
-      state.speed = 1
-      state.power = 1
+      state.totalRotations = totalRotations
+      state.speed = 1 + (powerUsed * 0.2) // Power affects speed
+      state.power = powerUsed
       state.startRotation = {
         x: coin.rotation.x,
         y: coin.rotation.y,
         z: coin.rotation.z
       }
 
-      console.log(`✅ Coin ${playerIndex} flip animation started: ${flipResult}`)
+      console.log(`✅ Coin ${playerIndex} flip animation started: ${flipResult} (power: ${powerUsed}, duration: ${flipDuration}ms)`)
     }
 
     // Use global socketService

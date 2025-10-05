@@ -217,32 +217,56 @@ const BattleRoyaleGameRoom = ({
 
   // Load coin images for players
   const loadPlayerCoinImages = useCallback(async (playerAddress, coinData) => {
+    if (!playerAddress) return
+    
+    const playerKey = playerAddress.toLowerCase()
+    
+    // Don't reload if we already have images for this player
+    if (playerCoinImages[playerKey]) {
+      console.log(`🖼️ Images already loaded for ${playerAddress}`)
+      return
+    }
+    
     try {
+      console.log(`🖼️ Loading coin images for ${playerAddress}:`, coinData)
       let headsImage, tailsImage
       
-      if (coinData?.type === 'custom') {
-        headsImage = await getCoinHeadsImage(playerAddress)
-        tailsImage = await getCoinTailsImage(playerAddress)
-      } else {
+      // Try to load custom images first
+      try {
+        const customHeads = await getCoinHeadsImage(playerAddress)
+        const customTails = await getCoinTailsImage(playerAddress)
+        
+        if (customHeads && customTails) {
+          console.log(`✅ Custom images found for ${playerAddress}`)
+          headsImage = customHeads
+          tailsImage = customTails
+        } else {
+          throw new Error('No custom images')
+        }
+      } catch (customError) {
+        console.log(`⚠️ No custom images for ${playerAddress}, using defaults`)
+        // Use coinData images or defaults
         headsImage = coinData?.headsImage || '/coins/plainh.png'
         tailsImage = coinData?.tailsImage || '/coins/plaint.png'
       }
       
+      console.log(`✅ Final images for ${playerAddress}:`, { headsImage, tailsImage })
+      
       setPlayerCoinImages(prev => ({
         ...prev,
-        [playerAddress]: { headsImage, tailsImage }
+        [playerKey]: { headsImage, tailsImage }
       }))
     } catch (error) {
       console.error('Error loading coin images for player:', playerAddress, error)
       setPlayerCoinImages(prev => ({
         ...prev,
-        [playerAddress]: { 
+        [playerKey]: { 
           headsImage: '/coins/plainh.png', 
           tailsImage: '/coins/plaint.png' 
         }
       }))
     }
-  }, [getCoinHeadsImage, getCoinTailsImage])
+  }, [getCoinHeadsImage, getCoinTailsImage, playerCoinImages])
 
   // Handle choice selection (heads/tails)
   const handleChoiceSelect = useCallback((choice) => {
@@ -324,7 +348,7 @@ const BattleRoyaleGameRoom = ({
       socketService.emit('battle_royale_flip_coin', {
         gameId,
         address,
-        powerLevel: finalPower
+        power: finalPower
       })
       
       setIsCharging(false)
@@ -435,6 +459,27 @@ const BattleRoyaleGameRoom = ({
         setupListener('allEliminated', handleAllEliminated)
         setupListener('battle_royale_player_flipped', (data) => {
           console.log('🪙 Player flip received:', data)
+          
+          // Trigger large coin spin animation if it's the current player
+          if (data.playerAddress?.toLowerCase() === address?.toLowerCase()) {
+            const largeCoin = document.querySelector('.player-coin-large img')
+            if (largeCoin) {
+              largeCoin.style.animation = 'none'
+              setTimeout(() => {
+                largeCoin.style.animation = 'spin-3d 2s ease-in-out'
+              }, 10)
+            }
+          }
+        })
+        setupListener('battle_royale_choice_confirmed', (data) => {
+          console.log('✅ Choice confirmed:', data)
+        })
+        setupListener('battle_royale_flip_confirmed', (data) => {
+          console.log('✅ Flip confirmed:', data)
+        })
+        setupListener('battle_royale_error', (data) => {
+          console.error('❌ Battle Royale error:', data)
+          showToast(data.message || 'Game error', 'error')
         })
         
         // Join room with consistent room ID
@@ -599,9 +644,26 @@ const BattleRoyaleGameRoom = ({
                     src={playerCoinImages[address.toLowerCase()].headsImage} 
                     alt="Your coin"
                     className="coin-image"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      objectFit: 'cover'
+                    }}
                   />
                 ) : (
-                  '🪙'
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '3rem'
+                  }}>
+                    🪙
+                  </div>
                 )}
               </div>
               
