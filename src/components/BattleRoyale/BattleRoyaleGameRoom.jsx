@@ -5,7 +5,14 @@ import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import socketService from '../../services/SocketService'
+import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
+import HeadsTailsDisplay from './HeadsTailsDisplay'
 import './BattleRoyaleCoins.css'
+
+// Make socketService globally available for unified scene
+if (typeof window !== 'undefined') {
+  window.socketService = socketService
+}
 
 const GameContainer = styled.div`
   display: flex;
@@ -28,72 +35,6 @@ const GameLayout = styled.div`
   }
 `
 
-const PlayersGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  flex: 1;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`
-
-const PlayerSlot = styled.div`
-  background: ${props => {
-    if (props.isEliminated) {
-      return 'linear-gradient(135deg, rgba(255, 0, 0, 0.2) 0%, rgba(139, 0, 0, 0.2) 100%)'
-    }
-    return 'linear-gradient(135deg, rgba(0, 191, 255, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%)'
-  }};
-  border: 2px solid ${props => props.isEliminated ? '#ff0000' : '#00bfff'};
-  border-radius: 1rem;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-  opacity: ${props => props.isEliminated ? 0.3 : 1};
-  filter: ${props => props.isEliminated ? 'grayscale(100%)' : 'none'};
-  
-  .player-coin {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    transition: all 0.3s ease;
-    
-    img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    
-    &.spinning {
-      animation: spin 2s linear infinite;
-    }
-  }
-  
-  .player-name {
-    color: white;
-    font-size: 0.9rem;
-    font-weight: bold;
-    text-align: center;
-    font-family: monospace;
-  }
-  
-  .player-status {
-    color: #aaa;
-      font-size: 0.8rem;
-      text-align: center;
-  }
-`
 
 const ActivePlayerPanel = styled.div`
   background: rgba(0, 0, 0, 0.5);
@@ -447,89 +388,103 @@ const BattleRoyaleGameRoom = ({
 
   return (
     <GameContainer>
-      {/* Main game layout */}
-      <div id="gamePhase">
-        <GameLayout>
-          {/* Left side: 6 player coins grid */}
-          <PlayersGrid>
-            {(serverState.playerSlots || new Array(6).fill(null)).map((playerAddress, index) => {
-              if (!playerAddress) {
-                return (
-                  <PlayerSlot key={index} data-player-index={index}>
-                    <div className="player-coin">?</div>
-                    <div className="player-name">Empty</div>
-                    <div className="player-status">Waiting...</div>
-                  </PlayerSlot>
-                )
-              }
-              
-              const player = serverState.players?.[playerAddress.toLowerCase()]
-              const coinImages = playerCoinImages[playerAddress.toLowerCase()]
-              const isEliminated = player?.status === 'eliminated'
-              const isCurrentUser = playerAddress.toLowerCase() === address?.toLowerCase()
-              
-              return (
-                <PlayerSlot 
-                  key={index} 
-                  data-player-index={index}
-                  isEliminated={isEliminated}
-                  isCurrentUser={isCurrentUser}
-                >
-                  <div className="player-coin">
-                    {coinImages ? (
-                      <img 
-                        src={coinImages.headsImage} 
-                        alt={`${player?.name || formatAddress(playerAddress)} coin`}
-                      />
-                    ) : (
-                      '🪙'
-                    )}
-              </div>
-                  <div className="player-name">
-                    {player?.name || formatAddress(playerAddress)}
-              </div>
-                  <div className="player-status">
-                    {isEliminated ? 'Eliminated' : 'Alive'}
-              </div>
-                </PlayerSlot>
-              )
-            })}
-          </PlayersGrid>
+      {/* Game Status Header */}
+      <HeadsTailsDisplay 
+        gamePhase={serverState?.phase || 'waiting'}
+        timeLeft={serverState?.roundCountdown || 20}
+        currentPlayers={serverState?.activePlayers?.length || 0}
+      />
+
+      {/* Unified 3D Scene - ALL 6 coins in one scene */}
+      <BattleRoyaleUnified3DScene
+        players={serverState?.playerSlots?.map((address, index) => 
+          address ? serverState.players[address] : null
+        ) || new Array(6).fill(null)}
+        gamePhase={serverState?.phase || 'filling'}
+        serverState={serverState}
+        flipStates={serverState?.coinStates || {}}
+        playerCoinImages={playerCoinImages}
+        currentUserAddress={address}
+        onFlipComplete={(playerAddress, result) => {
+          console.log(`🎲 Flip complete for ${playerAddress}: ${result}`)
+        }}
+      />
+
+      {/* Active Player Controls */}
+      {isAlive && serverState?.phase === 'round_active' && (
+        <ActivePlayerPanel>
+          <div className="round-timer">
+            {serverState?.roundCountdown || 20}s
+          </div>
           
-          {/* Right side: Active player panel */}
-          <ActivePlayerPanel>
-            <div className="round-timer">20</div>
-            
-            <div className="player-coin-large">
-              {currentPlayer && playerCoinImages[address.toLowerCase()] ? (
-                <img 
-                  src={playerCoinImages[address.toLowerCase()].headsImage} 
-                  alt="Your coin"
-                  className="coin-image"
-                />
-              ) : (
-                '🪙'
-              )}
+          <div className="choice-buttons">
+            <button 
+              className={`choice-btn ${currentPlayer?.choice === 'heads' ? 'selected' : ''}`}
+              data-choice="heads"
+              onClick={() => {
+                socketService.emit('battle_royale_player_choice', {
+                  gameId,
+                  address,
+                  choice: 'heads'
+                })
+              }}
+              disabled={currentPlayer?.hasFlipped}
+            >
+              HEADS
+            </button>
+            <button 
+              className={`choice-btn ${currentPlayer?.choice === 'tails' ? 'selected' : ''}`}
+              data-choice="tails"
+              onClick={() => {
+                socketService.emit('battle_royale_player_choice', {
+                  gameId,
+                  address,
+                  choice: 'tails'
+                })
+              }}
+              disabled={currentPlayer?.hasFlipped}
+            >
+              TAILS
+            </button>
           </div>
-            
-            <div className="choice-buttons">
-              <button className="choice-btn" data-choice="heads">HEADS</button>
-              <button className="choice-btn" data-choice="tails">TAILS</button>
-              </div>
-              
-            <div className="flip-button-container">
-              <button className="flip-btn" disabled>FLIP COIN</button>
-            </div>
-            
-            <div className="power-bar-container">
-              <div className="power-bar">
-                <div className="power-fill"></div>
-            </div>
-              <div className="power-label">POWER: <span className="power-value">0%</span></div>
+          
+          <div className="flip-button-container">
+            <button 
+              className="flip-btn"
+              onClick={() => {
+                if (currentPlayer?.choice) {
+                  socketService.emit('battle_royale_execute_flip', {
+                    gameId,
+                    address,
+                    power: currentPlayer?.power || 1
+                  })
+                }
+              }}
+              disabled={!currentPlayer?.choice || currentPlayer?.hasFlipped}
+            >
+              {currentPlayer?.hasFlipped ? 'FLIPPING...' : 'FLIP COIN'}
+            </button>
           </div>
-          </ActivePlayerPanel>
-        </GameLayout>
+        </ActivePlayerPanel>
+      )}
+
+      {/* Game Over / Spectator View */}
+      {(isEliminated || !isParticipant) && (
+        <div style={{
+          textAlign: 'center',
+          padding: '2rem',
+          background: 'rgba(0, 0, 0, 0.8)',
+          borderRadius: '1rem',
+          border: '2px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <h2 style={{ color: isEliminated ? '#ff6b6b' : '#00bfff' }}>
+            {isEliminated ? '💀 Eliminated' : '👁️ Spectating'}
+          </h2>
+          <p style={{ color: '#aaa' }}>
+            {isEliminated ? 'You were eliminated. Watch the remaining players!' : 'Watching the battle...'}
+          </p>
         </div>
+      )}
     </GameContainer>
   )
 }

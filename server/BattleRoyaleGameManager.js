@@ -12,12 +12,12 @@ class BattleRoyaleGameManager {
 
   // ===== BATTLE ROYALE PHASES =====
   PHASES = {
-    FILLING: 'filling',           // Waiting for 6 players to join
-    STARTING: 'starting',         // 3-second countdown before first round
-    ROUND_ACTIVE: 'round_active', // Players making choices and flipping
-    ROUND_RESULT: 'round_result', // Showing elimination results
-    COMPLETED: 'completed',       // Game finished, winner declared
-    CANCELLED: 'cancelled'        // Game cancelled (not enough players)
+    FILLING: 'filling',
+    STARTING: 'starting',
+    ROUND_ACTIVE: 'round_active',  // ✅ Keep this
+    ROUND_RESULT: 'round_result',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled'
   }
 
 
@@ -568,6 +568,18 @@ class BattleRoyaleGameManager {
     }
 
     return true
+  }
+
+  // After executePlayerFlip method, add:
+  broadcastFlipComplete(gameId, playerAddress, flipResult, broadcastFn) {
+    if (!broadcastFn) return
+    
+    broadcastFn(`br_${gameId}`, 'battle_royale_player_flipped', {
+      gameId,
+      playerAddress,
+      flipResult,
+      coinState: this.coinStates.get(playerAddress)
+    })
   }
 
   calculateFlipResult(choice, power) {

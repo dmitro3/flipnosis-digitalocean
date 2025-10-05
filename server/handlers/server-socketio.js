@@ -64,16 +64,43 @@ class GameServer {
       // Deposit system removed - using polling instead
       
       // ===== BATTLE ROYALE ACTIONS =====
-      socket.on('join_battle_royale_room', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('join_battle_royale', (data) => this.battleRoyaleHandlers.handleJoinBattleRoyale(socket, data, this.battleRoyaleManager, this.io, this.dbService))
-      socket.on('battle_royale_player_choice', (data) => this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('battle_royale_execute_flip', (data) => this.battleRoyaleHandlers.handleBattleRoyaleExecuteFlip(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('battle_royale_update_coin', (data) => this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(socket, data, this.battleRoyaleManager, this.io))
-      socket.on('spectate_battle_royale', (data) => this.battleRoyaleHandlers.handleSpectateBattleRoyale(socket, data, this.battleRoyaleManager))
-      socket.on('request_battle_royale_state', (data) => this.battleRoyaleHandlers.handleRequestBattleRoyaleState(socket, data, this.battleRoyaleManager))
+      socket.on('join_battle_royale_room', (data) => {
+        console.log(`📥 join_battle_royale_room event from ${socket.id}`)
+        this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(socket, data, this.battleRoyaleManager, this.io)
+      })
+
+      socket.on('join_battle_royale', (data) => {
+        console.log(`📥 join_battle_royale event from ${socket.id}`)
+        this.battleRoyaleHandlers.handleJoinBattleRoyale(socket, data, this.battleRoyaleManager, this.io, this.dbService)
+      })
+
+      socket.on('battle_royale_player_choice', (data) => {
+        console.log(`📥 battle_royale_player_choice event from ${socket.id}`, data)
+        this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(socket, data, this.battleRoyaleManager, this.io)
+      })
+
+      socket.on('battle_royale_execute_flip', (data) => {
+        console.log(`📥 battle_royale_execute_flip event from ${socket.id}`, data)
+        this.battleRoyaleHandlers.handleBattleRoyaleExecuteFlip(socket, data, this.battleRoyaleManager, this.io)
+      })
+
+      socket.on('battle_royale_update_coin', (data) => {
+        console.log(`📥 battle_royale_update_coin event from ${socket.id}`)
+        this.battleRoyaleHandlers.handleBattleRoyaleUpdateCoin(socket, data, this.battleRoyaleManager, this.io)
+      })
+
+      socket.on('spectate_battle_royale', (data) => {
+        console.log(`📥 spectate_battle_royale event from ${socket.id}`)
+        this.battleRoyaleHandlers.handleSpectateBattleRoyale(socket, data, this.battleRoyaleManager)
+      })
+
+      socket.on('request_battle_royale_state', (data) => {
+        console.log(`📥 request_battle_royale_state event from ${socket.id}`)
+        this.battleRoyaleHandlers.handleRequestBattleRoyaleState(socket, data, this.battleRoyaleManager)
+      })
+
       socket.on('battle_royale_start_early', (data) => {
-        console.log(`🎯 Socket.IO received battle_royale_start_early event from socket ${socket.id}`)
-        console.log(`📥 Event data:`, data)
+        console.log(`📥 battle_royale_start_early event from ${socket.id}`, data)
         this.battleRoyaleHandlers.handleBattleRoyaleStartEarly(socket, data, this.battleRoyaleManager, this.io, this.dbService)
       })
       

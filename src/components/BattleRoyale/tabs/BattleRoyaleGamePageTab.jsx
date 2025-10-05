@@ -277,32 +277,21 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   useEffect(() => {
     if (!gameId || !address) return
 
-    let connected = false
-    let mounted = true // Add mounted flag
+    let mounted = true
 
     const onStateUpdate = (data) => {
       if (!mounted) return
       
-      console.log('📊 Battle Royale state update received:', data)
-      console.log('📊 Player 1 - Received state with playerSlots:', data.playerSlots)
-      console.log('📊 Player 1 - Current local players before update:', players)
+      console.log('📊 Lobby state update:', data)
       
-      // Store the full server state
       setServerState(data)
       
-      // Update game phase from server
       if (data.phase) {
         setServerGamePhase(data.phase)
       }
       
-      // Update flip states from server
-      if (data.flipStates) {
-        setServerFlipStates(data.flipStates)
-      }
-      
-      // Update player slots
       if (data.playerSlots) {
-        const slots = new Array(6).fill(null) // Changed to 6 slots
+        const slots = new Array(6).fill(null)
         data.playerSlots.forEach((playerAddress, idx) => {
           if (playerAddress && data.players && data.players[playerAddress]) {
             const p = data.players[playerAddress]
@@ -316,34 +305,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           }
         })
         setPlayers(slots)
-        const playerCount = slots.filter(Boolean).length
-        setCurrentPlayers(playerCount)
-        console.log('📊 Player count updated:', {
-          slots: slots.map(s => s ? s.address : null),
-          playerCount,
-          currentPlayers,
-          receivedPlayerSlots: data.playerSlots,
-          receivedPlayers: data.players
-        })
+        setCurrentPlayers(slots.filter(Boolean).length)
         
-        // Update game status
-        let newGameStatus = 'filling'
-        if (data.phase === 'starting') {
-          newGameStatus = 'starting'
-        } else if (data.phase && data.phase !== 'filling' && data.phase !== 'waiting_players') {
-          newGameStatus = 'in_progress'
-        } else if (data.phase === 'completed') {
-          newGameStatus = 'completed'
-        }
-        
-        setGameStatus(newGameStatus)
-        
-        // Load coin images and update local playerCoins state
+        // Load coin images
         if (data.players && mounted) {
           Object.entries(data.players).forEach(([addrKey, playerVal]) => {
             if (playerVal?.coin) {
               loadPlayerCoinImages(addrKey, playerVal.coin)
-              // Update local playerCoins state to sync with server
               setPlayerCoins(prev => ({
                 ...prev,
                 [addrKey]: playerVal.coin
@@ -352,77 +320,50 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           })
         }
       }
+      
+      // Update game status
+      let newGameStatus = 'filling'
+      if (data.phase === 'starting') {
+        newGameStatus = 'starting'
+      } else if (data.phase && data.phase !== 'filling') {
+        newGameStatus = 'in_progress'
+      }
+      setGameStatus(newGameStatus)
     }
 
     const onGameStarting = (data) => {
-      if (!mounted) return // Check if still mounted
-      
-      console.log('🚀 Battle Royale game starting:', data)
-      console.log('📊 Game starting event received')
+      if (!mounted) return
+      console.log('🚀 Game starting:', data)
       showToast(`Game starting in ${data.countdown} seconds!`, 'success')
-      
       if (mounted) {
         setGameStatus('starting')
-        // Remove this navigation - let parent handle it
-        // setTimeout(() => {
-        //   navigate(`/battle-royale/${gameId}/play`)
-        // }, 1000)
-      }
-      console.log('📊 Game status updated to: starting')
-    }
-
-    // ADD THIS NEW HANDLER:
-    const onCountdown = (data) => {
-      if (!mounted) return
-      console.log(`⏰ Countdown: ${data.countdown}`)
-      
-      // Update server state with countdown
-      setServerState(prev => ({
-        ...prev,
-        startCountdown: data.countdown
-      }))
-      
-      // Show countdown in toast at 5, 3, 2, 1
-      if (data.countdown <= 5) {
-        showToast(data.message, 'info')
       }
     }
 
     const setup = async () => {
       try {
-        // Only connect if not already connected to the same game
         if (!socketService.isConnected() || socketService.getCurrentRoom() !== `br_${gameId}`) {
           await socketService.connect(gameId, address)
         }
-        connected = true
+        
         socketService.on('battle_royale_state_update', onStateUpdate)
         socketService.on('battle_royale_starting', onGameStarting)
-        socketService.on('battle_royale_countdown', onCountdown)
-        console.log('📊 Player 1 - Socket listeners registered for state updates')
         
-        // Add a test listener to see if ANY socket events are coming through
-        socketService.on('battle_royale_error', (error) => {
-          console.log('📊 Player 1 - Received battle_royale_error:', error)
-        }) // ADD THIS
-        // Join room and request state
         socketService.emit('join_battle_royale_room', { roomId: `br_${gameId}`, address })
         socketService.emit('request_battle_royale_state', { gameId })
       } catch (err) {
-        console.error('Socket setup failed in BattleRoyaleGamePageTab', err)
+        console.error('Socket setup failed:', err)
       }
     }
 
     setup()
 
     return () => {
-      mounted = false // Mark as unmounted
-      if (connected) {
-        socketService.off('battle_royale_state_update', onStateUpdate)
-        socketService.off('battle_royale_starting', onGameStarting)
-        socketService.off('battle_royale_countdown', onCountdown) // ADD THIS
-      }
+      mounted = false
+      socketService.off('battle_royale_state_update', onStateUpdate)
+      socketService.off('battle_royale_starting', onGameStarting)
     }
-  }, [gameId, address]) // Remove dependencies causing infinite loop
+  }, [gameId, address, showToast]) // ✅ Stable dependencies only
 
   // Add cleanup mechanism
   useEffect(() => {

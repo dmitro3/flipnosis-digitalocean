@@ -570,20 +570,27 @@ const BattleRoyaleUnified3DScene = ({
     }
   }, [serverState, players])
 
-  // Listen for individual player flip events
+  // Listen for individual player flip events - REGISTER ONCE
   useEffect(() => {
     if (!sceneRef.current) return
 
     const handlePlayerFlipped = (data) => {
+      console.log('🎲 Unified scene received player flip:', data)
       const { playerAddress, flipResult, coinState } = data
-      const playerIndex = players.findIndex(p => p?.address === playerAddress)
+      const playerIndex = players.findIndex(p => p?.address?.toLowerCase() === playerAddress?.toLowerCase())
       
-      if (playerIndex === -1 || playerIndex >= 6) return
+      if (playerIndex === -1 || playerIndex >= 6) {
+        console.warn(`⚠️ Player index not found for ${playerAddress}`)
+        return
+      }
 
       const state = coinStatesRef.current[playerIndex]
       const coin = coinsRef.current[playerIndex]
 
-      if (!state || !coin) return
+      if (!state || !coin) {
+        console.warn(`⚠️ Coin state or mesh not found for index ${playerIndex}`)
+        return
+      }
 
       state.isFlipping = true
       state.flipStartTime = Date.now()
@@ -598,19 +605,20 @@ const BattleRoyaleUnified3DScene = ({
         z: coin.rotation.z
       }
 
-      console.log(`🎲 Coin ${playerIndex} starting flip animation: ${flipResult}`)
+      console.log(`✅ Coin ${playerIndex} flip animation started: ${flipResult}`)
     }
 
+    // Use global socketService
     if (typeof window !== 'undefined' && window.socketService) {
-      console.log('✅ Registering flip listener (one time)')
+      console.log('✅ Registering unified scene flip listener')
       window.socketService.on('battle_royale_player_flipped', handlePlayerFlipped)
 
       return () => {
-        console.log('🧹 Cleaning up flip listener')
+        console.log('🧹 Cleaning up unified scene flip listener')
         window.socketService.off('battle_royale_player_flipped', handlePlayerFlipped)
       }
     }
-  }, []) // EMPTY DEPENDENCY ARRAY - only register once!
+  }, []) // EMPTY - register once on mount
 
   return (
     <div
