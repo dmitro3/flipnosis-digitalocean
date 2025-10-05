@@ -347,6 +347,9 @@ class BattleRoyaleGameManager {
       nftName: game.nftName,
       nftImage: game.nftImage,
       nftCollection: game.nftCollection,
+      nftContract: game.nftContract,
+      nftTokenId: game.nftTokenId,
+      nftChain: game.nftChain,
       winner: game.winner
     }
   }

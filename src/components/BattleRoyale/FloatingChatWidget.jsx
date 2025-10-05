@@ -7,19 +7,19 @@ import socketService from '../../services/SocketService'
 const ChatBubble = styled.div`
   position: fixed;
   bottom: ${props => props.isOpen ? '20px' : '20px'};
-  right: 20px;
+  left: 20px;
   z-index: 10000;
   transition: all 0.3s ease;
 `
 
 const MinimizedButton = styled.button`
-  width: 60px;
-  height: 60px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background: linear-gradient(135deg, #00BFFF, #0080FF);
   border: 3px solid #00BFFF;
   color: white;
-  font-size: 1.5rem;
+  font-size: 3rem;
   cursor: pointer;
   box-shadow: 0 4px 20px rgba(0, 191, 255, 0.4);
   transition: all 0.3s ease;
@@ -52,7 +52,7 @@ const MinimizedButton = styled.button`
 `
 
 const ChatWindow = styled.div`
-  width: 400px;
+  width: 800px;
   height: 600px;
   background: rgba(0, 0, 40, 0.95);
   border: 2px solid #00BFFF;
@@ -308,18 +308,23 @@ const FloatingChatWidget = () => {
     if (!gameState?.gameId) return
     
     const handleMessage = (data) => {
+      // Don't add our own messages (they're already added locally)
+      if ((data.from || data.address)?.toLowerCase() === address?.toLowerCase()) {
+        return
+      }
+      
       const newMsg = {
         id: Date.now() + Math.random(),
         sender: data.from || data.address,
         message: data.message,
         timestamp: new Date(data.timestamp).toLocaleTimeString(),
-        isCurrentUser: (data.from || data.address)?.toLowerCase() === address?.toLowerCase()
+        isCurrentUser: false
       }
       
       setMessages(prev => [...prev, newMsg])
       
       // Show unread indicator if chat is closed
-      if (!isOpen && !newMsg.isCurrentUser) {
+      if (!isOpen) {
         setHasUnread(true)
       }
     }
@@ -335,14 +340,26 @@ const FloatingChatWidget = () => {
     if (!newMessage.trim() || !gameState?.gameId || !address) return
     
     const roomId = `game_${gameState.gameId}`
+    const messageText = newMessage.trim()
     
+    // Add message to local state immediately for the sender
+    const newMsg = {
+      id: Date.now() + Math.random(),
+      sender: address,
+      message: messageText,
+      timestamp: new Date().toLocaleTimeString(),
+      isCurrentUser: true
+    }
+    
+    setMessages(prev => [...prev, newMsg])
+    setNewMessage('')
+    
+    // Send to server
     socketService.emit('chat_message', {
       roomId,
-      message: newMessage.trim(),
+      message: messageText,
       address
     })
-    
-    setNewMessage('')
   }
   
   const handleOpen = () => {
