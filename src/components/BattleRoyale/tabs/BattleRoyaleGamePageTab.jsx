@@ -665,10 +665,10 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       return
     }
 
-    console.log('🚀 Creator starting game early')
+    console.log('🚀 Creator starting game early', { gameId, address })
     socketService.emit('battle_royale_start_early', {
       gameId,
-      creatorAddress: address
+      address  // ✅ Fixed: Changed from creatorAddress to address
     })
   }, [isCreator, currentPlayers, gameId, address, showToast])
 
