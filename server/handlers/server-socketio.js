@@ -203,4 +203,11 @@ initialize(server, dbService) {
   }
 }
 
-module.exports = GameServer
+// Export the initialization function that server.js expects
+function initializeSocketIO(server, dbService) {
+  const gameServer = new GameServer(null, dbService)
+  const io = gameServer.initialize(server, dbService)
+  return { io, gameServer }
+}
+
+module.exports = { initializeSocketIO }
