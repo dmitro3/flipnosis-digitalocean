@@ -16,7 +16,7 @@ class GameServer {
     this.battleRoyaleManager = new BattleRoyaleGameManager()
     
     // Then instantiate handlers (FIXED: They are classes, not modules)
-    this.oneVOneHandlers = require('./1v1SocketHandlers')
+    // this.oneVOneHandlers = require('./1v1SocketHandlers') // TODO: Not implemented yet
     const BattleRoyaleSocketHandlersClass = require('./BattleRoyaleSocketHandlers')
     this.battleRoyaleHandlers = new BattleRoyaleSocketHandlersClass()
     
@@ -26,7 +26,6 @@ class GameServer {
     
     console.log('✅ SocketService: Managers initialized:', {
       battleRoyaleManager: !!this.battleRoyaleManager,
-      oneVOneHandlers: !!this.oneVOneHandlers,
       battleRoyaleHandlers: !!this.battleRoyaleHandlers
     })
   }
