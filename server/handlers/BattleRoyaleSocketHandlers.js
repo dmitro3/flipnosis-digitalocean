@@ -90,19 +90,58 @@ class BattleRoyaleSocketHandlers {
 
   // Update Player Coin
   async handleBattleRoyaleUpdateCoin(socket, data, battleRoyaleManager, io) {
-    const { gameId, address, coinData } = data
-    console.log(`🪙 Battle Royale coin update: ${address} changing coin in ${gameId}`)
-    
-    const success = battleRoyaleManager.updatePlayerCoin(gameId, address, coinData)
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot update coin' })
-      return
-    }
+    try {
+      const { gameId, address, coin } = data
+      console.log('🪙 Battle Royale: Player updating coin:', { gameId, address, coin })
 
-    // Broadcast updated state
-    const roomId = `br_${gameId}`
-    const fullState = battleRoyaleManager.getFullGameState(gameId)
-    io.to(roomId).emit('battle_royale_state_update', fullState)
+      if (!battleRoyaleManager) {
+        console.error('❌ BattleRoyaleManager not provided to handler')
+        socket.emit('error', { message: 'Server error: Manager not available' })
+        return
+      }
+
+      const game = battleRoyaleManager.getGame(gameId)
+      if (!game) {
+        console.error('❌ Game not found:', gameId)
+        socket.emit('error', { message: 'Game not found' })
+        return
+      }
+
+      const player = game.players.get(address)
+      if (!player) {
+        console.error('❌ Player not in game:', address)
+        socket.emit('error', { message: 'Player not in game' })
+        return
+      }
+
+      // Update player's coin
+      player.coin = {
+        id: coin.id || 'plain',
+        type: coin.type || 'default',
+        name: coin.name || 'Classic',
+        headsImage: coin.headsImage || null,
+        tailsImage: coin.tailsImage || null
+      }
+
+      console.log(`✅ Updated coin for ${address}:`, player.coin)
+
+      // BROADCAST state to all players in room
+      const roomId = `br_${gameId}`
+      const gameState = battleRoyaleManager.getFullGameState(gameId)
+      
+      console.log(`📢 Broadcasting state update to room ${roomId}`)
+      io.to(roomId).emit('battle_royale_state_update', gameState)
+
+      // Confirm to the player
+      socket.emit('battle_royale_coin_updated', {
+        success: true,
+        coin: player.coin
+      })
+
+    } catch (error) {
+      console.error('⚠️ BattleRoyale handler error:', error)
+      socket.emit('error', { message: 'Failed to update coin' })
+    }
   }
 
   // Request Game State
@@ -181,63 +220,73 @@ class BattleRoyaleSocketHandlers {
 
   // Join Battle Royale Game (Payment confirmed)
   async handleJoinBattleRoyale(socket, data, battleRoyaleManager, io, dbService) {
-    const { gameId, address } = data
-    console.log(`🎮 ${address} joining Battle Royale game: ${gameId}`)
-    
-    // Get or create game
-    let game = battleRoyaleManager.getGame(gameId)
-    if (!game && dbService) {
-      // Try to load from database
-      try {
-        const gameData = await dbService.getBattleRoyaleGame(gameId)
-        if (gameData && gameData.status === 'filling') {
-          game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
-          
-          // If creator wants to participate, add them to the game
-          if (gameData.creator_participates === true || gameData.creator_participates === 1) {
-            battleRoyaleManager.addCreatorAsPlayer(gameId, gameData.creator)
-            console.log(`✅ Creator ${gameData.creator} added to game ${gameId} on load`)
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error loading Battle Royale game:', error)
+    try {
+      const { gameId, address, betAmount } = data
+      console.log('🎮 Player joining Battle Royale:', { gameId, address, betAmount })
+
+      if (!battleRoyaleManager) {
+        console.error('❌ BattleRoyaleManager not provided')
+        socket.emit('error', { message: 'Server error' })
+        return
       }
-    }
 
-    if (!game) {
-      socket.emit('battle_royale_error', { message: 'Game not found' })
-      return
-    }
+      // Join room first
+      const roomId = `br_${gameId}`
+      socket.join(roomId)
+      console.log(`✅ Socket ${socket.id} joined room ${roomId}`)
 
-    // Add player to game
-    const success = battleRoyaleManager.addPlayer(gameId, address)
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot join game' })
-      return
-    }
+      // Get or create game
+      let game = battleRoyaleManager.getGame(gameId)
+      if (!game && dbService) {
+        // Try to load from database
+        try {
+          const gameData = await dbService.getBattleRoyaleGame(gameId)
+          if (gameData && gameData.status === 'filling') {
+            game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
+            
+            // If creator wants to participate, add them to the game
+            if (gameData.creator_participates === true || gameData.creator_participates === 1) {
+              battleRoyaleManager.addCreatorAsPlayer(gameId, gameData.creator)
+              console.log(`✅ Creator ${gameData.creator} added to game ${gameId} on load`)
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error loading Battle Royale game:', error)
+        }
+      }
 
-    // Join room
-    const roomId = `br_${gameId}`
-    socket.join(roomId)
-    
-    // Broadcast updated game state to all players
-    const fullState = battleRoyaleManager.getFullGameState(gameId)
-    io.to(roomId).emit('battle_royale_state_update', fullState)
+      if (!game) {
+        socket.emit('battle_royale_error', { message: 'Game not found' })
+        return
+      }
 
-    // Check if game should auto-start (8 players joined)
-    if (success) {
-      // ... existing broadcast code ...
+      // Add player to game
+      const success = battleRoyaleManager.addPlayer(gameId, address)
+      if (!success) {
+        socket.emit('battle_royale_error', { message: 'Cannot join game' })
+        return
+      }
       
-      // Check if game should auto-start (8 players joined)
-      const game = battleRoyaleManager.getGame(gameId)
-      console.log(`🔍 Auto-start check for game ${gameId}:`, {
-        gameExists: !!game,
-        currentPlayers: game?.currentPlayers,
-        maxPlayers: game?.maxPlayers,
-        phase: game?.phase,
-        shouldAutoStart: game && game.currentPlayers === game.maxPlayers && game.phase === battleRoyaleManager.PHASES.FILLING
+      console.log(`✅ Player ${address} joined game ${gameId}`)
+      
+      // Get updated state
+      const gameState = battleRoyaleManager.getFullGameState(gameId)
+      
+      // BROADCAST to ALL players in room (including the joiner)
+      console.log(`📢 Broadcasting join to room ${roomId}, ${gameState.activePlayers.length} players`)
+      io.to(roomId).emit('battle_royale_state_update', gameState)
+      
+      // Emit specific join event
+      io.to(roomId).emit('battle_royale_player_joined', {
+        gameId,
+        playerAddress: address,
+        playerCount: gameState.activePlayers.length,
+        maxPlayers: 6
       })
-      
+
+      socket.emit('battle_royale_join_success', { gameId, ...gameState })
+
+      // Check if game should auto-start (6 players joined)
       if (game && game.currentPlayers === game.maxPlayers && game.phase === battleRoyaleManager.PHASES.FILLING) {
         console.log(`🚀 Battle Royale game ${gameId} is full - auto-starting!`)
         
@@ -249,9 +298,11 @@ class BattleRoyaleSocketHandlers {
           })
         }, 1000) // Small delay to ensure all clients are ready
       }
-    }
 
-    console.log(`✅ ${address} joined Battle Royale ${gameId}`)
+    } catch (error) {
+      console.error('⚠️ Join Battle Royale error:', error)
+      socket.emit('error', { message: 'Failed to join game' })
+    }
   }
 
   // Spectate Battle Royale

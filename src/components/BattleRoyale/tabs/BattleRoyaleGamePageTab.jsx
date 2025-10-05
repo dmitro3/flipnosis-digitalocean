@@ -615,6 +615,63 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     }
   }
 
+  const handleUpdateCoin = useCallback(async (selectedCoinData) => {
+    if (!address || !gameId) {
+      console.error('❌ Missing address or gameId')
+      return
+    }
+
+    try {
+      console.log('📤 Emitting battle_royale_update_coin for', address)
+      console.log('📦 Coin data:', selectedCoinData)
+
+      // Ensure coin has all required fields
+      const coinToSend = {
+        id: selectedCoinData.id || 'plain',
+        type: selectedCoinData.type || 'default', 
+        name: selectedCoinData.name || 'Classic',
+        headsImage: selectedCoinData.headsImage || null,
+        tailsImage: selectedCoinData.tailsImage || null
+      }
+
+      socketService.emit('battle_royale_update_coin', {
+        gameId,
+        address,
+        coin: coinToSend
+      })
+
+      // Update local state immediately
+      setPlayerCoins(prev => ({
+        ...prev,
+        [address]: coinToSend
+      }))
+
+      // Load images
+      if (coinToSend.id !== 'plain') {
+        await loadPlayerCoinImages(address, coinToSend)
+      }
+
+      setShowCoinSelector(false)
+      showToast('Coin updated!', 'success')
+    } catch (err) {
+      console.error('❌ Error updating coin:', err)
+      showToast('Failed to update coin', 'error')
+    }
+  }, [address, gameId, loadPlayerCoinImages, showToast])
+
+  const handleStartGameEarly = useCallback(() => {
+    if (!isCreator || currentPlayers < 2) {
+      showToast('Need at least 2 players to start', 'error')
+      return
+    }
+
+    console.log('🚀 Creator starting game early')
+    socketService.emit('battle_royale_start_early', {
+      gameId,
+      creatorAddress: address
+    })
+  }, [isCreator, currentPlayers, gameId, address, showToast])
+
   const handleCoinSelect = (coin) => {
     console.log('🪙 Coin selected:', coin, 'Selected slot:', selectedSlot, 'Current address:', address)
     
@@ -631,7 +688,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           socketService.emit('battle_royale_update_coin', {
             gameId,
             address: playerAddress,
-            coinData: coin
+            coin: coin
           })
           console.log('🪙 Sent coin update to server:', coin)
           
@@ -677,11 +734,18 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
   }
 
   // Toggle coin side (heads/tails) for lobby viewing
-  const toggleCoinSide = React.useCallback((playerAddress) => {
-    setCoinSides(prev => ({
-      ...prev,
-      [playerAddress]: prev[playerAddress] === 'tails' ? 'heads' : 'tails'
-    }))
+  const handleToggleCoinSide = useCallback((playerAddr) => {
+    console.log('🔄 Toggling coin side for:', playerAddr)
+    
+    setCoinSides(prev => {
+      const currentSide = prev[playerAddr] || 'heads'
+      const newSide = currentSide === 'heads' ? 'tails' : 'heads'
+      console.log(`Toggling ${playerAddr}: ${currentSide} → ${newSide}`)
+      return {
+        ...prev,
+        [playerAddr]: newSide
+      }
+    })
   }, [])
 
   const formatAddress = (addr) => {
@@ -732,56 +796,31 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           </div>
         )}
 
-        {/* Start Game Button - Only for Creator */}
-        {(() => {
-          // Creator should be able to start early if they're not participating OR if they are participating
-          const showButton = isCreator && gameStatus === 'filling' && currentPlayers >= 2
-          
-          // Enhanced debugging to help identify the issue
-          console.log('🚀 Early start button debug:', {
-            isCreator,
-            gameStatus,
-            currentPlayers,
-            showButton,
-            address,
-            gameDataCreator: gameData?.creator,
-            creatorParticipates: gameData?.creator_participates,
-            addressMatches: gameData?.creator?.toLowerCase() === address?.toLowerCase(),
-            playersArray: players.map(p => ({ address: p?.address, isCreator: p?.isCreator }))
-          })
-          
-          // Also log each condition separately
-          console.log('🚀 Early start conditions:', {
-            'isCreator': isCreator,
-            'gameStatus === filling': gameStatus === 'filling',
-            'currentPlayers >= 2': currentPlayers >= 2,
-            'final showButton': showButton
-          })
-          
-          return showButton
-        })() && (
-          <button
-            onClick={() => {
-              socketService.emit('battle_royale_start_early', {
-                gameId,
-                address
-              })
-              showToast('Starting game now!', 'success')
-            }}
-            style={{
-              background: 'linear-gradient(135deg, #00ff88, #00cc6a)',
-              color: '#000',
-              border: 'none',
-              borderRadius: '0.5rem',
-              padding: '1rem 2rem',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              marginTop: '1rem'
-            }}
-          >
-            🚀 Start Game ({currentPlayers}/6 players)
-          </button>
+        {/* Start Early Button - Only for creator */}
+        {isCreator && gameStatus === 'filling' && currentPlayers >= 2 && (
+          <div style={{
+            marginBottom: '1rem',
+            textAlign: 'center'
+          }}>
+            <button
+              onClick={handleStartGameEarly}
+              style={{
+                padding: '1rem 2rem',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+              onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            >
+              🚀 Start Game Early ({currentPlayers}/6 Players)
+            </button>
+          </div>
         )}
       </GameStatus>
 
