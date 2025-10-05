@@ -123,7 +123,7 @@ class GameServer {
 
       socket.on('battle_royale_player_choice', (data) => {
         console.log(`📥 battle_royale_player_choice from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleBattleRoyalePlayerChoice(
+        this.battleRoyaleHandlers.handlePlayerChoice(
           socket, 
           data, 
           this.battleRoyaleManager, 
@@ -131,9 +131,9 @@ class GameServer {
         )
       })
 
-      socket.on('battle_royale_execute_flip', (data) => {
-        console.log(`📥 battle_royale_execute_flip from ${socket.id}`, data)
-        this.battleRoyaleHandlers.handleBattleRoyaleExecuteFlip(
+      socket.on('battle_royale_flip_coin', (data) => {
+        console.log(`📥 battle_royale_flip_coin from ${socket.id}`, data)
+        this.battleRoyaleHandlers.handleFlipCoin(
           socket, 
           data, 
           this.battleRoyaleManager, 

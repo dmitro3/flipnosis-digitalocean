@@ -337,6 +337,10 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       showToast(`Game starting in ${data.countdown} seconds!`, 'success')
       if (mounted) {
         setGameStatus('starting')
+        // Force a server state request to get updated game state
+        setTimeout(() => {
+          socketService.emit('request_battle_royale_state', { gameId })
+        }, 500)
       }
     }
 
@@ -823,6 +827,30 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
           </div>
         )}
       </GameStatus>
+
+      {/* 3D Battle Royale Scene */}
+      {gameStatus === 'in_progress' && (
+        <div style={{
+          width: '100%',
+          height: '600px',
+          background: 'rgba(0, 0, 0, 0.3)',
+          borderRadius: '1rem',
+          overflow: 'hidden',
+          border: '2px solid #FFD700'
+        }}>
+          <BattleRoyaleUnified3DScene
+            players={players}
+            gamePhase={serverGamePhase}
+            serverState={serverState}
+            flipStates={serverFlipStates}
+            playerCoinImages={playerCoinImages}
+            currentUserAddress={address}
+            onFlipComplete={(playerAddress, result) => {
+              console.log(`🪙 Flip complete for ${playerAddress}: ${result}`)
+            }}
+          />
+        </div>
+      )}
 
       {/* Lobby Display - 6 Player Slots */}
       <div style={{

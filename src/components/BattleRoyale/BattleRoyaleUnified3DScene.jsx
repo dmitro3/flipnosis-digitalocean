@@ -126,10 +126,30 @@ const BattleRoyaleUnified3DScene = ({
     if (!mountRef.current || sceneRef.current) return
 
     console.log('🎬 Creating unified Battle Royale 3D scene')
+    console.log('📊 Players data:', players)
+    console.log('🖼️ Player coin images:', playerCoinImages)
     
     // Clear any existing scene
     if (sceneRef.current) {
-      sceneRef.current.clear()
+      // Properly dispose of existing scene
+      const scene = sceneRef.current
+      scene.traverse((child) => {
+        if (child.geometry) {
+          child.geometry.dispose()
+        }
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(material => {
+              if (material.map) material.map.dispose()
+              material.dispose()
+            })
+          } else {
+            if (child.material.map) child.material.map.dispose()
+            child.material.dispose()
+          }
+        }
+      })
+      scene.clear()
     }
 
     const scene = new THREE.Scene()
@@ -183,6 +203,14 @@ const BattleRoyaleUnified3DScene = ({
       
       if (player?.address) {
         const playerAddressLower = player.address.toLowerCase()
+        const coinImages = playerCoinImages[playerAddressLower]
+        
+        console.log(`🪙 Creating coin ${i} for player ${player.address}:`, {
+          address: player.address,
+          addressLower: playerAddressLower,
+          coinImages: coinImages,
+          availableImages: Object.keys(playerCoinImages)
+        })
         
         const materials = [
           new THREE.MeshStandardMaterial({
@@ -194,7 +222,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('heads', playerCoinImages[playerAddressLower]?.headsImage || '/coins/plainh.png'),
+            map: createOptimizedTexture('heads', coinImages?.headsImage || '/coins/plainh.png'),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,
@@ -202,7 +230,7 @@ const BattleRoyaleUnified3DScene = ({
             emissiveIntensity: 0.1
           }),
           new THREE.MeshStandardMaterial({
-            map: createOptimizedTexture('tails', playerCoinImages[playerAddressLower]?.tailsImage || '/coins/plaint.png'),
+            map: createOptimizedTexture('tails', coinImages?.tailsImage || '/coins/plaint.png'),
             metalness: 0.3,
             roughness: 0.2,
             color: 0xFFFFFF,

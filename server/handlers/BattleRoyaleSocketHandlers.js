@@ -353,6 +353,49 @@ class BattleRoyaleSocketHandlers {
     socket.emit('battle_royale_state_update', fullState)
   }
 
+  // Handle player choice (heads/tails)
+  async handlePlayerChoice(socket, data, battleRoyaleManager, io) {
+    try {
+      const { gameId, address, choice } = data
+      console.log(`🎯 Player ${address} chose ${choice} in game ${gameId}`)
+      
+      const success = battleRoyaleManager.setPlayerChoice(gameId, address, choice)
+      if (success) {
+        // Broadcast updated state
+        const gameState = battleRoyaleManager.getFullGameState(gameId)
+        io.to(`game_${gameId}`).emit('battle_royale_state_update', gameState)
+        
+        socket.emit('battle_royale_choice_confirmed', { choice })
+      } else {
+        socket.emit('battle_royale_error', { message: 'Failed to set choice' })
+      }
+    } catch (error) {
+      console.error('❌ Error handling player choice:', error)
+      socket.emit('battle_royale_error', { message: 'Server error' })
+    }
+  }
+
+  // Handle coin flip
+  async handleFlipCoin(socket, data, battleRoyaleManager, io) {
+    try {
+      const { gameId, address, power } = data
+      console.log(`🪙 Player ${address} flipping coin with power ${power} in game ${gameId}`)
+      
+      const success = battleRoyaleManager.executePlayerFlip(gameId, address, (roomId, eventType, eventData) => {
+        io.to(roomId).emit(eventType, eventData)
+      })
+      
+      if (success) {
+        socket.emit('battle_royale_flip_confirmed', { power })
+      } else {
+        socket.emit('battle_royale_error', { message: 'Failed to flip coin' })
+      }
+    } catch (error) {
+      console.error('❌ Error handling coin flip:', error)
+      socket.emit('battle_royale_error', { message: 'Server error' })
+    }
+  }
+
   // Start Battle Royale Early
   async handleBattleRoyaleStartEarly(socket, data, battleRoyaleManager, io, dbService) {
     console.log(`🚀 handleBattleRoyaleStartEarly called with data:`, JSON.stringify(data))

@@ -5,6 +5,7 @@ import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import socketService from '../../services/SocketService'
+import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
 import './BattleRoyaleCoins.css'
 
 const GameContainer = styled.div`
@@ -264,6 +265,8 @@ const BattleRoyaleGameRoom = ({
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [playerCoinImages, setPlayerCoinImages] = useState({})
+  const [isCharging, setIsCharging] = useState(false)
+  const [powerLevel, setPowerLevel] = useState(1)
   
   // Fix the isCreator check - add this near the top of the component:
   const isCreator = serverState?.creator?.toLowerCase() === address?.toLowerCase()
@@ -296,6 +299,81 @@ const BattleRoyaleGameRoom = ({
       }))
     }
   }, [getCoinHeadsImage, getCoinTailsImage])
+
+  // Handle choice selection (heads/tails)
+  const handleChoiceSelect = useCallback((choice) => {
+    if (!gameId || !address || !serverState) return
+    
+    console.log(`🎯 Player ${address} chose ${choice}`)
+    
+    try {
+      socketService.emit('battle_royale_player_choice', {
+        gameId,
+        address,
+        choice
+      })
+      showToast(`Selected ${choice}!`, 'success')
+    } catch (error) {
+      console.error('Error sending choice:', error)
+      showToast('Failed to send choice', 'error')
+    }
+  }, [gameId, address, serverState, showToast])
+
+  // Handle power charging
+  const startPowerCharging = useCallback(() => {
+    if (isCharging) return
+    
+    setIsCharging(true)
+    setPowerLevel(1)
+    
+    const chargeInterval = setInterval(() => {
+      setPowerLevel(prev => {
+        if (prev >= 10) {
+          clearInterval(chargeInterval)
+          setIsCharging(false)
+          return 10
+        }
+        return prev + 0.1
+      })
+    }, 50)
+  }, [isCharging])
+
+  // Handle coin flip
+  const handleFlipCoin = useCallback(() => {
+    if (!gameId || !address || !serverState) return
+    
+    const finalPower = Math.round(powerLevel)
+    console.log(`🪙 Player ${address} flipping coin with power ${finalPower}`)
+    
+    try {
+      socketService.emit('battle_royale_flip_coin', {
+        gameId,
+        address,
+        power: finalPower
+      })
+      
+      setIsCharging(false)
+      setPowerLevel(1)
+      showToast('Coin flipped!', 'success')
+    } catch (error) {
+      console.error('Error flipping coin:', error)
+      showToast('Failed to flip coin', 'error')
+    }
+  }, [gameId, address, serverState, powerLevel, showToast])
+
+  // Power charging on mouse down
+  const handleMouseDown = useCallback(() => {
+    if (serverState?.phase === 'round_active' && !isCharging) {
+      startPowerCharging()
+    }
+  }, [serverState?.phase, isCharging, startPowerCharging])
+
+  // Stop charging on mouse up
+  const handleMouseUp = useCallback(() => {
+    if (isCharging) {
+      setIsCharging(false)
+    }
+  }, [isCharging])
 
   // ===== HELPER FUNCTIONS =====
   const isMyTurn = useCallback(() => {
@@ -448,6 +526,35 @@ const BattleRoyaleGameRoom = ({
 
   return (
     <GameContainer>
+      {/* 3D Battle Royale Scene */}
+      {serverState?.phase === 'round_active' && (
+        <div style={{
+          width: '100%',
+          height: '600px',
+          background: 'rgba(0, 0, 0, 0.3)',
+          borderRadius: '1rem',
+          overflow: 'hidden',
+          border: '2px solid #FFD700',
+          marginBottom: '2rem'
+        }}>
+          <BattleRoyaleUnified3DScene
+            players={serverState.playerSlots?.map((address, index) => ({
+              address,
+              slotNumber: index,
+              ...(address && serverState.players?.[address])
+            })) || []}
+            gamePhase={serverState.phase}
+            serverState={serverState}
+            flipStates={{}}
+            playerCoinImages={playerCoinImages}
+            currentUserAddress={address}
+            onFlipComplete={(playerAddress, result) => {
+              console.log(`🪙 Flip complete for ${playerAddress}: ${result}`)
+            }}
+          />
+        </div>
+      )}
+
       {/* Main game layout */}
       <div id="gamePhase">
         <GameLayout>
@@ -499,7 +606,9 @@ const BattleRoyaleGameRoom = ({
           
           {/* Right side: Active player panel */}
           <ActivePlayerPanel>
-            <div className="round-timer">20</div>
+            <div className="round-timer">
+              {serverState?.roundCountdown || 20}
+            </div>
             
             <div className="player-coin-large">
               {currentPlayer && playerCoinImages[address.toLowerCase()] ? (
@@ -514,20 +623,49 @@ const BattleRoyaleGameRoom = ({
           </div>
             
             <div className="choice-buttons">
-              <button className="choice-btn" data-choice="heads">HEADS</button>
-              <button className="choice-btn" data-choice="tails">TAILS</button>
+              <button 
+                className="choice-btn" 
+                data-choice="heads"
+                onClick={() => handleChoiceSelect('heads')}
+                disabled={currentPlayer?.hasFlipped || serverState?.phase !== 'round_active'}
+              >
+                HEADS
+              </button>
+              <button 
+                className="choice-btn" 
+                data-choice="tails"
+                onClick={() => handleChoiceSelect('tails')}
+                disabled={currentPlayer?.hasFlipped || serverState?.phase !== 'round_active'}
+              >
+                TAILS
+              </button>
               </div>
               
             <div className="flip-button-container">
-              <button className="flip-btn" disabled>FLIP COIN</button>
+              <button 
+                className="flip-btn" 
+                onClick={handleFlipCoin}
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
+                disabled={
+                  !currentPlayer?.choice || 
+                  currentPlayer?.hasFlipped || 
+                  serverState?.phase !== 'round_active'
+                }
+              >
+                {isCharging ? `CHARGING... ${Math.round(powerLevel * 10)}%` : 'FLIP COIN'}
+              </button>
             </div>
             
             <div className="power-bar-container">
               <div className="power-bar">
-                <div className="power-fill"></div>
+                <div 
+                  className="power-fill" 
+                  style={{ width: `${(powerLevel / 10) * 100}%` }}
+                ></div>
+              </div>
+              <div className="power-label">POWER: <span className="power-value">{Math.round(powerLevel * 10)}%</span></div>
             </div>
-              <div className="power-label">POWER: <span className="power-value">0%</span></div>
-          </div>
           </ActivePlayerPanel>
         </GameLayout>
         </div>
