@@ -211,80 +211,16 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
   }, [loadGameData])
   
   // ===== GAME STATUS LISTENERS =====
-  // Monitor socket connection and register parent listeners
+  // Simplified - let child components handle socket connections
+  // This prevents duplicate listeners that cause refresh issues
   useEffect(() => {
     if (!gameId || !address) return
     
-    let mounted = true
-    let checkInterval
+    console.log('🔥 PARENT: Tab interface mounted, child components will handle connections')
     
-    // Create stable listener functions
-    const handleGameStateUpdate = (data) => {
-      if (!mounted) return
-      console.log('🔥🔥🔥 PARENT TAB INTERFACE RECEIVED STATE UPDATE:', data.phase)
-      
-      // Update game status based on server state
-      if (data.phase === 'starting') {
-        console.log('🔥 Parent setting status to: starting')
-        setGameStatus('starting')
-      } else if (data.phase === 'round_active' || data.phase === 'eliminating') {
-        console.log('🔥 Parent setting status to: in_progress')
-        setGameStatus('in_progress')
-      } else if (data.phase === 'completed') {
-        console.log('🔥 Parent setting status to: completed')
-        setGameStatus('completed')
-      } else {
-        console.log('🔥 Parent setting status to: filling')
-        setGameStatus('filling')
-      }
-    }
+    // No socket listeners here - let child components handle them
+    // This prevents the refresh issue caused by duplicate listeners
     
-    const handleGameStarting = (data) => {
-      if (!mounted) return
-      console.log('🔥🚀 PARENT Tab Interface: Game starting')
-      setGameStatus('starting')
-    }
-    
-    // Wait for socket to be ready, then register listeners
-    const registerListeners = () => {
-      if (socketService.socket && socketService.connected) {
-        console.log('🔥 PARENT: Socket ready, registering persistent listeners')
-        socketService.socket.on('battle_royale_state_update', handleGameStateUpdate)
-        socketService.socket.on('battle_royale_starting', handleGameStarting)
-        
-        // Clear the check interval once registered
-        if (checkInterval) {
-          clearInterval(checkInterval)
-          checkInterval = null
-        }
-        return true
-      }
-      return false
-    }
-    
-    // Try to register immediately
-    if (!registerListeners()) {
-      // If socket not ready, check every 100ms
-      console.log('🔥 PARENT: Socket not ready, waiting...')
-      checkInterval = setInterval(() => {
-        if (registerListeners()) {
-          console.log('🔥 PARENT: Successfully registered after waiting')
-        }
-      }, 100)
-    }
-    
-    return () => {
-      mounted = false
-      if (checkInterval) {
-        clearInterval(checkInterval)
-      }
-      // Remove OUR specific listeners
-      if (socketService.socket) {
-        console.log('🔥 PARENT: Cleanup - removing persistent listeners')
-        socketService.socket.off('battle_royale_state_update', handleGameStateUpdate)
-        socketService.socket.off('battle_royale_starting', handleGameStarting)
-      }
-    }
   }, [gameId, address])
   
   // ===== TAB SWITCHING LOGIC =====

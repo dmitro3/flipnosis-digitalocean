@@ -365,34 +365,63 @@ const BattleRoyaleGameRoom = ({
     if (!gameId || !address) return
 
     let mounted = true
+    let connectionTimeout = null
+    
     console.log('🔌 Connecting to Battle Royale game server...')
 
     const connectToGame = async () => {
       try {
+        // Ensure we're connected to the right game
+        const roomId = `game_${gameId}`
         await socketService.connect(gameId, address)
+        
         if (mounted) {
           setConnected(true)
+          console.log('✅ Connected to Battle Royale server')
         }
         
-        // Register event listeners
-        socketService.on('room_joined', handleRoomJoined)
-        socketService.on('battle_royale_state_update', handleGameStateUpdate)
-        socketService.on('roundStart', handleRoundStart)
-        socketService.on('roundEnd', handleRoundEnd)
-        socketService.on('gameWon', handleGameWon)
-        socketService.on('allEliminated', handleAllEliminated)
+        // Register event listeners with proper cleanup
+        const cleanupFunctions = []
         
-        // Join room
+        const setupListener = (event, handler) => {
+          socketService.on(event, handler)
+          cleanupFunctions.push(() => socketService.off(event, handler))
+        }
+        
+        setupListener('room_joined', handleRoomJoined)
+        setupListener('battle_royale_state_update', handleGameStateUpdate)
+        setupListener('roundStart', handleRoundStart)
+        setupListener('roundEnd', handleRoundEnd)
+        setupListener('gameWon', handleGameWon)
+        setupListener('allEliminated', handleAllEliminated)
+        setupListener('battle_royale_player_flipped', (data) => {
+          console.log('🪙 Player flip received:', data)
+        })
+        
+        // Join room with consistent room ID
         socketService.emit('join_battle_royale_room', { 
-          roomId: gameId.startsWith('br_') ? gameId : `br_${gameId}`, 
+          roomId: roomId,
           address 
         })
         
-        // Request current game state
-        setTimeout(() => {
+        // Request current game state with retry mechanism
+        const requestState = () => {
           socketService.emit('request_battle_royale_state', { gameId })
-        }, 100)
+        }
         
+        // Immediate request
+        requestState()
+        
+        // Retry request after a short delay to handle race conditions
+        connectionTimeout = setTimeout(() => {
+          if (mounted && !serverState) {
+            console.log('🔄 Retrying state request...')
+            requestState()
+          }
+        }, 500)
+        
+        // Store cleanup functions for later use
+        return cleanupFunctions
         
       } catch (error) {
         console.error('❌ Failed to connect to Battle Royale game server:', error)
@@ -402,19 +431,27 @@ const BattleRoyaleGameRoom = ({
       }
     }
 
-    connectToGame()
+    connectToGame().then(cleanupFunctions => {
+      // Store cleanup functions for component unmount
+      if (cleanupFunctions) {
+        mounted.cleanup = cleanupFunctions
+      }
+    })
 
     return () => {
       mounted = false
-      // Cleanup listeners
-      socketService.off('room_joined', handleRoomJoined)
-      socketService.off('battle_royale_state_update', handleGameStateUpdate)
-      socketService.off('roundStart', handleRoundStart)
-      socketService.off('roundEnd', handleRoundEnd)
-      socketService.off('gameWon', handleGameWon)
-      socketService.off('allEliminated', handleAllEliminated)
+      
+      // Clear timeout
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout)
+      }
+      
+      // Execute cleanup functions
+      if (mounted.cleanup) {
+        mounted.cleanup.forEach(cleanup => cleanup())
+      }
     }
-  }, [gameId, address, handleRoomJoined, handleGameStateUpdate, handleRoundStart, handleRoundEnd, handleGameWon, handleAllEliminated, showToast])
+  }, [gameId, address]) // Removed handlers from dependencies to prevent re-connections
 
   // Show loading state
   if (loading) {

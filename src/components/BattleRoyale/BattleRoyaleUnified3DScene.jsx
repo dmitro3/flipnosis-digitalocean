@@ -345,8 +345,13 @@ const BattleRoyaleUnified3DScene = ({
             const launchHeight = 2.5
             coin.position.y = posData.y + (heightProgress * launchHeight)
             
+            // Forward spinning animation - coins spin towards viewer
             const totalRotation = 10 * Math.PI * 2
             coin.rotation.x = state.startRotation.x + (totalRotation * easeOut)
+            
+            // Add forward motion effect
+            const forwardProgress = Math.sin(progress * Math.PI)
+            coin.position.z = posData.z + (forwardProgress * 2) // Move towards viewer
             
             const wobbleAmount = 0.1 * Math.sin(elapsed * 0.01) * (1 - progress)
             coin.rotation.y = Math.PI / 2 + wobbleAmount
@@ -355,6 +360,7 @@ const BattleRoyaleUnified3DScene = ({
             if (progress >= 1) {
               state.isFlipping = false
               coin.position.y = posData.y
+              coin.position.z = posData.z // Reset to original position
               
               const finalRotation = state.flipResult === 'heads' ? 0 : Math.PI
               const currentRotations = Math.floor(coin.rotation.x / (Math.PI * 2))
@@ -663,7 +669,51 @@ const BattleRoyaleUnified3DScene = ({
         alignItems: 'center',
         justifyContent: 'center'
       }}
-    />
+    >
+      {/* Choice Display Overlay */}
+      {players.map((player, index) => {
+        if (!player?.address) return null
+        
+        const choice = serverState?.players?.[player.address.toLowerCase()]?.choice
+        const posData = coinPositions[index]
+        
+        if (!choice) return null
+        
+        return (
+          <div
+            key={`choice-${index}`}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: `translate(
+                ${posData.x * 15 + 50}px,
+                ${-posData.y * 15 + 50 + 80}px
+              )`,
+              color: choice === 'heads' ? '#FFD700' : '#C0C0C0',
+              fontSize: '1.2rem',
+              fontWeight: 'bold',
+              textShadow: '0 0 10px rgba(0,0,0,0.8)',
+              textAlign: 'center',
+              pointerEvents: 'none',
+              zIndex: 100,
+              minWidth: '60px'
+            }}
+          >
+            <div style={{
+              background: 'rgba(0,0,0,0.7)',
+              padding: '0.3rem 0.6rem',
+              borderRadius: '0.5rem',
+              border: `2px solid ${choice === 'heads' ? '#FFD700' : '#C0C0C0'}`,
+              textTransform: 'uppercase',
+              letterSpacing: '1px'
+            }}>
+              {choice}
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

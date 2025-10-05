@@ -278,6 +278,7 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
     if (!gameId || !address) return
 
     let mounted = true
+    let stateRequestTimeout = null
 
     const onStateUpdate = (data) => {
       if (!mounted) return
@@ -337,24 +338,46 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
       showToast(`Game starting in ${data.countdown} seconds!`, 'success')
       if (mounted) {
         setGameStatus('starting')
-        // Force a server state request to get updated game state
-        setTimeout(() => {
-          socketService.emit('request_battle_royale_state', { gameId })
-        }, 500)
+        // Clear any pending state requests since game is starting
+        if (stateRequestTimeout) {
+          clearTimeout(stateRequestTimeout)
+        }
       }
     }
 
     const setup = async () => {
       try {
-        if (!socketService.isConnected() || socketService.getCurrentRoom() !== `br_${gameId}`) {
+        // Use consistent room ID format
+        const roomId = `game_${gameId}`
+        
+        // Only connect if not already connected to this game
+        if (!socketService.isConnected() || socketService.getCurrentRoom() !== roomId) {
           await socketService.connect(gameId, address)
         }
         
+        // Register listeners
         socketService.on('battle_royale_state_update', onStateUpdate)
         socketService.on('battle_royale_starting', onGameStarting)
         
-        socketService.emit('join_battle_royale_room', { roomId: `game_${gameId}`, address })
-        socketService.emit('request_battle_royale_state', { gameId })
+        // Join room and request state
+        socketService.emit('join_battle_royale_room', { roomId, address })
+        
+        // Request state with retry mechanism
+        const requestState = () => {
+          socketService.emit('request_battle_royale_state', { gameId })
+        }
+        
+        // Immediate request
+        requestState()
+        
+        // Backup request after delay to handle race conditions
+        stateRequestTimeout = setTimeout(() => {
+          if (mounted && !serverState) {
+            console.log('🔄 Backup state request...')
+            requestState()
+          }
+        }, 1000)
+        
       } catch (err) {
         console.error('Socket setup failed:', err)
       }
@@ -364,6 +387,13 @@ const BattleRoyaleGamePageTab = ({ gameData, gameId, address, isCreator }) => {
 
     return () => {
       mounted = false
+      
+      // Clear timeout
+      if (stateRequestTimeout) {
+        clearTimeout(stateRequestTimeout)
+      }
+      
+      // Remove listeners
       socketService.off('battle_royale_state_update', onStateUpdate)
       socketService.off('battle_royale_starting', onGameStarting)
     }
