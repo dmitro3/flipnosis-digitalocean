@@ -5,6 +5,7 @@ import { useBattleRoyaleGame } from '../../contexts/BattleRoyaleGameContext'
 import { useWallet } from '../../contexts/WalletContext'
 import { useToast } from '../../contexts/ToastContext'
 import contractService from '../../services/ContractService'
+import socketService from '../../services/SocketService'
 import ProfilePicture from '../ProfilePicture'
 import CoinSelector from '../CoinSelector'
 import FloatingChatWidget from './FloatingChatWidget'
@@ -340,6 +341,20 @@ const LobbyScreen = () => {
       
       if (result.success) {
         showToast('Successfully joined!', 'success')
+        
+        // 🔥 THIS WAS MISSING - Tell the server to add player to game
+        socketService.emit('join_battle_royale', {
+          gameId: gameState.gameId,
+          address: address,
+          betAmount: totalAmountETH
+        })
+        
+        // Request updated state
+        socketService.emit('request_battle_royale_state', { 
+          gameId: gameState.gameId 
+        })
+        
+        console.log('✅ Notified server of player join')
       } else {
         throw new Error(result.error || 'Failed to join')
       }
