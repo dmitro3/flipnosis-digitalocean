@@ -3,7 +3,7 @@ const BattleRoyaleGameManager = require('../BattleRoyaleGameManager')
 const BattleRoyaleDBService = require('../services/BattleRoyaleDBService')
 
 // ===== CLEAN SERVER ARCHITECTURE =====
-// Single source of truth for all game state management
+
 // Server handles ALL game logic - clients only send actions and render state
 
 class GameServer {
@@ -31,7 +31,7 @@ class GameServer {
   }
 
   // ===== INITIALIZATION =====
-  initialize(server, dbService) {
+initialize(server, dbService) {
     console.log('🚀 Initializing Clean Game Server...')
     
     this.dbService = dbService
@@ -158,149 +158,49 @@ class GameServer {
   }
 
   // ===== ROOM MANAGEMENT =====
-  async handleJoinRoom(socket, data) {
+  handleJoinRoom(socket, data) {
     const { roomId, address } = data
-    console.log(`🏠 ${address} joining ${roomId}`)
+    console.log(`🏠 ${address} joining room: ${roomId}`)
     
-    // Leave previous rooms
-    socket.rooms.forEach(room => {
-      if (room !== socket.id) socket.leave(room)
-    })
-    
-    // Join new room
     socket.join(roomId)
+    this.socketData.set(socket.id, { address, roomId })
     
-    // Determine role (creator, challenger, or spectator) - Battle Royale only
-    const gameId = roomId // Keep the full game ID including 'br_' prefix
-    let role = 'spectator'
-    
-    // For Battle Royale games, check database for role
-    if (this.dbService) {
-      try {
-        const gameData = await this.dbService.getBattleRoyaleGame(gameId)
-        if (gameData) {
-          console.log(`🔍 Loaded Battle Royale game from DB for role detection:`, {
-            creator: gameData.creator,
-            joiningAddress: address
-          })
-          
-          // Check roles against database data
-          if (address.toLowerCase() === gameData.creator?.toLowerCase()) {
-            role = 'creator'
-          } else {
-            role = 'player'
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error loading Battle Royale game for role detection:', error)
-      }
+    // Handle Battle Royale room joins
+    if (roomId.startsWith('game_')) {
+      const gameId = roomId.substring(5)
+      this.battleRoyaleHandlers.handleJoinBattleRoyaleRoom(
+        socket, 
+        { roomId, address }, 
+        this.battleRoyaleManager, 
+        this.io,
+        this.dbService
+      )
     }
     
-    console.log(`🎭 Role assigned: ${address} → ${role}`)
-    
-    this.socketData.set(socket.id, { address, roomId, gameId, role })
-    this.userSockets.set(address.toLowerCase(), socket.id)
-    
-    // Add to Battle Royale room tracking
-    if (!this.battleRoyaleRooms.has(gameId)) {
-      this.battleRoyaleRooms.set(gameId, new Set())
-    }
-    this.battleRoyaleRooms.get(gameId).add(socket.id)
-    
-    socket.emit('room_joined', { 
-      roomId, 
-      role,
-      members: this.io.sockets.adapter.rooms.get(roomId)?.size || 0 
-    })
-    
-    // Send current Battle Royale game state if it exists
-    const battleRoyaleGame = this.battleRoyaleManager.getGame(gameId)
-    if (battleRoyaleGame) {
-      const fullState = this.battleRoyaleManager.getFullGameState(gameId)
-      socket.emit('battle_royale_state_update', fullState)
-    }
-    
-    // Send chat history if exists (preserved)
-    if (this.dbService && typeof this.dbService.getChatHistory === 'function') {
-      try {
-        const messages = await this.dbService.getChatHistory(roomId, 50)
-        socket.emit('chat_history', { roomId, messages })
-        console.log(`📚 Sent ${messages.length} chat messages to ${address}`)
-      } catch (error) {
-        console.error('❌ Error loading chat history:', error)
-      }
-    }
+    console.log(`✅ ${address} joined room ${roomId}`)
   }
 
-
-
-
-  // ===== PRESERVED METHODS (Chat, Offers, Deposits) =====
-  async handleChatMessage(socket, data) {
+  // ===== CHAT SYSTEM =====
+  handleChatMessage(socket, data) {
     const { roomId, message, address } = data
-    console.log(`💬 Chat message from ${address} in ${roomId}: ${message}`)
-    
-    // Save to database
-    if (this.dbService && typeof this.dbService.saveChatMessage === 'function') {
-      try {
-        await this.dbService.saveChatMessage(roomId, address, message)
-      } catch (error) {
-        console.error('❌ Error saving chat message:', error)
-      }
-    }
+    console.log(`💬 Chat from ${address} in ${roomId}: ${message}`)
     
     // Broadcast to room
-    this.io.to(roomId).emit('chat_message', {
-      type: 'chat_message',
+    socket.to(roomId).emit('chat_message', {
+      address,
       message,
-      from: address,
       timestamp: new Date().toISOString()
     })
   }
 
-
-
-
-
   // ===== DISCONNECTION =====
   handleDisconnect(socket) {
-    console.log('❌ Disconnected:', socket.id)
-    
-    const data = this.socketData.get(socket.id)
-    if (data) {
-      // Handle Battle Royale disconnection
-      if (data.gameType === 'battle_royale' && data.gameId && data.role === 'spectator') {
-        this.battleRoyaleManager.removeSpectator(data.gameId, data.address)
-      }
-      
-      this.userSockets.delete(data.address.toLowerCase())
+    const socketData = this.socketData.get(socket.id)
+    if (socketData) {
+      console.log(`❌ ${socketData.address} disconnected from ${socketData.roomId}`)
       this.socketData.delete(socket.id)
-      
-      // Remove from Battle Royale room tracking
-      if (data.gameType === 'battle_royale' && data.gameId) {
-        const brRoom = this.battleRoyaleRooms.get(data.gameId)
-        if (brRoom) {
-          brRoom.delete(socket.id)
-          if (brRoom.size === 0) {
-            // Consider cleaning up empty Battle Royale games
-            this.battleRoyaleRooms.delete(data.gameId)
-          }
-        }
-      }
     }
   }
 }
 
-// ===== SINGLETON INSTANCE =====
-const gameServer = new GameServer()
-
-// ===== EXPORT FUNCTION =====
-function initializeSocketIO(server, dbService) {
-  const io = gameServer.initialize(server, dbService)
-  return {
-    io,
-    gameServer // Export the gameServer instance
-  }
-}
-
-module.exports = { initializeSocketIO }
+module.exports = GameServer

@@ -55,43 +55,14 @@ class BattleRoyaleSocketHandlers {
     const roomId = `game_${gameId}`
     socket.join(roomId)
     
-    // Load game if needed
-    let game = gameManager.getGame(gameId)
-    if (!game && dbService) {
-      try {
-        const gameData = await dbService.getBattleRoyaleGame(gameId)
-        if (gameData && gameData.status === 'filling') {
-          game = gameManager.createBattleRoyale(gameId, gameData, dbService)
-        }
-      } catch (error) {
-        console.error('Error loading game:', error)
-      }
-    }
-    
-    if (!game) {
-      socket.emit('battle_royale_error', { message: 'Game not found' })
-      return
-    }
-    
-    // Add player
+    // Add player to game
     const success = gameManager.addPlayer(gameId, address)
-    if (!success) {
-      socket.emit('battle_royale_error', { message: 'Cannot join game' })
-      return
-    }
-    
-    // Broadcast updated state
-    gameManager.broadcastState(gameId, (room, event, data) => {
-      io.to(room).emit(event, data)
-    })
-    
-    // Auto-start if full
-    if (game.readyToStart) {
-      setTimeout(() => {
-        gameManager.prepareGameStart(gameId, (room, event, data) => {
-          io.to(room).emit(event, data)
-        })
-      }, 1000)
+    if (success) {
+      // Broadcast updated state
+      const state = gameManager.getFullGameState(gameId)
+      io.to(roomId).emit('battle_royale_state_update', state)
+    } else {
+      socket.emit('battle_royale_error', { message: 'Failed to join game' })
     }
     
     console.log(`✅ ${address} joined game`)
@@ -104,9 +75,9 @@ class BattleRoyaleSocketHandlers {
     
     const success = gameManager.setPlayerChoice(gameId, address, choice)
     if (success) {
-      gameManager.broadcastState(gameId, (room, event, data) => {
-        io.to(room).emit(event, data)
-      })
+      // Broadcast updated state
+      const state = gameManager.getFullGameState(gameId)
+      io.to(`game_${gameId}`).emit('battle_royale_state_update', state)
     } else {
       socket.emit('battle_royale_error', { message: 'Cannot make choice now' })
     }
@@ -133,10 +104,9 @@ class BattleRoyaleSocketHandlers {
     
     const success = gameManager.updatePlayerCoin(gameId, address, coin)
     if (success) {
-      gameManager.broadcastState(gameId, (room, event, data) => {
-        io.to(room).emit(event, data)
-      })
-      socket.emit('battle_royale_coin_updated', { success: true, coin })
+      // Broadcast updated state
+      const state = gameManager.getFullGameState(gameId)
+      io.to(`game_${gameId}`).emit('battle_royale_state_update', state)
     } else {
       socket.emit('battle_royale_error', { message: 'Cannot update coin' })
     }
