@@ -86,7 +86,7 @@ class BattleRoyaleGameManager {
     
     // Automatically add the creator as the first player if they want to participate
     if (gameData.creator_participates === true || gameData.creator_participates === 1) {
-      this.addCreatorAsPlayer(gameId, gameData.creator)
+      this.addCreatorAsPlayer(gameId, gameData.creator, dbService)
     } else {
       console.log(`🪙 Creator ${gameData.creator} will NOT participate in game ${gameId}`)
     }
@@ -121,7 +121,7 @@ class BattleRoyaleGameManager {
   }
 
   // ===== PLAYER MANAGEMENT =====
-  addCreatorAsPlayer(gameId, creatorAddress) {
+  async addCreatorAsPlayer(gameId, creatorAddress, dbService = null) {
     const game = this.battleRoyaleGames.get(gameId)
     if (!game) {
       console.error(`❌ Game not found: ${gameId}`)
@@ -190,6 +190,32 @@ class BattleRoyaleGameManager {
     game.lastActivity = Date.now()
 
     console.log(`✅ Creator ${creatorAddress} added as first player in game ${gameId}`)
+    
+    // Update database with new player count
+    if (dbService && typeof dbService.updateBattleRoyaleGame === 'function') {
+      try {
+        await dbService.updateBattleRoyaleGame(gameId, { current_players: game.currentPlayers })
+        console.log(`✅ Database updated with creator added: ${game.currentPlayers} players`)
+      } catch (error) {
+        console.error(`❌ Failed to update database with creator:`, error)
+      }
+    }
+    
+    // Also add creator to participants table
+    if (dbService && typeof dbService.addBattleRoyalePlayer === 'function') {
+      try {
+        await dbService.addBattleRoyalePlayer(gameId, {
+          player_address: creatorAddress,
+          slot_number: 0,
+          entry_paid: true,
+          entry_amount: 0
+        })
+        console.log(`✅ Creator added to participants table`)
+      } catch (error) {
+        console.error(`❌ Failed to add creator to participants table:`, error)
+      }
+    }
+    
     return true
   }
 

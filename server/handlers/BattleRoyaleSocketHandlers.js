@@ -7,7 +7,7 @@ class BattleRoyaleSocketHandlers {
   }
 
   // Join Battle Royale Room
-  async handleJoinBattleRoyaleRoom(socket, data, battleRoyaleManager, io) {
+  async handleJoinBattleRoyaleRoom(socket, data, battleRoyaleManager, io, dbService) {
     const { roomId, address } = data
     const gameId = roomId.startsWith('game_') ? roomId.substring(5) : roomId
     
@@ -16,10 +16,47 @@ class BattleRoyaleSocketHandlers {
     // Join socket room
     socket.join(`game_${gameId}`)
     
-    // Get or create game
+    // Get or load game from database
     let game = battleRoyaleManager.getGame(gameId)
+    if (!game && dbService) {
+      console.log(`🔄 Loading Battle Royale game from database: ${gameId}`)
+      try {
+        const gameData = await dbService.getBattleRoyaleGame(gameId)
+        if (gameData) {
+          console.log(`✅ Game data loaded from DB:`, {
+            creator: gameData.creator,
+            status: gameData.status,
+            currentPlayers: gameData.current_players,
+            creatorParticipates: gameData.creator_participates
+          })
+          
+          // Create game in memory
+          game = battleRoyaleManager.createBattleRoyale(gameId, gameData, dbService)
+          
+          // Load participants from database
+          if (dbService.getBattleRoyaleParticipants) {
+            try {
+              const participants = await dbService.getBattleRoyaleParticipants(gameId)
+              console.log(`✅ Loaded ${participants.length} participants from database`)
+              
+              // Add participants to game state
+              for (const participant of participants) {
+                if (participant.player_address !== gameData.creator) {
+                  battleRoyaleManager.addPlayer(gameId, participant.player_address, participant.slot_number)
+                  console.log(`✅ Added participant ${participant.player_address} to slot ${participant.slot_number}`)
+                }
+              }
+            } catch (error) {
+              console.error('❌ Error loading participants:', error)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading Battle Royale game:', error)
+      }
+    }
+    
     if (!game) {
-      // This would normally load from database
       console.log(`❌ Battle Royale game not found: ${gameId}`)
       socket.emit('battle_royale_error', { message: 'Game not found' })
       return
@@ -236,13 +273,8 @@ class BattleRoyaleSocketHandlers {
         try {
           const gameData = await dbService.getBattleRoyaleGame(gameId)
           if (gameData && gameData.status === 'filling') {
-            game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
-            
-            // If creator wants to participate, add them to the game
-            if (gameData.creator_participates === true || gameData.creator_participates === 1) {
-              battleRoyaleManager.addCreatorAsPlayer(gameId, gameData.creator)
-              console.log(`✅ Creator ${gameData.creator} added to game ${gameId} on load`)
-            }
+            game = battleRoyaleManager.createBattleRoyale(gameId, gameData, dbService)
+            console.log(`✅ Game ${gameId} loaded from database`)
           }
         } catch (error) {
           console.error('❌ Error loading Battle Royale game:', error)
@@ -334,13 +366,8 @@ class BattleRoyaleSocketHandlers {
         try {
           const gameData = await dbService.getBattleRoyaleGame(gameId)
           if (gameData && gameData.status === 'filling') {
-            game = battleRoyaleManager.createBattleRoyale(gameId, gameData)
-            
-            // If creator wants to participate, add them to the game
-            if (gameData.creator_participates === true || gameData.creator_participates === 1) {
-              battleRoyaleManager.addCreatorAsPlayer(gameId, gameData.creator)
-              console.log(`✅ Creator ${gameData.creator} added to game ${gameId} on early start load`)
-            }
+            game = battleRoyaleManager.createBattleRoyale(gameId, gameData, dbService)
+            console.log(`✅ Game ${gameId} loaded from database for early start`)
           }
         } catch (error) {
           console.error('❌ Error loading Battle Royale game for early start:', error)

@@ -16,9 +16,10 @@ class GameServer {
     this.gameManager = new GameManager()
     this.battleRoyaleManager = new BattleRoyaleGameManager()
     
-    // Then import handlers
+    // Then instantiate handlers (FIXED: They are classes, not modules)
     this.oneVOneHandlers = require('./1v1SocketHandlers')
-    this.battleRoyaleHandlers = require('./BattleRoyaleSocketHandlers')
+    const BattleRoyaleSocketHandlersClass = require('./BattleRoyaleSocketHandlers')
+    this.battleRoyaleHandlers = new BattleRoyaleSocketHandlersClass()
     
     this.socketData = new Map() // socketId -> { address, gameId, roomId, role }
     this.userSockets = new Map() // address -> socketId
@@ -79,7 +80,8 @@ class GameServer {
           socket, 
           data, 
           this.battleRoyaleManager, 
-          this.io
+          this.io,
+          this.dbService
         )
       })
 
