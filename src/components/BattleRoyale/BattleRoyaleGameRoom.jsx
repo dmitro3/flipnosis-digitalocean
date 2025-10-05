@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext'
 import { useProfile } from '../../contexts/ProfileContext'
 import socketService from '../../services/SocketService'
 import BattleRoyaleUnified3DScene from './BattleRoyaleUnified3DScene'
+import BattleRoyaleGamePageTab from './tabs/BattleRoyaleGamePageTab'
 import './BattleRoyaleCoins.css'
 
 const GameContainer = styled.div`
@@ -494,6 +495,11 @@ const BattleRoyaleGameRoom = ({
   const formatAddress = (addr) => {
     if (!addr) return ''
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
+
+  // If game is in filling phase, show the lobby
+  if (serverState?.phase === 'filling' || !serverState) {
+    return <BattleRoyaleGamePageTab gameData={gameData} gameId={gameId} address={address} isCreator={isCreator} />
   }
 
   return (

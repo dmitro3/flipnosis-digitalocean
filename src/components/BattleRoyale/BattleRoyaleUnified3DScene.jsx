@@ -248,10 +248,12 @@ const BattleRoyaleUnified3DScene = ({
         
         const posData = coinPositions[i]
         coin.position.set(posData.x, posData.y, posData.z)
+        // Make the coin edge thicker so it looks good standing up
         coin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-        coin.rotation.x = 0
-        coin.rotation.y = Math.PI / 2
-        coin.rotation.z = 0
+        // Make coin stand on edge like a wheel
+        coin.rotation.x = 0 // Start flat
+        coin.rotation.y = Math.PI / 2 // Rotated 90 degrees for proper facing
+        coin.rotation.z = 0 // No tilt
 
         scene.add(coin)
         coinsRef.current[i] = coin
@@ -477,9 +479,10 @@ const BattleRoyaleUnified3DScene = ({
         
         newCoin.position.set(posData.x, posData.y, posData.z)
         newCoin.scale.set(posData.scale, 1.5 * posData.scale, posData.scale)
-        newCoin.rotation.x = 0
-        newCoin.rotation.y = Math.PI / 2
-        newCoin.rotation.z = 0
+        // Make coin stand on edge like a wheel
+        newCoin.rotation.x = 0 // Start flat
+        newCoin.rotation.y = Math.PI / 2 // Rotated 90 degrees for proper facing
+        newCoin.rotation.z = 0 // No tilt
 
         sceneRef.current.add(newCoin)
         coinsRef.current[i] = newCoin

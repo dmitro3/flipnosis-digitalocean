@@ -251,12 +251,9 @@ const BattleRoyaleTabbedInterface = ({ gameId: propGameId, gameData: propGameDat
       case 'details':
         return <BattleRoyaleNFTDetailsTab {...commonProps} />
       case 'game':
-        // Show new game room when game is in progress, otherwise show lobby
-        if (gameStatus === 'starting' || gameStatus === 'in_progress') {
-          return <BattleRoyaleGameRoom {...commonProps} />
-        } else {
-          return <BattleRoyaleGamePageTab {...commonProps} />
-        }
+        // Always show GameRoom for active game phases, let it handle the display logic
+        // The GameRoom component will show the appropriate UI based on game state
+        return <BattleRoyaleGameRoom {...commonProps} />
       default:
         return <BattleRoyaleNFTDetailsTab {...commonProps} />
     }
