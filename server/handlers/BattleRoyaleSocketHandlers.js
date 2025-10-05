@@ -355,6 +355,7 @@ class BattleRoyaleSocketHandlers {
 
   // Start Battle Royale Early
   async handleBattleRoyaleStartEarly(socket, data, battleRoyaleManager, io, dbService) {
+    console.log(`🚀 handleBattleRoyaleStartEarly called with data:`, JSON.stringify(data))
     const { gameId, address } = data
     console.log(`🚀 Early start requested by ${address} for game ${gameId}`)
     
